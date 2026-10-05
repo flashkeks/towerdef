@@ -1,0 +1,212 @@
+{
+  "_meta": {
+    "description": "Enemy modifiers/mechanics (well documented) and known bosses. Per-enemy HP/speed/reward UNKNOWN.",
+    "researchDate": "2026-10-05",
+    "provenanceLegend": "VERIFIED|OBSERVED|RECONSTRUCTED|DERIVED|UNKNOWN|DESIGN",
+    "note": "Reference data about the original game (Anime Adventures, Gomu) for system reconstruction only. Names are AA in-game names (third-party IP) and must not be used in our game. null = UNKNOWN.",
+    "sources": "see ../sources.md"
+  },
+  "modifiers": [
+    {
+      "id": "flying",
+      "effect": "untargetable by ground units; does not regen",
+      "provenance": "OBSERVED",
+      "sources": [
+        "S14"
+      ]
+    },
+    {
+      "id": "shield",
+      "effect": "N shield instances; each hit removes 1; shatter removes all",
+      "instancesChallenge": 1,
+      "provenance": "OBSERVED",
+      "sources": [
+        "S14",
+        "S15"
+      ]
+    },
+    {
+      "id": "regen",
+      "effect": "regenerates HP over time (not flying)",
+      "rate": null,
+      "provenance": "OBSERVED",
+      "sources": [
+        "S14"
+      ]
+    },
+    {
+      "id": "hyper_regen",
+      "effect": "stronger regen",
+      "rate": null,
+      "provenance": "OBSERVED",
+      "sources": [
+        "S15"
+      ]
+    },
+    {
+      "id": "tank",
+      "effect": "white glow; slightly reduced damage taken; challenge: more HP and armor",
+      "damageReduction": null,
+      "provenance": "OBSERVED",
+      "sources": [
+        "S14",
+        "S15"
+      ]
+    },
+    {
+      "id": "steel_plated",
+      "effect": "3x HP, +20 shield instances",
+      "hpMult": 3,
+      "shieldInstances": 20,
+      "provenance": "OBSERVED",
+      "sources": [
+        "S15"
+      ]
+    },
+    {
+      "id": "fast",
+      "speedMult": null,
+      "provenance": "OBSERVED",
+      "sources": [
+        "S14"
+      ]
+    },
+    {
+      "id": "godspeed",
+      "speedMult": null,
+      "provenance": "OBSERVED",
+      "sources": [
+        "S15"
+      ]
+    },
+    {
+      "id": "boss",
+      "effect": "act-end boss; infinite every 10 waves",
+      "provenance": "OBSERVED",
+      "sources": [
+        "S06"
+      ]
+    },
+    {
+      "id": "affinity",
+      "effect": "per-enemy resistance & weakness in portals/legend stages",
+      "multipliers": null,
+      "provenance": "OBSERVED",
+      "sources": [
+        "S12"
+      ]
+    }
+  ],
+  "bosses": [
+    {
+      "world": "Planet Greenie",
+      "act": 1,
+      "stage": "Prodigal Prince",
+      "boss": "Vogita"
+    },
+    {
+      "world": "Planet Greenie",
+      "act": 2,
+      "stage": "Reckless Rage",
+      "boss": "Doria"
+    },
+    {
+      "world": "Planet Greenie",
+      "act": 3,
+      "stage": "Dazzling Disgust",
+      "boss": "Argon"
+    },
+    {
+      "world": "Planet Greenie",
+      "act": 4,
+      "stage": "Formidable Fighting Force",
+      "boss": "Giyu"
+    },
+    {
+      "world": "Planet Greenie",
+      "act": 5,
+      "stage": "Terrifying Tyrant",
+      "boss": "Friezo"
+    },
+    {
+      "world": "Planet Greenie",
+      "act": 6,
+      "stage": null,
+      "boss": "Friezo (Full Power)"
+    },
+    {
+      "world": "Spirit World",
+      "act": 6,
+      "stage": "The Wolf",
+      "boss": "Coyote / Spirit Wolf",
+      "confidence": "LOW"
+    },
+    {
+      "world": "Mountain Temple",
+      "act": 6,
+      "boss": "Gilgamesh",
+      "drops": [
+        "Noble Portal"
+      ]
+    },
+    {
+      "mode": "dungeon",
+      "map": "Cursed Womb",
+      "wave": 15,
+      "boss": "Finger Bearer",
+      "drops": [
+        "Cursed Finger"
+      ]
+    },
+    {
+      "mode": "raid",
+      "map": "Sacred Planet",
+      "stage": 4,
+      "boss": "The Genie",
+      "drops": [
+        {
+          "item": "relic_shard",
+          "chance": 0.1
+        }
+      ]
+    },
+    {
+      "mode": "raid",
+      "map": "Sacred Planet",
+      "stage": 5,
+      "boss": "The Pure Form",
+      "drops": [
+        {
+          "item": "relic_shard",
+          "chance": 1.0
+        },
+        "Bubblegum"
+      ]
+    },
+    {
+      "mode": "infinite",
+      "map": "newest world",
+      "boss": "Star Golem",
+      "spawn": "chance (UNKNOWN)",
+      "drops": [
+        "star_remnant"
+      ]
+    }
+  ],
+  "statusEffectCooldowns": {
+    "stun": [
+      10,
+      14
+    ],
+    "freeze": 10,
+    "slow": 4,
+    "knockback": [
+      30,
+      31
+    ],
+    "_unit": "seconds of immunity after effect ends",
+    "sources": [
+      "S13"
+    ]
+  }
+}

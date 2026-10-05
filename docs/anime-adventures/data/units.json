@@ -1,0 +1,818 @@
+{
+  "_meta": {
+    "description": "Units with documented stats. Ranges in the wiki are shown as [min,max]; max/min = 2.1 (damage), 1.2 (range), 0.9 (spa) - meaning UNKNOWN.",
+    "researchDate": "2026-10-05",
+    "provenanceLegend": "VERIFIED|OBSERVED|RECONSTRUCTED|DERIVED|UNKNOWN|DESIGN",
+    "note": "Reference data about the original game (Anime Adventures, Gomu) for system reconstruction only. Names are AA in-game names (third-party IP) and must not be used in our game. null = UNKNOWN.",
+    "sources": "see ../sources.md"
+  },
+  "units": [
+    {
+      "id": "captain",
+      "name": "Captain",
+      "rarity": "rare",
+      "towerType": "hill",
+      "damageTypes": null,
+      "spawnCap": null,
+      "sellRate": 0.25,
+      "evolvesTo": [
+        "captain_timeskip",
+        "captain_god"
+      ],
+      "upgrades": [
+        {
+          "level": 0,
+          "cost": 300,
+          "damage": [
+            3,
+            6.3
+          ],
+          "range": [
+            25,
+            30
+          ],
+          "spa": [
+            3,
+            2.7
+          ],
+          "aoe": {
+            "kind": "single"
+          }
+        },
+        {
+          "level": 1,
+          "cost": 450,
+          "damage": null,
+          "range": [
+            25,
+            30
+          ],
+          "spa": [
+            2.5,
+            2.25
+          ]
+        },
+        {
+          "level": 2,
+          "cost": 650,
+          "damage": null,
+          "range": [
+            27,
+            32.4
+          ],
+          "spa": [
+            2,
+            1.8
+          ]
+        },
+        {
+          "level": 3,
+          "cost": 1500,
+          "damage": null,
+          "range": [
+            30,
+            36
+          ],
+          "spa": [
+            2,
+            1.8
+          ],
+          "unlockAbility": "Bamboo Shot"
+        },
+        {
+          "level": 4,
+          "cost": 2500,
+          "damage": [
+            8.5,
+            null
+          ],
+          "range": [
+            35,
+            null
+          ],
+          "spa": [
+            1.5,
+            null
+          ],
+          "aoe": {
+            "kind": "circle",
+            "radius": 4
+          }
+        }
+      ],
+      "totalCost": 5400,
+      "provenance": "OBSERVED",
+      "confidence": "HIGH",
+      "sources": [
+        "S29"
+      ]
+    },
+    {
+      "id": "ceo",
+      "name": "C.E.O.",
+      "rarity": null,
+      "role": "farm",
+      "towerType": "ground",
+      "damageTypes": [
+        "physical"
+      ],
+      "spawnCap": 3,
+      "sellRate": 0.3,
+      "range": [
+        10,
+        12
+      ],
+      "upgrades": [
+        {
+          "level": 0,
+          "cost": 550,
+          "incomePerWave": 200
+        },
+        {
+          "level": 1,
+          "cost": 1000,
+          "incomePerWave": 500
+        },
+        {
+          "level": 2,
+          "cost": 1750,
+          "incomePerWave": 1000
+        },
+        {
+          "level": 3,
+          "cost": 2500,
+          "incomePerWave": 1750
+        },
+        {
+          "level": 4,
+          "cost": 3000,
+          "incomePerWave": 2500
+        }
+      ],
+      "totalCost": 8800,
+      "totalCostProvenance": "DERIVED",
+      "provenance": "OBSERVED",
+      "confidence": "HIGH",
+      "sources": [
+        "S28"
+      ]
+    },
+    {
+      "id": "bulby",
+      "name": "Bulby",
+      "rarity": null,
+      "role": "farm",
+      "towerType": null,
+      "upgrades": [
+        {
+          "level": 0,
+          "cost": 800,
+          "incomePerWave": 250
+        },
+        {
+          "level": 1,
+          "cost": 1500,
+          "incomePerWave": 750
+        },
+        {
+          "level": 2,
+          "cost": 3000,
+          "incomePerWave": 1500
+        },
+        {
+          "level": 3,
+          "cost": 4500,
+          "incomePerWave": 3000
+        },
+        {
+          "level": 4,
+          "cost": 7500,
+          "incomePerWave": 5000
+        },
+        {
+          "level": 5,
+          "cost": 10000,
+          "incomePerWave": 8000
+        },
+        {
+          "level": 6,
+          "cost": 12500,
+          "incomePerWave": 10000
+        }
+      ],
+      "totalCost": 39800,
+      "costProvenance": "DERIVED (from cumulative table)",
+      "provenance": "OBSERVED",
+      "confidence": "HIGH",
+      "sources": [
+        "S37"
+      ]
+    },
+    {
+      "id": "commander",
+      "name": "Commander",
+      "rarity": null,
+      "role": "support/summoner",
+      "towerType": "hybrid",
+      "aoe": {
+        "kind": "single"
+      },
+      "range": 15,
+      "spa": [
+        15,
+        13.5
+      ],
+      "upgrades": [
+        {
+          "level": 0,
+          "cost": 775
+        },
+        {
+          "level": 1,
+          "cost": 1000
+        },
+        {
+          "level": 2,
+          "cost": 1500
+        },
+        {
+          "level": 3,
+          "cost": 2000
+        },
+        {
+          "level": 4,
+          "cost": 4000,
+          "provenance": "DERIVED (position assumed)"
+        },
+        {
+          "level": 5,
+          "cost": 5500
+        },
+        {
+          "level": 6,
+          "cost": 7000
+        }
+      ],
+      "totalCost": 21775,
+      "ability": {
+        "kind": "active",
+        "buff": {
+          "stat": "damage",
+          "amount": 0.25,
+          "affectsDamageTypes": [
+            "physical"
+          ],
+          "target": "units in range"
+        },
+        "cooldown": null,
+        "duration": null
+      },
+      "provenance": "OBSERVED",
+      "confidence": "HIGH",
+      "sources": [
+        "S30"
+      ]
+    },
+    {
+      "id": "wind_dragon",
+      "name": "Wind Dragon",
+      "rarity": "legendary",
+      "summonable": true,
+      "towerType": "hybrid",
+      "aoe": {
+        "kind": "circle",
+        "radius": 5
+      },
+      "sellRate": 0.25,
+      "upgrades": [
+        {
+          "level": 0,
+          "cost": 800
+        },
+        {
+          "level": 1,
+          "cost": 1200
+        },
+        {
+          "level": 2,
+          "cost": 1750
+        },
+        {
+          "level": 3,
+          "cost": 2500
+        }
+      ],
+      "upgradesComplete": false,
+      "ability": {
+        "kind": "active",
+        "buff": {
+          "stat": "damage",
+          "amount": null,
+          "affectsDamageTypes": [
+            "magic"
+          ]
+        },
+        "cooldown": 40,
+        "duration": 20
+      },
+      "provenance": "OBSERVED",
+      "confidence": "HIGH",
+      "sources": [
+        "S31"
+      ]
+    },
+    {
+      "id": "honey",
+      "name": "Honey",
+      "rarity": "mythic",
+      "towerType": "hill",
+      "aoe": {
+        "kind": "single"
+      },
+      "evolvesTo": [
+        "honey_hive"
+      ],
+      "upgrades": [
+        {
+          "level": 0,
+          "cost": 1000,
+          "damage": [
+            150,
+            315
+          ],
+          "range": [
+            24,
+            28.8
+          ],
+          "spa": [
+            1,
+            0.9
+          ]
+        },
+        {
+          "level": 1,
+          "cost": 1250
+        },
+        {
+          "level": 2,
+          "cost": 2000
+        },
+        {
+          "level": 3,
+          "cost": 3000,
+          "unlockAbility": "Hivemind"
+        },
+        {
+          "level": 4,
+          "cost": 4500
+        }
+      ],
+      "upgradesComplete": false,
+      "provenance": "OBSERVED",
+      "confidence": "HIGH",
+      "sources": [
+        "S32"
+      ]
+    },
+    {
+      "id": "honey_hive",
+      "name": "Honey (Hive)",
+      "rarity": "mythic",
+      "obtain": [
+        "evolution:honey"
+      ],
+      "towerType": "hill",
+      "aoe": {
+        "kind": "single"
+      },
+      "upgrades": [
+        {
+          "level": 0,
+          "cost": 1000
+        },
+        {
+          "level": 1,
+          "cost": 1250
+        },
+        {
+          "level": 2,
+          "cost": null
+        },
+        {
+          "level": 3,
+          "cost": null
+        },
+        {
+          "level": 4,
+          "cost": 4500
+        },
+        {
+          "level": 5,
+          "cost": null
+        },
+        {
+          "level": 6,
+          "cost": 11000
+        }
+      ],
+      "passive": {
+        "name": "Hivemind",
+        "damageMultiplierAtUpgrade": {
+          "3": 3,
+          "6": 5
+        }
+      },
+      "minSpaObserved": 0.8,
+      "provenance": "OBSERVED",
+      "confidence": "MEDIUM",
+      "sources": [
+        "S32"
+      ]
+    },
+    {
+      "id": "legendary_assassin",
+      "name": "Legendary Assassin",
+      "rarity": "mythic",
+      "towerType": "ground",
+      "aoe": {
+        "kind": "cone",
+        "angleDeg": 60
+      },
+      "evolvesTo": [
+        "legendary_assassin_prime"
+      ],
+      "upgrades": [
+        {
+          "level": 0,
+          "cost": 1250,
+          "damage": [
+            950,
+            1995
+          ],
+          "range": [
+            16,
+            19.2
+          ],
+          "spa": [
+            7,
+            6.3
+          ],
+          "hits": null
+        },
+        {
+          "level": 1,
+          "cost": 1500,
+          "hits": null
+        },
+        {
+          "level": 2,
+          "cost": 2700,
+          "hits": 3
+        },
+        {
+          "level": 3,
+          "cost": 4000,
+          "hits": 3
+        },
+        {
+          "level": 4,
+          "cost": 7000,
+          "hits": 1
+        },
+        {
+          "level": 5,
+          "cost": 10000,
+          "hits": 1
+        },
+        {
+          "level": 6,
+          "cost": 12000,
+          "hits": 4
+        },
+        {
+          "level": 7,
+          "cost": 17000,
+          "hits": 4
+        }
+      ],
+      "totalCost": 55450,
+      "totalCostProvenance": "DERIVED",
+      "provenance": "OBSERVED",
+      "confidence": "HIGH",
+      "sources": [
+        "S33"
+      ]
+    },
+    {
+      "id": "legendary_assassin_prime",
+      "name": "Legendary Assassin (Prime)",
+      "rarity": "mythic",
+      "obtain": [
+        "evolution:legendary_assassin"
+      ],
+      "passive": {
+        "description": "2x DPS vs. the enemy closest to the base (front-runner)"
+      },
+      "provenance": "OBSERVED",
+      "confidence": "MEDIUM",
+      "sources": [
+        "S53"
+      ]
+    },
+    {
+      "id": "black_assassin",
+      "name": "Black Assassin",
+      "rarity": "mythic",
+      "towerType": "ground",
+      "damageTypes": [
+        "physical",
+        "dark(secondary)"
+      ],
+      "spawnCap": 4,
+      "upgradeCount": 5,
+      "first": {
+        "cost": 1200,
+        "damage": 600,
+        "range": 17,
+        "spa": 7,
+        "aoe": {
+          "kind": "circle",
+          "radius": 7
+        }
+      },
+      "final": {
+        "damage": 4500,
+        "range": 22,
+        "spa": 6,
+        "aoe": {
+          "kind": "circle",
+          "radius": 10
+        },
+        "hits": 2
+      },
+      "totalCost": 18900,
+      "evolvesTo": [
+        "black_assassin_reaper"
+      ],
+      "provenance": "OBSERVED",
+      "confidence": "HIGH",
+      "sources": [
+        "S36"
+      ]
+    },
+    {
+      "id": "fiery_commander",
+      "name": "Fiery Commander",
+      "rarity": null,
+      "towerType": "ground",
+      "damageTypes": [
+        "fire"
+      ],
+      "aoe": {
+        "kind": "circle",
+        "radius": 7
+      },
+      "evolvesTo": [
+        "fiery_commander_hellfire"
+      ],
+      "upgrades": [
+        {
+          "level": 0,
+          "cost": 1750,
+          "damage": [
+            250,
+            525
+          ],
+          "burn": {
+            "total": [
+              75,
+              157.5
+            ],
+            "ticks": 5,
+            "pctOfHit": 0.3
+          },
+          "range": [
+            20,
+            24
+          ],
+          "spa": [
+            7,
+            6.3
+          ]
+        },
+        {
+          "level": 1,
+          "cost": 2200,
+          "damage": [
+            400,
+            840
+          ],
+          "burn": {
+            "total": [
+              120,
+              252
+            ],
+            "ticks": 5
+          },
+          "range": [
+            21,
+            25.2
+          ],
+          "spa": [
+            6,
+            5.4
+          ]
+        },
+        {
+          "level": 2,
+          "cost": 2500,
+          "damage": [
+            600,
+            1200
+          ],
+          "burn": {
+            "total": [
+              180,
+              360
+            ],
+            "ticks": 5
+          },
+          "range": [
+            22,
+            26.4
+          ],
+          "spa": [
+            5.5,
+            4.95
+          ]
+        },
+        {
+          "level": 3,
+          "cost": 4000,
+          "damage": [
+            1300,
+            2600
+          ],
+          "burn": {
+            "total": [
+              390,
+              780
+            ],
+            "ticks": 5
+          },
+          "range": null,
+          "spa": null
+        }
+      ],
+      "upgradesComplete": false,
+      "provenance": "OBSERVED",
+      "confidence": "HIGH",
+      "sources": [
+        "S34"
+      ]
+    },
+    {
+      "id": "eccentric_researcher_captain",
+      "name": "Eccentric Researcher (Captain)",
+      "rarity": null,
+      "obtain": [
+        "battlepass:Ammo Pass",
+        "evolution:eccentric_researcher + 1 Thunder Spears"
+      ],
+      "towerType": "hill",
+      "aoe": {
+        "kind": "circle",
+        "radius": 4
+      },
+      "critChance": 0.5,
+      "level1": {
+        "damage": 390,
+        "bleed": {
+          "total": 117,
+          "ticks": 3,
+          "pctOfHit": 0.3
+        },
+        "range": 20,
+        "spa": 7,
+        "dps": 55.71
+      },
+      "level100Active": {
+        "damage": 3589.59,
+        "bleed": {
+          "total": 1076.88,
+          "ticks": 3
+        },
+        "range": 20,
+        "spa": 7,
+        "dps": 512.8
+      },
+      "upgrades": [
+        {
+          "level": 0,
+          "cost": 1500
+        },
+        {
+          "level": 1,
+          "cost": 2000
+        },
+        {
+          "level": 2,
+          "cost": 3000
+        }
+      ],
+      "upgradesComplete": false,
+      "provenance": "OBSERVED",
+      "confidence": "HIGH",
+      "sources": [
+        "S35"
+      ]
+    }
+  ],
+  "nameLists": {
+    "rare": [
+      "Aman",
+      "Blossom",
+      "Captain",
+      "Carrot",
+      "Demon Girl",
+      "Demonkiller",
+      "Explosion Hero",
+      "Fox Ninja",
+      "Ghoul",
+      "Gravity Hero",
+      "Joan",
+      "Johna",
+      "Jose",
+      "Joykid",
+      "Kolo",
+      "Shinobi",
+      "Spirit Reaper",
+      "Vego",
+      "Verdant Hero"
+    ],
+    "epic": [
+      "Beast",
+      "Blaze Frost (Epic)",
+      "Copy Ninja",
+      "Cyborg",
+      "Delinquent",
+      "Experiment X (Imperfect)",
+      "Green Alien",
+      "Waterfist (White Tooth)",
+      "Joykid (Navy Bay)",
+      "Karyn",
+      "Killer",
+      "Lotus Samurai",
+      "Operator",
+      "Restructure",
+      "Sand Ninja",
+      "Sandy",
+      "Spirit Reaper (Masked)",
+      "Tyrant (Final)",
+      "Zapstu"
+    ],
+    "mythic": [
+      "Black Assassin",
+      "Demihuman",
+      "Elyssia",
+      "Gambler",
+      "Robot Sorcerer",
+      "Shadow Sorcerer (Incident)",
+      "Zombie",
+      "Spider",
+      "Somber",
+      "Killstreak",
+      "Elf Mage",
+      "Cream",
+      "Legendary Assassin",
+      "Siren",
+      "Honey",
+      "Ghost-kun",
+      "Iceclaw (Rebirth)",
+      "Dreamer",
+      "Psychic Princess",
+      "Silver Slayer",
+      "Illusionist",
+      "Magma",
+      "Akemy",
+      "Curse",
+      "Cherub",
+      "Paragon",
+      "Frost Navy",
+      "Faker",
+      "Ariva",
+      "Arlem",
+      "Magic Disbeliever",
+      "Prime Force",
+      "Gamer Girl",
+      "Tiger",
+      "Flamefeather",
+      "Explosion Hero (Bang)",
+      "Waterfist",
+      "Player"
+    ],
+    "legendary": null,
+    "secret": null,
+    "_provenance": "OBSERVED/HIGH [S27,S02] (RR names); lists for legendary/secret UNKNOWN"
+  }
+}

@@ -1,0 +1,171 @@
+{
+  "_meta": {
+    "description": "Trait pool (LEGACY). rollWeight in percent; sum 99.93 (conflict C7).",
+    "researchDate": "2026-10-05",
+    "provenanceLegend": "VERIFIED|OBSERVED|RECONSTRUCTED|DERIVED|UNKNOWN|DESIGN",
+    "note": "Reference data about the original game (Anime Adventures, Gomu) for system reconstruction only. Names are AA in-game names (third-party IP) and must not be used in our game. null = UNKNOWN.",
+    "sources": "see ../sources.md"
+  },
+  "rerollCost": {
+    "starRemnant": {
+      "rare": 1,
+      "epic": 1,
+      "legendary": 1,
+      "mythic": 5,
+      "secret": 5
+    },
+    "rerollToken": {
+      "any": 1
+    },
+    "npc": "Ethereal Guide",
+    "provenance": "VERIFIED",
+    "confidence": "CONFIRMED",
+    "sources": [
+      "S03",
+      "S47"
+    ]
+  },
+  "traits": [
+    {
+      "id": "superior",
+      "name": "Superior",
+      "rollWeight": 29.97,
+      "tiers": [
+        {
+          "tier": 1,
+          "damage": 0.1
+        },
+        {
+          "tier": 2,
+          "damage": 0.125
+        },
+        {
+          "tier": 3,
+          "damage": 0.15
+        }
+      ],
+      "provenance": "OBSERVED",
+      "confidence": "HIGH"
+    },
+    {
+      "id": "nimble",
+      "name": "Nimble",
+      "rollWeight": 24.98,
+      "tiers": [
+        {
+          "tier": 1,
+          "spa": -0.05
+        },
+        {
+          "tier": 2,
+          "spa": -0.075
+        },
+        {
+          "tier": 3,
+          "spa": -0.12
+        }
+      ],
+      "provenance": "OBSERVED",
+      "confidence": "HIGH"
+    },
+    {
+      "id": "range",
+      "name": "Range",
+      "rollWeight": 24.98,
+      "tiers": [
+        {
+          "tier": 1,
+          "range": 0.1
+        },
+        {
+          "tier": 2,
+          "range": 0.125
+        },
+        {
+          "tier": 3,
+          "range": 0.15
+        }
+      ],
+      "provenance": "OBSERVED",
+      "confidence": "HIGH"
+    },
+    {
+      "id": "adept",
+      "name": "Adept",
+      "rollWeight": 9.99,
+      "xp": 0.5,
+      "provenance": "OBSERVED",
+      "confidence": "HIGH"
+    },
+    {
+      "id": "culling",
+      "name": "Culling",
+      "rollWeight": 5.0,
+      "conditional": {
+        "vsLowHpDamage": 0.2,
+        "lowHpThreshold": null
+      },
+      "provenance": "OBSERVED",
+      "confidence": "MEDIUM"
+    },
+    {
+      "id": "sniper",
+      "name": "Sniper",
+      "rollWeight": 2.5,
+      "range": 0.25,
+      "provenance": "VERIFIED",
+      "confidence": "CONFIRMED"
+    },
+    {
+      "id": "godspeed",
+      "name": "Godspeed",
+      "rollWeight": 1.0,
+      "spa": -0.2,
+      "provenance": "OBSERVED",
+      "confidence": "HIGH"
+    },
+    {
+      "id": "reaper",
+      "name": "Reaper",
+      "rollWeight": 0.8,
+      "damage": 0.15,
+      "conditional": {
+        "vsBossDamage": 0.25
+      },
+      "provenance": "OBSERVED",
+      "confidence": "MEDIUM"
+    },
+    {
+      "id": "celestial",
+      "name": "Celestial",
+      "rollWeight": 0.36,
+      "damage": 0.1,
+      "range": 0.1,
+      "conditional": {
+        "trueDamagePct": 0.2
+      },
+      "provenance": "OBSERVED",
+      "confidence": "MEDIUM"
+    },
+    {
+      "id": "divine",
+      "name": "Divine",
+      "rollWeight": 0.2,
+      "damage": 0.2,
+      "spa": -0.1,
+      "range": 0.2,
+      "provenance": "VERIFIED",
+      "confidence": "CONFIRMED"
+    },
+    {
+      "id": "golden",
+      "name": "Golden",
+      "rollWeight": 0.15,
+      "damage": 0.3,
+      "yen": 0.2,
+      "provenance": "OBSERVED",
+      "confidence": "HIGH"
+    }
+  ],
+  "tierProbabilities": null
+}

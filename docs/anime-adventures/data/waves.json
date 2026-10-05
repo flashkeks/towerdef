@@ -1,0 +1,72 @@
+{
+  "_meta": {
+    "description": "Wave table template. No AA wave table could be sourced - all values UNKNOWN. Known structural facts included.",
+    "researchDate": "2026-10-05",
+    "provenanceLegend": "VERIFIED|OBSERVED|RECONSTRUCTED|DERIVED|UNKNOWN|DESIGN",
+    "note": "Reference data about the original game (Anime Adventures, Gomu) for system reconstruction only. Names are AA in-game names (third-party IP) and must not be used in our game. null = UNKNOWN.",
+    "sources": "see ../sources.md"
+  },
+  "knownFacts": {
+    "infiniteBossEveryNWaves": 10,
+    "cursedWombBossWave": 15,
+    "hpScalesWithPartySize": true,
+    "infiniteGemsPerWave": [
+      {
+        "waves": [
+          1,
+          5
+        ],
+        "gems": 0
+      },
+      {
+        "waves": [
+          6,
+          6
+        ],
+        "gems": 18
+      },
+      {
+        "waves": [
+          7,
+          15
+        ],
+        "gems": 3
+      },
+      {
+        "waves": [
+          15,
+          100
+        ],
+        "gems": 5
+      },
+      {
+        "waves": [
+          105,
+          null
+        ],
+        "gems": 0
+      }
+    ],
+    "infiniteGemsMax": 497,
+    "infiniteDailyMilestones": {
+      "10": 90,
+      "25": 180,
+      "50": 330
+    }
+  },
+  "stages": [
+    {
+      "stageId": "planet_namak_act1",
+      "waves": null,
+      "provenance": "UNKNOWN"
+    }
+  ],
+  "designInfiniteGenerator": {
+    "provenance": "DESIGN",
+    "hp": "baseHP * g^(w-1) * (w>W_jump?J:1) * (1+0.5*(players-1))",
+    "g": 1.1,
+    "W_jump": 50,
+    "J": 2.0,
+    "bossEvery": 10
+  }
+}
