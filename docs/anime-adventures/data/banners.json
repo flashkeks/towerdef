@@ -1,0 +1,132 @@
+{
+  "_meta": {
+    "description": "Banner definitions per version.",
+    "researchDate": "2026-10-05",
+    "provenanceLegend": "VERIFIED|OBSERVED|RECONSTRUCTED|DERIVED|UNKNOWN|DESIGN",
+    "note": "Reference data about the original game (Anime Adventures, Gomu) for system reconstruction only. Names are AA in-game names (third-party IP) and must not be used in our game. null = UNKNOWN.",
+    "sources": "see ../sources.md"
+  },
+  "legacy": [
+    {
+      "id": "standard",
+      "cost": {
+        "gems": 50,
+        "vipGems": 40,
+        "ticket": 1
+      },
+      "rates": {
+        "rare": 0.819,
+        "epic": 0.16,
+        "legendary": 0.02,
+        "mythic": 0.0025
+      },
+      "ratesSumConflict": "1.0015 (C1)",
+      "shinyRate": 0.01,
+      "shinyRateShinyHunter": 0.03,
+      "rotationSeconds": 3600,
+      "extraDrops": [
+        {
+          "item": "star_remnant",
+          "chance": 0.0025
+        }
+      ],
+      "provenance": "VERIFIED",
+      "confidence": "CONFIRMED",
+      "sources": [
+        "S01"
+      ]
+    },
+    {
+      "id": "special",
+      "cost": {
+        "gems": 50,
+        "vipGems": 40
+      },
+      "rates": {
+        "mythic": 0.005,
+        "others": null
+      },
+      "featured": {
+        "count": 3,
+        "centerShareOfMythic": 0.5,
+        "sideShareOfMythic": 0.1,
+        "unfeaturedShareEach": 0.00526
+      },
+      "rotationSeconds": 3600,
+      "pity": {
+        "mythicCenter": 400,
+        "legendary": 50,
+        "resetRule": "UNKNOWN (C3)"
+      },
+      "provenance": "VERIFIED",
+      "confidence": "CONFIRMED",
+      "sources": [
+        "S01",
+        "S51"
+      ]
+    },
+    {
+      "id": "event",
+      "rates": {
+        "mythic": 0.005
+      },
+      "featured": {
+        "count": 3,
+        "limitedOnly": true
+      },
+      "provenance": "OBSERVED",
+      "confidence": "HIGH",
+      "sources": [
+        "S01"
+      ]
+    }
+  ],
+  "rerelease": [
+    {
+      "id": "event",
+      "currency": "eventCurrency",
+      "rates": {
+        "mythic": 0.0025,
+        "mythicSkin": 0.00249,
+        "secret": 1.25e-05
+      },
+      "provenance": "OBSERVED",
+      "confidence": "MEDIUM",
+      "sources": [
+        "S43"
+      ]
+    },
+    {
+      "id": "special",
+      "rates": {
+        "mythic": 0.005
+      },
+      "featured": {
+        "count": 3,
+        "unfeaturedShareEach": 0.00625
+      },
+      "provenance": "OBSERVED",
+      "confidence": "MEDIUM",
+      "sources": [
+        "S43"
+      ]
+    },
+    {
+      "id": "legacy",
+      "currency": "legacyGems",
+      "rates": {
+        "mythic": 0.005
+      },
+      "featured": {
+        "count": 3,
+        "unfeaturedShareEach": 0.00714
+      },
+      "provenance": "OBSERVED",
+      "confidence": "MEDIUM",
+      "sources": [
+        "S43"
+      ]
+    }
+  ],
+  "multiSummon": null
+}

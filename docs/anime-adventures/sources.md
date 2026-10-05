@@ -1,0 +1,97 @@
+# Quellen
+
+Recherchedatum aller Einträge: **2026-10-05**. Zugriffsart bei **allen** Quellen: Such-Auszug, kein Vollabruf (siehe [README](README.md#rechercheeinschränkung)).
+
+**Bewertung**
+
+| Stufe | Bedeutung |
+|---|---|
+| A | Official / Primary Source |
+| B | Reliable Community Documentation (Fandom-Wiki mit In-Game-Tabellen) |
+| C | Multiple Independent Confirmations |
+| D | Single Community Source (Guide-Seite, Forum) |
+| E | Inference / Observation / Content-Farm |
+
+> Hinweis: Eine **A-Quelle** (Entwickler-Patchnotes im Discord/Trello, Roblox-Spielseite im Volltext) war nicht abrufbar. Viele B-Werte werden durch mehrere D-Guides bestätigt und sind dann insgesamt als **C** bewertet (Spalte „effektiv“).
+
+## Fandom-Wiki `animeadventures.fandom.com` (Community-Wiki, Stufe B)
+
+| ID | Seite (URL `https://animeadventures.fandom.com/wiki/…`) | Version | Verwendete Informationen | Bewertung |
+|---|---|---|---|---|
+| S01 | `Summon` | LEGACY + RR | Summon-Kosten, Raten, Featured-Verteilung, Pity, Banner-Refresh | B (effektiv C) |
+| S02 | `Category:Mythic_Units` | VER? | Mythic-Raten, Mythic-Namen | B |
+| S03 | `Traits` | LEGACY/RR | Trait-NPC, Reroll-Kosten, Remnant-Quellen | B (effektiv C) |
+| S04 | `Frequently_Asked_Questions` | LEGACY | Shiny-Chancen, Level-Skalierung 9,204×, Shiny ist kosmetisch | B |
+| S05 | `Update_Log` | LEGACY + RR | Update-Zeitleiste, Features | B |
+| S06 | `Infinite` | LEGACY | Gems pro Wave, Bossrhythmus, Star Golem, Unlock | B |
+| S07 | `Story` | RR-Namen | Weltenliste, Acts, Bosse, Shibuya-Doppelpfad | B |
+| S08 | `Raids` | VER? | Raid-Liste, Raid-Belohnungen | B |
+| S09 | `Portals` | LEGACY | Portal-Liste, Alien- und Witch-Portal, Tiers | B |
+| S10 | `Secret_Portal` | LEGACY | Secret Portals, Host-Garantie, 5 % Non-Host | B |
+| S11 | `Powerups` | LEGACY | Stat-Ränge SSS–C-, ±10 % Varianz, Limit Break, Worthiness | B |
+| S12 | `Damage_Affinities_/_Elements` | LEGACY | Schadensarten, Resistenzen in Portals/Legend Stages | B |
+| S13 | `Effects` | LEGACY | Stun, Freeze, Timestop, Burn, Bleed, Poison, Slow, Knockback, Rewind, Shatter | B |
+| S14 | `Enemy_Mechanics` | LEGACY | Flying, Shield, Regen, Tank, Fast | B |
+| S15 | `Challenges` | LEGACY | Challenge-Modifikatoren, Belohnungen, 30-Min-Rotation | B |
+| S16 | `Legend_Stages` | VER? | Legend-Stage-Liste, Unlock (Act 6) | B |
+| S17 | `Relics`, `Relic_Shards` | LEGACY | Relic-Stats (%DMG, PEN, PWR), Crafting | B |
+| S18 | `Curse`, `Curse_(Contract)` | LEGACY | Curse-Mechanik ±2,5–13 % | B |
+| S19 | `Trading` | LEGACY | Trade-Level 40, Trade-Tax, handelbare Items | B (effektiv C) |
+| S20 | `Currencies` | LEGACY | Gems, Gold, Trophies, Event-Währungen | B |
+| S21 | `Items`, `Travelling_Merchant_Shop` | LEGACY | Shop-Preise, Shop-Zyklus, XP-Food-Limit, Unit-Storage via Gold | B |
+| S22 | `Store` | LEGACY | Gamepasses und Preise | B |
+| S23 | `Quests` | LEGACY | Questtypen, Story-Gems, Daily-Limit | B |
+| S24 | `Level_Milestones`, `Prayer_Master` | LEGACY | Level-Belohnungen | B |
+| S25 | `Time_Machine` | LEGACY | AFK-Gems, deaktiviert ab 19.5 | B |
+| S26 | `Battlepass`, `Past_Battlepasses`, `Magic_Hunt` | LEGACY + RR | 50 Tiers, Reward-Typen | B |
+| S27 | `Unit_List`, `Category:Rare_Units`, `Category:Epic_Units` | RR-Namen | Unit-Namen pro Rarität | B |
+| S28 | `C.E.O.` | VER? | Farm-Unit-Datenblatt, Sell 30 % | B |
+| S29 | `Captain` | VER? | Komplettes Upgrade-Datenblatt | B |
+| S30 | `Commander` | VER? | Support-Datenblatt | B |
+| S31 | `Wind_Dragon` | VER? | Buffer-Datenblatt, Sell 25 %, ±10 % | B |
+| S32 | `Honey`, `Honey_(Hive)` | VER? | Mythic-Datenblatt, Hivemind | B |
+| S33 | `Legendary_Assassin`, `Legendary_Assassin_(Prime)` | VER? | Cone-AoE, Hits pro Upgrade | B |
+| S34 | `Fiery_Commander`, `Fiery_Commander_(Hellfire)` | VER? | Burn-Datenblatt | B |
+| S35 | `Eccentric_Researcher_(Captain)` | VER? | Crit, Bleed, Level-1- vs. Level-100-Werte | B |
+| S36 | `Black_Assassin` | VER? | Datenblatt, Spawn Cap 4 | B |
+| S37 | `Bulby` | VER? | Farm-ROI-Tabelle | B |
+| S38 | `Map_Lengths` | LEGACY | Map-Laufzeiten | B |
+| S39 | `Air/Hill_Units`, `Ground_Units`, `Hybrid_Units` | LEGACY | Platzierungs- und Zielklassen | B |
+| S40 | `Evolution` | LEGACY | Evolution-Mechanik | B |
+| S41 | `Contracts` | LEGACY | Contract-Modus | B |
+| S59 | Forum `animeadventures.fandom.com/f/p/…` (Worthiness, Pity, Buff-Stacking, Level) | LEGACY | Spielerbeobachtungen | D |
+
+## Andere Quellen
+
+| ID | URL | Titel / Herausgeber | Version | Verwendet für | Bewertung |
+|---|---|---|---|---|---|
+| S42 | https://roblox.fandom.com/wiki/Gomu/Anime_Adventures | Roblox Wiki | LEGACY + RR | Entwickler, Erstellung, Release, DMCA, Relaunch | B |
+| S43 | https://www.destructoid.com/all-banner-types-in-anime-adventures-re-release/ | Destructoid | RR | RR-Banner (Event, Special, Legacy) und Raten | D |
+| S44 | https://www.destructoid.com/how-to-100-buff-with-erwin-wendy-leafy-anime-adventures/ | Destructoid | LEGACY | Buff-Stacking (100 %), Cooldown 60 s, Dauer 30 s | D |
+| S45 | https://tryhardguides.com/anime-adventures-update-1-log/ bis `…-update-12-log/` | Try Hard Guides | LEGACY | Update-Zeitleiste 1–12 | D (effektiv C mit S05) |
+| S46 | https://primagames.com/gaming/all-mythic-evolutions-in-anime-adventures und https://primagames.com/gaming/all-secret-evolutions-in-anime-adventures | Prima Games / PC Invasion | LEGACY | Evolution-Materialien | D |
+| S47 | https://gamertweak.com/traits-anime-adventures/ und https://www.ggrecon.com/guides/anime-adventures-every-trait-explained/ | Gamer Tweak / GGRecon | LEGACY | Trait-Chancen und Trait-Effekte | D (effektiv C) |
+| S48 | https://progameguides.com/roblox/ (Limit Break, Reroll Stats, Worthiness, Portale, Secret Units) | Pro Game Guides | LEGACY | diverse | D |
+| S49 | https://beebom.com/roblox-anime-adventures-teaser-released/ | Beebom | RR | Relaunch-Ankündigung | D |
+| S50 | https://www.videogameschronicle.com/news/anime-adventures-rain-village-update-patch-notes-and-code/ | VGC | LEGACY | Update 18 | D |
+| S51 | https://www.gameslearningsociety.org/anime-adventures-pity/ | GLS | LEGACY | Legendary-Pity 2 %/Summon, Pity-Reset | E |
+| S52 | https://www.vintageisthenewold.com/faq/what-are-the-odds-of-getting-a-shiny-in-anime-adventures | VITNO | LEGACY | Shiny-Raten (Bestätigung) | E |
+| S53 | https://www.animeadventures.wiki/ | Drittanbieter-„Wiki“ | RR | nur Kontext (Content-Farm-Verdacht) | E |
+| S54 | https://shapes.inc/fandom/anime-adventures/timeline | Shapes | RR | „Dark Ages“ 2024, Relaunch-Datum | E |
+| S55 | https://deltiasgaming.com/anime-adventures-roblox-top-5-best-raids-to-grind-for-rewards/ | Deltia’s Gaming | LEGACY | Raids | D |
+| S56 | https://progameguides.com/roblox/how-to-get-the-cursed-womb-key-in-anime-adventures-roblox/ | Pro Game Guides | LEGACY | Cursed Womb, Finger Bearer Wave 15, Key 199 R$ | D |
+| S57 | https://www.sportskeeda.com/roblox-news/anime-adventures-silver-hunt-battlepass-premium-pass-price-rewards | Sportskeeda | LEGACY | Battle Pass | D |
+| S58 | https://www.thegamer.com/roblox-anime-adventures-trading-units-how-to-trade/ | TheGamer | LEGACY | Trading | D |
+| S60 | https://www.roblox.com/games/117965110267191/Anime-Adventures und https://www.rolimons.com/game/8304191830 | Roblox / Rolimons | RR / LEGACY | Place-IDs | A (nur Existenz) |
+| S61 | https://tryhardguides.com/anime-adventures-1-year-anniversary-windhym-the-eclipse-update-log/ | Try Hard Guides | LEGACY | Update 15 | D |
+| S62 | https://itemlevel.net/anime-adventures-complete-beginners-guide/ | Item Level Gaming | LEGACY | Allgemeines | D |
+| S63 | https://www.destructoid.com/how-to-curse-units-and-get-cursed-tokens-anime-adventures/ | Destructoid | RR | Curse-Tokens | D |
+| S64 | https://www.pcinvasion.com/how-to-evolve-units-in-roblox-anime-adventures/ | PC Invasion | LEGACY | Beispiel Evolution (Kiro) | D |
+
+## Explizit verworfene Daten
+
+| Herkunft | Inhalt | Grund |
+|---|---|---|
+| Suchtreffer zu Infinite-Scaling („+15 %/Wave, Boss W25 500K HP, +20 % ab W100“) | Gegner-HP-Scaling | Die Zusammenfassung mischte Quellen zu **Anime Defenders** (animedefenders.fandom, bloxmeta). Für AA nicht belegt, daher **nicht verwendet**. |
+| Starter-Auswahl Goku/Naruto/Luffy | Starter-System | Stammt von **Anime Mysterious**, nicht von AA. |
+| X-Account „@GomuAdventures“ | Leaderboard-Reset | Der Account postet Nachrichten zu **Anime Vanguards**. Nicht offiziell für AA. |
