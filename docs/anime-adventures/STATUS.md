@@ -11,7 +11,7 @@ Letzte Aktualisierung: 2026-10-05 (Sitzung 2)
 | P0 | Bestandsaufnahme, Quellenlandkarte, Wiki-Dump | **erledigt** | siehe unten |
 | P1 | `game-overview.md` + Zeitleiste | offen | `S72:Update Log` liegt im Volltext vor |
 | P2 | `core-mechanics.md`, `combat-system.md` | offen | Effekte: `S67` (22 Effektdefinitionen), `S72:Effects`, `S72:Enemy Mechanics` |
-| P3 | `units.md` + `data/units.json` | offen | Hauptquelle `S65`/`S66` vollständig geparst (561 bzw. 500 Einträge) |
+| P3 | `units.md` + `data/units.json` | **erledigt** | 561 Einträge, `units-index.md`, Legacy-Diff. Offen: Fähigkeitstexte (Passives) aus Unit-Seiten in `units.json` übernehmen (optional) |
 | P4 | Upgrades, Traits, Shiny, Powerups | offen | `S72:Traits`, `S72:Powerups`, `S69` |
 | P5 | `evolution.md` | offen | Rezepte vollständig in `S65` (`evolve`) |
 | P6 | Gegner, Waves, Maps | offen | Wiki hat **keine** Gegner-Datenmodule; nur `Story`, `Infinite`, `Map Lengths`, `Enemy Mechanics` |
@@ -67,4 +67,4 @@ Letzte Aktualisierung: 2026-10-05 (Sitzung 2)
 
 ## Nächster Schritt
 
-**P3:** `data/units.json` aus S65 + S66 + S67 erzeugen (Legacy-/RR-Namen, alle Upgrades, AoE, Effekte, Evolution) und `units.md` neu aufbauen. Danach P1 und P2.
+**P1:** `game-overview.md` mit Zeitleiste aus `S72:Update Log` überarbeiten, danach P2 (Effekte aus S67 + `S72:Effects`).

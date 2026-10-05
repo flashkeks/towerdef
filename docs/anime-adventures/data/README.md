@@ -4,7 +4,7 @@ Maschinenlesbare Fassung der recherchierten **Anime-Adventures-Daten**. Sie dien
 
 | Datei | Inhalt |
 |---|---|
-| `units.json` | 12 Unit-Datenblätter mit belegten Werten plus Namenslisten nach Rarität |
+| `units.json` | **vollständige** Unit-Datenbank (561 Einträge), 1.098 Angriffsdefinitionen, 22 Effekte; erzeugt mit [`tools/aa-research/build_units.py`](../../../tools/aa-research/build_units.py) aus S65/S66/S67/S71. Eigene Konventionen im `_meta`-Block; pro Unit ein `meta`-Objekt (origin/confidence/source) |
 | `traits.json` | Trait-Pool mit Roll-Gewichten und Effekten, Reroll-Kosten |
 | `banners.json` | Banner und Raten getrennt nach LEGACY und Re-Release |
 | `enemies.json` | Enemy-Modifikatoren, bekannte Bosse, CC-Cooldowns |
