@@ -79,14 +79,21 @@ tick(dt = 0.05):
 ## Damage-Pipeline (konfigurierbar)
 
 ```text
-hit = base
-    × levelCurve(level)          // Anker L100 = 9.204
-    × (1+potential) × (1+trait) × (1+curse) × (1+relic)
-    × (1+Σbuffs)                 // Stacking-Regel konfigurierbar: "sum" | "max" | "noRefresh"
+hit = base(level k der Unit)                    // levels[k].damage  [S65]
+    × levelCurve(unitLevel)                     // L1 = 1, L100 = 9.20406501834430488  [S72: Template Stats Box]
+    × (1 + potential) × (1 + trait) × (1 + curse) × (1 + relic)
+    × (1 + Σ damage_add aller aktiven Buffs)    // additiv: +100 % und +10 % → ×2,1 (VERIFIED, Wiki-Template)  [S65 aura_buff, S72]
     × crit × typeMatchup × enemyMods
-shieldPhase: if enemy.shield > 0 → enemy.shield -= 1 (oder −= all bei Shatter); return
-hp -= hit; applyEffects(); onKill → killYen
+hitsPerAttack = attack.hits ?? 1                // Damage wird auf die Hits AUFGETEILT  [S76]
+for i in 1..hitsPerAttack:
+   h = hit / hitsPerAttack
+   shieldPhase: if enemy.shield > 0 → enemy.shield -= 1 (Shatter: = 0); continue
+   hp -= h
+dot (falls attack.dot): totalMultiplier = multiplierPerTick × ticks  (z. B. Burn 0,06 × 5 = 30 %)  [S67]
+applySpecial(attack.special); onKill → killYen
 ```
+
+Die Reihenfolge der Faktoren zwischen Potential, Trait, Curse, Relic und Buff ist nicht belegt (RECONSTRUCTED · LOW). Belegt sind die additive Buff-Stapelung, der Level-100-Faktor und die Hits-Aufteilung.
 
 # Datenmodell
 
@@ -94,52 +101,59 @@ TypeScript-Interfaces als kanonisches Schema. JSON-Beispiele stehen in [data/](d
 
 ```ts
 type Provenance = "VERIFIED" | "OBSERVED" | "RECONSTRUCTED" | "DERIVED" | "UNKNOWN" | "DESIGN";
-type Rarity = "rare" | "epic" | "legendary" | "mythic" | "secret";
-type TowerType = "ground" | "hill" | "hybrid";
-type DamageType = "physical" | "magic" | "fire" | "true" | "dark" | string;
-type TargetMode = "first" | "last" | "strongest" | "weakest" | "closest";
+type Rarity = "rare" | "epic" | "legendary" | "mythic" | "secret" | "exclusive";   // AA: 6 Raritäten [S65]
+type Placement = "ground" | "hill" | "hybrid";                                     // AA: hill_unit / hybrid_placement [S65]
+type DamageKind = "physical" | "magic" | "true";                                   // Primärtyp [S65]
+type Element = "dark" | "fire" | "lightning" | "ice" | "air" | "light" | "water" | "rose";  // Sekundärtypen [S65]
+type TargetMode = "first" | "last" | "strongest" | "weakest" | "closest";          // AA-Liste siehe combat-system.md
 
-interface Aoe { kind: "single" | "circle" | "cone" | "line" | "full"; radius?: number; angleDeg?: number; width?: number; }
-
-interface StatusEffectSpec {
-  kind: "burn" | "bleed" | "poison" | "slow" | "stun" | "freeze" | "timestop" | "knockback" | "rewind" | "shatter" | "nullifyFlying" | "nullifyRegen";
-  pctOfHit?: number;    // DoT: 0.3 = 30 % des Hits
-  ticks?: number;       // DoT-Ticks
-  tickInterval?: number;
-  slowPct?: number; duration?: number; distance?: number;
-  chance?: number;      // Anwendungswahrscheinlichkeit
+// Angriffsdefinition – entspricht S67 (1.098 Einträge); wird von Unit-Stufen per ID referenziert
+interface AttackDef {
+  id: string;
+  aoe: "single" | "circle" | "cone" | "line" | "full";
+  radius?: number; angleDeg?: number; width?: number;   // Studs bzw. Grad
+  hits?: number;                                        // teilt den Damage auf; entfernt je Hit 1 Schild
+  dot?: { type: "burn" | "bleed" | "poison" | "wither"; multiplierPerTick: number; ticks: number };
+  special?: { name: string; influence?: number; duration?: number };   // Slow 0.5/4 s, Stun, Freeze, Timestop, Knockback, Shatter, Cursed, …
 }
 
-interface UnitUpgrade {           // Stufe 0 = Placement
-  level: number; cost: number;
-  damage?: number; spa?: number; range?: number; hits?: number;
-  aoe?: Aoe; towerType?: TowerType;
-  critChance?: number; critMult?: number;
-  effects?: StatusEffectSpec[];
-  incomePerWave?: number;         // Farm
-  unlockAbilityId?: string; unlockPassiveId?: string;
+interface UnitLevel {             // Stufe 0 = Platzierung (entspricht units.json → levels[])
+  level: number;
+  cost: number;                   // Kosten DIESER Stufe
+  damage: number; spa: number; range: number;   // fehlende Werte erben vom Vorgänger
+  attackId: string;               // → AttackDef
+  farmPerWave?: number;           // Farm-Units
+  note?: string;                  // z. B. "+ Bamboo Shot" = neuer Angriff freigeschaltet
+  activeAbility?: { id: string; cooldown: number; duration?: number };
   provenance: Provenance;
 }
 
 interface Unit {                  // Definition (Content)
   id: string; name: string; rarity: Rarity;
-  limited: boolean; summonable: boolean; obtain: string[];
-  towerType: TowerType; damageTypes: DamageType[];
-  spawnCap: number; sellRate: number;          // 0.25 | 0.30
+  limited: boolean; summonable: boolean; rateUpOnly?: boolean; obtain: string[];
+  placement: Placement; damageKind: DamageKind; elements: Element[];
+  spawnCap: number; spawnCapScope: "player" | "team";   // AA: "6 (Global)" bei Buffern
+  sellRate: number;                                      // AA: 0.25 global [S72]
+  unsellable?: boolean;
+  critChance?: number; critDamage?: number;              // AA: meist 0.5 / Standard
+  aura?: { global?: boolean; buffs: { stat: "damage" | "crit" | "range" | "spa"; add: number }[] };
   defaultTarget: TargetMode;
-  upgrades: UnitUpgrade[];
-  abilities?: AbilityDef[]; passives?: PassiveDef[];
-  evolvesTo?: string; hitFrameMs?: number;
+  levels: UnitLevel[];
+  body?: { health: number; speed: number };              // Units mit eigener Lauf- bzw. Beschwörungslogik
+  summons?: { unitId: string; max: number }[];
+  evolution?: Evolution;
+  hitFrameMs?: number;            // DESIGN: Animations-Sync
   provenance: Provenance; sources?: string[];
 }
 
-interface AbilityDef {
-  id: string; kind: "active" | "passive";
-  cooldown?: number; duration?: number; cooldownScalesWithSpa?: boolean;
-  buff?: { stat: "damage" | "spa" | "range"; amount: number; affectsDamageTypes?: DamageType[]; stacking: "noRefresh" | "sum" | "max"; maxTotal?: number };
-  effect?: StatusEffectSpec; multiplierAtUpgrade?: Record<number, number>;   // z. B. Hivemind {3:3, 6:5}
+interface StatusEffectSpec {      // Laufzeit-Effekt auf Gegnern
+  kind: "burn" | "bleed" | "poison" | "wither" | "slow" | "stun" | "freeze" | "timestop" | "knockback"
+      | "confused" | "shatter" | "cursed" | "hexed" | "dismembered" | "bleedAmp" | string;
+  multiplierPerTick?: number; ticks?: number; tickInterval?: number;
+  influence?: number;             // z. B. Slow 0.5 = −50 % Speed
+  duration?: number;
+  immunityAfter?: number;         // CC-Immunitätsfenster (siehe combat-system.md)
 }
-type PassiveDef = AbilityDef;
 
 interface UnitInstance {          // Besitz (Backend)
   instanceId: string; unitId: string; ownerId: string;
@@ -203,7 +217,7 @@ interface Banner {
 
 interface Item { id: string; name: string; category: string; stackLimit?: number; tradeable: boolean }
 
-interface Evolution { fromUnitId: string; toUnitId: string; items: { itemId: string; qty: number }[]; units?: { unitId: string; qty: number }[]; gold?: number; rerollPotential: true; potentialFloor: "previous" }
+interface Evolution { fromUnitId: string; toUnitId: string; items: { itemId: string; qty: number }[]; units?: { unitId: string; qty: number; shiny?: boolean }[]; takedowns?: number; statText?: string; shinyItems?: { itemId: string; qty: number }[]; rerollPotential: true; potentialFloor: "previous" }   // AA: 222 Rezepte, Takedowns meist 7.500/5.000 [S65]
 
 interface Portal { id: string; name: string; tiers: { tier: number; mapPool: string[]; enemyHpMult: number; rewardMult: number }[]; secretPortalChance?: number; maxPlayers: number; hostSecretChance?: number; memberSecretChance?: number }
 
@@ -235,5 +249,5 @@ interface Player {
 | DoT-Tick | 1 s | – |
 | Tank-Reduktion | 20 % | „leicht reduziert“ |
 | Typ-Matchup | Schwäche ×1,5 / Resistenz ×0,5 | analog zu Genre-Standards; **nicht** AA |
-| Level-Kurve | linear mit Anker L100 = 9,204 | einfach, Anker belegt |
+| Level-Kurve | linear mit Anker L100 = 9,20406501834430488 | einfach, Anker belegt (exakte Konstante aus dem Wiki-Template) |
 | Max Spieler | 4 (Secret Portal 6) | Community-Konsens bzw. Beleg |
