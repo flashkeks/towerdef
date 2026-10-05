@@ -10,15 +10,21 @@ Recherchestand: **2026-10-05**
 
 ## Rechercheeinschränkung
 
-Diese Recherche lief in einer Cloud-Umgebung, deren Netzwerkrichtlinie **direkte Seitenabrufe blockiert** hat. Betroffen waren u. a. `animeadventures.fandom.com`, `roblox.fandom.com`, `web.archive.org`, `anime-adventures.wiki`, Reddit, YouTube und Nachrichten- bzw. Guide-Seiten.
+**Sitzung 1** lief ohne direkten Seitenabruf, nur mit Such-Auszügen. Werte aus dieser Zeit tragen Quellen-IDs S01–S64.
 
-Verfügbar war nur eine **Websuche**, die pro Treffer Textauszüge bzw. Zusammenfassungen der Quellseiten liefert. Konsequenzen:
+**Sitzung 2** (Arbeitsauftrag [`run.md`](../../run.md)) hatte über einen Recherche-Connector Volltextzugriff:
 
-- Alle Werte stammen aus **Such-Auszügen** der genannten Quellen, nicht aus der vollständigen Seite. Abschreibfehler der Zusammenfassung sind möglich. Deshalb ist jede Zahl mit einer Quellen-ID versehen ([sources.md](sources.md)).
-- **Vollständige Tabellen** (alle Units × alle Upgrades, alle Gegner-HP, alle Wave-Tabellen, Map-Geometrie) waren **nicht abrufbar**. Sie sind als `UNKNOWN` markiert, nicht geschätzt.
-- Videos, Screenshots und Archiv-Snapshots konnten **nicht ausgewertet** werden.
+- komplettes Fandom-Wiki samt Lua-Datenmodulen und Versionsgeschichte
+- Trello-API
+- offizielle Roblox-APIs
 
-**Nächster Schritt zur Vervollständigung:** Die Netzwerkfreigabe für `animeadventures.fandom.com`, `static.wikia.nocookie.net` und `web.archive.org` erteilen und die mit `UNKNOWN` markierten Felder in `data/*.json` gezielt nachpflegen. Die Lücken stehen gesammelt in [unknowns.md](unknowns.md).
+Diese Quellen tragen die IDs S65 ff. Bestandswerte werden paketweise dagegen geprüft. Fortschritt, ausgewertete Quellen und offene Spuren stehen in **[STATUS.md](STATUS.md)**.
+
+Weiterhin nicht auswertbar:
+
+- Discord (Login nötig)
+- Video-Inhalte
+- spielinterne Werte, die keine Community-Quelle dokumentiert (z. B. Gegner-HP-Tabellen); sie bleiben `UNKNOWN`
 
 ---
 
@@ -75,6 +81,7 @@ Jede wichtige Aussage trägt ein Tag in der Form `ART · CONFIDENCE · [Quellen]
 | [mathematics.md](mathematics.md) | **Game Mathematics** – alle Formeln |
 | [simulation.md](simulation.md) | Durchgerechnete Beispielrunde |
 | [technical-reconstruction.md](technical-reconstruction.md) | **Recommended Web Architecture** und Datenmodell |
+| [STATUS.md](STATUS.md) | Recherche-Fortschritt, Quellenlandkarte, nächster Schritt |
 | [sources.md](sources.md) | Quellenverzeichnis mit Bewertung A–E |
 | [unknowns.md](unknowns.md) | **Known Unknowns & Conflicts** |
 | [data/](data/) | Strukturierte Referenzdaten (JSON) |
