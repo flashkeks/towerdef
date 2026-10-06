@@ -27,7 +27,7 @@ Gesamtzahl Units zum Stand Update 1: 43 laut Tier-List-Seite (Update 2 hat weite
 | Mythic | 8 | 550-1 250 | 7 | 14 550-30 350 | 293-2 358 | 21-28 | 5-9,2 | 2-5 |
 | Mythic evolviert | 8 | 550-1 250 | 9-10 | 26 550-57 150 | 518-5 093 | 25-32 | 4,5-10,6 | 2-5 |
 | Exclusive | 3+2 evolviert | 900-2 200 | 7-12 | 17 500-53 000 | 592-3 804 | 15-27 | 4,8-7,8 | 1-3 |
-| Secret | 12 Einträge im Modul (inkl. Evolutionen: Lightning God, Sovereign, Prodigy, Crow, Shadow, 8th Sword) | 950-2 000 | 7-12 | 26 900-92 800 | 1 108-4 112 | 22-29 | 4-8,4 | 2-3 |
+| Secret | 12 Einträge im Modul (inkl. Evolutionen: Lightning God, Sovereign, Prodigy, Crow, Shadow, 8th Sword) | 950-2 000 | 7-11 | 26 900-92 800 | 1 108-4 112 | 22-29 | 4-8,4 | 2-3 |
 
 Alle Spannen [D/HIGH AE-S7] (Min/Max aus Modul-Einträgen). Hinweis: Stat-Potenzial (Buchstabennoten) und Trait verschieben diese Basiswerte noch einmal um zweistellige Prozent (siehe [meta.md](meta.md)).
 
