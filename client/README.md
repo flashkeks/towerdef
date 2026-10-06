@@ -13,7 +13,7 @@ npm run dev            # Entwicklungsserver
 npm run build          # typecheck + Produktions-Build nach dist/
 npm run typecheck
 npm test               # vitest (Gate, Strings, Anzeige-Mapping, Session, Boss-Tracker)
-npm run build && npm run smoke   # Playwright: Desktop-Lauf + Mobil-Sperre, Screenshots nach docs/
+npm run build && npm run smoke   # Playwright: je Aufloesung (1280x720, 1920x1080, 2560x1440) eine ganze Stage nur mit Mausklicks und Tasten, dazu Mobil-Sperre; Screenshots nach docs/screenshot-p1-*.png. Dauer ca. 20 min nacheinander, SMOKE_PARALLEL=1 zugleich (auf lahmer Maschine unzuverlaessig) (SMOKE_PORT, SMOKE_RES, SMOKE_MAX_S)
 ```
 
 `sim` bleibt eigenstaendig: `cd sim && npm test && npm run typecheck`.
@@ -21,6 +21,7 @@ npm run build && npm run smoke   # Playwright: Desktop-Lauf + Mobil-Sperre, Scre
 ## Bedienung
 
 Stufe waehlen (Normal/Hard/Nightmare), Unit unten waehlen (Tasten 1-8), freien Slot anklicken. Platzierte Unit anklicken: Upgrade, Verkaufen, Fertigkeit, Zielmodus.
+Platzier-Modus: passende Slots leuchten, unpassende sind grau und nennen beim Darueberfahren den Grund; Geist und Reichweitenkreis folgen dem Zeiger. Slot-Typen sind immer beschriftet (Boden = runde Platte, Huegel = Huegel, Gross = 2x2-Flaeche). Fehlschlaege erscheinen als Toast am Zeiger, kein Klick aufs Feld bleibt ohne Reaktion. Esc oder Rechtsklick bricht ab. Weitere Tasten: U Upgrade, T Zielmodus, A Fertigkeit, S Tempo, `?`/`H` Hilfe. Beim ersten Start drei Hinweise (abschaltbar, `localStorage`-Schluessel `dw.hints`). Version (Commit-Hash, Build-Datum) unten rechts, per Vite-`define` (`__BUILD_HASH__`, `__BUILD_DATE__`).
 `Start wave` (Taste N) ruft die naechste Welle frueher. Rechts: Wellenvorschau und Risikokarte fuer die naechste Welle. Boss-Telegraph: roter Ring mit Countdown, Schwachstellen-Fenster tuerkis. Leertaste = Pause, Tempo 1x/2x/3x.
 
 ## Aufbau
@@ -49,7 +50,9 @@ Seit P0b (Runde 5) sind `ui/app.ts` und `game/renderer.ts` nur noch Verdrahtung.
 | `src/ui/app.ts` | Verdrahtung der DOM-Bausteine, `bind`/`update`/`showStart` | - (nur Einzeiler, ggf. P6 fuer Szenen) |
 | `src/ui/hud.ts` | Leben, Muenzen, Welle, Start/Pause, Tempo, Stufe | P1 |
 | `src/ui/shop.ts` | Unit-Leiste unten | P1 (Team-Auswahl-Filter: P6) |
-| `src/ui/slots.ts` | Slot-Buttons ueber dem Canvas, Platzier-Hervorhebung | P1 |
+| `src/ui/slots.ts` | Slot-Buttons ueber dem Canvas, Platzier-Hervorhebung, Zeiger-Tracking, Klicks ins Leere | P1 |
+| `src/ui/hints.ts`, `hints-store.ts`, `help.ts`, `version.ts` | Ersthinweise (Speicher + Schritte getrennt, getestet), Hilfe-Overlay, Versionsanzeige | P1 |
+| `src/view/placement.ts`, `unit-info.ts` | Slot-Passung, Fehlertexte, Reichweite und Upgrade-Wirkung (reine Logik, getestet) | P1 |
 | `src/ui/unit-panel.ts` | Auswahl-Panel einer gesetzten Unit | P1 |
 | `src/ui/toast.ts` | Fehler-Toast | P1 |
 | `src/ui/input.ts` | Tastatur (Maus-Platzieren folgt hier hinein) | P1 |
@@ -92,5 +95,6 @@ Figuren sind Sprites (Gegner mit zwei Geh-Frames, Blickrichtung per Spiegeln, Fl
 - Grafik (P4): Pixel-Sprites im 32-px-Raster, **alle eigen und code-generiert**, keine Fremdpacks (Downloads waren gesperrt, `assets/ATTRIBUTIONS.md`). Figuren skalieren ganzzahlig (`RenderContext.art` = floor(Tile/32)), die Karte wird als ein nearest-Bild auf die Fenster-Kachel gezogen; die Tile-Groesse selbst folgt dem Fenster und ist daher nicht ganzzahlig zum Raster (ein Einrasten in `renderer.fit` auf Vielfache von 32 waere die saubere Loesung, aber nur 32 und 64 passen in den Bereich 24–72).
 - Ein Spieler, kein Koop, kein Speichern, kein Ton, keine Treffer-Effekte der Units.
 - Die Sim importiert `node:fs`/`node:url` (nur fuer `loadGameData`); im Browser ersetzen Vite-Alias-Platzhalter (`src/shims/`) sie. `sim/src` ist unveraendert.
+- Smoke spielt mit eigenem, einfachem Plan (Units reihum, Upgrades, Wellenruf bei (fast) leerem Feld) und gewinnt nicht zwingend; `evaluate` liest nur Zustand. Fuer die Klicks liest er die Boxen der Slot-/Panel-Knoepfe aus dem Layout.
 - Smoke: In der Headless-Sandbox (SwiftShader) wird das WebGL-Canvas nach laengerem Betrieb/Hover im Screenshot leer; deshalb laeuft der Screenshot in eigenem Browser mit Session-Aufbau, die Klickpfade in einem zweiten. Kein Befund am Spiel selbst, aber nicht auf echter GPU gegengeprueft.
 - Slots sind DOM-Buttons ueber dem Canvas (testbar), kein Pixi-Hit-Testing.

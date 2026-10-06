@@ -17,7 +17,7 @@ export class Hud {
   private diffText = h('span', 'sub');
   private session: Session | null = null;
 
-  constructor() {
+  constructor(onHelp: () => void = () => undefined) {
     const lives = h('div', 'stat lives');
     lives.append(h('span', 'lbl', t('hud.lives')), h('div', 'bar', undefined), this.livesText);
     lives.querySelector('.bar')?.append(this.livesFill);
@@ -35,7 +35,10 @@ export class Hud {
       this.speedBtns.push(b);
       speeds.append(b);
     }
-    this.el.append(lives, coins, wave, this.startBtn, this.pauseBtn, speeds, this.diffText);
+    const help = h('button', 'btn help-btn', t('help.button'));
+    help.title = t('help.title');
+    help.addEventListener('click', onHelp);
+    this.el.append(lives, coins, wave, this.startBtn, this.pauseBtn, speeds, this.diffText, help);
   }
 
   bind(session: Session): void {

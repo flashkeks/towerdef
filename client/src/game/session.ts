@@ -3,8 +3,9 @@
  * Spielregeln gibt es hier nicht - jede Aktion ist ein `sim.apply(...)`, jede Zahl kommt aus `sim.state`.
  */
 import { createSim, loadBrowserData, STAGE_ID, type CommandResult, type DifficultyId, type Sim, type TargetMode, type UnitDef, type WavePreview } from '../sim';
-import { keyOr } from '../i18n/t';
+import { keyOr, t } from '../i18n/t';
 import { TICK_MS } from '../view/model';
+import { failureToast, type ToastSpec } from '../view/placement';
 import { BossTracker } from '../view/telegraph';
 import { GameBus } from './events';
 
@@ -18,7 +19,11 @@ const PLAYER = 0;
 export interface Toast {
   /** i18n-Schluessel */
   key: string;
+  /** Parameter fuer den Text (Namen schon uebersetzt) */
+  params?: Record<string, string | number>;
   until: number;
+  /** Mausposition in Canvas-Pixeln beim Ausloesen: der Toast erscheint dort; ohne Position unten mittig. */
+  at?: { x: number; y: number } | null;
 }
 
 export class Session {
@@ -43,6 +48,8 @@ export class Session {
   /** Gewaehltes Team (Unit-Ids, P6 Team-Auswahl); null = alle. Reiner Client-Filter, die Sim kennt keine Teams. */
   team: string[] | null = null;
   toast: Toast | null = null;
+  /** Mauszeiger in Canvas-Pixeln (null = ausserhalb des Spielfelds); setzt `ui/slots.ts`, lesen Toast und Platzier-Geist. */
+  pointer: { x: number; y: number } | null = null;
   private acc = 0;
   private previewCache: { key: string; value: WavePreview | null } | null = null;
 
@@ -98,8 +105,38 @@ export class Session {
     const tick = this.sim.state.tick;
     const r = this.sim.apply(PLAYER, cmd);
     this.bus.emitCommand({ tick, player: PLAYER, cmd, result: r });
-    if (!r.ok) this.toast = { key: keyOr(`error.${r.reason}`, 'error.generic'), until: performance.now() + 2500 };
+    if (!r.ok) this.fail(cmd, r.reason);
     return r;
+  }
+
+  /** Ablehnung der Sim als Toast mit Grund, nahe am Mauszeiger. */
+  private fail(cmd: Parameters<Sim['apply']>[1], reason: string): void {
+    const unit = cmd.type === 'upgrade' ? this.sim.state.units.find((u) => u.id === cmd.entityId) : undefined;
+    const unitId = cmd.type === 'place' ? cmd.unitId : unit?.defId;
+    const def = unitId ? this.sim.catalog().find((d) => d.id === unitId) : undefined;
+    const caps = loadBrowserData().economy.caps;
+    const spec = failureToast(cmd, reason, {
+      name: def ? t(`unit.${def.id}.name`) : undefined,
+      def,
+      cost: unit ? (this.sim.upgradeCost(unit.id) ?? 0) : def?.placeCost,
+      coins: this.sim.state.players[PLAYER]?.coins ?? 0,
+      cap: def?.cap,
+      teamUnits: caps.teamUnits,
+      teamSlots: caps.teamSlots,
+    });
+    this.notify(spec);
+  }
+
+  /** Toast anzeigen (nahe am Mauszeiger). */
+  notify(spec: ToastSpec): void {
+    this.toast = { ...spec, until: performance.now() + 2500, at: this.pointer ? { ...this.pointer } : null };
+  }
+
+  /** Klick aufs Spielfeld, der keinen Slot trifft: nie ohne Reaktion. */
+  clickEmpty(): void {
+    if (this.placing) this.notify({ key: 'toast.hint.not-slot' });
+    else if (this.selectedUnit !== null) this.selectedUnit = null;
+    else this.notify({ key: 'toast.hint.empty' });
   }
 
   /** Klick auf einen Slot: platzieren (wenn eine Unit gewaehlt ist) oder die dort stehende Unit auswaehlen. */
@@ -112,6 +149,7 @@ export class Session {
     }
     if (!this.placing) {
       this.selectedUnit = null;
+      this.notify({ key: 'toast.hint.pick-unit' });
       return;
     }
     const r = this.run({ type: 'place', unitId: this.placing, slot: slotId });

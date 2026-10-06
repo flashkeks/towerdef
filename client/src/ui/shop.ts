@@ -3,6 +3,7 @@ import { t } from '../i18n/t';
 import type { Session } from '../game/session';
 import type { UnitDef } from '../sim';
 import { unitColor } from '../view/model';
+import { needOf } from '../view/placement';
 import { clear, h, setClass, setText } from './dom';
 
 const css = (n: number): string => `#${n.toString(16).padStart(6, '0')}`;
@@ -27,7 +28,10 @@ export class Shop {
     b.title = `${t(`rarity.${d.rarity}`)} - ${t(`placement.${d.placement}`)}`;
     const badge = h('span', 'badge', t(`unit.${d.id}.abbr`));
     badge.style.background = css(unitColor(d.id));
-    b.append(h('span', 'key', String(index + 1)), badge, h('span', 'uname', t(`unit.${d.id}.name`)), h('span', 'ucost', String(d.placeCost)));
+    const need = d.placement === 'hybrid' && d.footprint === 1 ? 'any' : needOf(d);
+    const chip = h('span', `ptype ${need}`, t(`ptype.${need}`));
+    b.title = `${b.title} - ${t('ptype.' + need)}`;
+    b.append(h('span', 'key', String(index + 1)), badge, h('span', 'uname', t(`unit.${d.id}.name`)), chip, h('span', 'ucost', String(d.placeCost)));
     b.addEventListener('click', () => session.choosePlacing(d.id));
     this.btns.set(d.id, b);
     return b;
@@ -41,6 +45,6 @@ export class Shop {
       setClass(b, 'active', s.placing === d.id);
       setClass(b, 'poor', coins < s.sim.placeCost(d.id));
     }
-    setText(this.hint, s.placing ? t('shop.hint.place', { name: t(`unit.${s.placing}.name`) }) : t('shop.hint.idle'));
+    setText(this.hint, s.placing ? t('shop.hint.place2', { name: t(`unit.${s.placing}.name`) }) : t('shop.hint.idle'));
   }
 }
