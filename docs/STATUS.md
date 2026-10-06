@@ -19,13 +19,37 @@ Letzte Aktualisierung: 2026-10-06 (Runde 4, P6 Zwischenstand; Arbeit ab jetzt ü
 | P7 | Architektur M1 (`docs/architecture.md`) | **erledigt** | 1 × Sonnet | parallel |
 | P8 | Art-Styleguide, Asset-Quellen | **erledigt** | 1 × Sonnet | parallel |
 | P9 | Name | **erledigt: „Duskwardens“** (Max) | 1 × Sonnet | parallel |
-| P10 | Client-Gerüst (optional) | offen | – | erst nach P1–P6 |
-| P11 | Abschluss | offen | Hauptsitzung | |
+| P10 | Client-Gerüst (optional) | offen | – | erst nach P1–P6; P1–P6 noch nicht abgenommen |
+| P11 | Abschluss (Sitzung 1) | **erledigt** | Hauptsitzung | Kurzbericht unten; Runde 4 bleibt offen (Reste P6, P10) |
 
 ## Nächster Schritt (Runde 4)
 
 P1–P9 stehen (P6 mit Zwischenstand). Offen aus P6 (Details und Reihenfolge: [kalibrierung.md § P6 Übergabe](balancing/kalibrierung.md)): (1) Striker-Cap (`botTuning.earlyCap` = 2) einführen und Hard/Nightmare danach neu kalibrieren (Bounty/HP-Raster, Koop-Tabellen), (2) Boss-Plan bedarfsabhängig (Titan kostet auf Normal 12,5 Punkte), (3) Koop über die Wirtschaft statt HP (`upgrade` 4P 95–100 %), (4) Stage-Dauer ist eine Regelentscheidung der Menschen. Danach P10 (Client-Gerüst) oder Playtest-Daten statt Bot-Daten.
 Offene Fragen an die Menschen: [architecture.md § 10](architecture.md), OFL-Fonts ([asset-sources.md](design/asset-sources.md)), EUIPO/USPTO für „Duskwardens“, Mindest-Wave-Dauer (Stage-Dauer 13–17 min).
+
+## Kurzbericht Sitzung 1 (06.10.2026, P11)
+
+```text
+STATUS — Runde 4
+Pakete erledigt / offen: P0, P2, P3, P4, P7, P8, P9 erledigt; P1, P5, P6 mit Zwischenstand; P10 offen
+Abnahmeziele (Profil normal): Stufen solo 85/57/24 erreicht; keine dominante Kombi erreicht;
+  Kaufquote >= 30 % erreicht (min. Banner 46 %); Schaden/Münze Faktor 1,4 erreicht (nur 1P);
+  AoE-Bot Normal 83 % erreicht; Kennlinie N 25,7 erreicht, NM 24,4 knapp, H 14,5 verfehlt;
+  Leave-one-out verfehlt (Striker +27,5 H, Titan +12,5 N); Koop fair nur aoe;
+  Stage-Dauer 11,7 min verfehlt (Regelfrage)
+Wichtigste Balance-Änderungen: siehe kalibrierung.md § Runde 4 (P1–P6, Nachkalibrierung)
+Leben-System: Start 30 (NM 22), Normal +1/Wave; Leak max(1, ceil(Basis × RestHP/MaxHP));
+  Boss-Leak = verloren, Elite = 8 Leben nach Rest-HP
+Schwierigkeit: Elemente (aus / je Wave / gemischt), Modifier-Dichte (0 / 6 % / 30 %),
+  Wellen-Varianten, Boss-Fähigkeiten-Tier 0/1/2, Leben; HP-Spreizung 4,8 %
+Architektur/Konto-Vertrag/Mock-Zahlung: Entwurf fertig (architecture.md, deploy/)
+Assets: 11 Packs CC0 bestätigt; Eigenzeichnung: 8 Figuren, 7 Gegner, 2 Bosse (zeichenliste.md)
+Name: „Duskwardens“ (Max), Domain duskwardens.flashkeks.com eingeplant
+Client-Gerüst: nein
+Agenten: 9 × Sonnet (höchstens 4 gleichzeitig; P3/P4 in getrennten Worktrees)
+Commits: 17 auf dev seit Übernahme
+Nächster Schritt: siehe oben
+```
 
 ---
 
