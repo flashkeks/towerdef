@@ -20,12 +20,12 @@ Letzte Aktualisierung: 2026-10-06 (Runde 4, P6b Balance-Reste; Arbeit ab jetzt �
 | P7 | Architektur M1 (`docs/architecture.md`) | **erledigt** | 1 × Sonnet | parallel |
 | P8 | Art-Styleguide, Asset-Quellen | **erledigt** | 1 × Sonnet | parallel |
 | P9 | Name | **erledigt: „Duskwardens“** (Max) | 1 × Sonnet | parallel |
-| P10 | Client-Gerüst (optional) | offen | – | erst nach P1–P6; P1–P6 noch nicht abgenommen |
+| P10 | Client-Gerüst | **erledigt, Stage von Hand spielbar** | 1 × Sonnet | `client/` (Vite + PixiJS v8 + TS strict): Terrassenweg-Map mit Formen, Platzieren/Upgraden/Verkaufen, Wellenstart, Vorschau, Risikokarten, Boss-Telegraph (roter Ring + Countdown), 1×/2×/3×, Stufenwahl, Sieg/Niederlage, Desktop-Sperre vor dem Bundle. 37 vitest-Tests, Smoke mit Playwright grün (Screenshots `client/docs/`). Sim unverändert (Browser-Anbindung über Alias-Platzhalter für `node:fs`). Details [client/README.md](../client/README.md) |
 | P11 | Abschluss (Sitzung 1) | **erledigt** | Hauptsitzung | Kurzbericht unten; Runde 4 bleibt offen (Reste P6, P10) |
 
 ## Nächster Schritt (Runde 4)
 
-P1–P9 und P6b stehen. Balance-Stand: Stufen solo im Ziel (87 / 56 / 27), Leave-one-out ≤ +7, Stage-Dauer entschieden (11–13 min). **Offen aus P6b** (Details und Übergabe: [kalibrierung.md § P6b](balancing/kalibrierung.md)): (1) Hard-Kennlinie 13,7 gegen Ziel 25: Boss-Kit Wave 20 weicher machen (Schild/Heilung), danach Hard neu kalibrieren; (2) Koop fair je Bot nur auf Normal erreicht, Hard/Nightmare brauchen koop-fähige Bots oder Playtest-Daten; (3) Titan bleibt Pflicht-Antwort auf den Colossus (Boss-Design, nicht Plan). **Empfehlung:** P10 (Client-Gerüst) starten und Playtest-Daten statt Bot-Daten für Koop/Hard sammeln.
+P1–P9 und P6b stehen. Balance-Stand: Stufen solo im Ziel (87 / 56 / 27), Leave-one-out ≤ +7, Stage-Dauer entschieden (11–13 min). **Offen aus P6b** (Details und Übergabe: [kalibrierung.md § P6b](balancing/kalibrierung.md)): (1) Hard-Kennlinie 13,7 gegen Ziel 25: Boss-Kit Wave 20 weicher machen (Schild/Heilung), danach Hard neu kalibrieren; (2) Koop fair je Bot nur auf Normal erreicht, Hard/Nightmare brauchen koop-fähige Bots oder Playtest-Daten; (3) Titan bleibt Pflicht-Antwort auf den Colossus (Boss-Design, nicht Plan). **P10 steht** (`client/`, spielbar): als Nächstes von Hand spielen, Playtest-Daten für Hard/Koop sammeln, danach Pixel-Assets (P8-Styleguide) statt Formen und Wellen-/Boss-Feedback (Treffer-Effekte, Sounds). Offen im Client: Koop/Server (M2), Assets, Ton.
 Offene Fragen an die Menschen: [architecture.md § 10](architecture.md), OFL-Fonts ([asset-sources.md](design/asset-sources.md)), EUIPO/USPTO für „Duskwardens“.
 
 ## Kurzbericht Sitzung 1 (06.10.2026, P11)
@@ -46,7 +46,7 @@ Schwierigkeit: Elemente (aus / je Wave / gemischt), Modifier-Dichte (0 / 6 % / 3
 Architektur/Konto-Vertrag/Mock-Zahlung: Entwurf fertig (architecture.md, deploy/)
 Assets: 11 Packs CC0 bestätigt; Eigenzeichnung: 8 Figuren, 7 Gegner, 2 Bosse (zeichenliste.md)
 Name: „Duskwardens“ (Max), Domain duskwardens.flashkeks.com eingeplant
-Client-Gerüst: nein
+Client-Gerüst: ja (P10, spielbar)
 Agenten: 9 × Sonnet (höchstens 4 gleichzeitig; P3/P4 in getrennten Worktrees)
 Commits: 17 auf dev seit Übernahme
 Nächster Schritt: siehe oben

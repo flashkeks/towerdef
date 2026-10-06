@@ -1,0 +1,175 @@
+/**
+ * Zentrale String-Datei (architecture.md §5). ALLE sichtbaren Texte des Spiels stehen hier.
+ * Der Spieltitel steht nur unter `game.title`; alles andere setzt ihn per `{title}` ein.
+ */
+export const en = {
+  'game.title': 'Duskwardens',
+
+  // Desktop-Sperre
+  'gate.title': 'Desktop only',
+  'gate.text': '{title} needs a mouse and a bigger screen. Please open this page on a desktop or laptop browser.',
+  'gate.small': 'Your window is too small. Enlarge it to at least {w} x {h}.',
+  'gate.back': 'Back to Kek-Game',
+
+  // Startbildschirm
+  'start.tagline': 'Hold the line against the Rift shadows.',
+  'start.pick': 'Choose a difficulty',
+  'difficulty.normal': 'Normal',
+  'difficulty.normal.desc': 'Relaxed. Lives regrow a little each wave.',
+  'difficulty.hard': 'Hard',
+  'difficulty.hard.desc': 'Elements matter, tougher waves, a stronger final boss.',
+  'difficulty.nightmare': 'Nightmare',
+  'difficulty.nightmare.desc': 'Fewer lives, mixed elements, all boss tricks.',
+
+  // Ende
+  'end.win': 'Victory!',
+  'end.loss': 'Defeat',
+  'end.win.text': 'The line holds. The Rift is quiet - for now.',
+  'end.loss.text': 'The shadows broke through.',
+  'end.stats': 'Reached wave {wave} of {total} with {lives} lives left.',
+  'end.restart': 'Restart',
+  'end.change': 'Change difficulty',
+
+  // HUD
+  'hud.lives': 'Lives',
+  'hud.coins': 'Coins',
+  'hud.wave': 'Wave {wave} / {total}',
+  'hud.prep': 'Get ready',
+  'hud.countdown': 'Next wave in {s}s',
+  'hud.lastWave': 'Final wave',
+  'hud.startWave': 'Start wave {n}',
+  'hud.pause': 'Pause',
+  'hud.resume': 'Resume',
+  'hud.paused': 'Paused',
+  'hud.speed': '{n}x',
+  'hud.difficulty': 'Difficulty: {name}',
+
+  // Shop und Auswahl
+  'shop.title': 'Units',
+  'shop.hint.place': 'Click a free slot to place {name}. Esc cancels.',
+  'shop.hint.idle': 'Pick a unit (keys 1-8), then click a free slot.',
+  'placement.ground': 'ground',
+  'placement.hill': 'hill',
+  'placement.hybrid': 'ground + hill',
+  'rarity.rare': 'Rare',
+  'rarity.epic': 'Epic',
+  'rarity.legendary': 'Legendary',
+  'rarity.mythic': 'Mythic',
+
+  // Unit-Panel
+  'unit.level': 'Level {n} / {max}',
+  'unit.maxed': 'Max level',
+  'unit.upgrade': 'Upgrade ({cost})',
+  'unit.sell': 'Sell (+{value})',
+  'unit.ability': 'Use ability',
+  'unit.ability.cooldown': 'Ability ready in {s}s',
+  'unit.targeting': 'Target: {mode}',
+  'targeting.first': 'First',
+  'targeting.last': 'Last',
+  'targeting.close': 'Closest',
+  'targeting.strongest': 'Strongest',
+  'unit.none': 'Select a placed unit to upgrade or sell it.',
+
+  // Wellenvorschau und Karten
+  'preview.title': 'Next: wave {n}',
+  'preview.none': 'No more waves.',
+  'preview.group': '{count}x {name}',
+  'preview.total': '{count} enemies, {hp} HP in total',
+  'preview.flying': 'flying',
+  'preview.boss': 'Boss wave',
+  'preview.elite': 'Elite wave',
+  'preview.bossKit': '{name}: {phases} phases',
+  'preview.abilities': 'Tricks: {list}',
+  'preview.element': 'Element {n}',
+  'cards.title': 'Risk card',
+  'cards.none': 'No card',
+  'cards.blocked': 'No card on boss waves.',
+  'cards.hint': 'Harder wave, more coins.',
+
+  // Boss
+  'boss.telegraph': '{name} - {ability} in {s}s',
+  'boss.interrupt': 'Stun it to interrupt!',
+  'boss.window': 'Weak point open ({s}s) - strike now!',
+  'boss.ward': 'Shielded - break the ward!',
+  'boss.phase': 'Phase: {name}',
+  'boss.ability.call': 'Summon',
+  'boss.ability.surge': 'Surge',
+  'boss.ability.mend': 'Mend',
+  'boss.phase.awake': 'Awake',
+  'boss.phase.ward': 'Ward',
+  'boss.phase.rage': 'Fury',
+  'boss.phase.mending': 'Mending',
+  'boss.phase.laststand': 'Last Stand',
+  'boss.kit.warden': 'Hollow Warden',
+  'boss.kit.colossus': 'Rift Colossus',
+
+  // Gegner
+  'enemy.grunt.name': 'Grunt',
+  'enemy.runner.name': 'Runner',
+  'enemy.brute.name': 'Brute',
+  'enemy.flyer.name': 'Flyer',
+  'enemy.splitter.name': 'Splitter',
+  'enemy.splitter_child.name': 'Splitling',
+  'enemy.elite.name': 'Elite',
+  'enemy.boss.name': 'Boss',
+
+  // Modifier
+  'modifier.shield': 'Shield {n}',
+  'modifier.regen': 'Regen',
+  'modifier.armored': 'Armored',
+  'modifier.fast': 'Fast',
+
+  // Einheiten
+  'unit.striker.name': 'Striker',
+  'unit.striker.abbr': 'STR',
+  'unit.gunner.name': 'Gunner',
+  'unit.gunner.abbr': 'GUN',
+  'unit.blaster.name': 'Blaster',
+  'unit.blaster.abbr': 'BLS',
+  'unit.banner.name': 'Banner',
+  'unit.banner.abbr': 'BNR',
+  'unit.farm.name': 'Farm',
+  'unit.farm.abbr': 'FRM',
+  'unit.lancer.name': 'Lancer',
+  'unit.lancer.abbr': 'LNC',
+  'unit.frost.name': 'Frost',
+  'unit.frost.abbr': 'FRS',
+  'unit.titan.name': 'Titan',
+  'unit.titan.abbr': 'TTN',
+
+  // Risikokarten
+  'card.thick-hide.name': 'Thick Hide',
+  'card.thick-hide.text': '+30% HP, +50% bounty',
+  'card.swift.name': 'Swift Shadows',
+  'card.swift.text': '+25% speed, +40% bounty',
+  'card.swarm.name': 'Swarm',
+  'card.swarm.text': '+50% enemies, +25% bounty each',
+  'card.warded.name': 'Warded Horde',
+  'card.warded.text': 'Shield 2 on every enemy, +60% bounty',
+  'card.regrowth.name': 'Regrowth',
+  'card.regrowth.text': 'Enemies regenerate, +40% bounty',
+  'card.ironclad.name': 'Ironclad',
+  'card.ironclad.text': 'Enemies armored, +90% bounty',
+  'card.blood-toll.name': 'Blood Toll',
+  'card.blood-toll.text': 'Leaks cost double lives, +80% bounty',
+  'card.gold-rush.name': 'Gold Rush',
+  'card.gold-rush.text': '+60% HP, +100% bounty',
+
+  // Fehlermeldungen der Sim (Ablehnungsgruende)
+  'error.generic': 'That did not work.',
+  'error.not-enough-coins': 'Not enough coins.',
+  'error.cap-reached': 'You cannot place more of this unit.',
+  'error.slot-occupied': 'That slot is taken.',
+  'error.slot-kind': 'This unit does not fit that slot type.',
+  'error.slot-size': 'That slot is too small for this unit.',
+  'error.team-limit': 'Unit limit reached.',
+  'error.team-slots': 'Your team is full of other unit types.',
+  'error.max-level': 'Already at max level.',
+  'error.ability-cooldown': 'Ability is still recharging.',
+  'error.no-target': 'Nothing to hit right now.',
+  'error.no-next-wave': 'There is no next wave.',
+  'error.boss-wave': 'No risk card on boss waves.',
+  'error.game-over': 'The run is over.',
+} as const;
+
+export type StringKey = keyof typeof en;

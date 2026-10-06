@@ -1,0 +1,19 @@
+:root {
+  --ink: #2a1e3a;
+  --night: #1b2036;
+  --slate: #3a3f5c;
+  --stone: #8a90a6;
+  --mist: #f1f2f7;
+  --gold: #f5c542;
+  --orange: #f07a2a;
+  --red: #d8344a;
+  --teal: #3fd8c0;
+  --parch: #f3e3c0;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: var(--night); color: var(--mist); font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; overflow: hidden; }
+#app { height: 100%; }
+.gate { position: fixed; inset: 0; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 24px; text-align: center; background: var(--night); }
+.gate h1 { margin: 0; font-size: 2rem; color: var(--gold); }
+.gate p { margin: 0; max-width: 28rem; line-height: 1.5; }
+.gate a { color: var(--orange); }

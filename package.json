@@ -1,0 +1,6 @@
+{
+  "name": "towerdef",
+  "private": true,
+  "description": "Duskwardens: Workspace-Wurzel (sim = Simulationskern, client = Browser-Client).",
+  "workspaces": ["sim", "client"]
+}
