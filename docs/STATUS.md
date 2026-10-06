@@ -3,7 +3,7 @@
 Arbeitsauftrag: [`/run.md`](../run.md) (Runde 2). **Jede Sitzung liest zuerst diese Datei** und macht beim „Nächsten Schritt“ weiter.
 Runde 1 (Anime Adventures) ist abgeschlossen: [anime-adventures/STATUS.md](anime-adventures/STATUS.md), Auftrag archiviert als [anime-adventures/run-runde1.md](anime-adventures/run-runde1.md).
 
-Letzte Aktualisierung: 2026-10-06 (Runde 2, Sitzung 1)
+Letzte Aktualisierung: 2026-10-06 (Runde 2, Sitzung 1, abgeschlossen)
 
 ## Pakete Runde 2
 
@@ -13,9 +13,9 @@ Letzte Aktualisierung: 2026-10-06 (Runde 2, Sitzung 1)
 | P1 | `anime-adventures/design-brief.md` | **erledigt** | 1 × Sonnet | 390 Zeilen, Zahlenbereiche je Rarity aus units.json (Stichprobe geprüft) |
 | P2 | Bloons TD6 | **erledigt** | 1 × Sonnet | Runden 1–140 als JSON (RBE, Cash, Bonus; R63 stichprobengeprüft), Startgeld/Leben/Kostenfaktoren, Sell 70 %, Steuerstufen, Freeplay-HP-Rampe, Targeting, 26 Tower | |
 | P3 | Roblox-Anime-TDs (ASTD, AV, ALS, UTDZ, AE) | **erledigt** (alle 5) | je Spiel 1 × Sonnet | ASTD: Farm-Kurve, Gacha, Startgeld nur Sondermodi. ALS: Upgrade-Kurven, Verkauf 50 %, Traits; In-Match-Geld und Gegner-HP UNKNOWN. AV: Datenmodule (UnitData 224 Units, EnemyData mit Kill-Yen und HP-Multiplikatoren, TraitValues) | |
-| P4 | Vergleich und Empfehlung | läuft | 1 × Sonnet | |
+| P4 | Vergleich und Empfehlung | **erledigt** | 1 × Sonnet | [systems-matrix](comparison/systems-matrix.md), [numbers](comparison/numbers.md), [recommendations](comparison/recommendations.md) (Startwerte §18, Playtest-Liste §19); Stichproben nachgerechnet | |
 | P5 | Vorarbeiten (Technik, Assets, Recht, Balancing) | **erledigt** | 2 × Sonnet (Technik+Assets, Recht+Balancing) | |
-| P6 | Abschluss | offen | – | |
+| P6 | Abschluss | **erledigt** | Hauptsitzung | Linkprüfung 0 Fehler, alle JSON gültig | |
 
 ## Spiele (P0, verifiziert)
 
@@ -56,6 +56,21 @@ Namensvetter (geprüft, **nicht** gemeint):
 
 - Ob ALS einen Nachfolger hat.
 
+## Ergebnisse Runde 2
+
+| Bereich | Dateien |
+|---|---|
+| AA-Kurzfassung | [anime-adventures/design-brief.md](anime-adventures/design-brief.md) |
+| Steckbriefe | [btd6](games/btd6/overview.md), [astd](games/astd/overview.md), [anime-vanguards](games/anime-vanguards/overview.md), [anime-last-stand](games/anime-last-stand/overview.md), [utdz](games/utdz/overview.md), [anime-expeditions](games/anime-expeditions/overview.md) |
+| Vergleich | [systems-matrix](comparison/systems-matrix.md), [numbers](comparison/numbers.md), **[recommendations](comparison/recommendations.md)** |
+| Vorarbeiten | [tech-options](research/tech-options.md), [assets-licensing](research/assets-licensing.md), [legal-gacha](research/legal-gacha.md), [balancing](research/balancing.md) |
+
+Agenten: 10 × Sonnet (P1, P2, 5 × P3, 2 × P5, P4), nie mehr als 4 gleichzeitig.
+
 ## Nächster Schritt
 
-Laufende Agenten abwarten und ihre Dateien prüfen. Danach P3 (ALS, UTDZ, AE) und P5 starten.
+Die Recherche ist für den Bau ausreichend. Vorschlag:
+
+1. Prototyp der Simulation nach [tech-options.md §7](research/tech-options.md) mit den Startwerten aus [recommendations.md §18](comparison/recommendations.md#18-startwerte-auf-einen-blick).
+2. Ein Balancing-Skript, das die Beispiel-Stage (§5) mit den Startwerten durchrechnet (Einkommen gegen benötigte DPS je Wave), und daraus die Playtest-Liste §19 abarbeiten.
+3. Optionale Restrecherche: Startgeld/Wave-Einkommen eines Roblox-Anime-TDs per YouTube-Gameplay (OBSERVED), Co-Op-Geldregeln BTD6.
