@@ -10,9 +10,9 @@ Letzte Aktualisierung: 2026-10-06 (Runde 2, Sitzung 1)
 | Paket | Inhalt | Status | Agent (Modell) | Notiz |
 |---|---|---|---|---|
 | P0 | Aufräumen, Status, Spiele verifizieren | **erledigt** | Hauptsitzung | siehe „Spiele“ |
-| P1 | `anime-adventures/design-brief.md` | offen | – | |
-| P2 | Bloons TD6 | offen | – | |
-| P3 | Roblox-Anime-TDs (ASTD, AV, ALS, UTDZ, AE) | offen | – | |
+| P1 | `anime-adventures/design-brief.md` | läuft | 1 × Sonnet | |
+| P2 | Bloons TD6 | läuft | 1 × Sonnet | |
+| P3 | Roblox-Anime-TDs (ASTD, AV, ALS, UTDZ, AE) | läuft (ASTD, AV) | 2 × Sonnet, danach ALS/UTDZ/AE | |
 | P4 | Vergleich und Empfehlung | offen | – | |
 | P5 | Vorarbeiten (Technik, Assets, Recht, Balancing) | offen | – | |
 | P6 | Abschluss | offen | – | |
@@ -44,4 +44,4 @@ Namensvetter (geprüft, **nicht** gemeint):
 
 ## Nächster Schritt
 
-P1 bis P3 mit Sonnet-Agenten starten (höchstens 4 gleichzeitig).
+Laufende Agenten abwarten und ihre Dateien prüfen. Danach P3 (ALS, UTDZ, AE) und P5 starten.
