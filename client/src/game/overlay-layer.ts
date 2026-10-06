@@ -3,7 +3,9 @@
  * Platzier-Geist und Platzier-Reichweite (P1) kommen hier hinein, Boss-Zeichnung gehoert P5.
  */
 import { Container, Graphics } from 'pixi.js';
-import { enemyStyle } from '../view/model';
+import { enemyStyle, unitColor } from '../view/model';
+import { slotAt, slotFit } from '../view/placement';
+import { reachMilli } from '../view/unit-info';
 import { telegraphProgress } from '../view/telegraph';
 import { C } from './palette';
 import type { RenderContext } from './context';
@@ -17,12 +19,16 @@ export class OverlayLayer {
   readonly above = new Container();
   private readonly rangeG = new Graphics();
   private readonly bossG = new Graphics();
+  /** Platzier-Modus (P1): Reichweitenkreis unter den Figuren, Geist darueber. */
+  private readonly ghostRangeG = new Graphics();
+  private readonly ghostG = new Graphics();
+  private ghostSig = '';
   private rangeSig = '';
   private bossDrawn = false;
 
   constructor(private readonly ctx: RenderContext, private readonly entities: EntitiesLayer) {
-    this.below.addChild(this.rangeG);
-    this.above.addChild(this.bossG);
+    this.below.addChild(this.rangeG, this.ghostRangeG);
+    this.above.addChild(this.bossG, this.ghostG);
   }
 
   /** Neue Runde. */
@@ -31,11 +37,15 @@ export class OverlayLayer {
     this.rangeG.clear();
     this.bossG.clear();
     this.bossDrawn = false;
+    this.ghostSig = '';
+    this.ghostRangeG.clear();
+    this.ghostG.clear();
   }
 
   /** Vor `entities.sync`: Ebene unter den Figuren. */
   drawBelow(session: Session): void {
     this.drawRange(session);
+    this.drawPlacing(session);
   }
 
   /** Nach `entities.sync` (braucht die frischen Gegner-Positionen): Ebene ueber den Figuren. */
@@ -49,7 +59,7 @@ export class OverlayLayer {
     const u = session.selectedUnit === null ? undefined : session.sim.state.units.find((x) => x.id === session.selectedUnit);
     const def = u ? ctx.defs[u.defId] : undefined;
     const slot = u && ctx.stage ? ctx.stage.slots[u.slot] : undefined;
-    const range = u ? (def?.levels[u.level]?.rangeMilli ?? 0) : 0;
+    const range = u && def ? reachMilli(def, u.level) : 0;
     const sig = u && slot && range > 0 ? `${u.id}|${u.level}|${ctx.tile}|${ctx.version}` : '';
     if (sig === this.rangeSig) return;
     this.rangeSig = sig;
@@ -58,6 +68,43 @@ export class OverlayLayer {
     const c = ctx.px(slot.x, slot.y);
     const r = (range / 1000) * ctx.tile;
     g.circle(c.x, c.y, r).fill({ color: C.white, alpha: 0.08 }).stroke({ width: 2, color: C.white, alpha: 0.6 });
+  }
+
+  /** Platzier-Geist: Unit-Scheibe plus Reichweitenkreis am Zeiger; rastet auf den Slot unter dem Zeiger ein. Gruen = passt, rot = passt nicht. */
+  private drawPlacing(session: Session): void {
+    const { ctx } = this;
+    const def = session.placing ? ctx.defs[session.placing] : undefined;
+    const p = session.pointer;
+    const stage = ctx.stage;
+    if (!def || !p || !stage) {
+      if (this.ghostSig !== '') {
+        this.ghostSig = '';
+        this.ghostRangeG.clear();
+        this.ghostG.clear();
+      }
+      return;
+    }
+    const T = ctx.tile;
+    const slotId = slotAt(stage.slots, p.x / T - 0.5, p.y / T - 0.5);
+    const slot = slotId === null ? undefined : stage.slots[slotId];
+    const taken = slotId !== null && session.sim.state.units.some((u) => u.slot === slotId);
+    const fit = slot ? slotFit(def, slot, !taken) : null;
+    const ok = !!fit && fit.ok;
+    const c = slot ? ctx.px(slot.x, slot.y) : p;
+    const sig = `${def.id}|${Math.round(c.x)}|${Math.round(c.y)}|${ok}|${slotId === null}|${T}`;
+    if (sig === this.ghostSig) return;
+    this.ghostSig = sig;
+    const tint = slot ? (ok ? C.teal : C.red) : C.white;
+    const reach = reachMilli(def, 0);
+    const gr = this.ghostRangeG.clear();
+    if (reach > 0) gr.circle(c.x, c.y, (reach / 1000) * T).fill({ color: tint, alpha: 0.1 }).stroke({ width: 2, color: tint, alpha: 0.65 });
+    const g = this.ghostG.clear();
+    const r = T * 0.3;
+    g.circle(c.x, c.y, r).fill({ color: unitColor(def.id), alpha: ok || !slot ? 0.8 : 0.4 }).stroke({ width: 3, color: tint, alpha: 0.95 });
+    if (slot && !ok) {
+      const d = r * 0.6;
+      g.moveTo(c.x - d, c.y - d).lineTo(c.x + d, c.y + d).moveTo(c.x + d, c.y - d).lineTo(c.x - d, c.y + d).stroke({ width: 4, color: C.red });
+    }
   }
 
   private drawBoss(session: Session, nowMs: number): void {

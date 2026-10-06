@@ -6,6 +6,8 @@ import type { Session } from '../game/session';
 import type { DifficultyId } from '../sim';
 import { BossBanner } from './boss-banner';
 import { clear, h } from './dom';
+import { Help } from './help';
+import { Hints } from './hints';
 import { Hud } from './hud';
 import { Input } from './input';
 import { WavePanels } from './panels';
@@ -14,6 +16,7 @@ import { Shop } from './shop';
 import { Slots } from './slots';
 import { Toast } from './toast';
 import { UnitPanel } from './unit-panel';
+import { versionEl } from './version';
 
 export interface UiHandlers {
   onStart(d: DifficultyId): void;
@@ -22,7 +25,9 @@ export interface UiHandlers {
 
 export class Ui {
   readonly boardWrap = h('div', 'boardwrap');
-  private readonly hud = new Hud();
+  private readonly help = new Help(() => this.session, () => this.hints.enable());
+  private readonly hud = new Hud(() => this.help.toggle());
+  private readonly hints = new Hints();
   private readonly shop = new Shop();
   private readonly slots = new Slots(this.boardWrap);
   private readonly waves = new WavePanels();
@@ -37,12 +42,12 @@ export class Ui {
     clear(root);
     root.classList.add('game');
     const side = h('aside', 'side');
-    side.append(this.waves.previewEl, this.waves.cardsEl, this.unitPanel.el);
+    side.append(this.hints.el, this.waves.previewEl, this.waves.cardsEl, this.unitPanel.el);
     this.boardWrap.append(this.slots.el, this.banner.el, this.toast.el, this.screens.pausedEl);
     const main = h('main', 'main');
     main.append(this.boardWrap, side);
-    root.append(this.hud.el, main, this.shop.el, this.screens.el);
-    new Input(() => this.session);
+    root.append(this.hud.el, main, this.shop.el, this.screens.el, this.help.el, versionEl());
+    new Input(() => this.session, this.help);
   }
 
   /** Neue Runde: Slots, Shop und Panels aufbauen. */
@@ -54,6 +59,7 @@ export class Ui {
     this.waves.bind();
     this.unitPanel.bind();
     this.hud.bind(session);
+    this.hints.bind();
   }
 
   showStart(): void {
@@ -70,6 +76,7 @@ export class Ui {
     this.slots.update(s, tile);
     this.waves.update(s, nextWave);
     this.unitPanel.update(s);
+    this.hints.update(s);
     this.banner.update(s);
     this.toast.update(s);
     if (s.over && this.screens.hidden) this.screens.showEnd(s);

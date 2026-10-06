@@ -13,7 +13,7 @@ Letzte Aktualisierung: 2026-10-06 (Runde 5 gestartet, Max' Claude-Account)
 |---|---|---|---|---|
 | P0 | Status, Aufräumen | **erledigt** | Hauptsitzung | `41515c4` (Slot-Fix) ist drin. Stand vor Runde 5: sim 208 Tests + tsc grün, client 37 Tests + tsc + build grün, `npm run smoke` grün (noch mit Selektor-Klicks, Umbau in P1). Bundle: `main` 465 kB (140 kB gzip) |
 | P0b | Client aufteilen (`app.ts` 396 Z., `renderer.ts` 433 Z.) | erledigt (nicht committet), `app.ts` 77 Z., `renderer.ts` 89 Z., Besitzer-Tabelle in `client/README.md` | 1 × Sonnet, allein | zuerst |
-| P1 | Bedienbarkeit, Smoke mit echten Mausklicks | offen | 1 × Sonnet | nach P0b |
+| P1 | Bedienbarkeit, Smoke mit echten Mausklicks | **erledigt** (Worktree `wip5-p1`, nicht gepusht) | 1 × Sonnet | Platzier-Modus (leuchtende/graue Slots mit Grund, Geist + Reichweite am Zeiger, Slot-Typen beschriftet und unterscheidbar), Toasts mit Grund am Zeiger, keine toten Klicks, Rechtsklick/Esc, Auswahl-Panel mit Upgrade-Wirkung alt → neu, 3 Ersthinweise (`localStorage`), Hilfe `?`/`H`, Version unten rechts (Vite-`define`). Smoke: ganze Stage W1–W20 Normal nur per Maus/Tasten bei 1280×720, 1920×1080, 2560×1440 (spielt nicht zwingend bis zum Sieg), Mobil-Gate bleibt. 56 vitest-Tests. Details [client/README.md](../client/README.md) |
 | P2 | Playtest-Daten, Replay | offen | 1 × Sonnet | nach P0b |
 | P3 | Boss-Design, Hard-Kennlinie | offen | 1 × Sonnet | nur `sim/` |
 | P4 | Pixel-Grafik | offen | 1 × Sonnet | nach P0b |
