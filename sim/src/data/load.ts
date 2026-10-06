@@ -91,6 +91,7 @@ function validateBosses(d: GameData, enemyIds: Set<string>): void {
       if (a.fromPhase >= k.phases.length || (a.toPhase !== undefined && (a.toPhase >= k.phases.length || a.toPhase < a.fromPhase))) {
         throw new Error(`Boss-Kit ${k.id}: Fähigkeit ${a.id} Phasenbereich ungültig`);
       }
+      if (a.staggerBp !== undefined && !a.interruptible) throw new Error(`Boss-Kit ${k.id}: Fähigkeit ${a.id} hat staggerBp, ist aber nicht unterbrechbar`);
     }
   }
 }

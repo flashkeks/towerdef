@@ -47,3 +47,8 @@ SMOKE_PORT=4302 npm run replay-check -- --full  # bis zum Ende, Freitext, Downlo
 ```
 
 `beispiel-normal.json` stammt aus einem `--full`-Lauf (Niederlage in Welle 8, Seed 1802315095, schnelles Wellenrufen ohne Verteidigung).
+
+## Wichtig: Replays gelten nur für denselben Datenstand
+
+Ein Replay ist Seed + Befehle. Ändern sich die Spieldaten (`sim/data/*.json`, z. B. Bounty, Boss-HP, Kosten), läuft dieselbe Befehlsliste anders ab: Käufe scheitern an fehlenden Münzen, der End-Hash weicht ab. Darum steht die Spiel-Version (Commit) in jeder Datei.
+Zum Auswerten älterer Replays den passenden Stand auschecken (`git checkout VERSION -- sim/data`) oder das Replay als Verhaltensdaten lesen (Bericht ohne Hash-Prüfung). Nach jeder Balance-Änderung `beispiel-normal.json` neu erzeugen: `cd client && npm run build && npm run replay-check -- --full`, Datei aus der Ausgabe hierher kopieren (so geschehen beim Merge von Runde 5 P3).

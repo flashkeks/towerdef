@@ -1,26 +1,33 @@
 {
  "format": "towerdef-replay",
  "formatVersion": 1,
- "gameVersion": "dev",
+ "gameVersion": "96ffc5f 2026-10-06",
  "stage": "standard20",
  "difficulty": "normal",
  "players": 1,
- "seed": 1802315095,
- "team": null,
+ "seed": 41188676,
+ "team": [
+  "striker",
+  "gunner",
+  "blaster",
+  "banner",
+  "frost",
+  "titan"
+ ],
  "cards": [],
  "complete": true,
  "result": "loss",
- "endTick": 3714,
- "endHash": "d381d7c66b56fc24",
+ "endTick": 3751,
+ "endHash": "c27f4df7fedba86e",
  "endWave": 8,
  "endLives": 0,
- "endCoins": 54,
- "durationTicks": 3714,
- "durationMs": 90216,
+ "endCoins": 67,
+ "durationTicks": 3751,
+ "durationMs": 63285,
  "date": "2026-10-06",
  "commands": [
   {
-   "tick": 22,
+   "tick": 10,
    "player": 0,
    "cmd": {
     "type": "place",
@@ -30,7 +37,7 @@
    "ok": true
   },
   {
-   "tick": 22,
+   "tick": 10,
    "player": 0,
    "cmd": {
     "type": "upgrade",
@@ -39,7 +46,7 @@
    "ok": true
   },
   {
-   "tick": 22,
+   "tick": 10,
    "player": 0,
    "cmd": {
     "type": "skipWave"
@@ -47,7 +54,7 @@
    "ok": true
   },
   {
-   "tick": 34,
+   "tick": 37,
    "player": 0,
    "cmd": {
     "type": "place",
@@ -57,15 +64,7 @@
    "ok": true
   },
   {
-   "tick": 34,
-   "player": 0,
-   "cmd": {
-    "type": "skipWave"
-   },
-   "ok": true
-  },
-  {
-   "tick": 58,
+   "tick": 61,
    "player": 0,
    "cmd": {
     "type": "place",
@@ -75,7 +74,7 @@
    "ok": true
   },
   {
-   "tick": 98,
+   "tick": 212,
    "player": 0,
    "cmd": {
     "type": "place",
@@ -85,7 +84,7 @@
    "ok": true
   },
   {
-   "tick": 302,
+   "tick": 402,
    "player": 0,
    "cmd": {
     "type": "place",
@@ -95,15 +94,7 @@
    "ok": true
   },
   {
-   "tick": 710,
-   "player": 0,
-   "cmd": {
-    "type": "skipWave"
-   },
-   "ok": true
-  },
-  {
-   "tick": 728,
+   "tick": 481,
    "player": 0,
    "cmd": {
     "type": "place",
@@ -114,7 +105,7 @@
    "reason": "cap-reached"
   },
   {
-   "tick": 740,
+   "tick": 508,
    "player": 0,
    "cmd": {
     "type": "place",
@@ -125,7 +116,7 @@
    "reason": "cap-reached"
   },
   {
-   "tick": 758,
+   "tick": 533,
    "player": 0,
    "cmd": {
     "type": "place",
@@ -136,7 +127,7 @@
    "reason": "cap-reached"
   },
   {
-   "tick": 776,
+   "tick": 560,
    "player": 0,
    "cmd": {
     "type": "place",
@@ -147,7 +138,7 @@
    "reason": "cap-reached"
   },
   {
-   "tick": 794,
+   "tick": 586,
    "player": 0,
    "cmd": {
     "type": "place",
@@ -158,16 +149,148 @@
    "reason": "cap-reached"
   },
   {
-   "tick": 794,
+   "tick": 611,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 636,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 662,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 688,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 712,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 738,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 763,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 788,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 814,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 840,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 865,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 890,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 890,
    "player": 0,
    "cmd": {
     "type": "upgrade",
-    "entityId": 3
+    "entityId": 4
    },
    "ok": true
   },
   {
-   "tick": 968,
+   "tick": 916,
    "player": 0,
    "cmd": {
     "type": "place",
@@ -178,7 +301,7 @@
    "reason": "cap-reached"
   },
   {
-   "tick": 986,
+   "tick": 942,
    "player": 0,
    "cmd": {
     "type": "place",
@@ -189,7 +312,7 @@
    "reason": "cap-reached"
   },
   {
-   "tick": 1004,
+   "tick": 967,
    "player": 0,
    "cmd": {
     "type": "place",
@@ -200,7 +323,7 @@
    "reason": "cap-reached"
   },
   {
-   "tick": 1022,
+   "tick": 994,
    "player": 0,
    "cmd": {
     "type": "place",
@@ -211,7 +334,7 @@
    "reason": "cap-reached"
   },
   {
-   "tick": 1040,
+   "tick": 1020,
    "player": 0,
    "cmd": {
     "type": "place",
@@ -222,7 +345,7 @@
    "reason": "cap-reached"
   },
   {
-   "tick": 1058,
+   "tick": 1045,
    "player": 0,
    "cmd": {
     "type": "place",
@@ -233,7 +356,7 @@
    "reason": "cap-reached"
   },
   {
-   "tick": 1076,
+   "tick": 1070,
    "player": 0,
    "cmd": {
     "type": "place",
@@ -244,7 +367,7 @@
    "reason": "cap-reached"
   },
   {
-   "tick": 1094,
+   "tick": 1096,
    "player": 0,
    "cmd": {
     "type": "place",
@@ -255,7 +378,7 @@
    "reason": "cap-reached"
   },
   {
-   "tick": 1112,
+   "tick": 1123,
    "player": 0,
    "cmd": {
     "type": "place",
@@ -266,7 +389,7 @@
    "reason": "cap-reached"
   },
   {
-   "tick": 1124,
+   "tick": 1149,
    "player": 0,
    "cmd": {
     "type": "place",
@@ -277,7 +400,7 @@
    "reason": "cap-reached"
   },
   {
-   "tick": 1142,
+   "tick": 1173,
    "player": 0,
    "cmd": {
     "type": "place",
@@ -288,7 +411,7 @@
    "reason": "cap-reached"
   },
   {
-   "tick": 1160,
+   "tick": 1199,
    "player": 0,
    "cmd": {
     "type": "place",
@@ -299,7 +422,7 @@
    "reason": "cap-reached"
   },
   {
-   "tick": 1178,
+   "tick": 1225,
    "player": 0,
    "cmd": {
     "type": "place",
@@ -310,192 +433,16 @@
    "reason": "cap-reached"
   },
   {
-   "tick": 1190,
-   "player": 0,
-   "cmd": {
-    "type": "place",
-    "unitId": "striker",
-    "slot": 9
-   },
-   "ok": false,
-   "reason": "cap-reached"
-  },
-  {
-   "tick": 1202,
-   "player": 0,
-   "cmd": {
-    "type": "place",
-    "unitId": "striker",
-    "slot": 9
-   },
-   "ok": false,
-   "reason": "cap-reached"
-  },
-  {
-   "tick": 1214,
-   "player": 0,
-   "cmd": {
-    "type": "place",
-    "unitId": "striker",
-    "slot": 9
-   },
-   "ok": false,
-   "reason": "cap-reached"
-  },
-  {
-   "tick": 1226,
-   "player": 0,
-   "cmd": {
-    "type": "place",
-    "unitId": "striker",
-    "slot": 9
-   },
-   "ok": false,
-   "reason": "cap-reached"
-  },
-  {
-   "tick": 1238,
-   "player": 0,
-   "cmd": {
-    "type": "place",
-    "unitId": "striker",
-    "slot": 9
-   },
-   "ok": false,
-   "reason": "cap-reached"
-  },
-  {
-   "tick": 1256,
-   "player": 0,
-   "cmd": {
-    "type": "place",
-    "unitId": "striker",
-    "slot": 9
-   },
-   "ok": false,
-   "reason": "cap-reached"
-  },
-  {
-   "tick": 1268,
-   "player": 0,
-   "cmd": {
-    "type": "place",
-    "unitId": "striker",
-    "slot": 9
-   },
-   "ok": false,
-   "reason": "cap-reached"
-  },
-  {
-   "tick": 1286,
-   "player": 0,
-   "cmd": {
-    "type": "place",
-    "unitId": "striker",
-    "slot": 9
-   },
-   "ok": false,
-   "reason": "cap-reached"
-  },
-  {
-   "tick": 1304,
-   "player": 0,
-   "cmd": {
-    "type": "place",
-    "unitId": "striker",
-    "slot": 9
-   },
-   "ok": false,
-   "reason": "cap-reached"
-  },
-  {
-   "tick": 1322,
-   "player": 0,
-   "cmd": {
-    "type": "place",
-    "unitId": "striker",
-    "slot": 9
-   },
-   "ok": false,
-   "reason": "cap-reached"
-  },
-  {
-   "tick": 1334,
-   "player": 0,
-   "cmd": {
-    "type": "place",
-    "unitId": "striker",
-    "slot": 9
-   },
-   "ok": false,
-   "reason": "cap-reached"
-  },
-  {
-   "tick": 1352,
-   "player": 0,
-   "cmd": {
-    "type": "place",
-    "unitId": "striker",
-    "slot": 9
-   },
-   "ok": false,
-   "reason": "cap-reached"
-  },
-  {
-   "tick": 1364,
-   "player": 0,
-   "cmd": {
-    "type": "place",
-    "unitId": "striker",
-    "slot": 9
-   },
-   "ok": false,
-   "reason": "cap-reached"
-  },
-  {
-   "tick": 1382,
-   "player": 0,
-   "cmd": {
-    "type": "place",
-    "unitId": "striker",
-    "slot": 9
-   },
-   "ok": false,
-   "reason": "cap-reached"
-  },
-  {
-   "tick": 1394,
-   "player": 0,
-   "cmd": {
-    "type": "place",
-    "unitId": "striker",
-    "slot": 9
-   },
-   "ok": false,
-   "reason": "cap-reached"
-  },
-  {
-   "tick": 1406,
-   "player": 0,
-   "cmd": {
-    "type": "place",
-    "unitId": "striker",
-    "slot": 9
-   },
-   "ok": false,
-   "reason": "cap-reached"
-  },
-  {
-   "tick": 1406,
+   "tick": 1225,
    "player": 0,
    "cmd": {
     "type": "upgrade",
-    "entityId": 8
+    "entityId": 7
    },
    "ok": true
   },
   {
-   "tick": 1724,
+   "tick": 1480,
    "player": 0,
    "cmd": {
     "type": "place",
@@ -506,7 +453,7 @@
    "reason": "cap-reached"
   },
   {
-   "tick": 1742,
+   "tick": 1505,
    "player": 0,
    "cmd": {
     "type": "place",
@@ -517,7 +464,7 @@
    "reason": "cap-reached"
   },
   {
-   "tick": 1765,
+   "tick": 1530,
    "player": 0,
    "cmd": {
     "type": "place",
@@ -528,7 +475,7 @@
    "reason": "cap-reached"
   },
   {
-   "tick": 1789,
+   "tick": 1556,
    "player": 0,
    "cmd": {
     "type": "place",
@@ -539,7 +486,7 @@
    "reason": "cap-reached"
   },
   {
-   "tick": 1813,
+   "tick": 1581,
    "player": 0,
    "cmd": {
     "type": "place",
@@ -550,7 +497,7 @@
    "reason": "cap-reached"
   },
   {
-   "tick": 1831,
+   "tick": 1605,
    "player": 0,
    "cmd": {
     "type": "place",
@@ -561,7 +508,7 @@
    "reason": "cap-reached"
   },
   {
-   "tick": 1849,
+   "tick": 1632,
    "player": 0,
    "cmd": {
     "type": "place",
@@ -572,7 +519,95 @@
    "reason": "cap-reached"
   },
   {
-   "tick": 1873,
+   "tick": 1658,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 1683,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 1709,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 1736,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 1763,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 1787,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 1814,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 1839,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 1865,
    "player": 0,
    "cmd": {
     "type": "place",
@@ -594,7 +629,7 @@
    "reason": "cap-reached"
   },
   {
-   "tick": 1915,
+   "tick": 1918,
    "player": 0,
    "cmd": {
     "type": "place",
@@ -605,7 +640,7 @@
    "reason": "cap-reached"
   },
   {
-   "tick": 1939,
+   "tick": 1944,
    "player": 0,
    "cmd": {
     "type": "place",
@@ -616,7 +651,7 @@
    "reason": "cap-reached"
   },
   {
-   "tick": 1963,
+   "tick": 1970,
    "player": 0,
    "cmd": {
     "type": "place",
@@ -627,7 +662,7 @@
    "reason": "cap-reached"
   },
   {
-   "tick": 1987,
+   "tick": 1994,
    "player": 0,
    "cmd": {
     "type": "place",
@@ -638,7 +673,7 @@
    "reason": "cap-reached"
   },
   {
-   "tick": 2005,
+   "tick": 2021,
    "player": 0,
    "cmd": {
     "type": "place",
@@ -649,7 +684,7 @@
    "reason": "cap-reached"
   },
   {
-   "tick": 2029,
+   "tick": 2045,
    "player": 0,
    "cmd": {
     "type": "place",
@@ -660,60 +695,16 @@
    "reason": "cap-reached"
   },
   {
-   "tick": 2047,
-   "player": 0,
-   "cmd": {
-    "type": "place",
-    "unitId": "striker",
-    "slot": 9
-   },
-   "ok": false,
-   "reason": "cap-reached"
-  },
-  {
-   "tick": 2071,
-   "player": 0,
-   "cmd": {
-    "type": "place",
-    "unitId": "striker",
-    "slot": 9
-   },
-   "ok": false,
-   "reason": "cap-reached"
-  },
-  {
-   "tick": 2089,
-   "player": 0,
-   "cmd": {
-    "type": "place",
-    "unitId": "striker",
-    "slot": 9
-   },
-   "ok": false,
-   "reason": "cap-reached"
-  },
-  {
-   "tick": 2107,
-   "player": 0,
-   "cmd": {
-    "type": "place",
-    "unitId": "striker",
-    "slot": 9
-   },
-   "ok": false,
-   "reason": "cap-reached"
-  },
-  {
-   "tick": 2107,
+   "tick": 2045,
    "player": 0,
    "cmd": {
     "type": "upgrade",
-    "entityId": 13
+    "entityId": 12
    },
    "ok": true
   },
   {
-   "tick": 2359,
+   "tick": 2127,
    "player": 0,
    "cmd": {
     "type": "place",
@@ -724,7 +715,7 @@
    "reason": "cap-reached"
   },
   {
-   "tick": 2371,
+   "tick": 2153,
    "player": 0,
    "cmd": {
     "type": "place",
@@ -735,7 +726,7 @@
    "reason": "cap-reached"
   },
   {
-   "tick": 2389,
+   "tick": 2181,
    "player": 0,
    "cmd": {
     "type": "place",
@@ -746,7 +737,7 @@
    "reason": "cap-reached"
   },
   {
-   "tick": 2407,
+   "tick": 2206,
    "player": 0,
    "cmd": {
     "type": "place",
@@ -757,7 +748,7 @@
    "reason": "cap-reached"
   },
   {
-   "tick": 2431,
+   "tick": 2231,
    "player": 0,
    "cmd": {
     "type": "place",
@@ -768,7 +759,7 @@
    "reason": "cap-reached"
   },
   {
-   "tick": 2449,
+   "tick": 2256,
    "player": 0,
    "cmd": {
     "type": "place",
@@ -779,7 +770,7 @@
    "reason": "cap-reached"
   },
   {
-   "tick": 2467,
+   "tick": 2283,
    "player": 0,
    "cmd": {
     "type": "place",
@@ -790,7 +781,7 @@
    "reason": "cap-reached"
   },
   {
-   "tick": 2485,
+   "tick": 2307,
    "player": 0,
    "cmd": {
     "type": "place",
@@ -801,7 +792,7 @@
    "reason": "cap-reached"
   },
   {
-   "tick": 2503,
+   "tick": 2333,
    "player": 0,
    "cmd": {
     "type": "place",
@@ -812,40 +803,7 @@
    "reason": "cap-reached"
   },
   {
-   "tick": 2521,
-   "player": 0,
-   "cmd": {
-    "type": "place",
-    "unitId": "striker",
-    "slot": 9
-   },
-   "ok": false,
-   "reason": "cap-reached"
-  },
-  {
-   "tick": 2544,
-   "player": 0,
-   "cmd": {
-    "type": "place",
-    "unitId": "striker",
-    "slot": 9
-   },
-   "ok": false,
-   "reason": "cap-reached"
-  },
-  {
-   "tick": 2571,
-   "player": 0,
-   "cmd": {
-    "type": "place",
-    "unitId": "striker",
-    "slot": 9
-   },
-   "ok": false,
-   "reason": "cap-reached"
-  },
-  {
-   "tick": 2571,
+   "tick": 2333,
    "player": 0,
    "cmd": {
     "type": "upgrade",
@@ -854,7 +812,7 @@
    "ok": true
   },
   {
-   "tick": 2877,
+   "tick": 2741,
    "player": 0,
    "cmd": {
     "type": "place",
@@ -865,7 +823,7 @@
    "reason": "cap-reached"
   },
   {
-   "tick": 2901,
+   "tick": 2766,
    "player": 0,
    "cmd": {
     "type": "place",
@@ -876,7 +834,7 @@
    "reason": "cap-reached"
   },
   {
-   "tick": 2927,
+   "tick": 2793,
    "player": 0,
    "cmd": {
     "type": "place",
@@ -887,7 +845,7 @@
    "reason": "cap-reached"
   },
   {
-   "tick": 2955,
+   "tick": 2820,
    "player": 0,
    "cmd": {
     "type": "place",
@@ -898,7 +856,7 @@
    "reason": "cap-reached"
   },
   {
-   "tick": 2982,
+   "tick": 2846,
    "player": 0,
    "cmd": {
     "type": "place",
@@ -909,7 +867,7 @@
    "reason": "cap-reached"
   },
   {
-   "tick": 3009,
+   "tick": 2872,
    "player": 0,
    "cmd": {
     "type": "place",
@@ -920,7 +878,7 @@
    "reason": "cap-reached"
   },
   {
-   "tick": 3038,
+   "tick": 2898,
    "player": 0,
    "cmd": {
     "type": "place",
@@ -931,7 +889,7 @@
    "reason": "cap-reached"
   },
   {
-   "tick": 3064,
+   "tick": 2924,
    "player": 0,
    "cmd": {
     "type": "place",
@@ -942,7 +900,7 @@
    "reason": "cap-reached"
   },
   {
-   "tick": 3090,
+   "tick": 2949,
    "player": 0,
    "cmd": {
     "type": "place",
@@ -953,7 +911,7 @@
    "reason": "cap-reached"
   },
   {
-   "tick": 3118,
+   "tick": 2975,
    "player": 0,
    "cmd": {
     "type": "place",
@@ -964,7 +922,7 @@
    "reason": "cap-reached"
   },
   {
-   "tick": 3144,
+   "tick": 3002,
    "player": 0,
    "cmd": {
     "type": "place",
@@ -975,7 +933,7 @@
    "reason": "cap-reached"
   },
   {
-   "tick": 3169,
+   "tick": 3027,
    "player": 0,
    "cmd": {
     "type": "place",
@@ -986,7 +944,51 @@
    "reason": "cap-reached"
   },
   {
-   "tick": 3169,
+   "tick": 3053,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 3079,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 3105,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 3131,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 3131,
    "player": 0,
    "cmd": {
     "type": "upgrade",
@@ -995,7 +997,7 @@
    "ok": true
   },
   {
-   "tick": 3283,
+   "tick": 3231,
    "player": 0,
    "cmd": {
     "type": "place",
@@ -1006,7 +1008,7 @@
    "reason": "cap-reached"
   },
   {
-   "tick": 3301,
+   "tick": 3256,
    "player": 0,
    "cmd": {
     "type": "place",
@@ -1017,7 +1019,7 @@
    "reason": "cap-reached"
   },
   {
-   "tick": 3328,
+   "tick": 3281,
    "player": 0,
    "cmd": {
     "type": "place",
@@ -1028,7 +1030,7 @@
    "reason": "cap-reached"
   },
   {
-   "tick": 3354,
+   "tick": 3307,
    "player": 0,
    "cmd": {
     "type": "place",
@@ -1039,7 +1041,7 @@
    "reason": "cap-reached"
   },
   {
-   "tick": 3378,
+   "tick": 3332,
    "player": 0,
    "cmd": {
     "type": "place",
@@ -1050,7 +1052,7 @@
    "reason": "cap-reached"
   },
   {
-   "tick": 3404,
+   "tick": 3357,
    "player": 0,
    "cmd": {
     "type": "place",
@@ -1061,7 +1063,7 @@
    "reason": "cap-reached"
   },
   {
-   "tick": 3434,
+   "tick": 3381,
    "player": 0,
    "cmd": {
     "type": "place",
@@ -1072,7 +1074,7 @@
    "reason": "cap-reached"
   },
   {
-   "tick": 3462,
+   "tick": 3407,
    "player": 0,
    "cmd": {
     "type": "place",
@@ -1083,7 +1085,7 @@
    "reason": "cap-reached"
   },
   {
-   "tick": 3480,
+   "tick": 3432,
    "player": 0,
    "cmd": {
     "type": "place",
@@ -1094,7 +1096,7 @@
    "reason": "cap-reached"
   },
   {
-   "tick": 3504,
+   "tick": 3459,
    "player": 0,
    "cmd": {
     "type": "place",
@@ -1105,7 +1107,7 @@
    "reason": "cap-reached"
   },
   {
-   "tick": 3533,
+   "tick": 3486,
    "player": 0,
    "cmd": {
     "type": "place",
@@ -1116,7 +1118,7 @@
    "reason": "cap-reached"
   },
   {
-   "tick": 3558,
+   "tick": 3512,
    "player": 0,
    "cmd": {
     "type": "place",
@@ -1127,7 +1129,7 @@
    "reason": "cap-reached"
   },
   {
-   "tick": 3583,
+   "tick": 3538,
    "player": 0,
    "cmd": {
     "type": "place",
@@ -1138,7 +1140,7 @@
    "reason": "cap-reached"
   },
   {
-   "tick": 3606,
+   "tick": 3564,
    "player": 0,
    "cmd": {
     "type": "place",
@@ -1149,7 +1151,7 @@
    "reason": "cap-reached"
   },
   {
-   "tick": 3634,
+   "tick": 3589,
    "player": 0,
    "cmd": {
     "type": "place",
@@ -1160,7 +1162,7 @@
    "reason": "cap-reached"
   },
   {
-   "tick": 3662,
+   "tick": 3614,
    "player": 0,
    "cmd": {
     "type": "place",
@@ -1171,7 +1173,7 @@
    "reason": "cap-reached"
   },
   {
-   "tick": 3690,
+   "tick": 3641,
    "player": 0,
    "cmd": {
     "type": "place",
@@ -1182,11 +1184,22 @@
    "reason": "cap-reached"
   },
   {
-   "tick": 3690,
+   "tick": 3668,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 3668,
    "player": 0,
    "cmd": {
     "type": "upgrade",
-    "entityId": 3
+    "entityId": 4
    },
    "ok": true
   }
@@ -1194,90 +1207,82 @@
  "controls": [
   {
    "type": "speed",
-   "tick": 16,
+   "tick": 8,
    "speed": 3
   },
   {
    "type": "pause",
-   "tick": 64,
+   "tick": 240,
    "paused": true
   },
   {
    "type": "pause",
-   "tick": 64,
+   "tick": 240,
    "paused": false
   },
   {
    "type": "speed",
-   "tick": 76,
+   "tick": 245,
    "speed": 2
   },
   {
    "type": "speed",
-   "tick": 80,
+   "tick": 247,
    "speed": 3
   }
  ],
  "waves": [
   {
    "wave": 1,
-   "startTick": 22,
-   "coinsStart": 518,
-   "coinsEnd": 518,
+   "startTick": 10,
+   "coinsStart": 500,
+   "coinsEnd": 28,
    "livesStart": 30,
    "livesEnd": 30,
-   "leaks": 3,
-   "leaksByEnemy": {
-    "grunt": 3
-   },
-   "kills": 5
+   "leaks": 0,
+   "leaksByEnemy": {},
+   "kills": 8
   },
   {
    "wave": 2,
-   "startTick": 34,
-   "coinsStart": 423,
-   "coinsEnd": 57,
+   "startTick": 227,
+   "coinsStart": 133,
+   "coinsEnd": 77,
    "livesStart": 30,
-   "livesEnd": 26,
+   "livesEnd": 30,
    "leaks": 0,
    "leaksByEnemy": {},
    "kills": 9
   },
   {
    "wave": 3,
-   "startTick": 694,
-   "coinsStart": 167,
-   "coinsEnd": 186,
-   "livesStart": 27,
-   "livesEnd": 27,
-   "leaks": 4,
-   "leaksByEnemy": {
-    "runner": 1,
-    "grunt": 3
-   },
-   "kills": 7
+   "startTick": 452,
+   "coinsStart": 187,
+   "coinsEnd": 356,
+   "livesStart": 30,
+   "livesEnd": 30,
+   "leaks": 0,
+   "leaksByEnemy": {},
+   "kills": 11
   },
   {
    "wave": 4,
-   "startTick": 710,
-   "coinsStart": 301,
-   "coinsEnd": 237,
-   "livesStart": 28,
-   "livesEnd": 9,
-   "leaks": 9,
-   "leaksByEnemy": {
-    "runner": 4,
-    "grunt": 5
-   },
-   "kills": 8
+   "startTick": 869,
+   "coinsStart": 471,
+   "coinsEnd": 73,
+   "livesStart": 30,
+   "livesEnd": 30,
+   "leaks": 0,
+   "leaksByEnemy": {},
+   "kills": 14
   },
   {
    "wave": 5,
-   "startTick": 1396,
-   "coinsStart": 357,
-   "coinsEnd": 217,
-   "livesStart": 10,
-   "livesEnd": 8,
+   "startTick": 1337,
+   "coinsStart": 193,
+   "coinsEnd": 337,
+   "livesStart": 30,
+   "livesEnd": 28,
    "leaks": 1,
    "leaksByEnemy": {
     "elite": 1
@@ -1286,41 +1291,41 @@
   },
   {
    "wave": 6,
-   "startTick": 2096,
-   "coinsStart": 342,
-   "coinsEnd": 48,
-   "livesStart": 9,
-   "livesEnd": 3,
+   "startTick": 2037,
+   "coinsStart": 462,
+   "coinsEnd": 126,
+   "livesStart": 29,
+   "livesEnd": 21,
    "leaks": 5,
    "leaksByEnemy": {
-    "runner": 3,
-    "grunt": 2
+    "runner": 2,
+    "grunt": 3
    },
    "kills": 18
   },
   {
    "wave": 7,
-   "startTick": 2782,
-   "coinsStart": 178,
-   "coinsEnd": 127,
-   "livesStart": 4,
-   "livesEnd": 4,
+   "startTick": 2723,
+   "coinsStart": 256,
+   "coinsEnd": 154,
+   "livesStart": 22,
+   "livesEnd": 22,
    "leaks": 0,
    "leaksByEnemy": {},
    "kills": 13
   },
   {
    "wave": 8,
-   "startTick": 3268,
-   "coinsStart": 262,
-   "coinsEnd": 54,
-   "livesStart": 5,
+   "startTick": 3209,
+   "coinsStart": 289,
+   "coinsEnd": 67,
+   "livesStart": 23,
    "livesEnd": 0,
-   "leaks": 2,
+   "leaks": 8,
    "leaksByEnemy": {
-    "flyer": 2
+    "flyer": 8
    },
-   "kills": 11
+   "kills": 12
   }
  ],
  "feedback": "Test: the first boss felt unfair."

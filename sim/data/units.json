@@ -77,7 +77,7 @@
       "_comment": "Nuke = True Damage auf den stärksten Gegner, 5x Treffer-Schaden der aktuellen Stufe (Runde 4 P1, vorher 8x), Abklingzeit 45 s.",
       "rarity": "mythic", "placement": "hill", "role": "Boss-Killer",
       "dpsShareBp": 5000, "attack": { "kind": "single" }, "defaultTargeting": "strongest", "element": 0,
-      "ability": { "kind": "nuke", "cooldownTicks": 900, "damageMulBp": 120000 }
+      "ability": { "kind": "nuke", "cooldownTicks": 900, "damageMulBp": 65000 }
     }
   ]
 }

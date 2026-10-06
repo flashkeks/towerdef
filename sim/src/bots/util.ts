@@ -135,6 +135,10 @@ export const botTuning = {
   banned: [] as string[],
   /** Boss-Plan: ohne freien Slot die schwächste Unit auf passendem Slot verkaufen (P6b). Aus: `P6B_NOROOM=1`. */
   makeRoom: true,
+  /** Runde 5 / P3: Gegen einen Boss mit Kit zielen alle Angreifer auf den stärksten Gegner (Dauerschaden gegen zerstörbare Wirkungen). Aus: `P3_NOFOCUS=1`. */
+  bossFocus: true,
+  /** Runde 5 / P3: Boss-Plan kauft `both` (Nuke- und Stun-Unit, wie P6) oder `oneOf` (eine der Antworten genügt). Experiment: `P3_ANSWER=oneOf`. */
+  bossAnswers: 'both' as 'both' | 'oneOf',
   bossNeedMid: 0,
   /** Policy-eigene Pläne (`Policy.plan`, z. B. `aoe` Titan ab Wave 5) beachten. Aus: nur der Boss-Plan mit Bedarfsprüfung kauft den Titan gezielt. */
   policyPlans: true,
@@ -203,7 +207,8 @@ export interface Option {
 export function makeEnv(ctx: BotContext, memo: Memo): Env {
   const { sim, playerId, rng } = ctx;
   const st = sim.state;
-  const defs = new Map(sim.catalog().map((d) => [d.id, d]));
+  // Verbotene Units (Leave-one-out) gibt es für den Bot nicht: auch nicht als "fehlender Typ" der Rotation oder als Plan-Ziel.
+  const defs = new Map(sim.catalog().filter((d) => !botTuning.banned.includes(d.id)).map((d) => [d.id, d]));
   const live = st.enemies.filter((e) => e.hp > 0);
   if (live.some((e) => e.flying)) memo.airSeen = true;
   let hp = 0;
@@ -472,9 +477,15 @@ function bossNeeds(env: Env, memo: Memo): string[] {
     stun ||= info.stun;
   }
   if (!found) return [];
-  const out = [...env.defs.values()].filter((d) => d.ability?.kind === 'nuke').map((d) => d.id);
-  if (stun) out.push(...[...env.defs.values()].filter((d) => d.ability?.kind === 'stunAoe').map((d) => d.id));
-  return out;
+  const nukes = [...env.defs.values()].filter((d) => d.ability?.kind === 'nuke').map((d) => d.id);
+  const stuns = stun ? [...env.defs.values()].filter((d) => d.ability?.kind === 'stunAoe').map((d) => d.id) : [];
+  if (botTuning.bossAnswers === 'oneOf') {
+    // Runde 5 / P3: Das Kit hat mehrere gleichwertige Antworten (Stun/Frost, Burst/Titan, Dauerschaden). Eine genügt: die billigere
+    // Kontrolle zuerst; wer eine besitzt, spart nicht auf die andere. Fehlt sie (verboten/kein Slot), kommt die nächste.
+    const all = [...stuns, ...nukes];
+    return all.some((id) => env.own.some((u) => u.defId === id)) ? [] : all;
+  }
+  return [...nukes, ...stuns];
 }
 
 /** Boss-Plan-Schritt: 'wait' = sparen, Option-Liste = nur diese Platzierungen, null = nichts zu tun. */
@@ -648,13 +659,16 @@ export function manageTargeting(ctx: BotContext): void {
   const { sim, playerId } = ctx;
   const st = sim.state;
   const big = st.enemies.some((e) => e.hp > 0 && isBig(e));
+  // Runde 5 / P3: Lebt ein Boss mit Kit, zielen auch Flächen-Units auf den stärksten Gegner (Dauerschaden-Antwort: die Schwelle einer
+  // zerstörbaren Wirkung zählt nur Schaden am Boss). Aus: `botTuning.bossFocus = false` (`P3_NOFOCUS=1`).
+  const focus = botTuning.bossFocus && st.enemies.some((e) => e.hp > 0 && e.bossRun !== null);
   const defs = new Map(sim.catalog().map((d) => [d.id, d]));
   for (const u of st.units) {
     if (u.owner !== playerId) continue;
     const d = defs.get(u.defId) as UnitDef;
     if (!d.attack) continue;
     let want = d.defaultTargeting;
-    if (d.id === 'titan') want = 'strongest';
+    if (d.id === 'titan' || focus) want = 'strongest';
     else if (big && d.attack.kind === 'single') want = 'strongest';
     else if (d.attack.kind === 'single') want = 'first';
     if (u.targeting !== want) sim.apply(playerId, { type: 'setTargeting', entityId: u.id, mode: want });
@@ -665,7 +679,7 @@ export function manageTargeting(ctx: BotContext): void {
  * Boss-Fenster (P4): Zustand des ersten lebenden Bosses mit Kit. `window` = Schwachstellen-Fenster offen, `ward` = Schild steht,
  * `interruptible` = Telegraph läuft, der sich per Stun brechen lässt, `charging` = Sturm läuft, `panic` = Boss fast am Ziel.
  */
-export function bossStatus(sim: Sim, live: EnemyState[]): { boss: EnemyState; window: boolean; ward: boolean; interruptible: boolean; charging: boolean; panic: boolean } | null {
+export function bossStatus(sim: Sim, live: EnemyState[]): { boss: EnemyState; window: boolean; ward: boolean; interruptible: boolean; charging: boolean; panic: boolean; stagger: number } | null {
   const boss = live.find((e) => e.bossRun !== null);
   if (!boss || !boss.bossRun) return null;
   const run = boss.bossRun;
@@ -678,6 +692,8 @@ export function bossStatus(sim: Sim, live: EnemyState[]): { boss: EnemyState; wi
     interruptible: !!tele && tele.interruptible && run.tele !== null && !run.tele.interrupted,
     charging: run.hasteTicks > 0,
     panic: boss.progress >= botTuning.bossPanicMilli,
+    // Runde 5 / P3: Schaden (Centi-HP), der noch fehlt, um die laufende Wirkung zu brechen (0 = keine zerstörbare Wirkung).
+    stagger: run.tele && run.tele.need > 0 && !run.tele.interrupted ? Math.max(0, run.tele.need - run.tele.dmg) : 0,
   };
 }
 
@@ -728,7 +744,9 @@ export function useAbilities(ctx: BotContext, frostMin = 4, memo?: Memo): void {
       const dmg = (d.levels[u.level].damageCenti * ab.damageMulBp) / 10000;
       if (bs) {
         // Nuke ins Fenster oder auf den Schild (bricht ihn, öffnet das Fenster); sonst halten, außer Notfall oder Kill.
-        fire = bs.window || bs.ward || bs.panic || bs.boss.hp <= dmg * 1.2;
+        // Runde 5 / P3: Ist keine Stun-Antwort bereit, bricht die Nuke eine zerstörbare Wirkung (Burst als zweite Antwort).
+        const stunReady = st.units.some((x) => x.owner === playerId && x.abilityCd <= 0 && defs.get(x.defId)?.ability?.kind === 'stunAoe');
+        fire = bs.window || bs.ward || bs.panic || bs.boss.hp <= dmg * 1.2 || (bs.stagger > 0 && !stunReady && dmg >= bs.stagger);
       } else {
         const top = targets.reduce((a, b) => (b.maxHp > a.maxHp ? b : a));
         fire = targets.some(isBig) || top.hp >= dmg * 0.5;

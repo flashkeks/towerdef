@@ -735,3 +735,71 @@ Normal / Hard / Nightmare bester Bot: **87** (`wide`; `upgrade` 85, `aoe` 83) / 
 2. **Koop fair** braucht koop-fähige Bots oder Playtest-Daten; `wide` Hard/Nightmare 4P (Slot-Konkurrenz) untersuchen.
 3. **Titan-Pflicht** ist Boss-Design: zweite Antwort auf den Colossus-Schild (Daten) wäre der Weg, nicht der Plan.
 4. Danach P10 (Client) bzw. Playtest.
+
+---
+
+# Runde 5 — P3: Boss ohne Pflicht-Unit, Hard breiter
+
+Messung: Profil `normal`, `standard20`, solo, bester Bot `wide`, Seeds 1..n (Standardfehler bei n = 100 ±4–5 Punkte, bei n = 60 ±6). Werkzeug `sim/scripts/sanity/r5-p3.ts` (`--part rates|loo|diag`), `r5-p3.sh`, Kennlinie `p3-check.ts --part curve`. Telegraph-Liste für den Client: `docs/design/boss-telegraphs.md`.
+
+## Was gebaut wurde
+
+| Baustein | Inhalt |
+|---|---|
+| Zerstörbare Wirkung (`staggerBp`) | Dauerschaden während des Telegraphs bricht Heilung, Ruf und Sturm wie ein Stun (`bossCast.cause: "damage"`); die Heilung schrumpft linear mit dem Schaden. Drei Antworten je Wirkung: Stun (Frost), Burst (ein Treffer ab Schwelle, Titan-Nuke), Dauerschaden (alle DPS-Units) |
+| Fenster mit Rüstung | `window.armor` (Colossus/Warden: 0) und Phasen-Aktion `armor` (Baustein fertig, in den Daten nicht benutzt: auf Hard als Panzer-Phase gemessen, ohne Gewinn, 33 gegen 33 %) |
+| Unterbrechen belohnt | Fenster 7–8 s x2,0 mit Rüstung 0, Boss steht 1,5–2 s (`interruptStunTicks`) |
+| Colossus | Heilung ab Phase 0 im Takt (15 s, Warnung 4 s, 6 %), Schild-Fenster 7 s x2,0, Last Stand wie vorher |
+| Bots | `bossFocus`: gegen einen Boss mit Kit zielen alle Angreifer auf den Stärksten (Schwelle zählt nur Boss-Schaden); Nuke bricht zerstörbare Wirkungen, wenn kein Stun bereit ist; `botTuning.bossAnswers` (`both` Standard, `oneOf` Experiment); `banned` entfernt die Unit auch aus `makeEnv().defs` (Messartefakt: ein verbotener Titan zählte als „fehlender Typ“ und löste die Striker-Rotation aus) |
+
+## Änderungen an `sim/data/` (alt → neu → Grund)
+
+| Datei/Feld | alt | neu | Grund |
+|---|---|---|---|
+| `bosses.json` | Kits R4 | siehe oben, beide Kits | zwei+ Antworten, lange Fenster |
+| `units.json` Titan Nuke `damageMulBp` | 120000 | **65000** | Nuke war die einzige Antwort; jetzt Burst-Antwort neben Frost und Dauerschaden. 3x/4,5x/6,5x/8x ändern LOO kaum, Titan-Anteil (DPS) zählt mehr |
+| `enemies.json` Boss `fHpBp` | 110000 | **140000** | mit Fokusfeuer und Fenstern leakt der Boss beim besten Bot nie (0/100); x14 macht ihn wieder zur Prüfung. 160000: Titan-LOO −27, 170000: −45 |
+| `difficulties.json` normal `hpBp` | 15300 | **15700** | Spreizung 7,5 % (Test < 8 %) |
+| normal `bountyBp` | 10000 | **9000** | ohne Boss-Leaks lag der beste Bot bei 98–100 %. Scan n = 100: 9300 → 97, 9100 → 94, 8900 → 89 |
+| hard `bountyBp` | 9500 | **9200** | `wide` 58 % (n = 100) |
+| nightmare | 9550 | 9550 | 31 % |
+Titan `dpsShareBp` 5000 bleibt (3500/4500 machen ihn auf Hard zur Falle: ohne Titan +18/+24).
+
+## Ergebnis
+
+| Ziel | Wert | Urteil |
+|---|---|---|
+| Stufen (bester Bot `wide`, n = 100) | Normal **92**, Hard **58**, Nightmare **31** | erreicht (alle Bots: Normal greedy 9, farm 59, aoe 37, upgrade 68, coop 59; Hard farm 25, aoe 8; NM upgrade 6) |
+| Hard-Kennlinie 90→10 % (n = 60) | **18,6** (Lauf mit Hard-Bounty 9200 vorher: 21,1; vorher 13,7) | knapp unter 20, Streuung ±2; Normal 15,5, Nightmare 26,6 |
+| Titan nicht Pflicht | Normal **−24** (vorher −87), Hard +12, Nightmare +3 | erreicht |
+| Boss-Leaks bester Bot | 0 von 100 je Stufe (Normal: ohne Titan 27 von 100) | Boss ist für den besten Bot kein Hindernis mehr; andere Bots (aoe, greedy) bleiben knapp |
+
+## Leave-one-out, alle 8 Units (`wide`, n = 100; Delta in Punkten)
+
+| Unit | Normal (92) | Hard (58) | Nightmare (31) |
+|---|---|---|---|
+| Striker | −1 | −20 | −6 |
+| Gunner | −44 | −57 | −19 |
+| Blaster | −42 | −46 | −14 |
+| Banner | 0 | 0 | +3 |
+| Lancer | −53 | −37 | −29 |
+| Frost | −92 | −58 | −31 |
+| Titan | **−24** | **+12** | **+3** |
+| Farm | 0 | 0 | 0 |
+
+Vorher (R4-Stand, n = 60, mit Messfehler-Fix): Normal Striker −33, Gunner −32, Blaster −13, Lancer −47, Frost −88, Titan −87; Hard Gunner −62, Blaster −50, Lancer −58, Frost −62, Titan −62.
+
+**Ziel „keine Unit um mehr als 25“: nur für den Titan, Striker, Banner und Farm erreicht, für Gunner, Blaster, Lancer, Frost verfehlt.** Ehrliche Begründung:
+- Die vier Rollen-Units sind keine Boss-Frage. Ohne Frost verlieren die Läufe an den Flyer-Pulks (Wave 16/18, rund 6 Flyer-Leaks je Lauf), nicht am Boss; Frosts Slow und Stun sind dabei ohne Wirkung (ohne beide 100 %), es zählt der Kegel als Mehrfachtreffer gegen Luft. Mehrfach-Luftabwehr gibt es nur mit Frost und Lancer (Flyer-Regel, ENTSCHEIDUNGEN.md), Blaster trifft keine Luft.
+- Je näher der beste Bot am Zielwert 92 %, desto steiler die Kurve (Normal 90→10 in 15 Punkten HP): ein Sechstel weniger Feuerkraft kostet dann 40+ Punkte. Bei Normal-Bounty 10000 (Bot 98 %) lagen Gunner −7, Blaster +2, Lancer −22; erst die Rückkehr in den Zielkorridor macht sie „Pflicht“.
+- Geprüft, nicht übernommen: Flyer-HP 9000→7000/5500 (ohne Frost 53/63 %), Gunner-Anteil 11500→15000/19000 (ohne Frost 87/100 %, aber Hard ohne Frost weiter 0–8 %), Blaster hybrid (trifft Luft: ohne Frost weiter 3 %). Die Luftabwehr-Rolle braucht eine Entscheidung (zweite Mehrfach-Luftquelle oder weniger Pulk-Druck), die nicht in P3 liegt.
+
+## Verworfene Versuche
+
+Boss-HP allein anheben (Titan-Team bleibt 100 %, ohne Titan fällt es bis −45); Boss-Plan `oneOf` (der Bot kauft dann nie Titan, Normal 72 %); Panzer-Phase (Armor 70) auf Hard; Lebens-Regeln auf Normal (ohne Wirkung, Verluste sind Boss-Leaks); Titan-Anteil senken.
+
+## Übergabe
+
+1. Luftabwehr-Rolle (Frost/Lancer) für „keine Pflicht-Unit“ klären; Fragen an Max in STATUS.
+2. aoe-Bot fällt auf Normal von 82 auf 37 % (hängt am Titan-Anteil); Bot-Pflege.
+3. Hard-Kennlinie 18,6: mehr Fenster-Streuung oder Hard-Zusatzregeln.

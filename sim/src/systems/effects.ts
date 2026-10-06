@@ -16,7 +16,10 @@ export function applyStun(e: EnemyState, ticks: number, eco: CcEco): boolean {
   const inWindow = e.bossRun !== null && e.bossRun.vulnTicks > 0;
   if (e.stunTicks > 0 || (e.stunImmune > 0 && !inWindow)) return false;
   e.stunTicks = e.boss && !inWindow ? mulBp(ticks, eco.cc.bossCcBp) : ticks;
-  if (e.stunTicks > 0 && e.bossRun?.tele) e.bossRun.tele.interrupted = true;
+  if (e.stunTicks > 0 && e.bossRun?.tele && !e.bossRun.tele.interrupted) {
+    e.bossRun.tele.interrupted = true;
+    e.bossRun.tele.cause = 'stun';
+  }
   return e.stunTicks > 0;
 }
 
@@ -86,6 +89,17 @@ export function applyDamage(
   if (run) {
     // Boss-Kit (P4): Fenster verstärkt den Schaden, der Schild absorbiert vor den HP (auch True Damage und DoT); Überschuss geht durch.
     if (run.vulnTicks > 0) amount = mulBp(amount, run.vulnBp);
+    // Zerstörbare Wirkung (Runde 5 / P3): Schaden während des Telegraphs zählt auf die Schwelle; bei Erreichen ist die Wirkung gebrochen
+    // (Auflösung im nächsten Boss-Tick, `bossCast` mit cause "damage").
+    const tele = run.tele;
+    if (tele && tele.need > 0 && !tele.interrupted) {
+      tele.dmg += amount;
+      if (tele.dmg >= tele.need) {
+        tele.interrupted = true;
+        tele.cause = 'damage';
+        tele.left = Math.min(tele.left, 1);
+      }
+    }
     if (run.ward > 0) {
       const absorbed = Math.min(amount, run.ward);
       run.ward -= absorbed;
