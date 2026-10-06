@@ -13,7 +13,10 @@
     "smoke": "node scripts/smoke.mjs",
     "assets": "node scripts/gen-sprites.mjs && node scripts/build-atlas.mjs",
     "shots:p4": "node scripts/shots-p4.mjs",
-    "replay-check": "node scripts/replay-check.mjs"
+    "replay-check": "node scripts/replay-check.mjs",
+    "perf": "node scripts/perf.mjs",
+    "shots:p5": "node scripts/shots-p5.mjs",
+    "audio-check": "node scripts/audio-check.mjs"
   },
   "dependencies": {
     "pixi.js": "^8.22.0",

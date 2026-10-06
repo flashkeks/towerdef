@@ -32,3 +32,16 @@ Hinweis: Das sind Platzhalter im Styleguide-Raster (schlicht, einheitlich), kein
 ## Schriften, Töne, Musik
 
 Noch keine eingebunden.
+
+## Ton (Runde 5, P5): alles eigen, zur Laufzeit erzeugt
+
+Die geplanten CC0-Tonpacks (Kenney Impact/Interface/RPG Audio, Music Jingles) waren aus der Session nicht erreichbar (Proxy 403 auf kenney.nl, nicht umgangen,
+offene Spur in `docs/STATUS.md`). Stattdessen gibt es **keine Audiodateien im Repo**: alle Klänge und die Musik entstehen zur Laufzeit per WebAudio
+(Oszillator/Rauschen, Frequenzlauf, Hüllkurve, sfxr-artig). Quelle der Rezepte: `src/audio/recipes.ts`, Abspiel-Motor `src/audio/engine.ts`.
+
+| Quelle | Lizenz | Urheber | Abruf | Bearbeitung |
+|---|---|---|---|---|
+| `src/audio/recipes.ts` (26 Klang-Rezepte, 1 Musik-Loop), `src/audio/engine.ts` | eigen (Projektlizenz des Repos) | Claude (Anthropic) im Auftrag von Max/Flashkeks | entf. (nicht heruntergeladen) | Synthese zur Laufzeit, keine Fremdsamples |
+
+Klänge (alle **eigen**): `place`, `upgrade`, `sell`, `error`, `hit.slash`, `hit.tracer`, `hit.shell`, `hit.bolt`, `hit.blast`, `hit.cone`, `hit.line`, `kill`, `leak`, `wave`, `frost`, `nuke`,
+`bossEnter`, `bossPhase`, `bossWarn`, `bossCast`, `bossBreak`, `windowOpen`, `windowClose`, `wardBreak`, `win`, `lose`. Musik: ein erzeugter a-Moll-Loop (8 Takte, 84 BPM: Bass, Arpeggio, Fläche).

@@ -13,6 +13,18 @@ export interface ActiveTelegraph {
   fireTick: number;
   warnTicks: number;
   interruptible: boolean;
+  /** Schaden-Schwelle (Centi-HP) zum Brechen durch Dauerschaden, 0 = nicht durch Schaden zu brechen (P3). */
+  staggerNeed: number;
+}
+
+/** Letzte Wirkung/Abbruch einer Boss-Faehigkeit (fuer die kurze Einblendung "gebrochen durch ..."). */
+export interface LastCast {
+  enemyId: number;
+  ability: string;
+  interrupted: boolean;
+  /** `stun`, `damage` oder null (nicht unterbrochen). */
+  cause: 'stun' | 'damage' | null;
+  tick: number;
 }
 
 export interface ActiveWindow {
@@ -21,6 +33,8 @@ export interface ActiveWindow {
   totalTicks: number;
   damageBp: number;
   cause: string;
+  /** Ruestung im Fenster (0 = Panzer offen, -1 = unveraendert, "Boss keucht"); P3. */
+  armor: number;
 }
 
 export interface ActivePhase {
@@ -33,6 +47,9 @@ export class BossTracker {
   readonly windows = new Map<number, ActiveWindow>();
   readonly wards = new Set<number>();
   readonly phases = new Map<number, ActivePhase>();
+  readonly lastCast = new Map<number, LastCast>();
+  /** Ruestungsphase (Ereignis `bossArmor`): aktuelle und normale Ruestung. */
+  readonly armors = new Map<number, { armor: number; base: number }>();
 
   consume(events: readonly SimEvent[]): void {
     for (const e of events) {
@@ -46,13 +63,18 @@ export class BossTracker {
             fireTick: e.fireTick,
             warnTicks: e.warnTicks,
             interruptible: e.interruptible,
+            staggerNeed: e.staggerNeed ?? 0,
           });
           break;
         case 'bossCast':
           this.telegraphs.delete(e.enemyId);
+          this.lastCast.set(e.enemyId, { enemyId: e.enemyId, ability: e.ability, interrupted: e.interrupted, cause: e.cause ?? null, tick: e.tick });
+          break;
+        case 'bossArmor':
+          this.armors.set(e.enemyId, { armor: e.armor, base: e.base });
           break;
         case 'bossWindow':
-          if (e.open) this.windows.set(e.enemyId, { enemyId: e.enemyId, untilTick: e.tick + e.ticks, totalTicks: e.ticks, damageBp: e.damageBp, cause: e.cause });
+          if (e.open) this.windows.set(e.enemyId, { enemyId: e.enemyId, untilTick: e.tick + e.ticks, totalTicks: e.ticks, damageBp: e.damageBp, cause: e.cause, armor: e.armor ?? -1 });
           else this.windows.delete(e.enemyId);
           break;
         case 'bossWard':
@@ -74,6 +96,8 @@ export class BossTracker {
     for (const [id, tl] of this.telegraphs) if (tick > tl.fireTick + TICKS_PER_SECOND || !aliveIds.has(id)) this.telegraphs.delete(id);
     for (const id of [...this.wards]) if (!aliveIds.has(id)) this.wards.delete(id);
     for (const id of [...this.phases.keys()]) if (!aliveIds.has(id)) this.phases.delete(id);
+    for (const id of [...this.lastCast.keys()]) if (!aliveIds.has(id)) this.lastCast.delete(id);
+    for (const id of [...this.armors.keys()]) if (!aliveIds.has(id)) this.armors.delete(id);
   }
 
   clear(): void {
@@ -81,6 +105,8 @@ export class BossTracker {
     this.windows.clear();
     this.wards.clear();
     this.phases.clear();
+    this.lastCast.clear();
+    this.armors.clear();
   }
 }
 

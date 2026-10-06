@@ -206,3 +206,29 @@ canvas.board { display: block; }
 .swatch.type-hill { background: #8a5a3a; clip-path: polygon(50% 4%, 96% 96%, 4% 96%); }
 .swatch.type-large { background: #4a5272; border: 3px double var(--gold); }
 .version { position: fixed; right: 8px; bottom: 4px; z-index: 40; font-size: 0.68rem; color: var(--stone); opacity: 0.8; pointer-events: none; }
+
+/* ---- P5: Spielgefuehl (Boss-Banner, Leak-Wackeln) ---- */
+.boss-banner .break { margin-top: 6px; display: flex; flex-direction: column; gap: 3px; }
+.boss-banner .break.hidden { display: none; }
+.boss-banner .break-text { font-size: 0.78rem; font-weight: 700; color: #9ad8f0; letter-spacing: 0.04em; text-transform: uppercase; }
+.boss-banner .break-bar { height: 10px; border: 2px solid var(--gold); background: var(--ink); border-radius: 3px; overflow: hidden; }
+.boss-banner .break-fill { height: 100%; width: 0; background: #9ad8f0; }
+.boss-banner .break.full .break-text { color: var(--teal); }
+.boss-banner .break.full .break-fill { background: #f1f2f7; }
+.boss-banner .cast { margin-top: 6px; padding: 3px 8px; border-radius: 4px; font-weight: 700; border: 2px solid var(--red); color: #fff; background: #d8344a55; }
+.boss-banner .cast.hidden { display: none; }
+.boss-banner .cast[data-mode='good'] { border-color: var(--teal); background: #3fd8c044; }
+.boss-banner .cast.pop { animation: cast-pop 0.35s ease-out; }
+.boss-banner.enter { animation: boss-enter 0.9s ease-out; }
+.boss-banner.phase { animation: boss-phase 0.6s ease-out; }
+.boss-banner[data-mode='danger'] { animation: boss-danger 0.5s ease-in-out infinite alternate; }
+@keyframes boss-enter { 0% { transform: translateX(-50%) translateY(-60px) scale(1.25); opacity: 0; } 40% { opacity: 1; } 100% { transform: translateX(-50%) translateY(0) scale(1); } }
+@keyframes boss-phase { 0%, 100% { box-shadow: 0 0 0 0 #f5c54200; } 30% { box-shadow: 0 0 0 8px #f5c542cc; transform: translateX(-50%) scale(1.06); } }
+@keyframes boss-danger { from { box-shadow: 0 0 0 0 #d8344a00; } to { box-shadow: 0 0 14px 2px #d8344acc; } }
+@keyframes cast-pop { from { transform: scale(0.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.hud .stat.lives.leak-hit { animation: lives-shake 0.55s ease-out; }
+.hud .stat.lives.leak-hit .bar-fill.lives { animation: lives-flash 0.55s ease-out; }
+@keyframes lives-shake { 0%, 100% { transform: translateX(0); } 12% { transform: translateX(-7px) rotate(-1.5deg); } 28% { transform: translateX(7px) rotate(1.5deg); } 44% { transform: translateX(-5px); } 60% { transform: translateX(4px); } 80% { transform: translateX(-2px); } }
+@keyframes lives-flash { 0%, 50% { filter: brightness(2.2) saturate(2); background-color: #ff5a6e; } 100% { filter: none; } }
+@media (prefers-reduced-motion: reduce) { .hud .stat.lives.leak-hit, .boss-banner.enter, .boss-banner.phase, .boss-banner[data-mode='danger'] { animation: none; } }
+.boss-banner[data-pos='bottom'] { top: auto; bottom: 8px; }

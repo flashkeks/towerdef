@@ -13,6 +13,7 @@ npm run dev            # Entwicklungsserver
 npm run build          # typecheck + Produktions-Build nach dist/
 npm run typecheck
 npm test               # vitest (Gate, Strings, Anzeige-Mapping, Session, Boss-Tracker)
+npm run build && npm run perf   # P5: FPS bei W19/3x/1920x1080 (headless = SwiftShader, Untergrenze); npm run shots:p5, npm run audio-check
 npm run build && npm run smoke   # Playwright: je Aufloesung (1280x720, 1920x1080, 2560x1440) eine ganze Stage nur mit Mausklicks und Tasten, dazu Mobil-Sperre; Screenshots nach docs/screenshot-p1-*.png. Dauer ca. 20 min nacheinander, SMOKE_PARALLEL=1 zugleich (auf lahmer Maschine unzuverlaessig) (SMOKE_PORT, SMOKE_RES, SMOKE_MAX_S)
 ```
 
@@ -45,8 +46,11 @@ Seit P0b (Runde 5) sind `ui/app.ts` und `game/renderer.ts` nur noch Verdrahtung.
 | `scripts/gen-sprites.mjs`, `scripts/build-atlas.mjs`, `scripts/lib/` | Pixel-Quellbilder erzeugen und zum Atlas packen; `scripts/shots-p4.mjs` Lesbarkeits-Screenshots | P4 |
 | `assets/` | `src/` (Quellbilder), `atlas/` (gepackt), `ATTRIBUTIONS.md` | P4 |
 | `src/game/entities-layer.ts` | Units/Gegner anlegen, positionieren, Lebensbalken | P4 |
-| `src/game/overlay-layer.ts` | Reichweitenkreis (unter Figuren), Boss-Telegraph/-Fenster/-Schild (darueber); Platzier-Geist und -Reichweite | P1 (Platzieren), P5 (Boss-Zeichnung) |
-| `src/game/fx.ts` | Effekte aus Bus-Ereignissen (heute Muenz-Popup, Leak-Blitz); Treffer, Tod, Boss, Zahlen, Ton | P5 |
+| `src/game/overlay-layer.ts` | Reichweitenkreis (unter Figuren), Boss-Telegraph (Schraffur, Countdown, Fortschritt zum Brechen)/-Fenster (Panzer offen vs. keucht)/-Schild (darueber); Platzier-Geist und -Reichweite | P1 (Platzieren), P5 (Boss-Zeichnung) |
+| `src/game/fx.ts` | Effekte (P5): Schuesse/Treffer je Unit (Projektil, Aufschlag, Blast, Kegel, Linie), Schadenszahlen, Tod mit Zerfall, Muenz-Popup, Leak-Rand, Boss-Auftritt/-Phasen, Bildschuettern; alles gepoolt und gedeckelt. Liest nur Bus-Ereignisse und Sim-Zustand | P5 |
+| `src/view/feel.ts` | reine Logik dazu (getestet): Trefferstil je Unit, Schuss-Erkennung (`cd` steigt), Zielwahl-Nachbildung, Schadenszahlen aus HP-Differenz, Ereignis -> Cue | P5 |
+| `src/audio/` | Ton (P5): `logic.ts` (Lautstaerke, Drosselung, Ereignis -> Klang, getestet), `recipes.ts` (Klang-Rezepte + Musik, nur Daten), `engine.ts` (WebAudio-Synthese, M = stumm, Context erst nach erster Nutzeraktion) | P5 |
+| `src/ui/leak-shake.ts` | Leak: Leben-Anzeige wackelt (CSS-Klasse am Bus) | P5 |
 | `src/ui/app.ts` | Verdrahtung der DOM-Bausteine, `bind`/`update`/`showStart` | - (nur Einzeiler, ggf. P6 fuer Szenen) |
 | `src/ui/hud.ts` | Leben, Muenzen, Welle, Start/Pause, Tempo, Stufe | P1 |
 | `src/ui/shop.ts` | Unit-Leiste unten | P1 (Team-Auswahl-Filter: P6) |
@@ -57,12 +61,13 @@ Seit P0b (Runde 5) sind `ui/app.ts` und `game/renderer.ts` nur noch Verdrahtung.
 | `src/ui/toast.ts` | Fehler-Toast | P1 |
 | `src/ui/input.ts` | Tastatur (Maus-Platzieren folgt hier hinein) | P1 |
 | `src/ui/panels.ts` | Wellenvorschau und Risikokarten (Seitenleiste) | P1 (Layout), P3-Folgen am Rand |
-| `src/ui/boss-banner.ts` | Boss-Banner | P5 |
+| `src/ui/boss-banner.ts` | Boss-Banner: Auftritt/Phase animiert, Brech-Fortschritt, "gebrochen durch Stun/Schaden", wandert nach unten, wenn der Boss unter ihm laeuft | P5 |
 | `src/ui/screens.ts` + `menu.ts`, `team-select.ts`, `team.ts`, `settings.ts`, `settings-screen.ts`, `result.ts`, `mvp.ts`, `markdown.ts` | Szenen: Hauptmenue, Stufe, Team-Wahl 6 aus 8 (Client-Filter), Einstellungen, Credits, Ergebnis, Pause | P6 |
 | `src/ui/dom.ts` | kleine DOM-Helfer | gemeinsam |
 | `src/styles.css` | Stil; Abschnitte je Baustein ergaenzen, nichts umsortieren | alle, nur eigene Selektoren |
 | `src/game/recorder.ts`, `src/ui/download.ts` | Replay-Aufzeichnung (nur am `GameBus`) und JSON-Download (`replayDownloadBox()` fuer den End-Bildschirm, Pause-Knopf selbst eingehaengt); Nachspielen: `sim/scripts/replay.ts`, Abnahme `npm run replay-check` | P2 |
 | `scripts/smoke.mjs` | Playwright-Smoke | P1 |
+| `scripts/perf.mjs`, `shots-p5.mjs`, `audio-check.mjs`, `lib/drive.mjs` | FPS-Messung (W19, 3x, 1920x1080), P5-Screenshots, Ton-Pruefung; `drive.mjs` baut Runden ueber die Session-Schnittstelle auf | P5 |
 
 ### Haken: `GameBus` (`game/events.ts`)
 
@@ -93,7 +98,9 @@ Figuren sind Sprites (Gegner mit zwei Geh-Frames, Blickrichtung per Spiegeln, Fl
 ## Grenzen
 
 - Grafik (P4): Pixel-Sprites im 32-px-Raster, **alle eigen und code-generiert**, keine Fremdpacks (Downloads waren gesperrt, `assets/ATTRIBUTIONS.md`). Figuren skalieren ganzzahlig (`RenderContext.art` = floor(Tile/32)), die Karte wird als ein nearest-Bild auf die Fenster-Kachel gezogen; die Tile-Groesse selbst folgt dem Fenster und ist daher nicht ganzzahlig zum Raster (ein Einrasten in `renderer.fit` auf Vielfache von 32 waere die saubere Loesung, aber nur 32 und 64 passen in den Bereich 24–72).
-- Ein Spieler, kein Koop, kein Speichern, kein Ton, keine Treffer-Effekte der Units.
+- Ein Spieler, kein Koop, kein Speichern.
+- Treffer-Effekte (P5) lesen den Zustand, nicht die Sim-Ereignisse: die Sim meldet Treffer nicht. Ein Schuss ist erkannt, wenn die Abklingzeit `cd` einer Unit steigt, das Ziel wird nachgebildet (`pickTarget`) und kann vom echten Ziel abweichen (nur Darstellung). Schadenszahlen = HP-Differenz je Gegner, gebuendelt.
+- Ton (P5): alle Klaenge und die Musik werden zur Laufzeit synthetisiert (eigene Werke, keine Dateien, siehe `assets/ATTRIBUTIONS.md`). Regler und Stumm: `master x sfx`, `master x music`, Taste M (merkt sich `dw.muted`). Der Context startet erst nach der ersten Nutzeraktion.
 - Die Sim importiert `node:fs`/`node:url` (nur fuer `loadGameData`); im Browser ersetzen Vite-Alias-Platzhalter (`src/shims/`) sie. `sim/src` ist unveraendert.
 - Smoke spielt mit eigenem, einfachem Plan (Units reihum, Upgrades, Wellenruf bei (fast) leerem Feld) und gewinnt nicht zwingend; `evaluate` liest nur Zustand. Fuer die Klicks liest er die Boxen der Slot-/Panel-Knoepfe aus dem Layout.
 - Smoke: In der Headless-Sandbox (SwiftShader) wird das WebGL-Canvas nach laengerem Betrieb/Hover im Screenshot leer; deshalb laeuft der Screenshot in eigenem Browser mit Session-Aufbau, die Klickpfade in einem zweiten. Kein Befund am Spiel selbst, aber nicht auf echter GPU gegengeprueft.

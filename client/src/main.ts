@@ -8,8 +8,10 @@ import { Recorder } from './game/recorder';
 import { Renderer } from './game/renderer';
 import { Session } from './game/session';
 import { loadBrowserData, STAGE_ID, type DifficultyId } from './sim';
+import { AudioEngine } from './audio/engine';
 import { Ui } from './ui/app';
 import { mountPauseDownload, replayDownloadBox } from './ui/download';
+import { mountLeakShake } from './ui/leak-shake';
 
 export interface GameHandle {
   /** Desktop-Sperre greift (true) oder ist wieder aufgehoben (false): Sim pausiert, nichts geht verloren. */
@@ -19,7 +21,7 @@ export interface GameHandle {
 declare global {
   interface Window {
     /** Test-/Debug-Zugriff (Playwright-Smoke): nur lesender Blick auf den Zustand. */
-    __duskwardens?: { session: () => Session | null; renderer: () => Renderer; bus: GameBus };
+    __duskwardens?: { session: () => Session | null; renderer: () => Renderer; bus: GameBus; audio: AudioEngine };
   }
 }
 
@@ -29,6 +31,9 @@ export async function startGame(root: HTMLElement): Promise<GameHandle> {
   new Recorder(bus);
   mountPauseDownload(bus);
   const renderer = new Renderer(bus);
+  // P5: Ton (nach erster Nutzeraktion) und Leak-Wackeln der Leben-Anzeige
+  const audio = new AudioEngine(bus, (fn) => renderer.fx.onShot(fn));
+  mountLeakShake(bus);
   let session: Session | null = null;
   let endEmitted = false;
   let blocked = false;
@@ -63,7 +68,7 @@ export async function startGame(root: HTMLElement): Promise<GameHandle> {
     bus.emitRunStart(session);
   }
 
-  window.__duskwardens = { session: () => session, renderer: () => renderer, bus };
+  window.__duskwardens = { session: () => session, renderer: () => renderer, bus, audio };
   window.addEventListener('resize', fit);
   ui.showStart();
   fit();
