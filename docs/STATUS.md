@@ -15,7 +15,7 @@ Letzte Aktualisierung: 2026-10-06 (Runde 3, Sitzung 1)
 | P2c | Reports und Kalibrierung | offen | – | nach P2a |
 | P3 | Content-Sanity | offen | – | nach P2c |
 | P4 | Game-Design-Entwurf `docs/design/` | läuft | 1 × Sonnet | parallel zu P2 |
-| P5 | Fähigkeiten-Musterkatalog (optional) | läuft | 1 × Sonnet | |
+| P5 | Fähigkeiten-Musterkatalog (optional) | **erledigt** | 1 × Sonnet | 16 Muster, Top-8 (DESIGN); Beliebtheit meist UNKNOWN | |
 | P6 | Abschluss | offen | – | |
 
 ## Nächster Schritt (Runde 3)
