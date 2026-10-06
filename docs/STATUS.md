@@ -1,9 +1,30 @@
-# Recherche-Status (global)
+# Status (global)
 
-Arbeitsauftrag: [`/run.md`](../run.md) (Runde 2). **Jede Sitzung liest zuerst diese Datei** und macht beim „Nächsten Schritt“ weiter.
-Runde 1 (Anime Adventures) ist abgeschlossen: [anime-adventures/STATUS.md](anime-adventures/STATUS.md), Auftrag archiviert als [anime-adventures/run-runde1.md](anime-adventures/run-runde1.md).
+Arbeitsauftrag: [`/run.md`](../run.md) (**Runde 3**: Balancing-Simulator und Game-Design-Entwurf). **Jede Sitzung liest zuerst diese Datei** und macht beim „Nächsten Schritt“ weiter.
+Frühere Aufträge: [archiv/run-runde1.md](archiv/run-runde1.md) (Anime Adventures, Status in [anime-adventures/STATUS.md](anime-adventures/STATUS.md)), [archiv/run-runde2.md](archiv/run-runde2.md) (Vergleichsrecherche, Ergebnisse unten).
 
-Letzte Aktualisierung: 2026-10-06 (Runde 2, Sitzung 1, abgeschlossen)
+Letzte Aktualisierung: 2026-10-06 (Runde 3, Sitzung 1)
+
+## Pakete Runde 3
+
+| Paket | Inhalt | Status | Agent (Modell) | Notiz |
+|---|---|---|---|---|
+| P0 | Archiv, Status | **erledigt** | Hauptsitzung | `run.md` Runde 1/2 → `docs/archiv/` |
+| P2a | Simulationskern `sim/` | offen | – | |
+| P2b | Bot-Strategien | offen | – | nach P2a |
+| P2c | Reports und Kalibrierung | offen | – | nach P2a |
+| P3 | Content-Sanity | offen | – | nach P2c |
+| P4 | Game-Design-Entwurf `docs/design/` | offen | – | parallel zu P2 |
+| P5 | Fähigkeiten-Musterkatalog (optional) | offen | – | |
+| P6 | Abschluss | offen | – | |
+
+## Nächster Schritt (Runde 3)
+
+P2a und P4 mit Sonnet-Agenten starten.
+
+---
+
+# Runde 2 (abgeschlossen)
 
 ## Pakete Runde 2
 
@@ -67,7 +88,7 @@ Namensvetter (geprüft, **nicht** gemeint):
 
 Agenten: 10 × Sonnet (P1, P2, 5 × P3, 2 × P5, P4), nie mehr als 4 gleichzeitig.
 
-## Nächster Schritt
+## Nächster Schritt (Ende Runde 2)
 
 Die Recherche ist für den Bau ausreichend. Vorschlag:
 
