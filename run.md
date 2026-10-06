@@ -1,184 +1,211 @@
-# run.md — Runde 3: Balancing-Simulator und Game-Design-Entwurf
+# run.md — Runde 4: Balance reparieren, Spielregeln festziehen, M1 vorbereiten
 
-Du arbeitest in diesem Repository auf dem Branch, auf dem diese Datei liegt. Keine neuen
-Branches. Commit und Push nach jedem Paket. Pull Requests nur, wenn der Mensch es sagt.
+Du arbeitest in diesem Repository auf dem Branch `dev`. Commit und Push nach jedem
+Paket. Pull Requests nach `main` nur, wenn der Mensch es sagt.
 
-**Runde 1 und 2 sind abgeschlossen.** Die Recherche reicht für den Bau. Ab jetzt wird
-**nicht mehr recherchiert**, außer ein Paket unten sagt es ausdrücklich. Grundlage ist
-vor allem `docs/comparison/recommendations.md` (die Startwerte in §18, die Playtest-Liste
-in §19) und `docs/research/tech-options.md`.
+**Neu und verbindlich: `docs/design/ENTSCHEIDUNGEN.md`.** Die Menschen haben die Fragen
+beantwortet. Lies die Datei **vor** allem anderen. Wo `gdd.md`, `recommendations.md` oder
+ältere Dateien etwas anderes sagen, gilt ENTSCHEIDUNGEN.md.
 
-Lies diese Datei einmal ganz. Danach liest jede Sitzung **zuerst `docs/STATUS.md`** und
-macht beim „Nächsten Schritt" weiter.
+Danach liest jede Sitzung **zuerst `docs/STATUS.md`** und macht beim „Nächsten Schritt"
+weiter.
 
 ---
 
 ## 1. Ziel dieser Runde
 
-1. **Die Zahlen beweisen.** Alle Werte in `recommendations.md` sind von Hand gerechnet
-   (`DESIGN`). Die Datei sagt selbst, dass zentrale Annahmen (z. B. „0,025 DPS je Münze")
-   um Faktor 1,5–3 danebenliegen können. Ein Simulator spielt die Stages tausendfach
-   durch und kalibriert die Konstanten.
-2. **Der Simulator ist der spätere Spielkern.** Er wird so gebaut, dass das echte Spiel
-   ihn 1:1 übernimmt (headless, deterministisch, datengetrieben). Das ist kein
-   Wegwerf-Skript.
-3. **Einen Game-Design-Entwurf vorlegen**, in dem die **Entscheidungen offen markiert**
-   sind. Was das Spiel einzigartig macht, entscheiden die Menschen, nicht du.
+Runde 3 hat gezeigt, dass der Simulator funktioniert. Er hat echte Probleme gefunden:
+eine dominante Strategie (Titan + Lancer + Frost), eine Fallen-Unit (Striker), unbrauchbare
+Rollen (AoE-Build 0 %, Frost/Banner/Lancer kaum gekauft), Schwierigkeitsstufen, die nur
+3–7 % HP auseinanderliegen, und kaputte Koop-Skalierung (Upgrade-Bot 100 % auf
+Nightmare 4P).
 
-**Nicht in dieser Runde:** kein Renderer, kein Client, kein Server, keine Grafik, keine
-Sounds, kein Gacha-Backend.
-
----
-
-## 2. Agenten und Token-Budget — gilt weiter
-
-- Subagenten **immer mit `model: "sonnet"`**, nie Opus. Rein Mechanisches (Tabellen
-  füllen, Tests schreiben nach Vorgabe) darf `model: "haiku"` sein.
-- Höchstens **4 Agenten gleichzeitig**. Jeder Agent bekommt einen kurzen, vollständigen
-  Auftrag (Paket, Zieldateien, Schnittstellen, Abnahmekriterien) statt dieser ganzen
-  Datei.
-- Agenten schreiben in Dateien. Rückmeldung an dich: höchstens 10 Zeilen.
-- Gut parallelisierbar: P2 (Simulator) und P4 (GDD-Entwurf) laufen unabhängig
-  voneinander. Innerhalb von P2 erst den Kern (P2a) fertig machen, dann parallel
-  Bots (P2b) und Reports (P2c).
+Diese Runde:
+1. **repariert die Balance** auf Unit-Ebene,
+2. baut die **beschlossenen Spielregeln** in den Simulator (Leben-System, Schwierigkeit
+   über Regeln, Boss-Kits, Wellenvorschau/Risikokarten),
+3. macht die Bots **menschlicher** (Fehlermodell), damit Siegquoten etwas über Menschen
+   aussagen,
+4. legt Architektur, Konto-Vertrag, Mock-Zahlung, Assets und Namen für M1 fest,
+5. startet optional das Client-Gerüst.
 
 ---
 
-## 3. Technik-Vorgaben für den Simulator
+## 2. Agenten und Token-Budget
 
-Nach `docs/research/tech-options.md` §4 und §7:
+- Subagenten **immer `model: "sonnet"`**, nie Opus. Rein Mechanisches darf `"haiku"` sein.
+- Höchstens **4 Agenten gleichzeitig**, kurzer vollständiger Auftrag je Agent, Agenten
+  schreiben in Dateien, Rückmeldung höchstens 10 Zeilen.
+- **Achtung, gemeinsamer Engpass:** P1–P6 ändern alle `sim/`. Nicht mehrere Agenten
+  gleichzeitig an denselben Dateien. Reihenfolge und Parallelität stehen in Abschnitt 4.
+  P7–P9 (Doku/Recherche) laufen gefahrlos parallel zum Simulator.
+- Jede Änderung an `sim/data/` mit alt → neu → Grund in `docs/balancing/kalibrierung.md`
+  (neuer Abschnitt „Runde 4"). Alle Tests grün vor jedem Commit, außer bei einem klar
+  markierten `wip`.
 
-- **TypeScript**, Node 22, Paket `sim/` im Repo-Root mit eigener `package.json`.
-  Tests mit **vitest**. Keine Browser-Abhängigkeiten, keine Render-Library.
-- **Fester Tick** (z. B. 20 Ticks/s). Alles, was das Ergebnis bestimmt, als
-  **Integer/Festkomma**: Positionen entlang des Pfads, HP, Schaden, Cooldowns in Ticks,
-  Geld. Kein `Math.random()`, sondern ein **eigener seeded PRNG**. Iteration in fester
-  Reihenfolge (aufsteigende Entity-IDs), keine Abhängigkeit von `Map`/`Set`-Reihenfolge.
-- **Determinismus-Test:** gleicher Seed und gleiche Eingaben ergeben nach 20 Waves einen
-  bit-gleichen Zustands-Hash. Das ist ein Pflichttest.
-- **Datengetrieben:** Units, Gegner, Archetypen, Modifier, Stages/Waves, Ökonomie-
-  Konstanten, Schwierigkeiten liegen als JSON unter `sim/data/` und werden validiert
-  (z. B. zod). Startwerte aus `recommendations.md` §18 übernehmen, jede Zahl mit
-  Kommentar bzw. Feld `ref`, das auf den Abschnitt zeigt.
-- **Pfad:** Waypoint-Polylinie, Gegnerfortschritt als skalare Distanz (Tiles).
-  Platzierungsplätze als Kandidatenliste neben dem Pfad (Raster), Abstand zum Pfad und
-  Abdeckung je Platz werden einmal vorberechnet.
-- **Spielregeln** wie in `recommendations.md`: Targeting-Modi (§9), Schadensformel und
-  Rüstung (§10), Buff-Caps (§11), Farm (§12), Leaks und Base-HP (§2), Einkommen (§3),
-  HP-Kurve und Archetypen (§4), Waves (§5), Kosten (§6), Caps (§7), Verkauf (§8),
-  Koop-Geld (§16). Wo die Datei etwas offenlässt: die einfachste sinnvolle Regel nehmen,
-  im Code als `// DESIGN-OFFEN` markieren und in `docs/balancing/offene-regeln.md`
-  eintragen.
+---
+
+## 3. Abnahmeziele (gelten für P1–P6 zusammen)
+
+Gemessen mit Bots **mit** Fehlermodell (P6), außer anders angegeben:
+
+| Ziel | Wert |
+|---|---|
+| Keine dominante Kombi | kein Bot bzw. keine Unit-Kombi ≥ 95 % in allen Zellen gleichzeitig (3 Stufen × 1P/4P) |
+| Keine Fallen-Unit | Leave-one-out: Verbot **einer** Unit hebt die Siegquote des besten Bots um höchstens +5 Punkte |
+| Jede Rolle hat einen Grund | jede Unit wird von mindestens einem Bot in ≥ 30 % der Runs gekauft; Schaden je Münze aller DPS-Units liegt innerhalb Faktor 1,6 zueinander (Support/Farm ausgenommen) |
+| AoE spielbar | AoE-orientierter Bot ≥ 50 % auf Normal solo |
+| Stufen klar getrennt | Siegquote bester Bot, solo: Normal 85–95 %, Hard 45–65 %, Nightmare 15–35 %, **und** die Stufen unterscheiden sich durch Regeln (P3), nicht nur durch HP |
+| Breitere Kennlinie | Fenster 90 % → 10 % Siegquote ≥ 25 Prozentpunkte HP-Faktor (vorher ~14) |
+| Koop fair | je Stufe Siegquote 1P/2P/4P innerhalb ±10 Punkte, für **jeden** Bot (auch Upgrade) |
+| Stage-Dauer | Story Normal 13–17 min |
+
+Was davon nicht erreichbar ist: ehrlich begründen. Nicht durch Datenbiegen erzwingen.
 
 ---
 
 ## 4. Arbeitspakete
 
-Jedes Paket endet mit grünen Tests, Commit, Push und einem Eintrag in `docs/STATUS.md`.
-
 ### P0 — Status (Hauptsitzung)
-- `run.md` von Runde 2 → `docs/archiv/run-runde2.md` (Runde 1 ggf. dorthin mitnehmen).
-  Diese Datei wird `run.md`.
-- `docs/STATUS.md`: Runde 3 mit den Paketen hier anlegen.
+- `run.md` Runde 3 → `docs/archiv/run-runde3.md`. Diese Datei wird `run.md`.
+- `docs/design/ENTSCHEIDUNGEN.md` liegt bei. In `gdd.md` jede `ENTSCHEIDUNG OFFEN` auf
+  den beschlossenen Stand bringen und auf ENTSCHEIDUNGEN.md verweisen. Verworfenes
+  (K3 Weichen, Mobile) als „verworfen" markieren statt löschen.
+- `docs/STATUS.md` für Runde 4 anlegen.
 
-### P2a — Simulationskern (ein Sonnet-Agent, zuerst)
-- Tick-Loop, PRNG, Entity-Verwaltung, Pfadbewegung, Spawner (Spawn-Gruppen aus §5),
-  Targeting, Angriffe inkl. AoE-Formen, Statuseffekte (mindestens Slow, Stun mit
-  CC-Sperre, Burn/Bleed), Schild-Stacks, Regen, Rüstung, Leaks, Ökonomie, Upgrades,
-  Verkauf.
-- **Befehls-Schnittstelle**, so wie sie später Spieler und Server nutzen:
-  `place(unitId, slot)`, `upgrade(entityId)`, `sell(entityId)`, `setTargeting(entityId, mode)`,
-  `useAbility(entityId)`, `skipWave()`. Der Simulator kennt nur Befehle, keine UI.
-- Tests: Determinismus, Einkommen der Beispiel-Stage bei „keine Units" (nur Wave-Bonus),
-  Schadensformel-Einzelfälle aus §10, Leak-Rechnung aus §2.
+### P1 — Unit-Rebalance (ein Agent, zuerst)
+- Titan: Schaden je Münze in den Korridor holen. Er bleibt Boss-Killer, aber nicht mehr
+  Universalantwort.
+- Striker: von der Falle zur sinnvollen Early-Unit machen (billig, früh effizient, fällt
+  später zurück).
+- AoE (Blaster/Lancer/Frost): so anpassen, dass ein AoE-Kern mit 1–2 Einzelziel-Units
+  trägt.
+- Frost, Banner, Lancer bekommen eine klare Nische, die ein Bot auch kauft.
+- Werkzeuge: die vorhandenen `sim/scripts/sanity/*` (q1, q1b, q2) nach jeder Änderung.
+- Ergebnis: Tabelle vorher/nachher je Unit (Kosten, DPS, Schaden je Münze, Kaufquote,
+  Leave-one-out).
 
-### P2b — Bot-Strategien (Sonnet, nach P2a)
-Mindestens fünf Bots, die über die Befehls-Schnittstelle spielen:
-1. **Greedy-DPS:** kauft immer das Beste pro Münze (Platzierung oder Upgrade)
-2. **Farm-first:** Farm in Wave 1, dann Greedy
-3. **AoE-lastig:** bevorzugt AoE-Units
-4. **Upgrade-first:** wenige Units, voll ausgebaut
-5. **Breit:** viele Units auf niedriger Stufe
-6. optional **Koop-Mix:** 2–4 Bots gemeinsam mit dem Koop-Geldmodell
+### P2 — Leben-System und Fail-State (nach P1, ersetzt Base-HP)
+Nach ENTSCHEIDUNGEN.md:
+- **Boss-Leak = sofort verloren.** Elite: vorschlagen und begründen (sofort verloren
+  oder viele Leben).
+- Normale Gegner kosten Leben nach Typ und **Rest-HP-Anteil** (z. B. `ceil(Basis ×
+  RestHP/MaxHP)`, mindestens 1). Ein fast toter Gegner kostet wenig.
+- Startleben, Ausbau über Meta (Datenfeld, Meta kommt mit M3), optionale Regeneration
+  pro Welle. Zahlen über den Simulator festlegen.
+- **Kurz-Recherche erlaubt:** Wie funktionieren Leben in Anime Vanguards genau
+  (`docs/games/anime-vanguards/` zuerst, Netz nur ergänzend, Stopp-Regel 3 Versuche)?
+- Tests anpassen bzw. neu schreiben.
 
-Platzierung: Bot wählt den Slot mit der größten Pfadabdeckung für die Range der Unit.
-Etwas Zufall (seeded), damit Monte-Carlo-Läufe streuen.
+### P3 — Schwierigkeit über Regeln (nach P2)
+- `difficulties.json` erweitern: je Stufe Modifier-Dichte, Elemente an/aus,
+  Boss-Fähigkeiten-Set, Wellen-Varianten, Belohnungsfaktor. HP-Faktor nur noch klein.
+- Modus-Idee aus dem Pitch abbilden: **entspannt** (Story Normal) gegen **fordernd**
+  (Hard, Nightmare, später Challenges).
+- Abnahme: Ziele „Stufen klar getrennt" und „Breitere Kennlinie" aus Abschnitt 3.
 
-### P2c — Reports und Kalibrierung (Sonnet, nach P2a, parallel zu P2b)
-- CLI: `npm run sim -- --stage standard20 --bot greedy --runs 500 --difficulty normal --players 1`
-- Ausgabe nach `docs/balancing/`:
-  - Siegquote je Bot × Schwierigkeit × Spielerzahl
-  - **Verlustrate je Wave**, Geldkurve, Pool/Kapazität je Wave, Leak-Quellen
-  - Farm-Anteil und Payback
-  - Anteil Upgrades gegen Neuplatzierungen
-  - Infinite: Median-Endwave und Streuung
-- Als Markdown-Tabellen plus CSV. Diagramme optional als SVG.
-- **Kalibrieren gegen die Ziele aus §19:** Verlustrate im späten Abschnitt 10–20 %,
-  Infinite-Median-Endwave 30–40, Koop-Siegquote je Spielerzahl auf ±10 Prozentpunkte,
-  Stage-Dauer ca. 15 min, Farm-Anteil 25–35 % und so weiter.
-  Konstanten in `sim/data/` anpassen, **jede Änderung** mit Alt-, Neu-Wert und Grund in
-  `docs/balancing/kalibrierung.md`.
-- Ergebnis: `docs/balancing/report.md` mit Stand vorher/nachher, den kalibrierten
-  Startwerten und dem, was der Simulator **nicht** beantworten kann (Spielgefühl,
-  Lesbarkeit, menschliche Fehler). Die Tabelle §18 in `recommendations.md` bekommt
-  einen Hinweis auf die kalibrierten Werte. Den Text dort nicht umschreiben.
+### P4 — Boss-Kits und Wellenvorschau (parallel zu P3 möglich, andere Dateien)
+- **K5:** Boss-Phasen-System in der Sim (HP-Schwellen → Phase), Telegraph-Ereignisse
+  (Vorwarnzeit in Ticks), Schwachstellen-Fenster (erhöhter Schaden oder CC möglich),
+  Schildphasen, Beschwörungen. **Zwei Bosse** für die MVP-Stage (Wave 10 und Wave 20),
+  der Final-Boss zitiert die Mechaniken der Stage. Bots müssen Fenster nutzen können
+  (Fähigkeiten im Fenster zünden).
+- **K1:** Wellenvorschau als Daten-API (`previewWave(n)`: Gegnertypen, Anzahl,
+  Modifier). **Risikokarten:** vor einer Welle wählbar, z. B. „+30 % HP, +50 % Bounty".
+  Katalog mit 6–10 Karten, Effekt in der Sim, Bot-Strategie „nimmt Karten, wenn stark".
+- Tests: Phasenwechsel deterministisch, Telegraph-Timing, Kartenwirkung.
 
-### P3 — Content-Sanity (Sonnet, nach P2c)
-Prüfe mit dem Simulator auch die Grenzfälle:
-- Gibt es eine dominante Strategie, die alles schlägt?
-- Gibt es eine nutzlose Unit-Rolle?
-- Ist Dauer-Stun auf Bosse möglich?
-- Macht ein einzelner Trait oder Buff-Stack das Spiel kaputt?
-- Bricht Infinite bei 60 Units/80 Gegnern die Performance (Ticks/s im Node-Lauf messen)?
-Befunde in `docs/balancing/report.md`, Abschnitt „Risiken".
+### P5 — Koop-Skalierung (nach P3)
+Upgrade-Bot 4P darf nicht mehr alles gewinnen. Hebel prüfen und messen: getrennte
+HP-Skalierung je Spielerzahl, Slot-Zahl je Spieler, Upgrade-Kosten im Koop, gemeinsamer
+gegen getrennten Cap. Den einfachsten Hebel nehmen, der „Koop fair" erreicht.
 
-### P4 — Game-Design-Entwurf (ein Sonnet-Agent, parallel zu P2)
-`docs/design/gdd.md`, kompakt (Ziel höchstens rund 500 Zeilen). Inhalt:
-1. **Elevator Pitch** in drei Sätzen. Mehrere Varianten zur Auswahl.
-2. **Design-Säulen** (3–4), jeweils mit „das heißt konkret …"
-3. **Der Kniff:** 3–5 Kandidaten, was unser Spiel von AA/ASTD/AV/ALS/UTDZ/AE/BTD6
-   unterscheidet. Jeweils mit Vorbild, Aufwand, Risiko, Bezug zu den
-   `design-lessons.md`. **Nicht entscheiden**, sondern als `ENTSCHEIDUNG OFFEN` markieren.
-4. **Core Loop** und **Meta Loop** (Match → Belohnung → Gacha/Upgrade → nächste Stage)
-5. **MVP-Umfang (Vertical Slice):** eine Map, 6–8 Units, 20 Waves, solo, ohne Gacha.
-   Was genau drin ist und was ausdrücklich nicht.
-6. **Unit-Entwürfe für den MVP:** 6–8 **eigene** Figuren (keine fremde IP, keine
-   anspielenden Namen), je Rolle, Fähigkeits-Idee, wie sie sich anfühlen soll, und
-   welcher Archetyp-Konter sie wichtig macht. Werte aus `sim/data/`.
-7. **Map-Konzepte:** 3 Stück, je Pfadform, Platzierungsflächen, welche Archetypen sie
-   testen
-8. **Onboarding:** die ersten 10 Minuten, Wave für Wave
-9. **Game Feel / Juice:** Liste konkreter Feedback-Effekte (Treffer, Kill, Geld, Level-up,
-   Boss-Auftritt, Leak), mit Prioritäten für den MVP
-10. **Art-Direction-Optionen:** 2–3 Stilrichtungen, die mit freien Assets oder wenig
-    eigenem Aufwand machbar sind (Bezug `docs/research/assets-licensing.md`).
-    `ENTSCHEIDUNG OFFEN`.
-11. **Roadmap:** M1 Vertical Slice → M2 Koop → M3 Meta/Gacha → M4 Inhalte. Je Meilenstein
-    eine Abnahme-Checkliste.
+### P6 — Fehlermodell der Bots und Endkalibrierung (zuletzt im Sim-Strang)
+- Bot-Parameter: Reaktionsverzögerung bei Käufen, Wahrscheinlichkeit für einen
+  schlechteren Slot, vergessene Upgrades, verspätete Fähigkeiten, kein Wellenwissen.
+  Drei Profile: **casual**, **normal**, **expert**.
+- Alle Messungen aus Abschnitt 3 mit den Profilen wiederholen. Ergebnis in
+  `docs/balancing/report.md` (neuer Abschnitt „Runde 4") mit vorher/nachher.
 
-Dazu `docs/design/FRAGEN.md`: **alle offenen Entscheidungen** als nummerierte Liste.
-Jede Frage mit Optionen, Empfehlung und Konsequenz („Wenn A, dann …"). Diese Liste ist
-für die Menschen. Kurz und klar, höchstens eine halbe Seite pro Frage.
+### P7 — Architektur für M1 (parallel zum Sim-Strang, eigener Agent)
+`docs/architecture.md`:
+- **Repo-Aufbau:** `sim/` (vorhanden), `client/` (PixiJS v8, Vite, TypeScript), später
+  `server/` (Node, autoritativ, für M2). Gemeinsame Typen und Daten aus `sim/`.
+- **Desktop-Sperre:** Touch-Geräte bzw. kleine Viewports bekommen einen Hinweis-Bildschirm
+  („Desktop only"), kein Spiel.
+- **Englisch:** alle UI-Texte zentral in einer String-Datei, damit später übersetzbar.
+- **Konto-Vertrag mit Kek-Game.** Das TD speichert keine Passwörter:
+  - Kek-Game öffnet `https://TD-DOMAIN/auth/launch?token=JWT` in einem neuen Tab.
+  - Das Token ist **asymmetrisch signiert (EdDSA/Ed25519)**, kurzlebig (≤ 60 s),
+    einmal verwendbar (`jti`). Claims: `sub` (Kek-Game-User-ID), `name`
+    (Anzeigename), `iat`, `exp`, `aud` = TD-Domain, `iss` = Kek-Game.
+  - Der TD-Server prüft das Token mit dem **öffentlichen** Schlüssel von Kek-Game, legt
+    ein TD-Profil zur `sub` an bzw. lädt es und setzt eine eigene Session
+    (HttpOnly-Cookie).
+  - Für die Entwicklung: ein Dev-Skript, das ein Testschlüsselpaar erzeugt und Tokens
+    ausstellt, und ein Dev-Login ohne Kek-Game. Beides **nur** im Dev-Modus.
+  - Kopplung von Coins und Leaderboards: **nicht bauen**, aber das Profil-Schema so
+    halten, dass es später geht (Abschnitt „Erweiterungspunkte").
+  - Die Kek-Game-Seite (Button, Token ausstellen) wird **nicht** in diesem Repo gebaut.
+    Beschreibe nur genau, was sie tun muss.
+- **Zahlung (Mock):** `PaymentProvider`-Schnittstelle (`createCheckout`, `confirm`,
+  `refund`, Webhook-Ereignis) plus `MockPaymentProvider`, der sofort bestätigt.
+  Premium-Währung und Kauf-Flow sind komplett durchspielbar. Gacha-Seite zeigt **Raten und
+  Pity-Zähler** sichtbar (Pflicht laut `legal-gacha.md`, auch ohne Echtgeld sinnvoll).
+  Alle Zahlungs- und Gacha-Mutationen serverseitig, transaktional, mit
+  Idempotenzschlüssel.
+- **Betrieb:** Das Spiel läuft später als Container auf `edge` hinter einem
+  Cloudflare-Tunnel. Liefere ein `Dockerfile` bzw. `docker-compose.yml`-**Entwurf** mit
+  Port auf `127.0.0.1`, Konfiguration nur über Umgebungsvariablen, keine Secrets im Repo.
+  Deployment, Domain und Tunnel machen die Menschen.
 
-### P5 — Fähigkeiten-Musterkatalog (Sonnet, optional, Recherche erlaubt)
-`docs/design/ability-patterns.md`: aus den sieben recherchierten Spielen (vorhandene
-Doku zuerst, Netz nur ergänzend) die Fähigkeits-Muster, die Spieler am meisten mögen
-(z. B. Zeitstopp, Ketten-Blitz, Beschwörung, Buff-Aura, Geldfarm mit Twist,
-Verwandlung), je Muster Mechanik, typische Werte, Balance-Risiko und ob der Simulator
-es schon kann. Ziel: Material für eigene Units.
+### P8 — Assets und Styleguide (parallel, eigener Agent, Recherche erlaubt)
+- `docs/design/art-styleguide.md` für **Pixel-Anime**: Sprite-Größe im Spiel (z. B.
+  32×32 oder 48×48), Animationsframes je Aktion, Palette, Portrait-Format im Menü,
+  Lesbarkeit von Gegner-Archetypen auf einen Blick, Boss-Telegraphs als Effekt.
+- `docs/design/asset-sources.md`: **konkrete** Packs, die zum Stil passen (Tiles, Effekte,
+  UI, Gegner, Sounds, Musik), je Link, Lizenz, kommerziell ja/nein, Namensnennung
+  ja/nein, Preis, Eignung.
+  - **Nur CC0, CC-BY oder Kauflizenz mit kommerzieller Nutzung.**
+  - Keine NC/ND/SA-Lizenzen, keine Rips aus anderen Spielen, keine Fan-Art, keine
+    ungeprüften KI-Assets.
+- Was fehlt (vor allem die 8 Figuren), als Zeichenliste für die Menschen: je Figur Größe,
+  Frames und Posen.
+- CC0/CC-BY-Platzhalter dürfen ins Repo (`client/assets/`), **mit** Eintrag in
+  `client/assets/ATTRIBUTIONS.md`.
 
-### P6 — Abschluss
+### P9 — Name (parallel, Recherche erlaubt, kurz)
+- 6–8 englische Namensvorschläge, die zu „Grenzgilde im Nebelriss" passen. Arbeitsname
+  „Riftwatch" mitprüfen.
+- Je Name ein Konflikt-Check: Steam, itch.io, Roblox, App-Stores, Google-Treffer,
+  EUIPO/USPTO-Markensuche (soweit ohne Login abrufbar), `.com`/`.gg`-Domain belegt?
+- `docs/design/name.md`: Tabelle mit Ergebnis und Empfehlung. **Entscheiden die Menschen.**
+
+### P10 — Client-Gerüst (optional, erst wenn P1–P6 abgenommen sind)
+- `client/` mit Vite + PixiJS v8 + TypeScript.
+- Der Client ruft **nur** die Befehls-Schnittstelle von `sim/` auf und rendert dessen
+  Zustand. Keine Spielregeln im Client.
+- Terrassenweg-Map mit einfachen Formen bzw. CC0-Platzhaltern, Platzieren, Upgraden,
+  Verkaufen, Wellenstart, Wellenvorschau, Lebensanzeige, Geschwindigkeit 1×/2×/3×.
+  Desktop-Sperre aktiv.
+- Keine Grafik-Politur, keine Menüs außer dem Nötigsten. Ziel: Die Stage ist von Hand
+  spielbar.
+
+### P11 — Abschluss
 `docs/STATUS.md` aktualisieren. Kurzbericht:
 
 ```text
-STATUS — Runde 3
+STATUS — Runde 4
 Pakete erledigt / offen:
-Simulator: Tests (Anzahl, grün?), Determinismus-Test grün?, Ticks/s:
-Kalibrierung: wichtigste geänderte Konstanten (alt → neu):
-Siegquoten Normal/Hard/Nightmare (Greedy-Bot, solo):
-Gefundene Balance-Risiken:
-GDD: offene Entscheidungen (Anzahl), siehe FRAGEN.md
-Agenten gestartet (Anzahl, Modell):
+Abnahmeziele (Abschnitt 3): je Ziel erreicht / verfehlt (Wert):
+Wichtigste Balance-Änderungen (alt → neu):
+Leben-System: Startwerte, Boss-/Elite-Regel:
+Schwierigkeit: was unterscheidet Normal/Hard/Nightmare jetzt:
+Architektur/Konto-Vertrag/Mock-Zahlung: fertig?
+Assets: Anzahl geprüfter Packs, Lücken für Eigenzeichnung:
+Namensvorschläge: Top 3:
+Client-Gerüst: spielbar ja/nein:
+Agenten (Anzahl, Modell):
 Commits:
 Nächster Schritt:
 ```
@@ -188,9 +215,8 @@ Nächster Schritt:
 ## 5. Ende einer Sitzung
 
 Bevor der Kontext knapp wird oder die Sitzung endet: `docs/STATUS.md` aktualisieren
-(erledigt, angefangen, laufende Agenten, nächster konkreter Schritt), Tests laufen
-lassen, committen und pushen. Code, der nicht durch die Tests geht, nur als klar
-markierter Zwischenstand committen.
+(erledigt, angefangen, laufende Agenten, nächster konkreter Schritt), Tests laufen lassen,
+committen und pushen.
 
-> Ziel dieser Runde: Wir wissen, **dass die Zahlen tragen**, und wir haben einen
-> Design-Entwurf, über den die Menschen entscheiden können. Danach wird gebaut.
+> Ziel dieser Runde: ein Spielregelwerk, das **nachweislich fair und abwechslungsreich**
+> ist, und alles, was M1 braucht, um ohne weitere Grundsatzfragen gebaut zu werden.

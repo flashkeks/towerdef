@@ -1,68 +1,145 @@
-# Offene Entscheidungen
+# Entscheidungen — zum Ausfüllen
 
-Für Menschen: bitte je Frage A/B/C wählen oder eine eigene Antwort geben. Quelle der Fragen: [gdd.md](gdd.md). Alle Empfehlungen sind `DESIGN`-Vorschläge. Dringlichkeit: **vor M1** = blockiert den Vertical Slice, **vor M2/M3** = kann warten.
+**So geht's:** Bei der gewählten Option `[ ]` zu `[x]` machen. Unter **Notiz** darf alles
+stehen, auch „egal" oder eine eigene Idee. Was leer bleibt, entscheidet die KI nach ihrer
+Empfehlung (⭐).
 
-| # | Thema | Dringlichkeit | GDD |
-|---|---|---|---|
-| 1 | Pitch-Variante | vor M1 (kostet nichts) | §1 |
-| 2 | Der Kniff | vor M1 (Auswahl), Umsetzung später | §3 |
-| 3 | Setting, Ton, Projektname | vor M1 | §6 |
-| 4 | Scope-Fallback der 8 Units | vor M1 | §5 |
-| 5 | Welche Map im MVP | vor M1 | §7 |
-| 6 | Flyer-Route | vor M1 | §7 |
-| 7 | Render-Engine | vor M1 | §11 M1 |
-| 8 | Art-Direction | vor M1 (Platzhalter reichen anfangs) | §10 |
-| 9 | Echtgeld | vor M3 | §11 M3 |
-| 10 | Reihenfolge Koop / Meta | vor M2 | §11 |
+Ausgefüllt von: Max (Flashkeks) + Plori  Datum: 06.10.2026
 
 ---
 
-## 1. Welcher Pitch ist die Leitidee?
-- **Optionen:** A „Das Team, das du sammelst“ (Sammeln und Figuren). B „Vier Freunde, eine Linie“ (Koop). C „Jede Münze ist eine Wette“ (Entscheidungstiefe). D „Anime-Gefühl, ehrliche Regeln“ (Wohlfühl plus Fairness).
-- **Empfehlung:** C als Kern, A als Schlagzeile (Sammeln zieht Spieler, Entscheiden hält sie). Grund: C passt zur Säule S1 und ist ohne Koop und Gacha schon im MVP erlebbar; B hängt an M2.
-- **Konsequenz:** Wenn C: Ergebnisbildschirm mit Ursachenzeile und Wellenvorschau werden Muss-Features. Wenn B: Koop rückt in der Priorität nach vorn (siehe #10). Wenn D: Juice und Figuren-Texte bekommen mehr Budget als Balance-Tiefe.
+## Teil A — Schnell abnicken
 
-## 2. Welcher Kniff soll uns von den sieben Vorbildern unterscheiden?
-- **Optionen:** A K1 Vorschau und Risikokarte (Vorbilder AV/AE/BTD6; Aufwand M; Risiko niedrig–mittel). B K2 Koop-Kombos (M–L; mittel–hoch). C K3 Weichen im Pfad (L; hoch). D K4 Bindung statt Würfeln (M; mittel). E K5 Bosse als Rätsel mit Fenstern (M; niedrig). Details und Quellen: GDD §3.
-- **Empfehlung:** E plus A im Kleinen für den MVP (2 Boss-Kits, Wellenvorschau), danach D für M3. Grund: günstig, passt zu S2 und S4, deckt sich mit den Lehren aus `lessons-AV` 3, 6; K3 ist das einzige echte Alleinstellungsmerkmal, aber das teuerste und riskanteste, K2 braucht Koop (M2).
-- **Konsequenz:** Wenn E+A: 2 Boss-Phasen und Vorschau-UI kommen in M1. Wenn D: der Trait-Zufall aus `rec §14` entfällt, Content-Pflege (Text, Bilder je Unit) kommt dazu. Wenn C: Sim und Map-Format müssen Verzweigungen unterstützen, M1 verlängert sich merklich. Wenn B: Kombo-Fenster müssen in der Server-Sim existieren (M2).
+Die Empfehlungen sind solide. Häkchen = passt so.
 
-## 3. Welche Welt, welcher Ton, welcher Name?
-- **Optionen:** A Grenzgilde im Nebelriss (Arbeitsannahme im GDD, Abenteuer/Warmherzig). B Moderne Stadt (Schule, Fantasy-Alltag). C Reine Fantasy-Insel, keine festen Orte, nur Figuren.
-- **Empfehlung:** A, aber mit offenem Namen. Grund: passt zu den acht Figurenentwürfen und erklärt Pfad, Basis und Wellen ohne Text. Projektname und Unit-Namen vor Release auf Namens- und Markenkonflikte prüfen lassen; stabilen Namen früh wählen (`lessons-UTDZ` 8; Risiko e1/e2 in `legal` §6).
-- **Konsequenz:** Wenn A: Gegner heißen „Schatten“-Varianten (Grunt = Schatten-Läufer usw.), Maps tragen Gilden-Orte. Wenn B: alle Figurennamen und Outfits werden neu entworfen. Ein späterer Namenswechsel zersplittert Doku und Wiedererkennung.
+- [x] **Map im MVP:** „Terrassenweg" (S-Kurve, eine Spur) ⭐
+- [x] **Flyer:** folgen dem normalen Pfad, nur Hill/Hybrid-Units treffen sie ⭐
+- [x] **Engine:** PixiJS (Rückfall: Phaser) ⭐
+- [x] **Reihenfolge:** erst Solo-Prototyp → dann Koop → dann Sammeln/Gacha ⭐
 
-## 4. Welche Units fallen zuerst, wenn der Scope zu groß wird?
-- **Optionen:** A Mythic `titan` (aufwendigste Fähigkeit). B Epic `banner` (Aura-Logik und Zielwahl). C Keine streichen, Zeitplan verlängern.
-- **Empfehlung:** C bis M1-Halbzeit; danach `banner` zuerst, weil ohne Koop der Buff-Hebel kaum zur Geltung kommt. `titan` bleibt, weil Boss-Waves 10 und 20 sonst ihre Gegenfigur verlieren (GDD §6). Ohne `banner` bleiben 7 Units, 6 Slots, die Wahl bleibt echt.
-- **Konsequenz:** Wenn `banner` gestrichen: Buff-Caps (`rec §11`) werden erst in M2 getestet; Onboarding Wave 9 entfällt. Wenn `titan` gestrichen: Boss-Kits (K5) tragen den Schwierigkeitsgipfel allein.
+Notiz: Naja das sind ja weniger fragen mehr einfach sachen die wir so machen müssen right?
 
-## 5. Auf welcher Map startet der MVP?
-- **Optionen:** A „Terrassenweg“ (S-Kurve, 2–3 Hill-Felder, testet fast alles). B „Die Schleife“ (Zentrum, Splitter/Boss-Kontrolle). C „Zwillingsflüsse“ (zwei Einstiege; Koop-Map).
-- **Empfehlung:** A. Grund: einfachster Pfad, das Onboarding (GDD §8) passt Wave für Wave dazu und das Kapazitätsmodell in `rec §4` rechnet mit einem einzelnen 28-s-Pfad. B und C sind M2/M4.
-- **Konsequenz:** Wenn A: M1 braucht nur ein Map-Format ohne Verzweigung. Wenn C: Format mit mehreren Spawns und Merges nötig; Playtest-Zahlen aus `rec §19` sind dann nicht direkt vergleichbar.
+---
 
-## 6. Folgen Flyer dem Pfad oder fliegen sie Luftlinie?
-- **Optionen:** A Pfadfolge (wie Boden, nur von Hill/Hybrid treffbar). B Luftlinie vom Spawn zur Basis. C Fester eigener Flugpfad je Map.
-- **Empfehlung:** A für den MVP. Grund: deterministisch, billig (`tech` §3), keine Zusatzdaten in der Sim; die Rolle „Flyer braucht Hill“ (`rec §4`, §7) bleibt erhalten. B/C erst mit M4, wenn Maps mit Luftachsen Spaß bringen.
-- **Konsequenz:** Wenn A: Flyer-Waves (W8, 11, 14, 16, 18) sind auf den Pfadabschnitten testbar wie Boden. Wenn B oder C: Reichweite-Überlappung und Leak-Zeit ändern sich, Kapazitätsmodell (`rec §4`) und Hill-Anzahl müssen neu kalibriert werden.
+## Teil B — Die großen Entscheidungen
 
-## 7. Welche Render-Engine?
-- **Optionen:** A PixiJS v8 (reiner Renderer, MIT; volle Kontrolle, mehr Eigenbau). B Phaser (MIT; Szenen, Audio, Input fertig). C Three.js (nur für echtes 2.5D/3D).
-- **Empfehlung:** A, mit strikter Trennung Sim/Render (`tech` §1). Grund: Sim ist ohnehin separat (`sim/`) und läuft später auf dem Server (`tech` §5); B ist die Rückfalloption, wenn Audio und Szenen zu viel Eigenbau fressen.
-- **Konsequenz:** Wenn A: Audio, UI-Schicht und Eingabe müssen selbst oder über kleine Libraries gelöst werden. Wenn B: schnellerer Start, aber engere Kopplung; Sim-Trennung muss diszipliniert bleiben. Wenn C: nur zusammen mit Art-Option C (#8).
+### B1 · Worum geht's im Kern? (Pitch)
 
-## 8. Welche Art-Direction?
-- **Optionen:** A Flat-Chibi Cutout (2D, Teile per Code animiert). B Pixel-Anime (kleine Sprites, große Portraits). C Toon-3D mit Anime-Portraits (Three.js).
-- **Empfehlung:** B als Weg in den MVP (Platzhalter aus CC0, Portraits eigen), mit Option auf A für Release. Grund: geringster Aufwand, Anime-Gefühl sitzt in den Portraits, die der Gacha-Kern ohnehin braucht (`assets` §3 Punkt 2). C nur bei klarer 3D-Entscheidung.
-- **Konsequenz:** Wenn B: 8 Portraits plus Platzhalter-Sprites für M1; `assets/ATTRIBUTIONS` ab Tag 1. Wenn A: Teile-Sätze und Animationsregeln nötig. Wenn C: Engine #7 muss Three.js sein, Performance bei 80 Gegnern prüfen. KI-Bilder nicht als Hauptquelle für Figuren (`assets` §2). Eigene Silhouetten ohne Anklang an bestehende Serien (Risiko e2, `legal` §6).
+- [x] **A — „Das Team, das du sammelst"**: Figuren sammeln steht im Mittelpunkt
+- [~] **B — „Vier Freunde, eine Linie"**: Koop steht im Mittelpunkt
+- [x] **C — „Jede Münze ist eine Wette"**: kluge Entscheidungen im Match stehen im Mittelpunkt
+- [~] **D — „Anime-Gefühl, ehrliche Regeln"**: Wohlfühlen, faire Mechanik, kein Abzocke-Gacha
+- [~] ⭐ **C als Kern, A als Aushängeschild**
 
-## 9. Echtgeld ja oder nein?
-- **Optionen:** A Nie: Kristalle nur erspielbar (`rec §13`). B Später nur Direktkäufe ohne Zufall (Skins/Einheiten mit Festpreis, Option (c)). C Premiumwährung plus Gacha (Option (b)).
-- **Empfehlung:** A bis nach M3; B nur als spätere, rechtlich geprüfte Option. C ausschließen. Grund: Risiko-Matrix `legal` §6: (a) „niedrig“, (c) „niedrig–mittel“, (b) „hoch“ (CPC-Verfahren, Lootbox-Debatte). Keine Rechtsberatung; vor jedem Echtgeld-Einsatz Fachanwalt.
-- **Konsequenz:** Wenn A: keine Zahlungsabwicklung, kein Altersgate über das Notwendige hinaus, aber Finanzierung offen. Wenn B: Preisangaben, Widerrufsrecht und Minderjährigenschutz (`legal` §6) sind Pflicht. Wenn C: neue Prüfschleife (Raten, Altersangaben, Store-Regeln) vor dem Livegang.
+Notiz: Soll solo auch spielbar sein. Es soll Modis geben die tatsächlich sehr anspruchsvoll sind (C), aber es soll auch enstapnnt Spielbar sein (A). Und es soll natürlich kein Full Abzock Gacha sein, aber eigentlich schon komplett xD. Kommt hier gleich noch mehr info (D).
 
-## 10. Reihenfolge der Meilensteine: Koop vor Meta?
-- **Optionen:** A M1 → M2 Koop → M3 Meta/Gacha → M4 (Entwurf). B M1 → M3 Meta → M2 Koop → M4. C M1 → M4-Inhalte → dann Koop und Meta parallel.
-- **Empfehlung:** A. Grund: Server-Autorität (`tech` §5) ist ohnehin Voraussetzung für Inventar und Gacha (`tech` §6); Koop prüft sie früher unter Last, und `rec §16` verlangt eine Balance-Kalibrierung vor Meta-Faktoren. B nur, wenn das Spiel vor allem als Sammelspiel gesehen wird (Pitch A in #1).
-- **Konsequenz:** Wenn A: Meta-Zufluss (`rec §13`) wird erst nach den Koop-Daten kalibriert. Wenn B: Koop-Balance startet mit Meta-Faktoren im Spiel und braucht eine Option, sie zu deaktivieren. Wenn C: längere Zeit ohne Server; Inventar und Gacha lassen sich nicht echt testen.
+### B2 · Was macht uns anders als AA, ASTD und Co.? (Kniff, mehrere möglich)
+
+- [x] **K1 Wellenvorschau + Risikokarten**: man sieht die nächste Welle und kann für mehr Belohnung freiwillig härter spielen. Aufwand mittel, Risiko klein
+- [x] **K2 Koop-Kombos**: Fähigkeiten verschiedener Spieler verstärken sich gegenseitig. Aufwand mittel bis groß, erst mit Koop
+- [ ] **K3 Weichen im Pfad**: Spieler lenken Gegner auf Spur A oder B. Echtes Alleinstellungsmerkmal, aber Aufwand groß, Risiko hoch
+- [x] **K4 Bindung statt Würfeln**: Figuren wachsen durch Einsätze und wählbare Perks statt Zufalls-Traits. Aufwand mittel, erst mit Meta
+- [x] **K5 Bosse als Rätsel**: Bosse haben Phasen und Schwachstellen-Fenster statt nur viel HP. Aufwand mittel, Risiko klein
+- [x] ⭐ **K5 + K1 im Prototyp, K4 später**
+
+Notiz:
+
+### B3 · Welt, Ton, Name
+
+- [x] **A — Grenzgilde im Nebelriss**: Fantasy-Abenteuer, warmherzig, Gilde hält die Linie gegen Schattenwesen ⭐
+- [ ] **B — Moderne Stadt**: Schule und Fantasy-Alltag
+- [ ] **C — Keine feste Welt**: nur die Figuren zählen
+
+Projektname (Ideen, gern mehrere): Hmm wird ja mit in die Kek-Game welt integriert, aber muss tbh nicht dem einheitlichen namens schema folgen, weil ist ja schon ein sehr umfangreicher eigenes game / Modul. Denk dir was schönes aus c:
+
+Notiz:
+
+### B4 · Grafikstil
+
+- [~] **A — Flat-Chibi**: 2D-Vektor-Optik, Figuren aus Teilen animiert
+- [x] **B — Pixel-Anime**: kleine Sprites im Spiel, große Portraits im Menü ⭐ (am wenigsten Aufwand)
+- [ ] **C — Toon-3D**: 3D-Modelle, Anime-Portraits (dann Three.js statt PixiJS)
+
+Wer macht die Figuren-Bilder?
+- [x] selbst gezeichnet
+- [ ] Auftrag an einen Zeichner
+- [~] erst mal Platzhalter, später entscheiden ⭐
+
+Notiz: Tbh, können wir die nicht irgentwo klauen xD. Also Lowkey. Ansonsten wenn du die selber machst (wie gesagt schau vorher ob du ggf. passende sachen im Internet findest (Licensing und Uhrheberecht ist unbedenklich)).
+
+### B5 · Echtgeld
+
+- [ ] **A — Nie**: alles nur erspielbar ⭐ (bis das Spiel steht)
+- [~] **B — Später nur Direktkäufe ohne Zufall**, z. B. Skins zum Festpreis
+- [x] **C — Premium-Währung plus Gacha**: rechtlich das höchste Risiko (Lootbox-Debatte)
+
+Notiz: Also, erstmal kannst du es so bauen als gäbe es eine Zahlungsmöglichkeit ohne echten Zahlungsdienst dahinter. Dann überlegen wir später genau wie wir das umsetzten.
+
+---
+
+## Teil C — Fehlte in der alten Datei
+
+### C1 · Wo wird gespielt?
+
+- [x] nur Desktop-Browser
+- [ ] Desktop **und** Handy-Browser (Touch-Bedienung, kleinere Maps, mehr Performance-Arbeit)
+- [ ] erst Desktop, Handy später mitdenken ⭐
+
+Notiz: Für Handy locken. Ist sonst unnötige balancing und Perfomance arbeit.
+
+### C2 · Wer baut, wie viel Zeit?
+
+Wer arbeitet daran mit (Namen/Rollen)?
+
+Ungefähre Zeit pro Woche (alle zusammen): 120 Stunden
+
+Wunschtermin für einen spielbaren Prototyp: tbh kein Zeitdruck. Wir bauen bis es sinn ergibt einen Prototyp zu erstellen.
+
+Notiz:
+
+### C3 · Betrieb
+
+Sprache:
+- [ ] Deutsch
+- [x] Englisch
+- [ ] beides, erst Deutsch ⭐
+
+Login:
+- [ ] Gast ohne Konto, Spielstand lokal
+- [x] Konto beim Spiel selbst ⭐
+- [ ] Login über authentik (`auth.flashkeks.com`)
+
+Nachtrag Max (06.10.2026): gemeint ist **dasselbe Konto wie Kek-Game**. Button auf der Kek-Game-Startseite, neuer Tab, Spiel läuft auf eigener Domain komplett eigenständig, nur das Konto ist geteilt. Coins/Leaderboard-Kopplung später.
+
+Hosting:
+- [x] auf `edge` (Netcup, läuft schon, Tunnel vorhanden) ⭐
+- [ ] woanders: ______
+
+Notiz:
+
+### C4 · Wie sollen sich die Schwierigkeitsstufen unterscheiden?
+
+Der Simulator zeigt: Wenn sich die Stufen nur in der Gegner-HP unterscheiden, landen sie fast alle auf demselben Niveau (Hard = +3 % HP).
+
+- [x] **Eigene Regeln je Stufe**: mehr Modifier, Elemente, Boss-Fähigkeiten, andere Wellen ⭐
+- [ ] nur über die Zahlen (HP, Tempo), einfach halten
+
+Was passiert bei einem Fehler?
+- [~] **Weicher Fail-State**: Basis heilt pro Welle etwas, ein einzelner Boss-Leak beendet das Spiel nicht ⭐
+- [~] knallhart: Fehler kosten richtig
+
+Notiz: Also wenn ein Boss durchkommt soll man verloren haben. Aber wenn da jetzt so nen dulli mit 1k hp der noch 100 überig hat durchkommt, dann soll man das überleben. ggf. mit Lifestocks oder upgradbaren leben. ggf. wie in anime Vanguards.
+
+---
+
+## Teil D — Später
+
+**Welche Unit fällt zuerst, wenn der Umfang zu groß wird?** Wird erst nach dem
+Unit-Rebalance in Runde 4 entschieden. Titan ist zu stark, Striker eine Falle.
+Jetzt nichts eintragen.
+
+---
+
+## Sonst noch was?
+
+Wünsche, Vorbilder, Dinge, die auf keinen Fall ins Spiel sollen:
