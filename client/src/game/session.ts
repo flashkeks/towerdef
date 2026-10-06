@@ -2,7 +2,7 @@
  * Eine Spielrunde im Browser: haelt die Sim, taktet sie mit festem Tick (20/s, Akkumulator) und verwaltet Auswahl/Bedienung.
  * Spielregeln gibt es hier nicht - jede Aktion ist ein `sim.apply(...)`, jede Zahl kommt aus `sim.state`.
  */
-import { createSim, loadBrowserData, STAGE_ID, type CommandResult, type DifficultyId, type Sim, type TargetMode, type WavePreview } from '../sim';
+import { createSim, loadBrowserData, STAGE_ID, type CommandResult, type DifficultyId, type Sim, type TargetMode, type UnitDef, type WavePreview } from '../sim';
 import { keyOr } from '../i18n/t';
 import { TICK_MS } from '../view/model';
 import { BossTracker } from '../view/telegraph';
@@ -40,6 +40,8 @@ export class Session {
   alpha = 0;
   selectedUnit: number | null = null;
   placing: string | null = null;
+  /** Gewaehltes Team (Unit-Ids, P6 Team-Auswahl); null = alle. Reiner Client-Filter, die Sim kennt keine Teams. */
+  team: string[] | null = null;
   toast: Toast | null = null;
   private acc = 0;
   private previewCache: { key: string; value: WavePreview | null } | null = null;
@@ -116,7 +118,15 @@ export class Session {
     if (r.ok && r.entityId !== undefined) this.selectedUnit = null;
   }
 
+  /** Units der Leiste: das Team (in Katalog-Reihenfolge) oder alle. */
+  teamCatalog(): UnitDef[] {
+    const all = this.sim.catalog();
+    const team = this.team;
+    return team ? all.filter((d) => team.includes(d.id)) : all;
+  }
+
   choosePlacing(unitId: string | null): void {
+    if (unitId !== null && this.team && !this.team.includes(unitId)) return;
     this.placing = this.placing === unitId ? null : unitId;
     if (this.placing) this.selectedUnit = null;
   }

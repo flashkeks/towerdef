@@ -6,6 +6,10 @@ import type { Session } from '../game/session';
 import type { DifficultyId } from '../sim';
 import { BossBanner } from './boss-banner';
 import { clear, h } from './dom';
+import { MvpTracker } from './mvp';
+import { getSettings } from './settings';
+import { loadTeam } from './team';
+import type { ReplayButtonFactory } from './result';
 import { Hud } from './hud';
 import { Input } from './input';
 import { WavePanels } from './panels';
@@ -18,6 +22,8 @@ import { UnitPanel } from './unit-panel';
 export interface UiHandlers {
   onStart(d: DifficultyId): void;
   onMenu(): void;
+  /** Replay-Knopf (P2) fuer Ergebnis- und Pause-Menue; `main.ts` verbindet ihn. */
+  replayButton?: ReplayButtonFactory;
 }
 
 export class Ui {
@@ -31,6 +37,8 @@ export class Ui {
   private readonly toast = new Toast();
   private readonly screens: Screens;
   private session: Session | null = null;
+  private mvp = new MvpTracker();
+  private unsubMvp: (() => void) | null = null;
 
   constructor(root: HTMLElement, handlers: UiHandlers) {
     this.screens = new Screens(handlers);
@@ -48,6 +56,12 @@ export class Ui {
   /** Neue Runde: Slots, Shop und Panels aufbauen. */
   bind(session: Session): void {
     this.session = session;
+    session.team = loadTeam(session.sim.catalog().map((d) => d.id));
+    session.speed = getSettings().defaultSpeed;
+    this.unsubMvp?.();
+    this.mvp = new MvpTracker();
+    this.unsubMvp = session.bus.onEvents((events) => this.mvp.consume(events));
+    this.screens.bind(session);
     this.screens.hide();
     this.slots.bind(session);
     this.shop.bind(session);
@@ -72,6 +86,6 @@ export class Ui {
     this.unitPanel.update(s);
     this.banner.update(s);
     this.toast.update(s);
-    if (s.over && this.screens.hidden) this.screens.showEnd(s);
+    if (s.over && this.screens.hidden) this.screens.showEnd(s, this.mvp.mvp());
   }
 }

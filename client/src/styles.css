@@ -98,3 +98,33 @@ canvas.board { display: block; }
 .btn.diff.normal { border-color: #4e8a45; }
 .btn.diff.hard { border-color: var(--orange); }
 .btn.diff.nightmare { border-color: var(--red); }
+
+/* P6: Menue, Team-Wahl, Einstellungen, Credits, Ergebnis, Pause */
+.dialog .title.small { font-size: 1.8rem; }
+.menu-col { display: flex; flex-direction: column; gap: 10px; margin-top: 18px; min-width: 240px; }
+.menu-col .btn { padding: 10px 16px; font-size: 1.05rem; }
+.paused.menu { font-size: 1rem; letter-spacing: 0; pointer-events: auto; z-index: 20; }
+.team-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 12px; }
+.btn.unit-card { display: flex; flex-direction: column; align-items: center; gap: 3px; width: 160px; padding: 8px; text-align: center; font-size: 0.78rem; border-color: var(--ink); }
+.btn.unit-card.picked { border-color: var(--gold); background: #4a5078; outline: 2px solid var(--gold); }
+.btn.unit-card:not(.picked) { opacity: 0.7; }
+.unit-card .badge { display: inline-block; min-width: 2.4rem; font: 700 0.75rem monospace; color: var(--ink); border: 2px solid var(--ink); border-radius: 50%; padding: 5px 2px; }
+.unit-card .role, .unit-card .slottype { color: var(--stone); }
+.unit-card .cost { color: var(--gold); font-weight: 700; }
+.unit-card .info { color: #d8dcea; }
+.team-count { margin: 12px 0 0; color: var(--stone); }
+.dialog.settings { min-width: 440px; }
+.set-row { display: flex; align-items: center; gap: 12px; margin: 10px 0; text-align: left; }
+.set-lbl { flex: 1; }
+.set-val { color: var(--stone); font-size: 0.85rem; min-width: 3rem; }
+.set-note { color: var(--stone); font-size: 0.8rem; margin: 4px 0 0; }
+.dialog.credits { width: min(720px, 92vw); }
+.credits-body { max-height: 55vh; overflow: auto; text-align: left; font-size: 0.82rem; margin: 12px 0; padding-right: 8px; }
+.credits-body h2, .credits-body h3, .credits-body h4 { color: var(--gold); margin: 12px 0 6px; font-size: 1rem; }
+.credits-body table { border-collapse: collapse; width: 100%; }
+.credits-body th, .credits-body td { border: 1px solid var(--slate); padding: 3px 6px; vertical-align: top; }
+.credits-body code { color: var(--parch); }
+.result-stats { display: grid; grid-template-columns: auto auto; gap: 6px 24px; justify-content: center; margin: 16px 0 4px; text-align: left; }
+.result-stats dt { color: var(--stone); }
+.result-stats dd { margin: 0; font-weight: 700; }
+.replay-slot { margin-top: 10px; min-height: 0; }

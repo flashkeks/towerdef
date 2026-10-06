@@ -55,7 +55,7 @@ Seit P0b (Runde 5) sind `ui/app.ts` und `game/renderer.ts` nur noch Verdrahtung.
 | `src/ui/input.ts` | Tastatur (Maus-Platzieren folgt hier hinein) | P1 |
 | `src/ui/panels.ts` | Wellenvorschau und Risikokarten (Seitenleiste) | P1 (Layout), P3-Folgen am Rand |
 | `src/ui/boss-banner.ts` | Boss-Banner | P5 |
-| `src/ui/screens.ts` | Start, Ende, Pause-Hinweis (spaeter Menue, Team-Wahl, Einstellungen, Ergebnis) | P6 |
+| `src/ui/screens.ts` + `menu.ts`, `team-select.ts`, `team.ts`, `settings.ts`, `settings-screen.ts`, `result.ts`, `mvp.ts`, `markdown.ts` | Szenen: Hauptmenue, Stufe, Team-Wahl 6 aus 8 (Client-Filter), Einstellungen, Credits, Ergebnis, Pause | P6 |
 | `src/ui/dom.ts` | kleine DOM-Helfer | gemeinsam |
 | `src/styles.css` | Stil; Abschnitte je Baustein ergaenzen, nichts umsortieren | alle, nur eigene Selektoren |
 | Replay-Aufzeichnung | neue Dateien, z. B. `src/game/recorder.ts` und `src/ui/download.ts`; haengt nur am `GameBus` | P2 |
