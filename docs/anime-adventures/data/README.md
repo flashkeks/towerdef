@@ -5,16 +5,15 @@ Maschinenlesbare Fassung der recherchierten **Anime-Adventures-Daten**. Sie dien
 | Datei | Inhalt |
 |---|---|
 | `units.json` | **vollständige** Unit-Datenbank (561 Einträge), 1.098 Angriffsdefinitionen, 22 Effekte; erzeugt mit [`tools/aa-research/build_units.py`](../../../tools/aa-research/build_units.py) aus S65/S66/S67/S71. Eigene Konventionen im `_meta`-Block; pro Unit ein `meta`-Objekt (origin/confidence/source) |
-| `traits.json` | Trait-Pool mit Roll-Gewichten und Effekten, Reroll-Kosten |
-| `banners.json` | Banner und Raten getrennt nach LEGACY und Re-Release |
-| `enemies.json` | Enemy-Modifikatoren, bekannte Bosse, CC-Cooldowns |
-| `maps.json` | Story-Welten (LEGACY/RR-Namen, Map-Laufzeiten), Legend Stages, Raids |
-| `waves.json` | bekannte Wave-Fakten, leere Tabellenvorlage, DESIGN-Generator |
-| `items.json` | Shop-Preise, Rezepte, Storage, Trade-Tax, Gamepasses, Evolution-Rezepte |
+| `traits.json` | Trait-Pool (12 Traits inkl. Unique) mit Roll-Chancen und Effekten, Reroll-Kosten, Regeln, LEGACY-Pool vor 2022-12 und Änderungshistorie |
+| `banners.json` | Banner, Raten und Pity-Regeln getrennt nach LEGACY und RR, berechnete Erwartungswerte |
+| `enemies.json` | 20 Gegner-Modifikatoren, 144 Bosse (alle Welten/Acts, Legend Stages), Boss-Angriffe, CC-Immunitäten, Dungeon-Curses |
+| `maps.json` | 22 Story-Welten (LEGACY/RR-Namen, Laufzeiten), Legend Stages, Raids, weitere Maps, Platzierungsregeln |
+| `waves.json` | Wave-Anzahlen je Modus, belegte Wave-Ereignisse, Infinite-Gem-Schema, Vorlage, DESIGN-Generator |
+| `items.json` | Merchant-Preise, Crafting-Rezepte, XP-Food, Kapseln mit Wahrscheinlichkeiten, Limits, Boosts, Storage, Trade-Tax, Gamepässe (VERIFIED), 219 Evolutionsrezepte |
 
 Konventionen:
 - `null` = **UNKNOWN**
-- Wertepaare `[min, max]` geben die Wiki-Spannen wieder
 - `provenance` / `confidence` / `sources` wie in [../README.md](../README.md#kennzeichnung) und [../sources.md](../sources.md)
 
 Das kanonische Schema für **unser** Spiel steht in [../technical-reconstruction.md](../technical-reconstruction.md#datenmodell).

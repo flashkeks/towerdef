@@ -4,7 +4,7 @@ Technische Analyse des Roblox-Spiels **Anime Adventures** (Entwickler: **Gomu**,
 
 > Ziel: genug über Regeln, Daten, Mathematik und Systeme dokumentieren, damit ein Entwickler ein funktional ähnliches Spiel bauen kann, **ohne** Assets, Namen oder IP des Originals zu übernehmen (siehe [Rechtliche Grenze](#rechtliche-grenze)).
 
-Recherchestand: **2026-10-05**
+Recherchestand: **2026-10-06** (Sitzung 2, Volltextquellen)
 
 ---
 
@@ -60,11 +60,13 @@ Jede wichtige Aussage trägt ein Tag in der Form `ART · CONFIDENCE · [Quellen]
 | [game-overview.md](game-overview.md) | Systemübersicht, Versionsgeschichte, Core Loop, Progression |
 | [core-mechanics.md](core-mechanics.md) | Ablauf einer Partie, Platzierung, Yen, Waves, Leaks, Base HP |
 | [combat-system.md](combat-system.md) | Targeting, AoE-Geometrie, Attack-Cycle, Damage, Crit, Status-Effekte, Buffs |
-| [units.md](units.md) | Unit-Datenbank (Rollen, Raritäten, bekannte Datenblätter) |
+| [units.md](units.md) | Unit-Datenbank: Felder, Statistik, Kurvenformen, Beispiel-Datenblätter, Legacy↔RR |
+| [units-index.md](units-index.md) | Tabelle aller 561 Units mit Legacy-/RR-Namen, Kosten, DPS, AoE, Evolution |
 | [unit-upgrades.md](unit-upgrades.md) | Upgrade-Tabellen, Kosten, Effizienz, Farm-ROI |
 | [traits.md](traits.md) | Traits, Shiny, Reroll-Ökonomie |
 | [unit-powerups.md](unit-powerups.md) | Randomisierte Stats (Potential/Worthiness), Level, Limit Break, Curses, Relics, Skins |
-| [evolution.md](evolution.md) | Evolution-System und bekannte Evolution-Matrix |
+| [evolution.md](evolution.md) | Evolution-System, Materialmuster, Stat-Faktoren |
+| [evolution-matrix.md](evolution-matrix.md) | alle 219 Evolutionsrezepte |
 | [enemies.md](enemies.md) | Gegnertypen, Enemy-Mechaniken, bekannte Bosse |
 | [waves.md](waves.md) | Wave-Struktur, Scaling, bekannte Wave-Daten |
 | [maps.md](maps.md) | Welten und Maps, Map-Längen, Platzierungsflächen |
