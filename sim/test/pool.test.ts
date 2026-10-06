@@ -29,7 +29,7 @@ describe('Pool-Check (§5, skaliert mit kalibriertem g)', () => {
   it('Koop skaliert den Pool mit h(n)', () => {
     const solo = wavePool(ctx, 20);
     const four = wavePool(ctxFor(4), 20);
-    const h = 1 + (3 * data.economy.coop.hpPerExtraPlayerBp) / 10000;
+    const h = (data.economy.coop.hpTableBp as number[])[3] / 10000;
     expect(four / solo).toBeGreaterThan(h - 0.01);
     expect(four / solo).toBeLessThan(h + 0.01);
   });

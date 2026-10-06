@@ -63,6 +63,7 @@ export function validateGameData(d: GameData): void {
   }
   validateBosses(d, enemyIds);
   validateCards(d);
+  validateCoop(d);
   for (const [sid, s] of Object.entries(d.stages)) validateStage(d, s, sid);
 }
 
@@ -89,6 +90,16 @@ function validateBosses(d: GameData, enemyIds: Set<string>): void {
         throw new Error(`Boss-Kit ${k.id}: Fähigkeit ${a.id} Phasenbereich ungültig`);
       }
     }
+  }
+}
+
+/** Koop-Tabellen (P5): Eintrag für 1 Spieler muss 10000 sein (Solo bleibt unberührt), Länge = maxPlayers. */
+function validateCoop(d: GameData): void {
+  const c = d.economy.coop;
+  for (const [name, t] of [['hpTableBp', c.hpTableBp], ['bossHpTableBp', c.bossHpTableBp]] as const) {
+    if (!t) continue;
+    if (t[0] !== 10000) throw new Error(`economy.coop.${name}[0] muss 10000 sein (1 Spieler), ist ${t[0]}`);
+    if (t.length !== c.maxPlayers) throw new Error(`economy.coop.${name}: ${t.length} Einträge, maxPlayers ist ${c.maxPlayers}`);
   }
 }
 

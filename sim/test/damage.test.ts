@@ -114,7 +114,7 @@ describe('HP-Kette', () => {
     expect(Math.abs(hard.maxHp - Math.floor((solo.maxHp * data.difficulties.hard.hpBp) / data.difficulties.normal.hpBp))).toBeLessThanOrEqual(1);
     expect(hard.bounty).toBe(solo.bounty);
     // Rundung je Faktor (Schwierigkeit, Koop): +-2 Centi-HP gegen den Direktwert
-    expect(Math.abs(coop.maxHp - Math.floor((solo.maxHp * (10000 + 3 * data.economy.coop.hpPerExtraPlayerBp)) / 10000))).toBeLessThanOrEqual(2);
-    expect(coop.bounty).toBeGreaterThan(solo.bounty * 3);
+    expect(Math.abs(coop.maxHp - Math.floor((solo.maxHp * data.economy.coop.hpTableBp![3]) / 10000))).toBeLessThanOrEqual(2);
+    expect(coop.bounty).toBeGreaterThan(solo.bounty * 1.5); // Bounty folgt der Koop-HP (Tabelle, P5)
   });
 });

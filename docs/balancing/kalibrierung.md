@@ -457,3 +457,57 @@ Nach dem Merge steuert `bossAbilityTier` (P3) das `minDifficulty`-Gate der Boss-
 | `difficulties.json` `hard.bountyBp` | 10000 | **11000** | Boss-Kits ab Hard (Sturm, zweiter Schild beim Colossus) senkten Hard auf 30 %. Erster Versuch `hard.hpBp` 14800 → 13900 (wide 56,7 %) verworfen: verletzt „HP nur Feinjustierung" (Test `difficulty.test.ts`, Spreizung ≤ 8 %, wäre 12 %). Stattdessen mehr Münzen als Regel. Scan n = 60: 11000 → aoe 53,3 / wide 50 %; 11500 → 91,7 %; 12000 → 93,3 %. **Steile Klippe** zwischen 11000 und 11500: Hard hängt am Kauf-Zeitpunkt des Titan vor dem Colossus. Das ist ein Thema für P6 (Fehlermodell) und den Boss-Plan der Bots. |
 
 Kennlinien nach Merge (vor der Hard-Änderung, `hard.hpBp` bleibt 14800): Normal aoe 90 → 10 % über **8,8** Punkte HP-Faktor (schmaler als in P3, weil die Boss-Kits eine harte Klippe setzen); Hard und Nightmare nicht bestimmbar, weil die Kurve im Scanbereich 0,8–1,3 die 90 % nicht erreicht. Das Ziel „Breitere Kennlinie ≥ 25" ist damit **verfehlt**; erst das Fehlermodell (P6) bringt Streuung in die Bots. Ehrlich: Mit deterministischen Bots ist die Kennlinie eine Treppe, keine Kurve.
+
+---
+
+# Runde 4 — P5: Koop-Skalierung
+
+Paket P5 aus `run.md` (Runde 4). Ziel „Koop fair“: je Stufe Siegquote 1P/2P/4P innerhalb ±10 Punkte, für jeden Bot. Gemessen mit den sechs Registry-Bots (ohne Fehlermodell), `standard20`, Stand nach P3 × P4 und Nachkalibrierung (Hard `bountyBp` 11000, Boss-HP ×11). Werkzeuge: `sim/scripts/sanity/p5-coop.ts` (Matrix), `p5-coop.sh` (je Stufe ein Prozess), `p5-scan.sh` (Raster der HP-Tabelle). **Ergebnis: Ziel verfehlt, Zwischenstand** — nur Normal ist für den besten Bot (`aoe`) fair, Hard/Nightmare sind im Koop zu leicht, und die Bots verhalten sich im Koop so verschieden, dass kein globaler Faktor alle zugleich trifft.
+
+## Änderungen
+
+| Datei/Feld | alt | neu | Grund |
+|---|---|---|---|
+| `economy.json` `coop.hpTableBp` (neu, optional) | – (lineare Formel `10000 + 11000 × (n−1)`, also 1 / 2,1 / 3,2 / 4,3) | **`[10000, 15000, 17500, 20000]`** (1 / 1,5 / 1,75 / 2,0) | Der alte Faktor machte 4P zur Wand (Boss ×4,3): `aoe` Normal 95 → 5 / 0 %, alle Bots 0–5 % auf 4P. Mit der Tabelle `aoe` Normal 95 / 87,5 / 97,5 %. Tabelle statt Formel, weil 4P mit nur 23 Kampf-Slots deutlich weniger als linear skaliert (Slot-Sättigung, s. u.). Eintrag für 1 Spieler muss 10000 sein (Solo unberührt, `load.ts` prüft) |
+| `economy.json` `coop.bossHpTableBp` (neu, **nicht gesetzt**) | – | – | Hebel „Boss-HP getrennt“ ist im Kern gebaut (`coopHpFor`, nur Archetyp `boss`) und getestet, aber in den Daten aus: der Boss ist so steil, dass Boss-Faktor 1,6 / 1,9 / 2,2 gegen 1,5 / 1,75 / 2,0 für die übrigen Gegner `aoe` Normal 4P von 97 auf 57 % und Normal 2P von 90 auf 23 % fallen lässt, 3,0 bei 4P auf 0 %. Als Feineinstellung brauchbar, als Hauptregler zu grob |
+| `hpPerExtraPlayerBp` | 11000 | 11000 (bleibt, gilt nur noch ohne Tabelle) | Rückwärtskompatibel, Tests lesen die Tabelle |
+
+Code: `schema.ts` (zwei optionale Arrays), `compile.ts` (`coopHpBp` aus Tabelle, `coopBossHpBp`, `coopHpFor(ctx, type)`), `spawn.ts`/`waves.ts` (Spawn-HP und Wellenpool nutzen `coopHpFor`), `load.ts` (`validateCoop`). Tests: neu `test/coop.test.ts` (6 Tests: Tabelle, Formel-Rückfall, Boss getrennt, Solo unberührt, Validierung); `damage.test.ts` und `pool.test.ts` lesen die Tabelle statt der Formel (Bounty-Mindestfaktor 3 → 1,5, weil die Bounty der Koop-HP folgt).
+
+## Matrix Siegquote %, Bot × {1P, 2P, 4P} × Stufe (n = 40; Standardfehler ±5–8 Punkte)
+
+Vorher = Daten wie vor P5 (Formel 1 / 2,1 / 4,3). Nachher = Tabelle oben. Spanne = max − min je Bot.
+
+| Bot | Normal 1P | 2P v → n | 4P v → n | Hard 1P | 2P v → n | 4P v → n | Nightmare 1P | 2P v → n | 4P v → n |
+|---|---|---|---|---|---|---|---|---|---|
+| greedy | 0 | 0 → 2,5 | 0 → 12,5 | 17,5 | 2,5 → 12,5 | 0 → 0 | 0 | 0 → 0 | 0 → 0 |
+| farm | 47,5 | 0 → 27,5 | 0 → 5 | 5 | 17,5 → 65 | 0 → 10 | 0 | 0 → 5 | 0 → 0 |
+| aoe | 95 | 5 → **87,5** | 0 → **97,5** | 52,5 | 77,5 → 92,5 | 5 → 100 | 0 | 12,5 → 32,5 | 0 → 97,5 |
+| upgrade | 60 | 80 → 100 | 2,5 → 97,5 | 27,5 | 95 → 97,5 | 82,5 → 100 | 32,5 | 90 → 100 | 75 → 100 |
+| wide | 0 | 0 → 0 | 0 → 15 | 42,5 | 5 → 20 | 0 → 0 | 2,5 | 2,5 → 0 | 0 → 0 |
+| coop | 47,5 | 0 → 25 | 0 → 42,5 | 5 | 5 → 60 | 0 → 7,5 | 0 | 0 → 2,5 | 0 → 10 |
+
+Bester / schlechtester Bot je Zelle (nachher): Normal 1P 95 (aoe) / 0 (greedy, wide), 2P 100 (upgrade) / 0 (wide), 4P 97,5 (aoe, upgrade) / 5 (farm). Hard 1P 52,5 / 5, 2P 97,5 / 12,5, 4P 100 / 0. Nightmare 1P 32,5 (upgrade) / 0, 2P 100 / 0, 4P 100 / 0.
+
+Ziel (Spanne ≤ 10) je Bot, nachher: **erreicht** nur `aoe` Normal (10,0), `greedy` Nightmare, `wide` Nightmare, `farm` Nightmare (alle drei trivial: 0 % überall). **Verfehlt:** `upgrade` (Spanne 40 / 72,5 / 67,5), `aoe` Hard/Nightmare (47,5 / 97,5), `farm`/`coop` (Boss-Plan fehlt, 1P schon schwach, Spanne 22–60), `greedy`/`wide` Hard (17,5–42,5).
+
+## 1P-Gegenmessung
+
+Die Spalte 1P der Nachher-Matrix ist **bit-identisch** zur Vorher-Matrix (alle 18 Zellen gleich, n = 40, gleiche Seeds). Das gilt konstruktionsbedingt: `hpTableBp[0]` = 10000 ist gleich dem Solo-Wert der alten Formel, `load.ts` erzwingt das, und `test/coop.test.ts` prüft, dass beliebige Koop-Tabellen die Solo-HP und den Solo-Wellenpool nicht ändern. Solo bleibt: bester Bot Normal 95 (aoe), Hard 52,5 (aoe), Nightmare 32,5 (upgrade).
+
+## Hebel geprüft
+
+| Hebel | Messung | Urteil |
+|---|---|---|
+| Linearer Faktor `k` (Formel) | Normal, n = 30, 2P/4P: k = 5000: aoe 90/57, upgrade 100/90; 7000: aoe 47/10, upgrade 90/70; 9000: aoe 13/0, upgrade 83/13 | Kein k passt für 2P **und** 4P: 4P braucht deutlich weniger als linear. Darum Tabelle |
+| **HP-Tabelle je Spielerzahl** | Raster Normal (2P:4P in 1000er): 1,6:2,0 → aoe 60/97, upgrade 100/97; 1,6:2,4 → aoe 60/50; 1,8:2,2 → aoe 17/80; 1,8:2,6 → aoe 17/40; 1,5:2,0 → **aoe 90/97**, upgrade 100/97 | Gewählt (1,5 / 1,75 / 2,0): einfachster Hebel, eine Datenzeile. Sehr steile Klippe: ±0,1 am 2P-Faktor ≈ −40 Punkte `aoe` |
+| Boss-HP getrennt | Tabelle oben (Zeile `bossHpTableBp`) | Gebaut, aus. Hebel greift an der Boss-Klippe, nicht an der Gesamtstärke |
+| Slot-Zahl je Spieler | Experiment (`P5_SLOTS=8`: 8 Zusatz-Slots je Zusatzspieler, k 7000–10000): `aoe` 2P/4P 77/100 (k 7000), 63/77 (9000), 47/47 (10000), also gut linear; **aber** `upgrade` fällt 4P von 70 auf 30 % (k 7000) bzw. 3 % (10000) | Ursache: In der Stage gibt es nur 23 Kampf-Slots (3 weitere sind Farm-Slots). 4P füllt sie (`aoe` 2P/4P je 23 Einheiten, solo 15), das trifft Einheiten-hungrige Bots (`aoe`) und begünstigt den Upgrade-Bot, der Münzen auf wenige Einheiten konzentriert. Mehr Slots drehen das um. Kein Hebel, der beide Bots zugleich fair macht, und er verlangt Map-Änderung (neue Slot-Koordinaten). Nicht übernommen |
+| Upgrade-Kosten im Koop, Cap gemeinsam/getrennt, Leben je Spieler | **nicht gemessen** (Zeit) | Leben: P2 zeigte, Startleben 30/60/100 ändert 4P nicht (alles Boss-Tod). Upgrade-Kosten und Caps: offen |
+
+## Was offen bleibt
+
+- **Hard/Nightmare im Koop zu leicht** (aoe/upgrade 90–100 % gegen 0–52 % solo). Die Stufen-Regeln (Modifier, Varianten) bremsen im Koop weniger, weil mehr Schaden pro Gegner da ist; ein Koop-Faktor, der Normal trifft, ist für Hard/Nightmare zu klein. Nächster Schritt: **Koop-Tabelle je Stufe** (z. B. Feld `coopHpTableBp` in `difficulties.json`, Normal wie jetzt, Hard/Nightmare höher), danach Raster mit `p5-scan.sh STUFE 30 "H2:H4 …"`.
+- **`upgrade` Normal 1P 60 gegen 2P/4P 100 %:** Der Bot skaliert im Koop überproportional (mehr Münzen auf gleich wenige, sättigende Slots). Das ist ein Bot-Thema (P6), kein Faktor.
+- **`farm`/`coop`/`greedy`/`wide`:** scheitern strukturell am Boss (kein Boss-Plan) und an den knappen Farm-Slots im Koop; P6. Ihre Koop-Zahlen wurden nicht verbogen.
+- Die Messung ist deterministisch pro Seed, aber n = 40 und die Klippe am Boss ist steil: ±10 Punkte Streuung je Zelle sind normal.

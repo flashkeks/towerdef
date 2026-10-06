@@ -28,7 +28,16 @@ export const EconomySchema = z.object({
   bounty: z.object({ ref, gammaStartBp: pos, gammaDecayBp: pos }),
   sell: z.object({ ref, combatBp: nat, farmBp: nat }),
   leakDamage: z.object({ ref }).catchall(nat.or(z.string())),
-  coop: z.object({ ref, hpPerExtraPlayerBp: nat, donationStep: pos, maxPlayers: pos }),
+  coop: z.object({
+    ref,
+    hpPerExtraPlayerBp: nat,
+    /** P5: optionale Tabelle des Koop-HP-Faktors je Spielerzahl (Index 0 = 1 Spieler, muss 10000 sein); überschreibt die lineare Formel. */
+    hpTableBp: z.array(pos).min(1).optional(),
+    /** P5: dasselbe nur für den Archetyp boss (getrennte Boss-HP-Skalierung); fehlt sie, gilt der normale Faktor. */
+    bossHpTableBp: z.array(pos).min(1).optional(),
+    donationStep: pos,
+    maxPlayers: pos,
+  }),
   /** Infinite-Parameter (recommendations §3); fehlt der Block, gelten die Standardwerte aus compile.ts/infinite.ts. */
   infinite: z
     .object({

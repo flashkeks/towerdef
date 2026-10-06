@@ -5,7 +5,7 @@
  * Eine Wave endet, wenn ihr Timer abläuft, per Skip, oder wenn nichts mehr lebt/aussteht.
  * Beim Ende von Wave n < N startet im selben Tick Wave n+1 (Waves dürfen überlappen).
  */
-import { parseModifier, type Ctx } from '../data/compile.js';
+import { coopHpFor, parseModifier, type Ctx } from '../data/compile.js';
 import { mulBp } from '../fixed.js';
 import type { World } from '../state.js';
 import { payWaveEnd } from './economy.js';
@@ -99,12 +99,12 @@ export function wavePool(ctx: Ctx, n: number): number {
     const def = ctx.enemies[g.type];
     for (const m of g.modifiers) parseModifier(m); // validiert
     let hp = mulBp(ctx.hpGrunt(n), def.fHpBp);
-    hp = mulBp(mulBp(hp, ctx.coopHpBp), ctx.difficulty.hpBp);
+    hp = mulBp(mulBp(hp, coopHpFor(ctx, g.type)), ctx.difficulty.hpBp);
     pool += hp * g.count;
     if (def.child) {
       const c = ctx.enemies[def.child.type];
       let ch = mulBp(ctx.hpGrunt(n), c.fHpBp);
-      ch = mulBp(mulBp(ch, ctx.coopHpBp), ctx.difficulty.hpBp);
+      ch = mulBp(mulBp(ch, coopHpFor(ctx, def.child.type)), ctx.difficulty.hpBp);
       pool += ch * def.child.count * g.count;
     }
   }

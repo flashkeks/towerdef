@@ -21,8 +21,9 @@
     "grunt": 2, "runner": 2, "splitter_child": 1, "flyer": 3, "splitter": 3, "brute": 5, "elite": 8, "boss": 30
   },
   "coop": {
-    "ref": "recommendations §16: h = 1 + 0,75(n-1); KALIBRIERT h = 1 + 1,10(n-1) (kalibrierung.md #5); Spenden in 50er-Schritten",
+    "ref": "recommendations §16: h = 1 + 0,75(n-1); KALIBRIERT h = 1 + 1,10(n-1) (kalibrierung.md #5), Runde 4 P5: Tabelle hpTableBp (kalibrierung.md, Runde 4 - P5); Spenden in 50er-Schritten",
     "hpPerExtraPlayerBp": 11000,
+    "hpTableBp": [10000, 15000, 17500, 20000],
     "donationStep": 50,
     "maxPlayers": 4
   },

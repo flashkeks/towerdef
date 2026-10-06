@@ -91,6 +91,8 @@ export interface Ctx {
   waveTimerTicks: number;
   /** Koop-HP-Faktor h(Spielerzahl) in Basispunkten. */
   coopHpBp: number;
+  /** Koop-HP-Faktor des Archetyps boss (P5: getrennt skalierbar, Standard = coopHpBp). */
+  coopBossHpBp: number;
   /** Archetypen, deren Leak sofort verliert (economy.lives.instantLoss). */
   instantLoss: ReadonlySet<string>;
   /** Leben-Regeneration am Wave-Ende. */
@@ -157,6 +159,16 @@ export function parseModifier(m: string): ParsedModifier {
 /** Infinite: höchstens 60 Gegner gleichzeitig (recommendations §3, Performance). */
 export const INFINITE_ENEMY_CAP = 60;
 
+/** P5: Tabellenwert für die Spielerzahl (letzter Eintrag gilt für größere Zahlen), null ohne Tabelle. */
+function coopTable(t: readonly number[] | undefined, players: number): number | null {
+  return t ? t[Math.min(players, t.length) - 1] : null;
+}
+
+/** Koop-HP-Faktor (Basispunkte) für einen Gegner-Archetyp: Boss getrennt, alle anderen gemeinsam. */
+export function coopHpFor(ctx: { coopHpBp: number; coopBossHpBp: number }, type: string): number {
+  return type === 'boss' ? ctx.coopBossHpBp : ctx.coopHpBp;
+}
+
 export const DIFFICULTY_RANK: Record<DifficultyId, number> = { normal: 0, hard: 1, nightmare: 2 };
 
 export interface CompileOpts {
@@ -176,6 +188,7 @@ export function compile(data: GameData, stage: StageData, difficultyId: Difficul
   const enemies: Record<string, EnemyArchetype> = {};
   for (const a of data.enemies.archetypes) enemies[a.id] = a;
 
+  const coopHpBp = coopTable(data.economy.coop.hpTableBp, players) ?? 10000 + data.economy.coop.hpPerExtraPlayerBp * (players - 1);
   const hpCache: number[] = [];
   const g = BigInt(data.enemies.hpCurve.growthBp);
   const hpGrunt = (n: number): number => {
@@ -241,7 +254,8 @@ export function compile(data: GameData, stage: StageData, difficultyId: Difficul
     cardList: data.cards?.cards ?? [],
     // P3 x P4: das Boss-Fähigkeiten-Set der Stufe (difficulties.json bossAbilityTier) entscheidet über minDifficulty der Boss-Kits.
     difficultyRank: data.difficulties[difficultyId].bossAbilityTier ?? DIFFICULTY_RANK[difficultyId],
-    coopHpBp: 10000 + data.economy.coop.hpPerExtraPlayerBp * (players - 1),
+    coopHpBp,
+    coopBossHpBp: coopTable(data.economy.coop.bossHpTableBp, players) ?? coopHpBp,
     hpGrunt,
     bounty,
   };

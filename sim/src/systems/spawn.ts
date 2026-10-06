@@ -4,7 +4,7 @@
  * Speed-Kette: Basis -> x f_Speed -> x v_Diff -> x Fast. Alle Schritte floor.
  */
 import type { Ctx } from '../data/compile.js';
-import { parseModifier } from '../data/compile.js';
+import { coopHpFor, parseModifier } from '../data/compile.js';
 import { mulBp } from '../fixed.js';
 import { positionAt } from '../path.js';
 import type { BossRun, EnemyState, World } from '../state.js';
@@ -35,7 +35,7 @@ export function initBossRun(ctx: Ctx, wave: number): BossRun | null {
 export function enemyStats(ctx: Ctx, type: string, wave: number, card: string | null): { maxHp: number; bounty: number } {
   const def = ctx.enemies[type];
   let hp = mulBp(ctx.hpGrunt(wave), def.fHpBp);
-  hp = mulBp(hp, ctx.coopHpBp);
+  hp = mulBp(hp, coopHpFor(ctx, type));
   let bounty = mulBp(ctx.bounty(wave, hp), ctx.difficulty.bountyBp);
   let maxHp = mulBp(hp, ctx.difficulty.hpBp);
   const c = card ? ctx.cards[card] : undefined;
