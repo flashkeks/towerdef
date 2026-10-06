@@ -8,13 +8,25 @@ import { BOTS } from '../../src/bots/index.js';
 import type { Bot, BotFactory } from '../../src/bots/types.js';
 import { DifficultySchema } from '../../src/data/schema.js';
 import { seedRng } from '../../src/prng.js';
-import { botTuning, policyBot, type Policy } from '../../src/bots/util.js';
+import { botTuning, overrideProfile, policyBot, type Policy } from '../../src/bots/util.js';
 
 // P1_NOSAVE=1: Bots verhalten sich wie in Runde 1-3 (kein Sparen auf teure Platzierungen).
 if (process.env.P1_NOSAVE === '1') botTuning.disabled = true;
 // P4_NOWINDOW=1: Bots zünden Fähigkeiten gegen Bosse sofort (Verhalten vor P4); P4_NOCARDS=1: keine Risikokarten.
 if (process.env.P4_NOWINDOW === '1') botTuning.windowAware = false;
 if (process.env.P4_NOCARDS === '1') botTuning.cardsDisabled = true;
+
+// P6: BOT_PROFILE=casual|normal|expert -> alle Registry-Bots der Skripte spielen mit Fehlermodell; P6_NOBOSSPLAN=1 schaltet den Boss-Plan ab.
+if (process.env.BOT_PROFILE) botTuning.profile = process.env.BOT_PROFILE;
+if (process.env.P6_NOBOSSPLAN === '1') botTuning.bossPlan = false;
+if (process.env.P6_NUKELVL) botTuning.bossNukeLevel = Number(process.env.P6_NUKELVL);
+if (process.env.P6_NOSAVE === '1') botTuning.bossPlanSave = false;
+if (process.env.P6_EARLYCAP) botTuning.earlyCap = Number(process.env.P6_EARLYCAP);
+if (process.env.P6_UPBOOST) botTuning.bossUpgradeBoost = Number(process.env.P6_UPBOOST);
+if (process.env.P6_PLANWAVES) botTuning.bossPlanWaves = Number(process.env.P6_PLANWAVES);
+
+// P6_PROFILES='{"normal":{"buyDelaySec":[0,0]}}': Profil-Felder überschreiben (Kalibrierung ohne Dateiänderung).
+if (process.env.P6_PROFILES) for (const [k, v] of Object.entries(JSON.parse(process.env.P6_PROFILES) as Record<string, object>)) overrideProfile(k, v);
 
 export const baseData: GameData = loadGameData();
 // Experiment-Override ohne Dateiänderung: P1_PATCH='{"titan":{"dpsShareBp":7000,"ability":{...}}}' (je Unit-ID, flach überschrieben).

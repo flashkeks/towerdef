@@ -130,6 +130,15 @@ Zeitwerte: Vorwarnzeit (`telegraphTicks`) 40-60 Ticks = 2-3 s, Fenster 60-100 Ti
 
 **Verdrahtung P3 × P4 (Merge):** `ctx.difficultyRank` = `bossAbilityTier` der Stufe (Fallback: Rang der Stufe). Eine Challenge kann damit über `overrides.bossAbilityTier` Boss-Fähigkeiten einer höheren Stufe zuschalten.
 
+## Bot-Profile und Boss-Plan (Runde 4 / P6)
+
+`data/botProfiles.json` (zod `BotProfileSchema`, `loadBotProfiles`; nicht Teil von `GameData`): drei Profile **casual / normal / expert** mit Fehlermodell: `buyDelaySec` (Pause zwischen Kaufrunden), `worseSlotBp` (Slot aus der schlechteren Hälfte), `forgetUpgradeBp` (je Unit und Wave), `abilityDelaySec` (verspätetes Zünden), `lookahead` (Wellenwissen in Waves, 0 = keines). Zufall nur über einen eigenen PRNG des Bots (aus dem seeded Bot-PRNG abgeleitet, nie der Sim-PRNG): deterministisch je Seed und Profil, der Sim-Hash ohne Bots bleibt unberührt.
+
+- Auswahl: `getBot('aoe@normal')`, `'upgrade+cards@casual'`, `'x@none'` (fehlerfrei); ohne `@` gilt `botTuning.profile` (Standard `null` = fehlerfrei wie Runden 1-5, in den Sanity-Skripten `BOT_PROFILE=normal`). `P6_PROFILES='{"normal":{"worseSlotBp":0}}'` überschreibt Profil-Felder.
+- **Boss-Plan** (alle Bots, `botTuning.bossPlan`, aus mit `P6_NOBOSSPLAN=1`): aus `previewWave(n).boss` und den Kit-Daten schafft der Bot vor dem Boss die Nuke-Unit (Titan) und bei unterbrechbaren Kit-Zügen die Stun-Unit (Frost) an und spart darauf; Horizont `min(lookahead, botTuning.bossPlanWaves = 3)`. Weitere Schalter: `P6_PLANWAVES`, `P6_NOSAVE`, `P6_EARLYCAP`.
+- **Koop-HP-Tabelle je Stufe:** `difficulties.json` `coopHpTableBp` / `coopBossHpTableBp` (Index 0 = 1 Spieler = 10000), Fallback `economy.coop`.
+- Zahlen und Befunde: `docs/balancing/kalibrierung.md`, „Runde 4 — P6".
+
 ## Daten ändern
 
 Alle Zahlen stehen in `data/*.json` (zod-validiert beim Laden, Querverweise in `load.ts`, z. B. Leak-Werte in `economy.json` = `enemies.json`). Neue Stage = neue Datei in `data/stages/` (Waves, Slots, Pfad). Die Wave-Tabelle der Standard-Stage wurde mit `scripts/gen-stage.ts` erzeugt (Ausgabe danach von Hand kompakt formatiert).

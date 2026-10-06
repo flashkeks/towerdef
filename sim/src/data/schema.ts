@@ -135,6 +135,10 @@ export const DifficultySchema = z.object({
   _comment: comment,
   /** Feinjustierung (Runde 4 / P3): Stufen unterscheiden sich über Regeln, nicht über diesen Faktor. */
   hpBp: pos,
+  /** Runde 4 / P6: Koop-HP-Faktor je Spielerzahl für diese Stufe (Index 0 = 1 Spieler, muss 10000 sein); fehlt er, gilt `economy.coop.hpTableBp`. */
+  coopHpTableBp: z.array(pos).min(1).optional(),
+  /** Dasselbe nur für den Archetyp boss; fehlt es, gilt `economy.coop.bossHpTableBp` bzw. der normale Koop-Faktor. */
+  coopBossHpTableBp: z.array(pos).min(1).optional(),
   speedBp: pos,
   elementsActive: z.boolean(),
   /** `wave`: alle Gruppen einer Wave teilen ein Element; `mixed`: Element je Gruppe versetzt (Gegenwehr braucht mehrere Elemente). */
@@ -393,3 +397,29 @@ export interface GameData {
   cards?: CardsData;
 }
 export { int };
+
+/**
+ * Bot-Profile (Runde 4 / P6): Fehlermodell der Bots. Nur Bot-Verhalten, nie Sim-Regeln; die Datei gehört nicht zu `GameData`
+ * (`loadBotProfiles` in `load.ts`). Zeiten in Sekunden (Bots entscheiden einmal je Sekunde), Wahrscheinlichkeiten in Basispunkten.
+ * Alle Würfe laufen über den eigenen, geseedeten PRNG des Bots (nicht den Sim-PRNG).
+ */
+const secRange = z.tuple([z.number().int().min(0), z.number().int().min(0)]).refine(([a, b]) => a <= b, 'min <= max');
+export const BotProfileSchema = z.object({
+  ref: z.string().optional(),
+  /** Zusätzliche Pause (Sekunden, gleichverteilt min..max) zwischen zwei Kaufrunden (Platzieren, Upgraden, Farm, Verkaufen). [0,0] = jede Sekunde. */
+  buyDelaySec: secRange,
+  /** Chance je Platzierung, statt des besten einen zufälligen anderen (bezahlbaren, nützlichen) Slot für dieselbe Unit zu nehmen. */
+  worseSlotBp: z.number().int().min(0).max(10000),
+  /** Chance je Unit und Wave, dass der Bot Upgrades dieser Unit in dieser Wave vergisst. */
+  forgetUpgradeBp: z.number().int().min(0).max(10000),
+  /** Verspätung (Sekunden, gleichverteilt) zwischen "Fähigkeit wäre sinnvoll" und dem Zünden. */
+  abilityDelaySec: secRange,
+  /** Wellenwissen: so viele Waves (ab der laufenden) liest der Bot per `previewWave` voraus. 0 = kein Wellenwissen: er reagiert erst, wenn der Boss da ist. */
+  lookahead: z.number().int().min(0).max(20),
+});
+export type BotProfile = z.infer<typeof BotProfileSchema>;
+export const BotProfilesSchema = z.object({
+  ref: z.string().optional(),
+  _comment: z.string().optional(),
+  profiles: z.record(z.string(), BotProfileSchema),
+});

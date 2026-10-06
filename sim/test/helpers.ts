@@ -7,7 +7,7 @@ import type { EnemyState, SimState } from '../src/state.js';
 
 /**
  * Daten ohne Stufen-Regeln (Runde 4 / P3): Modifier-Dichte 0, keine Wellen-Varianten, Element-Modus `wave`,
- * keine Leben-Überschreibung, Bounty x1. Die HP-Faktoren bleiben. Alle Regel-unabhängigen Tests laufen hierauf,
+ * keine Leben-Überschreibung, Bounty x1, keine Koop-Tabelle je Stufe (P6; es gilt `economy.coop`). Die HP-Faktoren bleiben. Alle Regel-unabhängigen Tests laufen hierauf,
  * damit sie die Stage-Waves der Daten zeigen; die Stufen-Regeln prüft `difficulty.test.ts` mit den echten Daten.
  */
 export function plainData(): GameData {
@@ -19,6 +19,8 @@ export function plainData(): GameData {
       waveVariants: [],
       lives: {},
       bountyBp: 10000,
+      coopHpTableBp: undefined,
+      coopBossHpTableBp: undefined,
     });
   }
   return d;

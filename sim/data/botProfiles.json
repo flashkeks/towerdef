@@ -1,0 +1,48 @@
+{
+  "ref": "Runde 4 P6, run.md Abschnitt 4 (Fehlermodell der Bots); docs/balancing/kalibrierung.md, Runde 4 - P6",
+  "_comment": "Drei Profile menschlicher Spielstaerke. Bots ohne Profil (Name ohne @...) sind die fehlerfreien Registry-Bots der Runden 1-5. Profil waehlen: getBot('aoe@normal') oder Env BOT_PROFILE=normal in den Sanity-Skripten. Zeiten in Sekunden, Wahrscheinlichkeiten in Basispunkten.",
+  "profiles": {
+    "casual": {
+      "ref": "Gelegenheitsspieler: reagiert traege, vergisst Upgrades, zuendet Faehigkeiten spaet, liest keine Wellenvorschau",
+      "buyDelaySec": [
+        0,
+        2
+      ],
+      "worseSlotBp": 3500,
+      "forgetUpgradeBp": 3000,
+      "abilityDelaySec": [
+        2,
+        5
+      ],
+      "lookahead": 0
+    },
+    "normal": {
+      "ref": "Durchschnittlicher Spieler: kleine Verzoegerungen, gelegentlich ein schlechter Slot, liest die naechste Wave",
+      "buyDelaySec": [
+        0,
+        1
+      ],
+      "worseSlotBp": 1200,
+      "forgetUpgradeBp": 1000,
+      "abilityDelaySec": [
+        0,
+        2
+      ],
+      "lookahead": 3
+    },
+    "expert": {
+      "ref": "Erfahrener Spieler: kaum Verzoegerung, beste Slots, plant Boss und Luft voraus",
+      "buyDelaySec": [
+        0,
+        0
+      ],
+      "worseSlotBp": 150,
+      "forgetUpgradeBp": 100,
+      "abilityDelaySec": [
+        0,
+        0
+      ],
+      "lookahead": 8
+    }
+  }
+}

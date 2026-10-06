@@ -511,3 +511,111 @@ Die Spalte 1P der Nachher-Matrix ist **bit-identisch** zur Vorher-Matrix (alle 1
 - **`upgrade` Normal 1P 60 gegen 2P/4P 100 %:** Der Bot skaliert im Koop überproportional (mehr Münzen auf gleich wenige, sättigende Slots). Das ist ein Bot-Thema (P6), kein Faktor.
 - **`farm`/`coop`/`greedy`/`wide`:** scheitern strukturell am Boss (kein Boss-Plan) und an den knappen Farm-Slots im Koop; P6. Ihre Koop-Zahlen wurden nicht verbogen.
 - Die Messung ist deterministisch pro Seed, aber n = 40 und die Klippe am Boss ist steil: ±10 Punkte Streuung je Zelle sind normal.
+
+---
+
+# Runde 4 — P6: Fehlermodell der Bots und Endkalibrierung
+
+Paket P6 aus `run.md` (Runde 4). **Stand: Teil A (Bots) fertig, Teil B (Endkalibrierung) teilweise.** Gemessen, soweit nicht anders genannt, mit Profil `normal`, `standard20`, solo, n = 100 (Siegquoten je Stufe) bzw. n = 40 (Matrizen, Leave-one-out, Koop; Standardfehler ±5–8 Punkte). Werkzeug-Skripte laufen mit `BOT_PROFILE=normal` (neu, `scripts/sanity/lib.ts`); Bots ohne Profil sind die fehlerfreien Registry-Bots der Runden 1–5.
+
+## Teil A — Was gebaut wurde
+
+**Boss-Plan für alle Bots** (`src/bots/util.ts`, `bossPlanStep`, `bossNeeds`): gespeist aus `sim.previewWave(n).boss` und den Kit-Daten (`sim.bossKits()`, nur die auf der Stufe aktiven Fähigkeiten). Boss im Horizont → eine Unit mit Nuke-Fähigkeit (Titan) wird angeschafft, bei einem unterbrechbaren Kit-Zug (z. B. Heilung des Colossus, Sturm auf Hard) zusätzlich eine Stun-Unit (Frost). Der Bot spart darauf (ab 40 % der Kosten wird nichts anderes gekauft), unabhängig von den Gewichten und `canPlace` der Policy. Horizont = `min(Wellenwissen, botTuning.bossPlanWaves = 3)` Waves vor dem Boss; ohne Wellenwissen (Horizont 0) reagiert der Bot erst, wenn der Boss auf dem Feld steht. Abschaltbar: `botTuning.bossPlan = false` (`P6_NOBOSSPLAN=1`), je Policy `bossPlan: false`. Die Fenster-Nutzung aus P4 (`windowAware`) gilt über `playTurn` ohnehin für alle Bots, sie hatte nur keine Titan/Frost-Einheit zum Zünden. Zusätzlich gebaut, **aus**, weil ohne Wirkung gemessen: `bossUpgradeBoost`, `bossNukeLevel` (Titan vor dem Boss ausbauen; Siegquote unverändert), `bossPlanSave = false` (nicht sparen: Titan kommt dann nicht, Ergebnis wie vor dem Plan).
+
+**Fehlermodell** (`data/botProfiles.json`, zod `BotProfileSchema` in `schema.ts`, `loadBotProfiles` in `load.ts`; getrennt von `GameData`). Aufruf: `getBot('aoe@normal')`, `'upgrade+cards@casual'`, `'@none'` = fehlerfrei; ohne `@` gilt `botTuning.profile` (Standard fehlerfrei, `BOT_PROFILE=...`). Alle Würfe laufen über einen eigenen PRNG des Bots (`memo.frng`, beim ersten Gebrauch aus dem seeded Bot-PRNG abgeleitet, nie der Sim-PRNG): ein Lauf ist je Seed und Profil reproduzierbar, der Sim-Hash ohne Bots bleibt unverändert (Test).
+
+| Parameter | Wirkung | casual | normal | expert |
+|---|---|---|---|---|
+| `buyDelaySec` | zusätzliche Pause (s, gleichverteilt) zwischen zwei Kaufrunden | 0–2 | 0–1 | 0 |
+| `worseSlotBp` | Chance je Platzierung auf einen Slot aus der **schlechteren Hälfte** (nach Bot-Bewertung) für dieselbe Unit | 35 % | 12 % | 1,5 % |
+| `forgetUpgradeBp` | Chance je Unit und Wave, dass Upgrades dieser Unit in dieser Wave vergessen werden | 30 % | 10 % | 1 % |
+| `abilityDelaySec` | Verspätung zwischen „Fähigkeit wäre sinnvoll“ und Zünden (verpasst Boss-Fenster von 3–5 s) | 2–5 | 0–2 | 0 |
+| `lookahead` | Wellenwissen: Waves voraus per `previewWave`; 0 = keines | 0 | 3 | 8 (Plan-Horizont gekappt auf 3) |
+
+Messbefunde, die die Werte bestimmt haben (n = 60, Hard `wide` bzw. Nightmare `upgrade`, ein Parameter allein):
+- **Kaufverzögerung hilft** im Sim (Hard `wide` 78 → 93 %, Nightmare `upgrade` 10 → 25 % bei 2–8 s): die Bots kaufen sonst jede Münze sofort in billige Optionen, mit Pause bündeln sie und erreichen teurere Units. Sie ist deshalb klein gehalten (0–2 s); ein größerer Wert hätte casual über expert gestellt. Das ist ein Befund über die Bots (Sparlogik der Policies), nicht über Menschen.
+- Zufälliger Slot (statt schlechtere Hälfte) war **nicht** schlechter (88 gegen 78 %): die Slot-Bewertung der Bots (DPS × Abdeckung) ist keine gute Qualitätsmetrik. Darum „schlechtere Hälfte“.
+- Verspätete Fähigkeiten −10 Punkte, vergessene Upgrades 0 bis −4, kein Wellenwissen −8 (Hard `wide`).
+
+## Teil A — Wirkung des Boss-Plans (fehlerfreie Bots, n = 40, Normal/Hard solo)
+
+| Bot | Normal Sieg % vorher → nachher | Normal Boss-Tod % | Hard Sieg % | Hard Boss-Tod % |
+|---|---|---|---|---|
+| greedy | 0 → 20 | 70 → 12,5 | 17,5 → 17,5 | 22,5 → 10 |
+| wide | 0 → 67,5 | 97,5 → 30 | 42,5 → 77,5 | 45 → 20 |
+| upgrade | 60 → 97,5 | 40 → 0 | 27,5 → 10 | 0 → 0 |
+| farm / coop | 47,5 → 47,5 | 7,5 → 0 | 5 → 27,5 | 2,5 → 0 |
+| aoe | 95 → 95 | 2,5 → 2,5 | 52,5 → 52,5 | 0 → 0 |
+
+Der Boss von Wave 10 leakt nicht mehr (0 von 40 in allen Bots); Rest: Wave 20, Rest-HP des Bosses beim Leak ~10 %. **Nebenwirkung:** der `upgrade`-Bot fällt auf Hard/Nightmare von 27/32 auf 2–10 %: er hortet für den Titan, erreicht das 6-Typen-Limit und hat dann nur fünf Einheiten (Wave 13/18 Verlust durch Leaks, nicht durch den Boss). Der Titan ist kein Gewinn für jeden Bot (siehe Leave-one-out).
+
+## Teil B — Änderungen an `sim/data/`
+
+| # | Datei/Feld | alt | neu | Grund (Messwert, Profil `normal`, solo) |
+|---|---|---|---|---|
+| 1 | `botProfiles.json` | – | neu: casual / normal / expert | Teil A |
+| 2 | `difficulties.json` `normal.hpBp` | 15600 | **15300** | Mit Fehlermodell fiel der beste Bot auf 68–80 %. Scan n = 60: 15000 → 96,7; 15300 → 85; 15600 → 80. n = 100: **85** (aoe 83, upgrade 85) |
+| 3 | `difficulties.json` `hard.bountyBp` | 11000 | **10600** | Mit Boss-Plan und Fehlermodell lag `wide` bei 83 % (Hard-Ziel 45–65). Scan n = 100 (`wide`): 10500 → 41, **10600 → 57**, 10700 → 64. Ein steiler Hang von ~7 Punkten je 100 bp, aber mit Fehlermodell und Boss-Plan keine Klippe mehr wie im Bare-Bot-Scan (11000 → 53, 11500 → 92: ~8 je 100 bp, dort aber nur zwei Stützstellen). Stufe mittig im Hang |
+| 4 | `difficulties.json` `nightmare.bountyBp` | 10000 | **10600** | Nightmare lag bei 10–20 % (Ziel 15–35). HP-Weg verworfen (14000 → 23 %, 13700 → 38 %, aber HP-Spreizung > 8 %, Test `difficulty.test.ts`), Startleben 26/30 brachte +3/+8 Punkte, Modifier-Dichte senken nichts. Scan n = 60: Bounty 10300 → 15, 10500 → 17, 10700 → 28, 11000 → 50. n = 100 bei 10600: **24** |
+| 5 | `difficulties.json` neue Felder `coopHpTableBp`, `coopBossHpTableBp` (Schema, `compile.ts`, `load.ts`) | – (nur `economy.coop.hpTableBp`) | optionale Koop-HP-Tabelle **je Stufe**; Fallback `economy.coop` | P5-Übergabe: Hard/Nightmare im Koop zu leicht. Eintrag für 1 Spieler muss 10000 sein (Validierung, Test): 1P unverändert |
+| 6 | `normal.coopHpTableBp` | 10000 / 15000 / 17500 / 20000 (Economy) | **10000 / 16000 / 18500 / 21000** | `aoe` Normal 85 / 80 / 90 (1P/2P/4P) |
+| 7 | `hard.coopHpTableBp` | Economy (wie Normal) | **10000 / 21000 / 28000 / 31000** | `aoe` Hard 40 / 62,5 / 60; vorher mit der Normal-Tabelle 90–100 gegen 57 solo. Raster n = 40: 2P-Faktor 1,6 → `aoe` 92 %, 1,9 → 80, 2,0 → 70, 2,1 → 65, 2,2 → 37 |
+| 8 | `nightmare.coopHpTableBp` | Economy | **10000 / 22000 / 29000 / 34000** | `aoe` Nightmare 7,5 / 17,5 / 17,5. Höhere Faktoren drücken `aoe` auf 0–5 %, `upgrade` bleibt 80–100 % (s. u.) |
+
+HP-Spreizung nach den Änderungen: 15300 / 14800 / 14600 = 4,8 % (Test ≤ 8 %).
+
+## Teil B — Ergebnis
+
+Siegquote bester Bot solo, n = 100 (Profil `normal`; `casual`/`expert` zum Vergleich): Normal 60 / **85** / 94, Hard 41 / **57** / 67, Nightmare 19 / **24** / 31 (casual / normal / expert). Reihenfolge expert ≥ normal ≥ casual gilt in allen drei Stufen (Hard normal 57 gegen expert 67; Nightmare 24 gegen 31 liegt im Rauschen). Je Bot (normal): Normal greedy 24, farm 48, aoe 83, upgrade 85, wide 57; Hard greedy 4, farm 13, aoe 46, upgrade 2, wide 57; Nightmare 1 / 3 / 6 / 8 / 24.
+
+| Ziel | Wert | Urteil |
+|---|---|---|
+| Stufen solo 85–95 / 45–65 / 15–35 | 85 / 57 / 24 | erreicht (Normal am unteren Rand) |
+| Kennlinie 90 → 10 % ≥ 25 Punkte HP | Normal (`upgrade`) **25,7**, Nightmare (`wide`) **24,4**, Hard (`wide`) **14,5** | Normal erreicht, Nightmare knapp verfehlt, Hard verfehlt: die Kurve fällt zwischen f = 0,95 (93 %) und 1,0 (62 %) um 31 Punkte — die Boss-Stufe (Wave 20) setzt eine Treppe. Gemessen mit `hard.bountyBp` 10700, danach auf 10600 gesenkt |
+| Keine dominante Kombi | kein Bot ≥ 95 % in allen Zellen: `upgrade` 4P 100 / 95 / 100, aber 1P 85 / 2,5 / 7,5 | erreicht |
+| AoE-Bot ≥ 50 % Normal solo | 83 % (n = 100), casual 60, expert 94 | erreicht |
+| Jede Unit von einem Bot ≥ 30 % gekauft | niedrigste: Banner 46 % (greedy, gemittelt), Farm 100 % (farm), übrige ≥ 98 % | erreicht |
+| Schaden/Münze DPS-Units ≤ 1,6 | 1,4 (striker 6,1, gunner 5,4, blaster 6,8, lancer 5,7, frost 7,8, titan 6,3; 1P, alle Bots, drei Stufen, n = 30). 4P nicht gemessen | erreicht (1P) |
+| Leave-one-out ≤ +5 | Normal: Striker 0, Blaster 0, Titan **+12,5**; Hard: Striker **+27,5**, Banner +5; Nightmare: Striker **+22,5** | **verfehlt** |
+| Koop fair ±10 je Bot je Stufe | siehe Tabelle unten | **verfehlt**, außer `aoe` (Normal 10, Nightmare 10) |
+| Stage-Dauer Normal 13–17 min | Siege 10,9–13,6, Median 11,7 (`aoe`) | **verfehlt**, unverändert seit Runde 3 |
+
+### Koop (Profil `normal`, n = 40, Siegquote %: 1P / 2P / 4P, Spanne)
+
+| Bot | Normal | Hard | Nightmare |
+|---|---|---|---|
+| greedy | 30 / 27,5 / 65 (37,5) | 10 / 0 / 0 (10) | 2,5 / 0 / 2,5 (2,5) |
+| farm | 50 / 82,5 / 67,5 (32,5) | 17,5 / 50 / 7,5 (42,5) | 5 / 20 / 7,5 (15) |
+| aoe | 85 / 80 / 90 (**10**) | 40 / 62,5 / 60 (22,5) | 7,5 / 17,5 / 17,5 (**10**) |
+| upgrade | 85 / 100 / 100 (15) | 2,5 / 60 / 95 (92,5) | 7,5 / 92,5 / 100 (92,5) |
+| wide | 62,5 / 20 / 42,5 (42,5) | 67,5 / 0 / 0 (67,5) | 20 / 2,5 / 0 (20) |
+| coop | 50 / 60 / 82,5 (32,5) | 17,5 / 5 / 0 (17,5) | 5 / 2,5 / 0 (5) |
+
+Warum nicht erreichbar: **kein einzelner HP-Faktor je Spielerzahl trifft alle Bots**, weil sich die Bots im Koop gegenläufig verhalten. `upgrade` skaliert mit der Spielerzahl überproportional (vier Geldbeutel auf dieselben wenigen Einheiten; bei 4P ×4,0 HP weiter 100 % auf Nightmare), `wide` bricht im Koop ein (Hard 67,5 → 0, kauft dort keinen Titan mehr: 4P Hard 0 %, Nightmare 3 %; Ursache — vermutlich Slot-/Typ-Konkurrenz bei 23 Kampf-Slots — nicht untersucht), `farm`/`coop`/`greedy` sind schon solo schwach. Ein Faktor, der `aoe` fair macht, lässt `upgrade` bei 95–100 % und `wide` bei 0 %. Der Hebel dafür ist nicht die HP-Tabelle, sondern die Koop-Wirtschaft (Upgrade-Kosten/Level-Cap im Koop, nicht gemessen) bzw. das Bot-Verhalten. Das ist keine Datenbiegung: die Tabellen sind auf `aoe` als Referenz gesetzt und das Ergebnis je Bot ist oben vollständig.
+
+### Leave-one-out (Befund und Experiment)
+
+- **Striker** ist für `wide` weiter eine Falle (Hard ohne Striker 95 gegen 67,5 %, Nightmare 42,5 gegen 20 %): er kauft ihn zu 100 % früh, hält fünf Stück und verbrennt die Münzen. Experiment `P6_EARLYCAP` (`botTuning.earlyCap`, höchstens N Striker je Bot): Cap 2 → LOO Striker +2,5, **aber** `wide` Hard steigt auf 92,5 % (Hard-Ziel 45–65 gerissen). Cap in den Daten nicht übernommen: danach müssten Hard und Nightmare neu kalibriert werden (Bounty/HP), und die Koop-Tabellen mit.
+- **Titan Normal +12,5:** ohne Titan gewinnt `aoe` 97,5 gegen 85 %. Auf Normal (Boss-Kit Tier 0: Rufer + Schild, kein Sturm) kostet der Titan 1000 Münzen für wenig Nutzen; auf Hard (Titan −17,5) und Nightmare (−10) trägt er. Der Boss-Plan ist heute nicht bedarfsabhängig (Kapazität gegen Boss-HP ließ sich aus `env.values` nicht sinnvoll abschätzen, Verhältnis überall ~1,0–1,7).
+
+## Verworfene Versuche
+
+- Boss-Plan-Horizont 4–5 Waves: `farm`/`coop` sterben bei Wave 13 (Hortung, zu wenig Verteidigung), Normal `farm` 47,5 → 30–37,5 %. 2 Waves: `wide` 52 %. 3 gewählt.
+- Titan-Upgrades vor dem Boss erzwingen (Stufe 1–3) oder Upgrade-Gewicht ×3/×8: keine Änderung der Boss-Tode, `farm` fällt dabei auf 30 %.
+- Kaufverzögerung 2–8 s für casual: casual schlug expert (siehe oben).
+- Zufälliger statt schlechterer Slot: nicht schlechter, siehe oben.
+
+## Tests
+
+Neu `test/botprofiles.test.ts` (12 Tests): Profil-Daten (schema-gültig, Fehler monoton), Determinismus je Profil/Seed (inkl. Koop), `@none` bit-identisch zu ohne Profil, Sim-Hash ohne Bots unberührt, Rauchtest Siegquote casual < normal ≲ expert (aoe + upgrade, Normal, 20 Seeds), Boss-Plan (greedy/wide/upgrade/farm/coop kaufen vor Wave 10 einen Titan; abschaltbar; ohne Wellenwissen kein früher Titan). `coop.test.ts` +2 Tests (Koop-Tabelle je Stufe, Validierung), `helpers.ts` `plainData()` neutralisiert die Stufen-Tabellen. 205 Tests grün, `tsc` sauber.
+
+## Werkzeuge
+
+`BOT_PROFILE=casual|normal|expert` (alle Sanity-Skripte), `P6_PROFILES='{"normal":{"worseSlotBp":0}}'` (Profil-Felder überschreiben), `P6_NOBOSSPLAN=1`, `P6_PLANWAVES=N`, `P6_NOSAVE=1`, `P6_NUKELVL`, `P6_UPBOOST`, `P6_EARLYCAP=N`. Koop-Tabelle je Stufe ohne Dateiänderung: `P3_RULES='{"hard":{"coopHpTableBp":[10000,21000,28000,31000]}}'` (mit `p5-coop.ts`).
+
+## Übergabe
+
+1. **Striker-Falle und Titan-Bedarf als Bot-/Plan-Thema schließen:** `earlyCap` 2 einführen **und** Hard/Nightmare danach neu einstellen (Bounty/HP-Raster, dann Koop-Tabellen); Boss-Plan bedarfsabhängig machen (z. B. nur ab Hard oder wenn die Wave-20-Kapazität fehlt).
+2. **Koop-Fairness** braucht einen Hebel an der Wirtschaft (Upgrade-Kosten/Level-Cap je Spielerzahl) statt an der HP; `upgrade` 4P bleibt sonst bei 95–100 %.
+3. **Stage-Dauer** (11,7 min): Waves enden früh, weil die nächste Wave beginnt, sobald das Feld leer ist; eine Mindest-Wave-Dauer wäre eine Regeländerung (Entscheidung der Menschen), keine Datenfrage.
+4. **Kennlinie Hard** (14,5): die Treppe liegt am Wave-20-Boss; Streuung der Bot-Stärke reicht nicht, solange der Boss-Schild eine harte Schwelle setzt.

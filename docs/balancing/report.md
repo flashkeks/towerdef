@@ -403,3 +403,47 @@ Siegquote bei gestreuter Spielerstärke (Faltung), bei f = 1,00:
 - Fehlertoleranz einbauen, die die Kurve verbreitert: weicher Fail-State (z. B. Base-HP-Regeneration pro Wave, 2. Boss-Leak ohne Verlust), damit ein einzelner Fehler nicht zur Niederlage führt; Ziel Fenster 90 -> 10 % >= 30 Punkte HP.
 - Playtest-Daten statt Bot-Daten für die Zielquoten: Bots um ein Fehlermodell erweitern (zufällig verspätete Käufe, falsche Slot-Wahl) und `q6-hp-curve.ts` wiederholen.
 - Mit dem Meta-Befund (Q4) zusammen betrachten: x1,10-1,15 Schadensmultiplikator entspricht etwa dem gesamten Abstand Normal-Nightmare (11 Punkte HP).
+
+---
+
+# Runde 4 (Stand P6): vorher / nachher je Abnahmeziel
+
+Grundlage: Ziele aus `run.md` Abschnitt 3, gemessen mit den Bots **mit Fehlermodell** (Profile casual / normal / expert, `sim/data/botProfiles.json`), `standard20`. „Vorher" = Ende Runde 3 (Tabellen oben) bzw. Ende P5 (letzter Messstand vor P6, `kalibrierung.md`). Messdetails, Datenänderungen (alt → neu → Grund) und Verworfenes: `kalibrierung.md`, „Runde 4 — P6". Stichproben: Siegquoten je Stufe n = 100, Matrizen/Leave-one-out/Koop n = 40 (±5–8 Punkte). Ampel: grün = erreicht, gelb = knapp/teilweise, rot = verfehlt.
+
+## Ergebnis in Kürze
+
+- **Bots:** drei Profile mit Fehlermodell (Kaufverzögerung, schlechterer Slot, vergessene Upgrades, verspätete Fähigkeiten, Wellenwissen), eigener geseedeter Bot-PRNG, deterministisch je Seed. Boss-Plan für alle Bots: Boss von Wave 10 leakt nie mehr (vorher bis 97 % der Läufe tot am Boss).
+- **Stufen solo** (bester Bot, Profil normal): Normal **85**, Hard **57**, Nightmare **24** — alle drei im Zielkorridor. expert liegt darüber (94 / 67 / 31), casual darunter (60 / 41 / 19).
+- **Offen:** Leave-one-out (Striker-Falle bei `wide` auf Hard/Nightmare, Titan auf Normal), Koop-Fairness je Bot (nur `aoe` fair), Kennlinie Hard (14,5), Stage-Dauer (11,7 min).
+
+## Ziele: vorher / nachher
+
+| Ziel | Vorher (Runde 3 → Ende P5) | Nachher (P6, Profil normal; casual / expert wo gemessen) | Ampel |
+|---|---|---|---|
+| Keine dominante Kombi (kein Bot ≥ 95 % in allen Zellen 3 Stufen × 1P/4P) | R3: `wide`/`greedy` Normal 100 %, aber Hard/NM klein; `upgrade` im Koop 97–100 %. P5: `upgrade` 4P 97,5 / 100 / 100, 1P 60 / 27,5 / 32,5 | `upgrade` 4P Normal 100, Hard 95, Nightmare 100, aber 1P 85 / 2,5 / 7,5. Kein Bot in allen sechs Zellen ≥ 95 | grün |
+| Keine Fallen-Unit (LOO ≤ +5) | R3: Striker +10/+33/+12 (N/H/NM). P1: Normal ≤ +5, Hard Striker +48 / Banner +50, NM +38 / +48 | Normal: Striker 0, Blaster 0, Titan **+12,5**; Hard: Striker **+27,5**, Banner +5; Nightmare: Striker **+22,5**. Experiment Striker-Cap 2: Striker +2,5, aber `wide` Hard 92,5 % (nicht übernommen, Hard/NM müssten neu kalibriert werden) | rot (besser als P1, Striker/Titan offen) |
+| Jede Unit von einem Bot ≥ 30 % gekauft | P1: ≥ 91 % | niedrigste Banner 46 % (greedy), alle anderen ≥ 98 % (Farm 100 % durch `farm`); mit Profil normal | grün |
+| Schaden/Münze DPS-Units Faktor ≤ 1,6 | R3: 3,5; P1: 1,6 | **1,4** (striker 6,1 / gunner 5,4 / blaster 6,8 / lancer 5,7 / frost 7,8 / titan 6,3; 1P, n = 30). 4P nicht gemessen | grün |
+| AoE-Bot ≥ 50 % Normal solo | R3: 0–2 %; P1: 52 %; P5: 95 % | **83 %** (casual 60, expert 94) | grün |
+| Stufen solo Normal 85–95 / Hard 45–65 / Nightmare 15–35 | R3: 95 / 58 / 39; P5: 95 / 52,5 / 32,5 (Bots ohne Fehlermodell) | **85 / 57 / 24**; casual 60 / 41 / 19; expert 94 / 67 / 31 | grün (Normal am unteren Rand) |
+| Stufen unterscheiden sich über Regeln | P3: Modifier, Varianten, Elemente, Leben, Boss-Tier | unverändert; HP-Spreizung 4,8 % (vorher 6,8 %) | grün |
+| Kennlinie 90 → 10 % ≥ 25 Punkte HP | R3: ~14; nach P3: 15,7 / 25,0 / 23,1; nach Merge Normal 8,8 | Normal (`upgrade`) **25,7**, Nightmare (`wide`) **24,4**, Hard (`wide`) **14,5** (Treppe am Wave-20-Boss, Sprung 93 → 62 % zwischen f = 0,95 und 1,0) | gelb (Normal grün, Nightmare knapp, Hard rot) |
+| Koop fair (1P/2P/4P ±10 je Bot je Stufe) | P5: nur `aoe` Normal fair; Hard/NM im Koop 90–100 % gegen 27–52 % solo | Tabelle je Stufe eingeführt. `aoe`: Normal 85 / 80 / 90 (Spanne 10), Hard 40 / 62,5 / 60 (22,5), Nightmare 7,5 / 17,5 / 17,5 (10). `upgrade`: Spanne 15 / 92,5 / 92,5, `wide` 42,5 / 67,5 / 20, `farm`/`coop`/`greedy` 5–42,5. Details `kalibrierung.md` | rot (nur `aoe` im Band) |
+| Stage-Dauer Story Normal 13–17 min | R3: 11–13 min | Siege `aoe` Normal 10,9–13,6, Median 11,7 min (Hard 11,6, Nightmare 11,7) | rot, Ursache Regel (Wave startet bei leerem Feld früher), nicht Daten |
+
+## Vorher/nachher je Profil: Siegquote bester Bot solo (n = 100)
+
+| Stufe | Ziel | casual | normal | expert | Bots normal (greedy / farm / aoe / upgrade / wide) |
+|---|---|---|---|---|---|
+| Normal | 85–95 | 60 | **85** | 94 | 24 / 48 / 83 / 85 / 57 |
+| Hard | 45–65 | 41 | **57** | 67 | 4 / 13 / 46 / 2 / 57 |
+| Nightmare | 15–35 | 19 | **24** | 31 | 1 / 3 / 6 / 8 / 24 |
+
+Zum Vergleich ohne Fehlermodell und ohne Boss-Plan (Ende P5, n = 40): Normal 95 (`aoe`), Hard 52,5 (`aoe`), Nightmare 32,5 (`upgrade`); mit Boss-Plan, noch ohne Fehlermodell: Hard `wide` 77,5, Nightmare `wide` 12,5. Der Boss-Plan hob `wide`/`greedy` auf Normal von 0 auf 67,5 / 20 % und senkte `upgrade` auf Hard/NM (27,5 → 10 / 32,5 → 10 %, Typ-Limit, Titan-Hortung).
+
+## Befunde für die weitere Arbeit
+
+- **Bot-Rollen:** `upgrade` trägt Normal (85) und bricht auf Hard/NM ein (2–8 %), `wide` ist der Hard/NM-Bot (57 / 24); `aoe` ist auf Hard mittelstark (46). Die Rollenverteilung ist Bot-Struktur (Titan-Hortung, Typ-Limit 6), keine Unit-Dominanz.
+- **Kaufverzögerung ist kein Handicap** in diesem Sim (Bündeln hilft den Bots): casual braucht Slot-, Upgrade- und Fähigkeitenfehler, um schwächer zu sein.
+- **Hard-Hang:** `hard.bountyBp` 10500 → 41, 10600 → 57, 10700 → 64 % (n = 100): ~7 Punkte je 100 bp. Für den Feinabgleich im Playtest der Hebel der Wahl.
+- **Offene Punkte (Übergabe in `kalibrierung.md`):** Striker-Cap mit Neukalibrierung von Hard/NM, bedarfsabhängiger Titan-Plan, Koop-Wirtschaft (Upgrade-Kosten/Level-Cap) statt HP-Tabelle, Mindest-Wave-Dauer als Regelentscheidung.

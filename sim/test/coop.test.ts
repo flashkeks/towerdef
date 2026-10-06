@@ -4,7 +4,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { compile, coopHpFor } from '../src/data/compile.js';
-import { validateGameData } from '../src/data/load.js';
+import { loadGameData, validateGameData } from '../src/data/load.js';
 import { wavePool } from '../src/systems/waves.js';
 import { createEnemy } from '../src/systems/spawn.js';
 import { plainData, stage } from './helpers.js';
@@ -68,5 +68,28 @@ describe('Koop-HP-Faktor', () => {
     expect(() => validateGameData(withCoop({ hpTableBp: [11000, 15000, 18000, 21000] }))).toThrow(/10000/);
     expect(() => validateGameData(withCoop({ bossHpTableBp: [10000, 15000] }))).toThrow(/maxPlayers/);
     expect(() => validateGameData(withCoop({ hpTableBp: [10000, 15000, 18000, 21000] }))).not.toThrow();
+  });
+
+  it('P6: Koop-Tabelle je Stufe überschreibt economy.coop, nur für diese Stufe; Solo bleibt unberührt; Validierung', () => {
+    const d = withCoop({ hpTableBp: [10000, 15000, 18000, 20000] });
+    Object.assign(d.difficulties.hard, { coopHpTableBp: [10000, 21000, 28000, 31000] });
+    expect([1, 2, 4].map((p) => compile(d, stage, 'hard', p).coopHpBp)).toEqual([10000, 21000, 31000]);
+    expect([1, 2, 4].map((p) => compile(d, stage, 'normal', p).coopHpBp)).toEqual([10000, 15000, 20000]);
+    expect(compile(d, stage, 'hard', 4).coopBossHpBp).toBe(31000);
+    expect(() => validateGameData(d)).not.toThrow();
+    Object.assign(d.difficulties.hard, { coopHpTableBp: [10500, 21000, 28000, 31000] });
+    expect(() => validateGameData(d)).toThrow(/10000/);
+    Object.assign(d.difficulties.hard, { coopHpTableBp: [10000, 21000] });
+    expect(() => validateGameData(d)).toThrow(/maxPlayers/);
+  });
+
+  it('P6: eingecheckte Stufen-Tabellen sind gültig und steigen mit der Spielerzahl; je Stufe gleich oder höher als Normal', () => {
+    const real = loadGameData();
+    validateGameData(real);
+    for (const k of ['normal', 'hard', 'nightmare'] as const) {
+      const t = real.difficulties[k].coopHpTableBp ?? real.economy.coop.hpTableBp ?? [];
+      expect(t[0]).toBe(10000);
+      for (let i = 1; i < t.length; i++) expect(t[i]).toBeGreaterThanOrEqual(t[i - 1]);
+    }
   });
 });

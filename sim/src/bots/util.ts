@@ -3,7 +3,9 @@
  * Farm-Fenster (§12), Fähigkeiten, Targeting, Spenden. Nur lesende Abfragen + `sim.apply`.
  */
 import type { UnitDef } from '../data/compile.js';
-import { nextInt, type RngState } from '../prng.js';
+import { loadBotProfiles } from '../data/load.js';
+import { BotProfileSchema, type BotProfile } from '../data/schema.js';
+import { nextInt, nextU32, seedRng, type RngState } from '../prng.js';
 import type { Sim, SlotInfo } from '../sim.js';
 import type { EnemyState, UnitState } from '../state.js';
 import type { BotContext } from './types.js';
@@ -25,8 +27,66 @@ export interface Memo {
   cardWave: number;
   cardLives: number;
   streak: number;
+  /** Fehlermodell (Runde 4 / P6): Profil (null = fehlerfreier Registry-Bot) und der eigene PRNG des Bots für alle Fehlerwürfe (lazy, aus `ctx.rng` abgeleitet). */
+  profile: BotProfile | null;
+  frng: RngState | null;
+  /** Frühester Tick der nächsten Kaufrunde (Reaktionsverzögerung). */
+  nextBuyTick: number;
+  /** Je Unit-ID: Wave, in der gewürfelt wurde, und ob die Upgrades dieser Unit in dieser Wave vergessen sind. */
+  forget: Map<number, { wave: number; forgot: boolean }>;
+  /** Je Unit-ID: Tick, ab dem die wartende Fähigkeit zündet (verspätete Fähigkeiten). */
+  abilityAt: Map<number, number>;
+  /** Boss-Vorschau je Wave (Boss-Plan): Boss ja/nein und welche Antworten das Kit verlangt. */
+  bossInfo: Map<number, { boss: boolean; stun: boolean }>;
 }
-export const newMemo = (): Memo => ({ armor: 0, airSeen: false, saving: 0, rotated: false, cardWave: 0, cardLives: -1, streak: 0 });
+/** Profil, das `newMemo` benutzt, solange `withProfile` läuft (Bot-Fabriken haben keine Parameter). */
+let building: BotProfile | null | undefined;
+let profileTable: Record<string, BotProfile> | null = null;
+export function profileByName(name: string | null | undefined): BotProfile | null {
+  if (!name || name === 'none') return null;
+  profileTable ??= loadBotProfiles();
+  const p = profileTable[name];
+  if (!p) throw new Error(`Unbekanntes Bot-Profil "${name}" (verfügbar: ${Object.keys(profileTable).join(', ')}, none)`);
+  return p;
+}
+/** Nur Experimente (Sanity-Skripte, `P6_PROFILES`): Felder eines Profils überschreiben, schema-geprüft. */
+export function overrideProfile(name: string, patch: Partial<BotProfile>): void {
+  const cur = profileByName(name) as BotProfile;
+  (profileTable as Record<string, BotProfile>)[name] = BotProfileSchema.parse({ ...cur, ...patch });
+}
+/** Baut einen Bot mit festem Profil (`null`/'none' = fehlerfrei), unabhängig von `botTuning.profile`. */
+export function withProfile<T>(name: string | null, make: () => T): T {
+  const prev = building;
+  building = profileByName(name);
+  try {
+    return make();
+  } finally {
+    building = prev;
+  }
+}
+export const newMemo = (): Memo => ({
+  armor: 0,
+  airSeen: false,
+  saving: 0,
+  rotated: false,
+  cardWave: 0,
+  cardLives: -1,
+  streak: 0,
+  profile: building !== undefined ? building : profileByName(botTuning.profile),
+  frng: null,
+  nextBuyTick: 0,
+  forget: new Map(),
+  abilityAt: new Map(),
+  bossInfo: new Map(),
+});
+
+/** Eigener Fehler-PRNG des Bots, beim ersten Gebrauch aus dem Bot-PRNG abgeleitet (der Sim-PRNG bleibt unberührt). */
+function frngOf(ctx: BotContext, memo: Memo): RngState {
+  memo.frng ??= seedRng((nextU32(ctx.rng) ^ 0xfa17ed06) >>> 0);
+  return memo.frng;
+}
+const chance = (ctx: BotContext, memo: Memo, bp: number): boolean => bp > 0 && nextInt(frngOf(ctx, memo), 10000) < bp;
+const secs = (ctx: BotContext, memo: Memo, r: [number, number]): number => r[0] + (r[1] > r[0] ? nextInt(frngOf(ctx, memo), r[1] - r[0] + 1) : 0);
 
 /**
  * Sparen (Runde 4 / P1, nur Policy-Option `save`): Ein Mensch spart auf eine teure, deutlich bessere Unit (Mythic/Legendary),
@@ -50,6 +110,22 @@ export const botTuning = {
   bossPanicMilli: 31000,
   /** Risikokarten-Strategie global abschalten (`P4_NOCARDS=1`). Die Strategie läuft nur für Policies mit `cards: true`. */
   cardsDisabled: false,
+  /** Runde 4 / P6: Profil für Bots ohne `@profil` im Namen (Sanity-Skripte: `BOT_PROFILE=normal`). null = fehlerfrei wie Runden 1-5. */
+  profile: null as string | null,
+  /** Boss-Plan (P6): Titan/Frost vor einem Boss anschaffen, gespeist aus `previewWave(n)`. Aus: `P6_NOBOSSPLAN=1`. */
+  bossPlan: true,
+  /** Wellenwissen von Bots ohne Profil (Waves voraus). */
+  bossLookahead: 8,
+  /** Der Plan greift frühestens so viele Waves vor dem Boss (sonst hortet der Bot zu früh Münzen). */
+  bossPlanWaves: 3,
+  /** Boss-Plan: Upgrades der Nuke-Unit zählen im Boss-Horizont so viel mehr (Nuke = Vielfaches des Treffer-Schadens der Stufe). 1 = aus. */
+  bossUpgradeBoost: 1,
+  /** Boss-Plan: Nuke-Unit vor dem Boss mindestens auf diese Stufe ausbauen (0 = nicht). */
+  bossNukeLevel: 0,
+  /** Boss-Plan: auf die Plan-Unit sparen (ab 40 % der Kosten nichts anderes kaufen). Aus: kauft sie nur, wenn die Münzen ohnehin da sind. */
+  bossPlanSave: true,
+  /** Early-Units (Striker): so viele davon kauft ein Bot höchstens (ein Mensch pivotiert früh weg von der Starter-Unit). Standard: Cap der Unit. */
+  earlyCap: 99,
 };
 
 export interface Policy {
@@ -68,6 +144,8 @@ export interface Policy {
    * 40 % der Kosten da sind) und kauft sie als Erstes. Ein Mensch plant so für den Boss (Titan vor Wave 10).
    */
   plan?: { unit: string; fromWave: number };
+  /** Boss-Plan (P6) für diese Policy; Standard an (`botTuning.bossPlan`). Koop-Support schaltet ihn ab. */
+  bossPlan?: boolean;
   /** Auf teure, deutlich bessere Platzierungen sparen (siehe `botTuning`). Standard an, `false` schaltet ab. */
   save?: boolean;
   /** Münzen, die nicht für Kampf-Units ausgegeben werden. */
@@ -234,6 +312,7 @@ export function buildOptions(env: Env, pol: Policy): Option[] {
     // Mythic nicht als Eröffnung: die ersten Waves brauchen mehrere billige Körper (Runde 4 / P1).
     if (def.rarity === 'mythic' && env.wave < botTuning.mythicFromWave && !botTuning.disabled) continue;
     if (env.memo.rotated && EARLY_UNITS.includes(def.id)) continue;
+    if (EARLY_UNITS.includes(def.id) && env.own.filter((u) => u.defId === def.id).length >= botTuning.earlyCap) continue;
     if (pol.canPlace && !pol.canPlace(def, env)) continue;
     const w = pol.weight ? pol.weight(def, 'place') : 1;
     if (w <= 0) continue;
@@ -272,6 +351,68 @@ function planStep(env: Env, plan: { unit: string; fromWave: number }, opts: Opti
 }
 
 /**
+ * Boss-Plan (Runde 4 / P6, für alle Bots): Wer weiß, dass ein Boss kommt, schafft die Antworten darauf an. Gespeist aus
+ * `previewWave(n).boss` und den Kit-Daten (`bossKits()`): Nuke-Unit (Titan) bricht Schilde und nutzt Fenster, Stun-Unit (Frost)
+ * unterbricht Telegraphs, sobald das Kit auf der Stufe etwas Unterbrechbares hat. Wellenwissen = `lookahead` des Profils
+ * (Bots ohne Profil: `botTuning.bossLookahead`); 0 = der Bot reagiert erst, wenn der Boss auf dem Feld steht. Der Plan greift
+ * höchstens `botTuning.bossPlanWaves` Waves vor dem Boss (Sparen ab dann, wie ein Mensch auf den Titan spart).
+ */
+function bossInfoOf(env: Env, memo: Memo, w: number): { boss: boolean; stun: boolean } {
+  let info = memo.bossInfo.get(w);
+  if (!info) {
+    const pv = env.sim.previewWave(w);
+    const kit = pv?.bossKit ? env.sim.bossKits()[w] : undefined;
+    const active = new Set(pv?.bossKit?.abilities ?? []);
+    info = { boss: !!pv?.boss, stun: !!kit?.abilities.some((a) => active.has(a.id) && a.interruptible) };
+    memo.bossInfo.set(w, info);
+  }
+  return info;
+}
+
+/** Unit-IDs, die der Boss-Plan jetzt will (Reihenfolge = Priorität), leer ohne Boss im Horizont. */
+function bossNeeds(env: Env, memo: Memo): string[] {
+  const look = memo.profile ? memo.profile.lookahead : botTuning.bossLookahead;
+  const horizon = Math.min(look, botTuning.bossPlanWaves);
+  const st = env.sim.state;
+  let stun = false;
+  let found = false;
+  for (let w = Math.max(1, env.wave); w <= env.wave + horizon; w++) {
+    if (w === env.wave && !st.enemies.some((e) => e.hp > 0 && e.boss)) continue;
+    const info = bossInfoOf(env, memo, w);
+    if (!info.boss) continue;
+    found = true;
+    stun ||= info.stun;
+  }
+  if (!found) return [];
+  const out = [...env.defs.values()].filter((d) => d.ability?.kind === 'nuke').map((d) => d.id);
+  if (stun) out.push(...[...env.defs.values()].filter((d) => d.ability?.kind === 'stunAoe').map((d) => d.id));
+  return out;
+}
+
+/** Boss-Plan-Schritt: 'wait' = sparen, Option-Liste = nur diese Platzierungen, null = nichts zu tun. */
+function bossPlanStep(env: Env, memo: Memo, pol: Policy): Option[] | 'wait' | null {
+  for (const id of bossNeeds(env, memo)) {
+    const def = env.defs.get(id);
+    if (!def || env.own.some((u) => u.defId === id) || !canPlaceBase(env, def)) continue;
+    const budget = env.coins - (pol.reserve ?? 0);
+    if (budget < def.placeCost) return botTuning.bossPlanSave && budget >= def.placeCost * 0.4 ? 'wait' : null;
+    // Ohne die Gewichte/Beschränkungen der Policy: der Boss-Plan gilt für jeden Bot.
+    const mine = buildOptions(env, { reserve: pol.reserve, maxNonFarmInvest: pol.maxNonFarmInvest }).filter((o) => o.kind === 'place' && o.def.id === id);
+    if (mine.length > 0) return mine;
+  }
+  // Alle Antworten stehen: die Nuke-Einheit vor dem Boss auf Mindeststufe bringen (unabhängig von den Gewichten der Policy).
+  if (botTuning.bossNukeLevel > 0 && bossNeeds(env, memo).length > 0) {
+    for (const u of env.own) {
+      const def = env.defs.get(u.defId) as UnitDef;
+      if (def.ability?.kind !== 'nuke' || u.level >= Math.min(def.maxLevel, botTuning.bossNukeLevel)) continue;
+      const cost = def.upgradeCosts[u.level];
+      if (cost <= env.coins - (pol.reserve ?? 0)) return [{ kind: 'upgrade', def, unit: u, cost, score: 1 }];
+    }
+  }
+  return null;
+}
+
+/**
  * Sparen: Ist die beste Option insgesamt (ohne Budget) deutlich besser je Münze als die beste bezahlbare,
  * kostet mehr als verfügbar und liegen schon `saveMinShare` davon vor (nur Platzierungen), wird gewartet (höchstens `saveMaxDecisions` Entscheidungen
  * in Folge, ~ 1,5 Waves), damit Teure-Platzierungen (Titan, Frost, Lancer) nicht strukturell verhungern.
@@ -295,20 +436,54 @@ function shouldSave(env: Env, memo: Memo, pol: Policy, opts: Option[], failed: S
   return true;
 }
 
+/** Fehlermodell: Hat der Bot die Upgrades dieser Unit in dieser Wave vergessen? (einmal je Unit und Wave gewürfelt) */
+function forgotten(ctx: BotContext, memo: Memo, u: UnitState, wave: number): boolean {
+  let f = memo.forget.get(u.id);
+  if (!f || f.wave !== wave) {
+    f = { wave, forgot: chance(ctx, memo, (memo.profile as BotProfile).forgetUpgradeBp) };
+    memo.forget.set(u.id, f);
+  }
+  return f.forgot;
+}
+
+/** Fehlermodell: Reaktionsverzögerung. Eine Kaufrunde ist erlaubt, wenn die Pause der letzten abgelaufen ist; danach wird die nächste Pause gewürfelt. */
+export function buyGate(ctx: BotContext, memo: Memo): boolean {
+  if (!memo.profile) return true;
+  const tick = ctx.sim.state.tick;
+  if (tick < memo.nextBuyTick) return false;
+  memo.nextBuyTick = tick + 20 * secs(ctx, memo, memo.profile.buyDelaySec);
+  return true;
+}
+
 /** Kauf-Schleife: wählt unter den Top-3-Optionen (seeded) und kauft, bis nichts mehr geht. */
 export function spend(ctx: BotContext, memo: Memo, pol: Policy): void {
   const failed = new Set<string>();
   const key = (o: Option): string => (o.kind === 'place' ? `p${o.def.id}@${o.slot}` : `u${o.unit?.id}`);
   for (let i = 0; i < 80; i++) {
     const env = makeEnv(ctx, memo);
-    const opts = buildOptions(env, pol).filter((o) => !failed.has(key(o)));
-    const planned = pol.plan ? planStep(env, pol.plan, opts) : null;
+    let opts = buildOptions(env, pol).filter((o) => !failed.has(key(o)));
+    // Fehlermodell: vergessene Upgrades (je Unit und Wave gewürfelt).
+    if (memo.profile && memo.profile.forgetUpgradeBp > 0) opts = opts.filter((o) => o.kind !== 'upgrade' || !forgotten(ctx, memo, o.unit as UnitState, env.wave));
+    if (botTuning.bossPlan && pol.bossPlan !== false && botTuning.bossUpgradeBoost !== 1 && bossNeeds(env, memo).length > 0) {
+      for (const o of opts) if (o.kind === 'upgrade' && o.def.ability?.kind === 'nuke') o.score *= botTuning.bossUpgradeBoost;
+      opts.sort((a, b) => b.score - a.score || a.cost - b.cost);
+    }
+    let planned: Option[] | 'wait' | null = botTuning.bossPlan && pol.bossPlan !== false ? bossPlanStep(env, memo, pol) : null;
+    if (Array.isArray(planned)) planned = planned.filter((o) => !failed.has(key(o)));
+    if (planned === null || (Array.isArray(planned) && planned.length === 0)) planned = pol.plan ? planStep(env, pol.plan, opts) : null;
     if (planned === 'wait') return;
     if (planned) opts.splice(0, opts.length, ...planned);
     if (!planned && !botTuning.disabled && pol.save !== false && shouldSave(env, memo, pol, opts, failed, key)) return;
     if (opts.length === 0) return;
     memo.saving = 0;
-    const o = pickTop(ctx.rng, opts);
+    let o = pickTop(ctx.rng, opts);
+    // Fehlermodell: schlechterer Slot (zufälliger anderer Slot für dieselbe Unit).
+    if (memo.profile && o.kind === 'place' && chance(ctx, memo, memo.profile.worseSlotBp)) {
+      // "Schlechter" = aus der schlechteren Hälfte der Slots (nach Bot-Bewertung) dieser Unit.
+      const same = opts.filter((x) => x.kind === 'place' && x.def.id === o.def.id);
+      const worse = same.slice(Math.ceil(same.length / 2));
+      if (worse.length > 0) o = worse[nextInt(frngOf(ctx, memo), worse.length)];
+    }
     const res =
       o.kind === 'place'
         ? ctx.sim.apply(ctx.playerId, { type: 'place', unitId: o.def.id, slot: o.slot as number })
@@ -413,8 +588,25 @@ export function bossStatus(sim: Sim, live: EnemyState[]): { boss: EnemyState; wi
   };
 }
 
+/**
+ * Fehlermodell: verspätete Fähigkeit. Wäre das Zünden sinnvoll, wartet der Bot die gewürfelte Verspätung ab (Sekunden, ab dem
+ * ersten Moment, in dem es sinnvoll war). Ohne Profil zündet er sofort.
+ */
+function abilityGate(ctx: BotContext, memo: Memo | undefined, u: UnitState): boolean {
+  if (!memo?.profile) return true;
+  const tick = ctx.sim.state.tick;
+  let at = memo.abilityAt.get(u.id);
+  if (at === undefined) {
+    at = tick + 20 * secs(ctx, memo, memo.profile.abilityDelaySec);
+    memo.abilityAt.set(u.id, at);
+  }
+  if (tick < at) return false;
+  memo.abilityAt.delete(u.id);
+  return true;
+}
+
 /** Fähigkeiten: Frost-Stun bei >= N Gegnern in Radius oder Boss/Elite; Titan-Nuke auf Boss/Elite oder fetten Gegner. Gegen einen Boss mit Kit im Fenster (P4). */
-export function useAbilities(ctx: BotContext, frostMin = 4): void {
+export function useAbilities(ctx: BotContext, frostMin = 4, memo?: Memo): void {
   const { sim, playerId } = ctx;
   const st = sim.state;
   const defs = new Map(sim.catalog().map((d) => [d.id, d]));
@@ -427,29 +619,30 @@ export function useAbilities(ctx: BotContext, frostMin = 4): void {
     const d = defs.get(u.defId) as UnitDef;
     const ab = d.ability;
     if (!ab) continue;
+    let fire = false;
     if (ab.kind === 'stunAoe') {
       const s = slots[u.slot];
       const inR = live.filter((e) => (!e.flying || d.canHitAir) && e.stunTicks <= 0 && dist(e, s) <= ab.radiusMilli);
       if (bs) {
         // Boss mit Kit lebt: Frost wartet auf das Fenster bzw. auf einen unterbrechbaren Telegraph (Notfall: kurz vor dem Ziel, Sturm).
         const bossIn = inR.some((e) => e === bs.boss);
-        if (bossIn && (bs.window || bs.interruptible || bs.charging || bs.panic)) sim.apply(playerId, { type: 'useAbility', entityId: u.id });
-        else if (inR.filter((e) => e !== bs.boss).length >= frostMin * 2) sim.apply(playerId, { type: 'useAbility', entityId: u.id });
-        continue;
-      }
-      if (inR.length >= frostMin || inR.some(isBig)) sim.apply(playerId, { type: 'useAbility', entityId: u.id });
+        fire = bossIn ? bs.window || bs.interruptible || bs.charging || bs.panic : false;
+        if (!fire && inR.filter((e) => e !== bs.boss).length >= frostMin * 2) fire = true;
+      } else fire = inR.length >= frostMin || inR.some(isBig);
     } else if (ab.kind === 'nuke') {
       const targets = live.filter((e) => !e.flying || d.canHitAir);
       if (targets.length === 0) continue;
       const dmg = (d.levels[u.level].damageCenti * ab.damageMulBp) / 10000;
       if (bs) {
         // Nuke ins Fenster oder auf den Schild (bricht ihn, öffnet das Fenster); sonst halten, außer Notfall oder Kill.
-        if (bs.window || bs.ward || bs.panic || bs.boss.hp <= dmg * 1.2) sim.apply(playerId, { type: 'useAbility', entityId: u.id });
-        continue;
+        fire = bs.window || bs.ward || bs.panic || bs.boss.hp <= dmg * 1.2;
+      } else {
+        const top = targets.reduce((a, b) => (b.maxHp > a.maxHp ? b : a));
+        fire = targets.some(isBig) || top.hp >= dmg * 0.5;
       }
-      const top = targets.reduce((a, b) => (b.maxHp > a.maxHp ? b : a));
-      if (targets.some(isBig) || top.hp >= dmg * 0.5) sim.apply(playerId, { type: 'useAbility', entityId: u.id });
     }
+    if (!fire) memo?.abilityAt.delete(u.id);
+    else if (abilityGate(ctx, memo, u)) sim.apply(playerId, { type: 'useAbility', entityId: u.id });
   }
 }
 
@@ -493,9 +686,11 @@ export function donateSurplus(ctx: BotContext, to: number[], keep: number): void
 
 /** Eine komplette Entscheidungsrunde nach Policy (Fähigkeiten, Targeting, Farm, Kauf). */
 export function playTurn(ctx: BotContext, memo: Memo, pol: Policy): void {
-  useAbilities(ctx, pol.frostMin ?? 4);
+  useAbilities(ctx, pol.frostMin ?? 4, memo);
   if (pol.cards && !botTuning.cardsDisabled) takeCard(ctx, memo);
   manageTargeting(ctx);
+  // Fehlermodell: Reaktionsverzögerung gilt für alle Käufe (Farm, Verkauf, Platzieren, Upgraden).
+  if (!buyGate(ctx, memo)) return;
   if (pol.farm) {
     if (pol.farm.sellLate) sellLateFarms(ctx);
     farmStep(ctx, memo, pol);

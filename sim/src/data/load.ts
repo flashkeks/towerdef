@@ -5,6 +5,7 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import {
+  BotProfilesSchema,
   ChallengesSchema,
   BossesSchema,
   CardsSchema,
@@ -14,6 +15,7 @@ import {
   ModifiersSchema,
   StageSchema,
   UnitsSchema,
+  type BotProfile,
   type GameData,
   type StageData,
 } from './schema.js';
@@ -101,6 +103,13 @@ function validateCoop(d: GameData): void {
     if (t[0] !== 10000) throw new Error(`economy.coop.${name}[0] muss 10000 sein (1 Spieler), ist ${t[0]}`);
     if (t.length !== c.maxPlayers) throw new Error(`economy.coop.${name}: ${t.length} Einträge, maxPlayers ist ${c.maxPlayers}`);
   }
+  for (const k of ['normal', 'hard', 'nightmare'] as const) {
+    for (const [name, t] of [['coopHpTableBp', d.difficulties[k].coopHpTableBp], ['coopBossHpTableBp', d.difficulties[k].coopBossHpTableBp]] as const) {
+      if (!t) continue;
+      if (t[0] !== 10000) throw new Error(`difficulties.${k}.${name}[0] muss 10000 sein (1 Spieler), ist ${t[0]}`);
+      if (t.length !== c.maxPlayers) throw new Error(`difficulties.${k}.${name}: ${t.length} Einträge, maxPlayers ist ${c.maxPlayers}`);
+    }
+  }
 }
 
 /** Risikokarten (P4): IDs eindeutig. */
@@ -155,4 +164,9 @@ export function loadGameData(): GameData {
   };
   validateGameData(data);
   return data;
+}
+
+/** Bot-Profile (Runde 4 / P6, `data/botProfiles.json`); getrennt von `GameData`, weil sie nur Bots betreffen. */
+export function loadBotProfiles(): Record<string, BotProfile> {
+  return BotProfilesSchema.parse(readJson('botProfiles.json')).profiles;
 }

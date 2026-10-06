@@ -3,7 +3,7 @@
 Arbeitsauftrag: [`/run.md`](../run.md) (**Runde 4**: Balance reparieren, Spielregeln festziehen, M1 vorbereiten). **Verbindlich zuerst:** [design/ENTSCHEIDUNGEN.md](design/ENTSCHEIDUNGEN.md). **Jede Sitzung liest danach diese Datei** und macht beim „Nächsten Schritt“ weiter.
 Frühere Aufträge: [archiv/run-runde1.md](archiv/run-runde1.md), [archiv/run-runde2.md](archiv/run-runde2.md), [archiv/run-runde3.md](archiv/run-runde3.md).
 
-Letzte Aktualisierung: 2026-10-06 (Runde 4, gestartet; Arbeit ab jetzt über Max' Claude-Account in `flashkeks/towerdef`, Branch `dev`)
+Letzte Aktualisierung: 2026-10-06 (Runde 4, P6 Zwischenstand; Arbeit ab jetzt über Max' Claude-Account in `flashkeks/towerdef`, Branch `dev`)
 
 ## Pakete Runde 4
 
@@ -15,7 +15,7 @@ Letzte Aktualisierung: 2026-10-06 (Runde 4, gestartet; Arbeit ab jetzt über Max
 | P3 | Schwierigkeit über Regeln | **erledigt, vorläufig kalibriert** | 1 × Sonnet | 160 Tests grün. Regeln je Stufe in `difficulties.json` (Modifier-Dichte, Wellen-Varianten seeded, Element-Modus, Leben-Überschreibung, `bossAbilityTier` für P4, `rewardBp`), `systems/rules.ts`, Challenges als Datenkonzept. Bester Bot solo N/H/NM: 90/52/27 %. Kennlinie 90→10 %: Normal 15,7, Hard 25,0, Nightmare 23,1 Punkte (Ziel ≥ 25, Normal braucht P6). Nachkalibrieren nach P4-Merge: `sh sim/scripts/sanity/p3-check.sh 60 TAG`. [kalibrierung.md § Runde 4 — P3](balancing/kalibrierung.md) |
 | P4 | Boss-Kits, Wellenvorschau, Risikokarten | **erledigt** | 1 × Sonnet | Zwei Kits (Warden W10, Colossus W20) mit Phasen, Telegraph, Fenster, Schild, Beschwörung, Heilung, Sturm; `minDifficulty` je Fähigkeit als Schnittstelle für P3. `sim.previewWave(n)`, 8 Risikokarten, Befehl `chooseCard`, Bot-Suffix `+cards`. Boss-HP x10 -> x11, Titan-Nuke 5x -> 12x: Titan-Bot 88 % gegen 57 % ohne Titan (Boss x11). Bester Bot solo N/H/NM: 90/60/37,5 -> 87,5/42,5/35 %. 169 Tests grün. Fenster werden von Bots genutzt (1,0 -> 7,2 Fähigkeiten/Lauf im Fenster), ändern die Siegquote aber nicht messbar. [kalibrierung.md § Runde 4 — P4](balancing/kalibrierung.md) |
 | P5 | Koop-Skalierung | **teilweise, Ziel verfehlt** | 1 × Sonnet | 191 Tests grün. Hebel: HP-Faktor je Spielerzahl als Tabelle `economy.coop.hpTableBp` = 1 / 1,5 / 1,75 / 2,0 (vorher linear 1 / 2,1 / 3,2 / 4,3), Boss-HP getrennt (`bossHpTableBp`) im Kern gebaut, aus. Normal: `aoe` 95/87,5/97,5 (1P/2P/4P, vorher 95/5/0) fair; `upgrade` 60/100/97,5 nicht. Hard/Nightmare im Koop zu leicht (aoe/upgrade 90–100 % gegen 27–52 % solo) → Koop-Tabelle je Stufe nötig. Slot-Hebel gemessen, verworfen (kippt `aoe` gegen `upgrade`). Solo-Zellen bit-identisch. [kalibrierung.md § Runde 4 — P5](balancing/kalibrierung.md); Werkzeug `sim/scripts/sanity/p5-coop.sh` |
-| P6 | Fehlermodell Bots, Endkalibrierung | offen | – | zuletzt |
+| P6 | Fehlermodell Bots, Endkalibrierung | **Teil A erledigt, Teil B teilweise** | 1 × Sonnet | 205 Tests grün, tsc sauber. Boss-Plan für alle Bots (`previewWave`/Kit-Daten, abschaltbar): Wave-10-Boss leakt nie mehr. Drei Profile in `sim/data/botProfiles.json` (Kaufverzögerung, schlechterer Slot, vergessene Upgrades, verspätete Fähigkeiten, Wellenwissen; eigener Bot-PRNG), `getBot('aoe@normal')` bzw. `BOT_PROFILE=normal`. Koop-HP-Tabelle je Stufe (`difficulties.json` `coopHpTableBp`). Solo bester Bot (normal) N/H/NM **85 / 57 / 24** (casual 60/41/19, expert 94/67/31); Daten: Normal `hpBp` 15300, Hard `bountyBp` 10600, Nightmare `bountyBp` 10600. Erreicht: Stufen, dominante Kombi, Kaufquote ≥ 30 %, Schaden/Münze 1,4, AoE-Bot 83 %, Kennlinie Normal 25,7. **Verfehlt:** LOO (Striker +27,5/+22,5 auf Hard/NM, Titan +12,5 auf Normal), Koop fair (nur `aoe`; `upgrade` 4P 95–100), Kennlinie Hard 14,5 / Nightmare 24,4, Stage-Dauer 11,7 min. [kalibrierung.md § Runde 4 — P6](balancing/kalibrierung.md), [report.md § Runde 4](balancing/report.md) |
 | P7 | Architektur M1 (`docs/architecture.md`) | **erledigt** | 1 × Sonnet | parallel |
 | P8 | Art-Styleguide, Asset-Quellen | **erledigt** | 1 × Sonnet | parallel |
 | P9 | Name | **erledigt: „Duskwardens“** (Max) | 1 × Sonnet | parallel |
@@ -24,9 +24,8 @@ Letzte Aktualisierung: 2026-10-06 (Runde 4, gestartet; Arbeit ab jetzt über Max
 
 ## Nächster Schritt (Runde 4)
 
-P3 × P4 gemergt und nachkalibriert (Hard `bountyBp` 11000, siehe [kalibrierung.md § Nachkalibrierung](balancing/kalibrierung.md)). Stand solo bester Bot: Normal 93 %, Hard ~53 %, Nightmare 30 %. Kennlinie ≥ 25 verfehlt (deterministische Bots, Boss-Klippe) → P6.
-P5 ist teilweise erledigt (Normal-Koop gefixt, Hard/Nightmare-Koop braucht stufenweise Tabelle, siehe Zeile P5). Als Nächstes: Koop je Stufe nachziehen, dann **P6 Fehlermodell + Boss-Plan für alle Bots** (aus `previewWave(n).boss`) und Endkalibrierung.
-Offene Fragen an die Menschen: [architecture.md § 10](architecture.md), OFL-Fonts ([asset-sources.md](design/asset-sources.md)), EUIPO/USPTO für „Duskwardens“.
+P1–P9 stehen (P6 mit Zwischenstand). Offen aus P6 (Details und Reihenfolge: [kalibrierung.md § P6 Übergabe](balancing/kalibrierung.md)): (1) Striker-Cap (`botTuning.earlyCap` = 2) einführen und Hard/Nightmare danach neu kalibrieren (Bounty/HP-Raster, Koop-Tabellen), (2) Boss-Plan bedarfsabhängig (Titan kostet auf Normal 12,5 Punkte), (3) Koop über die Wirtschaft statt HP (`upgrade` 4P 95–100 %), (4) Stage-Dauer ist eine Regelentscheidung der Menschen. Danach P10 (Client-Gerüst) oder Playtest-Daten statt Bot-Daten.
+Offene Fragen an die Menschen: [architecture.md § 10](architecture.md), OFL-Fonts ([asset-sources.md](design/asset-sources.md)), EUIPO/USPTO für „Duskwardens“, Mindest-Wave-Dauer (Stage-Dauer 13–17 min).
 
 ---
 

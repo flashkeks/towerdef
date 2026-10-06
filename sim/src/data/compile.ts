@@ -188,7 +188,7 @@ export function compile(data: GameData, stage: StageData, difficultyId: Difficul
   const enemies: Record<string, EnemyArchetype> = {};
   for (const a of data.enemies.archetypes) enemies[a.id] = a;
 
-  const coopHpBp = coopTable(data.economy.coop.hpTableBp, players) ?? 10000 + data.economy.coop.hpPerExtraPlayerBp * (players - 1);
+  const coopHpBp = coopTable(data.difficulties[difficultyId].coopHpTableBp ?? data.economy.coop.hpTableBp, players) ?? 10000 + data.economy.coop.hpPerExtraPlayerBp * (players - 1);
   const hpCache: number[] = [];
   const g = BigInt(data.enemies.hpCurve.growthBp);
   const hpGrunt = (n: number): number => {
@@ -255,7 +255,7 @@ export function compile(data: GameData, stage: StageData, difficultyId: Difficul
     // P3 x P4: das Boss-Fähigkeiten-Set der Stufe (difficulties.json bossAbilityTier) entscheidet über minDifficulty der Boss-Kits.
     difficultyRank: data.difficulties[difficultyId].bossAbilityTier ?? DIFFICULTY_RANK[difficultyId],
     coopHpBp,
-    coopBossHpBp: coopTable(data.economy.coop.bossHpTableBp, players) ?? coopHpBp,
+    coopBossHpBp: coopTable(data.difficulties[difficultyId].coopBossHpTableBp ?? data.economy.coop.bossHpTableBp, players) ?? coopHpBp,
     hpGrunt,
     bounty,
   };
