@@ -1,9 +1,34 @@
 # Status (global)
 
-Arbeitsauftrag: [`/run.md`](../run.md) (**Runde 3**: Balancing-Simulator und Game-Design-Entwurf). **Jede Sitzung liest zuerst diese Datei** und macht beim „Nächsten Schritt“ weiter.
-Frühere Aufträge: [archiv/run-runde1.md](archiv/run-runde1.md) (Anime Adventures, Status in [anime-adventures/STATUS.md](anime-adventures/STATUS.md)), [archiv/run-runde2.md](archiv/run-runde2.md) (Vergleichsrecherche, Ergebnisse unten).
+Arbeitsauftrag: [`/run.md`](../run.md) (**Runde 4**: Balance reparieren, Spielregeln festziehen, M1 vorbereiten). **Verbindlich zuerst:** [design/ENTSCHEIDUNGEN.md](design/ENTSCHEIDUNGEN.md). **Jede Sitzung liest danach diese Datei** und macht beim „Nächsten Schritt“ weiter.
+Frühere Aufträge: [archiv/run-runde1.md](archiv/run-runde1.md), [archiv/run-runde2.md](archiv/run-runde2.md), [archiv/run-runde3.md](archiv/run-runde3.md).
 
-Letzte Aktualisierung: 2026-10-06 (Runde 3, abgeschlossen)
+Letzte Aktualisierung: 2026-10-06 (Runde 4, gestartet; Arbeit ab jetzt über Max' Claude-Account in `flashkeks/towerdef`, Branch `dev`)
+
+## Pakete Runde 4
+
+| Paket | Inhalt | Status | Agent (Modell) | Notiz |
+|---|---|---|---|---|
+| P0 | Archiv, Entscheidungen, gdd, Status | **in Arbeit** | Hauptsitzung | Runde-3-`run.md` archiviert, ENTSCHEIDUNGEN.md + beantwortete FRAGEN.md abgelegt. Verifikation in eigener Node-Umgebung: `npm ci && npm test && npm run typecheck` → 130/130 grün, tsc sauber |
+| P1 | Unit-Rebalance | offen | 1 × Sonnet | zuerst im Sim-Strang |
+| P2 | Leben-System, Fail-State | offen | – | nach P1 |
+| P3 | Schwierigkeit über Regeln | offen | – | nach P2 |
+| P4 | Boss-Kits, Wellenvorschau, Risikokarten | offen | – | parallel zu P3 möglich |
+| P5 | Koop-Skalierung | offen | – | nach P3 |
+| P6 | Fehlermodell Bots, Endkalibrierung | offen | – | zuletzt |
+| P7 | Architektur M1 (`docs/architecture.md`) | offen | 1 × Sonnet | parallel |
+| P8 | Art-Styleguide, Asset-Quellen | offen | 1 × Sonnet | parallel |
+| P9 | Name | offen | 1 × Sonnet | parallel |
+| P10 | Client-Gerüst (optional) | offen | – | erst nach P1–P6 |
+| P11 | Abschluss | offen | Hauptsitzung | |
+
+## Nächster Schritt (Runde 4)
+
+P1 (Sim) sowie P7, P8, P9 (Doku/Recherche) parallel starten.
+
+---
+
+# Runde 3 (abgeschlossen)
 
 ## Pakete Runde 3
 
@@ -18,7 +43,7 @@ Letzte Aktualisierung: 2026-10-06 (Runde 3, abgeschlossen)
 | P5 | Fähigkeiten-Musterkatalog (optional) | **erledigt** | 1 × Sonnet | 16 Muster, Top-8 (DESIGN); Beliebtheit meist UNKNOWN | |
 | P6 | Abschluss | **erledigt** | Hauptsitzung | 130 Tests grün, Linkprüfung 0 Fehler | |
 
-## Nächster Schritt (Runde 3)
+## Nächster Schritt (Ende Runde 3)
 
 Runde 3 ist abgeschlossen. Als Nächstes entscheiden die Menschen die Fragen in [design/FRAGEN.md](design/FRAGEN.md). Danach (Vorschlag):
 
