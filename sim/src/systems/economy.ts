@@ -56,7 +56,7 @@ export function resolveDeaths(w: World): void {
     if (def.child) {
       for (let k = 0; k < def.child.count; k++) {
         // DESIGN-OFFEN: Splitter-Kinder erben das Element, aber keine Modifier; sie haben eigene Bounty (gamma * Kind-HP) und Leak 1.
-        born.push(createEnemy(ctx, state.nextId++, def.child.type, e.wave, [], ctx.difficulty.elementsActive ? e.element : 0, e.progress, e.frac));
+        born.push(createEnemy(ctx, state.nextId++, def.child.type, e.wave, [], ctx.difficulty.elementsActive ? e.element : 0, e.progress, e.frac, e.card));
       }
     }
   }

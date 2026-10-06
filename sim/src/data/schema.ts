@@ -229,6 +229,89 @@ export const UnitsSchema = z.object({
 });
 export type UnitsData = z.infer<typeof UnitsSchema>;
 
+/**
+ * Boss-Kits (Runde 4 / P4, K5). Ein Kit gehört zu einer Wave der Stage (`wave`), gilt für den Archetyp `boss` und besteht aus
+ * Phasen (HP-Schwellen), Phasen-Aktionen (Schild "ward", Beschwörung, Fenster) und Fähigkeiten mit Telegraph.
+ * Schnittstelle für Schwierigkeitsstufen: jede Aktion/Fähigkeit hat `minDifficulty` (Standard normal); darunter ist sie aus.
+ */
+const DifficultyName = z.enum(['normal', 'hard', 'nightmare']);
+const Window = z.object({ ticks: pos, bp: pos });
+const PhaseAction = z.discriminatedUnion('kind', [
+  /** Schild-Phase: absorbiert `hpBp` der Max-HP; läuft nach `expireTicks` ab; bricht er, öffnet sich ein Fenster. */
+  z.object({
+    kind: z.literal('ward'),
+    hpBp: pos,
+    expireTicks: pos,
+    window: Window,
+    minDifficulty: DifficultyName.default('normal'),
+  }),
+  z.object({ kind: z.literal('summon'), type: z.string(), count: pos, minDifficulty: DifficultyName.default('normal') }),
+  z.object({ kind: z.literal('window'), window: Window, minDifficulty: DifficultyName.default('normal') }),
+]);
+const AbilityBase = {
+  id: z.string(),
+  name: z.string(),
+  /** Aktiv ab dieser Phase (Index) bis einschließlich `toPhase` (Standard: bis zum Ende). */
+  fromPhase: nat.default(0),
+  toPhase: nat.optional(),
+  /** Ticks nach Spawn bzw. nach Phasenbeginn bis zum ersten Einsatz. */
+  firstTicks: pos,
+  cooldownTicks: pos,
+  /** Vorwarnzeit (Ticks) zwischen Telegraph-Ereignis und Wirkung. */
+  telegraphTicks: pos,
+  /** Ein erfolgreicher Stun des Bosses während des Telegraphs bricht die Fähigkeit ab. */
+  interruptible: z.boolean().default(false),
+  /** Fenster nach der Wirkung (bei `charge`: wenn der Sturm endet). */
+  window: Window.optional(),
+  /** Fenster, wenn die Fähigkeit unterbrochen wurde. */
+  interruptWindow: Window.optional(),
+  minDifficulty: DifficultyName.default('normal'),
+};
+const BossAbility = z.discriminatedUnion('kind', [
+  z.object({ ...AbilityBase, kind: z.literal('summon'), type: z.string(), count: pos }),
+  z.object({ ...AbilityBase, kind: z.literal('charge'), speedBp: pos, durationTicks: pos }),
+  z.object({ ...AbilityBase, kind: z.literal('mend'), healBp: pos }),
+]);
+export const BossKitSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  _comment: comment,
+  /** Wave der Stage, in der der Boss mit diesem Kit erscheint. */
+  wave: pos,
+  phases: z
+    .array(z.object({ id: z.string(), name: z.string(), fromHpBp: pos.max(10000), onEnter: z.array(PhaseAction).default([]) }))
+    .min(1),
+  abilities: z.array(BossAbility).default([]),
+});
+export const BossesSchema = z.object({ ref, _comment: comment, kits: z.array(BossKitSchema) });
+export type BossKit = z.infer<typeof BossKitSchema>;
+export type BossAbility = z.infer<typeof BossAbility>;
+export type BossPhaseAction = z.infer<typeof PhaseAction>;
+export type BossesData = z.infer<typeof BossesSchema>;
+
+/**
+ * Risikokarten (Runde 4 / P4, K1): vor einer Wave wählbar, wirken auf alle Gegner dieser Wave. Alle Faktoren in Basispunkten
+ * (10000 = x1). `addModifiers` fügt Modifier hinzu (nur wo die Gruppe die Art nicht schon hat; nie auf Boss/Elite).
+ */
+export const RiskCardSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  text: z.string(),
+  /** Grobe Stärke 1 (mild) bis 3 (hart), nur Bot-Strategie und UI-Sortierung. */
+  tier: z.number().int().min(1).max(3),
+  hpBp: pos.default(10000),
+  speedBp: pos.default(10000),
+  /** Anzahl je Gruppe: ceil(count * countBp / 10000). */
+  countBp: pos.default(10000),
+  bountyBp: pos.default(10000),
+  /** Lebenskosten normaler Leaks (Boss-Sofortverlust bleibt). */
+  leakBp: pos.default(10000),
+  addModifiers: z.array(Modifier).default([]),
+});
+export const CardsSchema = z.object({ ref, _comment: comment, cards: z.array(RiskCardSchema).min(1) });
+export type RiskCard = z.infer<typeof RiskCardSchema>;
+export type CardsData = z.infer<typeof CardsSchema>;
+
 export interface GameData {
   economy: EconomyData;
   enemies: EnemiesData;
@@ -236,5 +319,8 @@ export interface GameData {
   difficulties: DifficultiesData;
   units: UnitsData;
   stages: Record<string, StageData>;
+  /** Runde 4 / P4. Optional, damit alte Datenobjekte (Tests, Overrides) ohne Kits weiter laufen. */
+  bosses?: BossesData;
+  cards?: CardsData;
 }
 export { int };

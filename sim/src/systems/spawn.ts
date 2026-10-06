@@ -7,7 +7,44 @@ import type { Ctx } from '../data/compile.js';
 import { parseModifier } from '../data/compile.js';
 import { mulBp } from '../fixed.js';
 import { positionAt } from '../path.js';
-import type { EnemyState, World } from '../state.js';
+import type { BossRun, EnemyState, World } from '../state.js';
+
+/** Startzustand des Boss-Kits für eine Boss-Wave (null, wenn die Wave kein Kit hat). */
+export function initBossRun(ctx: Ctx, wave: number): BossRun | null {
+  const kit = ctx.bossKits[wave];
+  if (!kit) return null;
+  return {
+    kit: kit.id,
+    phase: 0,
+    ward: 0,
+    wardTicks: 0,
+    wardWindowTicks: 0,
+    wardWindowBp: 0,
+    vulnTicks: 0,
+    vulnBp: 0,
+    hasteTicks: 0,
+    hasteBp: 0,
+    exhaustTicks: 0,
+    exhaustBp: 0,
+    cd: kit.abilities.map((a) => a.firstTicks),
+    tele: null,
+  };
+}
+
+/** Max-HP (Centi) und Bounty eines Gegners: eine Stelle für Spawn und Wellenvorschau. */
+export function enemyStats(ctx: Ctx, type: string, wave: number, card: string | null): { maxHp: number; bounty: number } {
+  const def = ctx.enemies[type];
+  let hp = mulBp(ctx.hpGrunt(wave), def.fHpBp);
+  hp = mulBp(hp, ctx.coopHpBp);
+  let bounty = ctx.bounty(wave, hp);
+  let maxHp = mulBp(hp, ctx.difficulty.hpBp);
+  const c = card ? ctx.cards[card] : undefined;
+  if (c) {
+    maxHp = mulBp(maxHp, c.hpBp);
+    bounty = mulBp(bounty, c.bountyBp);
+  }
+  return { maxHp, bounty };
+}
 
 export function createEnemy(
   ctx: Ctx,
@@ -18,16 +55,15 @@ export function createEnemy(
   element: number,
   progress = 0,
   frac = 0,
+  card: string | null = null,
 ): EnemyState {
   const def = ctx.enemies[type];
   if (!def) throw new Error(`Unbekannter Gegnertyp ${type}`);
-  let hp = mulBp(ctx.hpGrunt(wave), def.fHpBp);
-  hp = mulBp(hp, ctx.coopHpBp);
-  const bounty = ctx.bounty(wave, hp);
-  const maxHp = mulBp(hp, ctx.difficulty.hpBp);
+  const { maxHp, bounty } = enemyStats(ctx, type, wave, card);
   const baseSpeedMicro = Math.floor((ctx.data.enemies.baseSpeedMilliPerSec * 1000) / 20);
   let speedMicro = mulBp(mulBp(baseSpeedMicro, def.fSpeedBp), ctx.difficulty.speedBp);
   if (ctx.infinite) speedMicro = mulBp(speedMicro, ctx.speedInfBp(wave));
+  if (card && ctx.cards[card]) speedMicro = mulBp(speedMicro, ctx.cards[card].speedBp);
   let armor = def.armor;
   let shield = 0;
   let regen = false;
@@ -67,6 +103,8 @@ export function createEnemy(
     burn: null,
     poison: null,
     dmgShare: new Array<number>(ctx.players).fill(0),
+    bossRun: def.boss ? initBossRun(ctx, wave) : null,
+    card,
   };
 }
 
@@ -78,7 +116,7 @@ export function processSpawns(w: World): void {
   while (n < q.length && q[n].atTick <= state.tick) {
     if (state.enemies.length >= ctx.enemyCap) break; // DESIGN-OFFEN: Spawn wartet am Limit
     const s = q[n++];
-    const e = createEnemy(ctx, state.nextId++, s.type, s.wave, s.modifiers, s.element);
+    const e = createEnemy(ctx, state.nextId++, s.type, s.wave, s.modifiers, s.element, 0, 0, s.card);
     state.enemies.push(e);
     state.stats.spawned++;
     w.events.push({ type: 'spawn', tick: state.tick, enemyId: e.id, enemy: e.type, wave: e.wave });

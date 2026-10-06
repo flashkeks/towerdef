@@ -5,6 +5,8 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import {
+  BossesSchema,
+  CardsSchema,
   DifficultiesSchema,
   EconomySchema,
   EnemiesSchema,
@@ -41,7 +43,44 @@ export function validateGameData(d: GameData): void {
     if (u.attack?.kind === 'line' && !u.attack.widthMilli) throw new Error(`${u.id}: line ohne Breite`);
     if (u.attack?.kind === 'cone' && !u.attack.coneDeg) throw new Error(`${u.id}: cone ohne Winkel`);
   }
+  validateBosses(d, enemyIds);
+  validateCards(d);
   for (const [sid, s] of Object.entries(d.stages)) validateStage(d, s, sid);
+}
+
+/** Boss-Kits (P4): Wave eindeutig, Phasen-Schwellen fallend, Querverweise auf Gegnertypen und Phasen-Indizes. */
+function validateBosses(d: GameData, enemyIds: Set<string>): void {
+  const waves = new Set<number>();
+  const ids = new Set<string>();
+  for (const k of d.bosses?.kits ?? []) {
+    if (waves.has(k.wave)) throw new Error(`Boss-Kit ${k.id}: Wave ${k.wave} doppelt belegt`);
+    if (ids.has(k.id)) throw new Error(`Boss-Kit-ID ${k.id} doppelt`);
+    waves.add(k.wave);
+    ids.add(k.id);
+    if (k.phases[0].fromHpBp !== 10000) throw new Error(`Boss-Kit ${k.id}: Phase 0 muss bei 10000 beginnen`);
+    for (let i = 1; i < k.phases.length; i++) {
+      if (k.phases[i].fromHpBp >= k.phases[i - 1].fromHpBp) throw new Error(`Boss-Kit ${k.id}: Schwellen müssen fallen`);
+    }
+    const spawns = [
+      ...k.abilities.filter((a) => a.kind === 'summon').map((a) => (a as { type: string }).type),
+      ...k.phases.flatMap((p) => p.onEnter.filter((a) => a.kind === 'summon').map((a) => (a as { type: string }).type)),
+    ];
+    for (const t of spawns) if (!enemyIds.has(t)) throw new Error(`Boss-Kit ${k.id}: Beschwörung unbekannter Typ ${t}`);
+    for (const a of k.abilities) {
+      if (a.fromPhase >= k.phases.length || (a.toPhase !== undefined && (a.toPhase >= k.phases.length || a.toPhase < a.fromPhase))) {
+        throw new Error(`Boss-Kit ${k.id}: Fähigkeit ${a.id} Phasenbereich ungültig`);
+      }
+    }
+  }
+}
+
+/** Risikokarten (P4): IDs eindeutig. */
+function validateCards(d: GameData): void {
+  const ids = new Set<string>();
+  for (const c of d.cards?.cards ?? []) {
+    if (ids.has(c.id)) throw new Error(`Doppelte Risikokarte ${c.id}`);
+    ids.add(c.id);
+  }
 }
 
 export function validateStage(d: GameData, s: StageData, label = s.id): void {
@@ -80,6 +119,8 @@ export function loadGameData(): GameData {
     modifiers: ModifiersSchema.parse(readJson('modifiers.json')),
     difficulties: DifficultiesSchema.parse(readJson('difficulties.json')),
     units: UnitsSchema.parse(readJson('units.json')),
+    bosses: BossesSchema.parse(readJson('bosses.json')),
+    cards: CardsSchema.parse(readJson('cards.json')),
     stages,
   };
   validateGameData(data);

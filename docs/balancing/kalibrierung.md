@@ -251,3 +251,110 @@ Regeneration (Nachrechnung, Normal / Hard / Nightmare, bester Bot): 0 → 100/60
 - **P4:** Boss-HP-Faktor ×10 ist **Zwischenstand**; mit Phasen/Fenstern neu setzen. Boss-Killer (Titan) bleibt unbelegt (alle Bots lassen ihn auf Stufe 0). Elite ggf. mit Kit und dann `instantLoss`-Frage erneut.
 - **P5:** Koop braucht Boss-Skalierung (h = 4,3 bei 4P) und die Frage Leben je Spieler; Normal 4P `upgrade` verliert allein am Boss.
 - **P6:** Bots reagieren nicht auf Leben (kein Panik-Kauf bei niedrigen Leben, keine Boss-Vorbereitung); menschliche Bots sollten beides tun.
+
+---
+
+# Runde 4 — P4: Boss-Kits, Wellenvorschau, Risikokarten
+
+Paket P4 aus `run.md` (Runde 4), Kniffe K5 und K1 aus `docs/design/ENTSCHEIDUNGEN.md`. Gemessen mit den Registry-Bots (ohne Fehlermodell), `standard20`, solo, n = 40 (Standardfehler ±5-8 Punkte), Stand nach P2. `difficulties.json` wurde **nicht** angefasst (P3); die Stufen-Schnittstelle der Kits steht in `sim/README.md`.
+
+## Was gebaut wurde
+
+| Baustein | Inhalt | Datei |
+|---|---|---|
+| Boss-Phasen | HP-Schwellen -> Phase, Phasen-Aktionen (Schild, Beschwörung, Fenster) | `data/bosses.json`, `src/systems/boss.ts` |
+| Telegraph | `bossTelegraph` (Vorwarnzeit 40-60 Ticks, `fireTick`), `bossCast`, Stun unterbricht | `boss.ts`, `effects.ts` (`applyStun`) |
+| Schwachstellen-Fenster | Schaden x1,4-1,6, volle Stun-Dauer ohne Sperre; geöffnet durch Schild-Bruch, Unterbrechung, Wirkung, Erschöpfung nach dem Sturm | `boss.ts`, `effects.ts` (`applyDamage`) |
+| Schildphase | Schild 12 % der Max-HP (8 % im zweiten Schild), läuft nach 15 s ab, absorbiert alles inkl. True Damage | `boss.ts` |
+| Beschwörung | 3-4 Grunts hinter dem Boss; Last Stand (W20): 2 Brutes | `boss.ts` |
+| Stufen-Schnittstelle | `minDifficulty` je Fähigkeit/Aktion | Schema, `README.md` |
+| Wellenvorschau | `sim.previewWave(n, cardId?)` / `previewWave(sim, n)` | `src/systems/cards.ts`, `src/index.ts` |
+| Risikokarten | 8 Karten, Befehl `chooseCard`, Effekt beim Wave-Start | `data/cards.json`, `cards.ts`, `waves.ts`, `spawn.ts`, `move.ts` |
+| Bots | Fenster nutzen (`useAbilities`), Karten nehmen (`takeCard`, Suffix `+cards`), beides abschaltbar | `src/bots/util.ts`, `index.ts` |
+
+## Die zwei Bosse
+
+| | **Hollow Warden** (Wave 10) | **Rift Colossus** (Wave 20, Final-Boss) |
+|---|---|---|
+| Lehre | Beschwörung abräumen, Schild brechen (Burst), Fenster nutzen | alle Mechaniken der Stage plus Heilung unterbrechen |
+| Phasen (HP) | 100 % wach, 65 % Schild, 30 % Wut | 100 % wach, 75 % Schild, 50 % Heilen, 25 % Last Stand |
+| Fähigkeiten (Normal) | Ruf: 3 Grunts, Warnung 2 s, alle 20 s | Ruf (Phase 0-1): 4 Grunts; Heilung ab Phase 2: +8 % Max-HP, Warnung 3 s, unterbrechbar (Stun -> Fenster 5 s x1,6); Sturm ab Phase 3: Tempo x2 für 3 s, unterbrechbar, Erschöpfungs-Fenster |
+| Phasen-Aktionen | Schild 12 % (Fenster 5 s x1,6 bei Bruch) | Schild 12 % (Phase 1); Last Stand: 2 Brutes |
+| Nur ab Hard | Sturm (Phase 2) | zweiter Schild 8 % in Last Stand |
+| Nightmare | wie Hard (Hebel für P3: weitere Zeilen in `bosses.json`) | wie Hard |
+
+## Änderungen an `sim/data/`
+
+| # | Datei/Feld | alt | neu | Grund (Messwert) |
+|---|---|---|---|---|
+| 1 | neu `bosses.json` | – | Kits `warden` (W10), `colossus` (W20) | K5 |
+| 2 | neu `cards.json` | – | 8 Karten | K1 |
+| 3 | `enemies.json` Boss `fHpBp` | 100000 (x10, P2-Zwischenstand) | **110000 (x11)** | Scan mit Kits, Normal solo, n = 30-40, `aoe`/`aoe-notitan`/`upgrade`: x7 -> 88/100/90 %, x8,5 -> 88/-/78, x10 -> 87/90/70, **x11 -> 88/57/65**, x11,5 -> 75/38/57, x12 -> 60/7/50, x14 -> 3/0/40. Die Kits machen den Boss härter (Beschwörungen, Heilung), deshalb x11 trotz Titan-Nuke x12. Klippe zwischen x11 und x14 wie in P2 (ein Faktor 1,3 kippt alles) |
+| 4 | `units.json` Titan Nuke `damageMulBp` | 50000 (5x) | **120000 (12x)** | Titan war mit 5x kein Boss-Killer: bei x13 Boss-HP gewannen `aoe` (mit Titan) und `aoe-notitan` beide 3 %; mit Nuke 10x/15x/20x: 8/35/73 % gegen 3 %. 12x: bei x11 gewinnt der Titan-Bot 88 %, derselbe Bot ohne Titan 57 % (+31 Punkte). Die Nuke ist durch die Bots (Fenster-Regel) nur noch auf Boss und Schild-Bruch gezündet, dadurch kein Wave-Clear mehr; der Titan-Anteil `dpsShareBp` (5000, P1) bleibt |
+| 5 | `tests/leaks.test.ts` | – | Kits für den Leak-Summentest aus | Beschwörungen sind zusätzliche Leaks außerhalb der Stage-Tabelle |
+
+## Ergebnis: Siegquote bester Bot solo, vorher / nachher
+
+"Vorher" = Stand nach P2 (n = 40 neu gemessen, Boss x10, keine Kits, Nuke 5x), "nachher" = Stand dieser Datei (n = 40). Alle Bots ohne Karten.
+
+| Bot | Normal v -> n | Hard v -> n | Nightmare v -> n |
+|---|---|---|---|
+| greedy | 12,5 -> 0 | 20 -> 5 | 2,5 -> 0 |
+| farm | 70 -> 45 | 2,5 -> 7,5 | 2,5 -> 7,5 |
+| aoe | 90 -> **87,5** | 37,5 -> **42,5** | 20 -> **35** |
+| upgrade | 85 -> 65 | 12,5 -> 22,5 | 7,5 -> 10 |
+| wide | 5 -> 0 | 60 -> 22,5 | 37,5 -> 2,5 |
+| coop | 70 -> 45 | 2,5 -> 7,5 | 2,5 -> 7,5 |
+| **bester** | 90 (`aoe`) -> **87,5 (`aoe`)** | 60 (`wide`) -> **42,5 (`aoe`)** | 37,5 (`wide`) -> **35 (`aoe`)** |
+
+Boss-Tod-Anteil (Verlust durch Boss-Leak, Normal): `aoe` 0 -> 7,5 %, `upgrade` 12,5 -> 30 %, `greedy` 55 -> 60 %, `wide` 95 -> 95 %. Es stirbt fast nur am **Wave-20-Boss** (Wave-10-Boss: 0 Leaks in allen Läufen der Scans); Rest-HP des Bosses beim Leak im Median 5-22 %, der Boss ist also eine knappe Prüfung und kein HP-Schwamm.
+
+## Belege
+
+**Titan als Boss-Killer (Normal solo, n = 40, Boss x11).** `aoe` (Titan per Plan): 88 %, Boss-Leaks 3 von 40. Derselbe Bot ohne Titan (`aoe-notitan`, Experiment-Bot in `q11-boss.ts`): **57 %**, Boss-Leaks 17 von 40. Bei Boss x12-13 gewinnt nur der Titan-Bot noch (60 % gegen 7 %). Titan ist damit belegt als Boss-Antwort, aber keine Pflicht: bei x10 und darunter gewinnt der Bot auch ohne (90 %).
+
+**Fenster-Nutzung durch Bots.** Fähigkeiten, die im offenen Schwachstellen-Fenster gezündet werden (je Lauf, `aoe`): 1,0 mit alter Regel (sofort) -> **7,2** mit Fenster-Regel; je Lauf öffnen sich 2-3 Fenster, das Schild wird in 98 % der Läufe gebrochen (Fenster danach), selten läuft es ab (0-13 %). Unterbrechungen der Heilung: 0,1-0,3 je Lauf (Frost ist meist gerade im Cooldown). **Ehrlich:** Auf die Siegquote wirkt die Regel bei x11 nicht messbar (`aoe` 88 % mit gegen 90 % ohne Fenster-Regel, `upgrade` 65/65 %): Die Titan-Nuke ist so stark, dass der Zeitpunkt zweitrangig ist. Die Fenster sind also bedienbar und werden genutzt, aber noch kein Muss; ein steileres Fenster (x2) oder ein engeres Zeitfenster wäre ein P6/P3-Hebel.
+
+**Risikokarten (Bot `+cards`, Tabelle unten).** Siehe nächster Abschnitt.
+
+## Risikokarten: Katalog und Bot
+
+| ID | Tier | Effekt |
+|---|---|---|
+| `thick-hide` | 1 | +30 % HP, +50 % Bounty |
+| `swift` | 1 | +25 % Tempo, +40 % Bounty |
+| `swarm` | 2 | +50 % Gegner (aufgerundet), +25 % Bounty je Gegner |
+| `warded` | 2 | Schild 2 auf jedem Gegner (vorhandene Schilde bleiben), +60 % Bounty |
+| `regrowth` | 2 | Regeneration, +40 % Bounty |
+| `ironclad` | 3 | Armored (+80 Rüstung), +90 % Bounty |
+| `blood-toll` | 3 | Leaks kosten doppelt Leben, +80 % Bounty |
+| `gold-rush` | 3 | +60 % HP, +100 % Bounty |
+
+Regeln: eine Karte je Wave (die nächste zu startende), nicht auf Boss-Waves, Boss/Elite behalten Anzahl und Modifier. Bounty-Aufschläge sind DESIGN-Startwerte (grob "Aufschlag = 1,5 x Mehr-Aufwand"), nicht kalibriert.
+
+**Bot-Strategie "nimmt Karten, wenn stark"** (`takeCard`, Suffix `+cards`, abschaltbar): ab 3 Waves ohne Lebensverlust Tier 1, ab 6 Tier 2, ab 10 Tier 3, mindestens 85 % Leben, nur Waves bis 15, nie auf Boss-Waves; gewählt wird der höchste Bounty-Aufschlag im erlaubten Tier. Siegquote Normal / Hard / Nightmare solo (n = 40), ohne -> mit Karten:
+
+| Bot | Normal | Hard | Nightmare |
+|---|---|---|---|
+| aoe | 87,5 -> 82,5 | 42,5 -> 37,5 | 35 -> 15 |
+| upgrade | 65 -> **90** | 22,5 -> 37,5 | 10 -> – |
+| wide | 0 -> 65 | 22,5 -> **65** | 2,5 -> **32,5** |
+
+Lesart: Karten sind eine echte Wette. Schwache Bots (`wide`, `upgrade`) profitieren über den Bounty-Aufschlag (Münzen früh = stärkere Verteidigung), der beste Bot (`aoe`) verliert 5-20 Punkte, weil die Strategie "keine Leaks in den letzten Waves" für ihn kein sicheres Stärke-Signal ist (Nightmare: eine harte Karte in Wave 13-15 reißt ihn). Die Strategie ist nicht optimiert; Siegquoten der Stufen-Kalibrierung (P3/P5/P6) werden **ohne** Karten gemessen.
+
+## Verworfene Versuche
+
+- **Boss-HP nur über den Faktor lösen** (ohne Titan-Nuke-Anhebung): bei x10 gewinnt der Bot ohne Titan genauso (90 %), der Titan wäre nur Kostenpunkt.
+- **Nuke 5x/10x/15x/20x:** 5x und 10x lassen den Titan zu schwach (bei Boss x13 8 % gegen 3 %), 20x löst den Boss mit einem einzigen Nuke (73 %) und macht den Titan wieder zur Pflicht. 12x ist der Kompromiss.
+- **Karten-Strategie erste Fassung** (ab 2/4/6 Waves ohne Verlust, 70 % Leben, alle Waves): `aoe+cards` fiel von 88 auf 45 % (Normal) und von 43 auf 5 % (Hard). Eine Karte `ironclad`/`gold-rush` in Wave 16-19 reißt knappe Verteidigungen. Daher strenger.
+
+## Übergabe
+
+- **P3 (Schwierigkeit):** Die Kits sind pro Stufe schaltbar (`minDifficulty`). Hard/Nightmare haben heute nur "Sturm in W10" und "zweiter Schild in W20" zusätzlich. Mit den Kits liegt der beste Bot auf **Hard bei 42,5 %** (Ziel 45-65) und auf **Nightmare bei 35 %** (Ziel 15-35); `wide` (früher bester Bot auf Hard/NM) stirbt jetzt am Boss, weil er keinen Titan und kein Fenster spielt. Die HP-Faktoren der Stufen sind nach dieser Änderung erneut zu scannen.
+- **P6 (Bots):** `greedy`, `wide`, `farm`, `coop`, `upgrade` haben keinen Boss-Plan: ohne Titan oder Frost-Fenster verlieren sie am Wave-20-Boss (Normal: greedy 60 %, wide 95 % Boss-Tod). Der Plan (`Policy.plan`) kann jetzt aus `sim.previewWave(n).boss` gespeist werden ("Boss in 5 Waves: auf Titan sparen"). Menschliche Bots sollten außerdem Karten nach dem Stärke-Signal wählen (`takeCard` ist ein erster Ansatz).
+- **P5 (Koop):** Boss-HP skaliert mit `coopHpBp` wie alle Gegner; Schild und Heilung skalieren über Max-HP mit. Nicht gemessen.
+- **Infinite:** Bosse ab Wave 21 haben kein Kit; Wave 10/20 des Infinite-Modus nutzen die Kits. Infinite-Kalibrierung nicht nachgemessen (Tests grün).
+
+## Werkzeuge
+
+`sim/scripts/sanity/q10-p4.ts` (Siegquote und Boss-Tod-Anteil, `--bots aoe+cards`), `q11-boss.ts` (Boss-Diagnose, Experiment-Bot `aoe-notitan`). Experimente per Umgebung: `P2_BOSSHP` (Boss-HP-Faktor), `P1_PATCH` (Unit-Felder, z. B. Nuke), `P4_NOWINDOW=1`, `P4_NOCARDS=1`.

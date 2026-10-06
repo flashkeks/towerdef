@@ -5,14 +5,18 @@
 import { BP, mulBp } from '../fixed.js';
 import type { EconomyData } from '../data/schema.js';
 import type { DotKind, DotState, EnemyState, UnitState, World } from '../state.js';
+import { wardBroken } from './boss.js';
 
 type CcEco = Pick<EconomyData, 'cc'>;
 
 /** Betäubung. Gibt false zurück, wenn bereits betäubt oder in der Sperre (kein Refresh). */
 export function applyStun(e: EnemyState, ticks: number, eco: CcEco): boolean {
   // DESIGN-OFFEN: Stun wird weder während des Stuns noch in der 6-s-Sperre erneuert; die Sperre beginnt, wenn der Stun endet.
-  if (e.stunTicks > 0 || e.stunImmune > 0) return false;
-  e.stunTicks = e.boss ? mulBp(ticks, eco.cc.bossCcBp) : ticks;
+  // P4: Im Schwachstellen-Fenster eines Bosses gilt die volle Dauer und keine Sperre ("CC möglich"); ein Stun unterbricht den Telegraph.
+  const inWindow = e.bossRun !== null && e.bossRun.vulnTicks > 0;
+  if (e.stunTicks > 0 || (e.stunImmune > 0 && !inWindow)) return false;
+  e.stunTicks = e.boss && !inWindow ? mulBp(ticks, eco.cc.bossCcBp) : ticks;
+  if (e.stunTicks > 0 && e.bossRun?.tele) e.bossRun.tele.interrupted = true;
   return e.stunTicks > 0;
 }
 
@@ -78,6 +82,18 @@ export function applyDamage(
   bypassShield: boolean,
 ): number {
   if (e.hp <= 0) return 0;
+  const run = e.bossRun;
+  if (run) {
+    // Boss-Kit (P4): Fenster verstärkt den Schaden, der Schild absorbiert vor den HP (auch True Damage und DoT); Überschuss geht durch.
+    if (run.vulnTicks > 0) amount = mulBp(amount, run.vulnBp);
+    if (run.ward > 0) {
+      const absorbed = Math.min(amount, run.ward);
+      run.ward -= absorbed;
+      amount -= absorbed;
+      if (run.ward === 0) wardBroken(w, e);
+      if (amount <= 0) return 0;
+    }
+  }
   if (!bypassShield && e.shield > 0) {
     e.shield--;
     return 0;
