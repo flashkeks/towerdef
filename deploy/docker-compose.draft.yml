@@ -1,0 +1,35 @@
+# ENTWURF (Paket P7). Nicht lauffaehig, solange server/ und client/ fehlen.
+# Deployment, Domain und Cloudflare-Tunnel machen die Menschen (deploy/README.md).
+# Konfiguration nur ueber Umgebungsvariablen; die echte .env liegt nur auf edge, nie im Repo.
+services:
+  td:
+    image: td:draft              # lokal gebaut: docker build -f deploy/Dockerfile.draft -t td:draft .
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.draft
+    restart: unless-stopped
+    env_file:
+      - .env                     # Vorlage: .env.example (nur Platzhalter)
+    ports:
+      - "127.0.0.1:8080:8080"    # NUR Loopback. Der Cloudflare-Tunnel zeigt auf http://127.0.0.1:8080
+    volumes:
+      - td-data:/data            # SQLite (Ledger, Ziehungsprotokoll) -> Backup klaeren
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+volumes:
+  td-data:

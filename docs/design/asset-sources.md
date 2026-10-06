@@ -95,3 +95,19 @@ Fehlend: Boss-Track (GDD §9: zwei Tracks Kampf und Boss), Menü-Ambiente. Für 
 - Boss-Musik und -Töne.
 
 Siehe `docs/design/zeichenliste.md`.
+
+## Nachtrag 2026-10-06: Lizenzprüfung über CT 113 (Homelab)
+
+Die Seiten waren aus der Agent-Umgebung gesperrt. Die Hauptsitzung hat sie per `curl` über CT 113 abgerufen und den Lizenztext auf der Seite selbst gelesen:
+
+| Pack | Lizenz laut Seite | Status |
+|---|---|---|
+| Kenney Tiny Town, Tiny Dungeon, Particle Pack, Pixel UI Pack | CC0 („CC0 licensed") | **freigegeben** |
+| Kenney Impact Sounds, Interface Sounds, RPG Audio, Music Jingles | CC0 | **freigegeben** |
+| OGA „5 Chiptunes (Action)" (Juhani Junkala) | CC0 1.0 (Lizenzfeld → creativecommons.org/publicdomain/zero/1.0) | **freigegeben** |
+| OGA „Tiny Creatures" | CC0 1.0 (Lizenzfeld wie oben) | **freigegeben** |
+| Pixel Frog „Tiny Swords" (Vollversion) | „CC0 Licensed", kommerzielle Nutzung und Änderung erlaubt; Name-your-own-price (Seite nennt $5) | **freigegeben** (Bezahlung freiwillig, Unterstützung empfohlen) |
+| Pixel Frog „Tiny Swords Demo" | Seite lieferte keinen Lizenztext | UNKNOWN → Vollversion nehmen |
+| Silkscreen / Press Start 2P (OFL), incompetech, freesound | nicht geprüft | offen; OFL braucht eine Entscheidung der Menschen |
+
+CC0 verlangt keine Namensnennung. Trotzdem jedes verwendete Pack in `client/assets/ATTRIBUTIONS.md` eintragen (Herkunft, Link, Prüfdatum).
