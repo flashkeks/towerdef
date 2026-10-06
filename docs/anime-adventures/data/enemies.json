@@ -1,212 +1,2234 @@
 {
   "_meta": {
-    "description": "Enemy modifiers/mechanics (well documented) and known bosses. Per-enemy HP/speed/reward UNKNOWN.",
-    "researchDate": "2026-10-05",
+    "description": "Enemy modifiers, story/raid/dungeon bosses, boss attacks and CC immunity rules. No enemy data module exists; per-enemy HP/speed/reward UNKNOWN except three LEGACY raid bosses.",
+    "researchDate": "2026-10-06",
+    "session": 2,
+    "package": "P6",
     "provenanceLegend": "VERIFIED|OBSERVED|RECONSTRUCTED|DERIVED|UNKNOWN|DESIGN",
     "note": "Reference data about the original game (Anime Adventures, Gomu) for system reconstruction only. Names are AA in-game names (third-party IP) and must not be used in our game. null = UNKNOWN.",
-    "sources": "see ../sources.md"
+    "sources": "see ../sources.md; S72:<Page> = wiki dump page, S73 = Trello (LEGACY), S67 = AoE Type module"
   },
   "modifiers": [
     {
       "id": "flying",
-      "effect": "untargetable by ground units; does not regen",
-      "provenance": "OBSERVED",
-      "sources": [
-        "S14"
-      ]
+      "effect": "untargetable by ground units; only hill/hybrid hit",
+      "firstSeen": "Hollow World / Spirit World Act 1 W10",
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Enemy Mechanics"
+      }
     },
     {
       "id": "shield",
-      "effect": "N shield instances; each hit removes 1; shatter removes all",
+      "effect": "N shield instances; each hit removes 1 and deals no HP damage; shatter/crash removes all; true damage ignores",
       "instancesChallenge": 1,
-      "provenance": "OBSERVED",
-      "sources": [
-        "S14",
-        "S15"
-      ]
+      "firstSeen": "Shiganshinu/Walled City Act 4 W15",
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Enemy Mechanics, S72:Challenges, S73"
+      }
     },
     {
       "id": "regen",
-      "effect": "regenerates HP over time (not flying)",
-      "rate": null,
-      "provenance": "OBSERVED",
-      "sources": [
-        "S14"
-      ]
+      "effect": "regenerates HP; bleed/wither stop, burn reduces",
+      "ratePctPerSecChallengeLegacy": 1.0,
+      "rateRR": null,
+      "firstSeen": "Snowy Town Act 4 W10",
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "MEDIUM",
+        "source": "S73 (rate, LEGACY 2022-08), S72:Enemy Mechanics"
+      }
     },
     {
       "id": "hyper_regen",
-      "effect": "stronger regen",
+      "effect": "stronger regen; demon academy portal/tournaments",
       "rate": null,
-      "provenance": "OBSERVED",
-      "sources": [
-        "S15"
-      ]
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Challenges"
+      }
     },
     {
       "id": "tank",
       "effect": "white glow; slightly reduced damage taken; challenge: more HP and armor",
-      "damageReduction": null,
-      "provenance": "OBSERVED",
-      "sources": [
-        "S14",
-        "S15"
-      ]
+      "hpMultChallengeLegacy": 1.25,
+      "damageTakenMultChallengeLegacy": 0.75,
+      "damageTakenMultRR": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "MEDIUM",
+        "source": "S73 (numbers, LEGACY), S72:Enemy Mechanics"
+      }
+    },
+    {
+      "id": "fortify",
+      "effect": "decreases incoming damage (Marine Flagbearer, Navy Bay from Act 2); self or aura UNKNOWN",
+      "damageTakenMult": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "MEDIUM",
+        "source": "S72:Story"
+      }
     },
     {
       "id": "steel_plated",
       "effect": "3x HP, +20 shield instances",
       "hpMult": 3,
       "shieldInstances": 20,
-      "provenance": "OBSERVED",
-      "sources": [
-        "S15"
-      ]
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Challenges"
+      }
     },
     {
       "id": "fast",
-      "speedMult": null,
-      "provenance": "OBSERVED",
-      "sources": [
-        "S14"
-      ]
+      "speedMultChallengeLegacy": 1.5,
+      "speedMultRR": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "MEDIUM",
+        "source": "S73"
+      }
     },
     {
       "id": "godspeed",
       "speedMult": null,
-      "provenance": "OBSERVED",
-      "sources": [
-        "S15"
-      ]
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Challenges"
+      }
+    },
+    {
+      "id": "fire",
+      "effect": "faster; ice units deal less damage; immune to slow and stun",
+      "speedMult": null,
+      "immune": [
+        "slow",
+        "stun"
+      ],
+      "firstSeen": "Magic Town Act 2 W10",
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Enemy Mechanics"
+      }
+    },
+    {
+      "id": "ice",
+      "effect": "takes less damage from normal units; fire units deal 3x; burn counts as fire; true damage ignores ice resistance",
+      "fireDamageMult": 3,
+      "firstSeen": "Magic Town Act 4 W10",
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Enemy Mechanics, S72:Damage Affinities / Elements"
+      }
+    },
+    {
+      "id": "armored",
+      "effect": "full-AoE attacks deal half damage; effects still full",
+      "fullAoeDamageMult": 0.5,
+      "added": "Update 13.5",
+      "firstSeen": "Witch City portal; story Virtual Dungeon Act 4 W10",
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Enemy Mechanics, S72:Update Log"
+      }
+    },
+    {
+      "id": "burst",
+      "effect": "fast at spawn, slows towards base",
+      "added": "Update 19 (RR)",
+      "speedProfile": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Enemy Mechanics, S72:Update Log"
+      }
+    },
+    {
+      "id": "cloner",
+      "effect": "spawns weaker enemies on death (e.g. 2 stacked clones); children may inherit challenge mods",
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "id": "egg_spawner",
+      "effect": "Massive Ant drops Ant Egg (5 shields) that hatches into Mutant Ant (2 HP bars, 5 shields) or Officer Ant (2 HP bars, fast)",
+      "eggShields": 5,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "MEDIUM",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "id": "explosive",
+      "effect": "on death explodes and stuns nearby units",
+      "stunDuration": null,
+      "radius": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "MEDIUM",
+        "source": "S72:Story, S72:Illusionist (Transcended), S72:Dungeon"
+      }
     },
     {
       "id": "boss",
-      "effect": "act-end boss; infinite every 10 waves",
-      "provenance": "OBSERVED",
-      "sources": [
-        "S06"
-      ]
+      "effect": "act-end boss; infinite: previous act bosses every 10 waves; immune to some CC (chrono reversal, Tamiki push)",
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Infinite, S72:Effects, S72:Tamiki (Tornado)"
+      }
+    },
+    {
+      "id": "secret_boss",
+      "effect": "rare infinite boss with special drop; per-wave spawn chance",
+      "chance": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "MEDIUM",
+        "source": "S73, S72:Items, S72:Magma, S72:Cat Guard"
+      }
     },
     {
       "id": "affinity",
-      "effect": "per-enemy resistance & weakness in portals/legend stages",
-      "multipliers": null,
-      "provenance": "OBSERVED",
-      "sources": [
-        "S12"
-      ]
+      "effect": "per-enemy resistance/weakness in portals, legend stages, daily challenges, contracts, infinity mansion",
+      "resistanceFormula": "damage * 100/(100+R)",
+      "weaknessFormula": "damage * (1+X/100)",
+      "values": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Damage Affinities / Elements"
+      }
+    },
+    {
+      "id": "stealth",
+      "effect": null,
+      "meta": {
+        "origin": "UNKNOWN",
+        "confidence": "UNKNOWN",
+        "source": "no wiki hit"
+      }
     }
   ],
+  "dungeonCurses": {
+    "items": [
+      {
+        "name": "curse of Vampirism",
+        "enemyRegenPct": 3
+      },
+      {
+        "name": "curse of Regen",
+        "enemyRegenPct": 1
+      },
+      {
+        "name": "curse of Wind",
+        "enemySpeedPct": 25
+      },
+      {
+        "name": "curse of Frenzy",
+        "enemySpeedPct": 50
+      },
+      {
+        "name": "curse of Shielding",
+        "enemyShield": 3
+      },
+      {
+        "name": "curse of Health",
+        "enemyHpPct": 80
+      },
+      {
+        "name": "curse of Flight",
+        "flyingChancePct": 20
+      },
+      {
+        "name": "curse of Burst",
+        "burstChancePct": 100
+      },
+      {
+        "name": "curse of Armor",
+        "armorChancePct": 100
+      },
+      {
+        "name": "curse of Explosion",
+        "explosiveDeathRange": 12
+      },
+      {
+        "name": "curse of Eruption",
+        "explosiveDeathRange": 24
+      }
+    ],
+    "meta": {
+      "origin": "OBSERVED",
+      "confidence": "HIGH",
+      "source": "S72:Dungeon (RR, Update 20)"
+    }
+  },
   "bosses": [
     {
+      "mode": "story",
       "world": "Planet Greenie",
       "act": 1,
-      "stage": "Prodigal Prince",
-      "boss": "Vogita"
+      "boss": "Zarbo -> Zarbo (Evolved)",
+      "hp": null,
+      "stage": "Evil Elegeance",
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
     },
     {
+      "mode": "story",
       "world": "Planet Greenie",
       "act": 2,
-      "stage": "Reckless Rage",
-      "boss": "Doria"
+      "boss": "Goldeo",
+      "hp": null,
+      "stage": "Technician of Time",
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
     },
     {
+      "mode": "story",
       "world": "Planet Greenie",
       "act": 3,
-      "stage": "Dazzling Disgust",
-      "boss": "Argon"
+      "boss": "Zezoom",
+      "hp": null,
+      "stage": "Dazzling Destruction",
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
     },
     {
+      "mode": "story",
       "world": "Planet Greenie",
       "act": 4,
-      "stage": "Formidable Fighting Force",
-      "boss": "Giyu"
+      "boss": "Jayce, Vurtor",
+      "hp": null,
+      "stage": "The Blue Hurricane",
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
     },
     {
+      "mode": "story",
       "world": "Planet Greenie",
       "act": 5,
-      "stage": "Terrifying Tyrant",
-      "boss": "Friezo"
+      "boss": "Gunyu",
+      "hp": null,
+      "stage": "The Ultimate Squadron",
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
     },
     {
+      "mode": "story",
       "world": "Planet Greenie",
       "act": 6,
-      "stage": null,
-      "boss": "Friezo (Full Power)"
+      "boss": "Freezo -> Freezo (Final)",
+      "hp": null,
+      "stage": "The Purple Tyrant",
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
     },
     {
+      "mode": "story",
+      "world": "Walled City",
+      "act": 1,
+      "boss": "Jaw Titan",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Walled City",
+      "act": 2,
+      "boss": "Female Titan",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Walled City",
+      "act": 3,
+      "boss": "Beast Titan",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Walled City",
+      "act": 4,
+      "boss": "Armored Titan",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Walled City",
+      "act": 5,
+      "boss": "Warhammer Titan",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Walled City",
+      "act": 6,
+      "boss": "Colossal Titan",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Snowy Town",
+      "act": 1,
+      "boss": "Yahobu",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Snowy Town",
+      "act": 2,
+      "boss": "Zui",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Snowy Town",
+      "act": 3,
+      "boss": "Daka",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Snowy Town",
+      "act": 4,
+      "boss": "Akoku",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Snowy Town",
+      "act": 5,
+      "boss": "Kokoshibon",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Snowy Town",
+      "act": 6,
+      "boss": "Muzo",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Sand Village",
+      "act": 1,
+      "boss": "Hido",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Sand Village",
+      "act": 2,
+      "boss": "Kizume",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Sand Village",
+      "act": 3,
+      "boss": "Zezsuo",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Sand Village",
+      "act": 4,
+      "boss": "Itochi",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Sand Village",
+      "act": 5,
+      "boss": "Reanimated Puppet",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Sand Village",
+      "act": 6,
+      "boss": "Sashora -> Sashora (Puppet Master)",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Navy Bay",
+      "act": 1,
+      "boss": "Marine Battleship",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Navy Bay",
+      "act": 2,
+      "boss": "Smoka",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Navy Bay",
+      "act": 3,
+      "boss": "Kumo",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Navy Bay",
+      "act": 4,
+      "boss": "Kizora",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Navy Bay",
+      "act": 5,
+      "boss": "Aojimi",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Navy Bay",
+      "act": 6,
+      "boss": "Senbodu -> Senbodu (Buddha)",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Fiend City",
+      "act": 1,
+      "boss": "Hammer",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Fiend City",
+      "act": 2,
+      "boss": "Gourmet, Family Bodyguards",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Fiend City",
+      "act": 3,
+      "boss": "Arata Unit",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Fiend City",
+      "act": 4,
+      "boss": "Jason",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Fiend City",
+      "act": 5,
+      "boss": "Ayato",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Fiend City",
+      "act": 6,
+      "boss": "Owl (Human) -> Owl",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Spirit World",
+      "act": 1,
+      "boss": "Massive Hollow",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Spirit World",
+      "act": 2,
+      "boss": "Adjuka",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Spirit World",
+      "act": 3,
+      "boss": "Aeronero -> Tendril (5x)",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Spirit World",
+      "act": 4,
+      "boss": "Barrago -> Barrago (King)",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Spirit World",
+      "act": 5,
+      "boss": "Yammo -> Yammo (Zanpakuto)",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
       "world": "Spirit World",
       "act": 6,
-      "stage": "The Wolf",
-      "boss": "Coyote / Spirit Wolf",
-      "confidence": "LOW"
+      "boss": "Coyote, Spirit Wolf",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
     },
     {
+      "mode": "story",
+      "world": "Ant Kingdom",
+      "act": 1,
+      "boss": "Officer Ant",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Ant Kingdom",
+      "act": 2,
+      "boss": "Condor",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Ant Kingdom",
+      "act": 3,
+      "boss": "Cheetah",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Ant Kingdom",
+      "act": 4,
+      "boss": "Rage Ant",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Ant Kingdom",
+      "act": 5,
+      "boss": "Butterfly -> Butterfly (Split) (10x)",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Ant Kingdom",
+      "act": 6,
+      "boss": "Queen Ant",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Magic Town",
+      "act": 1,
+      "boss": "Phantom Conjuration",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Magic Town",
+      "act": 2,
+      "boss": "Sound Mage",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Magic Town",
+      "act": 3,
+      "boss": "Rainbow Fire Mage",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Magic Town",
+      "act": 4,
+      "boss": "Water Mage",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Magic Town",
+      "act": 5,
+      "boss": "Steel Mage",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Magic Town",
+      "act": 6,
+      "boss": "Phantom Mage, Phantom Conjuration",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Haunted Academy",
+      "act": 1,
+      "boss": "Death Painting Curse",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Haunted Academy",
+      "act": 2,
+      "boss": "Worm Curse Leader -> Worm Curse (3x)",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Haunted Academy",
+      "act": 3,
+      "boss": "Jupy, Jellyfish Curse",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Haunted Academy",
+      "act": 4,
+      "boss": "Hanamo",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Haunted Academy",
+      "act": 5,
+      "boss": "Fire Curse",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Haunted Academy",
+      "act": 6,
+      "boss": "Mahoti, Transfigured Worm",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Magic Hills",
+      "act": 1,
+      "boss": "Low-Ranking Devil",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Magic Hills",
+      "act": 2,
+      "boss": "Mid-Ranking Devil",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Magic Hills",
+      "act": 3,
+      "boss": "High-Ranking Devil",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Magic Hills",
+      "act": 4,
+      "boss": "Zenom",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Magic Hills",
+      "act": 5,
+      "boss": "Vonica",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Magic Hills",
+      "act": 6,
+      "boss": "Denta -> Denta (Monster)",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Space Center",
+      "act": 1,
+      "boss": "Muccia",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Space Center",
+      "act": 2,
+      "boss": "F.F.",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Space Center",
+      "act": 3,
+      "boss": "Viviano",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Space Center",
+      "act": 4,
+      "boss": "Sports, Reanimated Corpse",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Space Center",
+      "act": 5,
+      "boss": "Johngallu",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Space Center",
+      "act": 6,
+      "boss": "Whiteserpent",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Alien Spaceship",
+      "act": 1,
+      "boss": "Crab Monster",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Alien Spaceship",
+      "act": 2,
+      "boss": "Carnage Beetle",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Alien Spaceship",
+      "act": 3,
+      "boss": "Medicine Man",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Alien Spaceship",
+      "act": 4,
+      "boss": "Sea King",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Alien Spaceship",
+      "act": 5,
+      "boss": "Plant Alien Commander",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Alien Spaceship",
+      "act": 6,
+      "boss": "Melzorgard -> Alien Gunner (3x)",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Fabled Kingdom",
+      "act": 1,
+      "boss": null,
+      "hp": null,
+      "meta": {
+        "origin": "UNKNOWN",
+        "confidence": "UNKNOWN",
+        "source": "S72:Story (empty field)"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Fabled Kingdom",
+      "act": 2,
+      "boss": "Alby",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Fabled Kingdom",
+      "act": 3,
+      "boss": "Curse Demon",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Fabled Kingdom",
+      "act": 4,
+      "boss": "Trick Demon",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Fabled Kingdom",
+      "act": 5,
+      "boss": "Deri",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Fabled Kingdom",
+      "act": 6,
+      "boss": "Dray",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Ruined City",
+      "act": 1,
+      "boss": "Magnet",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Ruined City",
+      "act": 2,
+      "boss": "Getan",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Ruined City",
+      "act": 3,
+      "boss": "Destra",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Ruined City",
+      "act": 4,
+      "boss": "Compress",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Ruined City",
+      "act": 5,
+      "boss": "Himika",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Ruined City",
+      "act": 6,
+      "boss": "Portal",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Puppet Island",
+      "act": 1,
+      "boss": "Burger",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Puppet Island",
+      "act": 2,
+      "boss": "Trouble",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Puppet Island",
+      "act": 3,
+      "boss": "Girgi -> Girgi (King)",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Puppet Island",
+      "act": 4,
+      "boss": "Sweet",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Puppet Island",
+      "act": 5,
+      "boss": "Diamanto",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Puppet Island",
+      "act": 6,
+      "boss": "Solid -> Solid (Stone)",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Virtual Dungeon",
+      "act": 1,
+      "boss": "Kobold Leader",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Virtual Dungeon",
+      "act": 2,
+      "boss": "Guardian Knight",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Virtual Dungeon",
+      "act": 3,
+      "boss": "Obsidian Elemental",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Virtual Dungeon",
+      "act": 4,
+      "boss": "Illfangs",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Virtual Dungeon",
+      "act": 5,
+      "boss": "Gleam Eyes",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Virtual Dungeon",
+      "act": 6,
+      "boss": "Heathcliff",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Snowy Kingdom",
+      "act": 1,
+      "boss": "Snake Baron (Apostle)",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Snowy Kingdom",
+      "act": 2,
+      "boss": "Raksha",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Snowy Kingdom",
+      "act": 3,
+      "boss": "Mozgo",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Snowy Kingdom",
+      "act": 4,
+      "boss": "Zod",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Snowy Kingdom",
+      "act": 5,
+      "boss": "Grobuld",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Snowy Kingdom",
+      "act": 6,
+      "boss": "Grobuld (Apostle)",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Dungeon Throne",
+      "act": 1,
+      "boss": "Undead Demon",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Dungeon Throne",
+      "act": 2,
+      "boss": "Elder Lich",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Dungeon Throne",
+      "act": 3,
+      "boss": "Death Knight",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Dungeon Throne",
+      "act": 4,
+      "boss": "Imp King",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Dungeon Throne",
+      "act": 5,
+      "boss": "Abyss Demon",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Dungeon Throne",
+      "act": 6,
+      "boss": "Doom Lord",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Mountain Temple",
+      "act": 1,
+      "boss": "Dragon Tooth Colossus",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Mountain Temple",
+      "act": 2,
+      "boss": "Kojira",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Mountain Temple",
+      "act": 3,
+      "boss": "Medae",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Mountain Temple",
+      "act": 4,
+      "boss": "Medusa",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Mountain Temple",
+      "act": 5,
+      "boss": "Berserker",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
       "world": "Mountain Temple",
       "act": 6,
-      "boss": "Gilgamesh",
-      "drops": [
-        "Noble Portal"
-      ]
+      "boss": "Kirai",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Rain Village",
+      "act": 1,
+      "boss": "Panda Summon",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Rain Village",
+      "act": 2,
+      "boss": "Chameleon Summon",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Rain Village",
+      "act": 3,
+      "boss": "Haza",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Rain Village",
+      "act": 4,
+      "boss": "Absorbtion Path",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Rain Village",
+      "act": 5,
+      "boss": "Human Path",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Rain Village",
+      "act": 6,
+      "boss": "Komon",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Shibuya District",
+      "act": 1,
+      "boss": "Finger Curse (Merged)",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Shibuya District",
+      "act": 2,
+      "boss": "Unstoppable Curse",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Shibuya District",
+      "act": 3,
+      "boss": "Shrieking Curse",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Shibuya District",
+      "act": 4,
+      "boss": "Apex Curse",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Shibuya District",
+      "act": 5,
+      "boss": "Crimson Curse",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "story",
+      "world": "Shibuya District",
+      "act": 6,
+      "boss": "Ascended Curse",
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "mode": "raid",
+      "map": "Shiganshinu District (The Rumbling)",
+      "wave": 20,
+      "boss": "Eren Founder",
+      "hp": 555658,
+      "version": "LEGACY 2022-08 (before raid HP nerfs U5.5/Halloween 2022)",
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "MEDIUM",
+        "source": "S73, S72:Raids"
+      }
+    },
+    {
+      "mode": "raid",
+      "map": "Hidden Sand Village (Midnight Attack)",
+      "wave": 20,
+      "boss": "Deidara",
+      "hp": 388960,
+      "onDeath": "splits into enemies totalling >=250k HP",
+      "version": "LEGACY 2022-08",
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "MEDIUM",
+        "source": "S73"
+      }
+    },
+    {
+      "mode": "raid",
+      "map": "Infinity Train (Demonic Invasion)",
+      "boss": "Enmu",
+      "role": "mini-boss",
+      "hp": "scales by wave, up to 550000",
+      "version": "LEGACY 2022-08",
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "MEDIUM",
+        "source": "S73"
+      }
+    },
+    {
+      "mode": "raid",
+      "map": "Infinity Train (Demonic Invasion)",
+      "wave": 20,
+      "boss": "Akaza",
+      "hp": 666952,
+      "version": "LEGACY 2022-08",
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "MEDIUM",
+        "source": "S73"
+      }
+    },
+    {
+      "mode": "raid",
+      "map": "Sacred Planet",
+      "acts": [
+        "The Guardian",
+        "The Demon King",
+        "The Warlock",
+        "The Genie",
+        "The Pure Form"
+      ],
+      "hp": null,
+      "drops": {
+        "act4": {
+          "relic_shard": 0.1,
+          "Bubblegum": 0.01
+        },
+        "act5": {
+          "relic_shard": 1.0,
+          "Bubblegum": 0.03
+        }
+      },
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Raids"
+      }
+    },
+    {
+      "mode": "raid",
+      "map": "Strange Town",
+      "acts": [
+        "Love Deluxe",
+        "Highway Star",
+        "The Harvest",
+        "Atom Heart",
+        "Killer Queen"
+      ],
+      "hp": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Raids"
+      }
     },
     {
       "mode": "dungeon",
       "map": "Cursed Womb",
       "wave": 15,
       "boss": "Finger Bearer",
+      "hp": null,
       "drops": [
         "Cursed Finger"
-      ]
+      ],
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Dungeons"
+      }
     },
     {
-      "mode": "raid",
-      "map": "Sacred Planet",
-      "stage": 4,
-      "boss": "The Genie",
+      "mode": "dungeon",
+      "map": "Cursed Parade",
+      "wave": 20,
+      "boss": "Getu",
+      "hp": null,
       "drops": [
-        {
-          "item": "relic_shard",
-          "chance": 0.1
-        }
-      ]
+        "Cursed Orb x4-10"
+      ],
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Dungeons"
+      }
     },
     {
-      "mode": "raid",
-      "map": "Sacred Planet",
-      "stage": 5,
-      "boss": "The Pure Form",
+      "mode": "infinite",
+      "map": "Cursed Academy",
+      "boss": "Womb Curse",
       "drops": [
-        {
-          "item": "relic_shard",
-          "chance": 1.0
-        },
-        "Bubblegum"
-      ]
+        "Key (Cursed Womb)"
+      ],
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Dungeons"
+      }
     },
     {
       "mode": "infinite",
       "map": "newest world",
       "boss": "Star Golem",
-      "spawn": "chance (UNKNOWN)",
+      "spawn": "chance (value UNKNOWN), since Update 7",
       "drops": [
         "star_remnant"
-      ]
+      ],
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Update Log, S72:Traits"
+      }
+    },
+    {
+      "mode": "infinite",
+      "map": "Hollow World",
+      "boss": "secret boss",
+      "spawn": "chance every wave",
+      "drops": [
+        "Soul Capsule"
+      ],
+      "version": "LEGACY U3",
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "MEDIUM",
+        "source": "S73"
+      }
+    },
+    {
+      "mode": "infinite",
+      "map": "Fiend City",
+      "boss": "secret boss",
+      "drops": [
+        "Clown Mask"
+      ],
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "MEDIUM",
+        "source": "S72:Items"
+      }
     }
   ],
-  "statusEffectCooldowns": {
-    "stun": [
-      10,
-      14
-    ],
-    "freeze": 10,
-    "slow": 4,
-    "knockback": [
-      30,
-      31
-    ],
-    "_unit": "seconds of immunity after effect ends",
-    "sources": [
-      "S13"
-    ]
-  }
+  "bossAttacks": [
+    {
+      "id": "frieza_boss:spawn_units",
+      "aoe": "single",
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "MEDIUM",
+        "source": "S67"
+      }
+    },
+    {
+      "id": "beast_titan_boss:rock",
+      "aoe": "circle",
+      "radius": 8,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "MEDIUM",
+        "source": "S67"
+      }
+    },
+    {
+      "id": "pitou_boss:heal",
+      "aoe": "single",
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "MEDIUM",
+        "source": "S67"
+      }
+    },
+    {
+      "id": "itachi_boss:start_teleport",
+      "aoe": "single",
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "MEDIUM",
+        "source": "S67"
+      }
+    },
+    {
+      "id": "juvia_boss:shield",
+      "aoe": "single",
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "MEDIUM",
+        "source": "S67"
+      }
+    }
+  ],
+  "crowdControl": {
+    "slow": {
+      "immunityAfterSec": [
+        4,
+        7
+      ],
+      "conflict": "Effects page lists 4 s and 7 s",
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "MEDIUM",
+        "source": "S72:Effects"
+      }
+    },
+    "stun": {
+      "immunityAfterSec": [
+        10,
+        14
+      ],
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Effects"
+      }
+    },
+    "freeze": {
+      "immunityAfterSec": [
+        10,
+        13
+      ],
+      "conflict": "10 / 12-13 (Effects) vs 10-12 (module)",
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "MEDIUM",
+        "source": "S72:Effects, S67"
+      }
+    },
+    "timestop": {
+      "immunityAfterSec": [
+        10,
+        12
+      ],
+      "sharesWith": "freeze",
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S67"
+      }
+    },
+    "knockback": {
+      "immunityAfterSec": [
+        30,
+        31
+      ],
+      "distance": "a few studs",
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Effects, S72:Agony"
+      }
+    },
+    "confused": {
+      "walkBackSec": 5,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Effects, S67"
+      }
+    },
+    "mind_control": {
+      "chance": 0.1,
+      "walkBackSec": 1.5,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Effects, S67"
+      }
+    },
+    "chrono_reversal": {
+      "walkBackSec": 5,
+      "bossImmune": true,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Effects"
+      }
+    },
+    "teleport_back": {
+      "distance": "0.5 * unit range along path",
+      "worksOnBosses": true,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Operator (ROOM)"
+      }
+    },
+    "unconscious": {
+      "durationSec": "3-4 (Effects) vs 0.5 (module)",
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "LOW",
+        "source": "S72:Effects, S67"
+      }
+    },
+    "_globalRule": {
+      "rule": "since Update 8: stun/freeze/walkback do not stack; 1 s delay before re-application; since Update 14 immunity cooldowns shown on enemies",
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Update Log"
+      }
+    }
+  },
+  "corrections": [
+    {
+      "old": "Planet Greenie bosses Vogita/Doria/Argon/Giyu/Friezo with stages Prodigal Prince etc.",
+      "new": "see S72:Story; old names not found in wiki (0 search hits)",
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story"
+      }
+    },
+    {
+      "old": "Mountain Temple Act 6 boss Gilgamesh",
+      "new": "Act 6 boss Kirai; Gilgamesh is Golden Portal unit",
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story, S72:Portals"
+      }
+    }
+  ]
 }

@@ -4,21 +4,27 @@ Technische Analyse des Roblox-Spiels **Anime Adventures** (Entwickler: **Gomu**,
 
 > Ziel: genug über Regeln, Daten, Mathematik und Systeme dokumentieren, damit ein Entwickler ein funktional ähnliches Spiel bauen kann, **ohne** Assets, Namen oder IP des Originals zu übernehmen (siehe [Rechtliche Grenze](#rechtliche-grenze)).
 
-Recherchestand: **2026-10-05**
+Recherchestand: **2026-10-06** (Sitzung 2, Volltextquellen)
 
 ---
 
 ## Rechercheeinschränkung
 
-Diese Recherche lief in einer Cloud-Umgebung, deren Netzwerkrichtlinie **direkte Seitenabrufe blockiert** hat. Betroffen waren u. a. `animeadventures.fandom.com`, `roblox.fandom.com`, `web.archive.org`, `anime-adventures.wiki`, Reddit, YouTube und Nachrichten- bzw. Guide-Seiten.
+**Sitzung 1** lief ohne direkten Seitenabruf, nur mit Such-Auszügen. Werte aus dieser Zeit tragen Quellen-IDs S01–S64.
 
-Verfügbar war nur eine **Websuche**, die pro Treffer Textauszüge bzw. Zusammenfassungen der Quellseiten liefert. Konsequenzen:
+**Sitzung 2** (Arbeitsauftrag [`run.md`](../../run.md)) hatte über einen Recherche-Connector Volltextzugriff:
 
-- Alle Werte stammen aus **Such-Auszügen** der genannten Quellen, nicht aus der vollständigen Seite. Abschreibfehler der Zusammenfassung sind möglich. Deshalb ist jede Zahl mit einer Quellen-ID versehen ([sources.md](sources.md)).
-- **Vollständige Tabellen** (alle Units × alle Upgrades, alle Gegner-HP, alle Wave-Tabellen, Map-Geometrie) waren **nicht abrufbar**. Sie sind als `UNKNOWN` markiert, nicht geschätzt.
-- Videos, Screenshots und Archiv-Snapshots konnten **nicht ausgewertet** werden.
+- komplettes Fandom-Wiki samt Lua-Datenmodulen und Versionsgeschichte
+- Trello-API
+- offizielle Roblox-APIs
 
-**Nächster Schritt zur Vervollständigung:** Die Netzwerkfreigabe für `animeadventures.fandom.com`, `static.wikia.nocookie.net` und `web.archive.org` erteilen und die mit `UNKNOWN` markierten Felder in `data/*.json` gezielt nachpflegen. Die Lücken stehen gesammelt in [unknowns.md](unknowns.md).
+Diese Quellen tragen die IDs S65 ff. Bestandswerte werden paketweise dagegen geprüft. Fortschritt, ausgewertete Quellen und offene Spuren stehen in **[STATUS.md](STATUS.md)**.
+
+Weiterhin nicht auswertbar:
+
+- Discord (Login nötig)
+- Video-Inhalte
+- spielinterne Werte, die keine Community-Quelle dokumentiert (z. B. Gegner-HP-Tabellen); sie bleiben `UNKNOWN`
 
 ---
 
@@ -54,11 +60,13 @@ Jede wichtige Aussage trägt ein Tag in der Form `ART · CONFIDENCE · [Quellen]
 | [game-overview.md](game-overview.md) | Systemübersicht, Versionsgeschichte, Core Loop, Progression |
 | [core-mechanics.md](core-mechanics.md) | Ablauf einer Partie, Platzierung, Yen, Waves, Leaks, Base HP |
 | [combat-system.md](combat-system.md) | Targeting, AoE-Geometrie, Attack-Cycle, Damage, Crit, Status-Effekte, Buffs |
-| [units.md](units.md) | Unit-Datenbank (Rollen, Raritäten, bekannte Datenblätter) |
+| [units.md](units.md) | Unit-Datenbank: Felder, Statistik, Kurvenformen, Beispiel-Datenblätter, Legacy↔RR |
+| [units-index.md](units-index.md) | Tabelle aller 561 Units mit Legacy-/RR-Namen, Kosten, DPS, AoE, Evolution |
 | [unit-upgrades.md](unit-upgrades.md) | Upgrade-Tabellen, Kosten, Effizienz, Farm-ROI |
 | [traits.md](traits.md) | Traits, Shiny, Reroll-Ökonomie |
 | [unit-powerups.md](unit-powerups.md) | Randomisierte Stats (Potential/Worthiness), Level, Limit Break, Curses, Relics, Skins |
-| [evolution.md](evolution.md) | Evolution-System und bekannte Evolution-Matrix |
+| [evolution.md](evolution.md) | Evolution-System, Materialmuster, Stat-Faktoren |
+| [evolution-matrix.md](evolution-matrix.md) | alle 219 Evolutionsrezepte |
 | [enemies.md](enemies.md) | Gegnertypen, Enemy-Mechaniken, bekannte Bosse |
 | [waves.md](waves.md) | Wave-Struktur, Scaling, bekannte Wave-Daten |
 | [maps.md](maps.md) | Welten und Maps, Map-Längen, Platzierungsflächen |
@@ -75,6 +83,7 @@ Jede wichtige Aussage trägt ein Tag in der Form `ART · CONFIDENCE · [Quellen]
 | [mathematics.md](mathematics.md) | **Game Mathematics** – alle Formeln |
 | [simulation.md](simulation.md) | Durchgerechnete Beispielrunde |
 | [technical-reconstruction.md](technical-reconstruction.md) | **Recommended Web Architecture** und Datenmodell |
+| [STATUS.md](STATUS.md) | Recherche-Fortschritt, Quellenlandkarte, nächster Schritt |
 | [sources.md](sources.md) | Quellenverzeichnis mit Bewertung A–E |
 | [unknowns.md](unknowns.md) | **Known Unknowns & Conflicts** |
 | [data/](data/) | Strukturierte Referenzdaten (JSON) |

@@ -1,72 +1,420 @@
 {
   "_meta": {
-    "description": "Wave table template. No AA wave table could be sourced - all values UNKNOWN. Known structural facts included.",
-    "researchDate": "2026-10-05",
+    "description": "Wave facts per mode. No AA per-wave table (enemy/count/delay/HP/reward) could be sourced; stages remain UNKNOWN.",
+    "researchDate": "2026-10-06",
+    "session": 2,
+    "package": "P6",
     "provenanceLegend": "VERIFIED|OBSERVED|RECONSTRUCTED|DERIVED|UNKNOWN|DESIGN",
     "note": "Reference data about the original game (Anime Adventures, Gomu) for system reconstruction only. Names are AA in-game names (third-party IP) and must not be used in our game. null = UNKNOWN.",
-    "sources": "see ../sources.md"
+    "sources": "see ../sources.md; S72:<Page> = wiki dump page, S73 = Trello (LEGACY), S67 = AoE Type module"
   },
+  "waveCounts": [
+    {
+      "mode": "story_act",
+      "waves": null,
+      "minWaves": 15,
+      "meta": {
+        "origin": "DERIVED",
+        "confidence": "MEDIUM",
+        "source": "S72:Enemy Mechanics (shield W15 in act 4)"
+      }
+    },
+    {
+      "mode": "raid_legacy_2022",
+      "waves": 20,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "MEDIUM",
+        "source": "S73"
+      }
+    },
+    {
+      "mode": "portal",
+      "waves": 20,
+      "note": "'wave 20 portals' (normal yen) vs portals with infinite-style yen",
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "MEDIUM",
+        "source": "S72:Effects, S72:Hubris (The One)"
+      }
+    },
+    {
+      "mode": "dungeon_cursed_womb",
+      "bossWave": 15,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Dungeons"
+      }
+    },
+    {
+      "mode": "dungeon_cursed_parade",
+      "bossWave": 20,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Dungeons"
+      }
+    },
+    {
+      "mode": "event_frozen_abyss_2024",
+      "waves": 50,
+      "minutes": 40,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Events"
+      }
+    },
+    {
+      "mode": "event_halloween_2024",
+      "waves": 50,
+      "minutes": 40,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Events"
+      }
+    },
+    {
+      "mode": "event_april_fools_2025",
+      "waves": 30,
+      "minutes": 25,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Events"
+      }
+    },
+    {
+      "mode": "infinite",
+      "waves": "endless",
+      "bossEveryNWaves": 10,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Infinite"
+      }
+    }
+  ],
   "knownFacts": {
-    "infiniteBossEveryNWaves": 10,
-    "cursedWombBossWave": 15,
-    "hpScalesWithPartySize": true,
-    "infiniteGemsPerWave": [
+    "waveTimerExists": {
+      "value": true,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:JIO (Over Heaven)"
+      }
+    },
+    "hpScalesWithPartySize": {
+      "value": null,
+      "note": "claim from S06 search excerpt not present in any version of the Infinite page (current and legacy rev. 18621)",
+      "meta": {
+        "origin": "UNKNOWN",
+        "confidence": "LOW",
+        "source": "S72:Infinite, S80, S81"
+      }
+    },
+    "baseHpScalesWithDifficulty": {
+      "value": true,
+      "since": "Update 9",
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Update Log"
+      }
+    },
+    "farmIncomeAfterEachWave": {
+      "value": true,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Effects"
+      }
+    },
+    "contractYenPerRound": {
+      "value": [
+        2500,
+        5000
+      ],
+      "start": 5000,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Contracts"
+      }
+    },
+    "infiniteGemsPerWave": {
+      "version": "RR (wiki table added 2025-01-02); trello 2023-01 consistent",
+      "table": [
+        {
+          "waves": [
+            1,
+            5
+          ],
+          "gems": 0
+        },
+        {
+          "waves": [
+            6,
+            6
+          ],
+          "gems": 18
+        },
+        {
+          "waves": [
+            7,
+            14
+          ],
+          "gems": 3
+        },
+        {
+          "waves": [
+            15,
+            105
+          ],
+          "gems": 5
+        },
+        {
+          "waves": [
+            106,
+            null
+          ],
+          "gems": 0
+        }
+      ],
+      "max": 497,
+      "derivation": "18+3k+5m=497 -> only plausible integer solution k=8 (W7-14), m=91 (W15-105); wiki text says 7-15 / 15-100 / none from 105",
+      "meta": {
+        "origin": "DERIVED",
+        "confidence": "MEDIUM",
+        "source": "S72:Infinite + revision history S80, S82 (2025-01), S73 (97 gems at W25), S72:Map Lengths"
+      }
+    },
+    "infiniteDaily": [
       {
-        "waves": [
-          1,
-          5
-        ],
-        "gems": 0
+        "version": "LEGACY 2022-07",
+        "milestones": {
+          "10": 15,
+          "25": 25,
+          "50": 50
+        },
+        "meta": {
+          "origin": "OBSERVED",
+          "confidence": "LOW",
+          "source": "wiki revision 298 (S80, S82)"
+        }
       },
       {
-        "waves": [
-          6,
-          6
-        ],
-        "gems": 18
+        "version": "LEGACY 2022-08",
+        "milestones": {
+          "10": 30,
+          "25": 70,
+          "50": 100
+        },
+        "meta": {
+          "origin": "OBSERVED",
+          "confidence": "MEDIUM",
+          "source": "S73"
+        }
       },
       {
-        "waves": [
-          7,
-          15
-        ],
-        "gems": 3
+        "version": "since U7 (quests, 3 random worlds/day) to RR",
+        "milestones": {
+          "10": 90,
+          "25": 180,
+          "50": 330
+        },
+        "meta": {
+          "origin": "OBSERVED",
+          "confidence": "HIGH",
+          "source": "S72:Quests, S72:Infinite"
+        }
       },
       {
-        "waves": [
-          15,
-          100
-        ],
-        "gems": 5
-      },
-      {
-        "waves": [
-          105,
-          null
-        ],
-        "gems": 0
+        "version": "RR U20.4.1",
+        "note": "daily infinite quest shortened from 50 to 40 waves",
+        "meta": {
+          "origin": "OBSERVED",
+          "confidence": "HIGH",
+          "source": "S72:Update Log"
+        }
       }
     ],
-    "infiniteGemsMax": 497,
-    "infiniteDailyMilestones": {
-      "10": 90,
-      "25": 180,
-      "50": 330
+    "infinityMansion": {
+      "gemsPerRoom": 150,
+      "hardAfterRoom100": 300,
+      "note": "rooms 58-60 higher HP, nerfed from 60; resistances from room 50/100",
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Infinity Mansion"
+      }
     }
   },
+  "storyWaveEvents": [
+    {
+      "world": "Walled City",
+      "act": 4,
+      "wave": 15,
+      "event": "first shield enemies",
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story, S72:Enemy Mechanics"
+      }
+    },
+    {
+      "world": "Snowy Town",
+      "act": 4,
+      "wave": 10,
+      "event": "first regen enemies",
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story, S72:Enemy Mechanics"
+      }
+    },
+    {
+      "world": "Fiend City",
+      "act": 4,
+      "wave": 10,
+      "event": "Aogiri Executives (heavy regen)",
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story, S72:Enemy Mechanics"
+      }
+    },
+    {
+      "world": "Spirit World",
+      "act": 1,
+      "wave": 10,
+      "event": "first flying enemies",
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story, S72:Enemy Mechanics"
+      }
+    },
+    {
+      "world": "Magic Town",
+      "act": 2,
+      "wave": 10,
+      "event": "Fire Mages",
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story, S72:Enemy Mechanics"
+      }
+    },
+    {
+      "world": "Magic Town",
+      "act": 4,
+      "wave": 10,
+      "event": "Ice Mages",
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story, S72:Enemy Mechanics"
+      }
+    },
+    {
+      "world": "Haunted Academy",
+      "act": 2,
+      "wave": 10,
+      "event": "Death Painting Curse as regular enemy",
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story, S72:Enemy Mechanics"
+      }
+    },
+    {
+      "world": "Haunted Academy",
+      "act": [
+        3,
+        4
+      ],
+      "wave": 8,
+      "event": "Death Painting Curse as regular enemy",
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story, S72:Enemy Mechanics"
+      }
+    },
+    {
+      "world": "Haunted Academy",
+      "act": [
+        5,
+        6
+      ],
+      "wave": 6,
+      "event": "Death Painting Curse as regular enemy",
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story, S72:Enemy Mechanics"
+      }
+    },
+    {
+      "world": "Magic Hills",
+      "act": 1,
+      "wave": 10,
+      "event": "Ice Demons",
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story, S72:Enemy Mechanics"
+      }
+    },
+    {
+      "world": "Space Center",
+      "act": 1,
+      "wave": 10,
+      "event": "Pursuit Bikes",
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story, S72:Enemy Mechanics"
+      }
+    },
+    {
+      "world": "Virtual Dungeon",
+      "act": 4,
+      "wave": 10,
+      "event": "first armored enemies",
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Story, S72:Enemy Mechanics"
+      }
+    }
+  ],
   "stages": [
     {
       "stageId": "planet_namak_act1",
       "waves": null,
-      "provenance": "UNKNOWN"
+      "meta": {
+        "origin": "UNKNOWN",
+        "confidence": "UNKNOWN",
+        "source": "no source"
+      }
     }
   ],
   "designInfiniteGenerator": {
-    "provenance": "DESIGN",
+    "meta": {
+      "origin": "DESIGN",
+      "confidence": "-",
+      "source": "own proposal"
+    },
     "hp": "baseHP * g^(w-1) * (w>W_jump?J:1) * (1+0.5*(players-1))",
     "g": 1.1,
     "W_jump": 50,
     "J": 2.0,
-    "bossEvery": 10
+    "bossEvery": 10,
+    "secretBossChancePerWave": 0.02,
+    "note": "partyMult is DESIGN only; AA party scaling not documented"
   }
 }
