@@ -1,6 +1,6 @@
 # Items und Crafting
 
-Stand: Sitzung 2 (P8). Grundlage: `S72:Items`, `S72:Travelling Merchant Shop`, `S72:Trading`, `S72:Challenges`, das Item-Datenmodul S68 (`Module:ItemData/Data`, 278 Einträge, Stand 2025-04-03) und Trello S73. Maschinenlesbar: [data/items.json](data/items.json). Evolution-Rezepte (Unit → Evo) stehen in [evolution.md](evolution.md).
+Stand: Sitzung 2 (P8). Grundlage: `S72:Items`, `S72:Travelling Merchant Shop`, `S72:Trading`, `S72:Challenges`, das Item-Datenmodul S68 (`Module:ItemData/Data`, 278 Einträge, Stand 2025-04-03) und Trello S73. Maschinenlesbar: [data/items.json](data/items.json). Evolution-Rezepte (Unit → Evo) stehen in [evolution.md](evolution.md) und in [data/items.json](data/items.json) unter `evolutionRecipes` (P5); der alte Block `evolutions` aus Sitzung 1 wurde entfernt.
 
 ## Datenmodell im Original (S68)
 

@@ -118,6 +118,7 @@ Die Fandom-Seiten S01–S41 liegen seit Sitzung 2 im Volltext vor (Dump S72). We
 | S81 | https://animeadventures.fandom.com/api.php?action=parse&oldid=18621&prop=wikitext&format=json (Wiki „Infinite“, Rev. 18621 (2023-06-12)) | Abruf 2026-10-06 | LEGACY | Legacy-Fassung der Infinite-Seite: Daily-Rewards 90/180/330, keine Spielerzahl-Skalierung | B |
 | S82 | https://animeadventures.fandom.com/api.php?action=query&revids=36814\ (39813\) | Abruf 2026-10-06 | 39814\ | 40081\ | 40093&prop=revisions&rvprop=content\ |
 | S83 | https://animeadventures.fandom.com/api.php?action=query&list=search&srsearch=Vogita&srwhat=text&srlimit=20&format=json (Wiki-API-Volltextsuche „Vogita“) | Abruf 2026-10-06 | Stand 2026-10 | Negativbeleg: Bossnamen aus Sitzung 1 nicht im Wiki | B |
+| S84 | Alte Wiki-Fassungen über `api.php?action=query&prop=revisions&revids=<REVID>&rvprop=content` sowie Versionslisten (`titles=<Seite>&rvlimit=…`). Im Text zitiert als **`S72:<Seite>@<REVID>`**. Genutzt: Traits@6052 (2022-10-13), @8911 (2022-12-26), @33631 (2023-12-25); Powerups@19904 (2023-06-25); Summon@33626 (2023-12-25), @42938 (2025-03-04), Versionsliste Summon inkl. Rev. 37934 | Abruf 2026-10-06 | LEGACY + RR | Versionsstände von Trait-Pool, Curses, Stat Transfer, Pity und Event-Bannern | B |
 
 ## Explizit verworfene Daten
 

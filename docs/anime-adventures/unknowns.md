@@ -215,6 +215,51 @@ Siehe [sources.md](sources.md#explizit-verworfene-daten). Die Infinite-HP-Formel
 | P6 | Party-Scaling OBSERVED · HIGH (S06) | im Volltext S72 nicht wiedergefunden → OBSERVED · LOW | S72 (keine Fundstelle) |
 | P6 | Infinite-Scaling „ab einer bestimmten Wave signifikant“ (S06) | im Volltext S72 nicht enthalten; nur „each wave progressively getting harder“ | S72:Infinite |
 | P6 | Wave-Start: ob per Timer UNKNOWN | Wave-Timer existiert (JIO Over Heaven stoppt „the wave timer“); Dauer UNKNOWN | S72:JIO (Over Heaven) |
+| P4 | Trait-Pool hat 11 Traits, Summe 99,93 % (C7) | 12 Traits: **Unique (0,1 %)** fehlte (×4 Damage, −10 % SPA, +10 % Range, max. 1 Platzierung); Summe 100,03 % = gerundete Anzeigewerte | S72:Traits, S72:Traits@rev33631 |
+| P4 | Culling: HP-Schwelle UNKNOWN | ≤ 30 % HP, +20 % Damage (Ø +6 %) | S72:Traits, S73:Traits |
+| P4 | Sniper/Divine VERIFIED · CONFIRMED (nur Guides) | OBSERVED · HIGH (Wiki); VERIFIED nur mit offizieller Quelle | S72:Traits |
+| P4 | Golden +30 % Damage (ohne Versionsangabe) | LEGACY bis 24.12.2022: +10 %, seit Christmas-Update 25.12.2022: +30 % | S72:Traits@rev6052/@rev8911 |
+| P4 | Reaper +15 % / +25 % Boss (ohne Versionsangabe) | bis Update 10.5 (02/2023) +12,5 %, danach +15 %; Boss-Bonus multiplikativ (×1,4375). Trello 2022-08 nennt +20 % Boss (Konflikt) | S72:Traits@rev8911, S72:Update Log, S73 |
+| P4 | Trait-Chancen ohne Versionswechsel | vor 25.12.2022: Superior 30, Range/Nimble 25, Godspeed 1,5, Reaper 0,6, Golden 0,2 %, kein Celestial; danach aktueller Pool | S72:Traits@rev6052 |
+| P4 | Pro Unit ein Trait-Slot (RECONSTRUCTED) | Doppel-Traits möglich: 0,2 % pro Reroll (RR), Boni addieren sich; neue Units 1 % Trait-Chance, davon 1 % Doppel-Trait | S72:Traits, S73:Traits |
+| P4 | Trait Locking UNKNOWN | kein Lock-Mechanismus dokumentiert; neu: Trait Transfer (RR U19, 100 %, gleiche Unit); Trait wird bei Evolution Legendary→Mythic übertragen | S72:Traits, S72:Update Log |
+| P4 | Shiny-Chance VERIFIED · CONFIRMED [S01,S04,S52] | OBSERVED · HIGH [S72:Summon]; Shiny Hunter VERIFIED über offizielle Gamepass-Beschreibung | S72:Summon, S75 |
+| P4 | Shiny ab Player Level 20 (C13) | Shinies ab Banner-Tier 1 = Player Level 5; Secrets ab Level 20 | S72:Summon, S73:Mechanics |
+| P4 | Shiny-Entfernung: Remnant-Menge UNKNOWN | 3 Star Remnants (Legendary+, auch Secret nur 3; LEGACY-Beobachtung) | S73:NPCs, S72:Blade Beast (Past) |
+| P4 | Shiny und Evolution: Erhalt UNKNOWN | Shiny-Mythics brauchen weniger Material-Units (z. B. 5 statt 15); ein Shiny-Kandidat genügt für Shiny-Fused-Hero | S72:Evolution, S72:Update Log, S72:Fused Hero |
+| P4 | Potential SPA/Range-Ränge nur an Endpunkten belegt; Rekonstruktion „halbe Skala, negativ 1:1“ | vollständige Rangtabelle für SPA und Range; positiv ≈ halbe Skala, negativ nicht linear (C+ −2,0 statt −3,0) | S72:Powerups |
+| P4 | Worthiness aus „Takedowns (Kills)“ | Takedowns ≠ Kills (Takedown = jeder Treffer an getötetem Gegner) | S72:Frequently Asked Questions |
+| P4 | Worthiness max. 400 % (ohne Version) | LEGACY 100 %, seit RR Update 20 (03/2025) 400 %, max. 100 % pro Reroll | S72:Update Log |
+| P4 | Evolution: Stats immer strikt besser | immer besser, außer ein SSS-Stat bleibt gleich | S72:Powerups |
+| P4 | Level-Cap 70 (U2) → 80 (U3) → 90 (U4) → 100 (U5) | 60 (U1) → 70 (U1.5) → 80 (U3) → 90 (U4) → 100 (U5) → 110 mit LB (U19) | S72:Update Log |
+| P4 | Limit Break „permanenter 15-%-Buff“ (S59) | +5 % Damage für alle eigenen Units pro ausgerüsteter LB-Unit, max. 6 → +30 %; LB auf 110 ≈ +19 % Damage; Voraussetzung L100; max. 3 Divine Wishes | S72:Powerups, S72:Update Log, S72:Frequently Asked Questions |
+| P4 | Curses ±2,5 … 13 % (ohne Version) | LEGACY 2,5 … 11 % bzw. 11,1 %, RR 2,5 … 13 %; Cursed Finger → Cursed Token (U19); Limit 20 + 1 indestructible | S72:Curses, S72:Powerups@rev19904, S72:Powerups, S72:Items |
+| P4 | Relic-Beispiel Nail: Crit Chance/Crit Damage; Relic-Rolls ohne Gewichte | vollständige Relic-Tabelle; Datenmodell mit statischen Buffs, Unique-Effekt und 1 gewichtetem Zufallszug (Epic 1:2:2, Mythic 1:1:1) | S69, S68, S72:Relics |
+| P4 | Endless Blades = 10 Relic Shards + 10.000 Gold „auch Mangekyō Eye, Mirrorblade“ | bestätigt; Mirrorblade braucht zusätzlich 5 Demonic Spellbook | S72:Relics |
+| P4 | Effizienz-Formel DPS = Damage × Hits / SPA; Black Assassin final 1.500 DPS pro Ziel | Hits teilen den Damage auf → DPS = Damage/SPA; Black Assassin U5 = 750 pro Ziel | S76, S65 |
+| P4 | Black Assassin „1.200 → ?“, Fiery Commander „≥3 Stufen, ≥10.450“, Wind Dragon „≥3, ≥6.250“, Honey „≥4“ | vollständig: BA 18.900 (5 Upg.), FC 59.950 (8), WD 24.250 (6), Honey 11.750 (4) | S65 |
+| P4 | Sell 25 % oder 30 % | Standard 25 %; 9 Units unverkäuflich (u. a. Bulby, Weather Girl (Thief)) | S72, S65 |
+| P4 | Skins rein kosmetisch | außerhalb von Events kosmetisch; in Events Drop- und Damage-Boni (z. B. Mythic-Skin +40 % Drops, +100–150 % Damage im Winter-Event 2024) | S72:Events, S72:Spooky Star |
+| P4 | Golden-Yen bestätigt durch Bulby-ROI | gilt nur für C.E.O. und Bulby, nicht für Weather Girl (Thief) | S72:Traits |
+| P8 | Mythic-Pity 400 garantiert in LEGACY den Center-Featured (summoning.md, banners.json) | LEGACY: 400 nur auf dem Standard-Banner und für **irgendeinen** Mythic, unsichtbar; Special-Banner LEGACY **ohne** Mythic-Pity. Center-Featured-Pity erst seit Update 20.4.1 (~04/2025) auf Special und Legacy | S72:Summon@33626, S72:Summon@42938, S72:Update Log 20.4.1, S73 |
+| P8 | E[Summons bis Center] = 253 (12.652 Gems); P(Pity greift) 36,8 % | RR-Center: E = 304,9 Summons (15.245 Gems, VIP 12.196), weil jeder Mythic und jeder stündliche Refresh die Pity zurücksetzt; P(Center in 400) = 76,76 %; DP + Monte-Carlo Seed 20261006. 253 gilt nur für „beliebiger Mythic, LEGACY Standard“ | S72:Summon; DERIVED |
+| P8 | Legendary-Pity 50 gilt allgemein | gilt LEGACY und RR bis 20.4; seit 20.4.1 entfernt | S72:Summon (Trivia) |
+| P8 | LEGACY-Event-Banner: 3 Featured, 0,5 % | LEGACY-Ende (Dez. 2023): 4 Featured, 1 %, Pity 100 (1.000 Währung); RR: 3 Featured, 0,5 %, Pity 200 (2.000) | S72:Summon@33626, S72:Summon |
+| P8 | RR-Event-Banner Mythic 0,25 % / Skin 0,249 % (S43) | entspricht der Struktur der Event-Kapseln (Frozen/Icy Star, 150 Event-Währung, Mythic-Unit 0,25 %, Pity 400), nicht dem Event-Summon-Banner (0,5 %) | S68, S72:Events |
+| P8 | Secret-Rate unbekannt / RR-Event 1:80.000 | Secret 1 : 400.000 ohne Pity (seit 20.4.1 bekannt); 1:80.000 nicht durch S72 gedeckt (LOW) | S72:Summon |
+| P8 | Star Remnant 0,25 % je Summon (OBSERVED · HIGH) | im Volltext nur „low chance“ → OBSERVED · LOW | S72:Items |
+| P8 | Level-Milestones nur bei 10/20/50/100 | alle 5 Level 500 Gems + 2 Reroll Tokens (Level 50 und 100: 5), Level 100 zusätzlich Divine Wish; Summe 10.000 Gems, 46 Tokens; eingeführt Update 19 (RR) | S72:Level Milestones, S72:Update Log |
+| P8 | Star Fruit Blau/Pink Merchant-Preis UNKNOWN | je 200 Gems | S72:Travelling Merchant Shop |
+| P8 | Celestial Tear: Zweck UNKNOWN | Evo-Item für Jelly (+30 % Damage, „Sema“), Merchant 7.500 Gems, Crafting 7.500 Gold + Star Fruits | S72:Travelling Merchant Shop, S68 |
+| P8 | Sell Value 25 % oder 30 % (C5) | Standard 25 % (über 500 Unit-Seiten); 30 % nur auf der C.E.O.-Seite (Einzelfall); Bulby, Weather Girl (Thief), Navi unverkäuflich | S72, S65 |
+| P8 | Farm-Units: C.E.O., Bulby (Tabelle ohne Weather Girl) | dritte Farm-Unit Weather Girl (Thief): 300 → 3.000 ¥/Wave, Golden wirkt bei ihr nur auf Damage | S65, S72:Traits |
+| P8 | Reroll Tokens handelbar: ja | nicht belegt (Trading-Seite nennt nur Limited-Units, Skins, einige Relics) → UNKNOWN | S72:Trading |
+| P8 | VIP: Time-Machine-Rewards +100 % | offiziell (RR): −20 % Summon-Kosten, Nametag, +10 % XP; Time-Machine-Bonus ist LEGACY-Beschreibung | S75, S72:Store |
+| P8 | Daily Quests bis 3.000 Gems/Tag (HIGH) | Wiki-Liste summiert 1.575 (inkl. 500 Abschlussbonus); 3.000 nur Fließtext → MEDIUM, Konflikt | S72:Quests |
+| P8 | Battle Pass Secret Units auf Tier 25 und 50 | Lily Hunt: Units (Free) bzw. Shiny-Units + Mythic-Skin (Premium) auf Tier 25 und 50; Rarität der Units nicht als Secret belegt | S72:Battlepass |
+| P8 | Mangekyō Eye: Relic-Shard-Menge UNKNOWN | 10 Relic Shards + 10.000 Gold | S68 |
+| P8 | Rate-Summe 100,15 % (C1), vermutlich Rundung | Rare = 81,75 % (DERIVED aus Kapseltabellen: 0,81545625 = 0,9975 × 0,8175) | S68 |
+| P8 | items.json `evolutions` (Sitzung 1, 13 Einträge, teils falsch) | Block entfernt; maßgeblich ist `evolutionRecipes` (P5, 219 Rezepte) | Koordinator-Anweisung, S65 |
 
 ## H. Paketbefunde (Sitzung 2)
 
@@ -383,3 +428,72 @@ Konflikte, Lücken und erledigte Einträge aus den Paketen der Sitzung 2. Die ä
 - Map-Geometrie (Wegpunkte, Platzierungsflächen) aller Maps; Map-Länge Shibuya; ob RR-Maps geometrisch den LEGACY-Maps entsprechen.
 - Bedeutung des Feldes `knockback_points` (S65: 0,5 bei 385 Units, 3 bei einer).
 - Wirkung der Boss-Angriffe in S67 (spawn_units, rock, heal, teleport, shield).
+
+### P4
+
+#### Erledigt
+- **C7 gelöst:** Trait-Summe 99,93 % → der Trait Unique (0,1 %) fehlte. Aktuelle Summe 100,03 % (gerundete Anzeigewerte); vor 25.12.2022 100,09 %. [S72:Traits, S72:Traits@rev6052]
+- **C13 gelöst:** Shinies ab Banner-Tier 1 = Player Level 5; Secrets ab Level 20 (seit Update 1.5). [S72:Summon, S73:Mechanics]
+- **U17 gelöst:** Shiny-Entfernung gibt 3 Star Remnants (LEGACY-Beobachtung, MEDIUM). [S73:NPCs, S72:Blade Beast (Past)]
+- **U9 teilweise gelöst:** SPA- und Range-Ränge vollständig bekannt [S72:Powerups]; offen bleibt die Roll-Verteilung abhängig von Worthiness.
+- **U19 teilweise gelöst:** vollständige Relic-Liste mit Rollbereichen und Gewichten [S69, S68, S72:Relics]; offen: Slots pro Unit.
+- **C5 (aus P3) bestätigt:** Sell 25 %; zusätzlich 9 unverkäufliche Units (Flag `unsellable`, u. a. Bulby, Weather Girl (Thief)). [S65]
+- Forenaussage „Limit Break permanenter 15-%-Buff“ [S59] ersetzt: +5 % Team-Damage pro ausgerüsteter LB-Unit, max. +30 %. [S72:Powerups]
+- Level-Cap-Historie korrigiert: 60 (U1) → 70 (U1.5) → 80 → 90 → 100 → 110 (LB). [S72:Update Log]
+
+#### Neue Konflikte
+| ID | Thema | Wert A | Wert B | Bewertung |
+|---|---|---|---|---|
+| C-P4a | Reaper Boss-Bonus frühes LEGACY | +20 % [S73:Traits, 2022-08] | +25 % [S72:Traits@rev6052, 2022-10] | letzter Stand +25 % |
+| C-P4b | Steel Shiv / Amplifying Codex: Anzahl der Buffs | alle 3 Buffs gelistet [S72:Relics] | 1 Zufallszug, Gewichte 1:2:2 [S69] | Datenmodul gilt (HIGH) |
+| C-P4c | Celestial-True-Damage bei Griffin-Buff | 7,5 % [S72:Traits@rev33631] | 13,3 % bzw. 20 % [S72:Traits] | Wortlaut widersprüchlich |
+| C-P4d | Level-Kurve | L100 = 9,20407× [S72] | L110 ≈ +19 % auf L100 [S72:Powerups] | weder linear (+9 %) noch exponentiell (+25 %) passt |
+| C-P4e | U19-Buff „Most Rares, Epics and Legendaries buffed“ | Update-Log [S72] | Upgrade-Tabellen S65 und S66 nahezu identisch | Buff im Datenmodul nicht sichtbar |
+
+#### Weiterhin offen
+- U16 Trait-Tier-Wahrscheinlichkeiten I/II/III
+- Trait-Chance neuer Units im LEGACY (RR: 1 %)
+- Trait-Transfer-Kosten (Anzahl der Opfer)
+- U18 Curse-Verteilung (Betrag, Stat-Paar)
+- Potential-Rollverteilung, Einfluss der Worthiness (die Forenaussage „100 % ⇒ ≥ B+“ ist im Wiki nicht bestätigt)
+- XP-Kurve, Level-Kurve zwischen L1 und L100; Bedeutung des Feldes `xp_world` bei XP-Food
+- Relic-Slots pro Unit; Gleichverteilung innerhalb der Rollbereiche
+- Gold-Erlös beim Verkauf aus dem Inventar
+- Shiny-Secret-Rate; Wirkung der Shiny-Luck-Potions (RR)
+- „Curse debuff cooldown rate removed“ (U20): Bedeutung
+- Limit-Break-„mysterious powers“ (angekündigt, Inhalt unbekannt)
+
+### P8
+
+#### Erledigt
+- **C1 gelöst:** Ratensumme 100,15 % → Rare = 81,75 %, DERIVED aus S68-Kapseltabellen (0,81545625 = 0,9975 × 0,8175; Epic 15,96 = 0,9975 × 16 usw.). Das Wiki rundet/irrt bei 81,9 %.
+- **C2 gelöst (verworfen):** „Rare 27,3 % in beiden Bannern“ (S27) kommt in keiner Fassung von S72:Summon vor; Volltext und alle Revisionen nennen 81,9 %. Wert verwerfen.
+- **C3 gelöst:** Pity-Reset: LEGACY = beliebiger Mythic auf Standard-Banner (Reset bei Mythic + Banner-Refresh), Special ohne Mythic-Pity; RR ab 20.4.1 = Center-Featured nach 400, Reset bei **jedem** Mythic und bei jedem Refresh (S72:Summon, @33626, @42938, Update Log).
+- **C4 präzisiert:** Event-Banner LEGACY-Ende 1 % (4 Featured, Pity 100), RR 0,5 % (3 Featured, Pity 200); die 0,25 % aus S43 sind die Event-Kapseln (S68).
+- **C5 gelöst:** Sell 25 % Standard (über 500 Unit-Seiten); 30 % nur C.E.O.-Seite (Einzelfall, vermutlich Seitenfehler oder Sonderregel).
+
+#### Neue Konflikte
+| ID | Thema | Wert A | Wert B | Quellen | Einschätzung |
+|---|---|---|---|---|---|
+| C-P8-1 | Featured-Pity RR | 400 Summons (Haupttext, 20.000 Gems) | 200 Summons (Trivia „all banner … after 200 times summon“) | S72:Summon | 400 verwenden; 200 evtl. Verwechslung mit Event-Pity |
+| C-P8-2 | Unfeatured-Anteil Special | 0,526 % (Special-Abschnitt) | 0,625 % (Legacy-Abschnitt, RR) | S72:Summon | 0,526 % ist LEGACY-Rest; RR = 0,625 % |
+| C-P8-3 | Luck-Stacking | Luck+Super+Ultra = 0,936 % Mythic | LEGACY-Text: Super/Ultra „flach +0,125 % / +0,25 %“; volle Multiplikation ergäbe 1,875 % | S72:Summon, @33626, S73 (Luck ×1,25) | Regel UNKNOWN; 0,936 ≈ 0,25 × 1,25 × 3 |
+| C-P8-4 | Daily-Quest-Gems | „bis 3.000/Tag“ | Liste summiert 1.575 | S72:Quests | Liste unvollständig oder anderer Stand |
+| C-P8-5 | Battle-Pass-Punkte | 31.250 Punkte bis Tier 50 | „500 steigend bis 1.500 je Tier“ (= 50.000 bei linearer Kurve); andere Texte „50 bis 1.500“, „500 bis 15.000“ | S72:Battlepass, S72:Past Battlepasses | Tier-Kurve UNKNOWN |
+| C-P8-6 | Time Machine VIP+Premium | 2.304 je 8 h (288/h) | 4.608 je 24 h (192/h) | S72:Time Machine | Tabellenfehler; 288/h plausibler |
+| C-P8-7 | Mythic-Pity RR vor 20.4.1 | Legacy-Banner hat unsichtbare 400er-Pity | Edit „Mythical pity is NOT real“ (2025-01-09), revertiert | S72:Summon-Versionsgeschichte | LOW |
+| C-P8-8 | Merchant-Preise Evo-Items | Shining Extract 2.500, Ultrasteel Blade 2.500 (2022) | 2.000 bzw. 2.250 (Wiki 2025) | S73 vs. S72 | Versionsänderung |
+| C-P8-9 | VIP-Effekt | Time-Machine +100 % (LEGACY-Wiki) | +10 % XP (offizielle RR-Beschreibung) | S72:Store vs. S75 | Versionsänderung |
+
+#### Weiterhin fehlend
+- Start-Yen, Kill-Yen, Wave-Yen, Boss-Yen: in keiner Quelle (Wiki, Module, Trello) dokumentiert.
+- Multi-Summon (10er) und Rabatt: nicht belegt.
+- Umtauschkurs Gems → Legacy Gems; Legacy-Gems aus Disenchant je Unit.
+- Gold beim Verkauf von Units je Rarität; Gold-Shop-Preise (außer Summon Ticket 500).
+- Login-Belohnungstabelle (nur Tag 6 Ticket, Tag 7 Luck Potion bekannt); Reset-Uhrzeit der Dailies (UTC?).
+- Battle-Pass-Premium-Preis, Gem-Paket-Preise (Robux).
+- Pulls pro Stunde (begrenzt die Pity innerhalb einer Rotation).
+- Verteilung natürlicher Mythics auf die Event-Featured (Monte-Carlo nimmt Gleichverteilung an).
+- Star-Remnant-Dropchance je Summon; Remnants aus Shiny-Entfernung.
+- Spieler-Level-Cap und XP-Kurve.
+- Icy Star (RR) Kapselinhalt im Modul unvollständig.
