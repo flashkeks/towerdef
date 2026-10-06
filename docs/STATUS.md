@@ -1,9 +1,33 @@
-# Recherche-Status (global)
+# Status (global)
 
-Arbeitsauftrag: [`/run.md`](../run.md) (Runde 2). **Jede Sitzung liest zuerst diese Datei** und macht beim „Nächsten Schritt“ weiter.
-Runde 1 (Anime Adventures) ist abgeschlossen: [anime-adventures/STATUS.md](anime-adventures/STATUS.md), Auftrag archiviert als [anime-adventures/run-runde1.md](anime-adventures/run-runde1.md).
+Arbeitsauftrag: [`/run.md`](../run.md) (**Runde 3**: Balancing-Simulator und Game-Design-Entwurf). **Jede Sitzung liest zuerst diese Datei** und macht beim „Nächsten Schritt“ weiter.
+Frühere Aufträge: [archiv/run-runde1.md](archiv/run-runde1.md) (Anime Adventures, Status in [anime-adventures/STATUS.md](anime-adventures/STATUS.md)), [archiv/run-runde2.md](archiv/run-runde2.md) (Vergleichsrecherche, Ergebnisse unten).
 
-Letzte Aktualisierung: 2026-10-06 (Runde 2, Sitzung 1, abgeschlossen)
+Letzte Aktualisierung: 2026-10-06 (Runde 3, abgeschlossen)
+
+## Pakete Runde 3
+
+| Paket | Inhalt | Status | Agent (Modell) | Notiz |
+|---|---|---|---|---|
+| P0 | Archiv, Status | **erledigt** | Hauptsitzung | `run.md` Runde 1/2 → `docs/archiv/` |
+| P2a | Simulationskern `sim/` | **erledigt** | 1 × Sonnet | 96 Tests grün, Determinismus-Test grün, ~236 000 Ticks/s (20 Waves in 0,08 s); 30 DESIGN-OFFEN in [offene-regeln](balancing/offene-regeln.md); Infinite noch nicht modelliert | Auftrag: Unit-IDs striker, gunner, blaster, banner, farm, lancer, frost, titan |
+| P2b | Bot-Strategien | **erledigt** | 1 × Sonnet | greedy, farm, aoe, upgrade, wide, coop; vor Kalibrierung Normal solo: greedy/wide/upgrade 20/20, aoe 11/20, farm 10/20 | nach P2a |
+| P2c | Reports und Kalibrierung | **erledigt** | 1 × Sonnet | nach P2a |
+| P3 | Content-Sanity | **erledigt** | 1 × Sonnet | Risiken in [report.md](balancing/report.md#risiken): dominante Kombi Titan+Lancer+Frost, Striker als Falle, Messerschneide; Performance unkritisch | nach P2c |
+| P4 | Game-Design-Entwurf `docs/design/` | **erledigt** (Werte-Verweise auf sim/data nach P2a prüfen) | 1 × Sonnet | gdd.md 353 Zeilen, FRAGEN.md 10 offene Entscheidungen | parallel zu P2 |
+| P5 | Fähigkeiten-Musterkatalog (optional) | **erledigt** | 1 × Sonnet | 16 Muster, Top-8 (DESIGN); Beliebtheit meist UNKNOWN | |
+| P6 | Abschluss | **erledigt** | Hauptsitzung | 130 Tests grün, Linkprüfung 0 Fehler | |
+
+## Nächster Schritt (Runde 3)
+
+Runde 3 ist abgeschlossen. Als Nächstes entscheiden die Menschen die Fragen in [design/FRAGEN.md](design/FRAGEN.md). Danach (Vorschlag):
+
+1. Balance-Risiken aus [report.md § Risiken](balancing/report.md#risiken) beheben: Titan/Frost-Dominanz, Striker-Falle, flachere Schwierigkeitskurve (Messerschneide), Koop-Faktor je Spielerzahl. Danach erneut die Matrix laufen lassen.
+2. M1 Vertical Slice nach [gdd.md](design/gdd.md): Renderer (Engine laut FRAGEN #7) auf den Simulator `sim/` setzen.
+
+---
+
+# Runde 2 (abgeschlossen)
 
 ## Pakete Runde 2
 
@@ -67,7 +91,7 @@ Namensvetter (geprüft, **nicht** gemeint):
 
 Agenten: 10 × Sonnet (P1, P2, 5 × P3, 2 × P5, P4), nie mehr als 4 gleichzeitig.
 
-## Nächster Schritt
+## Nächster Schritt (Ende Runde 2)
 
 Die Recherche ist für den Bau ausreichend. Vorschlag:
 

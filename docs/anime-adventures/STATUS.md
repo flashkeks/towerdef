@@ -1,6 +1,6 @@
 # Recherche-Status
 
-Arbeitsauftrag Runde 1: [`run-runde1.md`](run-runde1.md) (archiviert). **Runde 1 ist abgeschlossen.** Der globale Fortschritt steht seit Runde 2 in [`docs/STATUS.md`](../STATUS.md).
+Arbeitsauftrag Runde 1: [`run-runde1.md`](../archiv/run-runde1.md) (archiviert). **Runde 1 ist abgeschlossen.** Der globale Fortschritt steht seit Runde 2 in [`docs/STATUS.md`](../STATUS.md).
 
 Letzte Aktualisierung: 2026-10-06 (Sitzung 2, abgeschlossen)
 

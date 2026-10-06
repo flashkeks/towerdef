@@ -1,249 +1,196 @@
-# run.md — Runde 2: Vergleichsrecherche Tower Defense + Vorarbeiten für unser Spiel
+# run.md — Runde 3: Balancing-Simulator und Game-Design-Entwurf
 
 Du arbeitest in diesem Repository auf dem Branch, auf dem diese Datei liegt. Keine neuen
 Branches. Commit und Push nach jedem Paket. Pull Requests nur, wenn der Mensch es sagt.
 
-**Runde 1 (Anime Adventures) ist abgeschlossen** und war sehr gut: Datenmodule über
-die Wiki-API statt HTML, 561 Units mit echten Werten, saubere Etiketten, Quellen,
-Konflikte. Die Konventionen von dort gelten weiter (Abschnitt 3). Der alte Auftrag liegt
-als `docs/anime-adventures/run-runde1.md` im Archiv (P0 verschiebt ihn dorthin).
+**Runde 1 und 2 sind abgeschlossen.** Die Recherche reicht für den Bau. Ab jetzt wird
+**nicht mehr recherchiert**, außer ein Paket unten sagt es ausdrücklich. Grundlage ist
+vor allem `docs/comparison/recommendations.md` (die Startwerte in §18, die Playtest-Liste
+in §19) und `docs/research/tech-options.md`.
 
-Lies diese Datei einmal ganz. Danach liest jede Sitzung **zuerst `docs/STATUS.md`**
-und macht beim „Nächsten Schritt" weiter.
-
----
-
-## 1. Was sich gegenüber Runde 1 ändert
-
-Runde 1 hat AA **enzyklopädisch** erfasst. Für den Bau unseres Spiels brauchen wir das
-nicht bei jedem Spiel. Ab jetzt gilt **Systeme und Zahlenbereiche statt Vollständigkeit**:
-
-| Brauchen wir | Brauchen wir nicht (nur wenn billig nebenbei) |
-|---|---|
-| Regeln, Abläufe, Formeln | jedes einzelne Item, Rezept, Skin |
-| In-Match-Ökonomie: Startgeld, Kill-/Wave-Einkommen, Verkaufswert | komplette Unit-Datenbanken mit allen Varianten |
-| Gegner-HP/-Speed und **wie sie mit der Welle skalieren** | Update-Zeitleisten bis aufs Datum |
-| Wave-Zusammensetzung (wenigstens für einige Stages) | Legacy-gegen-aktuell-Diffs jedes Werts |
-| Archetypen von Towern/Units mit **repräsentativen** Zahlen | Trading-/Social-Historie, Gamepass-Preislisten |
-| Meta-Progression und Gacha als **System** (Raten, Pity, Sinks) | Lore, Namen, Bossangriffe im Einzelnen |
-| Was Spieler lieben und hassen (Design-Lehren) | |
-
-**Genau die Lücken, die bei AA offen geblieben sind, sind die wichtigsten:**
-In-Match-Yen, Gegner-HP, Wave-Zusammensetzung, Targeting-Modi, Level-Kurve. Wer
-Balance-Zahlen für ein TD bauen will, braucht genau die. Bloons TD6 hat dafür die
-beste öffentliche Datenlage. Darum steht es vorn.
-
-**Stopp-Regel:** Findest du einen Wert nach **drei gezielten Versuchen** (verschiedene
-Quellen oder Suchbegriffe) nicht, trägst du ihn als `UNKNOWN` ein und machst weiter.
-Keine Endlosschleifen auf einem Wert.
+Lies diese Datei einmal ganz. Danach liest jede Sitzung **zuerst `docs/STATUS.md`** und
+macht beim „Nächsten Schritt" weiter.
 
 ---
 
-## 2. Agenten und Token-Budget — WICHTIG
+## 1. Ziel dieser Runde
 
-Subagenten sind ausdrücklich erwünscht (ein Spiel oder Paket je Agent). Aber:
+1. **Die Zahlen beweisen.** Alle Werte in `recommendations.md` sind von Hand gerechnet
+   (`DESIGN`). Die Datei sagt selbst, dass zentrale Annahmen (z. B. „0,025 DPS je Münze")
+   um Faktor 1,5–3 danebenliegen können. Ein Simulator spielt die Stages tausendfach
+   durch und kalibriert die Konstanten.
+2. **Der Simulator ist der spätere Spielkern.** Er wird so gebaut, dass das echte Spiel
+   ihn 1:1 übernimmt (headless, deterministisch, datengetrieben). Das ist kein
+   Wegwerf-Skript.
+3. **Einen Game-Design-Entwurf vorlegen**, in dem die **Entscheidungen offen markiert**
+   sind. Was das Spiel einzigartig macht, entscheiden die Menschen, nicht du.
 
-1. **Subagenten immer mit `model: "sonnet"` starten.** Nie Opus. Runde 1 hat mit
-   Opus-Agenten extrem viele Tokens verbraucht. Sonnet reicht, wenn der Auftrag klar ist.
-   Für rein Mechanisches (Seitenlisten holen, JSON parsen, Tabellen füllen) darf es
-   `model: "haiku"` sein.
-2. **Höchstens 4 Agenten gleichzeitig.** Mehr bremst sich am Rate-Limit des
-   Connectors (60 Aufrufe pro Minute, für alle zusammen).
-3. **Briefing statt Kontext:** Jeder Agent bekommt einen kurzen, vollständigen Auftrag:
-   Spiel, Zieldateien, die Feldliste aus Abschnitt 5, Stopp-Regel, Etiketten. Gib ihm
-   **nicht** diese ganze Datei und nicht die AA-Doku zum Lesen.
-4. **Agenten schreiben in Dateien, nicht in die Antwort.** Rückmeldung an dich: höchstens
-   10 Zeilen (was erledigt, was `UNKNOWN`, welche Dateien).
-5. **Kein Doppelabruf:** Bevor ein Agent eine Quelle holt, prüft er
-   `docs/games/SPIEL/sources.md`. Große Rohdaten (Wiki-Dumps) bleiben im Scratchpad,
-   nicht im Repo.
-6. Die **Hauptsitzung** koordiniert, prüft und fasst zusammen. Recherchieren sollen die
-   Agenten.
+**Nicht in dieser Runde:** kein Renderer, kein Client, kein Server, keine Grafik, keine
+Sounds, kein Gacha-Backend.
 
 ---
 
-## 3. Konventionen (unverändert aus Runde 1)
+## 2. Agenten und Token-Budget — gilt weiter
 
-- **Herkunft:** `VERIFIED` · `OBSERVED` · `DERIVED` (Rechenweg) · `RECONSTRUCTED` (Begründung) · `UNKNOWN`
-- **Sicherheit:** `CONFIRMED` · `HIGH` · `MEDIUM` · `LOW` · `UNKNOWN`
-- **Kurzform in Tabellen:** `120 [O/HIGH S12]`
-- **Quellen:** je Spiel eigene `sources.md` mit IDs (`BTD-S1` …), Bewertung `A`–`E`, Abrufdatum
-- **Versionen:** nur trennen, wo sich ein **für uns relevanter** Wert geändert hat
-- **Nichts erfinden.** Ein ehrliches `UNKNOWN` ist mehr wert als eine plausible Zahl.
-- **Keine Assets** (Bilder, Sounds, Modelle, extrahierte Spieldateien) ins Repo, keine
-  langen Fließtexte kopieren. Zahlen und Fakten strukturiert übernehmen ist ok.
-
-### Recherche-Technik (bewährt in Runde 1)
-
-- **Fandom/MediaWiki:** `api.php?action=parse&page=SEITE&prop=wikitext&format=json` mit
-  `raw=true`. Nach **Datenmodulen** suchen (`Module:…/Data`): Dort steht die
-  Spielkonfiguration, das ist der Jackpot. Kategorien über `list=categorymembers`.
-  Alte Stände über `prop=revisions` und `oldid`.
-- **Wayback Machine:** `web.archive.org/cdx/search/cdx?url=URL&output=json` und dann
-  `web.archive.org/web/ZEIT/URL`
-- **Reddit** war über den Connector gesperrt (403). Versuche
-  `https://old.reddit.com/r/SUB/search.json?q=…&restrict_sr=1`, sonst Reddit-Treffer aus
-  der `search`-Ergebnisliste (Snippets) nutzen. Nicht lange daran festbeißen.
-- **Steam** (BTD6): Store-API `store.steampowered.com/api/appdetails?appids=960090`,
-  Reviews `store.steampowered.com/appreviews/960090?json=1&filter=all&num_per_page=100`
-- **Roblox:** Universe/Place-IDs über die Spielseite, dann `games.roblox.com/v1/games?universeIds=…`
-  und `games.roblox.com/v1/games/ID/game-passes`
-- **YouTube:** nur Titel, Beschreibungen, Kapitel → höchstens `OBSERVED`
-- **Trello:** Board-URL + `.json`
+- Subagenten **immer mit `model: "sonnet"`**, nie Opus. Rein Mechanisches (Tabellen
+  füllen, Tests schreiben nach Vorgabe) darf `model: "haiku"` sein.
+- Höchstens **4 Agenten gleichzeitig**. Jeder Agent bekommt einen kurzen, vollständigen
+  Auftrag (Paket, Zieldateien, Schnittstellen, Abnahmekriterien) statt dieser ganzen
+  Datei.
+- Agenten schreiben in Dateien. Rückmeldung an dich: höchstens 10 Zeilen.
+- Gut parallelisierbar: P2 (Simulator) und P4 (GDD-Entwurf) laufen unabhängig
+  voneinander. Innerhalb von P2 erst den Kern (P2a) fertig machen, dann parallel
+  Bots (P2b) und Reports (P2c).
 
 ---
 
-## 4. Ordnerstruktur
+## 3. Technik-Vorgaben für den Simulator
 
-```text
-docs/
-  STATUS.md                    globaler Fortschritt (neu, ersetzt die Rolle von anime-adventures/STATUS.md)
-  anime-adventures/            Runde 1, bleibt wie sie ist (+ design-brief.md aus P1)
-  games/
-    btd6/  astd/  anime-vanguards/  anime-last-stand/  anime-expeditions/  utdz/
-      overview.md  mechanics.md  economy.md  units.md  enemies-waves.md
-      meta.md  design-lessons.md  sources.md
-      data/*.json   (optional, klein: max. ~200 KB je Spiel)
-  comparison/
-    systems-matrix.md  numbers.md  recommendations.md
-  research/
-    tech-options.md  assets-licensing.md  legal-gacha.md  balancing.md
-```
+Nach `docs/research/tech-options.md` §4 und §7:
 
----
-
-## 5. Steckbrief je Spiel (Feldliste für die Agenten)
-
-**`overview.md`:** Entwickler, Plattform, Start, Status (aktiv/tot), Spielerzahlen
-(Roblox-API/SteamDB), Kurzbeschreibung des Core Loops in fünf Sätzen, was das Spiel
-**einzigartig** macht.
-
-**`mechanics.md`:**
-- Platzierung: Boden/Luft/Hügel, Raster oder frei, Limits je Unit und gesamt
-- Targeting-Modi und ihre **genauen** Regeln
-- Angriffszyklus, AoE-Formen, Treffer-Bestimmung
-- Statuseffekte mit Stärke, Dauer und Stacking
-- Schadensformel, Resistenzen und Schadensarten, Crits
-- Fähigkeiten: aktiv/passiv, Cooldowns, Auren/Buffs mit Caps
-- Wie Upgrades strukturiert sind (lineare Stufen, Pfade wie in BTD6, Evolutions)
-
-**`economy.md` (Priorität!):**
-- Startgeld je Modus und Schwierigkeit
-- Einkommen je Kill, je Wave, passiv, Farm-Units und ihre Rendite
-- Verkaufswert
-- **Kostenkurve der Upgrades** (Beispiele: Billig-, Mittel-, Top-Unit)
-
-**`units.md`:** **Kein Vollkatalog.** Rollen-Archetypen (Single-Target-DPS, AoE,
-Support/Buffer, Farm, Debuffer, Anti-Air, Hidden-Detection …), pro Archetyp 2–4
-repräsentative Units mit Kosten, Damage, SPA bzw. Cooldown, Range und Max-Upgrade-Kosten.
-Dazu die Rarity-Verteilung und typische Stat-Spannen je Rarity.
-**Ausnahme BTD6:** alle Tower (das sind nur rund 25) mit Basiswerten und Pfadstruktur.
-
-**`enemies-waves.md` (Priorität!):**
-- Gegnertypen mit HP, Speed und Eigenschaften (Schild, Fliegen, Stealth, Regen,
-  Spawn-on-death)
-- **HP-Skalierung über die Wellen** (Formel oder Tabelle)
-- Wave-Zusammensetzung für wenigstens eine komplette Stage
-- Boss-Waves
-- **Ausnahme BTD6:** Runden 1–100 (oder so weit belegt) mit Zusammensetzung, RBE und
-  Cash je Runde als JSON, außerdem Freeplay-Skalierung
-
-**`meta.md`:** Account-Progression, Währungen mit Quellen und Sinks, Gacha (Raten, Pity,
-Banner), Traits/Rerolls, Evolution, Modi (Story/Infinite/Raids/Challenges/Events),
-Multiplayer (max. Spieler, geteiltes oder getrenntes Geld). Monetarisierung **nur als
-Struktur**, ohne Preislisten.
-
-**`design-lessons.md`:** Was Spieler loben und was sie hassen (Reviews, Reddit-Snippets,
-Wiki-Diskussionen). Woran das Spiel gestorben ist bzw. warum es lebt. 5–10 konkrete
-Lehren für unser Spiel.
+- **TypeScript**, Node 22, Paket `sim/` im Repo-Root mit eigener `package.json`.
+  Tests mit **vitest**. Keine Browser-Abhängigkeiten, keine Render-Library.
+- **Fester Tick** (z. B. 20 Ticks/s). Alles, was das Ergebnis bestimmt, als
+  **Integer/Festkomma**: Positionen entlang des Pfads, HP, Schaden, Cooldowns in Ticks,
+  Geld. Kein `Math.random()`, sondern ein **eigener seeded PRNG**. Iteration in fester
+  Reihenfolge (aufsteigende Entity-IDs), keine Abhängigkeit von `Map`/`Set`-Reihenfolge.
+- **Determinismus-Test:** gleicher Seed und gleiche Eingaben ergeben nach 20 Waves einen
+  bit-gleichen Zustands-Hash. Das ist ein Pflichttest.
+- **Datengetrieben:** Units, Gegner, Archetypen, Modifier, Stages/Waves, Ökonomie-
+  Konstanten, Schwierigkeiten liegen als JSON unter `sim/data/` und werden validiert
+  (z. B. zod). Startwerte aus `recommendations.md` §18 übernehmen, jede Zahl mit
+  Kommentar bzw. Feld `ref`, das auf den Abschnitt zeigt.
+- **Pfad:** Waypoint-Polylinie, Gegnerfortschritt als skalare Distanz (Tiles).
+  Platzierungsplätze als Kandidatenliste neben dem Pfad (Raster), Abstand zum Pfad und
+  Abdeckung je Platz werden einmal vorberechnet.
+- **Spielregeln** wie in `recommendations.md`: Targeting-Modi (§9), Schadensformel und
+  Rüstung (§10), Buff-Caps (§11), Farm (§12), Leaks und Base-HP (§2), Einkommen (§3),
+  HP-Kurve und Archetypen (§4), Waves (§5), Kosten (§6), Caps (§7), Verkauf (§8),
+  Koop-Geld (§16). Wo die Datei etwas offenlässt: die einfachste sinnvolle Regel nehmen,
+  im Code als `// DESIGN-OFFEN` markieren und in `docs/balancing/offene-regeln.md`
+  eintragen.
 
 ---
 
-## 6. Arbeitspakete
+## 4. Arbeitspakete
 
-Jedes Paket endet mit Commit, Push und einem Eintrag in `docs/STATUS.md`.
+Jedes Paket endet mit grünen Tests, Commit, Push und einem Eintrag in `docs/STATUS.md`.
 
-### P0 — Aufräumen und Status (Hauptsitzung, kein Agent)
-- `run.md` von Runde 1 → `docs/anime-adventures/run-runde1.md`. Diese Datei wird
-  `run.md`.
-- `docs/STATUS.md` anlegen: Pakete, Agenten mit Modell, offene Spuren. Den Verweis in
-  `README.md` anpassen.
-- Spielnamen und Plattform verifizieren. Exakte Schreibweise und Roblox-Universe-ID je
-  Spiel. Vorsicht bei Namensvetter-Spielen: „Anime Expeditions" kann auch anders
-  geschrieben sein, und „Universal Tower Defense Z" ist nicht dasselbe wie „Universal
-  Tower Defense". Bei Zweifel beide notieren und die aktivere nehmen.
+### P0 — Status (Hauptsitzung)
+- `run.md` von Runde 2 → `docs/archiv/run-runde2.md` (Runde 1 ggf. dorthin mitnehmen).
+  Diese Datei wird `run.md`.
+- `docs/STATUS.md`: Runde 3 mit den Paketen hier anlegen.
 
-### P1 — AA-Design-Brief (ein Sonnet-Agent)
-`docs/anime-adventures/design-brief.md`, **höchstens rund 400 Zeilen**: die Essenz von
-Runde 1 für Entwickler. Core Loop, Kampf, Ökonomie, Gacha, Progression, die wichtigsten
-Formeln, typische Zahlenbereiche, offene Lücken. Verweise auf die Detaildateien statt
-Wiederholung. Keine neue Recherche.
+### P2a — Simulationskern (ein Sonnet-Agent, zuerst)
+- Tick-Loop, PRNG, Entity-Verwaltung, Pfadbewegung, Spawner (Spawn-Gruppen aus §5),
+  Targeting, Angriffe inkl. AoE-Formen, Statuseffekte (mindestens Slow, Stun mit
+  CC-Sperre, Burn/Bleed), Schild-Stacks, Regen, Rüstung, Leaks, Ökonomie, Upgrades,
+  Verkauf.
+- **Befehls-Schnittstelle**, so wie sie später Spieler und Server nutzen:
+  `place(unitId, slot)`, `upgrade(entityId)`, `sell(entityId)`, `setTargeting(entityId, mode)`,
+  `useAbility(entityId)`, `skipWave()`. Der Simulator kennt nur Befehle, keine UI.
+- Tests: Determinismus, Einkommen der Beispiel-Stage bei „keine Units" (nur Wave-Bonus),
+  Schadensformel-Einzelfälle aus §10, Leak-Rechnung aus §2.
 
-### P2 — Bloons TD6 (ein bis zwei Sonnet-Agenten)
-Steckbrief wie Abschnitt 5, mit den genannten Ausnahmen. **Hier die AA-Lücken füllen:**
-Startgeld, Cash je Pop und je Runde, RBE- und HP-Skalierung, Rundenzusammensetzung,
-Targeting-Modi, Verkaufswert, Schwierigkeitsmultiplikatoren.
+### P2b — Bot-Strategien (Sonnet, nach P2a)
+Mindestens fünf Bots, die über die Befehls-Schnittstelle spielen:
+1. **Greedy-DPS:** kauft immer das Beste pro Münze (Platzierung oder Upgrade)
+2. **Farm-first:** Farm in Wave 1, dann Greedy
+3. **AoE-lastig:** bevorzugt AoE-Units
+4. **Upgrade-first:** wenige Units, voll ausgebaut
+5. **Breit:** viele Units auf niedriger Stufe
+6. optional **Koop-Mix:** 2–4 Bots gemeinsam mit dem Koop-Geldmodell
 
-### P3 — Roblox-Anime-TDs (bis zu 4 Sonnet-Agenten parallel, einer je Spiel)
-In dieser Reihenfolge, falls weniger Agenten:
-1. All Star Tower Defense (ASTD)
-2. Anime Vanguards
-3. Anime Last Stand
-4. Universal Tower Defense Z (UTDZ)
-5. Anime Expeditions
+Platzierung: Bot wählt den Slot mit der größten Pfadabdeckung für die Range der Unit.
+Etwas Zufall (seeded), damit Monte-Carlo-Läufe streuen.
 
-Steckbrief wie Abschnitt 5. Bei jedem Spiel zuerst nach Wiki-**Datenmodulen** suchen.
+### P2c — Reports und Kalibrierung (Sonnet, nach P2a, parallel zu P2b)
+- CLI: `npm run sim -- --stage standard20 --bot greedy --runs 500 --difficulty normal --players 1`
+- Ausgabe nach `docs/balancing/`:
+  - Siegquote je Bot × Schwierigkeit × Spielerzahl
+  - **Verlustrate je Wave**, Geldkurve, Pool/Kapazität je Wave, Leak-Quellen
+  - Farm-Anteil und Payback
+  - Anteil Upgrades gegen Neuplatzierungen
+  - Infinite: Median-Endwave und Streuung
+- Als Markdown-Tabellen plus CSV. Diagramme optional als SVG.
+- **Kalibrieren gegen die Ziele aus §19:** Verlustrate im späten Abschnitt 10–20 %,
+  Infinite-Median-Endwave 30–40, Koop-Siegquote je Spielerzahl auf ±10 Prozentpunkte,
+  Stage-Dauer ca. 15 min, Farm-Anteil 25–35 % und so weiter.
+  Konstanten in `sim/data/` anpassen, **jede Änderung** mit Alt-, Neu-Wert und Grund in
+  `docs/balancing/kalibrierung.md`.
+- Ergebnis: `docs/balancing/report.md` mit Stand vorher/nachher, den kalibrierten
+  Startwerten und dem, was der Simulator **nicht** beantworten kann (Spielgefühl,
+  Lesbarkeit, menschliche Fehler). Die Tabelle §18 in `recommendations.md` bekommt
+  einen Hinweis auf die kalibrierten Werte. Den Text dort nicht umschreiben.
 
-### P4 — Vergleich und Empfehlung (Hauptsitzung oder ein Sonnet-Agent)
-- `comparison/systems-matrix.md`: Systeme × Spiele (hat es / wie gelöst), inklusive AA
-- `comparison/numbers.md`: Zahlenbereiche nebeneinander. Startgeld, Einkommen je Wave
-  relativ zum Startgeld, Kosten erste Platzierung relativ zum Startgeld, SPA-Spannen,
-  Range-Spannen, Placement-Caps, HP-Skalierung (Formeln nebeneinander), Gacha-Raten
-  und Pity
-- `comparison/recommendations.md`: konkrete **Startwerte und Regeln für unser Spiel**,
-  jeweils mit Begründung („BTD6 macht X, AA macht Y, wir nehmen Z, weil …"). Das ist
-  das wichtigste Ergebnis dieser Runde.
+### P3 — Content-Sanity (Sonnet, nach P2c)
+Prüfe mit dem Simulator auch die Grenzfälle:
+- Gibt es eine dominante Strategie, die alles schlägt?
+- Gibt es eine nutzlose Unit-Rolle?
+- Ist Dauer-Stun auf Bosse möglich?
+- Macht ein einzelner Trait oder Buff-Stack das Spiel kaputt?
+- Bricht Infinite bei 60 Units/80 Gegnern die Performance (Ticks/s im Node-Lauf messen)?
+Befunde in `docs/balancing/report.md`, Abschnitt „Risiken".
 
-### P5 — Vorarbeiten ohne Spielbezug (Sonnet-Agenten, gern parallel zu P3)
-Alles nur mit Internetzugang:
-- `research/tech-options.md`: Web-Engine (z. B. Phaser, PixiJS, Three.js/Babylon,
-  Godot-Web-Export), ECS-Bibliotheken, Pathfinding/Waypoints, deterministische
-  Simulation (Fixed Timestep), Koop-Multiplayer (autoritativer Server, z. B. Colyseus
-  oder eigene WebSockets), Speichern (Server-Inventar gegen Cheats). Je Option Lizenz,
-  Reife, Aktivität (letzter Release, GitHub-Stars) und eine **Empfehlung**.
-- `research/assets-licensing.md`: Quellen für freie bzw. CC0-Grafik und -Sound
-  (Kenney, OpenGameArt, itch.io-CC0-Packs u. a.) mit Lizenz und Eignung für den
-  Anime-/TD-Stil. **Nur Links und Lizenzen, nichts herunterladen.**
-- `research/legal-gacha.md`: Lootbox- und Gacha-Regeln in DE/EU (Jugendschutzgesetz,
-  USK-Deskriptoren, Belgien/Niederlande), Pflicht zur Ratenangabe, Risiken bei
-  anime-ähnlichen Namen und Figuren (Markenrecht, Parodie). **Keine Rechtsberatung**,
-  nur eine Übersicht mit Quellen.
-- `research/balancing.md`: öffentliche Artikel, GDC-Talks und Postmortems zu
-  TD-Balancing und Gacha-Ökonomie. Kernaussagen und Formeln mit Quellen.
+### P4 — Game-Design-Entwurf (ein Sonnet-Agent, parallel zu P2)
+`docs/design/gdd.md`, kompakt (Ziel höchstens rund 500 Zeilen). Inhalt:
+1. **Elevator Pitch** in drei Sätzen. Mehrere Varianten zur Auswahl.
+2. **Design-Säulen** (3–4), jeweils mit „das heißt konkret …"
+3. **Der Kniff:** 3–5 Kandidaten, was unser Spiel von AA/ASTD/AV/ALS/UTDZ/AE/BTD6
+   unterscheidet. Jeweils mit Vorbild, Aufwand, Risiko, Bezug zu den
+   `design-lessons.md`. **Nicht entscheiden**, sondern als `ENTSCHEIDUNG OFFEN` markieren.
+4. **Core Loop** und **Meta Loop** (Match → Belohnung → Gacha/Upgrade → nächste Stage)
+5. **MVP-Umfang (Vertical Slice):** eine Map, 6–8 Units, 20 Waves, solo, ohne Gacha.
+   Was genau drin ist und was ausdrücklich nicht.
+6. **Unit-Entwürfe für den MVP:** 6–8 **eigene** Figuren (keine fremde IP, keine
+   anspielenden Namen), je Rolle, Fähigkeits-Idee, wie sie sich anfühlen soll, und
+   welcher Archetyp-Konter sie wichtig macht. Werte aus `sim/data/`.
+7. **Map-Konzepte:** 3 Stück, je Pfadform, Platzierungsflächen, welche Archetypen sie
+   testen
+8. **Onboarding:** die ersten 10 Minuten, Wave für Wave
+9. **Game Feel / Juice:** Liste konkreter Feedback-Effekte (Treffer, Kill, Geld, Level-up,
+   Boss-Auftritt, Leak), mit Prioritäten für den MVP
+10. **Art-Direction-Optionen:** 2–3 Stilrichtungen, die mit freien Assets oder wenig
+    eigenem Aufwand machbar sind (Bezug `docs/research/assets-licensing.md`).
+    `ENTSCHEIDUNG OFFEN`.
+11. **Roadmap:** M1 Vertical Slice → M2 Koop → M3 Meta/Gacha → M4 Inhalte. Je Meilenstein
+    eine Abnahme-Checkliste.
+
+Dazu `docs/design/FRAGEN.md`: **alle offenen Entscheidungen** als nummerierte Liste.
+Jede Frage mit Optionen, Empfehlung und Konsequenz („Wenn A, dann …"). Diese Liste ist
+für die Menschen. Kurz und klar, höchstens eine halbe Seite pro Frage.
+
+### P5 — Fähigkeiten-Musterkatalog (Sonnet, optional, Recherche erlaubt)
+`docs/design/ability-patterns.md`: aus den sieben recherchierten Spielen (vorhandene
+Doku zuerst, Netz nur ergänzend) die Fähigkeits-Muster, die Spieler am meisten mögen
+(z. B. Zeitstopp, Ketten-Blitz, Beschwörung, Buff-Aura, Geldfarm mit Twist,
+Verwandlung), je Muster Mechanik, typische Werte, Balance-Risiko und ob der Simulator
+es schon kann. Ziel: Material für eigene Units.
 
 ### P6 — Abschluss
-`docs/STATUS.md` aktualisieren und Links prüfen. Dann der Kurzbericht:
+`docs/STATUS.md` aktualisieren. Kurzbericht:
 
 ```text
-RESEARCH STATUS — Runde 2
+STATUS — Runde 3
 Pakete erledigt / offen:
-Spiele mit Steckbrief:
-Gefüllte AA-Lücken (welche, woher):
+Simulator: Tests (Anzahl, grün?), Determinismus-Test grün?, Ticks/s:
+Kalibrierung: wichtigste geänderte Konstanten (alt → neu):
+Siegquoten Normal/Hard/Nightmare (Greedy-Bot, solo):
+Gefundene Balance-Risiken:
+GDD: offene Entscheidungen (Anzahl), siehe FRAGEN.md
 Agenten gestartet (Anzahl, Modell):
-Neue Dateien:
 Commits:
-Größte Lücken:
 Nächster Schritt:
 ```
 
 ---
 
-## 7. Ende einer Sitzung
+## 5. Ende einer Sitzung
 
 Bevor der Kontext knapp wird oder die Sitzung endet: `docs/STATUS.md` aktualisieren
-(erledigt, angefangen, laufende Agenten, nächster konkreter Schritt), committen und
-pushen. Laufende Agenten vorher fertig werden lassen oder ihren Stand als
-„Zwischenstand" committen.
+(erledigt, angefangen, laufende Agenten, nächster konkreter Schritt), Tests laufen
+lassen, committen und pushen. Code, der nicht durch die Tests geht, nur als klar
+markierter Zwischenstand committen.
 
-> Ziel dieser Runde: Wir wissen danach, **welche Zahlen und Regeln wir für unser eigenes
-> Tower Defense nehmen**, und warum. Wir wissen nicht jedes Detail jedes Spiels.
+> Ziel dieser Runde: Wir wissen, **dass die Zahlen tragen**, und wir haben einen
+> Design-Entwurf, über den die Menschen entscheiden können. Danach wird gebaut.
