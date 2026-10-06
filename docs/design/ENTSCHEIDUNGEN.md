@@ -9,7 +9,7 @@ Verbindlich für alle weiteren Runden. Die beantwortete Fragenliste liegt in
 | Thema | Entscheidung |
 |---|---|
 | MVP-Map | „Terrassenweg" (S-Kurve, eine Spur) |
-| Flyer | folgen dem normalen Pfad, nur Hill/Hybrid-Units treffen sie. **Ausnahme seit Runde 5 P3b (Max, 06.10.2026):** der Blaster (Boden) trifft Flieger mit 75 % Schaden (`airDamageBp`), damit es neben Frost und Lancer eine zweite Flächen-Antwort gegen die Pulks in W16/W18 gibt |
+| Flyer | folgen dem normalen Pfad, nur Hill/Hybrid-Units treffen sie |
 | Engine | PixiJS v8 (Rückfall Phaser), Simulation strikt getrennt (`sim/`) |
 | Reihenfolge | M1 Solo-Prototyp → M2 Koop → M3 Sammeln/Gacha/Meta → M4 Inhalte |
 | Welt | **Grenzgilde im Nebelriss**: Fantasy-Abenteuer, warmherzig, eine Gilde hält die Linie gegen Schattenwesen |

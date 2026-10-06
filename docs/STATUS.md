@@ -31,6 +31,8 @@ Letzte Aktualisierung: 2026-10-06 (Runde 5 gestartet, Max' Claude-Account)
 `…/tiny-dungeon/f8422efb44-1674742415/kenney_tiny-dungeon.zip` (0,1 MB) (Präfix jeweils `https://kenney.nl/media/pages/assets`).
 Bis dahin: Grafik und Ton eigen und code-generiert.
 
+**Entscheidung Max (06.10.2026, im Chat):** Flieger-Pulks (W16/W18) bekommen eine zweite Flächen-Antwort statt weniger Pulk-Druck. Umgesetzt in P3b: Blaster trifft Flieger mit 75 % (`airDamageBp`). Das weicht von ENTSCHEIDUNGEN.md („nur Hill/Hybrid treffen Flieger") ab; Max trägt es dort ein, wenn er es so lässt.
+
 Plan: P0b allein. Danach Welle A parallel in getrennten Worktrees: P1, P2, P3, P4. Danach Welle B: P5, P6. Die Hauptsitzung merged.
 
 **Antworten auf die offenen Fragen von Runde 4** (Homelab-Sitzung/Max, 06.10.2026):
