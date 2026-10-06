@@ -7,7 +7,7 @@ Letzte Aktualisierung: 2026-10-06 (Runde 4, P6b Balance-Reste; Arbeit ab jetzt �
 
 ## Runde 5
 
-Letzte Aktualisierung: 2026-10-06 (Runde 5 gestartet, Max' Claude-Account)
+Letzte Aktualisierung: 2026-10-07 (Runde 5 abgeschlossen, P7)
 
 | Paket | Inhalt | Status | Agent (Modell) | Notiz |
 |---|---|---|---|---|
@@ -21,7 +21,7 @@ Letzte Aktualisierung: 2026-10-06 (Runde 5 gestartet, Max' Claude-Account)
 | P4 | Pixel-Grafik | **erledigt (eigene Sprites, keine Packs)** | 1 × Sonnet | Terrassenweg aus Kacheln (Gras, Pfad mit 16 Kantenmasken, Deko, Spawn/Basis), drei Slot-Untergründe auf einen Blick unterscheidbar (graue Steinplatte = Boden, Sockel mit Frontmauer = Hügel, Holzdeck mit Münze = 2×2), 8 Units + 8 Gegnertypen (je 2 Geh-Frames) = 54 Quellbilder, **alle eigen und code-generiert** (`client/scripts/gen-sprites.mjs`). Atlas-Pipeline `build-atlas.mjs` (reproduzierbar, nearest), Figuren ganzzahlig skaliert. Bundle: `dist` 860 kB gesamt, Atlas 10 kB, `index` unverändert. Lizenzen: nur Eigenes, `ATTRIBUTIONS.md`. Screenshots `client/docs/screenshot-p4-*.png`. **Offene Spuren:** CC0-Packs (Kenney Tiny Town/Dungeon, OGA Tiny Creatures, Pixel Frog Tiny Swords) waren aus der Session nicht erreichbar (Proxy 403 auf kenney.nl, opengameart.org, itch.io), nicht umgangen; Homelab-Seite könnte per CT 113 holen. Tile-Größe folgt dem Fenster (nicht ganzzahlig), Einrasten wäre Einzeiler in `renderer.fit` (P0b-Datei) |
 | P5 | Spielgefühl, Ton | **erledigt (60 fps nur ohne Software-Renderer nachweisbar, s. u.)** | 1 × Sonnet | **Effekte** (`game/fx.ts`, Logik `view/feel.ts`, nur lesend am Bus + Zustand): Schuss/Aufschlag je Unit (Striker Hieb, Gunner Leuchtspur, Titan Granate, Blaster Geschoss + Flächenblast, Frost Kegel, Lancer Linie), Schadenszahlen (gebündelt, abschaltbar, gold im Fenster, Boss-Heilung grün), Tod mit Zerfall + Münz-Popup, Leak (roter Rand pulsiert, Leben-Anzeige wackelt, Bildschütteln), Boss-Auftritt/Phasenwechsel (Ringe, Schütteln, Banner-Animation), Telegraph mit Schraffur, Countdown, Fortschritt zum Brechen (`tele.dmg/need`, Leiste am Boss + im Banner), Fenster „Panzer offen“ (Platten, `armor 0`) vs. „keucht“, Mend-Sog, `bossCast.cause` als Einblendung. Tracker um `staggerNeed`, `armor`, `lastCast`, `bossArmor` ergänzt. Partikel/Effekte/Zahlen gepoolt und gedeckelt (170/80/44). **Ton:** 26 Klänge + 1 Musik-Loop, **alle eigen**, zur Laufzeit per WebAudio synthetisiert (keine Dateien; Kenney-Packs weiter offene Spur), Drosselung je Gruppe (Treffer-Topf: 55 ms Abstand, max. 5 je 400 ms) + Gedränge-Dämpfung + Begrenzer, Lautstärke `master×sfx` / `master×music` (quadratisch), M = stumm (`dw.muted`), Context erst nach erster Nutzeraktion, `settings.note` angepasst. **FPS** (`npm run perf`: W19, 8 Units Stufe 2, 3×, 1920×1080, Effekte an, headless Chromium mit **SwiftShader, kein GPU**): 5,5–12 fps, die Zeit liegt im Software-Raster (alles ausblenden = 60 fps, Karte allein ≈ 40 ms/Frame), **JS-Anteil je Frame ≈ 1,2 ms** (Fx 0,7, Entities 0,4, Sim 0,3; Budget 16,7 ms) — 60 fps auf echter GPU **nicht gemessen**, nur das CPU-Budget belegt. Bundle: `dist` 0,93 MB gesamt (Ziel < 8 MB), `index` 14,5 kB, `main` 510 kB (154 kB gzip). Tests: `test/p5.test.ts` (Drosselung, Lautstärke, Ereignis→Klang/Effekt, Schuss-Erkennung, Zielwahl, Schadenszahlen, Tracker). Skripte: `perf.mjs`, `shots-p5.mjs`, `audio-check.mjs`, `lib/drive.mjs`. Screenshots `client/docs/screenshot-p5-*.png`. Fremde Dateien minimal: `main.ts` (Ton + Leak-Wackeln), `help.ts` (M), `en.ts`, `styles.css`, `telegraph.ts` |
 | P6 | M1-Lücken (Menü, Team 6 aus 8, Einstellungen, Ergebnis) | **erledigt** | 1 × Sonnet | Hauptmenü, Stufe → Team-Wahl, Einstellungen, Credits (`ATTRIBUTIONS.md` per `?raw`), Ergebnis (Welle, Leaks, MVP, Dauer), Pause-Menü. Team nur **Client-Filter** (Sim kennt keine Teams): `session.team`, `session.teamCatalog()`; Sim lässt weiter alle 8 zu. Einstellungen `ui/settings.ts` (Ton baut P5 später). Replay-Slot `.replay-slot` + `replayButton`-Callback. 62 Tests grün |
-| P7 | Abschluss | offen | Hauptsitzung | |
+| P7 | Abschluss | **erledigt** | Hauptsitzung | Kurzbericht unten |
 
 **Offene Spur Assets (06.10.2026):** Aus der Session sind kenney.nl, opengameart.org und itch.io gesperrt (Proxy 403). Über CT 113 (Homelab) sind die Kenney-ZIPs erreichbar, Lizenz CC0 auf der Seite geprüft. Die Homelab-Seite kann sie unverändert unter `client/assets/vendor/kenney/` ablegen (ZIP entpacken, `License.txt` mit), dann tauscht eine spätere Sitzung Platzhalter gegen Pack-Grafik bzw. -Ton:
 `https://kenney.nl/media/pages/assets/impact-sounds/87b4ddecda-1677589768/kenney_impact-sounds.zip` (0,8 MB),
@@ -45,6 +45,53 @@ Plan: P0b allein. Danach Welle A parallel in getrennten Worktrees: P1, P2, P3, P
 - Kek-Game-Seite (`/td/launch`, Schlüsselablage, `kid`-Schema): baut die Homelab-Seite zusammen mit M2. Vorschlag aus `architecture.md` (`iss=kek-game`) gilt bis dahin.
 
 Vorab erledigt (Homelab-Sitzung, 06.10.2026): Preview `https://duskwardens.flashkeks.com` (statisch, Access, Betrieb durch Homelab); Slot-Knöpfe lagen in Festkomma statt Kacheln, Units ließen sich nicht setzen → behoben in `41515c4`, Smoke prüft jetzt die Lage der Slot-Knöpfe.
+
+## Kurzbericht Runde 5 (P7, 06./07.10.2026)
+
+```text
+STATUS — Runde 5
+Pakete erledigt / offen: P0, P0b, P1, P2, P3 (+P3b, P3c), P4, P5, P6, P7 erledigt; Ziele teils verfehlt (unten)
+Abnahmeziele (Abschnitt 3):
+  Bedienbar ohne Erklärung: Smoke spielt per page.mouse.click + Tastatur über Menü → Stufe → Team
+    bis Spielende, 1280×720 / 1920×1080 / 2560×1440 grün. ABER: der einfache Klick-Plan des Smoke
+    verliert jedes Mal an W11 (Hollow Warden), W1–W20 wird so nicht erreicht → teilweise
+  Keine toten Klicks: erreicht (Toast mit Grund, P1-Tests)
+  Replays: erreicht (Browser-Export → npm run replay gleicher Hash, Pause- und Endstand)
+  Kein Pflicht-Unit (LOO ≤ 25): Normal −18, Hard −22, Nightmare −26 (Frost; Streuung ±5) → fast erreicht
+  Hard-Kennlinie ≥ 20: 13,0 → verfehlt (Final-Boss-Schwelle; Elemente waren nicht die Ursache)
+  Stufen im Ziel (wide, normal, n=100): 92 / 49 / 31 → erreicht (Hard am unteren Rand)
+  Lesbarkeit: Lineup 1× (screenshot-p4-lineup.png) unterscheidbar → erreicht (Augenmaß, kein Menschentest)
+  Lizenzen sauber: erreicht (alle Grafik/Ton eigen, in ATTRIBUTIONS.md; keine Packs eingebunden)
+  Performance 60 fps @3× W19: nicht nachweisbar (Sandbox nur SwiftShader: 5–12 fps; JS je Frame ≈ 1,2 ms
+    von 16,7 ms) → auf echter GPU von Hand prüfen
+  Bundle: dist 0,93 MB, index 14,5 kB → erreicht
+Boss-Änderungen und LOO (alt → neu): zerstörbare Wirkungen (staggerBp; Frost-Stun, Nuke oder Dauerschaden
+  brechen), Rüstung-0-Fenster, Colossus heilt im Takt; Boss-HP ×11 → ×14, Titan-Nuke 12× → 6,5×;
+  Blaster trifft Luft (75 %), Frost-Slow 20 → 12 %, Element-Faktor 1,5/0,5 → 1,2/0,8.
+  LOO Titan Normal −87 → −24; Gunner Hard −57 → +7; Frost Normal −92 → −18
+Hard-Kennlinie (alt → neu): 13,7 → 13,0
+Grafik: 54 Quellbilder eigen (code-generiert), 0 CC0-Packs (Downloads gesperrt, offene Spur oben)
+Sounds: 26 Klänge + 1 Musik-Loop, eigen (WebAudio-Synthese)
+Replay: Export → Hash-Prüfung grün: ja
+Performance (fps bei 3×, W19): Sandbox 5–12 fps (Software-Raster), JS 1,2 ms/Frame
+Bundle-Größe: 0,93 MB gesamt, Spiel-Bundle main 512 kB (155 kB gzip), index 14,5 kB
+Was die Menschen als Nächstes testen sollen:
+  1. Eine Stage Normal ganz durchspielen und das Replay schicken (Ergebnis-Bildschirm → Download)
+  2. Hard 2–3 Runden: fair oder frustig? Woran gescheitert? (Freitext im Ergebnis)
+  3. Boss W10/W20: Vorwarnung und Fenster verständlich? Brechen per Frost/Titan/Dauerschaden erkannt?
+  4. FPS bei 3× in W15–W20 auf dem eigenen Rechner (Chrome-DevTools oder Gefühl)
+  5. Slots: Die runden Slot-Platten (P1) liegen über den Slot-Grafiken der Karte (P4) — stört das, oder lieber nur Rahmen?
+Agenten: 10 × Sonnet (P0b, P1, P2, P3, P3b, P3c, P4, P5, P6; P1/P3 nach Rate-Limit fortgesetzt), höchstens 4 gleichzeitig
+Commits: 21 auf dev seit dem Auftrag (b889a92)
+Nächster Schritt: Playtests der Menschen abwarten (Replays nach docs/balancing/playtests/), dann
+  (a) Hard-Kennlinie über den Final-Boss angehen, (b) Bot-Messlatte klären (farm/coop über Korridor,
+  vermutlich Bot-Artefakt), (c) Slot-Platten mit der Kartengrafik verschmelzen, (d) Kenney-Packs, sobald
+  die Homelab-Seite sie ablegt.
+```
+
+**Offene Fragen an die Menschen** (mit Empfehlung):
+- Bot-Messlatte: Welcher Bot ist „der beste“ für die Abnahme? `farm`/`coop` liegen über dem Korridor (98/86/48), vermutlich ein Bot-Pfad-Artefakt. Empfehlung: `wide` als Messlatte festschreiben, farm/coop untersuchen.
+- Blaster trifft Luft (P3b) weicht von ENTSCHEIDUNGEN.md ab („nur Hill/Hybrid treffen Flieger“). Empfehlung: in ENTSCHEIDUNGEN.md nachtragen (macht Max).
 
 # Runde 4 (abgeschlossen; Balance-Reste gehen in Runde 5 P3 auf)
 
