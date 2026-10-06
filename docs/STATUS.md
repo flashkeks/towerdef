@@ -5,9 +5,24 @@ Frühere Aufträge: [archiv/run-runde1.md](archiv/run-runde1.md), [archiv/run-ru
 
 Letzte Aktualisierung: 2026-10-06 (Runde 4, P6b Balance-Reste; Arbeit ab jetzt über Max' Claude-Account in `flashkeks/towerdef`, Branch `dev`)
 
-## Runde 5 (Start offen)
+## Runde 5
 
-Auftrag liegt seit 06.10.2026 in `run.md`. Die Sitzung, die Runde 5 beginnt, legt hier die Pakettabelle an (P0).
+Letzte Aktualisierung: 2026-10-06 (Runde 5 gestartet, Max' Claude-Account)
+
+| Paket | Inhalt | Status | Agent (Modell) | Notiz |
+|---|---|---|---|---|
+| P0 | Status, Aufräumen | **erledigt** | Hauptsitzung | `41515c4` (Slot-Fix) ist drin. Stand vor Runde 5: sim 208 Tests + tsc grün, client 37 Tests + tsc + build grün, `npm run smoke` grün (noch mit Selektor-Klicks, Umbau in P1). Bundle: `main` 465 kB (140 kB gzip) |
+| P0b | Client aufteilen (`app.ts` 396 Z., `renderer.ts` 433 Z.) | offen | 1 × Sonnet, allein | zuerst |
+| P1 | Bedienbarkeit, Smoke mit echten Mausklicks | offen | 1 × Sonnet | nach P0b |
+| P2 | Playtest-Daten, Replay | offen | 1 × Sonnet | nach P0b |
+| P3 | Boss-Design, Hard-Kennlinie | offen | 1 × Sonnet | nur `sim/` |
+| P4 | Pixel-Grafik | offen | 1 × Sonnet | nach P0b |
+| P5 | Spielgefühl, Ton | offen | 1 × Sonnet | nach P0b und P3 (Telegraph-Liste) |
+| P6 | M1-Lücken (Menü, Team 6 aus 8, Einstellungen, Ergebnis) | offen | 1 × Sonnet | nach P0b |
+| P7 | Abschluss | offen | Hauptsitzung | |
+
+Plan: P0b allein. Danach Welle A parallel in getrennten Worktrees: P1, P2, P3, P4. Danach Welle B: P5, P6. Die Hauptsitzung merged.
+
 **Antworten auf die offenen Fragen von Runde 4** (Homelab-Sitzung/Max, 06.10.2026):
 - Domain-Betrieb: `cloudflared` läuft auf `edge` als Host-Dienst, Ingress wird bei Cloudflare per API gepflegt. Ziel ist immer `http://127.0.0.1:PORT`, Compose braucht **kein** eigenes Netz für den Tunnel, nur einen auf `127.0.0.1` gebundenen Port. Port vergibt die Homelab-Seite.
 - Backup `/data` (ab M2): wie bei den anderen Apps über CT 113 per tar zum PBS, eigene backup-id. Baut die Homelab-Seite; das TD muss nur einen konsistenten Stand liefern (SQLite: Online-Backup oder WAL-Checkpoint, im Deploy-Entwurf beschreiben).
@@ -18,7 +33,9 @@ Auftrag liegt seit 06.10.2026 in `run.md`. Die Sitzung, die Runde 5 beginnt, leg
 
 Vorab erledigt (Homelab-Sitzung, 06.10.2026): Preview `https://duskwardens.flashkeks.com` (statisch, Access, Betrieb durch Homelab); Slot-Knöpfe lagen in Festkomma statt Kacheln, Units ließen sich nicht setzen → behoben in `41515c4`, Smoke prüft jetzt die Lage der Slot-Knöpfe.
 
-# Runde 4 (abgeschlossen bis auf Balance-Reste, die in Runde 5 P3 aufgehen)
+# Runde 4 (abgeschlossen; Balance-Reste gehen in Runde 5 P3 auf)
+
+Zusammenfassung: Leben-System, Schwierigkeit über Regeln, zwei Boss-Kits, Wellenvorschau, Risikokarten, Bot-Fehlerprofile, Architektur, Styleguide, Name „Duskwardens“, spielbares Client-Gerüst. Offen übernommen: Titan als Pflicht-Antwort auf den Colossus, Hard-Kennlinie 13,7, Koop-Fairness Hard/NM (M2).
 
 ## Pakete Runde 4
 
