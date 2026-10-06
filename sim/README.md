@@ -186,3 +186,7 @@ Bot-Regeln aus P1 (`src/bots/util.ts`, Details und Begründung in `kalibrierung.
 - `botTuning.earlyCap` = 2 (höchstens 2 Striker), `botTuning.banned` (Leave-one-out: die Unit existiert für den Bot nicht; `q7-p1 --part loo`, `LOO_PROXY=1` = alter Proxy), `botTuning.makeRoom` (Boss-Plan verkauft die schwächste Unit für einen Slot), Boss-Bedarfsprüfung `bossCapacityRatio` / `bossNeedMid` / `bossNeedFinal` (Standard 0 = aus), `policyPlans`, `bossFinalHorizon`, `rotateMinRarity`.
 - `economy.coop.upgradeCostTableBp` (optional, Upgrade-Kosten je Spielerzahl, Index 0 = 10000): gebaut, in den Daten nicht gesetzt.
 - Skripte: `p6b-diag.ts` (Team je Wave), `p6b-boss.ts` (Boss-Bedarf). Env: `P6B_ROTRAR`, `P6B_ROTWAVE`, `P6B_NEED`, `P6B_FINALH`, `P6B_NOPLAN`, `P6B_NOROOM`.
+
+## Replay-Prüfer (Runde 5 / P2)
+
+`npm run replay -- DATEI [--compare] [--bot NAME]` spielt eine im Client exportierte Runde (Seed + Befehle mit Tick) nach, prüft End-Hash und Ergebnis und druckt einen Bericht; Abweichung = Exit 1. Format und Weg: [`docs/balancing/playtests/README.md`](../docs/balancing/playtests/README.md). Falle: Der letzte Schritt einer Niederlage zählt `state.tick` nicht hoch; das Replay läuft deshalb bei beendeten Runden bis `phase === 'over'`.

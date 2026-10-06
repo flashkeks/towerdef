@@ -4,10 +4,12 @@
  */
 import './styles.css';
 import { GameBus } from './game/events';
+import { Recorder } from './game/recorder';
 import { Renderer } from './game/renderer';
 import { Session } from './game/session';
 import { loadBrowserData, STAGE_ID, type DifficultyId } from './sim';
 import { Ui } from './ui/app';
+import { mountPauseDownload } from './ui/download';
 
 export interface GameHandle {
   /** Desktop-Sperre greift (true) oder ist wieder aufgehoben (false): Sim pausiert, nichts geht verloren. */
@@ -24,6 +26,8 @@ declare global {
 export async function startGame(root: HTMLElement): Promise<GameHandle> {
   /** Ein Bus fuer die ganze Seite: Replay, Effekte, Ton usw. abonnieren hier (game/events.ts). */
   const bus = new GameBus();
+  new Recorder(bus);
+  mountPauseDownload(bus);
   const renderer = new Renderer(bus);
   let session: Session | null = null;
   let endEmitted = false;

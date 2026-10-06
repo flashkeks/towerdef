@@ -12,7 +12,8 @@
     "test": "vitest run",
     "smoke": "node scripts/smoke.mjs",
     "assets": "node scripts/gen-sprites.mjs && node scripts/build-atlas.mjs",
-    "shots:p4": "node scripts/shots-p4.mjs"
+    "shots:p4": "node scripts/shots-p4.mjs",
+    "replay-check": "node scripts/replay-check.mjs"
   },
   "dependencies": {
     "pixi.js": "^8.22.0",

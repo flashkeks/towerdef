@@ -58,7 +58,7 @@ Seit P0b (Runde 5) sind `ui/app.ts` und `game/renderer.ts` nur noch Verdrahtung.
 | `src/ui/screens.ts` | Start, Ende, Pause-Hinweis (spaeter Menue, Team-Wahl, Einstellungen, Ergebnis) | P6 |
 | `src/ui/dom.ts` | kleine DOM-Helfer | gemeinsam |
 | `src/styles.css` | Stil; Abschnitte je Baustein ergaenzen, nichts umsortieren | alle, nur eigene Selektoren |
-| Replay-Aufzeichnung | neue Dateien, z. B. `src/game/recorder.ts` und `src/ui/download.ts`; haengt nur am `GameBus` | P2 |
+| `src/game/recorder.ts`, `src/ui/download.ts` | Replay-Aufzeichnung (nur am `GameBus`) und JSON-Download (`replayDownloadBox()` fuer den End-Bildschirm, Pause-Knopf selbst eingehaengt); Nachspielen: `sim/scripts/replay.ts`, Abnahme `npm run replay-check` | P2 |
 | `scripts/smoke.mjs` | Playwright-Smoke | P1 |
 
 ### Haken: `GameBus` (`game/events.ts`)

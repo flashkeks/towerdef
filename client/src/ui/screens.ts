@@ -7,6 +7,7 @@ import { t } from '../i18n/t';
 import type { Session } from '../game/session';
 import type { DifficultyId } from '../sim';
 import { clear, h, setClass } from './dom';
+import { replayDownloadBox } from './download';
 
 const DIFFICULTIES: readonly DifficultyId[] = ['normal', 'hard', 'nightmare'];
 
@@ -69,7 +70,7 @@ export class Screens {
     const change = h('button', 'btn menu', t('end.change'));
     change.addEventListener('click', () => this.handlers.onMenu());
     row.append(again, change);
-    box.append(row);
+    box.append(replayDownloadBox(), row);
     this.el.append(box);
     this.el.classList.remove('hidden');
   }
