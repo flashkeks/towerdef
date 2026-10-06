@@ -98,20 +98,21 @@ describe('Schild, DoT, Boss', () => {
 });
 
 describe('HP-Kette', () => {
-  it('Grunt-HP-Kurve 25 * 1,12^(n-1) exakt in Centi-HP', () => {
+  it('Grunt-HP-Kurve 25 * g^(n-1) exakt in Centi-HP (g kalibriert: docs/balancing/kalibrierung.md #2)', () => {
     const ctx = ctxFor();
+    const g = BigInt(data.enemies.hpCurve.growthBp);
+    const exact = (n: number): number => Number((2500n * g ** BigInt(n - 1)) / 10000n ** BigInt(n - 1));
     expect(ctx.hpGrunt(1)).toBe(2500);
-    expect(ctx.hpGrunt(2)).toBe(2800);
-    expect(ctx.hpGrunt(10)).toBe(6932);
-    expect(ctx.hpGrunt(20)).toBe(21531);
+    for (const n of [2, 10, 20]) expect(ctx.hpGrunt(n)).toBe(exact(n));
+    expect(ctx.hpGrunt(2)).toBe(Math.floor((2500 * data.enemies.hpCurve.growthBp) / 10000));
   });
   it('Schwierigkeit und Koop-Faktor skalieren HP, Bounty-Basis nur mit Koop', () => {
     const solo = enemy(ctxFor(1, 'normal'), 'grunt', 10);
     const hard = enemy(ctxFor(1, 'hard'), 'grunt', 10);
     const coop = enemy(ctxFor(4, 'normal'), 'grunt', 10);
-    expect(hard.maxHp).toBe(Math.floor((solo.maxHp * 14000) / 10000));
+    expect(hard.maxHp).toBe(Math.floor((solo.maxHp * data.difficulties.hard.hpBp) / 10000));
     expect(hard.bounty).toBe(solo.bounty);
-    expect(coop.maxHp).toBe(Math.floor((solo.maxHp * 32500) / 10000));
+    expect(coop.maxHp).toBe(Math.floor((solo.maxHp * (10000 + 3 * data.economy.coop.hpPerExtraPlayerBp)) / 10000));
     expect(coop.bounty).toBeGreaterThan(solo.bounty * 3);
   });
 });

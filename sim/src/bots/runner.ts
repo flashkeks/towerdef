@@ -20,6 +20,8 @@ export interface MatchOptions {
   bots: string[];
   /** Standard 40 000 Ticks (Stage-Ende liegt bei ~19 000). */
   maxTicks?: number;
+  /** Nur Stage `infinite`: Abbruch, sobald diese Wave endet (Ergebnis `timeout`). */
+  maxWaves?: number;
 }
 
 export interface WaveStat {
@@ -77,7 +79,7 @@ export function runMatch(opts: MatchOptions): MatchResult {
   const n = opts.players;
   if (opts.bots.length !== n && opts.bots.length !== 1) throw new Error('bots: ein Name je Spieler oder genau einer');
   const names = Array.from({ length: n }, (_, i) => opts.bots[opts.bots.length === 1 ? 0 : i]);
-  const sim = createSim({ stage: opts.stage, difficulty: opts.difficulty, players: n, seed: opts.seed });
+  const sim = createSim({ stage: opts.stage, difficulty: opts.difficulty, players: n, seed: opts.seed, maxWaves: opts.maxWaves });
   const bots: Bot[] = names.map((nm) => getBot(nm)());
   const rngs = names.map((_, i) => seedRng((Math.imul(opts.seed | 0, 0x9e3779b1) ^ Math.imul(i + 1, 0x85ebca6b) ^ 0xb07b07) >>> 0));
   const maxTicks = opts.maxTicks ?? 40000;

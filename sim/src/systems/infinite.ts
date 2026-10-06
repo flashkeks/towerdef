@@ -33,8 +33,8 @@ const KINDS: Record<string, { eq: number; interval: number }> = {
   elite: { eq: 8000, interval: 60 },
 };
 const REGULAR = ['grunt', 'runner', 'brute', 'flyer', 'splitter'] as const;
-const BUDGET = 32_000;
-const BOSS_BUDGET = 45_000;
+const DEFAULT_BUDGET = 32_000;
+const DEFAULT_BOSS_BUDGET = 45_000;
 const BOSS_EQ = 30_000;
 const MAX_PER_WAVE = 60;
 
@@ -64,6 +64,8 @@ export function generateWave(ctx: Ctx, n: number): GenWave {
     groups.push({ type, count, intervalTicks: count > 1 ? KINDS[type].interval : 0, delayTicks: delay, modifiers, element });
     delay += count * (KINDS[type]?.interval ?? 60);
   };
+  const BUDGET = ctx.data.economy.infinite?.poolMilli ?? DEFAULT_BUDGET;
+  const BOSS_BUDGET = ctx.data.economy.infinite?.bossPoolMilli ?? DEFAULT_BOSS_BUDGET;
   let budget = BUDGET;
   let used = 0;
   if (boss) {

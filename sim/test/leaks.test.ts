@@ -5,7 +5,7 @@ import { createSim, data, stage } from './helpers.js';
 describe('Leaks (§2)', () => {
   it('Leak-Werte je Archetyp und Base-HP 100', () => {
     const leak = Object.fromEntries(data.enemies.archetypes.map((a) => [a.id, a.leak]));
-    expect(leak).toEqual({ grunt: 1, runner: 1, brute: 3, flyer: 2, splitter: 2, splitter_child: 1, elite: 10, boss: 50 });
+    expect(leak).toEqual({ grunt: 1, runner: 1, brute: 3, flyer: 2, splitter: 2, splitter_child: 1, elite: 10, boss: 34 }); // boss 50 -> 34: docs/balancing/kalibrierung.md #1
     expect(data.economy.baseHp).toBe(100);
   });
   it('Jeder Typ kostet beim Leak genau seinen Wert; Summe über die Stage stimmt (godMode)', () => {
@@ -20,10 +20,10 @@ describe('Leaks (§2)', () => {
     expect(sim.state.baseHp).toBe(100); // godMode
     expect(leaks.length).toBe(stage.waves.reduce((a, w) => a + w.groups.reduce((b, g) => b + g.count, 0), 0));
   });
-  it('Zwei Boss-Leaks beenden die Stage, einer nicht', () => {
+  it('Drei Boss-Leaks (je 34) beenden die Stage, einer nicht (kalibriert, docs/balancing/kalibrierung.md #1)', () => {
     const st: StageData = {
       ...stage,
-      waves: [{ n: 1, groups: [{ type: 'boss', count: 2, intervalTicks: 400, delayTicks: 0, modifiers: [], element: 0 }] }],
+      waves: [{ n: 1, groups: [{ type: 'boss', count: 3, intervalTicks: 400, delayTicks: 0, modifiers: [], element: 0 }] }],
     };
     const sim = createSim({ stage: st, difficulty: 'normal', players: 1, seed: 1 });
     let afterFirst = -1;
@@ -31,8 +31,8 @@ describe('Leaks (§2)', () => {
       sim.step();
       if (afterFirst < 0 && sim.state.stats.leaks === 1) afterFirst = sim.state.baseHp;
     }
-    expect(afterFirst).toBe(50);
-    expect(sim.state.baseHp).toBe(0);
+    expect(afterFirst).toBe(100 - 34);
+    expect(sim.state.baseHp).toBeLessThanOrEqual(0);
     expect(sim.result()).toBe('loss');
   });
   it('Geleakte Gegner zahlen keine Bounty, Splitter-Eltern erzeugen beim Leak keine Kinder', () => {

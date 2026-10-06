@@ -539,6 +539,8 @@ Folge (D): Pro Spieler bleibt der Kill-Bounty `h(n)/n` der Solo-Werte (1,00 / 0,
 
 ## 18. Startwerte auf einen Blick
 
+> **Hinweis (Runde 3):** Einige dieser Werte wurden mit dem Simulator kalibriert (u. a. HP-Wachstum 1,12 → 1,1525, γ-Decay 0,92 → 0,894, Boss-Leak 50 → 34, Schwierigkeits- und Koop-Faktoren, Farm-Ertrag ×1,3). Maßgeblich sind die Daten in `sim/data/`; Änderungen und Gründe: [balancing/kalibrierung.md](../balancing/kalibrierung.md), Ergebnisse: [balancing/report.md](../balancing/report.md).
+
 Alle Werte `DESIGN`, Herleitung im jeweiligen Abschnitt.
 
 | Parameter | Startwert | § |

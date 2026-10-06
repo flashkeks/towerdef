@@ -79,7 +79,7 @@ describe('Verkauf (§8)', () => {
 });
 
 describe('Farm (§12) und Caps (§7)', () => {
-  it('Ertrag 50/90/135/205/310 am Wave-Ende, Cap 2, 2x2-Slot', () => {
+  it('Ertrag je Stufe (units.json) am Wave-Ende, Cap 2, 2x2-Slot', () => {
     const sim = createSim({ stage: 'standard20', difficulty: 'normal', players: 1, seed: 1, data: richData(), godMode: true });
     const big = slotsOf(sim, 'ground', 2);
     const small = slotsOf(sim, 'ground', 1)[0];
@@ -87,16 +87,17 @@ describe('Farm (§12) und Caps (§7)', () => {
     const f1 = (sim.apply(0, { type: 'place', unitId: 'farm', slot: big[0] }) as { entityId: number }).entityId;
     expect(sim.apply(0, { type: 'place', unitId: 'farm', slot: big[1] }).ok).toBe(true);
     expect(sim.apply(0, { type: 'place', unitId: 'farm', slot: big[2] })).toEqual({ ok: false, reason: 'cap-reached' });
+    const farmYield = data.units.units.find((u) => u.id === "farm")!.farm!.yieldByLevel;
     const yields: number[] = [];
     for (let lvl = 0; lvl <= 4; lvl++) {
       const c0 = sim.state.players[0].coins;
       sim.runWave();
       // Wave n endet: Bonus 100+5n plus Ertrag der Farmen (Farm 1 auf Stufe lvl, Farm 2 auf Stufe 0)
       const n = lvl + 1;
-      yields.push(sim.state.players[0].coins - c0 - (100 + 5 * n) - 50);
+      yields.push(sim.state.players[0].coins - c0 - (100 + 5 * n) - farmYield[0]);
       sim.apply(0, { type: 'upgrade', entityId: f1 });
     }
-    expect(yields).toEqual([50, 90, 135, 205, 310]);
+    expect(yields).toEqual(farmYield); // Ertrag je Stufe laut units.json (kalibriert: docs/balancing/kalibrierung.md)
     expect(sim.state.stats.coinsFarm).toBeGreaterThan(0);
   });
   it('Caps je Typ und Spieler: Rare 5, Epic 4, Legendary 3, Mythic 2', () => {
@@ -122,8 +123,8 @@ describe('Bounty und Koop (§3, §16)', () => {
   it('Bounty = round(gamma(n) * HP): Wave 1 Grunt 25 HP -> 18 Münzen', () => {
     const ctx = ctxFor();
     expect(ctx.bounty(1, 2500)).toBe(18); // 17,5 -> 18
-    expect(ctx.bounty(2, 2800)).toBe(18); // 0,644 * 28 = 18,03
-    expect(ctx.bounty(20, 21530)).toBe(31);
+    expect(ctx.bounty(2, 2800)).toBe(Math.round(0.7 * (data.economy.bounty.gammaDecayBp / 10000) * 28)); // gamma-Decay kalibriert (kalibrierung.md #3)
+    expect(ctx.bounty(20, 21530)).toBe(Math.round(0.7 * (data.economy.bounty.gammaDecayBp / 10000) ** 19 * 215.3));
   });
   it('Verteilung nach Schadensanteil, Rest an den größten Anteil', () => {
     expect(splitBounty(10, [0, 0])).toEqual([0, 0]);

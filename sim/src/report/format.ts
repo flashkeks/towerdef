@@ -17,7 +17,7 @@ export const DEFINITIONS = `## Definitionen
 - **Siegquote**: Anteil der Runs mit Ergebnis \`win\`. Infinite hat keinen Sieg; dort zählen Median-Endwave und P10/P90 (Endwave = zuletzt gestartete Wave bei Ende; abgebrochene Runs (\`maxWaves\`) zählen mit der Abbruchwave und sind als "abgebrochen" ausgewiesen).
 - **Verlustrate Wave n**: Anteil *aller* Runs, die in Wave n verlieren; "Verlust-Wave" ist die Wave des Gegners, dessen Leak die Base auf <= 0 bringt (Waves überlappen). **Hazard** = Verluste in Wave n / Runs, die Wave n erreicht haben. **Leak-Rate** = Anteil der erreichenden Runs mit mindestens einem Leak von Gegnern der Wave n.
 - **Geldkurve**: Münzen des gesamten Teams am Ende der Wave n (nach Wave-Bonus/Farm, vor den Käufen der nächsten Wave; bei Verlust: Stand beim Ende); P10/Median/P90 über die Runs, die Wave n erreicht haben. **Einkommen** = Kill-Bounty + Wave-Bonus + Farm, die während der Wave n (Zeitraum zwischen Start Wave n und Start Wave n+1) eingehen; Quellen als Medianwerte. Münzen/Einkommen sind Team-Summen.
-- **Pool/Kapazität** (zwei Maße, je Wave zu deren Beginn nach den Bot-Käufen): *Pool/Münze* = Pool-HP der Wave (HP-Summe inkl. Splitter-Kinder, mit Schwierigkeits- und Koop-Faktor, ohne Rüstung) geteilt durch die in stehenden Units investierten Münzen (Platzierung + bezahlte Upgrades, verkaufte Units zählen nicht). *Pool/DPS20* = Pool-HP geteilt durch (nominelle Single-Target-DPS aller stehenden Units x 20 s), analog zum Kapazitätsmodell in recommendations §4/§5 (Referenz: 0,025 DPS je Münze und 20 s Wirkzeit ergibt Pool/Münze = 0,5 bei Pool/Kapazität 1,0). Die nominelle DPS ignoriert Buffs, Multi-Target, Crit und Überkill. Median über Runs.
+- **Pool/Münze** (Kapazitätsmaß, je Wave): Pool-HP der Wave (Summe Max-HP aller gespawnten Gegner inkl. Splitter-Kinder, mit Schwierigkeits- und Koop-Faktor, ohne Rüstung) geteilt durch die netto eingesetzten Münzen (kumulativ Platzierung + Upgrade - Verkaufserlös bis einschließlich Wave n, Teamsumme). Referenz aus recommendations §4: 0,025 DPS je Münze x 20 s = 0,5 HP Pool je Münze entspricht Pool/Kapazität 1,0 (Näherung, Anlage der Münzen unterschiedlich wirksam). Median über Runs.
 - **Leak-Quellen**: Anzahl, Anteil und Base-Schaden aller Leaks nach Gegnertyp über alle Runs der Zelle.
 - **Farm-Anteil** = Farm-Einkommen / Gesamteinkommen (Summe über alle Runs und Waves). **Payback** = je Run (Summe der Farm-Investitionen: Platzierung + Upgrades) / (mittlerer Farm-Ertrag je Wave mit Ertrag) in Waves, Median über Runs mit Farm.
 - **Upgrade-Anteil** = Upgrade-Münzen / (Platzierungs- + Upgrade-Münzen).
@@ -26,11 +26,11 @@ export const DEFINITIONS = `## Definitionen
 
 function waveRows(c: CellStats): string[] {
   const head =
-    '| Wave | erreicht | Verlustrate | Hazard | Leak-Rate | Münzen P10 | Median | P90 | Einkommen P10 | Median | P90 | kill | wave | farm | Pool/Münze | Pool/DPS20 |';
-  const sep = '|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|';
+    '| Wave | erreicht | Verlustrate | Hazard | Leak-Rate | Münzen P10 | Median | P90 | Einkommen P10 | Median | P90 | kill | wave | farm | Pool/Münze |';
+  const sep = '|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|';
   const rows = c.waves.map(
     (w: WaveStats) =>
-      `| ${w.n} | ${pct(w.reachedFrac)} | ${pct(w.lossRate, 1)} | ${pct(w.hazard, 1)} | ${pct(w.leakRate)} | ${i0(w.coins.p10)} | ${i0(w.coins.med)} | ${i0(w.coins.p90)} | ${i0(w.income.p10)} | ${i0(w.income.med)} | ${i0(w.income.p90)} | ${i0(w.incKill)} | ${i0(w.incWave)} | ${i0(w.incFarm)} | ${f2(w.poolPerCoin)} | ${f2(w.poolPerDps20)} |`,
+      `| ${w.n} | ${pct(w.reachedFrac)} | ${pct(w.lossRate, 1)} | ${pct(w.hazard, 1)} | ${pct(w.leakRate)} | ${i0(w.coins.p10)} | ${i0(w.coins.med)} | ${i0(w.coins.p90)} | ${i0(w.income.p10)} | ${i0(w.income.med)} | ${i0(w.income.p90)} | ${i0(w.incKill)} | ${i0(w.incWave)} | ${i0(w.incFarm)} | ${f2(w.poolPerCoin)} |`,
   );
   return [head, sep, ...rows];
 }
@@ -78,7 +78,7 @@ const csvCell = (v: string | number): string => {
 export const WAVE_CSV_HEADER = [
   'stage', 'bot', 'difficulty', 'players', 'runs', 'wave', 'reached', 'reached_frac', 'lost_here', 'loss_rate', 'hazard', 'leak_rate',
   'coins_p10', 'coins_med', 'coins_p90', 'income_p10', 'income_med', 'income_p90', 'inc_kill_med', 'inc_wave_med', 'inc_farm_med',
-  'farm_share', 'pool_per_coin', 'pool_per_dps20', 'base_loss_mean',
+  'farm_share', 'pool_per_coin', 'base_loss_mean',
 ];
 
 export function wavesCsv(cells: CellStats[]): string {
@@ -90,7 +90,7 @@ export function wavesCsv(cells: CellStats[]): string {
         [
           c.stage, c.bot, c.difficulty, c.players, c.runs, w.n, w.reached, r(w.reachedFrac), w.lostHere, r(w.lossRate), r(w.hazard), r(w.leakRate),
           r(w.coins.p10), r(w.coins.med), r(w.coins.p90), r(w.income.p10), r(w.income.med), r(w.income.p90), r(w.incKill), r(w.incWave), r(w.incFarm),
-          r(w.farmShare), r(w.poolPerCoin), r(w.poolPerDps20), r(w.baseLossMean),
+          r(w.farmShare), r(w.poolPerCoin), r(w.baseLossMean),
         ].map(csvCell).join(','),
       );
     }

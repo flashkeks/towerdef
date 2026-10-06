@@ -8,20 +8,24 @@
   "prepTicks": 900,
   "waveBonus": { "ref": "recommendations §3: W(n) = 100 + 5n", "base": 100, "perWave": 5 },
   "bounty": {
-    "ref": "recommendations §3: gamma(n) = 0,70 * 0,92^(n-1) Münzen je Gegner-HP",
+    "ref": "recommendations §3: gamma(n) = 0,70 * 0,92^(n-1); KALIBRIERT Decay 0,894 (kalibrierung.md #3)",
     "gammaStartBp": 7000,
-    "gammaDecayBp": 9200
+    "gammaDecayBp": 8940
   },
   "sell": { "ref": "recommendations §8: Kampf 60 %, Farm 40 %, floor", "combatBp": 6000, "farmBp": 4000 },
   "leakDamage": {
-    "ref": "recommendations §2 (Tabelle Base-HP/Leak)",
-    "grunt": 1, "runner": 1, "splitter_child": 1, "flyer": 2, "splitter": 2, "brute": 3, "elite": 10, "boss": 50
+    "ref": "recommendations §2 (Tabelle Base-HP/Leak); KALIBRIERT boss 50 -> 34 (kalibrierung.md #1)",
+    "grunt": 1, "runner": 1, "splitter_child": 1, "flyer": 2, "splitter": 2, "brute": 3, "elite": 10, "boss": 34
   },
   "coop": {
-    "ref": "recommendations §16: h = 1 + 0,75(n-1) auf HP; Spenden in 50er-Schritten",
-    "hpPerExtraPlayerBp": 7500,
+    "ref": "recommendations §16: h = 1 + 0,75(n-1); KALIBRIERT h = 1 + 1,10(n-1) (kalibrierung.md #5); Spenden in 50er-Schritten",
+    "hpPerExtraPlayerBp": 11000,
     "donationStep": 50,
     "maxPlayers": 4
+  },
+  "infinite": {
+    "ref": "recommendations §3: Pool ca. 32 Grunt-Äquivalente (Boss-Wave 45), Speed +1 %/Wave bis x1,5, max. 60 Gegner; KALIBRIERT poolMilli 14000, bossPoolMilli 38000 = Boss + Elite ohne Füller (kalibrierung.md #7)",
+    "poolMilli": 14000, "bossPoolMilli": 38000, "speedPerWaveBp": 100, "speedMaxBp": 15000, "enemyCap": 60
   },
   "caps": {
     "ref": "recommendations §7: 6 Team-Slots je Spieler, 60 Units, 80 Gegner",

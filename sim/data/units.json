@@ -51,11 +51,11 @@
       "aura": { "radiusMilli": 3000, "damageBpByLevel": [1000, 1600, 2200, 2800, 3400, 4000] }
     },
     {
-      "id": "farm", "name": "Farm", "ref": "§12 Farm-Tabelle: 400 M, Upgrades 300/450/700/1100, Ertrag 50/90/135/205/310, Cap 2, Verkauf 40 %",
+      "id": "farm", "name": "Farm", "ref": "§12 Farm-Tabelle: 400 M, Upgrades 300/450/700/1100, Ertrag 50/90/135/205/310 -> KALIBRIERT x1,3 (kalibrierung.md #6), Cap 2, Verkauf 40 %",
       "rarity": "epic", "placement": "ground", "role": "Farm", "footprint": 2,
       "placeCost": 400, "upgradeCosts": [300, 450, 700, 1100], "cap": 2, "sellBp": 4000,
       "dpsShareBp": 0, "attack": null,
-      "farm": { "yieldByLevel": [50, 90, 135, 205, 310] }
+      "farm": { "yieldByLevel": [65, 117, 176, 267, 403] }
     },
     {
       "id": "lancer", "name": "Lancer", "ref": "Auftrag P2a; §6 Legendary, §10 Pen 30-60",

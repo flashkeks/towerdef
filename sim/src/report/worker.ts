@@ -6,7 +6,7 @@ import type { MatchSpec, RunRecord } from './types.js';
 const specs = (workerData as { specs: MatchSpec[] }).specs;
 const records: RunRecord[] = [];
 for (const s of specs) {
-  records.push(await recordMatch(s));
+  records.push(recordMatch(s));
   parentPort?.postMessage({ type: 'progress' });
 }
 parentPort?.postMessage({ type: 'done', records });

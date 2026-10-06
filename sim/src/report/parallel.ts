@@ -8,10 +8,10 @@ import type { MatchSpec, RunRecord } from './types.js';
 
 const isTs = import.meta.url.endsWith('.ts');
 
-export async function runSequential(specs: MatchSpec[], onProgress?: (done: number) => void): Promise<RunRecord[]> {
+export function runSequential(specs: MatchSpec[], onProgress?: (done: number) => void): RunRecord[] {
   const out: RunRecord[] = [];
   for (const s of specs) {
-    out.push(await recordMatch(s));
+    out.push(recordMatch(s));
     onProgress?.(out.length);
   }
   return out;

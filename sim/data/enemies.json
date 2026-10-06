@@ -1,7 +1,7 @@
 {
   "ref": "recommendations §4",
   "_comment": "HP(e,n) = HP_grunt(n) * f_HP * h * s_Diff; HP_grunt(n) = 25 * 1,12^(n-1) (exakt per Ganzzahl-Potenz, Centi-HP). Speed = 1,5 Tiles/s * f_Speed * v_Diff.",
-  "hpCurve": { "ref": "recommendations §4: 25 * 1,12^(n-1)", "baseCenti": 2500, "growthBp": 11200 },
+  "hpCurve": { "ref": "recommendations §4: 25 * 1,12^(n-1); KALIBRIERT g = 1,1525 (kalibrierung.md #2)", "baseCenti": 2500, "growthBp": 11525 },
   "baseSpeedMilliPerSec": 1500,
   "archetypes": [
     { "id": "grunt", "ref": "§4 Grunt 1,0/1,0, R0, Leak 1", "fHpBp": 10000, "fSpeedBp": 10000, "armor": 0, "leak": 1, "flying": false, "boss": false, "elite": false },
@@ -11,6 +11,6 @@
     { "id": "splitter", "ref": "§4 Splitter 1,0/0,9, Leak 2, 2 Kinder à 35 % HP", "fHpBp": 10000, "fSpeedBp": 9000, "armor": 0, "leak": 2, "flying": false, "boss": false, "elite": false, "child": { "type": "splitter_child", "count": 2 } },
     { "id": "splitter_child", "ref": "§4 Splitter-Kind 0,35 HP, Leak 1", "fHpBp": 3500, "fSpeedBp": 9000, "armor": 0, "leak": 1, "flying": false, "boss": false, "elite": false },
     { "id": "elite", "ref": "§4 Elite 8,0/0,8, R30, Leak 10", "fHpBp": 80000, "fSpeedBp": 8000, "armor": 30, "leak": 10, "flying": false, "boss": false, "elite": true },
-    { "id": "boss", "ref": "§4 Boss 30,0/0,5, R40, Leak 50", "fHpBp": 300000, "fSpeedBp": 5000, "armor": 40, "leak": 50, "flying": false, "boss": true, "elite": false }
+    { "id": "boss", "ref": "§4 Boss 30,0/0,5, R40, Leak 50 -> KALIBRIERT Leak 34 (kalibrierung.md #1)", "fHpBp": 300000, "fSpeedBp": 5000, "armor": 40, "leak": 34, "flying": false, "boss": true, "elite": false }
   ]
 }

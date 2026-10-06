@@ -212,9 +212,12 @@ export function compile(data: GameData, stage: StageData, difficultyId: Difficul
     fixedWaves,
     maxWaves: infinite && opts.maxWaves !== undefined ? opts.maxWaves : Infinity,
     waveSeed: opts.seed ?? 0,
-    enemyCap: infinite ? INFINITE_ENEMY_CAP : data.economy.caps.enemies,
+    enemyCap: infinite ? (data.economy.infinite?.enemyCap ?? INFINITE_ENEMY_CAP) : data.economy.caps.enemies,
     // DESIGN-OFFEN: Infinite-Speed +1 %/Wave ab Wave N+1 bis x1,5 (wirkt zusätzlich zu Archetyp-/Schwierigkeitsfaktor).
-    speedInfBp: (n: number) => (infinite && n > fixedWaves ? Math.min(15000, 10000 + 100 * (n - fixedWaves)) : 10000),
+    speedInfBp: (n: number) => {
+      const inf = data.economy.infinite;
+      return infinite && n > fixedWaves ? Math.min(inf?.speedMaxBp ?? 15000, 10000 + (inf?.speedPerWaveBp ?? 100) * (n - fixedWaves)) : 10000;
+    },
     waveTimerTicks: stage.waveTimerTicks ?? data.economy.waveTimerTicks,
     coopHpBp: 10000 + data.economy.coop.hpPerExtraPlayerBp * (players - 1),
     hpGrunt,

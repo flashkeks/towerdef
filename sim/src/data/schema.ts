@@ -24,6 +24,19 @@ export const EconomySchema = z.object({
   sell: z.object({ ref, combatBp: nat, farmBp: nat }),
   leakDamage: z.object({ ref }).catchall(nat.or(z.string())),
   coop: z.object({ ref, hpPerExtraPlayerBp: nat, donationStep: pos, maxPlayers: pos }),
+  /** Infinite-Parameter (recommendations §3); fehlt der Block, gelten die Standardwerte aus compile.ts/infinite.ts. */
+  infinite: z
+    .object({
+      ref,
+      /** Pool je Wave in Milli-Grunt-Äquivalenten (32 000 = 32 Grunts). */
+      poolMilli: pos,
+      /** Pool einer Boss-Wave (Boss + Elite + Grunts). */
+      bossPoolMilli: pos,
+      speedPerWaveBp: nat,
+      speedMaxBp: pos,
+      enemyCap: pos,
+    })
+    .optional(),
   caps: z.object({ ref, teamUnits: pos, teamSlots: pos, enemies: pos }),
   cc: z.object({
     ref,

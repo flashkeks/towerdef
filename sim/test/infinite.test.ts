@@ -73,8 +73,8 @@ describe('Infinite', () => {
       const has = (t: string) => w.groups.some((g) => g.type === t);
       expect(has('boss')).toBe(n % 10 === 0);
       if (n % 10 === 5) expect(has('elite')).toBe(true);
-      if (n % 10 !== 0 && n % 10 !== 5) expect(eq(n)).toBeGreaterThan(24);
-      expect(eq(n)).toBeLessThan(48);
+      if (n % 10 !== 0 && n % 10 !== 5) expect(eq(n)).toBeGreaterThan((data.economy.infinite?.poolMilli ?? 32000) / 1000 - 8);
+      expect(eq(n)).toBeLessThan(50);
       for (const g of w.groups) expect(g.element).toBe(1 + ((n - 1) % 5));
     }
   });

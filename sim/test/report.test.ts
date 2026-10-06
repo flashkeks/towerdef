@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { loadGameData } from '../src/data/load.js';
 import { toMarkdown, summaryCsv, wavesCsv } from '../src/report/format.js';
 import { runMatches, runSequential } from '../src/report/parallel.js';
 import { recordMatch } from '../src/report/record.js';
@@ -8,7 +9,7 @@ import type { MatchSpec, RunRecord, WaveRec } from '../src/report/types.js';
 
 const wave = (n: number, o: Partial<WaveRec> = {}): WaveRec => ({
   n, coinsStart: 0, coinsEnd: 0, incomeKill: 0, incomeWave: 0, incomeFarm: 0, spendPlace: 0, spendUpgrade: 0, sellRefund: 0,
-  farmInvest: 0, farmYield: 0, kills: 0, leaks: {}, leakDmg: {}, leakCount: 0, baseLoss: 0, poolHp: 0, invested: 0, dps: 0, units: 0, ...o,
+  farmInvest: 0, farmYield: 0, kills: 0, leaks: {}, leakDmg: {}, leakCount: 0, baseLoss: 0, poolHp: 0, invested: 0, ...o,
 });
 const run = (o: Partial<RunRecord>): RunRecord => ({
   stage: 's', botLabel: 'b', difficulty: 'normal', players: 1, seed: 1, result: 'win', endWave: 2, lossWave: null, ticks: 2400,
@@ -62,7 +63,7 @@ describe('Aggregation', () => {
   it('Leak-Quellen nach Typ mit Anteil und Schaden', () => {
     expect(c.leakSources.map((s) => s.type)).toEqual(['grunt', 'boss', 'brute']);
     expect(c.leakSources[0]).toMatchObject({ count: 2, damage: 2 });
-    expect(c.leakSources[1]).toMatchObject({ count: 1, damage: 50 });
+    expect(c.leakSources[1]).toMatchObject({ count: 1, damage: Number(loadGameData().economy.leakDamage.boss) });
     expect(c.leakSources.reduce((a, s) => a + s.share, 0)).toBeCloseTo(1);
   });
   it('Endwave- und Dauer-Verteilung', () => {
@@ -80,15 +81,13 @@ describe('Aggregation', () => {
     expect(x.farmPayback.n).toBe(1);
     expect(x.farmPayback.med).toBeCloseTo(400 / 50);
   });
-  it('Pool/Kapazität-Maße (Median)', () => {
+  it('Pool/Münze (Median)', () => {
     const r = [
-      run({ waves: [wave(0), wave(1, { poolHp: 200, invested: 400, dps: 20 })] }),
-      run({ waves: [wave(0), wave(1, { poolHp: 300, invested: 300, dps: 10 })] }),
-      run({ waves: [wave(0), wave(1, { poolHp: 100, invested: 0, dps: 0 })] }),
+      run({ waves: [wave(0), wave(1, { poolHp: 200, invested: 400 })] }),
+      run({ waves: [wave(0), wave(1, { poolHp: 300, invested: 300 })] }),
+      run({ waves: [wave(0), wave(1, { poolHp: 100, invested: 0 })] }),
     ];
-    const w = aggregateCell(r).waves[0];
-    expect(w.poolPerCoin).toBeCloseTo(0.75);
-    expect(w.poolPerDps20).toBeCloseTo((200 / 400 + 300 / 200) / 2);
+    expect(aggregateCell(r).waves[0].poolPerCoin).toBeCloseTo(0.75);
   });
   it('aggregate gruppiert nach Zelle', () => {
     const cells = aggregate([run({ botLabel: 'a' }), run({ botLabel: 'b' }), run({ botLabel: 'a', seed: 2 }), run({ botLabel: 'a', players: 2 })]);
@@ -110,30 +109,32 @@ describe('Aggregation', () => {
   });
 });
 
-describe('recordMatch (Test-Bot)', () => {
-  const spec: MatchSpec = { stage: 'standard20', difficulty: 'normal', players: 1, seed: 3, bots: ['testbot'] };
-  it('deterministisch und Münzbilanz je Match konsistent', async () => {
-    const a = await recordMatch(spec);
-    const b = await recordMatch(spec);
+describe('recordMatch (runMatch)', () => {
+  const spec: MatchSpec = { stage: 'standard20', difficulty: 'normal', players: 1, seed: 3, bots: ["greedy"] };
+  it('deterministisch und Münzbilanz je Match konsistent', () => {
+    const a = recordMatch(spec);
+    const b = recordMatch(spec);
     expect(a).toEqual(b);
     const w = a.waves;
+    expect(w[0].n).toBe(0);
     const income = w.reduce((s, x) => s + x.incomeKill + x.incomeWave + x.incomeFarm, 0);
     const spend = w.reduce((s, x) => s + x.spendPlace + x.spendUpgrade, 0);
     const sell = w.reduce((s, x) => s + x.sellRefund, 0);
     const last = w[w.length - 1];
     expect(1000 + income - spend + sell).toBe(last.coinsEnd);
+    expect(a.waves.length).toBe(a.endWave + 1);
     expect(a.endWave).toBeGreaterThan(5);
     expect(w.find((x) => x.n === 1)?.poolHp).toBeGreaterThan(0);
     if (a.result === 'loss') expect(a.lossWave).not.toBeNull();
   });
-  it('Infinite: kein Sieg, maxWaves bricht ab', async () => {
-    const r = await recordMatch({ ...spec, stage: 'infinite', maxWaves: 22 });
+  it('Infinite: kein Sieg, maxWaves bricht ab', () => {
+    const r = recordMatch({ ...spec, stage: 'infinite', maxWaves: 22 });
     expect(r.result === 'loss' || r.result === null).toBe(true);
     expect(r.endWave).toBeLessThanOrEqual(22);
   });
-  it('Parallelität ändert das Ergebnis nicht', async () => {
+  it("Parallelität ändert das Ergebnis nicht", async () => {
     const specs = [1, 2, 3, 4, 5, 6].map((seed) => ({ ...spec, seed }));
-    const seq = await runSequential(specs);
+    const seq = runSequential(specs);
     const par = await runMatches(specs, 3);
     expect(par).toEqual(seq);
   }, 30000);

@@ -12,15 +12,15 @@ Letzte Aktualisierung: 2026-10-06 (Runde 3, Sitzung 1)
 | P0 | Archiv, Status | **erledigt** | Hauptsitzung | `run.md` Runde 1/2 → `docs/archiv/` |
 | P2a | Simulationskern `sim/` | **erledigt** | 1 × Sonnet | 96 Tests grün, Determinismus-Test grün, ~236 000 Ticks/s (20 Waves in 0,08 s); 30 DESIGN-OFFEN in [offene-regeln](balancing/offene-regeln.md); Infinite noch nicht modelliert | Auftrag: Unit-IDs striker, gunner, blaster, banner, farm, lancer, frost, titan |
 | P2b | Bot-Strategien | **erledigt** | 1 × Sonnet | greedy, farm, aoe, upgrade, wide, coop; vor Kalibrierung Normal solo: greedy/wide/upgrade 20/20, aoe 11/20, farm 10/20 | nach P2a |
-| P2c | Reports und Kalibrierung | Teil 1 **erledigt** (CLI, Reports, Infinite); Teil 2 Kalibrierung läuft | 1 × Sonnet | nach P2a |
-| P3 | Content-Sanity | offen | – | nach P2c |
+| P2c | Reports und Kalibrierung | **erledigt** | 1 × Sonnet | nach P2a |
+| P3 | Content-Sanity | läuft | 1 × Sonnet | nach P2c |
 | P4 | Game-Design-Entwurf `docs/design/` | **erledigt** (Werte-Verweise auf sim/data nach P2a prüfen) | 1 × Sonnet | gdd.md 353 Zeilen, FRAGEN.md 10 offene Entscheidungen | parallel zu P2 |
 | P5 | Fähigkeiten-Musterkatalog (optional) | **erledigt** | 1 × Sonnet | 16 Muster, Top-8 (DESIGN); Beliebtheit meist UNKNOWN | |
 | P6 | Abschluss | offen | – | |
 
 ## Nächster Schritt (Runde 3)
 
-P2b und P2c Teil 1 abwarten; dann P2c Teil 2 (Kalibrierung mit allen Bots), danach P3.
+P3 (Content-Sanity) läuft; danach P6.
 
 ---
 

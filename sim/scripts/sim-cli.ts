@@ -6,8 +6,8 @@
  *                  [--name <dateiname>] [--svg|--no-svg]
  *
  * Listen sind erlaubt (--difficulty normal,hard --players 1,2,4 --bot greedy,farm = jeweils eigene Zelle).
- * --bots a,b = ein Team, Spieler i nutzt Bot i mod Anzahl. --bot coop: Registry-Bot "coop", sonst Mix aller Registry-Bots.
- * --matrix = alle Registry-Bots x normal/hard/nightmare x 1/2/4 Spieler.
+ * --bots a,b = ein Team, Spieler i nutzt Bot i mod Anzahl. --bot coop: Bot "coop" für alle Spieler.
+ * --matrix = alle Bots (Object.keys(BOTS)) x normal/hard/nightmare x 1/2/4 Spieler.
  */
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { availableParallelism } from 'node:os';
@@ -15,7 +15,7 @@ import { join, resolve } from 'node:path';
 import type { DifficultyId } from '../src/data/schema.js';
 import { toMarkdown, summaryCsv, wavesCsv } from '../src/report/format.js';
 import { runMatches } from '../src/report/parallel.js';
-import { listBotNames, makeBot } from '../src/report/resolve.js';
+import { BOTS } from '../src/bots/index.js';
 import { aggregate } from '../src/report/stats.js';
 import { lineChart } from '../src/report/svg.js';
 import type { CellStats, MatchSpec } from '../src/report/types.js';
@@ -77,26 +77,11 @@ function parseArgs(argv: string[]): Cli {
   };
 }
 
-async function expandBots(cli: Cli): Promise<string[][]> {
-  if (cli.matrix) {
-    const names = await listBotNames();
-    if (names.length === 0) throw new Error('--matrix: keine Bots in src/bots/index.ts gefunden (oder Registry fehlt); nutze --bot/--bots');
-    return names.map((n) => [n]);
-  }
-  const out: string[][] = [];
-  for (const b of cli.bots) {
-    if (b.length === 1 && b[0] === 'coop') {
-      try {
-        await makeBot('coop');
-        out.push(b);
-      } catch {
-        const names = await listBotNames();
-        if (names.length === 0) throw new Error('Bot "coop" unbekannt und keine Registry-Bots für einen Mix');
-        out.push(names);
-      }
-    } else out.push(b);
-  }
-  return out;
+function expandBots(cli: Cli): string[][] {
+  const all = Object.keys(BOTS);
+  const sets = cli.matrix ? all.map((n) => [n]) : cli.bots;
+  for (const b of sets) for (const n of b) if (!BOTS[n]) throw new Error(`Unbekannter Bot "${n}" (verfügbar: ${all.join(', ')})`);
+  return sets;
 }
 
 function chartsFor(c: CellStats, file: string): Record<string, string> {
@@ -117,7 +102,7 @@ async function main(): Promise<void> {
   const cli = parseArgs(process.argv.slice(2));
   const diffs = cli.matrix ? DIFFS : cli.difficulties;
   const players = cli.matrix ? [1, 2, 4] : cli.players;
-  const botSets = await expandBots(cli);
+  const botSets = expandBots(cli);
   const maxWaves = cli.maxWaves ?? (cli.stage === 'infinite' ? 100 : undefined);
   const specs: MatchSpec[] = [];
   for (const bots of botSets) {

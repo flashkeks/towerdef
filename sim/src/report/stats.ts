@@ -1,4 +1,5 @@
 /** Aggregation von RunRecords zu CellStats. Reine Funktionen, deterministisch (nearest-rank-Perzentile). */
+import { loadGameData } from '../data/load.js';
 import type { CellStats, Dist, RunRecord, WaveRec, WaveStats } from './types.js';
 
 export function sortedNums(xs: readonly number[]): number[] {
@@ -24,6 +25,9 @@ export function dist(xs: readonly number[]): Dist {
   return { p10: pctSorted(s, 0.1), med: median(s), p90: pctSorted(s, 0.9) };
 }
 
+/** Leak-Schaden je Typ aus economy.json (der Runner schlüsselt den Schaden nicht nach Typ auf). */
+let leakDmgCache: Record<string, number> | undefined;
+const leakDmgTable = (): Record<string, number> => (leakDmgCache ??= loadGameData().economy.leakDamage as Record<string, number>);
 const sum = (xs: readonly number[]): number => xs.reduce((a, b) => a + b, 0);
 const div = (a: number, b: number): number => (b > 0 ? a / b : 0);
 
@@ -44,7 +48,6 @@ function waveStats(n: number, runs: RunRecord[]): WaveStats {
   for (const { w } of recs) for (const [t, c] of Object.entries(w.leaks)) leakTypes[t] = (leakTypes[t] ?? 0) + c;
   for (const t of Object.keys(leakTypes)) leakTypes[t] = div(leakTypes[t], reached);
   const withInv = recs.filter(({ w }) => w.invested > 0);
-  const withDps = recs.filter(({ w }) => w.dps > 0);
   return {
     n,
     reached,
@@ -60,7 +63,6 @@ function waveStats(n: number, runs: RunRecord[]): WaveStats {
     incFarm: median(recs.map(({ w }) => w.incomeFarm)),
     farmShare: div(sum(recs.map(({ w }) => w.incomeFarm)), sum(recs.map(({ w }) => incTotal(w)))),
     poolPerCoin: median(withInv.map(({ w }) => w.poolHp / w.invested)),
-    poolPerDps20: median(withDps.map(({ w }) => w.poolHp / (w.dps * 20))),
     baseLossMean: div(sum(recs.map(({ w }) => w.baseLoss)), reached),
     leaksByType: leakTypes,
   };
@@ -89,7 +91,7 @@ export function aggregateCell(runs: RunRecord[]): CellStats {
   for (const w of allWaves) {
     for (const [t, c] of Object.entries(w.leaks)) {
       leakCount[t] = (leakCount[t] ?? 0) + c;
-      leakDmg[t] = (leakDmg[t] ?? 0) + (w.leakDmg[t] ?? 0);
+      leakDmg[t] = (leakDmg[t] ?? 0) + c * (leakDmgTable()[t] ?? 1);
     }
   }
   const totalLeaks = sum(Object.values(leakCount));

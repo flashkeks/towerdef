@@ -14,7 +14,7 @@ export interface MatchSpec {
   bots: string[];
   /** Nur Infinite: Abbruch nach dieser Wave. */
   maxWaves?: number;
-  /** Sicherheitslimit (Ticks); Standard 400 000 (~5,5 h Spielzeit). */
+  /** Sicherheitslimit (Ticks); Standard des Runners. */
   maxTicks?: number;
 }
 
@@ -41,11 +41,8 @@ export interface WaveRec {
   baseLoss: number;
   /** HP-Summe der Wave (inkl. Splitter-Kinder, mit Schwierigkeit/Koop) in HP. */
   poolHp: number;
-  /** Summe investierter Münzen aller stehenden Units zu Wave-Beginn. */
+  /** Netto eingesetzte Münzen (kumulativ Platzierung + Upgrade - Verkaufserlös) bis einschließlich Wave n. */
   invested: number;
-  /** Nominelle Single-Target-DPS (HP/s) aller stehenden Units zu Wave-Beginn (ohne Buffs/Multi-Target). */
-  dps: number;
-  units: number;
 }
 
 export interface RunRecord {
@@ -89,9 +86,8 @@ export interface WaveStats {
   incFarm: number;
   /** Anteil Farm am Einkommen dieser Wave (Summe über Runs). */
   farmShare: number;
-  /** Median Pool-HP je investierter Münze und je (DPS x 20 s). */
+  /** Median Pool-HP je netto eingesetzter Münze. */
   poolPerCoin: number;
-  poolPerDps20: number;
   baseLossMean: number;
   /** Mittlere Leaks je erreichendem Run nach Typ. */
   leaksByType: Record<string, number>;
