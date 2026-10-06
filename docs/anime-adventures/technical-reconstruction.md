@@ -9,7 +9,8 @@ Dieser Teil ist **unser Bauplan** und keine AA-Dokumentation. Die Architektur is
 1. **Content-driven:** Alle Zahlen (Units, Upgrades, Gegner, Waves, Raten) liegen in versionierten JSON- bzw. Content-Dateien. Unbekannte AA-Werte sind dort als `DESIGN` markiert und ohne Codeänderung tunebar.
 2. **Deterministische Simulation:** Fixed Timestep (z. B. 20 Ticks/s), seeded RNG und **Simulation vom Rendering getrennt**. Das ermöglicht Replays, Server-Validierung und Balancing-Tests wie die [Beispiel-Simulation](simulation.md).
 3. **Server-autoritativ für alles mit Wert:** Gacha, Traits, Potential, Evolution, Belohnungen, Trades. Der Client fordert nur an.
-4. **Koop-Multiplayer:** Server-Sim (autoritativ) mit Client-Interpolation. Inputs sind Place, Upgrade, Sell, Ability, Targeting und Skip.
+4. **Koop-Multiplayer:** Server-Sim (autoritativ) mit Client-Interpolation. Inputs sind Place, Upgrade, Sell, Ability und Targeting. Ein Skip-Wave-Input ist in AA unbelegt und wäre `DESIGN`.
+5. **Versionierbare Regeln:** AA hat viele Regeln mehrfach geändert, z. B. Pity, Trait-Pool, CC-Immunität und Matchmaking (siehe [game-overview.md](game-overview.md#versionsgeschichte)). Regeln gehören deshalb als Konfiguration mit Versionsfeld in den Content, nicht als Konstanten in den Code.
 
 ## Komponenten
 
@@ -17,7 +18,7 @@ Dieser Teil ist **unser Bauplan** und keine AA-Dokumentation. Die Architektur is
 Frontend (TypeScript, Vite)
 ├── Shell/Router (React o. Svelte für Menüs)
 ├── Lobby-Hub                ← NPC-Funktionen als Panels (Summon, Evolve, Traits, Potential, Shiny, Milestones, Shop, Storage)
-├── Unit Collection / Inventory / Teams (6 Slots)
+├── Unit Collection / Inventory / Teams (Loadouts seit AA-Update 7.5; Slot-Zahl in AA UNKNOWN → DESIGN 6)
 ├── Summoning (Banner, Pity-Anzeige, Animation)
 ├── Evolution / Traits / Potential / Curses / Relics / Limit Break
 ├── Quests / Battle Pass / Codes / Leaderboards
@@ -31,13 +32,13 @@ Frontend (TypeScript, Vite)
 Game Engine (shared TS package, läuft im Client [Solo/Prediction] und auf dem Server)
 ├── Sim Core (fixed tick, seeded PRNG)
 ├── Map System (Pfade als Polylines, Placement-Zonen Ground/Hill, Blocker)
-├── Wave Manager (Gruppen, Intervalle, Boss-Waves, Infinite-Generator, Party-Scaling)
-├── Enemy Manager (Pfad-Distanz s, Speed-Mods, Flying, Shield, Regen, Tank, Resist/Weak)
+├── Wave Manager (Gruppen, Intervalle, Boss-Waves, Wave-Timer, Infinite-Generator; Party-Scaling nur DESIGN, in AA unbelegt)
+├── Enemy Manager (Pfad-Distanz s, Speed-Mods, Flying, Shield, Regen, Tank, Armored, Fire/Ice, Burst, Resist/Weak)
 ├── Unit Manager (Placement-Regeln, Spawn Cap, Upgrades, Sell)
 ├── Targeting System (First/Strongest/… + Klassenfilter Ground/Air)
 ├── Combat Engine (Attack-Cycle, AoE-Geometrie, Hits, Crit, Damage-Pipeline)
-├── Status Effect System (DoT-Ticks, CC mit Diminishing-Cooldowns, Knockback, Rewind, Shatter)
-├── Buff System (Typ-Buffs, Stacking-Regeln, Ability-Cooldowns ~ SPA)
+├── Status Effect System (22 AA-Effekte: DoT-Ticks, CC mit Immunitäts-Cooldown je Sperrgruppe, Knockback, Confused, Shatter; siehe combat-system.md)
+├── Buff System (Σ damage_add additiv, gleiche Effekte stapeln nicht, globale vs. eigene Auren, Spawn-Caps je Team)
 ├── Ability System (Active/Passive, Upgrade-Unlocks)
 ├── Economy (Yen: Start, Kill, Wave, Farm, Golden, Sell)
 └── Match Result (Belohnungs-Roll serverseitig)
@@ -53,7 +54,7 @@ Backend (Node/TS)
 ├── Shops (Merchant-Zyklus, Gold-Shop, Event-Shops, Raid-Shops)
 ├── Quests/Battle Pass/Codes (Reset-Jobs)
 ├── Trading (Escrow, Tax, Atomic Swap)
-├── Matchmaking/Rooms (Party-Räume, Portal-Host, max. Spieler pro Modus)
+├── Matchmaking/Rooms (Party-Räume, Global Matchmaking, Portal-Host mit Host-Vorteilen, max. Spieler pro Modus)
 ├── Match Server (autoritativer Sim-Prozess pro Match, z. B. Colyseus)
 ├── Leaderboards (Redis Sorted Sets; Saison-Resets)
 └── Anti-Cheat (Server-Sim, Rate-Limits, Plausibilitätsprüfung von Inputs, Ledger-Audits)
@@ -167,7 +168,7 @@ interface UnitInstance {          // Besitz (Backend)
 }
 
 interface Trait {
-  id: string; name: string; rollWeight: number;            // 29.97 …
+  id: string; name: string; rollWeight: number;            // AA: Pool inkl. Unique 0,1 %, Summe der Anzeigewerte 100,03 % (traits.md)
   tiers?: { tier: number; damage?: number; spa?: number; range?: number }[];
   damage?: number; spa?: number; range?: number; yen?: number; xp?: number;
   conditional?: { vsBoss?: number; vsLowHpPct?: number; lowHpThreshold?: number; trueDamagePct?: number };
@@ -210,8 +211,14 @@ interface Banner {
   currency: "gems" | "eventCurrency" | "legacyGems"; cost: number; vipCost?: number;
   rates: Record<Rarity, number>; shinyRate: number;
   featured: { center?: string; sides?: string[]; centerShareOfMythic: number; sideShareOfMythic: number };
-  rotationSeconds?: number;                         // 3600 (LEGACY)
-  pity: { mythicCenter?: number; legendary?: number; resetOn: "anyOfRarity" | "featuredOnly" };
+  rotationSeconds?: number;                         // AA: 3600 (Standard/Special/Legacy); Event: keine Rotation
+  pity: {
+    threshold: number;                              // AA: 400 (Center, RR 20.4.1) | 200 (Event RR) | 100 (Event LEGACY)
+    target: "anyMythic" | "featuredCenter" | "unownedFeatured";
+    resetOn: ("anyMythic" | "bannerRefresh")[];     // RR 20.4.1: beides
+    legendary?: number;                             // AA LEGACY: 50; RR: entfernt
+    rulesVersion: string;                           // Regeln haben sich je Update geändert (summoning.md)
+  };
   extraDrops?: { itemId: string; chance: number }[]; // Star Remnant 0.0025
 }
 
@@ -235,19 +242,33 @@ interface Player {
 }
 ```
 
-## DESIGN-Defaults (bis AA-Daten vorliegen)
+<a id="design-defaults-bis-aa-daten-vorliegen"></a>
 
-| Parameter | Default | Begründung |
-|---|---|---|
-| Base HP | 100 | Genre-Standard |
-| Leak-Schaden | normal 1–5, Boss 20–100 | Genre-Standard |
-| Start-Yen | 2.000–2.500 | erlaubt 1 Starter + 1 Farm in Wave 1 (vgl. Captain 300, C.E.O. 550) |
-| Wave-Yen | `200 + 100·w` | Farm-ROI von 3–4 Waves soll relevant bleiben |
-| Kill-Yen | `5 + floor(HP/10)` | – |
-| Gegner-Speed | 4 Studs/s (Boss 2) | Map-Laufzeiten 8–24 s → 32–96 Studs |
-| Tick-Rate | 20 Hz | – |
-| DoT-Tick | 1 s | – |
-| Tank-Reduktion | 20 % | „leicht reduziert“ |
-| Typ-Matchup | Schwäche ×1,5 / Resistenz ×0,5 | analog zu Genre-Standards; **nicht** AA |
-| Level-Kurve | linear mit Anker L100 = 9,20406501834430488 | einfach, Anker belegt (exakte Konstante aus dem Wiki-Template) |
-| Max Spieler | 4 (Secret Portal 6) | Community-Konsens bzw. Beleg |
+## DESIGN-Defaults und belegte AA-Werte
+
+Stand nach Sitzung 2. Wo AA-Werte belegt sind, nennt die Tabelle sie mit Quelle; der Default für unseren Nachbau steht daneben.
+
+| Parameter | AA-Wert | Default für den Nachbau | Herkunft |
+|---|---|---|---|
+| Base HP | UNKNOWN (in keiner der 661 Wiki-Seiten) | 100 | DESIGN |
+| Leak-Schaden | UNKNOWN | normal 1–5, Boss 20–100 | DESIGN |
+| Start-Yen | UNKNOWN | 2.000–2.500 (1 Starter + 1 Farm in Wave 1; Captain 300 ¥, C.E.O. 550 ¥ [S65]) | DESIGN |
+| Wave-Yen | UNKNOWN | `200 + 100·w` | DESIGN |
+| Kill-Yen | UNKNOWN | `5 + floor(HP/10)` | DESIGN |
+| Farm-Einkommen | C.E.O. 200→2.500, Bulby 250→10.000, Weather Girl (Thief) 300→3.000 ¥/Wave | übernehmen als Kurvenform | OBSERVED · HIGH [S65] |
+| Verkaufswert | 25 % von Platzierung + Upgrades | 0,25 | OBSERVED · HIGH [S72] |
+| Gegner-HP/Speed | UNKNOWN | Speed 4 Studs/s (Boss 2); Map-Laufzeiten 8–36 s [maps.md] | DESIGN |
+| Wave-Timer | existiert, Dauer UNKNOWN | 30–45 s | DESIGN |
+| Tick-Rate | – | 20 Hz | DESIGN |
+| DoT | Gesamtanteil = multiplierPerTick × ticks (z. B. Burn 6 % × 5) | Tick-Intervall 1 s | OBSERVED · HIGH [S67]; Intervall DESIGN |
+| Tank | LEGACY-Challenge: +25 % HP, 25 % Schadensreduktion | ×1,25 HP, ×0,75 Schaden | OBSERVED · MEDIUM [S73] |
+| Regen | LEGACY-Challenge: 1 % HP/s | 1 %/s | OBSERVED · MEDIUM [S73] |
+| Fast | LEGACY-Challenge: +50 % Speed | ×1,5 | OBSERVED · MEDIUM [S73] |
+| Slow | 50 / 65 / 80 % je Angriff | übernehmen | OBSERVED · HIGH [S67] |
+| Schwäche / Resistenz | Schwäche `1 + Σ %` über die Affinitäten; Resistenz `100/(100+R)`; True Damage ignoriert Resistenz | übernehmen | OBSERVED · HIGH [S72:Damage Affinities / Elements] |
+| Armored | 50 % Schaden durch Full-AoE | übernehmen | OBSERVED · HIGH [S72:Enemy Mechanics] |
+| Buff-Stapelung | additiv über verschiedene Quellen (×2,1 = 1 + 1,0 + 0,1); gleiche Effekte stapeln nicht | übernehmen | VERIFIED (Template) · HIGH |
+| Level-Kurve | L1 = 1, L100 = 9,20406501834430488; Form dazwischen UNKNOWN | linear mit diesem Anker | Anker OBSERVED · HIGH; Form DESIGN |
+| Targeting-Modi | belegt: First, Strongest | + Last, Weakest, Closest | DESIGN (Ergänzung) |
+| Max. Spieler | Secret Portal 6; Dungeon „you and up to 6 others“; Server 30 (Lobby) | 4 (Portal/Dungeon 6) | teils OBSERVED [S72], sonst DESIGN |
+| Summon-Kosten / Pity | 50 Gems (VIP 40); Center-Pity 400 mit Reset bei Mythic und Refresh (RR 20.4.1) | übernehmen oder vereinfachen | OBSERVED · HIGH [S72:Summon] |

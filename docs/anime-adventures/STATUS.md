@@ -19,7 +19,7 @@ Letzte Aktualisierung: 2026-10-05 (Sitzung 2)
 | P8 | Summoning, Economy, Items, Quests | **erledigt** | Pity je Version, E(Center) = 304,9 Pulls, C1/C2/C4 gelöst, Kapseln, Crafting, Milestones, BP. Offen: In-Match-Yen, 10er-Summon, Gold-Shop |
 | P9 | Multiplayer, Trading, UI, Audio/VFX | **erledigt** | Matchmaking-Zeitachse, Host-Regeln, globale Caps/Auren, Trading-Zeitachse. Offen: Max. Spieler je Modus, Trade-Ablauf, Rejoin |
 | P10 | `mathematics.md`, Beispielrunde | offen | |
-| P11 | `technical-reconstruction.md` | offen | |
+| P11 | `technical-reconstruction.md` | **erledigt** | Datenmodell an S65/S67 angepasst (AttackDef, UnitLevel, Pity-Regeln versioniert), Komponenten aktualisiert, Defaults-Tabelle mit belegten AA-Werten |
 | P12 | `unknowns.md` (inkl. Korrekturen), `README.md`, Abschlussprüfung | offen | |
 
 ## Ausgewertete Quellen (nicht erneut holen)
