@@ -16,7 +16,7 @@ export class Input {
       s.togglePause();
     } else if (e.key === 'n' || e.key === 'N') s.startNextWave();
     else if (/^[1-9]$/.test(e.key)) {
-      const d = s.sim.catalog()[Number(e.key) - 1];
+      const d = s.teamCatalog()[Number(e.key) - 1];
       if (d) s.choosePlacing(d.id);
     }
   }

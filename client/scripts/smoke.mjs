@@ -72,7 +72,9 @@ try {
     // obwohl die Sim laeuft. Das ist ein Umgebungsartefakt; die Klickpfade prueft der Desktop-Lauf darunter.
     const shotPage = await shotCtx.newPage();
     await shotPage.goto(URL_);
+    await shotPage.click('.menu-play'); // P6: Hauptmenue -> Stufe -> Team
     await shotPage.click('.diff[data-difficulty="normal"]');
+    await shotPage.click('.team-go');
     await shotPage.waitForSelector('canvas.board');
     await shotPage.evaluate(() => {
       const x = window.__duskwardens.session();
@@ -103,11 +105,19 @@ try {
     page.on('requestfailed', (r) => errors.push(`requestfailed: ${r.url()}`));
 
     await page.goto(URL_);
+    await page.waitForSelector('.menu-play');
+    await page.screenshot({ path: resolve(docs, 'screenshot-p6-menu.png') });
+    await page.click('.menu-play');
     await page.waitForSelector('.diff[data-difficulty="normal"]');
     check((await page.title()) === 'Duskwardens', `Titel = Duskwardens (ist: ${await page.title()})`);
     check((await page.locator('.diff').count()) === 3, 'Stufenwahl Normal/Hard/Nightmare sichtbar');
     await page.click('.diff[data-difficulty="normal"]');
+    await page.waitForSelector('.team-go');
+    check((await page.locator('.unit-card.picked').count()) === 6, 'Team-Wahl: 6 Units vorbelegt');
+    await page.screenshot({ path: resolve(docs, 'screenshot-p6-team.png') });
+    await page.click('.team-go');
     await page.waitForSelector('canvas.board');
+    check((await page.locator('.unit-btn').count()) === 6, 'Unit-Leiste zeigt nur das Team (6)');
     check((await page.locator('.overlay.hidden').count()) === 1, 'Start-Overlay verschwindet nach Stufenwahl');
     // Slot-Knoepfe muessen ueber dem Canvas liegen. page.click scrollt sonst zu weit entfernten Knoepfen hin
     // und verdeckt so, dass ein echter Mausklick ins Leere geht (06.10.2026: Festkomma statt Kacheln, x ~ 216000 px).

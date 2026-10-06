@@ -9,7 +9,7 @@ import { Renderer } from './game/renderer';
 import { Session } from './game/session';
 import { loadBrowserData, STAGE_ID, type DifficultyId } from './sim';
 import { Ui } from './ui/app';
-import { mountPauseDownload } from './ui/download';
+import { mountPauseDownload, replayDownloadBox } from './ui/download';
 
 export interface GameHandle {
   /** Desktop-Sperre greift (true) oder ist wieder aufgehoben (false): Sim pausiert, nichts geht verloren. */
@@ -39,6 +39,8 @@ export async function startGame(root: HTMLElement): Promise<GameHandle> {
       session = null;
       ui.showStart();
     },
+    // P2 x P6: Replay-Knopf samt Freitext im Ergebnis-Bildschirm und Pause-Menue.
+    replayButton: () => replayDownloadBox(),
   });
   await renderer.init(ui.boardWrap);
   ui.boardWrap.prepend(renderer.app.canvas);

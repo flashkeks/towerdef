@@ -63,7 +63,9 @@ try {
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
   await page.goto(URL_);
+  await page.click('.menu-play'); // P6: Hauptmenue -> Stufe -> Team
   await page.click('.diff[data-difficulty="normal"]');
+  await page.click('.team-go');
   await page.waitForSelector('canvas.board');
   await page.evaluate(() => window.__duskwardens.session().setSpeed(3));
 

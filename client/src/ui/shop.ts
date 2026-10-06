@@ -16,7 +16,7 @@ export class Shop {
     clear(this.el);
     this.btns.clear();
     const list = h('div', 'shop-list');
-    session.sim.catalog().forEach((d, i) => list.append(this.button(session, d, i)));
+    session.teamCatalog().forEach((d, i) => list.append(this.button(session, d, i)));
     this.el.append(h('div', 'shop-title', t('shop.title')), list, this.hint);
   }
 
@@ -35,7 +35,7 @@ export class Shop {
 
   update(s: Session): void {
     const coins = s.sim.state.players[0]?.coins ?? 0;
-    for (const d of s.sim.catalog()) {
+    for (const d of s.teamCatalog()) {
       const b = this.btns.get(d.id);
       if (!b) continue;
       setClass(b, 'active', s.placing === d.id);
