@@ -1,9 +1,16 @@
 # Status (global)
 
-Arbeitsauftrag: [`/run.md`](../run.md) (**Runde 4**: Balance reparieren, Spielregeln festziehen, M1 vorbereiten). **Verbindlich zuerst:** [design/ENTSCHEIDUNGEN.md](design/ENTSCHEIDUNGEN.md). **Jede Sitzung liest danach diese Datei** und macht beim „Nächsten Schritt“ weiter.
-Frühere Aufträge: [archiv/run-runde1.md](archiv/run-runde1.md), [archiv/run-runde2.md](archiv/run-runde2.md), [archiv/run-runde3.md](archiv/run-runde3.md).
+Arbeitsauftrag: [`/run.md`](../run.md) (**Runde 5**: Bedienbarkeit, Playtest-Replays, Boss-Design ohne Pflicht-Titan, erste Pixel-Grafik und Ton, M1-Lücken). **Verbindlich zuerst:** [design/ENTSCHEIDUNGEN.md](design/ENTSCHEIDUNGEN.md). **Jede Sitzung liest danach diese Datei** und macht beim „Nächsten Schritt“ weiter.
+Frühere Aufträge: [archiv/run-runde1.md](archiv/run-runde1.md), [archiv/run-runde2.md](archiv/run-runde2.md), [archiv/run-runde3.md](archiv/run-runde3.md), [archiv/run-runde4.md](archiv/run-runde4.md).
 
 Letzte Aktualisierung: 2026-10-06 (Runde 4, P6b Balance-Reste; Arbeit ab jetzt über Max' Claude-Account in `flashkeks/towerdef`, Branch `dev`)
+
+## Runde 5 (Start offen)
+
+Auftrag liegt seit 06.10.2026 in `run.md`. Die Sitzung, die Runde 5 beginnt, legt hier die Pakettabelle an (P0).
+Vorab erledigt (Homelab-Sitzung, 06.10.2026): Preview `https://duskwardens.flashkeks.com` (statisch, Access, Betrieb durch Homelab); Slot-Knöpfe lagen in Festkomma statt Kacheln, Units ließen sich nicht setzen → behoben in `41515c4`, Smoke prüft jetzt die Lage der Slot-Knöpfe.
+
+# Runde 4 (abgeschlossen bis auf Balance-Reste, die in Runde 5 P3 aufgehen)
 
 ## Pakete Runde 4
 
