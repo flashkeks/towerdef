@@ -131,7 +131,7 @@ for (const [name, fn] of [['S1 realistisch: Infinite, 4P greedy, <= 26 Units, bi
     f1(med((s) => s.meanEnemies)),
     Math.max(...all.map((s) => s.maxEnemies)),
     Math.round(med((s) => s.tps)),
-    f1(med((s) => s.meanMs * 1000) / 1000 * 1000) ,
+    Math.round(med((s) => s.meanMs * 1000)),
     f1(med((s) => s.p99Ms)),
     f1(Math.max(...all.map((s) => s.maxMs))),
     all[0].heavyTicks ? `${Math.round(med((s) => 1000 / s.heavyMeanMs))} (${all[0].heavyTicks} Ticks, max ${f1(Math.max(...all.map((s) => s.heavyMaxMs)))} ms)` : '-',
