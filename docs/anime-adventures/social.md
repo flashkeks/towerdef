@@ -115,10 +115,10 @@ Hinweis zum Modul: Die `_only_same_player`-Aura steht im Datensatz `femto_egg` (
 | Disconnect in Infinite | Gems und Wave-Fortschritt (für das Leaderboard) werden trotzdem gutgeschrieben; Infinite speichert automatisch | LEGACY U3 | OBSERVED · HIGH · [S06 → S72:Update Log (U3)] |
 | Verlassen von Infinite mittendrin | Gems werden gutgeschrieben, XP und XP-Items gehen verloren | LEGACY | OBSERVED · HIGH · [S72:Infinite] |
 | Time Machine (AFK-Modus) | eigener Server zum AFK-Farmen: +3 Gems je 150 s (VIP oder Premium +6). Gems bleiben nur bei „leave and claim reward“ oder bei einem Kick erhalten, nicht beim manuellen Schließen von Roblox. Autosave seit U1 | LEGACY; deaktiviert ab U19/U19.5 (RR) | OBSERVED · HIGH · [S25 → S72:Time Machine, S72:Update Log (U1)] |
-| AFK-Kick | Roblox trennt inaktive Spieler (die Wiki nennt Makro-Tools als Gegenmittel). Ein eigenes AFK-System des Spiels ist nicht belegt | OBSERVED · MEDIUM · [S72:Time Machine] |
-| Rejoin in eine laufende Partie | **UNKNOWN** | UNKNOWN |
-| Units eines Spielers, der die Partie verlässt | **UNKNOWN** | UNKNOWN |
-| „Return to Spawn“-Setting | setzt den Avatar zurück, wenn er in einer Runde feststeckt | LEGACY U12.5 · OBSERVED · HIGH · [S72:Update Log (U12.5)] |
+| AFK-Kick | Roblox trennt inaktive Spieler (die Wiki nennt Makro-Tools als Gegenmittel). Ein eigenes AFK-System des Spiels ist nicht belegt | – | OBSERVED · MEDIUM · [S72:Time Machine] |
+| Rejoin in eine laufende Partie | **UNKNOWN** | – | UNKNOWN |
+| Units eines Spielers, der die Partie verlässt | **UNKNOWN** | – | UNKNOWN |
+| „Return to Spawn“-Setting | setzt den Avatar zurück, wenn er in einer Runde feststeckt | LEGACY U12.5 | OBSERVED · HIGH · [S72:Update Log (U12.5)] |
 
 ### Performance
 
@@ -210,8 +210,8 @@ Trade-Limits pro Tag, Trade-Cooldowns, Trade-Historie und eine Zweitbestätigung
 | Infinity Castle | seit U10 relativ zu allen Spielern (Perzentil), nicht mehr höchster Raum; Saisons | Perzentil-Stufen mit Gems, Star Remnants, Shiny Unit (siehe [game-modes.md](game-modes.md#infinity-castle-seit-update-6)); Titel Top 50/25/10 | LEGACY ab U6; RR | OBSERVED · HIGH · [S72:Update Log (U10), S72:Infinity Mansion, S72:Titles] |
 | Tournament | wöchentlich; zufällige Brackets; Punkte (z. B. „Most DMG“ in Zeitlimit) | Rangbelohnung; Platz 1 im Bracket: Titel „[Tournament # Champion]“ | LEGACY ab U10; RR | OBSERVED · HIGH · [S72:Tournament, S72:Titles] |
 | Guild Event | „most damage dealt“, Gildenrang | Gilden-Badges (siehe unten) | LEGACY ab U15 | OBSERVED · HIGH · [S72:Update Log (U15), S72:Guilds] |
-| Player Level | **nicht belegt** (Sitzung 1: „wie oben“ mit S06; Infinite-Seite nennt das nicht). Level-Milestones laufen über den Prayer Master im Leaderboard-Bereich, sind aber kein Ranking | UNKNOWN · korrigiert |
-| Reset | Infinite: monatlich bzw. bei Infinite-Änderungen (U1: „Leaderboard reset due to infinite changes“). Viele Updates melden „New Infinity Castle, Leaderboard, and Tournament seasons“ | OBSERVED · HIGH · [S72:Infinite, S72:Update Log (U1, U17, U18)] |
+| Player Level | **nicht belegt** (Sitzung 1: „wie oben“ mit S06; die Infinite-Seite nennt das nicht). Level-Milestones laufen über den Prayer Master im Leaderboard-Bereich, sind aber kein Ranking | – | – | UNKNOWN · korrigiert |
+| Reset | Infinite: monatlich bzw. bei Infinite-Änderungen (U1: „Leaderboard reset due to infinite changes“). Viele Updates melden „New Infinity Castle, Leaderboard, and Tournament seasons“ | – | LEGACY; RR | OBSERVED · HIGH · [S72:Infinite, S72:Update Log (U1, U17, U18)] |
 
 Leaderboard-Units werden seit U19 als eigene Rarity **Exclusive** geführt („Exclusive rarity added for leaderboard and tournament units“). OBSERVED · HIGH · [S72:Update Log (U19)]. Bekannte Leaderboard-Units: 13 [S72:Unobtainable Units].
 
@@ -248,7 +248,7 @@ Badges nach Gildenrang [S72:Guilds] OBSERVED · HIGH:
 | Titel | Text über dem Avatar und im Chat. Quellen: Events, Ranglisten, Discord-Rollen, „[OG]“ für Spieler vor RR | LEGACY ab U9; RR | OBSERVED · HIGH · [S72:Titles, S72:Update Log (U9)] |
 | Globale Chat-Ansagen | Shiny Mythic und Secret aus dem Summon werden **serverübergreifend** im Chat angekündigt (seit Halloween 2022). Neuer Bestwert im Infinity Castle ebenfalls (U17) | LEGACY | OBSERVED · HIGH · [S72:Summon, S72:Update Log (U17)] |
 | Voice-Chat | aktiviert | LEGACY U15.5 | OBSERVED · HIGH · [S72:Update Log (U15.5)] |
-| Freunde | Roblox-Freundesliste; kein eigenes Freundesystem belegt | RECONSTRUCTED · MEDIUM |
+| Freunde | Roblox-Freundesliste; kein eigenes Freundesystem belegt | – | RECONSTRUCTED · MEDIUM |
 | Gifting | Gamepass-Gifts an andere Spieler; „Gifts can also be given in trades“ | LEGACY ab U8 | OBSERVED · HIGH · [S72:Update Log (U8)] |
 
 ## Für unseren Nachbau (DESIGN)
