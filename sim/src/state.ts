@@ -29,6 +29,7 @@ export interface BossRun {
   wardTicks: number;
   wardWindowTicks: number;
   wardWindowBp: number;
+  wardWindowArmor: number;
   /** Schwachstellen-Fenster: solange `vulnTicks` > 0 nimmt der Boss `vulnBp`-fachen Schaden und volle Stun-Dauer. */
   vulnTicks: number;
   vulnBp: number;
@@ -37,10 +38,14 @@ export interface BossRun {
   hasteBp: number;
   exhaustTicks: number;
   exhaustBp: number;
+  exhaustArmor: number;
   /** Restabklingzeit je Fähigkeit des Kits (Index = Position in `abilities`). */
   cd: number[];
   /** Laufender Telegraph: Fähigkeit (Index), Ticks bis zur Wirkung, wurde der Boss währenddessen betäubt? */
-  tele: { ability: number; left: number; interrupted: boolean } | null;
+  tele: { ability: number; left: number; interrupted: boolean; /** Schaden (Centi-HP) während des Telegraphs und Schwelle (`staggerBp`, 0 = keine); Runde 5 / P3. */ dmg: number; need: number; cause?: 'stun' | 'damage' | null } | null;
+  /** Rüstung der Phase (Runde 5 / P3): -1 = die Basis-Rüstung des Gegners; `vulnArmor`: Rüstung, solange das Fenster offen ist (-1 = keine Änderung). */
+  armor: number;
+  vulnArmor: number;
 }
 
 export interface EnemyState {
@@ -175,9 +180,10 @@ export type SimEvent =
   | { type: 'over'; tick: number; result: 'win' | 'loss' }
   // Boss-Kits (P4, K5): Phase, Telegraph (Vorwarnung), Wirkung/Unterbrechung, Schwachstellen-Fenster, Schild.
   | { type: 'bossPhase'; tick: number; enemyId: number; kit: string; phase: number; id: string; name: string }
-  | { type: 'bossTelegraph'; tick: number; enemyId: number; kit: string; ability: string; kind: string; warnTicks: number; fireTick: number; interruptible: boolean }
-  | { type: 'bossCast'; tick: number; enemyId: number; kit: string; ability: string; kind: string; interrupted: boolean }
-  | { type: 'bossWindow'; tick: number; enemyId: number; open: boolean; damageBp: number; ticks: number; cause: 'ward' | 'cast' | 'interrupt' | 'exhaust' | 'phase' }
+  | { type: 'bossTelegraph'; tick: number; enemyId: number; kit: string; ability: string; kind: string; warnTicks: number; fireTick: number; interruptible: boolean; /** Runde 5 / P3: Schaden-Schwelle (Centi-HP) zum Zerstören der Wirkung, 0 = keine. */ staggerNeed?: number }
+  | { type: 'bossCast'; tick: number; enemyId: number; kit: string; ability: string; kind: string; interrupted: boolean; /** Runde 5 / P3: womit unterbrochen (null = nicht unterbrochen). */ cause?: 'stun' | 'damage' | null }
+  | { type: 'bossWindow'; tick: number; enemyId: number; open: boolean; damageBp: number; ticks: number; cause: 'ward' | 'cast' | 'interrupt' | 'exhaust' | 'phase'; /** Runde 5 / P3: Rüstung im Fenster (-1 = unverändert). */ armor?: number }
+  | { type: 'bossArmor'; tick: number; enemyId: number; armor: number; base: number }
   | { type: 'bossWard'; tick: number; enemyId: number; state: 'up' | 'broken' | 'expired'; hp: number }
   | { type: 'cardChosen'; tick: number; player: number; card: string | null; wave: number };
 

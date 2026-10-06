@@ -20,14 +20,18 @@ export function initBossRun(ctx: Ctx, wave: number): BossRun | null {
     wardTicks: 0,
     wardWindowTicks: 0,
     wardWindowBp: 0,
+    wardWindowArmor: -1,
     vulnTicks: 0,
     vulnBp: 0,
     hasteTicks: 0,
     hasteBp: 0,
     exhaustTicks: 0,
     exhaustBp: 0,
+    exhaustArmor: -1,
     cd: kit.abilities.map((a) => a.firstTicks),
     tele: null,
+    armor: -1,
+    vulnArmor: -1,
   };
 }
 

@@ -6,7 +6,8 @@
 import { createSim, loadGameData, type DifficultyId, type GameData, type Sim, type UnitMod } from '../../src/index.js';
 import { BOTS } from '../../src/bots/index.js';
 import type { Bot, BotFactory } from '../../src/bots/types.js';
-import { DifficultySchema } from '../../src/data/schema.js';
+import { readFileSync } from 'node:fs';
+import { BossesSchema, DifficultySchema } from '../../src/data/schema.js';
 import { seedRng } from '../../src/prng.js';
 import { botTuning, overrideProfile, policyBot, type Policy } from '../../src/bots/util.js';
 
@@ -32,6 +33,8 @@ if (process.env.P6B_NEED) {
 if (process.env.P6B_NOPLAN === '1') botTuning.policyPlans = false;
 if (process.env.P6B_FINALH) botTuning.bossFinalHorizon = Number(process.env.P6B_FINALH);
 if (process.env.P6B_NOROOM === '1') botTuning.makeRoom = false;
+if (process.env.P3_NOFOCUS === '1') botTuning.bossFocus = false;
+if (process.env.P3_ANSWER) botTuning.bossAnswers = process.env.P3_ANSWER as 'oneOf';
 if (process.env.P6_UPBOOST) botTuning.bossUpgradeBoost = Number(process.env.P6_UPBOOST);
 if (process.env.P6_PLANWAVES) botTuning.bossPlanWaves = Number(process.env.P6_PLANWAVES);
 
@@ -39,6 +42,8 @@ if (process.env.P6_PLANWAVES) botTuning.bossPlanWaves = Number(process.env.P6_PL
 if (process.env.P6_PROFILES) for (const [k, v] of Object.entries(JSON.parse(process.env.P6_PROFILES) as Record<string, object>)) overrideProfile(k, v);
 
 export const baseData: GameData = loadGameData();
+// R5_BOSSES=pfad.json: Boss-Kits aus einer anderen Datei laden (Vorher/Nachher-Messung ohne Dateiänderung).
+if (process.env.R5_BOSSES) baseData.bosses = BossesSchema.parse(JSON.parse(readFileSync(process.env.R5_BOSSES, 'utf8')));
 // Experiment-Override ohne Dateiänderung: P1_PATCH='{"titan":{"dpsShareBp":7000,"ability":{...}}}' (je Unit-ID, flach überschrieben).
 if (process.env.P1_PATCH) {
   const pt = JSON.parse(process.env.P1_PATCH) as Record<string, Record<string, unknown>>;
@@ -71,6 +76,14 @@ if (process.env.P1_COOPH) baseData.economy.coop.hpPerExtraPlayerBp = Number(proc
 if (process.env.P2_BOSSHP) {
   const b = baseData.enemies.archetypes.find((a) => a.id === 'boss');
   if (b) b.fHpBp = Number(process.env.P2_BOSSHP);
+}
+// P3_ENEMY='{"flyer":6500}': HP-Faktor (Basispunkte) beliebiger Archetypen überschreiben (Runde 5 / P3).
+if (process.env.P3_ENEMY) {
+  for (const [id, v] of Object.entries(JSON.parse(process.env.P3_ENEMY) as Record<string, number>)) {
+    const a = baseData.enemies.archetypes.find((x) => x.id === id);
+    if (!a) throw new Error(`P3_ENEMY: ${id} unbekannt`);
+    a.fHpBp = v;
+  }
 }
 // P2_ELITEHP=40000: dasselbe für elite.
 if (process.env.P2_ELITEHP) {

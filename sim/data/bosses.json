@@ -1,59 +1,62 @@
 {
-  "ref": "ENTSCHEIDUNGEN.md Kniff K5 (Bosse als Rätsel); gdd.md K5; Runde 4 P4 (kalibrierung.md, Runde 4 - P4)",
-  "_comment": "Zeiten in Ticks (20/s), Faktoren in Basispunkten (16000 = x1,6 Schaden im Fenster). Schwierigkeits-Schnittstelle: jede Fähigkeit/Phasen-Aktion hat minDifficulty (normal|hard|nightmare, Standard normal) - darunter ist sie aus. Bosse ohne Kit (andere Waves, Infinite ab Wave 21) bleiben schlichte HP-Klötze.",
+  "ref": "ENTSCHEIDUNGEN.md Kniff K5 (Bosse als Rätsel); gdd.md K5; Runde 4 P4, Runde 5 P3 (kalibrierung.md, Runde 5 - P3; Telegraph-Liste docs/design/boss-telegraphs.md)",
+  "_comment": "Zeiten in Ticks (20/s), Faktoren in Basispunkten (16000 = x1,6 Schaden im Fenster). Schwierigkeits-Schnittstelle: jede Fähigkeit/Phasen-Aktion hat minDifficulty (normal|hard|nightmare, Standard normal) - darunter ist sie aus. Bosse ohne Kit (andere Waves, Infinite ab Wave 21) bleiben schlichte HP-Klötze. Runde 5 P3 (kein Pflicht-Unit): jede unterbrechbare Wirkung hat DREI Antworten - Stun (Frost), Burst (ein Treffer >= staggerBp, z. B. Titan-Nuke) und Dauerschaden (staggerBp der Max-HP in der Vorwarnzeit); Unterbrechen öffnet ein langes Fenster mit Rüstung 0 und hält den Boss kurz fest.",
   "kits": [
     {
       "id": "warden",
       "name": "Hollow Warden",
-      "_comment": "Wave 10, Lehr-Boss: Rufer (Beschwörung) und Schildphase mit Fenster. Auf Hard kommt der Sturm dazu (Frost-Stun unterbricht ihn).",
+      "_comment": "Wave 10, Lehr-Boss: Rufer (Beschwörung, AoE räumt die Grunts), Schildphase mit Fenster und die Unterbrech-Regel (Stun oder Schaden) in Klein. Auf Hard kommt der Sturm dazu.",
       "wave": 10,
       "phases": [
         { "id": "awake", "name": "Awake", "fromHpBp": 10000 },
         {
           "id": "ward", "name": "Stoneward", "fromHpBp": 6500,
-          "onEnter": [ { "kind": "ward", "hpBp": 1200, "expireTicks": 300, "window": { "ticks": 100, "bp": 16000 } } ]
+          "onEnter": [ { "kind": "ward", "hpBp": 1200, "expireTicks": 300, "window": { "ticks": 100, "bp": 18000, "armor": 0 } } ]
         },
         { "id": "rage", "name": "Fury", "fromHpBp": 3000, "onEnter": [] }
       ],
       "abilities": [
-        { "id": "call", "name": "Call of the Hollow", "kind": "summon", "type": "grunt", "count": 3, "fromPhase": 0, "firstTicks": 160, "cooldownTicks": 400, "telegraphTicks": 40 },
+        {
+          "id": "call", "name": "Call of the Hollow", "kind": "summon", "type": "grunt", "count": 3, "fromPhase": 0, "firstTicks": 160, "cooldownTicks": 400, "telegraphTicks": 40,
+          "interruptible": true, "staggerBp": 800, "interruptWindow": { "ticks": 80, "bp": 15000 }, "interruptStunTicks": 30
+        },
         {
           "id": "surge", "name": "Hollow Surge", "kind": "charge", "speedBp": 20000, "durationTicks": 60, "fromPhase": 2, "minDifficulty": "hard",
-          "firstTicks": 100, "cooldownTicks": 300, "telegraphTicks": 40, "interruptible": true,
-          "interruptWindow": { "ticks": 80, "bp": 14000 }, "window": { "ticks": 60, "bp": 15000 }
+          "firstTicks": 100, "cooldownTicks": 300, "telegraphTicks": 40, "interruptible": true, "staggerBp": 600,
+          "interruptWindow": { "ticks": 80, "bp": 14000 }, "interruptStunTicks": 30, "window": { "ticks": 60, "bp": 15000 }
         }
       ]
     },
     {
       "id": "colossus",
       "name": "Rift Colossus",
-      "_comment": "Wave 20, Final-Boss: zitiert die Mechaniken der Stage (Rufer, Schild + Fenster, Heilung unterbrechen, Sturm). Zweiter Schild ab Hard.",
+      "_comment": "Wave 20, Final-Boss: zitiert die Mechaniken der Stage (Rufer, Schild + Fenster, zerstörbare Heilung, Sturm). Zweiter Schild ab Hard. Die Heilung läuft ab der ersten Phase im Takt: wer sie bricht (Frost-Stun, Nuke oder 7 % der Max-HP in 4 s), bekommt 8 s Fenster x2 mit Rüstung 0.",
       "wave": 20,
       "phases": [
         { "id": "awake", "name": "Awake", "fromHpBp": 10000 },
         {
           "id": "ward", "name": "Riftward", "fromHpBp": 7500,
-          "onEnter": [ { "kind": "ward", "hpBp": 1200, "expireTicks": 300, "window": { "ticks": 100, "bp": 16000 } } ]
+          "onEnter": [ { "kind": "ward", "hpBp": 1200, "expireTicks": 300, "window": { "ticks": 140, "bp": 20000, "armor": 0 } } ]
         },
         { "id": "mending", "name": "Mending", "fromHpBp": 5000, "onEnter": [] },
         {
           "id": "laststand", "name": "Last Stand", "fromHpBp": 2500,
           "onEnter": [
             { "kind": "summon", "type": "brute", "count": 2 },
-            { "kind": "ward", "hpBp": 800, "expireTicks": 240, "window": { "ticks": 100, "bp": 16000 }, "minDifficulty": "hard" }
+            { "kind": "ward", "hpBp": 800, "expireTicks": 240, "window": { "ticks": 100, "bp": 20000, "armor": 0 }, "minDifficulty": "hard" }
           ]
         }
       ],
       "abilities": [
         { "id": "call", "name": "Rift Call", "kind": "summon", "type": "grunt", "count": 4, "fromPhase": 0, "toPhase": 1, "firstTicks": 160, "cooldownTicks": 400, "telegraphTicks": 40 },
         {
-          "id": "mend", "name": "Mend the Rift", "kind": "mend", "healBp": 800, "fromPhase": 2, "firstTicks": 100, "cooldownTicks": 400, "telegraphTicks": 60,
-          "interruptible": true, "interruptWindow": { "ticks": 100, "bp": 16000 }
+          "id": "mend", "name": "Mend the Rift", "kind": "mend", "healBp": 600, "fromPhase": 0, "firstTicks": 200, "cooldownTicks": 300, "telegraphTicks": 80,
+          "interruptible": true, "staggerBp": 700, "interruptWindow": { "ticks": 160, "bp": 20000, "armor": 0 }, "interruptStunTicks": 40
         },
         {
           "id": "surge", "name": "Rift Surge", "kind": "charge", "speedBp": 20000, "durationTicks": 60, "fromPhase": 3,
-          "firstTicks": 80, "cooldownTicks": 300, "telegraphTicks": 40, "interruptible": true,
-          "interruptWindow": { "ticks": 80, "bp": 14000 }, "window": { "ticks": 60, "bp": 15000 }
+          "firstTicks": 80, "cooldownTicks": 300, "telegraphTicks": 40, "interruptible": true, "staggerBp": 600,
+          "interruptWindow": { "ticks": 80, "bp": 14000 }, "interruptStunTicks": 40, "window": { "ticks": 60, "bp": 15000 }
         }
       ]
     }

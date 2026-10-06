@@ -15,7 +15,7 @@ Letzte Aktualisierung: 2026-10-06 (Runde 5 gestartet, Max' Claude-Account)
 | P0b | Client aufteilen (`app.ts` 396 Z., `renderer.ts` 433 Z.) | erledigt (nicht committet), `app.ts` 77 Z., `renderer.ts` 89 Z., Besitzer-Tabelle in `client/README.md` | 1 × Sonnet, allein | zuerst |
 | P1 | Bedienbarkeit, Smoke mit echten Mausklicks | offen | 1 × Sonnet | nach P0b |
 | P2 | Playtest-Daten, Replay | offen | 1 × Sonnet | nach P0b |
-| P3 | Boss-Design, Hard-Kennlinie | offen | 1 × Sonnet | nur `sim/` |
+| P3 | Boss-Design, Hard-Kennlinie | **erledigt, Ziele teilweise** | 1 × Sonnet | Zerstörbare Wirkungen (Dauerschaden/Stun/Burst), Rüstungsfenster, Boss-Fokus der Bots. Stufen 92/58/31, Titan-LOO −87 → −24 (Normal), Hard-Kennlinie 13,7 → 18,6. Verfehlt: LOO ≤ 25 für Gunner/Blaster/Lancer/Frost (Luftabwehr-Rolle, nicht Boss). [kalibrierung.md § Runde 5 — P3](balancing/kalibrierung.md), [boss-telegraphs.md](design/boss-telegraphs.md) |
 | P4 | Pixel-Grafik | offen | 1 × Sonnet | nach P0b |
 | P5 | Spielgefühl, Ton | offen | 1 × Sonnet | nach P0b und P3 (Telegraph-Liste) |
 | P6 | M1-Lücken (Menü, Team 6 aus 8, Einstellungen, Ergebnis) | offen | 1 × Sonnet | nach P0b |

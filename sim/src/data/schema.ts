@@ -308,7 +308,8 @@ export type ChallengesData = z.infer<typeof ChallengesSchema>;
  * Schnittstelle für Schwierigkeitsstufen: jede Aktion/Fähigkeit hat `minDifficulty` (Standard normal); darunter ist sie aus.
  */
 const DifficultyName = z.enum(['normal', 'hard', 'nightmare']);
-const Window = z.object({ ticks: pos, bp: pos });
+/** Schwachstellen-Fenster: `bp` = Schadensfaktor; `armor` (Runde 5 / P3, optional) = Rüstung des Bosses, solange das Fenster offen ist (z. B. 0 = Panzer offen). */
+const Window = z.object({ ticks: pos, bp: pos, armor: nat.optional() });
 const PhaseAction = z.discriminatedUnion('kind', [
   /** Schild-Phase: absorbiert `hpBp` der Max-HP; läuft nach `expireTicks` ab; bricht er, öffnet sich ein Fenster. */
   z.object({
@@ -320,6 +321,8 @@ const PhaseAction = z.discriminatedUnion('kind', [
   }),
   z.object({ kind: z.literal('summon'), type: z.string(), count: pos, minDifficulty: DifficultyName.default('normal') }),
   z.object({ kind: z.literal('window'), window: Window, minDifficulty: DifficultyName.default('normal') }),
+  /** Rüstungsphase (Runde 5 / P3): setzt die Rüstung des Bosses (absolut) bis zum nächsten Phasenwechsel; Fenster mit `armor` überstimmen sie. */
+  z.object({ kind: z.literal('armor'), value: nat, minDifficulty: DifficultyName.default('normal') }),
 ]);
 const AbilityBase = {
   id: z.string(),
@@ -334,10 +337,18 @@ const AbilityBase = {
   telegraphTicks: pos,
   /** Ein erfolgreicher Stun des Bosses während des Telegraphs bricht die Fähigkeit ab. */
   interruptible: z.boolean().default(false),
+  /**
+   * Zerstörbare Wirkung (Runde 5 / P3, Dauerschaden-Antwort): richtet das Team während des Telegraphs mindestens `staggerBp` der Max-HP
+   * (Basispunkte, inkl. Schild-Absorption und Fenster-Faktor) an Schaden an, ist die Fähigkeit unterbrochen (`bossCast.cause: "damage"`),
+   * ohne dass ein Stun nötig ist. Setzt `interruptible` voraus. Eine Heilung (`mend`) schrumpft linear mit dem bisherigen Schaden.
+   */
+  staggerBp: pos.optional(),
   /** Fenster nach der Wirkung (bei `charge`: wenn der Sturm endet). */
   window: Window.optional(),
   /** Fenster, wenn die Fähigkeit unterbrochen wurde. */
   interruptWindow: Window.optional(),
+  /** Runde 5 / P3: Wird die Fähigkeit unterbrochen (Stun oder Schaden), steht der Boss so viele Ticks still (umgeht die Stun-Sperre). */
+  interruptStunTicks: pos.optional(),
   minDifficulty: DifficultyName.default('normal'),
 };
 const BossAbility = z.discriminatedUnion('kind', [

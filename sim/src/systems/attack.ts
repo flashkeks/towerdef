@@ -9,6 +9,7 @@ import { BP, dist2, isqrt, mulBp } from '../fixed.js';
 import { nextInt } from '../prng.js';
 import type { EnemyState, UnitState, World } from '../state.js';
 import { applyDamage, applyDot, applySlow } from './effects.js';
+import { effectiveArmor } from './boss.js';
 import { selectTarget } from './target.js';
 
 export interface Buffs {
@@ -122,7 +123,7 @@ export function hitEnemy(w: World, u: UnitState, def: UnitDef, e: EnemyState, hc
       buffBp: hc.buffs.damageBp,
       vulnBp: 0,
       elementBp: elementBp(def.element, e.element, eco),
-      armor: e.armor,
+      armor: effectiveArmor(e),
       pen: def.penetration,
       crit: hc.crit,
       critMultBp: def.crit?.multBp ?? eco.damage.critDefaultMultBp,

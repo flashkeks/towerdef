@@ -183,7 +183,7 @@ describe('Boss-Kits: Telegraph, Beschwörung, Unterbrechung', () => {
         applyStun(boss, 30, ctx.data.economy);
         boss.stunTicks = 100000;
       }
-      step(70);
+      step(90); // Vorwarnzeit der Heilung: 80 Ticks (P3)
       return boss.hp - hp0;
     };
     expect(heal(false)).toBeGreaterThan(0);
@@ -234,7 +234,7 @@ describe('Boss-Kits: Schwachstellen-Fenster und Schild', () => {
     expect(e.bossRun!.ward).toBe(0);
     expect(m.w.events.some((x) => x.type === 'bossWard' && x.state === 'broken')).toBe(true);
     const win = m.w.events.find((x) => x.type === 'bossWindow');
-    expect(win).toMatchObject({ open: true, cause: 'ward', damageBp: 16000 });
+    expect(win).toMatchObject({ open: true, cause: 'ward', damageBp: 18000 }); // Runde 5 P3: Fenster x1,8, Rüstung 0
     expect(e.bossRun!.vulnTicks).toBe(100);
     // Fenster schließt nach vulnTicks
     m.step(101);

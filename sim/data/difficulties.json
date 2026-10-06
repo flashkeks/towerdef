@@ -1,8 +1,8 @@
 {
- "ref": "Runde 4 P3: Stufen unterscheiden sich \u00fcber Regeln (ENTSCHEIDUNGEN.md), HP nur Feinjustierung. Details: docs/balancing/kalibrierung.md, Runde 4 - P3",
+ "ref": "Runde 4 P3: Stufen unterscheiden sich über Regeln (ENTSCHEIDUNGEN.md), HP nur Feinjustierung. Details: docs/balancing/kalibrierung.md, Runde 4 - P3",
  "normal": {
   "ref": "entspannt",
-  "hpBp": 15300,
+  "hpBp": 15700,
   "coopHpTableBp": [
    10000,
    16000,
@@ -42,7 +42,7 @@
   "lives": {
    "regenPerWave": 1
   },
-  "bountyBp": 10000,
+  "bountyBp": 9000,
   "rewardBp": 10000
  },
  "hard": {
@@ -102,7 +102,7 @@
   ],
   "bossAbilityTier": 1,
   "lives": {},
-  "bountyBp": 9500,
+  "bountyBp": 9200,
   "rewardBp": 15000
  },
  "nightmare": {
