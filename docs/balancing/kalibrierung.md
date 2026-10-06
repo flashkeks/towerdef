@@ -803,3 +803,66 @@ Boss-HP allein anheben (Titan-Team bleibt 100 %, ohne Titan fällt es bis −45)
 1. Luftabwehr-Rolle (Frost/Lancer) für „keine Pflicht-Unit“ klären; Fragen an Max in STATUS.
 2. aoe-Bot fällt auf Normal von 82 auf 37 % (hängt am Titan-Anteil); Bot-Pflege.
 3. Hard-Kennlinie 18,6: mehr Fenster-Streuung oder Hard-Zusatzregeln.
+
+# Runde 5 — P3b: zweite Luft-AoE-Quelle
+
+Auftrag (Max, 06.10.2026): die Flieger-Pulks in W16/W18 bekommen eine zweite Flächen-Antwort gegen Luft, statt den Pulk-Druck zu senken. Messung wie P3 (`r5-p3.sh loo|rates`, Profil `normal`, bester Bot `wide`, n = 100, Standardfehler ±4–5 Punkte).
+
+## Befunde auf dem Weg
+
+1. **Blaster mit Luft allein genügt nicht.** Mit `airDamageBp` 6000 stieg `wide` auf 99/96/73 %; neu auf 94/58/31 eingestellt blieb Frost-Verbot bei −94 (Normal). Auch bei 100 % Luftschaden: ohne Frost 10 %.
+2. **Frosts Slow ist der Pfeiler, nicht der Kegel.** Slow auf 1 % gesetzt: `wide` Normal 92 → 57, Hard 63 → 12. Stun weg: 92 → 87, 63 → 40. Die P3-Aussage „Slow und Stun ohne Wirkung" war falsch gelesen. Slow wirkt als Multiplikator auf alle anderen Units, und nur Frost hatte ihn.
+3. **Messartefakt in `wide`:** bei verbotener Unit blieb ein Slot frei (Typenlimit 6, nur 6 Angriffs-Typen), und `wide` kaufte 3–4 Banner als Füllmaterial, upgradete nie und blieb mit 428 Münzen übrig. Banner-Ban allein: 40/40 Siege. Fix im Bot (kein Support ohne Schaden als Füllmaterial). Das hebt jede LOO-Zeile, wirkt aber nicht auf die Siegquote ohne Verbot (Banner 0,4 Stk im Mittel).
+4. **Banner stärker machen** (+25…85 % Aura) verschlechterte `wide` (63 statt 94): Falle, nicht Ausgleich. Verworfen.
+5. **Hard-LOO ist Element-Mechanik.** Mit `elementsActive: false` auf Hard (nur Diagnose, nicht übernommen): Gunner +2, Blaster −20, Frost −22, Striker −10, Basis 93 %. Auf Hard fehlt einem Team ohne Element-Unit die starke Trefferfläche.
+
+## Änderungen (alt → neu → Grund)
+
+| Datei/Feld | alt | neu | Grund |
+|---|---|---|---|
+| Sim: `airDamageBp` (schema/compile/attack) | gab es nicht | optionales Unit-Feld; Boden-Unit mit Feld trifft Luft mit diesem Anteil | zweite Flächen-Luftquelle, Gunner/Titan/Lancer/Frost unverändert |
+| `units.json` Blaster `airDamageBp` | – | **7500** | 6000 → Frost −33 (Normal); 9000 → Blaster −27/−30 (Normal/NM); 7500 liegt dazwischen |
+| `units.json` Blaster `onHit` | Burn | Burn + **Slow 10 % / 60 Ticks** | zweite Slow-Quelle (Befund 2); Frost allein trug den Multiplikator |
+| `units.json` Frost Slow `pctBp` | 2000 | **1200** | Frost entlasten, ohne Frost-Rolle (Stun, Kegel) anzufassen |
+| `difficulties.json` `bountyBp` normal / hard / nightmare | 9000 / 9200 / 9550 | **8400 / 8150 / 8450** | neu eingestellt: `wide` 92 / 55 / 30 (n = 100) |
+| `bots/wide.ts` | Banner als Füller | `canPlace: !aura`, Caps-Prüfung nur über Angreifer | Befund 3 |
+| `test/combat.test.ts` | – | Test Blaster trifft Flieger | Regression |
+
+HP-Faktoren unverändert (Spreizung 7,5 %, Test < 8 %).
+
+## Ergebnis
+
+| Ziel | Wert | Urteil |
+|---|---|---|
+| Stufen `wide` (n = 100) | Normal **92**, Hard **55**, Nightmare **30** | erreicht |
+| Andere Bots | Normal farm/coop 98, aoe **81**, greedy 47, upgrade 28; Hard farm/coop 67, aoe 14; NM farm/coop 36 | **farm/coop liegen über dem Korridor** (Normal 98, Hard 67, NM 36): die Blaster-Luft nützt dem Farm-Pfad stärker. Ein Herunterstellen auf farm würde `wide` unter den Korridor drücken (Test: 8300/8100/8420 → `wide` 89/52/30, farm 99/69/40, die Quote von farm bewegt sich kaum) |
+| `aoe`-Bot Normal ≥ 50 % | **81 %** (vorher 37) | erreicht |
+| Hard-Kennlinie 90→10 % (n = 60) | **13,1** Punkte HP (vorher 18,6) | **verfehlt, schlechter**: stärkeres Team = steilere Kante |
+| HP-Spreizung | 7,5 % | erreicht |
+
+## Leave-one-out, alle 8 Units (`wide`, n = 100; Delta in Punkten)
+
+| Unit | Normal (92) | Hard (55) | Nightmare (30) |
+|---|---|---|---|
+| Striker | +3 | −17 | −8 |
+| Gunner | +7 | **−51** | +11 |
+| Blaster | −11 | **−53** | −25 |
+| Banner | 0 | 0 | 0 |
+| Lancer | +1 | +10 | +7 |
+| Frost | −18 | **−45** | **−26** |
+| Titan | +3 | +27 | +34 |
+| Farm | 0 | 0 | 0 |
+
+Vorher (P3): Gunner −44/−57/−19, Blaster −42/−46/−14, Lancer −53/−37/−29, Frost −92/−58/−31.
+
+**Normal: erreicht (schlechtester Wert −18). Nightmare: Frost −26 knapp daneben (Blaster −25 am Rand). Hard verfehlt (Gunner −51, Blaster −53, Frost −45).** Begründung Hard: die Elemente (stark 1,5 / schwach 0,5) machen jede Element-Unit zur Abdeckung; ohne Elemente liegt Hard bei −22 und besser. Das ist eine Eigenschaft der Stufe, kein Luftproblem; Lösungen sind eine Entscheidung (Element-Stärke auf Hard senken, z. B. 1,5/0,5 → 1,3/0,7, oder Elemente erst ab Wave X) und gehören nicht in P3b. Titan ist auf Hard/NM ein Minus-Kauf (Verbot +27/+34): Bot kauft ihn zu früh oder zu teuer, kein Pflicht-Problem.
+
+## Verworfene Versuche
+
+Blaster-Luft allein (Frost bleibt −94); Luft 6000 und 9000 (siehe Tabelle oben); Banner-Aura ×1,7 (Falle); Gunner mit Durchschlag gegen Luft nicht gemessen: Gunner ist auf Normal/NM kein Problem mehr (+7/+11).
+
+## Übergabe
+
+1. `sim/test/replay.test.ts` ist rot, bis die Hauptsitzung das Beispiel-Replay neu aufnimmt (Daten haben sich geändert).
+2. Hard-LOO: Entscheidung über die Element-Stärke auf Hard (Max).
+3. Farm/coop liegen über dem Korridor; Hard-Kennlinie 13,1.

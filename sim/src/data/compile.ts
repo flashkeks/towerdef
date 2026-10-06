@@ -47,6 +47,8 @@ export interface UnitDef {
   farm?: UnitData['farm'];
   ability?: UnitData['ability'];
   canHitAir: boolean;
+  /** Schadensanteil gegen Flieger in Bp (nur gesetzt, wenn die Unit Luft abweichend vom vollen Schaden trifft). */
+  airDamageBp?: number;
   levels: LevelStat[];
 }
 
@@ -144,7 +146,8 @@ function build(u: UnitData, d: GameData): UnitDef {
     aura: u.aura,
     farm: u.farm,
     ability: u.ability,
-    canHitAir: u.placement !== 'ground',
+    canHitAir: u.placement !== 'ground' || u.airDamageBp !== undefined,
+    airDamageBp: u.airDamageBp,
     levels,
   };
 }

@@ -25,6 +25,21 @@ function mk(difficulty: 'normal' | 'hard' = 'normal', players = 1) {
 const hurt = (e: EnemyState) => e.hp < e.maxHp;
 
 describe('Trefferflächen', () => {
+  it('Blaster trifft Flieger mit airDamageBp (Runde 5 P3b), Striker (Boden) weiter nicht', () => {
+    const { sim, put, place } = mk();
+    place('blaster', 0);
+    const fly = put('flyer', 5000);
+    const near = put('flyer', 4200);
+    const ground = put('grunt', 5000);
+    sim.step();
+    const bl = sim.catalog().find((u) => u.id === 'blaster')!;
+    expect(bl.canHitAir).toBe(true);
+    expect(bl.airDamageBp).toBeGreaterThan(0);
+    expect(hurt(fly) && hurt(near)).toBe(true);
+    expect(fly.maxHp - fly.hp).toBeLessThan(ground.maxHp - ground.hp);
+    const st = sim.catalog().find((u) => u.id === 'striker')!;
+    expect(st.canHitAir).toBe(false);
+  });
   it('Lancer (line, Pen 40): trifft Linie, nicht daneben; Rüstung 20 wirkungslos', () => {
     const { sim, put, place } = mk();
     place('lancer', 0); // Slot 0 = (2000, 0), ground
