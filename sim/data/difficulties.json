@@ -1,0 +1,6 @@
+{
+  "ref": "recommendations §4 (Schwierigkeit), §18",
+  "normal": { "ref": "§4 Normal x1,0", "hpBp": 10000, "speedBp": 10000, "elementsActive": false },
+  "hard": { "ref": "§4 Hard HP x1,4, Speed x1,1, Elemente aktiv", "hpBp": 14000, "speedBp": 11000, "elementsActive": true },
+  "nightmare": { "ref": "§4 Nightmare HP x2,0, Speed x1,2, Elemente aktiv", "hpBp": 20000, "speedBp": 12000, "elementsActive": true }
+}

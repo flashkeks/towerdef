@@ -1,0 +1,58 @@
+{
+  "ref": "recommendations §1-§3, §7, §8, §10, §11, §16, §18",
+  "_comment": "Alle Werte DESIGN (Startwerte). Einheiten: Münzen, Ticks (20/s), Basispunkte (10000 = x1,0), Milli-Tiles, Centi-HP.",
+  "tickRate": 20,
+  "startCoins": 1000,
+  "baseHp": 100,
+  "waveTimerTicks": 900,
+  "prepTicks": 900,
+  "waveBonus": { "ref": "recommendations §3: W(n) = 100 + 5n", "base": 100, "perWave": 5 },
+  "bounty": {
+    "ref": "recommendations §3: gamma(n) = 0,70 * 0,92^(n-1) Münzen je Gegner-HP",
+    "gammaStartBp": 7000,
+    "gammaDecayBp": 9200
+  },
+  "sell": { "ref": "recommendations §8: Kampf 60 %, Farm 40 %, floor", "combatBp": 6000, "farmBp": 4000 },
+  "leakDamage": {
+    "ref": "recommendations §2 (Tabelle Base-HP/Leak)",
+    "grunt": 1, "runner": 1, "splitter_child": 1, "flyer": 2, "splitter": 2, "brute": 3, "elite": 10, "boss": 50
+  },
+  "coop": {
+    "ref": "recommendations §16: h = 1 + 0,75(n-1) auf HP; Spenden in 50er-Schritten",
+    "hpPerExtraPlayerBp": 7500,
+    "donationStep": 50,
+    "maxPlayers": 4
+  },
+  "caps": {
+    "ref": "recommendations §7: 6 Team-Slots je Spieler, 60 Units, 80 Gegner",
+    "teamUnits": 60,
+    "teamSlots": 6,
+    "enemies": 80
+  },
+  "cc": {
+    "ref": "recommendations §10: Stun 1,5 s, 6 s Sperre, Slow max -60 %, Boss-CC Dauer x0,5",
+    "stunTicks": 30,
+    "stunImmuneTicks": 120,
+    "slowMaxBp": 6000,
+    "bossCcBp": 5000
+  },
+  "dot": { "ref": "recommendations §10: DoT-Ticks à 1 s, Boss/Elite x0,5", "intervalTicks": 20, "bossEliteBp": 5000 },
+  "regen": { "ref": "recommendations §4: Regen 2 % MaxHP/s", "perSecondBp": 200 },
+  "buffCaps": {
+    "ref": "recommendations §11: Schaden +100 %, Tempo +60 %, Range +30 %, Verwundbar +50 %",
+    "damageBp": 10000, "tempoBp": 6000, "rangeBp": 3000, "vulnerableBp": 5000
+  },
+  "damage": {
+    "ref": "recommendations §10: Mindestschaden 1 HP, Resistenz 100/(100+R), Element 1,5/0,5, Crit-Multiplikator 1,5",
+    "minDamageCenti": 100,
+    "armorBase": 100,
+    "elementStrongBp": 15000,
+    "elementWeakBp": 5000,
+    "critDefaultMultBp": 15000
+  },
+  "targeting": {
+    "ref": "recommendations §9: Gegnerradius 0,3 Tiles; Strongest = maxHP*(1+0,25*Schild)",
+    "enemyRadiusMilli": 300,
+    "strongestShieldBp": 2500
+  }
+}

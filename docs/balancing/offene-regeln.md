@@ -1,0 +1,35 @@
+# Offene Regeln (DESIGN-OFFEN)
+
+Wo `docs/comparison/recommendations.md` eine Regel offenlässt, nimmt der Simulationskern (`sim/`) die einfachste sinnvolle Lösung. Jede Stelle ist im Code mit `// DESIGN-OFFEN: …` markiert (Datenentscheidungen in den JSON-Dateien stehen am Ende der Tabelle). Zeilenangaben beziehen sich auf den Stand der Erstellung.
+
+| # | Thema | gewählte Regel | Alternativen | Datei:Zeile |
+|---|---|---|---|---|
+| 1 | Gegner-Limit beim Spawn | Bei 80 lebenden Gegnern wartet der Spawn in der Warteschlange (Splitter-Kinder ignorieren das Limit) | Spawn verwerfen oder Limit nur für neue Waves | `sim/src/systems/spawn.ts:78` |
+| 2 | Bounty-Verteilung (Rest) | Bounty je Spieler = floor(Bounty * Anteil); der Rest geht an den Spieler mit dem größten Schadensanteil (Gleichstand: kleinste ID) | Rest an letzten Treffer / zufällig / Münzen in Centi-Einheiten | `sim/src/systems/economy.ts:18` |
+| 3 | Splitter-Kinder | Splitter-Kinder erben das Element, aber keine Modifier; sie haben eigene Bounty (gamma * Kind-HP) und Leak 1. | Kinder erben Modifier | `sim/src/systems/economy.ts:58` |
+| 4 | Prep-Phase | Prep-Phase dauert prepTicks (45 s) oder bis skipWave (Mehrheit); danach startet Wave 1 automatisch. | Kein Prep-Timer (nur manueller Start) | `sim/src/systems/waves.ts:47` |
+| 5 | Wave-Ende und -Start | Wave endet bei Timer (45 s ab Start), Skip oder wenn nichts mehr lebt/aussteht; das Ende zahlt Wave-Bonus + Farm und startet im selben Tick die nächste Wave. | Wave-Ende erst, wenn alle Gegner weg sind (keine Überlappung) | `sim/src/systems/waves.ts:55` |
+| 6 | Sieg nach Wave 20 | Sieg erst, wenn nach Wave 20 alle Gegner tot/geleakt sind; endet Wave 20 per Timer, wird ihr Bonus schon dort gezahlt. | Bonus von Wave 20 erst bei Sieg | `sim/src/systems/waves.ts:68` |
+| 7 | Buff-Stacking je Buff-ID | Buff-ID = Support-Unit-Typ; je ID zählt nur der höchste Wert im Radius (auch spielerübergreifend), verschiedene IDs addieren sich. | Alle Banner addieren (bis Cap +100 %) | `sim/src/systems/attack.ts:26` |
+| 8 | On-Hit bei Schild | On-Hit-Effekte (Bleed/Burn/Slow) wirken auch, wenn ein Schild-Stack den Direktschaden absorbiert hat. | Effekte nur bei durchgekommenem Schaden | `sim/src/systems/attack.ts:134` |
+| 9 | Windup | kein Windup - der Treffer erfolgt im selben Tick wie die Zielwahl (§9 Regel 2 braucht damit keine Verfall-Sonderfälle). | Windup-Phase mit Verfall wie §9 Regel 2 | `sim/src/systems/attack.ts:150` |
+| 10 | Crit-Wurf | ein Crit-Wurf je Angriff, gilt für alle Treffer dieses Angriffs (Flächenangriffe). | Crit-Wurf je getroffenem Ziel | `sim/src/systems/attack.ts:166` |
+| 11 | Nuke-Ziel | "stärkster Gegner" = größte Max-HP (wie Strongest), global, Flyer nur wenn die Unit Luft trifft. | Stärkster nach aktueller HP oder Typ-Rangliste | `sim/src/systems/abilities.ts:20` |
+| 12 | Ability ohne Ziel | ohne wirksames Ziel wird keine Abklingzeit verbraucht | Abklingzeit immer verbrauchen | `sim/src/systems/abilities.ts:42` |
+| 13 | Stun-Refresh und Sperre | Stun wird weder während des Stuns noch in der 6-s-Sperre erneuert; die Sperre beginnt, wenn der Stun endet. | Refresh während Stun, Sperre ab Stun-Beginn | `sim/src/systems/effects.ts:13` |
+| 14 | DoT-Stacking | gleicher DoT-Typ: Dauer wird erneuert, Rate = Maximum (kein Stapeln); DoT ignoriert Schild und Mindestschaden. | Rate addieren (Stack) oder Dauer verlängern | `sim/src/systems/effects.ts:53` |
+| 15 | Flyer-Pfad | Flyer folgen derselben Polylinie wie Bodengegner (kein separater Luftpfad); alle spawnen bei Fortschritt 0. | eigener Luftpfad / Luft-Geschwindigkeitsfaktor | `sim/src/systems/move.ts:13` |
+| 16 | DoT-Basis | DoT-Basis = Treffer nach Lvl/Trait/Buff/Verwundbar, vor Element, Rüstung und Crit. | DoT auf Basis des Endschadens | `sim/src/damage.ts:43` |
+| 17 | Level-Stats (Interpolation) | Level-Stats linear interpoliert (DPS, SPA, Range), jeweils abgerundet; Schaden/Treffer = floor(floor(DPS*Anteil) * SPA / 20). | Tabellenwerte je Stufe statt Interpolation | `sim/src/data/compile.ts:91` |
+| 18 | Team-Slots | Team-Slots = höchstens 6 verschiedene Unit-Typen gleichzeitig je Spieler. | Nur 6 ausgerüstete Typen im Loadout (Meta), nicht im Match prüfen | `sim/src/commands.ts:42` |
+| 19 | Fähigkeiten ab Platzierung bereit | Fähigkeiten sind ab Platzierung bereit (Abklingzeit 0); es gibt keinen Auto-Ability-Schalter im Kern. | Start mit voller Abklingzeit; Auto-Ability-Schalter | `sim/src/commands.ts:59` |
+| 20 | Wave-Skip | Skip = mehr als die Hälfte der Spieler; im Wave-Betrieb beendet er die laufende Wave sofort (Bonus wird gezahlt) und startet die nächste. | Skip nur in der Prep-Phase oder Warteschleife ohne Wave-Abbruch | `sim/src/commands.ts:115` |
+| 21 | DPS-Verteilung | Single 100 % (Striker 70 % + Bleed, Gunner 90 % + Crit-Erwartung), Multi-Target (circle/line) 60 % je Ziel, Frost 50 %, Banner/Farm 0 | Alle Single-Units 100 %, DoT/Crit zusätzlich | `sim/data/units.json:29` |
+| 22 | Fähigkeiten-Werte | Titan-Nuke = 8 x Treffer-Schaden (True Damage), 45 s; Frost-Stun Radius 2,5 Tiles um die Unit, 30 s | Andere Multiplikatoren/Radien (Balancing) | `sim/data/units.json:80` |
+| 23 | Banner-Aura | +10 % (Stufe 0) bis +40 % (Stufe 5) linear (+6 %/Stufe), Radius 3 Tiles, nur Schaden (Tempo-/Range-Buffs ohne Quelle im MVP) | Tabellenwerte pro Stufe, zusätzlich Tempo +10 % | `sim/data/units.json:47` |
+| 24 | Unit-Elemente / Wave-Elemente | Units: Striker 1, Gunner 2, Blaster 3, Lancer 4, Frost 5, Titan/Banner/Farm neutral; Gegner-Element je Wave 1+((n-1) mod 5) für alle Gruppen, wirkt erst ab Hard | Element je Gruppe/Archetyp, Mischwaves | `sim/data/stages/standard20.json:4` |
+| 25 | Slot-Layout und 2x2-Farms | 26 vordefinierte Kandidaten-Slots (ground/hill) neben dem Pfad, 3 große 2x2-Ground-Slots (x=15) für Farms; 2x2-Kollision nur über vordefinierte Slots | Freies Raster mit Footprint-Kollision | `sim/data/stages/standard20.json:8` |
+| 26 | Kegel/Linie/Kreis-Geometrie | Kegel 60 Grad ab Unit-Mitte Richtung Ziel, Länge = Range; Linie Breite 0,6 Tiles; Kreis 1,2 Tiles um das Ziel; Gegnerradius 0,3 addiert (Kegel/Linie/Reichweite), Kreis ohne Radius | Kreis inkl. Gegnerradius, andere Winkel (30/45/90 unterstützt) | `sim/src/systems/attack.ts:45` |
+| 27 | Nicht modelliert (MVP) | Infinite (ab Wave 21), Heiler-Unit, Verbindungsabbruch/Konto einfrieren, Verwundbar-/Range-/Tempo-Quellen (Formel und Caps sind vorhanden), Kosten-Reduktion, Kommandeur-Modifier | Spätere Ausbaustufen laut §3, §11, §16 | `sim/src/damage.ts:1` |
+| 28 | Schwierigkeit und Koop-Kette | HP-Kette: HP_grunt -> x f_HP -> x h (= Bounty-Basis) -> x s_Diff, jeweils floor; Bounty wird bei Spawn je Gegner gerundet (kaufmännisch), nicht je Wave-Pool | Bounty je Wave-Pool runden (Tabelle §5 weicht dadurch um wenige Münzen ab) | `sim/src/systems/spawn.ts:26` |
+| 29 | Pfad-Auflösung | Fortschritt in Milli-Tiles + Mikro-Rest (Speed in 1/1000 Milli-Tile je Tick), damit 1,7x/0,9x-Geschwindigkeiten ohne Float exakt sind | Speed nur in ganzen Milli-Tiles je Tick (Rundungsfehler bis 0,5 %) | `sim/src/systems/move.ts:18` |
