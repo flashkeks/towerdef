@@ -260,6 +260,8 @@ export const UnitSchema = z.object({
   defaultTargeting: z.enum(['first', 'last', 'close', 'strongest']).default('first'),
   element: z.number().int().min(0).max(5).default(0),
   penetration: nat.default(0),
+  /** Runde 5 P3b: Bodeneinheit trifft Luft mit diesem Anteil ihres Schadens (Bp). Ohne Feld: unverändert (Boden trifft keine Luft, Hügel/Hybrid voll). */
+  airDamageBp: pos.optional(),
   crit: z.object({ chanceBp: nat, multBp: pos }).optional(),
   onHit: z.array(Effect).default([]),
   aura: z.object({ radiusMilli: pos, damageBpByLevel: z.array(nat) }).optional(),

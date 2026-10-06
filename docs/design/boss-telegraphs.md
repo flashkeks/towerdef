@@ -98,3 +98,7 @@ Der Colossus zitiert alles, was die Stage gelehrt hat, und fügt die **zerstörb
 - `bossCast` mit `interrupted: true` und `cause: "damage"` kommt **ein Tick nach dem brechenden Treffer**, nicht erst zum `fireTick`: den Telegraph beim Eintreffen sofort beenden (der Client löscht ihn ohnehin bei jedem `bossCast`).
 - Der Telegraph-Ring darf **kein** Spielzustand sein: Fortschritt aus `warnTicks`/`fireTick`, Schadensfüllung aus `bossRun.tele`, beides read-only.
 - Bei 3-facher Geschwindigkeit laufen Vorwarnzeiten gleich schnell (Sim-Ticks); Töne und Animationen auf **Sim-Zeit** ausrichten, nicht auf Echtzeit.
+
+## Nachtrag Runde 5 P3b: Blaster trifft Luft
+
+Keine neuen Ereignisse. Der Blaster (Boden-Unit) trifft jetzt auch Flieger, mit 75 % seines Schadens (`UnitDef.airDamageBp = 7500`, `canHitAir = true`). Für den Client folgt daraus nur: Blaster-Treffer und -Flächen-Effekte können auf Flieger-Gegnern auftauchen (Burn, Slow). Der Katalog zeigt `canHitAir` und `airDamageBp` (additiv, Feld fehlt bei allen anderen Units). Blaster bekommt außerdem 10 % Slow (60 Ticks), Frost nur noch 12 % statt 20 %: Tooltips und Effekt-Farben entsprechend lesen (Slow-Anzeige an Gegnern unverändert, nur die Quelle ist jetzt doppelt). Der Beispiel-Replay passt nicht mehr zu den Daten und muss neu aufgenommen werden.

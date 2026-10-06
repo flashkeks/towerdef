@@ -185,6 +185,10 @@ Experimente ohne Dateiänderung über Umgebungsvariablen (nur Sanity-Skripte, ni
 
 Bot-Regeln aus P1 (`src/bots/util.ts`, Details und Begründung in `kalibrierung.md`): Sparen auf teure Platzierungen (`Policy.save`), Mythic frühestens ab Wave 4, `Policy.plan` (feste Anschaffung ab Wave X, genutzt vom `aoe`-Bot für den Titan) und `rotateEarly` (Striker verkaufen, wenn das 6-Typ-Team voll ist und ein Legendary/Mythic fehlt). Alle Regeln sind über `botTuning.disabled` abschaltbar.
 
+## Luft-Treffer des Blasters (Runde 5 / P3b)
+
+`units.json`: optionales Feld `airDamageBp` (Bp, > 0). Eine Boden-Unit mit dem Feld trifft Flieger (`canHitAir = true`, auch für Zielwahl und Flächentreffer) mit diesem Anteil ihres Schadens; Burn/DoT-Basis wird mit herunterskaliert. Ohne Feld ändert sich nichts. Heute nur der Blaster (7500). `UnitDef.airDamageBp` steht im Katalog (additiv). Der `wide`-Bot kauft keine Support-Units ohne Schaden (Banner) mehr als Füllmaterial; vorher flutete er damit bei verbotener Unit die Slots (Messartefakt im Leave-one-out). Diagnose-Skripte: `scripts/sanity/p3b-diag.ts` (Leaks je Typ/Wave), `p3b-team.ts` (Team am Laufende).
+
 ## Balance-Reste (Runde 4 / P6b)
 
 - `botTuning.earlyCap` = 2 (höchstens 2 Striker), `botTuning.banned` (Leave-one-out: die Unit existiert für den Bot nicht; `q7-p1 --part loo`, `LOO_PROXY=1` = alter Proxy), `botTuning.makeRoom` (Boss-Plan verkauft die schwächste Unit für einen Slot), Boss-Bedarfsprüfung `bossCapacityRatio` / `bossNeedMid` / `bossNeedFinal` (Standard 0 = aus), `policyPlans`, `bossFinalHorizon`, `rotateMinRarity`.

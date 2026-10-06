@@ -40,8 +40,8 @@
     {
       "id": "blaster", "name": "Blaster", "ref": "Auftrag P2a; §6 Epic, §10 Burn 0,9x in 4 s; Runde 4 P1: Anteil 60 -> 65 %",
       "rarity": "epic", "placement": "ground", "role": "AoE",
-      "dpsShareBp": 6500, "attack": { "kind": "circle", "radiusMilli": 1200 }, "defaultTargeting": "first", "element": 3,
-      "onHit": [{ "kind": "burn", "totalBp": 9000, "ticks": 80 }]
+      "dpsShareBp": 6500, "airDamageBp": 7500, "attack": { "kind": "circle", "radiusMilli": 1200 }, "defaultTargeting": "first", "element": 3,
+      "onHit": [{ "kind": "burn", "totalBp": 9000, "ticks": 80 }, { "kind": "slow", "pctBp": 1000, "ticks": 60 }]
     },
     {
       "id": "banner", "name": "Banner", "ref": "Auftrag P2a; §6 Epic (5 Upgrades), §11 Aura +10 % bis +40 %",
@@ -69,7 +69,7 @@
       "_comment": "Kegel ~60 Grad (Länge = Range), 50 % DPS (Kontrolle). Fähigkeit: Stun im Radius 2,5 Tiles um die Unit, Abklingzeit 30 s.",
       "rarity": "legendary", "placement": "hybrid", "role": "Kontrolle",
       "dpsShareBp": 7000, "attack": { "kind": "cone", "coneDeg": 60 }, "defaultTargeting": "first", "element": 5,
-      "onHit": [{ "kind": "slow", "pctBp": 2000, "ticks": 80 }],
+      "onHit": [{ "kind": "slow", "pctBp": 1200, "ticks": 80 }],
       "ability": { "kind": "stunAoe", "cooldownTicks": 600, "radiusMilli": 2500, "stunTicks": 30 }
     },
     {

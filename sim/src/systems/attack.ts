@@ -115,6 +115,7 @@ export interface HitCtx {
 /** Ein Treffer einer Unit auf einen Gegner (Schaden + On-Hit-Effekte). */
 export function hitEnemy(w: World, u: UnitState, def: UnitDef, e: EnemyState, hc: HitCtx, baseCenti: number, trueDamage: boolean): number {
   const eco = w.ctx.data.economy;
+  if (e.flying && def.airDamageBp !== undefined) baseCenti = mulBp(baseCenti, def.airDamageBp);
   const r = computeHit(
     {
       baseCenti,
