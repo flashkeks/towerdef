@@ -41,7 +41,7 @@ Belege für einzelne Schritte:
 
 | Schritt | Beleg | Tag |
 |---|---|---|
-| Wave-Timer existiert | Eine Fähigkeit „stoppt alle Gegner-Spawns, den **Wave-Timer** und hält alle Gegner 20 s an“ | OBSERVED · HIGH · [S72:JIO (Over Heaven), S72:Effects] |
+| Wave-Timer existiert | Eine Fähigkeit „stoppt alle Gegner-Spawns, den **Wave-Timer** und hält alle Gegner 20 s an“ | OBSERVED · HIGH · [S72:JIO (Over Heaven), S72:Tier Lists] |
 | Team vor Start änderbar | „You can now select units and change your team before the game starts“ (RR, Update 19/19.5) | OBSERVED · HIGH · [S72:Update Log] |
 | Mehrere Pfade per Modifikator | Event-Modus: „pick options to add new enemy paths for significant increases in rewards“ (Update 19) | OBSERVED · HIGH · [S72:Update Log] |
 | Kills vs. Takedowns | Kill = letzter Treffer durch diese Unit; Takedown = Unit hat den Gegner überhaupt getroffen („mob-sharing“). Takedowns sind Evolutions- und Worthiness-Ressource | OBSERVED · HIGH · [S72:Frequently Asked Questions] |
@@ -107,7 +107,7 @@ Das alte „Beispiel Oshi“ (Sitzung 1, [S19]) ist durch die Wiki-Liste ersetzt
 | Event-/Portal-Modi | Teils 50 Waves mit Modifikator-Wahl „every few waves“ | OBSERVED · HIGH · [S72:Update Log] |
 | Dungeon Cursed Womb | Boss „Finger Bearer“ in **Wave 15** | OBSERVED · MEDIUM · [S56] |
 | Skip Wave | Button vorhanden (in Scripts als „Auto Skip Wave“ automatisiert); ob per Abstimmung im Koop: UNKNOWN | OBSERVED · MEDIUM · [S06] |
-| Wave-Timer | Existiert (s. o.), Dauer **UNKNOWN** | OBSERVED · HIGH (Existenz) · [S72:Effects] / UNKNOWN (Wert) |
+| Wave-Timer | Existiert (s. o.), Dauer **UNKNOWN** | OBSERVED · HIGH (Existenz) · [S72:JIO (Over Heaven)] / UNKNOWN (Wert) |
 | Spawn-Reihenfolge und -Abstände | **UNKNOWN**. Sonderfall Burst-Gegner: schnell beim Spawn, werden zur Basis hin langsamer | UNKNOWN / OBSERVED · HIGH · [S72:Enemy Mechanics] |
 | Pfadlänge (Laufzeit) | Story-Maps: 8–36 s Laufzeit eines Normalgegners vom Spawn bis Pfadende (Stand 2023-12, LEGACY) | OBSERVED · MEDIUM · [S72:Map Lengths] |
 

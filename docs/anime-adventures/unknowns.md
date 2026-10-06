@@ -119,7 +119,25 @@ Siehe [sources.md](sources.md#explizit-verworfene-daten). Die Infinite-HP-Formel
 | P1 | Trading: handelbar u. a. Reroll Tokens | bestätigt (Terminology: „tradable item“) | S72:Terminology |
 | P1 | Shiny „1 % pro Summon, rein kosmetisch“ | bestätigt; ×3 mit Shiny Hunter; erst ab Banner-Tier 1 (Level 5) | S72:Summon, S75, S73 |
 | P1 | Settings: nur 3 Einträge | 11 belegte Settings mit Update-Zuordnung | S72:Update Log |
-
+| P2 | Sell-Wert 25 % **oder** 30 % je nach Unit (MEDIUM), Bezug unklar | Standardregel 25 % von Deployment + Upgrades (508 von 528 Selling-Abschnitten); 30 % nur auf Seite C.E.O. (Einzelfall, LOW); 10 Seiten „cannot be sold“ | S72 (Unit-Seiten), S65 `unsellable` |
+| P2 | Beispiel unverkäufliche Unit „Oshi“ [S19] | Liste aus Modul: Bulby, Weather Girl (+Evo), Lulu (+Evo), Lyla (+Evo), Usurper, Spirit Reaper (Final Dusk); laut Wiki zusätzlich Idol, Idol (Star), Griffin (Reincarnation) | S65, S72 |
+| P2 | „Base HP skaliert mit Level-Schwierigkeit“ als RR-Patchnote (LOW) | Update 9, 14.01.2023, LEGACY (OBSERVED · HIGH) | S72:Update Log |
+| P2 | Multiplikatoren Schwäche/Resistenz UNKNOWN | Schwäche additiv `1 + Σweakness%` über alle Affinitäten der Unit; Resistenz `100/(100+R)`; True Damage ignoriert Resistenz | S72:Damage Affinities / Elements |
+| P2 | Wind Dragon Magic-Buff 20 s Dauer / 40 s Cooldown | 30 % Buff, 30 s Dauer, 60 s Cooldown, Kette bis 100 % | S72:Wind Dragon |
+| P2 | Ability-Cooldowns skalieren mit dem SPA-Stat | Nur der SPA-**Curse** verlängert den Cooldown; „Attack speed from stats … do not affect ability cooldown“ | S72:Commander, S72:Wind Dragon |
+| P2 | Buff-Stacking UNKNOWN („Σ? / max?“), Formel RECONSTRUCTED · LOW | Buffs verschiedener Quellen additiv (+100 % +10 % = ×2,1; +100 % +15 % = ×2,15); gleiche Effekte stapeln nicht | S72:Experiment buff, S72:Griffin (Reincarnation), S72:Blossom, S72:Effects |
+| P2 | Commander-Buff Dauer/Cooldown UNKNOWN; „Erwin-Typ“ als getrennte Unit | Commander = Erwin-Typ: +25 % Physical, 30 s / 60 s, Kette 25 → 56 → 95 → 100 % | S72:Commander |
+| P2 | Hits: Anzahl Schadensinstanzen (implizit zusätzlicher Schaden) | Damage wird durch Hits geteilt; jeder Hit entfernt 1 Schild-Instanz | S76, S72:Enemy Mechanics |
+| P2 | Shatter als Effektname | Wiki führt Shatter (Detailabschnitt, Modul) und „Crash“ (Effekt-Kopf) mit gleicher Wirkung | S72:Effects, S67 |
+| P2 | Slow-Stärke UNKNOWN, Stapelung UNKNOWN | Slow 50/65/80 % je Upgrade (`influence`), Dauer 2,5–4 s; Cooldown-Konflikt 4 s nach Ablauf vs. 7 s | S67, S72:Effects, S72:Tier Lists |
+| P2 | Freeze-Cooldown 10 s (eindeutig) | Konflikt: 10 s (Effects-Kopf) / 12–13 s (Effects-Detail) / 10–12 s (Modul) | S72:Effects, S67 |
+| P2 | Timestop-Cooldown UNKNOWN | 10–12 s (Modul) | S67 |
+| P2 | Bleed-Stapelung UNKNOWN | Bleed stackt zwischen Units; Buffs erhöhen den Bleed-Prozentsatz proportional | S72:Effects |
+| P2 | Poison-Stärke UNKNOWN | Modul: 280 % über 56 Ticks bzw. 300 % über 20 Ticks | S67 |
+| P2 | Wave-Timer UNKNOWN (auch Existenz) | Existenz belegt (Fähigkeit stoppt Wave-Timer), Dauer UNKNOWN | S72:JIO (Over Heaven) |
+| P2 | Kill-/Wave-Yen VERIFIED · CONFIRMED [S42] | herabgestuft auf OBSERVED · HIGH bzw. MEDIUM: im Wiki-Volltext keine Beschreibung oder Werte | S72 (Volltextsuche negativ) |
+| P2 | Crit ×1,5 bis ×2 | Modulwerte 1,5 / 1,85 / 2; Mehrfach-Crit über 100 % seit Update 11 (LEGACY); Crit-Damage als „true multiplier“ seit 20.4.1 (RR) | S65, S72:Update Log |
+| P2 | Armored-Gegner nicht berücksichtigt | Full-AoE macht 50 % Schaden; Ice-Gegner: Fire ×3 | S72:Enemy Mechanics |
 
 ## H. Paketbefunde (Sitzung 2)
 
@@ -155,3 +173,31 @@ Konflikte, Lücken und erledigte Einträge aus den Paketen der Sitzung 2. Die ä
 - **U25 (Achievements, Tutorial, Login)** teilweise: Achievements → Titles (U9), Trophies, Level Milestones (S72:Titles, S72:Level Milestones). Tutorial bleibt UNKNOWN. Login: Holiday-Kalender (U19), 1-Mrd.-Login-Event (U13), Dungeon-Key täglich per Login (U20); Tabelle weiter UNKNOWN.
 - RR-Place-ID geklärt: Spiel = 8304191830, 117965110267191 = Teaser (S74, S78).
 - Update-Zeitleiste vollständig aus S72:Update Log (Release bis 20.4.1, 45 Einträge mit Daten).
+
+### P2
+
+#### Erledigt
+- **C5 gelöst:** Sell-Wert 25 % ist Standard (508 von 528 Selling-Abschnitten); 30 % nur auf C.E.O.-Seite (Einzelfall, vermutlich Seitenfehler, LOW). [S72]
+- **Schwäche/Resistenz-Multiplikatoren gelöst:** Schwäche additiv `1 + Σ%`, Resistenz `100/(100+R)`. [S72:Damage Affinities / Elements]
+- **Buff-Stacking gelöst:** additiv über verschiedene Quellen, gleiche Effekte stapeln nicht. [S72:Experiment buff, S72:Griffin (Reincarnation)]
+- **Base-HP-Skalierung datiert:** Update 9 (LEGACY), nicht RR. [S72:Update Log]
+
+#### Neue Konflikte
+| Thema | Wert A | Wert B | Quelle |
+|---|---|---|---|
+| Freeze-Immunitäts-Cooldown | 10 s (Effects-Kopf) | 12–13 s (Effects-Detail); Modul 10–12 s | S72:Effects, S67 |
+| Slow-Cooldown | 4 s nach Ablauf (Effects-Kopf) | 7 s (Effects-Detail, Tier-List-Texte) | S72:Effects, S72:Tier Lists |
+| Unconscious-Dauer | 0,5 s (Modul) | 3–4 s (Effects) | S67, S72:Effects |
+| Bleed Amplification | ×3,5–5 (Effects-Kopf) / ×3–5 (Detail) | ×5 (Modul) | S72:Effects, S67 |
+| Dismembered | +20 % Physical (Modul, Effects) | +25 % (Damage-Affinities-Seite) | S67, S72:Damage Affinities / Elements |
+| Sunshine Max-Damage | ×2,35 (DERIVED aus 9 %/Wave × 15) | ×2,25 (Modul) | S72:Effects, S67 |
+| Stun-Dauer | 1 s (Trello, LEGACY 2022) | typisch 2 s (Unit-/Tier-Seiten) | S73, S72 |
+
+#### Weiterhin fehlend (UNKNOWN)
+- Start-Yen, Kill-Yen, Wave-Yen: in keiner der 661 Wiki-Seiten genannt (Volltextsuche). Reddit per Connector gesperrt (403).
+- Base-HP-Wert und Leak-Schaden: nur Indiz (Healer früher 25 HP/Wave, danach 3–5 %).
+- Wave-Timer-Dauer, Spawn-Abstände.
+- Vollständige Targeting-Modus-Liste (nur First und Strongest belegt; Dropdown seit Update 19.5).
+- DoT-Tick-Intervall; Knockback-Distanz; Regen-Rate; Tank-Reduktion; Ice-Reduktion für Nicht-Fire; Penetration-Formel.
+- Bedeutung der Modul-Rohfelder `cooldown` (meist 10) und `knockback_points` (meist [0.5]).
+- Verrechnung Trait/Potential mit Buffs (additiv oder multiplikativ); Rundung beim Verkauf.

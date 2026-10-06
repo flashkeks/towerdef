@@ -10,7 +10,7 @@ Letzte Aktualisierung: 2026-10-05 (Sitzung 2)
 |---|---|---|---|
 | P0 | Bestandsaufnahme, Quellenlandkarte, Wiki-Dump | **erledigt** | siehe unten |
 | P1 | `game-overview.md` + Zeitleiste | **erledigt** | 45 Update-Einträge; RR-Place-ID korrigiert (S78/S79); Update vom 2025-09-03 ohne Wiki-Log |
-| P2 | `core-mechanics.md`, `combat-system.md` | offen | Effekte: `S67` (22 Effektdefinitionen), `S72:Effects`, `S72:Enemy Mechanics` |
+| P2 | `core-mechanics.md`, `combat-system.md` | **erledigt** | 22 Effekte, Affinitäten (Schwäche additiv, Resistenz 100/(100+R)), C5 gelöst. Offen: Start-/Kill-/Wave-Yen, Base-HP (in keiner Wiki-Seite); Reddit-JSON über Connector gesperrt (403) |
 | P3 | `units.md` + `data/units.json` | **erledigt** | 561 Einträge, `units-index.md`, Legacy-Diff. Offen: Fähigkeitstexte (Passives) aus Unit-Seiten in `units.json` übernehmen (optional) |
 | P4 | Upgrades, Traits, Shiny, Powerups | offen | `S72:Traits`, `S72:Powerups`, `S69` |
 | P5 | `evolution.md` | offen | Rezepte vollständig in `S65` (`evolve`) |

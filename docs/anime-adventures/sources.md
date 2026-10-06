@@ -114,6 +114,7 @@ Die Fandom-Seiten S01–S41 liegen seit Sitzung 2 im Volltext vor (Dump S72). We
 | S77 | Wiki-API Versionsgeschichte `Module:UnitData/Data` | 2022-08-26 bis 2026-03-18 | LEGACY + RR | Zeitachse von Buffs und Datenständen | B |
 | S78 | https://apis.roblox.com/universes/v1/places/117965110267191/universe (Roblox Universes API: Place → Universe (Abruf 2026-10-06)) | Abruf 2026-10-06 | RR | Nachweis: Place 117965110267191 gehört zu Universe 6930929888 | A |
 | S79 | https://games.roblox.com/v1/games?universeIds=6930929888 (Roblox Games API, Teaser-Experience „[❓RETURN???] Anime Adventures“ (Abruf 2026-10-06)) | Abruf 2026-10-06 | RR (Teaser) | Creator „Gomu Development“ (34564273), erstellt 2024-12-17, 319.166 Besuche, 1.799 Favoriten, Beschreibung/Prämisse | A |
+| S80 | (keine neue Quelle) (Reddit-JSON-Suche `r/AnimeAdventures/search.json?q=targeting mode` lieferte HTTP 403 („blocked by network security“); eine SearXNG-Suche nach Targeting-Modi ergab nur Tier-Listen ohne Mechanik-Inhalt) | Abruf 2026-10-06 | – | Targeting-Modi, Start-Yen | – |
 
 ## Explizit verworfene Daten
 
