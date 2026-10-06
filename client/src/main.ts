@@ -3,6 +3,7 @@
  * Verdrahtet Session, Renderer und DOM-UI und treibt alles per Pixi-Ticker.
  */
 import './styles.css';
+import { GameBus } from './game/events';
 import { Renderer } from './game/renderer';
 import { Session } from './game/session';
 import { loadBrowserData, STAGE_ID, type DifficultyId } from './sim';
@@ -16,13 +17,16 @@ export interface GameHandle {
 declare global {
   interface Window {
     /** Test-/Debug-Zugriff (Playwright-Smoke): nur lesender Blick auf den Zustand. */
-    __duskwardens?: { session: () => Session | null; renderer: () => Renderer };
+    __duskwardens?: { session: () => Session | null; renderer: () => Renderer; bus: GameBus };
   }
 }
 
 export async function startGame(root: HTMLElement): Promise<GameHandle> {
-  const renderer = new Renderer();
+  /** Ein Bus fuer die ganze Seite: Replay, Effekte, Ton usw. abonnieren hier (game/events.ts). */
+  const bus = new GameBus();
+  const renderer = new Renderer(bus);
   let session: Session | null = null;
+  let endEmitted = false;
   let blocked = false;
 
   const ui = new Ui(root, {
@@ -43,15 +47,17 @@ export async function startGame(root: HTMLElement): Promise<GameHandle> {
   };
 
   function begin(d: DifficultyId): void {
-    session = new Session(d);
+    session = new Session(d, undefined, bus);
+    endEmitted = false;
     session.blocked = blocked;
     const data = loadBrowserData();
     renderer.setup(data.stages[STAGE_ID], session.sim.catalog());
     ui.bind(session);
     fit();
+    bus.emitRunStart(session);
   }
 
-  window.__duskwardens = { session: () => session, renderer: () => renderer };
+  window.__duskwardens = { session: () => session, renderer: () => renderer, bus };
   window.addEventListener('resize', fit);
   ui.showStart();
   fit();
@@ -60,7 +66,11 @@ export async function startGame(root: HTMLElement): Promise<GameHandle> {
     if (!session) return;
     const dt = ticker.deltaMS;
     session.advance(dt);
-    renderer.draw(session, performance.now(), dt, session.takeEvents());
+    renderer.draw(session, performance.now(), dt);
+    if (session.over && !endEmitted) {
+      endEmitted = true;
+      bus.emitRunEnd(session);
+    }
     ui.update(session, renderer.tile);
   });
 

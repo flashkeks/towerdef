@@ -25,16 +25,52 @@ Stufe waehlen (Normal/Hard/Nightmare), Unit unten waehlen (Tasten 1-8), freien S
 
 ## Aufbau
 
-| Pfad | Inhalt |
-|---|---|
-| `src/boot.ts`, `src/gate.ts` | Einstieg und Desktop-Sperre (architecture.md §4); das Spiel-Bundle (`main.ts`) wird nur bei Desktop per `import()` geladen |
-| `src/i18n/en.ts`, `t.ts` | alle sichtbaren Texte; Titel nur als `game.title` (auch `<title>`) |
-| `src/sim/` | einziges Tor zur Sim, baut die Daten im Browser aus `sim/data/*.json` (gleiche zod-Pruefung) |
-| `src/game/session.ts` | fester Tick (20/s, Akkumulator), Befehle, Auswahl |
-| `src/game/renderer.ts` | Pixi-Zeichnung (Formen), Interpolation zwischen Ticks |
-| `src/view/` | reine Abbildung Zustand -> Anzeige und Boss-Tracker (getestet) |
-| `src/ui/` | DOM-Oberflaeche (HUD, Leiste, Panels, Overlays) |
-| `scripts/smoke.mjs` | Playwright-Smoke |
+Seit P0b (Runde 5) sind `ui/app.ts` und `game/renderer.ts` nur noch Verdrahtung. **Jedes Paket der Runde 5 besitzt eigene Dateien**; wer eine fremde Datei braucht, aendert dort nur das Minimum (Import, eine Zeile) und meldet es. Gemeinsame Basis (`session.ts`, `events.ts`, `context.ts`, `dom.ts`) nur additiv aendern.
+
+| Pfad | Inhalt | Besitzer |
+|---|---|---|
+| `src/boot.ts`, `src/gate.ts` | Einstieg und Desktop-Sperre (architecture.md §4); das Spiel-Bundle (`main.ts`) wird nur bei Desktop per `import()` geladen | - |
+| `src/main.ts` | Verdrahtung: ein `GameBus`, Renderer, Ui, Pixi-Ticker; feuert `onRunStart`/`onRunEnd` | alle, nur Einzeiler |
+| `src/i18n/en.ts`, `t.ts` | alle sichtbaren Texte; Titel nur als `game.title` | jeder fuer seine Texte |
+| `src/sim/` | einziges Tor zur Sim (baut die Daten im Browser aus `sim/data/*.json`) | - |
+| `src/view/` | reine Abbildung Zustand -> Anzeige, Boss-Tracker (getestet) | - |
+| `src/game/session.ts` | fester Tick (20/s), Befehle, Auswahl; meldet alles an den Bus | gemeinsam, nur additiv |
+| `src/game/events.ts` | `GameBus`: Verteilung von Sim-Ereignissen, Befehlen, Steuerung, Rundenstart/-ende (siehe unten) | gemeinsam, nur additiv |
+| `src/game/context.ts` | `RenderContext` (Tile-Groesse, Stage, Unit-Defs, `px()`), Weltmasse | P4 |
+| `src/game/renderer.ts` | nur Pixi-Setup, Ebenen-Reihenfolge, `fit`, `draw()` | - (nicht anfassen) |
+| `src/game/map-layer.ts`, `palette.ts` | Karte/Tiles zeichnen, Farben | P4 |
+| `src/game/sprites.ts` | Formen-Fabrik fuer Units/Gegner (spaeter Atlas) | P4 |
+| `src/game/entities-layer.ts` | Units/Gegner anlegen, positionieren, Lebensbalken | P4 |
+| `src/game/overlay-layer.ts` | Reichweitenkreis (unter Figuren), Boss-Telegraph/-Fenster/-Schild (darueber); Platzier-Geist und -Reichweite | P1 (Platzieren), P5 (Boss-Zeichnung) |
+| `src/game/fx.ts` | Effekte aus Bus-Ereignissen (heute Muenz-Popup, Leak-Blitz); Treffer, Tod, Boss, Zahlen, Ton | P5 |
+| `src/ui/app.ts` | Verdrahtung der DOM-Bausteine, `bind`/`update`/`showStart` | - (nur Einzeiler, ggf. P6 fuer Szenen) |
+| `src/ui/hud.ts` | Leben, Muenzen, Welle, Start/Pause, Tempo, Stufe | P1 |
+| `src/ui/shop.ts` | Unit-Leiste unten | P1 (Team-Auswahl-Filter: P6) |
+| `src/ui/slots.ts` | Slot-Buttons ueber dem Canvas, Platzier-Hervorhebung | P1 |
+| `src/ui/unit-panel.ts` | Auswahl-Panel einer gesetzten Unit | P1 |
+| `src/ui/toast.ts` | Fehler-Toast | P1 |
+| `src/ui/input.ts` | Tastatur (Maus-Platzieren folgt hier hinein) | P1 |
+| `src/ui/panels.ts` | Wellenvorschau und Risikokarten (Seitenleiste) | P1 (Layout), P3-Folgen am Rand |
+| `src/ui/boss-banner.ts` | Boss-Banner | P5 |
+| `src/ui/screens.ts` | Start, Ende, Pause-Hinweis (spaeter Menue, Team-Wahl, Einstellungen, Ergebnis) | P6 |
+| `src/ui/dom.ts` | kleine DOM-Helfer | gemeinsam |
+| `src/styles.css` | Stil; Abschnitte je Baustein ergaenzen, nichts umsortieren | alle, nur eigene Selektoren |
+| Replay-Aufzeichnung | neue Dateien, z. B. `src/game/recorder.ts` und `src/ui/download.ts`; haengt nur am `GameBus` | P2 |
+| `scripts/smoke.mjs` | Playwright-Smoke | P1 |
+
+### Haken: `GameBus` (`game/events.ts`)
+
+Ein Bus fuer die ganze Seite, in `main.ts` erzeugt, an `Session` und `Renderer` uebergeben und als `window.__duskwardens.bus` sichtbar. Abonnenten lesen nur, sie aendern den Sim-Zustand nie. Jede `on…` gibt die Abmeldefunktion zurueck.
+
+| Abo | Wann | Inhalt |
+|---|---|---|
+| `bus.onEvents(fn(events, tick))` | je Sim-Tick mit Ereignissen (nie leer), direkt nach `drainEvents` | die Sim-Ereignisse (`kill`, `leak`, ...) — **P5** (`fx.ts`, Ton), P2 (Statistik je Welle) |
+| `bus.onCommand(fn(rec))` | jeder Befehl an die Sim, auch abgelehnte | `{ tick, player, cmd, result }`, `tick` = Tick vor `apply` — **P2** (Befehlsliste) |
+| `bus.onControl(fn(rec))` | Tempo- und Pause-Wechsel | `{ type: 'speed' \| 'pause', tick, ... }` — P2 |
+| `bus.onRunStart(fn(session))` | neue Runde gebaut, vor dem ersten Tick | die `Session` (hat `seed`, `difficulty`) |
+| `bus.onRunEnd(fn(session))` | Runde vorbei, genau einmal | die `Session` (`sim.state.result`) |
+
+Neue Befehle laufen immer ueber `Session.run`, damit sie am Bus ankommen; wer neue Bedienung baut, ruft Session-Methoden und sendet nie direkt an `sim.apply`.
 
 ## Grenzen
 

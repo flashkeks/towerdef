@@ -12,7 +12,7 @@ Letzte Aktualisierung: 2026-10-06 (Runde 5 gestartet, Max' Claude-Account)
 | Paket | Inhalt | Status | Agent (Modell) | Notiz |
 |---|---|---|---|---|
 | P0 | Status, Aufräumen | **erledigt** | Hauptsitzung | `41515c4` (Slot-Fix) ist drin. Stand vor Runde 5: sim 208 Tests + tsc grün, client 37 Tests + tsc + build grün, `npm run smoke` grün (noch mit Selektor-Klicks, Umbau in P1). Bundle: `main` 465 kB (140 kB gzip) |
-| P0b | Client aufteilen (`app.ts` 396 Z., `renderer.ts` 433 Z.) | offen | 1 × Sonnet, allein | zuerst |
+| P0b | Client aufteilen (`app.ts` 396 Z., `renderer.ts` 433 Z.) | erledigt (nicht committet), `app.ts` 77 Z., `renderer.ts` 89 Z., Besitzer-Tabelle in `client/README.md` | 1 × Sonnet, allein | zuerst |
 | P1 | Bedienbarkeit, Smoke mit echten Mausklicks | offen | 1 × Sonnet | nach P0b |
 | P2 | Playtest-Daten, Replay | offen | 1 × Sonnet | nach P0b |
 | P3 | Boss-Design, Hard-Kennlinie | offen | 1 × Sonnet | nur `sim/` |

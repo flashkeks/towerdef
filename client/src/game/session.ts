@@ -2,10 +2,11 @@
  * Eine Spielrunde im Browser: haelt die Sim, taktet sie mit festem Tick (20/s, Akkumulator) und verwaltet Auswahl/Bedienung.
  * Spielregeln gibt es hier nicht - jede Aktion ist ein `sim.apply(...)`, jede Zahl kommt aus `sim.state`.
  */
-import { createSim, loadBrowserData, STAGE_ID, type CommandResult, type DifficultyId, type Sim, type SimEvent, type TargetMode, type WavePreview } from '../sim';
+import { createSim, loadBrowserData, STAGE_ID, type CommandResult, type DifficultyId, type Sim, type TargetMode, type WavePreview } from '../sim';
 import { keyOr } from '../i18n/t';
 import { TICK_MS } from '../view/model';
 import { BossTracker } from '../view/telegraph';
+import { GameBus } from './events';
 
 export type Speed = 1 | 2 | 3;
 export const SPEEDS: readonly Speed[] = [1, 2, 3];
@@ -23,6 +24,9 @@ export interface Toast {
 export class Session {
   readonly sim: Sim;
   readonly difficulty: DifficultyId;
+  readonly seed: number;
+  /** Ereignis- und Befehls-Verteilung (siehe events.ts); von main.ts geteilt, im Test eigener Bus. */
+  readonly bus: GameBus;
   readonly totalWaves: number;
   readonly waveTimerTicks: number;
   readonly tracker = new BossTracker();
@@ -37,12 +41,12 @@ export class Session {
   selectedUnit: number | null = null;
   placing: string | null = null;
   toast: Toast | null = null;
-  /** Events seit dem letzten `takeEvents()` (Renderer zeigt daraus Muenz-Pops und Leak-Blitz). */
-  private pending: SimEvent[] = [];
   private acc = 0;
   private previewCache: { key: string; value: WavePreview | null } | null = null;
 
-  constructor(difficulty: DifficultyId, seed: number = Math.floor(Math.random() * 0x7fffffff)) {
+  constructor(difficulty: DifficultyId, seed: number = Math.floor(Math.random() * 0x7fffffff), bus: GameBus = new GameBus()) {
+    this.seed = seed;
+    this.bus = bus;
     const data = loadBrowserData();
     this.difficulty = difficulty;
     this.sim = createSim({ stage: STAGE_ID, difficulty, players: 1, seed, data });
@@ -70,7 +74,7 @@ export class Session {
       const events = this.sim.drainEvents();
       if (events.length > 0) {
         this.tracker.consume(events);
-        this.pending.push(...events);
+        this.bus.emitEvents(events, this.sim.state.tick);
       }
       this.acc -= TICK_MS;
       ticks++;
@@ -86,16 +90,12 @@ export class Session {
     for (const e of this.sim.state.enemies) this.prevPos.set(e.id, { x: e.x, y: e.y });
   }
 
-  takeEvents(): SimEvent[] {
-    const e = this.pending;
-    this.pending = [];
-    return e;
-  }
-
   // ---- Bedienung -----------------------------------------------------------------------------------------------
 
   private run(cmd: Parameters<Sim['apply']>[1]): CommandResult {
+    const tick = this.sim.state.tick;
     const r = this.sim.apply(PLAYER, cmd);
+    this.bus.emitCommand({ tick, player: PLAYER, cmd, result: r });
     if (!r.ok) this.toast = { key: keyOr(`error.${r.reason}`, 'error.generic'), until: performance.now() + 2500 };
     return r;
   }
@@ -151,10 +151,13 @@ export class Session {
 
   setSpeed(s: Speed): void {
     this.speed = s;
+    this.bus.emitControl({ type: 'speed', tick: this.sim.state.tick, speed: s });
   }
 
   togglePause(): void {
-    if (!this.over) this.paused = !this.paused;
+    if (this.over) return;
+    this.paused = !this.paused;
+    this.bus.emitControl({ type: 'pause', tick: this.sim.state.tick, paused: this.paused });
   }
 
   cancel(): void {
