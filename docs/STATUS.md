@@ -11,10 +11,10 @@ Letzte Aktualisierung: 2026-10-06 (Runde 2, Sitzung 1)
 |---|---|---|---|---|
 | P0 | Aufräumen, Status, Spiele verifizieren | **erledigt** | Hauptsitzung | siehe „Spiele“ |
 | P1 | `anime-adventures/design-brief.md` | **erledigt** | 1 × Sonnet | 390 Zeilen, Zahlenbereiche je Rarity aus units.json (Stichprobe geprüft) |
-| P2 | Bloons TD6 | läuft | 1 × Sonnet | |
+| P2 | Bloons TD6 | **erledigt** | 1 × Sonnet | Runden 1–140 als JSON (RBE, Cash, Bonus; R63 stichprobengeprüft), Startgeld/Leben/Kostenfaktoren, Sell 70 %, Steuerstufen, Freeplay-HP-Rampe, Targeting, 26 Tower | |
 | P3 | Roblox-Anime-TDs (ASTD, AV, ALS, UTDZ, AE) | läuft: ASTD, ALS, AV **erledigt**; UTDZ, AE laufen | je Spiel 1 × Sonnet | ASTD: Farm-Kurve, Gacha, Startgeld nur Sondermodi. ALS: Upgrade-Kurven, Verkauf 50 %, Traits; In-Match-Geld und Gegner-HP UNKNOWN. AV: Datenmodule (UnitData 224 Units, EnemyData mit Kill-Yen und HP-Multiplikatoren, TraitValues) | |
 | P4 | Vergleich und Empfehlung | offen | – | |
-| P5 | Vorarbeiten (Technik, Assets, Recht, Balancing) | läuft (Technik + Assets) | 1 × Sonnet | |
+| P5 | Vorarbeiten (Technik, Assets, Recht, Balancing) | läuft | 2 × Sonnet (Technik+Assets, Recht+Balancing) | |
 | P6 | Abschluss | offen | – | |
 
 ## Spiele (P0, verifiziert)
@@ -39,6 +39,8 @@ Namensvetter (geprüft, **nicht** gemeint):
 - „Anime Last Stand“ hat bei 1,08 Mrd. Besuchen nur 17 gleichzeitige Spieler: Das Spiel ist praktisch tot oder abgelöst. Ein Nachfolger wurde nicht gefunden (eine Suche). Es wird trotzdem ausgewertet, mit Fokus auf `design-lessons.md`.
 
 ## Offene Spuren
+
+- BTD6: Preis-Konflikt Preismodul vs. Infobox (Heli 1500/1600, Mortar 600/750, Mermonkey 300/275); Spawn-Timings, absolute Bloon-Speeds, Co-Op-Geldregeln UNKNOWN.
 
 - AV: Startgeld und Wave-Yen, Basis-HP; Wiki-Stat-Chancen summieren sich auf 106,5 %. Kill-Yen aus EnemyData nur O/LOW.
 
