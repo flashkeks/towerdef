@@ -21,6 +21,15 @@ Letzte Aktualisierung: 2026-10-06 (Runde 5 gestartet, Max' Claude-Account)
 | P6 | M1-Lücken (Menü, Team 6 aus 8, Einstellungen, Ergebnis) | offen | 1 × Sonnet | nach P0b |
 | P7 | Abschluss | offen | Hauptsitzung | |
 
+**Offene Spur Assets (06.10.2026):** Aus der Session sind kenney.nl, opengameart.org und itch.io gesperrt (Proxy 403). Über CT 113 (Homelab) sind die Kenney-ZIPs erreichbar, Lizenz CC0 auf der Seite geprüft. Die Homelab-Seite kann sie unverändert unter `client/assets/vendor/kenney/` ablegen (ZIP entpacken, `License.txt` mit), dann tauscht eine spätere Sitzung Platzhalter gegen Pack-Grafik bzw. -Ton:
+`https://kenney.nl/media/pages/assets/impact-sounds/87b4ddecda-1677589768/kenney_impact-sounds.zip` (0,8 MB),
+`…/interface-sounds/fa43c1dd4d-1677589452/kenney_interface-sounds.zip` (0,8 MB),
+`…/rpg-audio/8e99002d76-1677590336/kenney_rpg-audio.zip` (1,0 MB),
+`…/music-jingles/f37e530b9e-1677590399/kenney_music-jingles.zip` (1,2 MB),
+`…/tiny-town/a415fbeb49-1735736916/kenney_tiny-town.zip` (0,2 MB),
+`…/tiny-dungeon/f8422efb44-1674742415/kenney_tiny-dungeon.zip` (0,1 MB) (Präfix jeweils `https://kenney.nl/media/pages/assets`).
+Bis dahin: Grafik und Ton eigen und code-generiert.
+
 Plan: P0b allein. Danach Welle A parallel in getrennten Worktrees: P1, P2, P3, P4. Danach Welle B: P5, P6. Die Hauptsitzung merged.
 
 **Antworten auf die offenen Fragen von Runde 4** (Homelab-Sitzung/Max, 06.10.2026):
