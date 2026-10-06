@@ -265,6 +265,22 @@ Siehe [sources.md](sources.md#explizit-verworfene-daten). Die Infinite-HP-Formel
 | P8 | Mangekyō Eye: Relic-Shard-Menge UNKNOWN | 10 Relic Shards + 10.000 Gold | S68 |
 | P8 | Rate-Summe 100,15 % (C1), vermutlich Rundung | Rare = 81,75 % (DERIVED aus Kapseltabellen: 0,81545625 = 0,9975 × 0,8175) | S68 |
 | P8 | items.json `evolutions` (Sitzung 1, 13 Einträge, teils falsch) | Block entfernt; maßgeblich ist `evolutionRecipes` (P5, 219 Rezepte) | Koordinator-Anweisung, S65 |
+| P10 | mathematics.md: `DPS = Damage × Hits / SPA`; Hits-Faktor RECONSTRUCTED · HIGH | `DPS = Damage / SPA`; Hits teilen den Damage (`hitDamage = Damage / hits`), entfernen aber je eine Schild-Instanz. Beispiel Black Assassin U5: 750 DPS pro Ziel, nicht 1.500 | S76, S72:Enemy Mechanics |
+| P10 | Final Damage: jeder Buff als eigener Faktor `× (1 + buff)` | Buffs **additiv** in einer Summe: `1 + Σ damage_add` (+100 % und +10 % = ×2,1). Reihenfolge der übrigen Faktoren RECONSTRUCTED · LOW | S72:Experiment buff, S72:Griffin (Reincarnation), S72:Blossom |
+| P10 | Typ-Matchup nur als Faktor `type` ohne Formel | Schwäche additiv `1 + Σ weakness%`, Resistenz `100 / (100 + R)`; True Damage = 1 | S72:Damage Affinities / Elements |
+| P10 | Level-Faktor `L(100)/L(1) = 9.204` | exakt 9,20406501834430488 (Wiki-Template-Konstante); L110 ≈ ×1,19 von L100 (MEDIUM); keine der beiden Kurven (linear/exponentiell) trifft beide Anker | S72:Experiment buff, S72:Frequently Asked Questions, S72:Powerups |
+| P10 | Pity: „Center-Mythic p = 0,0025, N = 400 → E = 253,0 Summons“; Reset bei jedem Mythic „nur per Simulation lösbar“ | RR ab 20.4.1: Center-Pity mit Reset bei jedem Mythic und Refresh, geschlossene Erneuerungsformel `E = L/s`: L = 173,07, s = 0,5677, **E = 304,9** Summons (15.244 Gems); P(Center in 400) = 76,76 %. E = 253,0 gilt für LEGACY-Standard „irgendein Mythic“ (p = 0,0025). LEGACY Special: keine Mythic-Pity | S72:Summon, S72:Summon@33626, summoning.md (P8); DERIVED |
+| P10 | `P(spez. unfeatured Mythic) = 0,005 × 0,00526` | RR-Special 0,625 % des Mythic-Anteils → 0,003125 %; Legacy-Banner 0,714 % → 0,00357 %; 0,526 % ist alter Wiki-Text | S72:Summon |
+| P10 | Infinite-Gems `W7–15 je 3, W16–104 je 5 → 490`, Konflikt zu 497 | W6 18, W7–14 je 3, W15–105 je 5 = **497** (einzige ganzzahlige Lösung) | S72:Infinite, S80, S82, waves.md (P6) |
+| P10 | Trait-Wahrscheinlichkeiten ohne Summenprüfung (Sitzung-1-Tabelle 99,93 %) | Summe mit **Unique (0,1 %)** = 100,03 %; Normierung `p/1,0003` (DESIGN) | S72:Traits |
+| P10 | Sell `sellRate ∈ {0.25, 0.30} je Unit` | global 25 % (C.E.O.-Seite 30 % = OBSERVED · LOW, vermutlich Seitenfehler); Rundung UNKNOWN | S72: Unit-Seiten |
+| P10 | Range-Challenges „Short Range 1/3? bzw. 2/3?, Mini Range 3/4? bzw. 1/4?“ | Short Range ×2/3 (LEGACY-Trello −33,33 %); Mini Range wahrscheinlich ×0,75 (RECONSTRUCTED · MEDIUM), AoE unverändert | S72:Challenges, S73 |
+| P10 | Enemy-HP `HP(w,n) = f(w) × g(n)` mit Party-Scaling `g(n)` | Party-Scaling unbelegt, gestrichen; nur Modifikatoren belegt (Tank ×1,25 HP, Steel-Plated ×3, Dungeon-Curse +80 %) | S72:Infinite, S80, S81, S73, S72:Challenges, S72:Dungeon |
+| P10 | Worthiness `w = min(kills/10000, 1)`; „w = 1 ⇒ alle Stats ≥ B+“ MEDIUM | zählt **Takedowns**, nicht Kills; RR-Maximum 400 %, ≤ 100 % je Reroll; B+-Regel nur Forum → LOW | S72:Powerups, S72:Update Log |
+| P10 | Trade-Tax „Seite mit dem besseren Deal“ (Observed/Reconstructed) | wer zahlt und Summierung UNKNOWN; Gift im Trade → eigene Tax 0 | S72:Trading, S72:Update Log (U12), social.md (P9) |
+| P10 | Time Machine: VIP/Premium 144 Gems/h (ohne Version) | VIP **und** Premium 288/h; nur LEGACY, seit Update 19/19.5 deaktiviert | S72:Time Machine, economy.md (P8) |
+| P10 | simulation.md: Fiery Commander (Fire) profitiert **nicht** vom Physical-Buff des Commanders | profitiert; Primärtyp Physical, Fire ist Sekundärtyp | S65 (`damageType physical`, `secondaryDamageTypes [fire]`), S72:Commander |
+| P10 | simulation.md: Units auf Level 1, Ability nur hypothetisch | Level 100 mit exakter Konstante; Commander-Buff real durchgerechnet (30 s / 60 s, Variante Modul-Cooldown 40 s); Schild-Gegner ergänzt | S72:Commander, S65, S72:Enemy Mechanics |
 
 ## H. Paketbefunde (Sitzung 2)
 
@@ -502,3 +518,28 @@ Konflikte, Lücken und erledigte Einträge aus den Paketen der Sitzung 2. Die ä
 - Star-Remnant-Dropchance je Summon; Remnants aus Shiny-Entfernung.
 - Spieler-Level-Cap und XP-Kurve.
 - Icy Star (RR) Kapselinhalt im Modul unvollständig.
+
+### P10
+
+#### Neu / Konflikte
+
+- **Commander-Ability-Cooldown (neu):** Wiki 30 s Dauer / **60 s** Cooldown [S72:Commander] vs. Unit-Modul `active_attack_stats.attack_cooldown = 40` [S65, data/units.json `erwin.extra`]. In der Beispielrunde entscheidet der Wert, ob der Buff auf den Boss fällt (Boss 3 s früher tot bei 40 s). Ob 40 der Cooldown ist oder Dauer+Pause anders gezählt wird: UNKNOWN.
+- **Commander-Beschwörungen:** bis zu 3 „Survey Corps Member“ je Commander (Modul: Damage 15, SPA 10, HP 100, Speed 3; Commander-Stufen setzen `health` 120 … 1.100). Kontakt-Schaden und HP-Verbrauch beim Zusammenstoß mit Gegnern: UNKNOWN.
+- **Mehrfach-Crit (> 100 % Crit-Chance, seit Update 11):** Existenz belegt, Rechenregel (`m²` oder `1 + 2(m−1)`) UNKNOWN [S72:Update Log].
+- **Crit × DoT:** ob ein Crit den DoT des Treffers erhöht: UNKNOWN.
+- **DoT derselben Unit:** ob ein zweiter Burn/Bleed derselben Unit stapelt oder erneuert: UNKNOWN (zwischen Units stapelt er).
+- **Faktorreihenfolge Final Damage:** nur `LevelMult × BuffMult` (Wiki-Template) und additive Buffs belegt; Rest RECONSTRUCTED · LOW.
+
+#### Weiterhin fehlend (P10-relevant)
+
+- Level-Kurve zwischen L1 und L100 (nur Anker L100 = 9,20406501834430488 und L110 ≈ +19 %).
+- Start-Yen, Wave-Yen, Kill-Yen (einzige Zahl: Contracts 5.000 Start, 2.500–5.000 pro Runde [S72:Contracts]).
+- Enemy-HP-Formel, Wave-Zusammensetzung, Spawn-Abstände, Base HP, Leak-Schaden, Wave-Timer-Dauer.
+- Sell-Rundung; Verteilung des Potential-Rolls in Abhängigkeit von Worthiness; Trait-Tier-Verteilung I/II/III.
+
+#### Erledigt
+
+- **C6 bestätigt (P6) und in mathematics.md übernommen:** Infinite-Gems 497 = 18 + 8·3 + 91·5 (W6 / W7–14 / W15–105).
+- **C7 bestätigt (P4) und übernommen:** Trait-Summe 100,03 % mit Unique; die 99,93 % aus Sitzung 1 fehlten Unique.
+- **C3 (P8) in mathematics.md übernommen:** RR-Center E = 304,9 Summons, LEGACY-Standard „irgendein Mythic“ E = 253,0; STATUS-Spur „Rechnung in mathematics.md korrigieren (P8/P10)“ erledigt.
+- **Simulation-Konflikt Fiery Commander/Physical-Buff:** gelöst, Fiery Commander ist primär Physical (S65).

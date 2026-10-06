@@ -2,7 +2,7 @@
 
 Arbeitsauftrag: [`/run.md`](../../run.md). **Eine neue Sitzung liest zuerst diese Datei** und macht beim „Nächsten Schritt“ weiter.
 
-Letzte Aktualisierung: 2026-10-05 (Sitzung 2)
+Letzte Aktualisierung: 2026-10-06 (Sitzung 2, abgeschlossen)
 
 ## Pakete
 
@@ -18,9 +18,9 @@ Letzte Aktualisierung: 2026-10-05 (Sitzung 2)
 | P7 | Modi, Portals, Raids | **erledigt** | 22 Welten, 8 Legend Stages, 14 Secret Portals, 12 Raids, Challenge-Werte (Legacy). Offen: Portal-Tier-Multiplikatoren |
 | P8 | Summoning, Economy, Items, Quests | **erledigt** | Pity je Version, E(Center) = 304,9 Pulls, C1/C2/C4 gelöst, Kapseln, Crafting, Milestones, BP. Offen: In-Match-Yen, 10er-Summon, Gold-Shop |
 | P9 | Multiplayer, Trading, UI, Audio/VFX | **erledigt** | Matchmaking-Zeitachse, Host-Regeln, globale Caps/Auren, Trading-Zeitachse. Offen: Max. Spieler je Modus, Trade-Ablauf, Rejoin |
-| P10 | `mathematics.md`, Beispielrunde | offen | |
+| P10 | `mathematics.md`, Beispielrunde | **erledigt** | alle Formeln neu etikettiert, Pity/Hits/Buffs/Resistenz korrigiert; Simulation mit echten Unit-Werten (L100), DESIGN-Ökonomie |
 | P11 | `technical-reconstruction.md` | **erledigt** | Datenmodell an S65/S67 angepasst (AttackDef, UnitLevel, Pity-Regeln versioniert), Komponenten aktualisiert, Defaults-Tabelle mit belegten AA-Werten |
-| P12 | `unknowns.md` (inkl. Korrekturen), `README.md`, Abschlussprüfung | offen | |
+| P12 | `unknowns.md` (inkl. Korrekturen), `README.md`, Abschlussprüfung | **erledigt** | Status aller C1–C13/U1–U28, ~180 Korrekturen in G, Linkprüfung 0 Fehler, alle JSON gültig |
 
 ## Ausgewertete Quellen (nicht erneut holen)
 
@@ -65,6 +65,28 @@ Letzte Aktualisierung: 2026-10-05 (Sitzung 2)
 - Wiki-Versionsgeschichte von `Summon`, `Traits` und `Infinite` für Legacy-Werte auswerten (P4, P6, P8).
 - YouTube-Beschreibungen zu Updates 19–20 (RR) für die Zeitleiste (P1).
 
+## Abschlussprüfung Sitzung 2
+
+| Bereich | Erfasst? |
+|---|---|
+| Units | ja, 561 Einträge vollständig (S65/S66) |
+| Enemies | Typen, Modifikatoren und 144 Bosse ja; **HP/Speed/Yen je Gegner nein** (keine Quelle) |
+| Maps | 22 Welten + Legend/Raid/Portal-Maps, Laufzeiten; **Geometrie nein** |
+| Waves | Wave-Anzahlen, Boss-Waves, Infinite-Gems; **Zusammensetzung nein** |
+| Upgrade-Kosten | ja (alle Units) |
+| Gacha-Raten | ja, nach Version getrennt, Pity-Regeln je Version |
+| Traits | ja, drei Pool-Stände |
+| Evolutionen | ja, 219 Rezepte |
+| Economy | Account-Ökonomie ja; **In-Match-Yen (Start/Kill/Wave) nein** |
+| Portals/Raids | ja; Tier-Multiplikatoren offen |
+| Formeln | ja, mit Etiketten |
+| Unbekannte markiert / Quellen eingetragen / Widersprüche sichtbar / Versionen getrennt | ja (unknowns.md A–H, sources.md S01–S84) |
+
 ## Nächster Schritt
 
-**P1:** `game-overview.md` mit Zeitleiste aus `S72:Update Log` überarbeiten, danach P2 (Effekte aus S67 + `S72:Effects`).
+Die verbleibenden Lücken (In-Match-Yen, Gegner-HP, Wave-Zusammensetzung, Targeting-Modi, Level-Kurve) stehen in keiner Textquelle, die der Connector erreicht. Mögliche nächste Spuren:
+
+1. **YouTube:** Beschreibungen und angepinnte Kommentare von Gameplay-Videos, z. B. per Suche „anime adventures starting yen“ (höchstens OBSERVED).
+2. **Wayback Machine:** Snapshots von Community-Guides 2022–2023 (`web.archive.org/cdx/search/cdx?url=…`).
+3. **Discord:** Patch Notes im offiziellen Server, nur mit Login lesbar und daher nicht über den Connector.
+4. Sonst: die DESIGN-Defaults aus [technical-reconstruction.md](technical-reconstruction.md#design-defaults-bis-aa-daten-vorliegen) verwenden und das Balancing im eigenen Spiel per Simulation kalibrieren.
