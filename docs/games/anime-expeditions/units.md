@@ -27,7 +27,7 @@ Gesamtzahl Units zum Stand Update 1: 43 laut Tier-List-Seite (Update 2 hat weite
 | Mythic | 8 | 550-1 250 | 7 | 14 550-30 350 | 293-2 358 | 21-28 | 5-9,2 | 2-5 |
 | Mythic evolviert | 8 | 550-1 250 | 9-10 | 26 550-57 150 | 518-5 093 | 25-32 | 4,5-10,6 | 2-5 |
 | Exclusive | 3+2 evolviert | 900-2 200 | 7-12 | 17 500-53 000 | 592-3 804 | 15-27 | 4,8-7,8 | 1-3 |
-| Secret | 1 + 1 evolviert (+ Lightning God 30 950 / 44 450) | 950-2 000 | 9-11 | 29 700-92 800 | 1 108-4 112 | 22-26 | 4-8,4 | 2-3 |
+| Secret | 12 Einträge im Modul (inkl. Evolutionen: Lightning God, Sovereign, Prodigy, Crow, Shadow, 8th Sword) | 950-2 000 | 7-12 | 26 900-92 800 | 1 108-4 112 | 22-29 | 4-8,4 | 2-3 |
 
 Alle Spannen [D/HIGH AE-S7] (Min/Max aus Modul-Einträgen). Hinweis: Stat-Potenzial (Buchstabennoten) und Trait verschieben diese Basiswerte noch einmal um zweistellige Prozent (siehe [meta.md](meta.md)).
 
@@ -78,7 +78,7 @@ Siehe [economy.md](economy.md): Stone Alchemist (Epic, Limit 3) und Ramen Guy (L
 
 | Unit | Rarity | Platz. | Max-Summe | Effekt | Kennz. |
 |---|---|---|---|---|---|
-| Toy Maker | Exclusive | 2 200 | 51 150 | Greift nicht an, spawnt "Toy" auf allen Pfaden in Reichweite; Toy-HP = 100 % des aktuellen Damage des Maker (3 804 am Ende), geteilt durch Anzahl Pfade; Limit 1 | [O/HIGH AE-S7] |
+| Toy Maker | Exclusive | 2 200 | 48 350 | Greift nicht an, spawnt "Toy" auf allen Pfaden in Reichweite; Toy-HP = 100 % des aktuellen Damage des Maker (3 804 am Ende), geteilt durch Anzahl Pfade; Limit 1 | [O/HIGH AE-S7] |
 | Lady Giant | Mythic | 850 | 15 250 | Stone Wall alle 15 s (Kapazität 2) | [O/HIGH AE-S7] |
 
 ### Anti-Air und Hidden-Detection
@@ -94,4 +94,4 @@ Siehe [economy.md](economy.md): Stone Alchemist (Epic, Limit 3) und Ramen Guy (L
 | Puppet | Puppet (Telekinetic) | 2 358 | 5 093 | 29 150 | 57 150 | [D/HIGH AE-S7] |
 | Hollow | Hollow (Blaze) | 479 | 1 388 | 26 400 | 55 150 | [D/HIGH AE-S7] |
 
-Evolution verdoppelt etwa die Gesamt-Upgrade-Kosten und verdreifacht etwa den Max-Damage (Faktor 2,2-3,0 beim Schaden). Der Zusatzgewinn kommt vor allem aus 2-3 zusätzlichen Stufen mit einer neuen Attacke [D/HIGH AE-S7].
+Evolution verdoppelt etwa die Gesamt-Upgrade-Kosten (Faktor 1,7-2,1) und macht den Max-Damage 2,2- bis 3,2-fach (Puppet 2,2; Lady Giant 2,7; Hollow 2,9; Elf Mage 3,2). Der Zusatzgewinn kommt vor allem aus 2-3 zusätzlichen Stufen mit einer neuen Attacke [D/HIGH AE-S7].

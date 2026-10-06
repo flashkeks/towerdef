@@ -1,0 +1,108 @@
+{
+ "source": "UTDZ-S13",
+ "tag": "O/HIGH",
+ "pity_rule": "1.25 x expected rerolls (1/chance)",
+ "traits": [
+  {
+   "name": "Agile 1/2/3",
+   "rarity": "Rare/Epic",
+   "effect": "-7.5/-10/-12.5% SPA"
+  },
+  {
+   "name": "Precise 1/2/3",
+   "rarity": "Rare/Epic",
+   "effect": "+10/+12.5/+15% Range"
+  },
+  {
+   "name": "Enhanced 1/2/3",
+   "rarity": "Rare/Epic",
+   "effect": "+10/+12.5/+15% Damage"
+  },
+  {
+   "name": "Lightspeed",
+   "rarity": "Legendary",
+   "chance_pct": 1.5,
+   "effect": "-20% SPA"
+  },
+  {
+   "name": "Lethal",
+   "rarity": "Legendary",
+   "chance_pct": 3,
+   "effect": "+15% crit chance, +30% dmg vs <50% HP"
+  },
+  {
+   "name": "Prodigy",
+   "rarity": "Legendary",
+   "chance_pct": 3,
+   "effect": "+50% EXP"
+  },
+  {
+   "name": "Deadeye",
+   "rarity": "Legendary",
+   "chance_pct": 3,
+   "effect": "+20% Range"
+  },
+  {
+   "name": "Fortunate",
+   "rarity": "Mythic",
+   "chance_pct": 1,
+   "effect": "farm only, +20% income"
+  },
+  {
+   "name": "Duelist",
+   "rarity": "Mythic",
+   "chance_pct": 0.8,
+   "pity": 156,
+   "effect": "+35% boss dmg, +25% crit rate, +20% range"
+  },
+  {
+   "name": "Artificer",
+   "rarity": "Mythic",
+   "chance_pct": 0.65,
+   "pity": 192,
+   "effect": "+15% relic stats"
+  },
+  {
+   "name": "Wizard",
+   "rarity": "Mythic",
+   "chance_pct": 0.5,
+   "pity": 250,
+   "effect": "+30% DoT, -15% SPA, +20% range"
+  },
+  {
+   "name": "Astral",
+   "rarity": "Mythic",
+   "chance_pct": 0.45,
+   "pity": 277,
+   "effect": "+20% affliction duration, -20% SPA, +15% range, DoT stacks"
+  },
+  {
+   "name": "Sacred",
+   "rarity": "Mythic",
+   "chance_pct": 0.3,
+   "pity": 416,
+   "effect": "+25% dmg, +25% range, -10% SPA, -15% cost"
+  },
+  {
+   "name": "Eternal",
+   "rarity": "Mythic",
+   "chance_pct": 0.2,
+   "pity": 625,
+   "effect": "-20% SPA, +5% dmg and +2.5% range per wave (cap +60%/+30%)"
+  },
+  {
+   "name": "Fission",
+   "rarity": "Mythic",
+   "chance_pct": 0.15,
+   "pity": 833,
+   "effect": "+15% dmg, -15% SPA, +25% range, radiation DoT"
+  },
+  {
+   "name": "Ruler",
+   "rarity": "Mythic",
+   "chance_pct": 0.1,
+   "pity": 1250,
+   "effect": "+200% dmg, -20% cooldown, +30% range, +20% income, 1 placement"
+  }
+ ]
+}

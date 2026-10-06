@@ -28,7 +28,7 @@ Format: `Wert [Herkunft/Sicherheit Quelle]`. Siehe [sources.md](sources.md). Spi
 7. Letzte Upgrade-Stufe teuer machen: bei Pebble/Ruka/Zorus kostet die letzte Stufe 1,7x-2x der vorletzten; das erzeugt Spätentscheidungen [D, siehe [economy.md](economy.md)].
 8. Namens-/Versionswechsel vermeiden oder klar kommunizieren: Die Umbenennung hat Suche, Guides und Wiki zersplittert (zwei Wikis, Namensvettern) [D/MEDIUM UTDZ-S21]. Für uns: stabilen Namen und eine kanonische Datenquelle (Datenmodul/JSON) pflegen.
 9. Mehrspieler-Skalierung bewusst designen: 12-Spieler-World-Raid mit Tages-Missionen nach kumuliertem Schaden (20M bis 500M) ist ein Koop-Ziel, das nicht von einer einzelnen Person abhängt [O/HIGH UTDZ-S16]; ob Geld geteilt wird, ist unbekannt, also selbst festlegen.
-10. Plattform-Tag-Boni (+30 % für Raid-Tag) belohnen Team-Komposition und sind billig zu implementieren [O/HIGH UTDZ-S15].
+10. Raid-Tag-Boni (+30 % für Raid-Tag) belohnen Team-Komposition und sind billig zu implementieren [O/HIGH UTDZ-S15].
 
 ## Offene Punkte (für spätere Runde)
 

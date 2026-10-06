@@ -1,0 +1,39 @@
+{
+ "source": "UTDZ-S11",
+ "tag": "O/HIGH",
+ "note": "percent sums slightly exceed 100",
+ "banners": {
+  "standard": {
+   "secret": 0.00625,
+   "secret_pity": 24000,
+   "mythic": 0.25,
+   "legendary": 2,
+   "epic": 16,
+   "rare": 81.75,
+   "cost_gems_single": 50,
+   "cost_gems_x10": 450
+  },
+  "special": {
+   "secret": 0.00625,
+   "secret_pity": 24000,
+   "unrivaled": 0.1,
+   "mythic": 0.5,
+   "legendary": 2,
+   "epic": 16,
+   "rare": 81.5,
+   "cost_gems_x10": 450
+  },
+  "universal_festival": {
+   "universal": 0.005,
+   "universal_pity": 15000,
+   "unrivaled": 0.05,
+   "unrivaled_pity": 1500,
+   "mythic": 0.5,
+   "mythic_pity": 400,
+   "legendary": 2,
+   "epic": 16,
+   "rare": 81.5,
+   "cost_universal_gems_single": 250
+  }
+ }
+}
