@@ -24,8 +24,8 @@ Letzte Aktualisierung: 2026-10-06 (Runde 4, P6 Zwischenstand; Arbeit ab jetzt ü
 
 ## Nächster Schritt (Runde 4)
 
-P1–P9 stehen (P6 mit Zwischenstand). Offen aus P6 (Details und Reihenfolge: [kalibrierung.md § P6 Übergabe](balancing/kalibrierung.md)): (1) Striker-Cap (`botTuning.earlyCap` = 2) einführen und Hard/Nightmare danach neu kalibrieren (Bounty/HP-Raster, Koop-Tabellen), (2) Boss-Plan bedarfsabhängig (Titan kostet auf Normal 12,5 Punkte), (3) Koop über die Wirtschaft statt HP (`upgrade` 4P 95–100 %), (4) Stage-Dauer ist eine Regelentscheidung der Menschen. Danach P10 (Client-Gerüst) oder Playtest-Daten statt Bot-Daten.
-Offene Fragen an die Menschen: [architecture.md § 10](architecture.md), OFL-Fonts ([asset-sources.md](design/asset-sources.md)), EUIPO/USPTO für „Duskwardens“, Mindest-Wave-Dauer (Stage-Dauer 13–17 min).
+P1–P9 stehen (P6 mit Zwischenstand). Offen aus P6 (Details und Reihenfolge: [kalibrierung.md § P6 Übergabe](balancing/kalibrierung.md)): (1) Striker-Cap (`botTuning.earlyCap` = 2) einführen und Hard/Nightmare danach neu kalibrieren (Bounty/HP-Raster, Koop-Tabellen), (2) Boss-Plan bedarfsabhängig (Titan kostet auf Normal 12,5 Punkte), (3) Koop über die Wirtschaft statt HP (`upgrade` 4P 95–100 %), (4) Stage-Dauer: **entschieden** (Max): Ziel 11–13 min, Regel bleibt → mit 11,7 min erreicht. Danach P10 (Client-Gerüst) oder Playtest-Daten statt Bot-Daten.
+Offene Fragen an die Menschen: [architecture.md § 10](architecture.md), OFL-Fonts ([asset-sources.md](design/asset-sources.md)), EUIPO/USPTO für „Duskwardens“.
 
 ## Kurzbericht Sitzung 1 (06.10.2026, P11)
 

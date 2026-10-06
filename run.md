@@ -58,7 +58,7 @@ Gemessen mit Bots **mit** Fehlermodell (P6), außer anders angegeben:
 | Stufen klar getrennt | Siegquote bester Bot, solo: Normal 85–95 %, Hard 45–65 %, Nightmare 15–35 %, **und** die Stufen unterscheiden sich durch Regeln (P3), nicht nur durch HP |
 | Breitere Kennlinie | Fenster 90 % → 10 % Siegquote ≥ 25 Prozentpunkte HP-Faktor (vorher ~14) |
 | Koop fair | je Stufe Siegquote 1P/2P/4P innerhalb ±10 Punkte, für **jeden** Bot (auch Upgrade) |
-| Stage-Dauer | Story Normal 13–17 min |
+| Stage-Dauer | Story Normal **11–13 min** (geändert von 13–17 durch Max, 06.10.2026; Wellen-Autostart bei leerem Feld bleibt) |
 
 Was davon nicht erreichbar ist: ehrlich begründen. Nicht durch Datenbiegen erzwingen.
 

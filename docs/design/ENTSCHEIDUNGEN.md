@@ -50,6 +50,12 @@ Verbindlich für alle weiteren Runden. Die beantwortete Fragenliste liegt in
   - Leben sind über Upgrades bzw. Meta **ausbaubar**. Optional regenerieren sie pro Welle
     etwas.
 
+## Stage-Dauer
+
+- **Story Normal: 11–13 min** (Max, 06.10.2026, vorher Ziel 13–17 min). Die Regel „nächste
+  Welle startet, sobald das Feld leer ist" bleibt; das Ziel folgt dem gemessenen Spiel
+  (Median 11,7 min in Runde 4, P6), nicht umgekehrt.
+
 ## Konto
 
 - **Dasselbe Konto wie Kek-Game** (`game.flashkeks.com`). Auf der Kek-Game-Startseite gibt
