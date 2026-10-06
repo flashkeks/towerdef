@@ -80,5 +80,16 @@ Verbindlich für alle weiteren Runden. Die beantwortete Fragenliste liegt in
 
 ## Name
 
-Englisch. Gehört zur Kek-Game-Welt, muss aber nicht deren Namensschema folgen.
-Arbeitsname bis zur Prüfung: **„Riftwatch"**. Vorschläge und Konfliktprüfung: Paket P9.
+**„Duskwardens"** (Entscheidung Max, 06.10.2026). Ersetzt den Arbeitsnamen „Riftwatch" überall.
+Englisch, gehört zur Kek-Game-Welt, folgt nicht deren Namensschema.
+
+- **Domain zum Start:** `duskwardens.flashkeks.com`, später über den `edge`-Tunnel.
+  **Noch nicht angelegt, nichts deployt** – nur eingeplant.
+- `duskwardens.com` ist frei (Namecheap ca. 10 €), wird vorerst **nicht** gekauft. Wird sie
+  weggeschnappt, wird notfalls umbenannt.
+- Deshalb den Namen **an möglichst wenigen Stellen hart verdrahten:** Spieltitel nur als
+  Schlüssel `game.title` in der zentralen String-Datei (`client/src/i18n/en.ts`), Domain nur
+  über Konfiguration (`TD_PUBLIC_HOST`/`TD_PUBLIC_ORIGIN`). Repo-Name bleibt `flashkeks/towerdef`.
+- **Prüfstand:** `.com` frei, kein Steam-Treffer, per Google keine Spiele mit dem Namen (nur
+  einzelne Figuren in anderen Spielen – ok). **EUIPO/USPTO offen**, vor einem echten Release
+  prüfen. Vorprüfung der übrigen Vorschläge: `docs/design/name.md`.

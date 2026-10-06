@@ -1,5 +1,26 @@
 # Name — Vorschläge und Konflikt-Vorprüfung (Paket P9)
 
+> ## Entscheidung (Max, 06.10.2026): **„Duskwardens"**
+>
+> - Ersetzt den Arbeitsnamen „Riftwatch" überall. Repo bleibt `flashkeks/towerdef`.
+> - Domain zum Start: `duskwardens.flashkeks.com` (über den `edge`-Tunnel, **noch nicht angelegt**).
+> - `duskwardens.com` frei (Namecheap ca. 10 €), vorerst nicht gekauft. Wird sie weggeschnappt,
+>   notfalls umbenennen – darum Titel nur in `game.title` der String-Datei, Domain nur per Konfiguration.
+> - Geprüft: `.com` frei, kein Steam-Treffer, per Google keine Spiele mit dem Namen (nur einzelne
+>   Figuren in anderen Spielen, ok). **EUIPO/USPTO offen**, vor echtem Release prüfen.
+> - Kam nicht aus der Vorschlagsliste unten; die Liste bleibt als Prüfprotokoll stehen.
+>
+> **Verworfen:**
+>
+> | Name | Grund |
+> |---|---|
+> | Riftwatch | `riftwatch.org` ist ein aktives Gaming-Produkt (Esports-Analytik), Ort in Dune: Awakening, „Rift" stark besetzt; `.com` belegt |
+> | Lanternmarch | einziger Kandidat mit freier `.com`, aber lang und als „Lantern March" verwechselbar; Max hat Duskwardens gewählt |
+> | Fogwarden | `.com` belegt; „Warden" schwach als Marke, Ton düsterer als die Welt |
+> | Hearthwatch | klingt fast wie die App „HeartWatch"; `.com` belegt |
+> | Gildmark | schwer lesbar, klanglich nah an „Goldmark"; `.com` belegt |
+> | Mistward, Emberline | gleichnamige Spiele auf Steam (ROT, schon in der Vorprüfung) |
+
 Stand: 2026-10-06. Welt: „Grenzgilde im Nebelriss" (Fantasy-Abenteuer, warmherzig, eine Gilde hält die Linie gegen Schattenwesen). Sprache der Namen: Englisch.
 
 > **Entscheiden die Menschen.** Das hier ist eine Vorprüfung, **kein rechtlicher Rat**. Vor einer Namensentscheidung mit echtem Geld dahinter (Domain, Store-Seite, Marke) braucht es eine richtige Markenrecherche.

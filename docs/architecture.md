@@ -3,7 +3,7 @@
 Stand 06.10.2026, Paket P7 (Runde 4). Verbindlich sind `docs/design/ENTSCHEIDUNGEN.md` und `run.md`;
 dieses Dokument legt die technische Auslegung fest. Es ist ein **Entwurf**: Es gibt noch keinen Server,
 keinen Client und kein Deployment. Alle Code-Blöcke sind Schnittstellen-Skizzen, kein lauffähiger Code.
-Das Spiel selbst ist Englisch, diese Doku bleibt Deutsch. Der Arbeitsname „Riftwatch" ist vorläufig (P9).
+Das Spiel selbst ist Englisch, diese Doku bleibt Deutsch. Name: **„Duskwardens"** (Entscheidung Max, 06.10.2026, `docs/design/ENTSCHEIDUNGEN.md`). Der Name ist **nicht hart verdrahtet**: Spieltitel nur über den String-Schlüssel `game.title`, Domain nur über `TD_PUBLIC_HOST`/`TD_PUBLIC_ORIGIN`. Ein späteres Umbenennen ist damit eine Zeile in `en.ts` plus Konfiguration.
 
 Quellen: `docs/research/tech-options.md` (Stack), `docs/research/legal-gacha.md` (Raten, Pity, Jugendschutz),
 `sim/README.md` (Sim-API).
@@ -106,12 +106,13 @@ Festlegungen:
   Wer den UA fälscht, kommt am Handy vorbei, aber das ist kein Sicherheitsproblem, sondern nur eine ungepflegte Fahrt; Support gibt es dafür nicht.
 - **Desktop-Modus-Trick am Handy** („Desktopseite anfordern") liefert weiter `pointer: coarse`/`any-pointer: fine` = false, wird also über Regel 1 gesperrt.
 - **Kein serverseitiges Sperren.** Die Sperre ist Freundlichkeit, keine Zugriffskontrolle. Server-Endpunkte bleiben für alle gleich geschützt.
-- **Hinweis-Bildschirm** (Texte in der String-Datei, Schlüssel `gate.*`): Titel „Desktop only", Text „Riftwatch needs a mouse and a bigger screen. Please open this page on a desktop or laptop browser.",
+- **Hinweis-Bildschirm** (Texte in der String-Datei, Schlüssel `gate.*`): Titel „Desktop only", Text „{title} needs a mouse and a bigger screen. Please open this page on a desktop or laptop browser.",
   bei `small-viewport` zusätzlich „Your window is too small. Enlarge it to at least 1024 x 600." und ein Link zurück zu Kek-Game. Kein Spiel, kein Login-Versuch dahinter.
 - **Test:** Unit-Test für `gateReason` mit einem Fake-`Window` (Matrix aus Zeiger/Hover/UA/Größe) und ein Playwright-Test mit Handy-Emulation (erwartet Hinweis, kein Canvas im DOM).
 
 ## 5. Texte (Englisch, zentral)
 
+- **Spieltitel** nur unter `game.title` (`"Duskwardens"`). Seitentitel, Hinweis-Bildschirm, Fehlerseiten und Menüs setzen ihn per `t('game.title')` bzw. Platzhalter `{title}` ein; der Name steht sonst nirgends im Code (Lint-Regel unten greift).
 - Alle sichtbaren Texte stehen in **einer** Datei `client/src/i18n/en.ts` als typisiertes Objekt mit stabilen Schlüsseln (`'shop.pull.button'`).
   Zugriff nur über `t(key, params?)`; Parameter mit `{name}`-Platzhaltern, Plural über eine kleine Hilfsfunktion `plural(key, n)`.
 - Ein weiteres Locale ist später nur eine zweite Datei mit demselben Typ (`Record<StringKey, string>`); fehlende Schlüssel sind ein Typfehler.
@@ -127,14 +128,14 @@ Das TD speichert **keine Passwörter** und hat kein eigenes Registrieren. Dassel
 ### 6.1 Ablauf
 
 ```
-Spieler klickt auf Kek-Game "Play Riftwatch"
+Spieler klickt auf Kek-Game "Play Duskwardens"
   -> Kek-Game-Server prüft Login, erzeugt Token (Ed25519, 60 s), antwortet 302
   -> neuer Tab: https://TD-DOMAIN/auth/launch?token=JWT
   -> TD-Server prüft Token, verbraucht jti, legt Profil an/lädt es, setzt Cookie, antwortet 302 auf /
   -> Spiel läuft eigenständig auf TD-DOMAIN
 ```
 
-`TD-DOMAIN` ist die öffentliche Domain des TD (Hostname, z. B. `riftwatch.example`; noch nicht festgelegt, kommt aus `TD_PUBLIC_ORIGIN`).
+`TD-DOMAIN` ist die öffentliche Domain des TD: **`duskwardens.flashkeks.com`** (festgelegt 06.10.2026, noch nicht angelegt). Im Code steht sie nirgends, sie kommt aus `TD_PUBLIC_HOST` bzw. `TD_PUBLIC_ORIGIN`. Eine spätere eigene Domain (`duskwardens.com`) ist damit nur ein Konfigurationswechsel auf beiden Seiten (TD und Kek-Game, wegen `aud`).
 
 ### 6.2 Token
 
@@ -144,7 +145,7 @@ JWT (kompakt, JWS) mit **EdDSA/Ed25519**. Header: `{"alg":"EdDSA","typ":"JWT","k
 /** Claims des Launch-Tokens. Alle Felder Pflicht. */
 export interface LaunchTokenClaims {
   iss: 'kek-game';        // fest; TD vergleicht exakt (env KEKGAME_ISSUER)
-  aud: string;            // Hostname des TD, exakt TD-DOMAIN (nicht die URL, kein Schema, kein Port außer Dev)
+  aud: string;            // Hostname des TD, exakt TD-DOMAIN = "duskwardens.flashkeks.com" (nicht die URL, kein Schema, kein Port außer Dev)
   sub: string;            // Kek-Game-User-ID: opak, stabil, nie wiederverwendet, 1..64 Zeichen [A-Za-z0-9_-]
   name: string;           // Anzeigename, nur zur Anzeige, 1..32 Zeichen, siehe 6.5
   iat: number;            // Ausstellung, Sekunden seit Epoch (NumericDate)
@@ -174,7 +175,7 @@ Reihenfolge, jede Stufe bricht bei Fehler ab. Das Token wird erst nach bestanden
 8. Neue **Session** anlegen und mit `302 Location: /` antworten. Das Token verschwindet damit aus der Adresszeile und aus dem Verlauf.
 
 **Cookie:** `__Host-td_session=<256 Bit Zufall, base64url>; Path=/; Secure; HttpOnly; SameSite=Lax`. Serverseitig gespeichert wird nur der SHA-256 des Werts
-(Tabelle `session`). Gleitender Ablauf 7 Tage, absolut 30 Tage. Logout löscht die Zeile und das Cookie; Logout im TD beendet **nicht** die Kek-Game-Sitzung und umgekehrt.
+(Tabelle `session`). **Kein `Domain`-Attribut:** Das Cookie gilt genau für `duskwardens.flashkeks.com` (host-only; der Präfix `__Host-` erzwingt das sogar). **Nie** `Domain=.flashkeks.com` setzen, sonst sähen Kek-Game und alle anderen `*.flashkeks.com`-Dienste das Session-Cookie. Gleitender Ablauf 7 Tage, absolut 30 Tage. Logout löscht die Zeile und das Cookie; Logout im TD beendet **nicht** die Kek-Game-Sitzung und umgekehrt.
 Zustandsändernde Requests (POST/PUT/DELETE) prüfen zusätzlich `Origin` gegen `TD_PUBLIC_ORIGIN` und verlangen einen Header `X-TD-Request: 1` (einfacher CSRF-Schutz; `SameSite=Lax` allein reicht nicht für alles).
 
 **Zusatzmaßnahmen:** `Referrer-Policy: no-referrer` auf der Antwort von `/auth/launch`; der Reverse-Proxy bzw. Tunnel/Server loggt für `/auth/launch` **keine Query-Strings**
@@ -198,7 +199,7 @@ Gesteuert über `TD_MODE=dev|production` (Standard `production`).
 
 Dieser Teil wird **nicht** in diesem Repo gebaut; er ist die Anforderung an die Menschen bzw. die Homelab-Seite.
 
-1. **Button** auf der Kek-Game-Startseite („Play Riftwatch"), nur für angemeldete Nutzer sichtbar. Er ist ein normaler Link `<a href="/td/launch" target="_blank" rel="noopener">`
+1. **Button** auf der Kek-Game-Startseite („Play Duskwardens"), nur für angemeldete Nutzer sichtbar. Er ist ein normaler Link `<a href="/td/launch" target="_blank" rel="noopener">`
    auf einen **Kek-Game-eigenen Endpunkt**, der den Tab öffnet. Das Token wird **nicht** in die Seite eingebettet und nicht vorab erzeugt, sondern erst beim Klick (so ist es frisch,
    und Popup-Blocker greifen nicht, weil der Klick ein Nutzerklick ist).
 2. **Endpunkt `/td/launch`** (Kek-Game-Server): Login-Session prüfen (nicht angemeldet: zur Anmeldung, danach zurück). Dann Token erzeugen, mit **`302 Location: https://TD-DOMAIN/auth/launch?token=JWT`** antworten.
@@ -551,8 +552,8 @@ Entwurfsdateien: `deploy/Dockerfile.draft`, `deploy/docker-compose.draft.yml`, `
 |---|---|---|
 | `TD_MODE` | `production` (Standard) oder `dev` | `production` |
 | `TD_PORT` | Port im Container | `8080` |
-| `TD_PUBLIC_ORIGIN` | öffentliche URL, für Origin-Prüfung und Rücksprünge | `https://TD-DOMAIN` |
-| `TD_PUBLIC_HOST` | Hostname, muss `aud` im Token entsprechen | `TD-DOMAIN` |
+| `TD_PUBLIC_ORIGIN` | öffentliche URL, für Origin-Prüfung und Rücksprünge | `https://duskwardens.flashkeks.com` |
+| `TD_PUBLIC_HOST` | Hostname, muss `aud` im Token entsprechen | `duskwardens.flashkeks.com` |
 | `KEKGAME_ISSUER` | erwarteter `iss` | `kek-game` |
 | `KEKGAME_PUBLIC_KEYS` | JSON: `kid` -> öffentlicher Schlüssel (JWK/PEM) | leer |
 | `KEKGAME_URL` | Rücksprung-Link auf Fehlerseiten | `https://game.flashkeks.com` |
@@ -565,7 +566,7 @@ Entwurfsdateien: `deploy/Dockerfile.draft`, `deploy/docker-compose.draft.yml`, `
 
 ## 10. Offene Fragen an die Menschen
 
-1. **Domain** des TD (setzt `aud` und `TD_PUBLIC_HOST`) und Tunnel-Ingress auf `127.0.0.1:8080`: wie läuft `cloudflared` auf `edge` (Host-Dienst oder Container)? Daran hängt, ob Compose ein Netzwerk braucht.
+1. ~~Domain~~ **entschieden:** `duskwardens.flashkeks.com` (06.10.2026). Noch offen: Tunnel-Ingress auf `127.0.0.1:8080`: wie läuft `cloudflared` auf `edge` (Host-Dienst oder Container)? Daran hängt, ob Compose ein Netzwerk braucht.
 2. **Kek-Game-Seite:** Wer baut `/td/launch` und die Schlüsselablage? Einigung auf `iss=kek-game`, `kid`-Schema und Rotationsrhythmus.
 3. **Backup** des `/data`-Volumes auf `edge` (Ledger und Ziehungsprotokoll): Anschluss an das bestehende Backup?
 4. **Koop-Bibliothek** (Colyseus gegen `ws` + eigenes Protokoll) und **bitECS** (MPL-2.0-Pflichten): Entscheidung zu Beginn M2 (laut `tech-options.md` noch offen).
