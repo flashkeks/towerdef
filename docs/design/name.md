@@ -68,3 +68,21 @@ Nicht empfohlen: **Mistward** und **Emberline** (ROT, gleichnamige Spiele auf St
 - Direktprüfung aller Punkte, die oben UNKNOWN sind, bevor irgendein Name festgelegt wird. Besonders Domains und Marken.
 - Der Name muss **nicht** dem Kek-Game-Schema folgen (Entscheidung Max/Plori). Bei einem Namen ohne „Kek" sollte der Button auf der Kek-Game-Startseite den Zusammenhang trotzdem klar machen.
 - **Entscheiden die Menschen.**
+
+## Nachtrag 2026-10-06: Prüfung über CT 113 (Homelab)
+
+Aus der Agent-Umgebung waren Steam, itch.io und RDAP gesperrt. Nachgeholt per `curl` über CT 113:
+
+| Name | `.com` (RDAP via rdap.org) | Steam (Store-Suche) | itch.io (Suche) |
+|---|---|---|---|
+| Lanternmarch | **frei** (404) | kein Treffer | kein Treffer |
+| Fogwarden | belegt (200) | kein Treffer | kein exakter Treffer (nur „FlowGarden" u. ä.) |
+| Riftwatch | belegt (200) | kein Treffer | kein exakter Treffer |
+| Hearthwatch | belegt | – | – |
+| Gildmark | belegt | – | – |
+| Mistward, Emberline | UNKNOWN (Rate-Limit 429) | – | – |
+
+- Gegenprobe Steam-Suche: „bloons" liefert Bloons TD 6, die Abfrage funktioniert also.
+- `.gg`: rdap.org liefert für `.gg` auch bei `google.gg` keinen Datensatz, die 404 dort sagen nichts. **`.gg` bleibt UNKNOWN.**
+- Marken (EUIPO/USPTO), Roblox und App-Stores bleiben UNKNOWN, die Prüfung machen die Menschen.
+- Folge für die Empfehlung: **Lanternmarch** ist der einzige Kandidat mit freier `.com`.
