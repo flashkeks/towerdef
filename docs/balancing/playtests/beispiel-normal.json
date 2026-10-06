@@ -1,0 +1,1327 @@
+{
+ "format": "towerdef-replay",
+ "formatVersion": 1,
+ "gameVersion": "dev",
+ "stage": "standard20",
+ "difficulty": "normal",
+ "players": 1,
+ "seed": 1802315095,
+ "team": null,
+ "cards": [],
+ "complete": true,
+ "result": "loss",
+ "endTick": 3714,
+ "endHash": "d381d7c66b56fc24",
+ "endWave": 8,
+ "endLives": 0,
+ "endCoins": 54,
+ "durationTicks": 3714,
+ "durationMs": 90216,
+ "date": "2026-10-06",
+ "commands": [
+  {
+   "tick": 22,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 0
+   },
+   "ok": true
+  },
+  {
+   "tick": 22,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 1
+   },
+   "ok": true
+  },
+  {
+   "tick": 22,
+   "player": 0,
+   "cmd": {
+    "type": "skipWave"
+   },
+   "ok": true
+  },
+  {
+   "tick": 34,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 1
+   },
+   "ok": true
+  },
+  {
+   "tick": 34,
+   "player": 0,
+   "cmd": {
+    "type": "skipWave"
+   },
+   "ok": true
+  },
+  {
+   "tick": 58,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 2
+   },
+   "ok": true
+  },
+  {
+   "tick": 98,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 3
+   },
+   "ok": true
+  },
+  {
+   "tick": 302,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 8
+   },
+   "ok": true
+  },
+  {
+   "tick": 710,
+   "player": 0,
+   "cmd": {
+    "type": "skipWave"
+   },
+   "ok": true
+  },
+  {
+   "tick": 728,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 740,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 758,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 776,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 794,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 794,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 3
+   },
+   "ok": true
+  },
+  {
+   "tick": 968,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 986,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 1004,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 1022,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 1040,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 1058,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 1076,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 1094,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 1112,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 1124,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 1142,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 1160,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 1178,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 1190,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 1202,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 1214,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 1226,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 1238,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 1256,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 1268,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 1286,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 1304,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 1322,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 1334,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 1352,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 1364,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 1382,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 1394,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 1406,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 1406,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 8
+   },
+   "ok": true
+  },
+  {
+   "tick": 1724,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 1742,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 1765,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 1789,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 1813,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 1831,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 1849,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 1873,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 1891,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 1915,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 1939,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 1963,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 1987,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 2005,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 2029,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 2047,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 2071,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 2089,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 2107,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 2107,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 13
+   },
+   "ok": true
+  },
+  {
+   "tick": 2359,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 2371,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 2389,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 2407,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 2431,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 2449,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 2467,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 2485,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 2503,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 2521,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 2544,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 2571,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 2571,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 22
+   },
+   "ok": true
+  },
+  {
+   "tick": 2877,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 2901,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 2927,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 2955,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 2982,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 3009,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 3038,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 3064,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 3090,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 3118,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 3144,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 3169,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 3169,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 1
+   },
+   "ok": true
+  },
+  {
+   "tick": 3283,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 3301,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 3328,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 3354,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 3378,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 3404,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 3434,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 3462,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 3480,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 3504,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 3533,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 3558,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 3583,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 3606,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 3634,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 3662,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 3690,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 3690,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 3
+   },
+   "ok": true
+  }
+ ],
+ "controls": [
+  {
+   "type": "speed",
+   "tick": 16,
+   "speed": 3
+  },
+  {
+   "type": "pause",
+   "tick": 64,
+   "paused": true
+  },
+  {
+   "type": "pause",
+   "tick": 64,
+   "paused": false
+  },
+  {
+   "type": "speed",
+   "tick": 76,
+   "speed": 2
+  },
+  {
+   "type": "speed",
+   "tick": 80,
+   "speed": 3
+  }
+ ],
+ "waves": [
+  {
+   "wave": 1,
+   "startTick": 22,
+   "coinsStart": 518,
+   "coinsEnd": 518,
+   "livesStart": 30,
+   "livesEnd": 30,
+   "leaks": 3,
+   "leaksByEnemy": {
+    "grunt": 3
+   },
+   "kills": 5
+  },
+  {
+   "wave": 2,
+   "startTick": 34,
+   "coinsStart": 423,
+   "coinsEnd": 57,
+   "livesStart": 30,
+   "livesEnd": 26,
+   "leaks": 0,
+   "leaksByEnemy": {},
+   "kills": 9
+  },
+  {
+   "wave": 3,
+   "startTick": 694,
+   "coinsStart": 167,
+   "coinsEnd": 186,
+   "livesStart": 27,
+   "livesEnd": 27,
+   "leaks": 4,
+   "leaksByEnemy": {
+    "runner": 1,
+    "grunt": 3
+   },
+   "kills": 7
+  },
+  {
+   "wave": 4,
+   "startTick": 710,
+   "coinsStart": 301,
+   "coinsEnd": 237,
+   "livesStart": 28,
+   "livesEnd": 9,
+   "leaks": 9,
+   "leaksByEnemy": {
+    "runner": 4,
+    "grunt": 5
+   },
+   "kills": 8
+  },
+  {
+   "wave": 5,
+   "startTick": 1396,
+   "coinsStart": 357,
+   "coinsEnd": 217,
+   "livesStart": 10,
+   "livesEnd": 8,
+   "leaks": 1,
+   "leaksByEnemy": {
+    "elite": 1
+   },
+   "kills": 8
+  },
+  {
+   "wave": 6,
+   "startTick": 2096,
+   "coinsStart": 342,
+   "coinsEnd": 48,
+   "livesStart": 9,
+   "livesEnd": 3,
+   "leaks": 5,
+   "leaksByEnemy": {
+    "runner": 3,
+    "grunt": 2
+   },
+   "kills": 18
+  },
+  {
+   "wave": 7,
+   "startTick": 2782,
+   "coinsStart": 178,
+   "coinsEnd": 127,
+   "livesStart": 4,
+   "livesEnd": 4,
+   "leaks": 0,
+   "leaksByEnemy": {},
+   "kills": 13
+  },
+  {
+   "wave": 8,
+   "startTick": 3268,
+   "coinsStart": 262,
+   "coinsEnd": 54,
+   "livesStart": 5,
+   "livesEnd": 0,
+   "leaks": 2,
+   "leaksByEnemy": {
+    "flyer": 2
+   },
+   "kills": 11
+  }
+ ],
+ "feedback": "Test: the first boss felt unfair."
+}

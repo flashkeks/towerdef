@@ -14,7 +14,7 @@ Letzte Aktualisierung: 2026-10-06 (Runde 5 gestartet, Max' Claude-Account)
 | P0 | Status, Aufräumen | **erledigt** | Hauptsitzung | `41515c4` (Slot-Fix) ist drin. Stand vor Runde 5: sim 208 Tests + tsc grün, client 37 Tests + tsc + build grün, `npm run smoke` grün (noch mit Selektor-Klicks, Umbau in P1). Bundle: `main` 465 kB (140 kB gzip) |
 | P0b | Client aufteilen (`app.ts` 396 Z., `renderer.ts` 433 Z.) | erledigt (nicht committet), `app.ts` 77 Z., `renderer.ts` 89 Z., Besitzer-Tabelle in `client/README.md` | 1 × Sonnet, allein | zuerst |
 | P1 | Bedienbarkeit, Smoke mit echten Mausklicks | offen | 1 × Sonnet | nach P0b |
-| P2 | Playtest-Daten, Replay | offen | 1 × Sonnet | nach P0b |
+| P2 | Playtest-Daten, Replay | **erledigt** (Worktree `wip5-p2`, nicht gepusht) | 1 × Sonnet | `game/recorder.ts` (nur am GameBus), `ui/download.ts` (End-Bildschirm-Box + Pause-Knopf), `sim/scripts/replay.ts` (`npm run replay -- DATEI [--compare]`), Abnahme `client/scripts/replay-check.mjs`: echte Browser-Runde → gleicher Hash. Beispiel + README in `docs/balancing/playtests/`. Fremde Dateien minimal: `screens.ts` (1 Zeile), `main.ts` (3 Zeilen), `en.ts`, `styles.css` |
 | P3 | Boss-Design, Hard-Kennlinie | offen | 1 × Sonnet | nur `sim/` |
 | P4 | Pixel-Grafik | offen | 1 × Sonnet | nach P0b |
 | P5 | Spielgefühl, Ton | offen | 1 × Sonnet | nach P0b und P3 (Telegraph-Liste) |

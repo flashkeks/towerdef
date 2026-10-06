@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "smoke": "node scripts/smoke.mjs"
+    "smoke": "node scripts/smoke.mjs",
+    "replay-check": "node scripts/replay-check.mjs"
   },
   "dependencies": {
     "pixi.js": "^8.22.0",

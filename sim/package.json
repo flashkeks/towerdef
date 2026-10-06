@@ -14,7 +14,8 @@
     "typecheck": "tsc --noEmit",
     "build": "tsc -p tsconfig.build.json",
     "bench": "tsx scripts/bench.ts",
-    "sim": "tsx scripts/sim-cli.ts"
+    "sim": "tsx scripts/sim-cli.ts",
+    "replay": "tsx scripts/replay.ts"
   },
   "dependencies": {
     "zod": "^4.6.5"

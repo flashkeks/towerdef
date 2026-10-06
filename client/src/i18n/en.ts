@@ -29,6 +29,9 @@ export const en = {
   'end.stats': 'Reached wave {wave} of {total} with {lives} lives left.',
   'end.restart': 'Restart',
   'end.change': 'Change difficulty',
+  'replay.download': 'Download replay',
+  'replay.feedback': 'What felt bad?',
+  'replay.feedback.hint': 'Optional. Too hard? Unclear? Boring? It is saved in the replay file.',
 
   // HUD
   'hud.lives': 'Lives',

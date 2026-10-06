@@ -98,3 +98,11 @@ canvas.board { display: block; }
 .btn.diff.normal { border-color: #4e8a45; }
 .btn.diff.hard { border-color: var(--orange); }
 .btn.diff.nightmare { border-color: var(--red); }
+
+/* Replay-Download (P2) */
+.replay-box { margin-top: 16px; display: flex; flex-direction: column; gap: 8px; align-items: stretch; text-align: left; }
+.replay-label { display: flex; flex-direction: column; gap: 4px; color: var(--stone); font-size: 0.9rem; font-weight: 600; }
+.replay-feedback { width: 100%; box-sizing: border-box; resize: vertical; font: inherit; padding: 6px 8px; border-radius: 6px; border: 2px solid var(--stone); background: #00000040; color: var(--parch); }
+.replay-box .replay-download { align-self: center; }
+.replay-pause-download { position: fixed; left: 12px; bottom: 12px; z-index: 60; }
+.replay-pause-download.hidden { display: none; }
