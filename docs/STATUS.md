@@ -10,9 +10,9 @@ Letzte Aktualisierung: 2026-10-06 (Runde 3, Sitzung 1)
 | Paket | Inhalt | Status | Agent (Modell) | Notiz |
 |---|---|---|---|---|
 | P0 | Archiv, Status | **erledigt** | Hauptsitzung | `run.md` Runde 1/2 → `docs/archiv/` |
-| P2a | Simulationskern `sim/` | läuft | 1 × Sonnet | Auftrag: Unit-IDs striker, gunner, blaster, banner, farm, lancer, frost, titan |
-| P2b | Bot-Strategien | offen | – | nach P2a |
-| P2c | Reports und Kalibrierung | offen | – | nach P2a |
+| P2a | Simulationskern `sim/` | **erledigt** | 1 × Sonnet | 96 Tests grün, Determinismus-Test grün, ~236 000 Ticks/s (20 Waves in 0,08 s); 30 DESIGN-OFFEN in [offene-regeln](balancing/offene-regeln.md); Infinite noch nicht modelliert | Auftrag: Unit-IDs striker, gunner, blaster, banner, farm, lancer, frost, titan |
+| P2b | Bot-Strategien | läuft | 1 × Sonnet | nach P2a |
+| P2c | Reports und Kalibrierung | läuft (Teil 1: CLI, Reports, Infinite) | 1 × Sonnet | nach P2a |
 | P3 | Content-Sanity | offen | – | nach P2c |
 | P4 | Game-Design-Entwurf `docs/design/` | **erledigt** (Werte-Verweise auf sim/data nach P2a prüfen) | 1 × Sonnet | gdd.md 353 Zeilen, FRAGEN.md 10 offene Entscheidungen | parallel zu P2 |
 | P5 | Fähigkeiten-Musterkatalog (optional) | **erledigt** | 1 × Sonnet | 16 Muster, Top-8 (DESIGN); Beliebtheit meist UNKNOWN | |
@@ -20,7 +20,7 @@ Letzte Aktualisierung: 2026-10-06 (Runde 3, Sitzung 1)
 
 ## Nächster Schritt (Runde 3)
 
-Laufende Agenten (P2a, P4, P5) abwarten; danach P2b und P2c parallel starten.
+P2b und P2c Teil 1 abwarten; dann P2c Teil 2 (Kalibrierung mit allen Bots), danach P3.
 
 ---
 
