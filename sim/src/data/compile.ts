@@ -184,6 +184,9 @@ export function compile(data: GameData, stage: StageData, difficultyId: Difficul
   }
   const unitList = data.units.units.map((u) => build(u, data));
   const units: Record<string, UnitDef> = {};
+  // P6b: Koop-Upgrade-Kosten (Tabelle je Spielerzahl, nur Kampf-Units); 1 Spieler = unverändert.
+  const upBp = coopTable(data.economy.coop.upgradeCostTableBp, players) ?? 10000;
+  if (upBp !== 10000) for (const u of unitList) if (!u.farm) u.upgradeCosts = u.upgradeCosts.map((c) => Math.round((c * upBp) / 10000));
   for (const u of unitList) units[u.id] = u;
   const enemies: Record<string, EnemyArchetype> = {};
   for (const a of data.enemies.archetypes) enemies[a.id] = a;

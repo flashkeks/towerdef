@@ -22,6 +22,16 @@ if (process.env.P6_NOBOSSPLAN === '1') botTuning.bossPlan = false;
 if (process.env.P6_NUKELVL) botTuning.bossNukeLevel = Number(process.env.P6_NUKELVL);
 if (process.env.P6_NOSAVE === '1') botTuning.bossPlanSave = false;
 if (process.env.P6_EARLYCAP) botTuning.earlyCap = Number(process.env.P6_EARLYCAP);
+if (process.env.P6B_ROTRAR) botTuning.rotateMinRarity = process.env.P6B_ROTRAR as 'epic';
+if (process.env.P6B_ROTWAVE) botTuning.rotateFromWave = Number(process.env.P6B_ROTWAVE);
+if (process.env.P6B_NEED) {
+  const [m, f] = process.env.P6B_NEED.split(',').map(Number);
+  botTuning.bossNeedMid = m;
+  botTuning.bossNeedFinal = f ?? m;
+}
+if (process.env.P6B_NOPLAN === '1') botTuning.policyPlans = false;
+if (process.env.P6B_FINALH) botTuning.bossFinalHorizon = Number(process.env.P6B_FINALH);
+if (process.env.P6B_NOROOM === '1') botTuning.makeRoom = false;
 if (process.env.P6_UPBOOST) botTuning.bossUpgradeBoost = Number(process.env.P6_UPBOOST);
 if (process.env.P6_PLANWAVES) botTuning.bossPlanWaves = Number(process.env.P6_PLANWAVES);
 

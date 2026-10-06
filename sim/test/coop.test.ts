@@ -93,3 +93,29 @@ describe('Koop-HP-Faktor', () => {
     }
   });
 });
+
+describe('Koop-Upgrade-Kosten (P6b)', () => {
+  it('Tabelle skaliert die Upgrade-Kosten der Kampf-Units je Spielerzahl, Solo und Farm bleiben', () => {
+    const d = withCoop({ upgradeCostTableBp: [10000, 12000, 14000, 15000] });
+    const base = ctx(plainData(), 1).units;
+    for (const [players, bp] of [[1, 10000], [2, 12000], [4, 15000]] as const) {
+      const u = ctx(d, players).units;
+      expect(u.striker.upgradeCosts).toEqual(base.striker.upgradeCosts.map((c) => Math.round((c * bp) / 10000)));
+      expect(u.farm.upgradeCosts).toEqual(base.farm.upgradeCosts);
+    }
+    // Platzierungskosten unberührt
+    expect(ctx(d, 4).units.striker.placeCost).toBe(base.striker.placeCost);
+  });
+
+  it('Validierung: Eintrag für 1 Spieler muss 10000 sein, Länge = maxPlayers', () => {
+    const d = withCoop({ upgradeCostTableBp: [11000, 12000, 14000, 15000] });
+    expect(() => validateGameData(d)).toThrow(/10000/);
+    const e = withCoop({ upgradeCostTableBp: [10000, 12000] });
+    expect(() => validateGameData(e)).toThrow(/maxPlayers/);
+  });
+
+  it('eingecheckte Daten: keine Koop-Upgrade-Kosten-Tabelle gesetzt (Hebel gemessen und verworfen)', () => {
+    expect(loadGameData().economy.coop.upgradeCostTableBp).toBeUndefined();
+  });
+});
+

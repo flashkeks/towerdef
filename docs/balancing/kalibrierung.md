@@ -619,3 +619,119 @@ Neu `test/botprofiles.test.ts` (12 Tests): Profil-Daten (schema-gültig, Fehler 
 2. **Koop-Fairness** braucht einen Hebel an der Wirtschaft (Upgrade-Kosten/Level-Cap je Spielerzahl) statt an der HP; `upgrade` 4P bleibt sonst bei 95–100 %.
 3. **Stage-Dauer** (11,7 min): Waves enden früh, weil die nächste Wave beginnt, sobald das Feld leer ist; eine Mindest-Wave-Dauer wäre eine Regeländerung (Entscheidung der Menschen), keine Datenfrage.
 4. **Kennlinie Hard** (14,5): die Treppe liegt am Wave-20-Boss; Streuung der Bot-Stärke reicht nicht, solange der Boss-Schild eine harte Schwelle setzt.
+
+---
+
+# Runde 4 — P6b: Balance-Reste (Leave-one-out, Boss-Plan, Hard/Nightmare, Koop)
+
+Fortsetzung von P6 (Reihenfolge von Max: erst Balance-Reste, dann Client). Messung wie dort: Profil `normal`, `standard20`, solo, n = 100 (Siegquoten, Leave-one-out), n = 30–60 (Scans, Kennlinie je Punkt), n = 40 (Koop-Matrix); Standardfehler bei n = 100 ±4–5 Punkte, bei n = 30–40 ±8. **Ergebnis: Stufen solo und Leave-one-out erreicht, Koop und Kennlinie Hard nicht.** Die Stage-Dauer ist entschieden (11–13 min) und wurde nicht angefasst.
+
+## Punkt 1 — Leave-one-out (Bot-Problem, kein Daten-Problem)
+
+**Messartefakt zuerst:** Das Verbot einer Unit lief bisher über einen Proxy, der `place` ablehnt. Bots mit Plan (`aoe`: Titan ab Wave 5; Boss-Plan) sparen dann ewig auf eine Unit, die sie nie bekommen. Seit P6b gilt `botTuning.banned` (die Unit existiert für den Bot nicht, `canPlaceBase`); `q7-p1 --part loo` nutzt das, `LOO_PROXY=1` ist der alte Weg. Das „Titan Normal +12,5“ aus P6 war damit zu einem Teil Artefakt: mit sauberem Verbot ist der Titan **keine Falle**: ohne Titan fällt der beste Bot auf Normal um 86, auf Hard um 47, auf Nightmare um 25 Punkte (er ist umgekehrt auf jeder Stufe notwendig, siehe Punkt 2).
+
+**Striker, Diagnose** (`scripts/sanity/p6b-diag.ts`, Team je Wave): `wide` kauft bis Wave 4 fünf Striker (1000 Münzen), seine Upgrade-Regel wartet auf „Breite voll“, also bleiben sie auf Stufe 0 und besetzen 4,5 Plätze bis Wave 19. Ohne Striker kauft er 3,6 Gunner (Luft-tauglich) für dieselben Münzen und ist ab Wave 8 deutlich weiter. `rotateEarly` (Striker verkaufen) greift nicht, weil sie nur bei fehlendem Legendary/Mythic-Typ verkauft. Der Striker hat auf Stufe 0 den besten DPS je Münze (11 / 200) und liegt bei Schaden/Münze (6,1) in der Mitte des Korridors; er ist Boden-only und wird ab den Flyer-Waves ein toter Typ-Platz. Das ist **Bot-Verhalten** (ein Mensch kauft zwei, pivotiert und verkauft den Rest), die Daten sind in Ordnung.
+
+**Änderung (Bot, nicht `sim/data/`):** `botTuning.earlyCap` 99 → **2** (höchstens 2 Striker je Bot). Die verworfene Variante `rotateMinRarity: epic` (Striker auch für einen fehlenden Epic-Typ verkaufen, Experiment `P6B_ROTRAR=epic`) macht den Banner zur Falle (Hard +23, Nightmare +27), Standard bleibt `legendary`. Cap 3: Hard +1,7, Nightmare +16,7 (n = 60); Cap 1: Hard −10, Nightmare −30 (n = 40).
+
+| LOO bester Bot, n = 100 | Normal (`wide` 87) | Hard (`wide` 56) | Nightmare (`wide` 27) |
+|---|---|---|---|
+| ohne Striker | −39 | −16 | −13 |
+| ohne Banner | +5 | **+7** | −1 |
+| ohne Titan | −86 | −47 | −25 |
+| alle übrigen | ≤ −14 | ≤ −42 | ≤ −19 |
+
+Vorher (P6, Proxy-Verbot): Striker Hard +27,5 / Nightmare +22,5, Titan Normal +12,5. Jetzt höchstens **+7** (Banner Hard, im Rauschen von ±5), Ziel ≤ +5 praktisch erreicht. Der Banner ist ein reines Support-Extra (kein Bot braucht ihn).
+
+## Punkt 2 — Boss-Plan bedarfsabhängig: gebaut, gemessen, **ausgeschaltet** (Titan bleibt Pflicht)
+
+Gebaut: `bossCapacityRatio(env, wave)` in `src/bots/util.ts` (Schaden, den das Team auf einen einzelnen Boss ausübt, solange er den Pfad entlangläuft: Σ DPS × Pfadabdeckung / Boss-Tempo, Rüstung 40, gegen Boss-HP samt Schild +20 %), Schwellen `botTuning.bossNeedMid` / `bossNeedFinal` (0 = Prüfung aus), `bossFinalHorizon`, `policyPlans` (aus: nur der Boss-Plan kauft den Titan). Messung `scripts/sanity/p6b-boss.ts` (alle Bots ohne Titan, 3 Stufen, n = 40, Verhältnis zu Beginn von Wave 7 / 17 gegen den Leak des Bosses):
+
+- **Wave-10-Boss:** fällt auch ohne Titan (4 Leaks in 698 Läufen, Verhältnis 40–100 %). Titan ist dort nur Reserve.
+- **Wave-20-Boss (Final-Boss):** Leak-Quote ohne Titan je Verhältnis bei Wave 17: 40–50 % → 58 %, 50–60 % → 24 %, 60–70 % → 14 %, 70–80 % → 16 %, 80–90 % → 3 %, ≥ 90 % → 0. Also trennt die Kennzahl grob (Schwelle ~0,75).
+- **Trotzdem nicht einsetzbar:** Der Titan ist ein siebter Typ (Team-Limit 6) und kostet 1000 Münzen; wer ihn erst ab Wave 14–17 einplant, kann ihn nicht mehr kaufen. Gemessen (Plan nur mit Bedarf, Final-Horizont 6): `wide` Normal 62,5 → 27,5 %, `greedy` 30 → 20 %; nur `farm` (+15) und `upgrade` auf Hard/Nightmare (+20) gewinnen. Zum Zeitpunkt der Entscheidung (Wave 7) ist die Kapazität gegen den Wave-20-Boss nicht schätzbar (HP ×4, Team wächst).
+- **Titan Normal ohne Pflicht:** nicht erreichbar. Mit sauberem Verbot gewinnt kein Bot ohne Titan auf Normal (`wide` 87 → 1 %; `upgrade` 85 → 49 % in einem Zwischenlauf mit anderem Rotationsstand): die Nuke ist die einzige Antwort auf Schild und Heilung des Colossus. Das ist Design der Boss-Kits (P4), keine Bot-Eigenheit; ändern würde es nur eine zweite Boss-Antwort (z. B. Frost-Stun plus mehr Fenster-Schaden) in den Daten, nicht im Plan.
+- Standard in den Daten: `bossNeedMid = bossNeedFinal = 0` (Plan wie P6). Schalter für Experimente: `P6B_NEED=0.4,0.75`, `P6B_FINALH=6`, `P6B_NOPLAN=1`.
+
+## Punkt 3 — Hard/Nightmare neu kalibriert
+
+| # | Datei/Feld | alt | neu | Grund (Profil `normal`, solo) |
+|---|---|---|---|---|
+| 1 | `difficulties.json` `hard.bountyBp` | 10600 | **9500** | Nach Striker-Cap und den Bot-Fixes (unten) stieg `wide` auf Hard 57 → 90 %. Scan `wide` n = 80–100: 9300 → 42, 9400 → 47, 9500 → 60, 9700 → 71, 9800 → 81. Endwert n = 100: **56** |
+| 2 | `difficulties.json` `nightmare.bountyBp` | 10600 | **9550** | `wide` 24 → 47 %. Scan n = 80–100: 9500 → 16, 9600 → 33, 9650 → 30, 9700 → 35. Endwert n = 100: **27** |
+| 3 | `difficulties.json` `normal.hpBp` | 15300 | 15300 (bleibt) | Normal n = 100 unverändert im Ziel |
+
+HP-Spreizung unverändert 4,8 % (Test ≤ 8 % grün). Der Hang ist flach und verrauscht (~+10 Punkte je 200 bp bei n = 80–100); Hard/Nightmare sind im Playtest über `bountyBp` nachzuziehen.
+
+Zusätzliche **Bot-Fixes** (alle in `src/bots/util.ts`, keine Daten):
+- `earlyCap` 2 (Punkt 1).
+- **Kein Sparen ohne Platz:** `bossPlanStep`/`planStep` warten nicht mehr auf eine Plan-Unit, für die kein freier Slot passender Art existiert (4P-`wide` hortete bis zu 2500 Münzen). Zusätzlich `botTuning.makeRoom`: ist kein Slot frei, verkauft der Bot seine schwächste eigene Unit auf passendem Slot (keine Nuke-/Stun-Unit, keine Farm) und kauft dann den Titan. Ohne den Fix hatte `wide` 4P nie einen Titan (23 geteilte Slots, jeder füllt sie mit Billig-Units). Aus: `P6B_NOROOM=1`.
+
+## Punkt 4 — Koop über die Wirtschaft: gemessen, nicht erreicht
+
+**Neuer Hebel gebaut, gemessen, nicht übernommen:** `economy.coop.upgradeCostTableBp` (Upgrade-Kosten der Kampf-Units je Spielerzahl, Index 0 = 10000, Farm unberührt; Schema, `compile.ts`, `load.ts`, 3 Tests in `coop.test.ts`; in den Daten **nicht gesetzt**). Messung Normal, n = 30:
+
+| Tabelle (2P / 3P / 4P) | `upgrade` 2P / 4P | `aoe` | `wide` | `greedy` |
+|---|---|---|---|---|
+| keine | 100 / 100 | 80 / 100 | 73 / 97 | 57 / 100 |
+| 1,2 / 1,4 / 1,6 | 97 / 83 | 17 / 0 | 13 / 10 | 27 / 13 |
+| 1,4 / 1,8 / 2,2 | 50 / 23 | 0 / 0 | 3 / 0 | 0 / 0 |
+
+Der Hebel trifft den `upgrade`-Bot **nicht stärker** als die anderen (`aoe` fällt von 80 auf 17 %, `upgrade` nur von 100 auf 97 %): Upgrades sind für jeden Bot Pflichtausgaben, der Aufschlag verknappt die Münzen für alle. Damit ist „Upgrade-Kosten im Koop“ als einfachster Hebel **verworfen**. Nicht gemessen: getrennter Cap (Caps gelten schon je Spieler), Bounty-Aufteilung (Bounty folgt der Koop-HP und wird nach Schadensanteil geteilt; eine Entkopplung ist dasselbe wie eine kleinere HP-Tabelle), Leben je Spielerzahl (P2: Startleben ändert 4P nicht).
+
+**Was die Messung zeigte:** Der Bot-Fix aus Punkt 3 (`wide` kauft im vollen Koop-Feld wieder einen Titan) hat die 2P/4P-Quoten aller Bots stark angehoben (Normal 4P `aoe` 100, `wide` 97, `greedy` 100 vor Neuabstimmung); die HP-Tabellen mussten daher neu gesetzt werden:
+
+| Datei/Feld | alt (1P / 2P / 3P / 4P) | neu | Grund |
+|---|---|---|---|
+| `normal.coopHpTableBp` | 10000 / 16000 / 18500 / 21000 | **10000 / 16000 / 20000 / 24000** | `aoe` Normal 85 / 80 / 85; `wide` 90 / 82,5 / 87,5; `upgrade` 85 / 100 / 100 |
+| `hard.coopHpTableBp` | 10000 / 21000 / 28000 / 31000 | **10000 / 16000 / 20000 / 23000** | Bezug `wide` (bester Hard-Bot): 1P 55, 2P 40, 4P 22,5. Höhere 4P-Faktoren (26–31 k) senken `wide` 4P weiter auf 7–10 %, ohne dass ein Faktor es hebt |
+| `nightmare.coopHpTableBp` | 10000 / 22000 / 29000 / 34000 | **10000 / 16000 / 20000 / 23000** | `wide` 25 / 12,5 / 37,5 |
+
+**Koop-Matrix** (Profil `normal`, n = 40, Siegquote 1P / 2P / 4P %, Spanne; 1P ist von der Koop-Tabelle unberührt):
+
+| Bot | Normal | Hard | Nightmare |
+|---|---|---|---|
+| greedy | 30 / 67,5 / 87,5 (57,5) | 5 / 12,5 / 25 (20) | 0 / 0 / 47,5 (47,5) |
+| farm | 60 / 97,5 / 95 (37,5) | 20 / 65 / 97,5 (77,5) | 5 / 27,5 / 92,5 (87,5) |
+| aoe | 85 / 80 / 85 (**5**) | 15 / 42,5 / 95 (80) | 0 / 12,5 / 40 (40) |
+| upgrade | 85 / 100 / 100 (15) | 0 / 52,5 / 97,5 (97,5) | 10 / 87,5 / 100 (90) |
+| wide | 90 / 82,5 / 87,5 (**7,5**) | 55 / 40 / 22,5 (32,5) | 25 / 12,5 / 37,5 (**25**) |
+| coop | 60 / 85 / 100 (40) | 20 / 67,5 / 87,5 (67,5) | 5 / 30 / 80 (75) |
+
+**Ehrliche Begründung, warum ±10 je Bot nicht erreichbar ist:** Im Koop bekommt jeder Spieler eigene Caps, einen eigenen 6-Typen-Satz und eigene Münzen; die Gegner-HP wächst nur ×1,6 / ×2,0 / ×2,4. Bots, die solo schwach sind (`greedy`, `farm`, `coop`, `upgrade` auf Hard/Nightmare), werden im Team deutlich stärker, weil sie solo an Typ-Limit/Titan-Hortung scheitern und im Team vier Ressourcenbeutel haben; ein HP-Faktor, der diese Bots auf ihre Solo-Quote drückt, trifft `aoe`/`wide` mit einer Klippe (±0,1 am 2P-Faktor ≈ ∓40 Punkte, P5). `wide` auf Hard/Nightmare fällt im Koop unabhängig vom Faktor (23 → 10 %), Ursache vermutlich Slot-Konkurrenz der 4 Bots um 23 Slots (`makeRoom` hilft nur dem Titan). Fair sind jetzt auf Normal `aoe`, `wide` und fast `upgrade`; Hard/Nightmare im Koop bleiben offen. Ein Koop-Ziel „je Bot“ braucht entweder koop-fähige Bots (Absprache, Rollenverteilung) oder Playtest-Daten statt Bot-Daten.
+
+## Punkt 5 — Kennlinie (Siegquote gegen globalen HP-Faktor f, n = 60, 26 Punkte f = 0,80…1,30 in 0,02 Schritten)
+
+| Stufe (Bot) | 90 % bei f | 50 % bei f | 10 % bei f | Fenster 90 → 10 % | Ziel ≥ 25 |
+|---|---|---|---|---|---|
+| Normal (`upgrade`) | 0,920 | 1,091 | 1,187 | **26,7** | erreicht |
+| Hard (`wide`) | 0,943 | 1,013 | 1,080 | **13,7** | verfehlt (P6: 14,5) |
+| Nightmare (`wide`) | < 0,80 (80 % bei f = 0,80) | 0,932 | 1,037 | **> 24** (lineare Fortsetzung ≈ 28, 90 % nicht gemessen) | knapp, nicht bestimmbar |
+
+Hard bleibt steil: zwischen f = 0,96 (80 %) und 1,10 (1,7 %) fällt die Kurve in einem Zug; ursächlich der Final-Boss (Schild + Heilung + Sturm ab Hard), der als Schwelle wirkt, sobald das Team seine Nuke-Kapazität verfehlt. Das ist eine Boss-Kit-Frage (weichere Schwelle: kleinerer Schild, Heilung unterbrechbar mit mehr Fenster), keine Frage der Stufen-Zahlen.
+
+## Ergebnis solo (Profil `normal`, n = 100)
+
+Normal / Hard / Nightmare bester Bot: **87** (`wide`; `upgrade` 85, `aoe` 83) / **56** (`wide`) / **27** (`wide`) — alle drei im Zielkorridor (85–95 / 45–65 / 15–35). Je Bot (greedy / farm / aoe / upgrade / wide / coop): Normal 27 / 66 / 83 / 85 / 87 / 66; Hard 4 / 17 / 12 / 0 / 56 / 17; Nightmare 0 / 4 / 0 / 8 / 27 / 4. (`aoe` ist auf Hard/Nightmare schwach (12 / 0), Ursache nicht untersucht; auf Normal 83 % = AoE-Ziel ≥ 50 % erreicht.)
+
+## Verworfene Versuche
+
+- `rotateMinRarity: epic`: Banner wird zur Falle (s. o.).
+- Bedarfsprüfung für den Titan als Standard (s. Punkt 2).
+- Koop-Upgrade-Kosten-Tabelle (s. Punkt 4).
+- Kleiner Striker-Cap 1: macht `wide` auf Hard 97,5 % (Hard-Ziel gerissen), LOO negativ.
+
+## Tests
+
+205 → 208 Tests grün (`coop.test.ts` +3: Upgrade-Kosten-Tabelle, Validierung, nicht gesetzt), `tsc` sauber. Bestehende Tests brauchten keine Änderung.
+
+## Werkzeuge
+
+`scripts/sanity/p6b-diag.ts` (Team je Wave, `--ban`, `--players`), `p6b-boss.ts` (Boss-Bedarf, `--csv`, `--early`), `q7-p1 --part loo` mit `botTuning.banned`. Env: `P6B_ROTRAR`, `P6B_ROTWAVE`, `P6B_NEED`, `P6B_FINALH`, `P6B_NOPLAN`, `P6B_NOROOM`, `P6_EARLYCAP`; Koop ohne Dateiänderung `P5_COOP='{"upgradeCostTableBp":[10000,12000,14000,16000]}'` bzw. `P3_RULES='{"hard":{"coopHpTableBp":[...]}}'`.
+
+## Übergabe
+
+1. **Final-Boss-Schwelle** (Hard-Kennlinie 13,7): Boss-Kit Wave 20 weicher machen (Schild/Heilung), dann Kennlinie neu messen; danach `hard.bountyBp` nachziehen.
+2. **Koop fair** braucht koop-fähige Bots oder Playtest-Daten; `wide` Hard/Nightmare 4P (Slot-Konkurrenz) untersuchen.
+3. **Titan-Pflicht** ist Boss-Design: zweite Antwort auf den Colossus-Schild (Daten) wäre der Weg, nicht der Plan.
+4. Danach P10 (Client) bzw. Playtest.

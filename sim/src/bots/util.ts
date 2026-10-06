@@ -37,7 +37,7 @@ export interface Memo {
   /** Je Unit-ID: Tick, ab dem die wartende Fähigkeit zündet (verspätete Fähigkeiten). */
   abilityAt: Map<number, number>;
   /** Boss-Vorschau je Wave (Boss-Plan): Boss ja/nein und welche Antworten das Kit verlangt. */
-  bossInfo: Map<number, { boss: boolean; stun: boolean }>;
+  bossInfo: Map<number, { boss: boolean; stun: boolean; need?: boolean }>;
 }
 /** Profil, das `newMemo` benutzt, solange `withProfile` läuft (Bot-Fabriken haben keine Parameter). */
 let building: BotProfile | null | undefined;
@@ -124,9 +124,28 @@ export const botTuning = {
   bossNukeLevel: 0,
   /** Boss-Plan: auf die Plan-Unit sparen (ab 40 % der Kosten nichts anderes kaufen). Aus: kauft sie nur, wenn die Münzen ohnehin da sind. */
   bossPlanSave: true,
+  /**
+   * Bedarfsprüfung (P6b): Titan/Frost nur, wenn `bossCapacityRatio` unter der Schwelle liegt. Zwischen-Boss (Lehr-Boss, Wave 10) und
+   * Final-Boss (letzte Wave) getrennt, weil das Verhältnis den Final-Boss (Heilung, mehr Begleiter) unterschätzt; Werte aus
+   * `scripts/sanity/p6b-boss.ts`. 0 = Prüfung aus (Plan immer, wie P6).
+   */
+  /** Horizont (Waves vor dem Final-Boss) für Bots mit Wellenwissen. 0 = wie die übrigen Bosse (`bossPlanWaves`). */
+  bossFinalHorizon: 0,
+  /** Nur Messungen (Leave-one-out): diese Unit-IDs kennt der Bot nicht, Pläne eingeschlossen (ein Proxy, der `place` ablehnt, lässt Pläne ewig sparen). */
+  banned: [] as string[],
+  /** Boss-Plan: ohne freien Slot die schwächste Unit auf passendem Slot verkaufen (P6b). Aus: `P6B_NOROOM=1`. */
+  makeRoom: true,
+  bossNeedMid: 0,
+  /** Policy-eigene Pläne (`Policy.plan`, z. B. `aoe` Titan ab Wave 5) beachten. Aus: nur der Boss-Plan mit Bedarfsprüfung kauft den Titan gezielt. */
+  policyPlans: true,
+  bossNeedFinal: 0,
   /** Early-Units (Striker): so viele davon kauft ein Bot höchstens (ein Mensch pivotiert früh weg von der Starter-Unit). Standard: Cap der Unit. */
-  earlyCap: 99,
+  earlyCap: 2,
+  /** Early-Unit abgeben (P6b): frühestens ab dieser Wave (Standard `ROTATE_FROM_WAVE`) und wenn ein Typ dieser Seltenheit oder höher fehlt. */
+  rotateFromWave: 8,
+  rotateMinRarity: 'legendary' as 'rare' | 'epic' | 'legendary' | 'mythic',
 };
+const RARITY_RANK = { rare: 0, epic: 1, legendary: 2, mythic: 3 } as const;
 
 export interface Policy {
   /** Präferenz-Multiplikator je Unit (Standard 1). */
@@ -290,7 +309,35 @@ export function pickTop<T extends { score: number }>(rng: RngState, sorted: T[],
 const investedOf = (env: Env, farm: boolean): number =>
   env.own.reduce((a, u) => a + ((env.defs.get(u.defId) as UnitDef).farm ? (farm ? u.invested : 0) : farm ? 0 : u.invested), 0);
 
+/** Gibt es einen freien Kleinslot passender Art für die Unit? (Ohne ihn wäre Sparen auf die Unit sinnlos: P6b, 4P-`wide` hortete bis zu 2500 Münzen.) */
+function hasFreeSlot(env: Env, def: UnitDef): boolean {
+  return env.slots.some((s) => s.free && s.size === 1 && (def.placement === 'hybrid' || def.placement === s.kind));
+}
+
+/**
+ * Platz schaffen für eine geplante Unit (P6b): ist kein passender Slot frei, verkauft der Bot seine schwächste Unit auf einem
+ * passenden Slot (nur Eigene, keine Nuke-/Stun-Unit, keine Farm). So macht es ein Mensch im vollen Koop-Feld; ohne das
+ * flutet `wide` die 23 Slots mit Billig-Units und der Titan findet nie einen Platz.
+ */
+function sacrificeFor(env: Env, def: UnitDef): UnitState | null {
+  let best: UnitState | null = null;
+  let bestV = Infinity;
+  for (const u of env.own) {
+    const d = env.defs.get(u.defId) as UnitDef;
+    if (d.farm || d.ability?.kind === 'nuke' || d.ability?.kind === 'stunAoe') continue;
+    const slot = env.slots[u.slot];
+    if (slot.size !== 1 || (def.placement !== 'hybrid' && def.placement !== slot.kind)) continue;
+    const v = env.values.get(u.id) ?? 0;
+    if (v < bestV) {
+      best = u;
+      bestV = v;
+    }
+  }
+  return best;
+}
+
 function canPlaceBase(env: Env, def: UnitDef): boolean {
+  if (botTuning.banned.includes(def.id)) return false;
   if (env.own.filter((u) => u.defId === def.id).length >= def.cap) return false;
   if (env.team.length >= 60) return false;
   if (!env.own.some((u) => u.defId === def.id) && new Set(env.own.map((u) => u.defId)).size >= 6) return false;
@@ -344,7 +391,7 @@ export function buildOptions(env: Env, pol: Policy): Option[] {
 function planStep(env: Env, plan: { unit: string; fromWave: number }, opts: Option[]): Option[] | 'wait' | null {
   const def = env.defs.get(plan.unit);
   if (!def || env.wave < plan.fromWave) return null;
-  if (env.own.some((u) => u.defId === def.id) || !canPlaceBase(env, def)) return null;
+  if (env.own.some((u) => u.defId === def.id) || !canPlaceBase(env, def) || !hasFreeSlot(env, def)) return null;
   if (env.coins < def.placeCost) return env.coins >= def.placeCost * 0.4 ? 'wait' : null;
   const mine = opts.filter((o) => o.kind === 'place' && o.def.id === def.id);
   return mine.length > 0 ? mine : null;
@@ -357,7 +404,7 @@ function planStep(env: Env, plan: { unit: string; fromWave: number }, opts: Opti
  * (Bots ohne Profil: `botTuning.bossLookahead`); 0 = der Bot reagiert erst, wenn der Boss auf dem Feld steht. Der Plan greift
  * höchstens `botTuning.bossPlanWaves` Waves vor dem Boss (Sparen ab dann, wie ein Mensch auf den Titan spart).
  */
-function bossInfoOf(env: Env, memo: Memo, w: number): { boss: boolean; stun: boolean } {
+function bossInfoOf(env: Env, memo: Memo, w: number): { boss: boolean; stun: boolean; need?: boolean } {
   let info = memo.bossInfo.get(w);
   if (!info) {
     const pv = env.sim.previewWave(w);
@@ -369,6 +416,37 @@ function bossInfoOf(env: Env, memo: Memo, w: number): { boss: boolean; stun: boo
   return info;
 }
 
+/** Boss-Tempo auf der Standard-Stage in Tiles/s (Grunt 1,5 x Boss-Faktor 0,5); die Vorschau nennt kein Tempo. */
+const BOSS_TILES_PER_S = 0.75;
+
+/**
+ * Bedarfsprüfung des Boss-Plans (P6b): Schaden, den das aktuelle Team (ohne Nuke-Unit) auf einen einzelnen Boss ausübt, während
+ * er den Pfad entlangläuft (Summe DPS x Pfadabdeckung / Boss-Tempo, Boss-Rüstung 40, ohne AoE-Faktoren, Effekt-Anteile wie `dpsOf`)
+ * im Verhältnis zur Boss-HP von Wave `w` samt Schild (+20 %). Verhältnis >= `botTuning.bossNeedRatio` = der Boss fällt auch ohne Titan.
+ */
+export function bossCapacityRatio(env: Env, w: number): number | null {
+  const pv = env.sim.previewWave(w);
+  const g = pv?.groups.find((x) => x.boss);
+  if (!pv || !g) return null;
+  const hp = ((g.hpCenti * g.count) / 100) * 1.2;
+  let dmg = 0;
+  for (const u of env.team) {
+    const d = env.defs.get(u.defId) as UnitDef;
+    if (!d.attack || d.ability?.kind === 'nuke') continue;
+    const ls = d.levels[u.level];
+    let dps = (ls.damageCenti * 20) / ls.spaTicks / 100;
+    if (d.crit) dps *= 1 + (d.crit.chanceBp / 10000) * (d.crit.multBp / 10000 - 1);
+    for (const o of d.onHit) {
+      if (o.kind === 'bleed') dps *= 1.25;
+      else if (o.kind === 'burn') dps *= 1.35;
+    }
+    dps = (dps * 100) / (100 + Math.max(0, 40 - d.penetration));
+    // Aura-Units tragen über ihre Nachbarn bei (hier nicht gerechnet), Luft-Einheiten treffen den Boden-Boss genauso.
+    dmg += (dps * env.slots[u.slot].coverageByRange(ls.rangeMilli)) / 1000 / BOSS_TILES_PER_S;
+  }
+  return dmg / hp;
+}
+
 /** Unit-IDs, die der Boss-Plan jetzt will (Reihenfolge = Priorität), leer ohne Boss im Horizont. */
 function bossNeeds(env: Env, memo: Memo): string[] {
   const look = memo.profile ? memo.profile.lookahead : botTuning.bossLookahead;
@@ -376,10 +454,20 @@ function bossNeeds(env: Env, memo: Memo): string[] {
   const st = env.sim.state;
   let stun = false;
   let found = false;
-  for (let w = Math.max(1, env.wave); w <= env.wave + horizon; w++) {
+  // Der Final-Boss (letzte Wave) steht auf der Stage-Karte: wer Wellenwissen hat (Profil `lookahead` > 0), plant ihn früher ein,
+  // weil ein später Titan am 6-Typ-Limit und an den Münzen scheitert (P6b). Ohne Wellenwissen bleibt es beim normalen Horizont.
+  const finalH = look > 0 ? botTuning.bossFinalHorizon : 0;
+  for (let w = Math.max(1, env.wave); w <= env.wave + Math.max(horizon, finalH); w++) {
+    if (w > env.wave + horizon && w !== TOTAL_WAVES) continue;
     if (w === env.wave && !st.enemies.some((e) => e.hp > 0 && e.boss)) continue;
     const info = bossInfoOf(env, memo, w);
     if (!info.boss) continue;
+    // Bedarfsprüfung (P6b): einmal je Boss-Wave, wenn sie in den Horizont kommt; Boss fällt auch ohne Titan -> kein Plan.
+    if (info.need === undefined) {
+      const ratio = botTuning.bossNeedMid > 0 ? bossCapacityRatio(env, w) : null;
+      info.need = ratio === null || ratio < (w >= TOTAL_WAVES ? botTuning.bossNeedFinal : botTuning.bossNeedMid);
+    }
+    if (!info.need) continue;
     found = true;
     stun ||= info.stun;
   }
@@ -393,9 +481,14 @@ function bossNeeds(env: Env, memo: Memo): string[] {
 function bossPlanStep(env: Env, memo: Memo, pol: Policy): Option[] | 'wait' | null {
   for (const id of bossNeeds(env, memo)) {
     const def = env.defs.get(id);
-    if (!def || env.own.some((u) => u.defId === id) || !canPlaceBase(env, def)) continue;
+    if (!def || env.own.some((u) => u.defId === id) || !canPlaceBase(env, def) || (!hasFreeSlot(env, def) && !(botTuning.makeRoom && sacrificeFor(env, def)))) continue;
     const budget = env.coins - (pol.reserve ?? 0);
     if (budget < def.placeCost) return botTuning.bossPlanSave && budget >= def.placeCost * 0.4 ? 'wait' : null;
+    if (botTuning.makeRoom && !hasFreeSlot(env, def)) {
+      const sac = sacrificeFor(env, def);
+      if (sac && env.sim.apply(env.playerId, { type: 'sell', entityId: sac.id }).ok) return 'wait';
+      continue;
+    }
     // Ohne die Gewichte/Beschränkungen der Policy: der Boss-Plan gilt für jeden Bot.
     const mine = buildOptions(env, { reserve: pol.reserve, maxNonFarmInvest: pol.maxNonFarmInvest }).filter((o) => o.kind === 'place' && o.def.id === id);
     if (mine.length > 0) return mine;
@@ -470,7 +563,7 @@ export function spend(ctx: BotContext, memo: Memo, pol: Policy): void {
     }
     let planned: Option[] | 'wait' | null = botTuning.bossPlan && pol.bossPlan !== false ? bossPlanStep(env, memo, pol) : null;
     if (Array.isArray(planned)) planned = planned.filter((o) => !failed.has(key(o)));
-    if (planned === null || (Array.isArray(planned) && planned.length === 0)) planned = pol.plan ? planStep(env, pol.plan, opts) : null;
+    if (planned === null || (Array.isArray(planned) && planned.length === 0)) planned = pol.plan && botTuning.policyPlans ? planStep(env, pol.plan, opts) : null;
     if (planned === 'wait') return;
     if (planned) opts.splice(0, opts.length, ...planned);
     if (!planned && !botTuning.disabled && pol.save !== false && shouldSave(env, memo, pol, opts, failed, key)) return;
@@ -709,13 +802,13 @@ export const ROTATE_FROM_WAVE = 8;
 export function rotateEarly(ctx: BotContext, memo: Memo): void {
   if (botTuning.disabled) return;
   const env = makeEnv(ctx, memo);
-  if (env.wave < ROTATE_FROM_WAVE) return;
+  if (env.wave < botTuning.rotateFromWave) return;
   if (new Set(env.own.map((u) => u.defId)).size < 6) return;
   const early = env.own.filter((u) => EARLY_UNITS.includes(u.defId));
   if (early.length === 0) return;
   const refund = early.reduce((a, u) => a + Math.floor((u.invested * (env.defs.get(u.defId) as UnitDef).sellBp) / 10000), 0);
   const missing = [...env.defs.values()].filter(
-    (d) => d.attack && (d.rarity === 'legendary' || d.rarity === 'mythic') && !env.own.some((u) => u.defId === d.id) && env.own.filter((u) => u.defId === d.id).length < d.cap,
+    (d) => (d.attack || d.aura) && RARITY_RANK[d.rarity] >= RARITY_RANK[botTuning.rotateMinRarity] && !EARLY_UNITS.includes(d.id) && !env.own.some((u) => u.defId === d.id) && env.own.filter((u) => u.defId === d.id).length < d.cap,
   );
   if (!missing.some((d) => env.coins + refund >= d.placeCost)) return;
   for (const u of early) ctx.sim.apply(ctx.playerId, { type: 'sell', entityId: u.id });

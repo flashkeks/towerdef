@@ -447,3 +447,25 @@ Zum Vergleich ohne Fehlermodell und ohne Boss-Plan (Ende P5, n = 40): Normal 95 
 - **Kaufverzögerung ist kein Handicap** in diesem Sim (Bündeln hilft den Bots): casual braucht Slot-, Upgrade- und Fähigkeitenfehler, um schwächer zu sein.
 - **Hard-Hang:** `hard.bountyBp` 10500 → 41, 10600 → 57, 10700 → 64 % (n = 100): ~7 Punkte je 100 bp. Für den Feinabgleich im Playtest der Hebel der Wahl.
 - **Offene Punkte (Übergabe in `kalibrierung.md`):** Striker-Cap mit Neukalibrierung von Hard/NM, bedarfsabhängiger Titan-Plan, Koop-Wirtschaft (Upgrade-Kosten/Level-Cap) statt HP-Tabelle, Mindest-Wave-Dauer als Regelentscheidung.
+
+---
+
+# Runde 4 (Stand P6b): Ampel je Abnahmeziel
+
+Nachtrag zu P6 (Messdetails, alt → neu → Grund: `kalibrierung.md`, „Runde 4 — P6b“). Profil `normal`, `standard20`; Siegquoten, Leave-one-out n = 100, Koop n = 40, Kennlinie n = 60 mit 26 Punkten. Stage-Dauer-Ziel ist seit 06.10.2026 **11–13 min** (Max).
+
+| Ziel | P6 → P6b | Ampel |
+|---|---|---|
+| Keine dominante Kombi | `upgrade` 4P Normal 100 / Hard 97,5 / Nightmare 100, aber 1P 85 / 0 / 10; kein Bot in allen Zellen ≥ 95 | grün |
+| Keine Fallen-Unit (LOO ≤ +5) | Striker Hard +27,5 / NM +22,5 → **−16 / −13**; Titan Normal +12,5 → **−86** (war Artefakt des Proxy-Verbots, jetzt sauber gemessen); größter Wert **Banner Hard +7**, Normal +5 (Rauschen ±5) | grün (Banner Hard knapp) |
+| Jede Unit von einem Bot ≥ 30 % gekauft | unverändert ≥ 46 % (Striker durch Cap 2: je Lauf 2 statt 5, Anteil der Läufe mit Kauf bleibt ~100 %) | grün |
+| Schaden/Münze DPS-Units Faktor ≤ 1,6 | 1,4 (1P, aus P6; Daten der Units unverändert) | grün |
+| AoE-Bot ≥ 50 % Normal solo | 83 % | grün |
+| Stufen solo 85–95 / 45–65 / 15–35 | 85 / 57 / 24 → **87 / 56 / 27** (alle `wide`; `upgrade` Normal 85) | grün |
+| Stufen unterscheiden sich über Regeln | unverändert (HP-Spreizung 4,8 %, Test grün) | grün |
+| Kennlinie 90 → 10 % ≥ 25 Punkte HP | Normal 25,7 → **26,7**; Hard 14,5 → **13,7**; Nightmare 24,4 → **> 24** (90 % nicht erreicht, f = 0,80 liegt bei 80 %) | gelb (Normal grün, Hard rot: Final-Boss-Schwelle) |
+| Koop fair (±10 je Bot je Stufe) | `aoe` Normal 5, `wide` Normal 7,5, `upgrade` Normal 15, `wide` Nightmare 25; Hard/Nightmare sonst 20–97 | rot (nur Normal nahe, Hard/Nightmare offen) |
+| Stage-Dauer Story Normal 11–13 min | Median 11,7 min (Siege 10,9–13,6) | grün |
+
+**Offen:** Hard-Kennlinie (Boss-Kit Wave 20 weicher machen), Koop-Fairness je Bot (Bot-Verhalten im Team, Slot-Konkurrenz; Upgrade-Kosten-Hebel gemessen und verworfen), Titan als Pflicht-Antwort auf den Colossus (Boss-Design, ein bedarfsabhängiger Plan scheitert am 6-Typ-Limit).
+

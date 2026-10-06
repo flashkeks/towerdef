@@ -98,7 +98,7 @@ function validateBosses(d: GameData, enemyIds: Set<string>): void {
 /** Koop-Tabellen (P5): Eintrag für 1 Spieler muss 10000 sein (Solo bleibt unberührt), Länge = maxPlayers. */
 function validateCoop(d: GameData): void {
   const c = d.economy.coop;
-  for (const [name, t] of [['hpTableBp', c.hpTableBp], ['bossHpTableBp', c.bossHpTableBp]] as const) {
+  for (const [name, t] of [['hpTableBp', c.hpTableBp], ['bossHpTableBp', c.bossHpTableBp], ['upgradeCostTableBp', c.upgradeCostTableBp]] as const) {
     if (!t) continue;
     if (t[0] !== 10000) throw new Error(`economy.coop.${name}[0] muss 10000 sein (1 Spieler), ist ${t[0]}`);
     if (t.length !== c.maxPlayers) throw new Error(`economy.coop.${name}: ${t.length} Einträge, maxPlayers ist ${c.maxPlayers}`);

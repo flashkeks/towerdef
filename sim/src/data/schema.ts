@@ -35,6 +35,8 @@ export const EconomySchema = z.object({
     hpTableBp: z.array(pos).min(1).optional(),
     /** P5: dasselbe nur für den Archetyp boss (getrennte Boss-HP-Skalierung); fehlt sie, gilt der normale Faktor. */
     bossHpTableBp: z.array(pos).min(1).optional(),
+    /** P6b: optionale Tabelle für die Upgrade-Kosten der Kampf-Units je Spielerzahl (Index 0 = 1 Spieler, muss 10000 sein). Farm unberührt. */
+    upgradeCostTableBp: z.array(pos).min(1).optional(),
     donationStep: pos,
     maxPlayers: pos,
   }),

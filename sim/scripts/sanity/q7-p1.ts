@@ -7,6 +7,7 @@
  */
 import { type DifficultyId, type Sim } from '../../src/index.js';
 import { BOTS } from '../../src/bots/index.js';
+import { botTuning } from '../../src/bots/util.js';
 import type { BotFactory } from '../../src/bots/types.js';
 import { writeFileSync, readFileSync } from 'node:fs';
 import { argNum, argStr, baseData, f1, play, restricted, table } from './lib.js';
@@ -174,7 +175,14 @@ if (part === 'static') {
       const base = botNames.map((bn) => [bn, win(BOTS[bn], n)] as [string, number]).sort((a, b) => b[1] - a[1]);
       const best = base[0];
       const rows = UNITS.filter((u) => u !== 'farm').map((u) => {
-        const w = win(banned(BOTS[best[0]], u), n);
+        // P6b: Verbot über `botTuning.banned` (die Unit existiert für den Bot nicht, Pläne sparen nicht darauf); `LOO_PROXY=1` = alter Proxy-Weg
+        let w: number;
+        if (process.env.LOO_PROXY === '1') w = win(banned(BOTS[best[0]], u), n);
+        else {
+          botTuning.banned = [u];
+          w = win(BOTS[best[0]], n);
+          botTuning.banned = [];
+        }
         return [`ohne ${u}`, f1(w), (w - best[1] >= 0 ? '+' : '') + f1(w - best[1])];
       });
       console.log(`\n### LOO ${d} ${p}P (n=${n}), bester Bot ${best[0]} = ${f1(best[1])} % (alle: ${base.map((b) => `${b[0]} ${f1(b[1])}`).join(', ')})\n`);

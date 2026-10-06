@@ -6,8 +6,8 @@
   "coopHpTableBp": [
    10000,
    16000,
-   18500,
-   21000
+   20000,
+   24000
   ],
   "speedBp": 10000,
   "elementsActive": false,
@@ -50,9 +50,9 @@
   "hpBp": 14800,
   "coopHpTableBp": [
    10000,
-   21000,
-   28000,
-   31000
+   16000,
+   20000,
+   23000
   ],
   "speedBp": 10000,
   "elementsActive": true,
@@ -102,7 +102,7 @@
   ],
   "bossAbilityTier": 1,
   "lives": {},
-  "bountyBp": 10600,
+  "bountyBp": 9500,
   "rewardBp": 15000
  },
  "nightmare": {
@@ -110,9 +110,9 @@
   "hpBp": 14600,
   "coopHpTableBp": [
    10000,
-   22000,
-   29000,
-   34000
+   16000,
+   20000,
+   23000
   ],
   "speedBp": 10000,
   "elementsActive": true,
@@ -164,7 +164,7 @@
   "lives": {
    "start": 22
   },
-  "bountyBp": 10600,
+  "bountyBp": 9550,
   "rewardBp": 25000
  }
 }

@@ -180,3 +180,9 @@ Weitere Optionen: `--jobs N` (worker_threads, Ergebnis unabhängig von N), `--na
 Experimente ohne Dateiänderung über Umgebungsvariablen (nur Sanity-Skripte, nie der Kern): `P1_PATCH='{"titan":{"dpsShareBp":5000}}'` (Unit-Felder je ID überschreiben), `P1_HP=1.4` (globaler HP-Faktor), `P1_DIFF='{"normal":15200}'` (HP-Basispunkte je Stufe), `P1_COOPH=9000` (Koop-HP je Zusatzspieler), `P1_NOSAVE=1` (Bots wie in Runde 3), `P2_BOSSHP=100000` / `P2_ELITEHP=80000` (HP-Faktor von Boss/Elite).
 
 Bot-Regeln aus P1 (`src/bots/util.ts`, Details und Begründung in `kalibrierung.md`): Sparen auf teure Platzierungen (`Policy.save`), Mythic frühestens ab Wave 4, `Policy.plan` (feste Anschaffung ab Wave X, genutzt vom `aoe`-Bot für den Titan) und `rotateEarly` (Striker verkaufen, wenn das 6-Typ-Team voll ist und ein Legendary/Mythic fehlt). Alle Regeln sind über `botTuning.disabled` abschaltbar.
+
+## Balance-Reste (Runde 4 / P6b)
+
+- `botTuning.earlyCap` = 2 (höchstens 2 Striker), `botTuning.banned` (Leave-one-out: die Unit existiert für den Bot nicht; `q7-p1 --part loo`, `LOO_PROXY=1` = alter Proxy), `botTuning.makeRoom` (Boss-Plan verkauft die schwächste Unit für einen Slot), Boss-Bedarfsprüfung `bossCapacityRatio` / `bossNeedMid` / `bossNeedFinal` (Standard 0 = aus), `policyPlans`, `bossFinalHorizon`, `rotateMinRarity`.
+- `economy.coop.upgradeCostTableBp` (optional, Upgrade-Kosten je Spielerzahl, Index 0 = 10000): gebaut, in den Daten nicht gesetzt.
+- Skripte: `p6b-diag.ts` (Team je Wave), `p6b-boss.ts` (Boss-Bedarf). Env: `P6B_ROTRAR`, `P6B_ROTWAVE`, `P6B_NEED`, `P6B_FINALH`, `P6B_NOPLAN`, `P6B_NOROOM`.
