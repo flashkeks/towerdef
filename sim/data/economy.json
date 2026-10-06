@@ -51,11 +51,11 @@
     "damageBp": 10000, "tempoBp": 6000, "rangeBp": 3000, "vulnerableBp": 5000
   },
   "damage": {
-    "ref": "recommendations §10: Mindestschaden 1 HP, Resistenz 100/(100+R), Element 1,5/0,5, Crit-Multiplikator 1,5",
+    "ref": "recommendations §10: Mindestschaden 1 HP, Resistenz 100/(100+R), Element 1,2/0,8 (R5 P3c, vorher 1,5/0,5), Crit-Multiplikator 1,5",
     "minDamageCenti": 100,
     "armorBase": 100,
-    "elementStrongBp": 15000,
-    "elementWeakBp": 5000,
+    "elementStrongBp": 12000,
+    "elementWeakBp": 8000,
     "critDefaultMultBp": 15000
   },
   "targeting": {

@@ -168,7 +168,7 @@ describe('Fähigkeiten', () => {
 });
 
 describe('Elemente ab Hard, Crit, Splitter', () => {
-  it('Normal: Elemente inaktiv; Hard: Striker (Element 1) gegen Element 2 = x1,5, gegen 4 = x0,5', () => {
+  it('Normal: Elemente inaktiv; Hard: Striker (Element 1) gegen Element 2 = x1,2, gegen 4 = x0,8', () => {
     const run = (diff: 'normal' | 'hard', el: number): number => {
       const { sim, put, place } = mk(diff);
       place('striker', 0);
@@ -179,8 +179,8 @@ describe('Elemente ab Hard, Crit, Splitter', () => {
     const base = run('normal', 2);
     expect(run('normal', 4)).toBe(base);
     const hardNeutral = run('hard', 0);
-    expect(run('hard', 2)).toBe(Math.floor((hardNeutral * 15000) / 10000));
-    expect(run('hard', 4)).toBe(Math.floor((hardNeutral * 5000) / 10000));
+    expect(run('hard', 2)).toBe(Math.floor((hardNeutral * 12000) / 10000));
+    expect(run('hard', 4)).toBe(Math.floor((hardNeutral * 8000) / 10000));
   });
   it('Nur Crit-Units verbrauchen PRNG-Werte', () => {
     const a = mk();

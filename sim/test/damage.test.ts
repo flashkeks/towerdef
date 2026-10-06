@@ -42,14 +42,14 @@ describe('Schadensformel (§10)', () => {
   });
   it('Element-Zyklus: stark bei {1,2}, schwach bei {3,4}, neutral bei 0 / gleich', () => {
     const e = (a: number, d: number) => elementBp(a, d, eco);
-    expect(e(1, 2)).toBe(15000);
-    expect(e(1, 3)).toBe(15000);
-    expect(e(1, 4)).toBe(5000);
-    expect(e(1, 5)).toBe(5000);
+    expect(e(1, 2)).toBe(12000);
+    expect(e(1, 3)).toBe(12000);
+    expect(e(1, 4)).toBe(8000);
+    expect(e(1, 5)).toBe(8000);
     expect(e(1, 1)).toBe(10000);
-    expect(e(5, 1)).toBe(15000); // Zyklus schließt sich
-    expect(e(5, 2)).toBe(15000);
-    expect(e(2, 1)).toBe(5000);
+    expect(e(5, 1)).toBe(12000); // Zyklus schließt sich
+    expect(e(5, 2)).toBe(12000);
+    expect(e(2, 1)).toBe(8000);
     expect(e(0, 3)).toBe(10000);
     expect(e(3, 0)).toBe(10000);
   });

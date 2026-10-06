@@ -866,3 +866,67 @@ Blaster-Luft allein (Frost bleibt −94); Luft 6000 und 9000 (siehe Tabelle oben
 1. `sim/test/replay.test.ts` ist rot, bis die Hauptsitzung das Beispiel-Replay neu aufnimmt (Daten haben sich geändert).
 2. Hard-LOO: Entscheidung über die Element-Stärke auf Hard (Max).
 3. Farm/coop liegen über dem Korridor; Hard-Kennlinie 13,1.
+
+# Runde 5 — P3c: Element-Bonus abschwächen
+
+Auftrag (Max, 06.10.2026): Auf Hard machten die Elemente Gunner/Blaster/Frost zur Pflicht (LOO −45 bis −53, ohne Elemente höchstens −22). Der Stärke-/Schwäche-Faktor wird kleiner, Elemente bleiben auf Hard/Nightmare Regel, aber kein Muss für bestimmte Units. Messung wie P3 (`r5-p3.sh loo|rates`, Profil `normal`, bester Bot `wide`, n = 100, Standardfehler ±4–5 Punkte; Kennlinie `p3-check.ts --part curve`, n = 60).
+
+## Änderungen (alt → neu → Grund)
+
+| Datei/Feld | alt | neu | Grund |
+|---|---|---|---|
+| `economy.json` `damage.elementStrongBp` / `elementWeakBp` | 15000 / 5000 (±50 %) | **12000 / 8000 (±20 %)** | siehe Scan unten; Richtwert war ±25 % |
+| `difficulties.json` hard `bountyBp` | 8150 | **7800** | schwächere Elemente = leichter (Hard `wide` 79 %), nachgestellt auf 49 % |
+| `difficulties.json` nightmare `bountyBp` | 8450 | **8100** | NM 44 % → 31 % |
+| normal | 8400 | 8400 | Elemente auf Normal aus, unverändert 92 % |
+| `test/damage.test.ts`, `test/combat.test.ts` | x1,5 / x0,5 | x1,2 / x0,8 | Erwartungswerte an die Daten angepasst |
+
+Element-Verteilung je Stufe (`wave` auf Hard, `mixed` auf Nightmare) und HP-Faktoren unverändert (Spreizung 7,5 %).
+
+## Scan Element-Faktor (`wide`, LOO-Schlechtester je Stufe, n = 100)
+
+| Faktor | Bounty H/NM | Hard Basis | Hard schlechtester LOO | NM Basis | NM schlechtester LOO |
+|---|---|---|---|---|---|
+| 1,5 / 0,5 (P3b) | 8150 / 8450 | 55 | Blaster −53 | 30 | Frost −26 |
+| 1,25 / 0,75 (±25 %) | 7900 / 8200 | 55 | Blaster −27, Frost −24 | 33 | Frost −30 |
+| **1,2 / 0,8 (±20 %)** | **7800 / 8100** | **49** | **Frost −22, Blaster −19** | **31** | **Frost −26** |
+
+±25 % ließ Blaster auf Hard knapp über der Grenze. ±20 % ist die gewählte Stufe; weiter herunter (±15 %) nicht gemessen, weil Elemente dann kaum noch spürbar sind (Auftrag: „bleiben Regel“). Die Bounty-Schritte (Hard 7300–7900, NM 7700–8250) sind sehr steil (Hard 20 → 55 %).
+
+## Ergebnis
+
+| Ziel | Wert | Urteil |
+|---|---|---|
+| Stufen `wide` (n = 100) | Normal **92**, Hard **49**, Nightmare **31** | erreicht (Hard 45–65 am unteren Rand) |
+| Andere Bots | Normal greedy 47, farm 98, aoe 81, upgrade 28, coop 98; Hard 30 / **86** / 32 / 2 / coop **86**; NM 5 / **48** / 5 / 2 / coop **48** | farm/coop weiter über dem Korridor |
+| HP-Spreizung | 7,5 % | erreicht (Test grün) |
+| Hard-Kennlinie 90→10 % (n = 60) | **13,0** Punkte HP | **verfehlt (Ziel ≥ 20), unverändert zu P3b (13,1)**; Normal 9,4, Nightmare 21,7 |
+| LOO ≤ 25 auf allen Stufen | Normal erreicht (−18), Hard erreicht (−22), **Nightmare Frost −26 knapp daneben** (Messfehler ±5) | fast |
+
+Die Elemente waren nicht die Ursache der steilen Kennlinie: sie fällt bei gleichem `wide` weiter bei 13. Die Kante kommt vom Team, nicht von der Stufenregel.
+
+## Leave-one-out, alle 8 Units (`wide`, n = 100; Delta in Punkten)
+
+| Unit | Normal (92) | Hard (49) | Nightmare (31) |
+|---|---|---|---|
+| Striker | +3 | +10 | −11 |
+| Gunner | +7 | +8 | −1 |
+| Blaster | −11 | −19 | −20 |
+| Banner | 0 | 0 | 0 |
+| Lancer | +1 | +19 | +3 |
+| Frost | −18 | −22 | **−26** |
+| Titan | +3 | +38 | +29 |
+| Farm | 0 | 0 | 0 |
+
+Vorher (P3b): Hard Gunner −51, Blaster −53, Frost −45; NM Blaster −25, Frost −26. Gunner ist nicht mehr Pflicht (±0), Blaster und Frost bleiben die größten Posten (Frost-Slow ist der Multiplikator, vgl. P3b Befund 2; Blaster trägt zweiten Slow und Luft).
+
+## farm/coop über dem Korridor: ist der „beste Bot“ zu stark?
+
+`farm` und `coop` schlagen `wide` auf allen Stufen (98/86/48 gegen 92/49/31). Sie sind damit der eigentlich beste Bot. LOO `farm` (n = 60): Normal Blaster **−78**, sonst ≤ +3; Hard Blaster −73, Frost −23, Gunner −10; NM Blaster −47, Frost −22. Das ist vermutlich weniger Spielbalance als Bot-Pfad: `farm` plant um den Blaster herum, ein Verbot lässt ihn ohne Ersatzplan stehen (Messartefakt wie in P3b Befund 3, nicht untersucht). Als Referenz gilt weiter `wide`; `farm`-Quoten würden bei Angleichung `wide` unter den Korridor drücken (P3b-Test: farm bewegt sich kaum). Die Frage „welcher Bot ist die Messlatte“ gehört zu Max; so lange `farm` mit einer einzigen Einkaufsliste 98/86/48 schafft, ist die Stufe für wenig geschickte Spieler eher leicht, für `wide`-artig breit bauende genau richtig.
+
+## Offen / Übergabe
+
+1. NM Frost −26: Frost-Slow oder Blaster-Slow anfassen (P3b-Hebel) oder Toleranz ±5 akzeptieren.
+2. Hard-Kennlinie 13: Hebel liegt im Team/Bot (Kante), nicht in Elementen oder Bounty.
+3. `farm`-Bot: LOO-Artefakt prüfen, Messlatte klären.
+4. `replay.test.ts` war nach der Änderung grün (Beispiel-Replay offenbar von Hard-Elementen unabhängig); die Hauptsitzung soll trotzdem prüfen, ob das Replay neu aufgenommen werden muss.
