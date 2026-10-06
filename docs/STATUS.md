@@ -12,9 +12,9 @@ Letzte Aktualisierung: 2026-10-06 (Runde 2, Sitzung 1)
 | P0 | Aufräumen, Status, Spiele verifizieren | **erledigt** | Hauptsitzung | siehe „Spiele“ |
 | P1 | `anime-adventures/design-brief.md` | **erledigt** | 1 × Sonnet | 390 Zeilen, Zahlenbereiche je Rarity aus units.json (Stichprobe geprüft) |
 | P2 | Bloons TD6 | läuft | 1 × Sonnet | |
-| P3 | Roblox-Anime-TDs (ASTD, AV, ALS, UTDZ, AE) | läuft: ASTD und ALS **erledigt**, AV, UTDZ, AE laufen | je Spiel 1 × Sonnet | ASTD: Farm-Kurve, Gacha, Startgeld nur Sondermodi. ALS: Upgrade-Kurven, Verkauf 50 %, Traits; In-Match-Geld und Gegner-HP UNKNOWN | |
+| P3 | Roblox-Anime-TDs (ASTD, AV, ALS, UTDZ, AE) | läuft: ASTD, ALS, AV **erledigt**; UTDZ, AE laufen | je Spiel 1 × Sonnet | ASTD: Farm-Kurve, Gacha, Startgeld nur Sondermodi. ALS: Upgrade-Kurven, Verkauf 50 %, Traits; In-Match-Geld und Gegner-HP UNKNOWN. AV: Datenmodule (UnitData 224 Units, EnemyData mit Kill-Yen und HP-Multiplikatoren, TraitValues) | |
 | P4 | Vergleich und Empfehlung | offen | – | |
-| P5 | Vorarbeiten (Technik, Assets, Recht, Balancing) | offen | – | |
+| P5 | Vorarbeiten (Technik, Assets, Recht, Balancing) | läuft (Technik + Assets) | 1 × Sonnet | |
 | P6 | Abschluss | offen | – | |
 
 ## Spiele (P0, verifiziert)
@@ -39,6 +39,8 @@ Namensvetter (geprüft, **nicht** gemeint):
 - „Anime Last Stand“ hat bei 1,08 Mrd. Besuchen nur 17 gleichzeitige Spieler: Das Spiel ist praktisch tot oder abgelöst. Ein Nachfolger wurde nicht gefunden (eine Suche). Es wird trotzdem ausgewertet, mit Fokus auf `design-lessons.md`.
 
 ## Offene Spuren
+
+- AV: Startgeld und Wave-Yen, Basis-HP; Wiki-Stat-Chancen summieren sich auf 106,5 %. Kill-Yen aus EnemyData nur O/LOW.
 
 - ASTD: Startgeld/Kill-Cash in Story, Gegner-HP-Formel (Wiki ohne Werte). Wikiwidersprüche: Pity Banner Z 140/120, Gale-Slow-Cap 65/80 %.
 - ALS: Startgeld, Gegner-HP, Targeting. Wiki `alsroblox.fandom.com` hat keine Datenmodule. Aura-Farmer-Upgradekosten nicht monoton (Wikifehler?).
