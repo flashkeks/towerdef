@@ -98,12 +98,48 @@ export const ModifiersSchema = z.object({
 });
 export type ModifiersData = z.infer<typeof ModifiersSchema>;
 
+const bp = z.number().int().min(0).max(10000);
+const ModifierId = z.string().regex(/^(shield:\d+|regen|armored|fast)$/);
+
+/** Modifier-Vergabe je Stufe (Runde 4 / P3): Anteil regulärer Gruppen (nicht Boss/Elite), die ab `fromWave` einen Modifier bekommen. */
+export const DifficultyModifiersSchema = z.object({
+  densityBp: bp,
+  fromWave: pos,
+  pool: z.array(z.object({ id: ModifierId, weight: pos })),
+});
+/** Wellen-Variante: pro Wave (seeded, deterministisch) mit `chanceBp` gewählt; höchstens eine je Wave. */
+export const WaveVariantSchema = z.object({
+  id: z.string().min(1),
+  chanceBp: bp,
+  fromWave: pos,
+  /** Anzahl-Faktor auf alle regulären Gruppen (Basispunkte, floor, mindestens 1). */
+  countBp: pos.default(10000),
+  /** Spawn-Abstand-Faktor (Basispunkte, < 10000 = dichter). */
+  intervalBp: pos.default(10000),
+  /** Tauscht `shareBp` der Gegner des Typs `from` gegen Typ `to` (eigene Gruppe, gleicher Start). */
+  swap: z.object({ from: z.string(), to: z.string(), shareBp: bp }).optional(),
+  /** Setzt diesen Modifier auf alle regulären Gruppen der Wave, die noch keinen haben (ganze Wave gepanzert/geschirmt/schnell). */
+  forceModifier: ModifierId.optional(),
+});
 export const DifficultySchema = z.object({
   ref,
   _comment: comment,
+  /** Feinjustierung (Runde 4 / P3): Stufen unterscheiden sich über Regeln, nicht über diesen Faktor. */
   hpBp: pos,
   speedBp: pos,
   elementsActive: z.boolean(),
+  /** `wave`: alle Gruppen einer Wave teilen ein Element; `mixed`: Element je Gruppe versetzt (Gegenwehr braucht mehrere Elemente). */
+  elementMode: z.enum(['wave', 'mixed']).default('wave'),
+  modifiers: DifficultyModifiersSchema.default({ densityBp: 0, fromWave: 1, pool: [] }),
+  waveVariants: z.array(WaveVariantSchema).default([]),
+  /** Boss-Fähigkeiten-Set (0 = Basis, 1 = erweitert, 2 = voll). Schnittstelle für P4 (Boss-Kits); die Sim wertet es noch nicht aus. */
+  bossAbilityTier: z.union([z.literal(0), z.literal(1), z.literal(2)]).default(0),
+  /** Überschreibt `economy.lives` je Stufe (nur gesetzte Felder). */
+  lives: z.object({ start: pos.optional(), regenPerWave: nat.optional(), instantLoss: z.array(z.string()).optional() }).default({}),
+  /** Münz-Faktor auf Kill-Bounties (Basispunkte). */
+  bountyBp: pos.default(10000),
+  /** Belohnungsfaktor für Meta-Belohnungen (XP/Gems am Rundenende, M3); in der Sim nur Datenfeld. */
+  rewardBp: pos.default(10000),
 });
 export const DifficultiesSchema = z.object({
   ref,
@@ -113,6 +149,7 @@ export const DifficultiesSchema = z.object({
 });
 export type DifficultyId = 'normal' | 'hard' | 'nightmare';
 export type DifficultyDef = z.infer<typeof DifficultySchema>;
+export type WaveVariant = z.infer<typeof WaveVariantSchema>;
 export type DifficultiesData = z.infer<typeof DifficultiesSchema>;
 
 const Modifier = z.string().regex(/^(shield:\d+|regen|armored|fast)$/);
@@ -229,11 +266,34 @@ export const UnitsSchema = z.object({
 });
 export type UnitsData = z.infer<typeof UnitsSchema>;
 
+/**
+ * Challenges (vorbereitetes Datenkonzept, Runde 4 / P3): eine Stufe als Basis plus Regel-Überschreibungen und Einschränkungen.
+ * Die Sim wertet sie noch nicht aus; sie werden nur geladen und auf Querverweise geprüft.
+ */
+export const ChallengesSchema = z.object({
+  ref,
+  _comment: comment,
+  challenges: z.array(
+    z.object({
+      id: z.string().min(1),
+      name: z.string().min(1),
+      extends: z.enum(['normal', 'hard', 'nightmare']),
+      /** Überschreibt Felder der Basis-Stufe (z. B. lives, modifiers, waveVariants, bossAbilityTier). */
+      overrides: DifficultySchema.partial().default({}),
+      restrictions: z.object({ bannedUnits: z.array(z.string()).default([]), maxTeamSlots: pos.optional(), noSell: z.boolean().default(false) }).default({ bannedUnits: [], noSell: false }),
+      rewardBp: pos.default(10000),
+    }),
+  ),
+});
+export type ChallengesData = z.infer<typeof ChallengesSchema>;
+
 export interface GameData {
   economy: EconomyData;
   enemies: EnemiesData;
   modifiers: ModifiersData;
   difficulties: DifficultiesData;
+  /** Optional; nur Datenkonzept (P3). */
+  challenges?: ChallengesData;
   units: UnitsData;
   stages: Record<string, StageData>;
 }

@@ -1,11 +1,30 @@
 import { compile, type Ctx } from '../src/data/compile.js';
 import { loadGameData } from '../src/data/load.js';
 import type { DifficultyId, GameData, StageData } from '../src/data/schema.js';
-import { createSim, type Sim } from '../src/index.js';
+import { createSim as createSimCore, type Sim, type SimOptions } from '../src/index.js';
 import { createEnemy } from '../src/systems/spawn.js';
 import type { EnemyState, SimState } from '../src/state.js';
 
-export const data: GameData = loadGameData();
+/**
+ * Daten ohne Stufen-Regeln (Runde 4 / P3): Modifier-Dichte 0, keine Wellen-Varianten, Element-Modus `wave`,
+ * keine Leben-Überschreibung, Bounty x1. Die HP-Faktoren bleiben. Alle Regel-unabhängigen Tests laufen hierauf,
+ * damit sie die Stage-Waves der Daten zeigen; die Stufen-Regeln prüft `difficulty.test.ts` mit den echten Daten.
+ */
+export function plainData(): GameData {
+  const d = loadGameData();
+  for (const k of ['normal', 'hard', 'nightmare'] as const) {
+    Object.assign(d.difficulties[k], {
+      elementMode: 'wave',
+      modifiers: { densityBp: 0, fromWave: 1, pool: [] },
+      waveVariants: [],
+      lives: {},
+      bountyBp: 10000,
+    });
+  }
+  return d;
+}
+
+export const data: GameData = plainData();
 export const stage = data.stages['standard20'];
 
 export function ctxFor(players = 1, diff: DifficultyId = 'normal', st: StageData = stage): Ctx {
@@ -18,7 +37,7 @@ export function enemy(ctx: Ctx, type: string, wave = 1, over: Partial<EnemyState
 }
 
 export function richData(coins = 1_000_000): GameData {
-  const d = loadGameData();
+  const d = plainData();
   d.economy.startCoins = coins;
   return d;
 }
@@ -32,4 +51,7 @@ export function slotsOf(sim: Sim, kind: 'ground' | 'hill', size: 1 | 2 = 1): num
   return sim.slots().filter((s) => s.kind === kind && s.size === size).map((s) => s.id);
 }
 
-export { createSim };
+/** `createSim` mit regelfreien Daten als Standard (siehe `plainData`); `data` überschreibt. */
+export function createSim(o: SimOptions): Sim {
+  return createSimCore({ ...o, data: o.data ?? data });
+}

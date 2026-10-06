@@ -71,7 +71,7 @@ export function createSim(opts: SimOptions): Sim {
   if (!stage) throw new Error(`Unbekannte Stage ${String(opts.stage)}`);
   const ctx: Ctx = compile(data, stage, opts.difficulty, opts.players, { seed: opts.seed, maxWaves: opts.maxWaves });
   const eco = data.economy;
-  const startLives = eco.lives.start + (opts.metaLives ?? eco.lives.metaBonus);
+  const startLives = (data.difficulties[opts.difficulty].lives.start ?? eco.lives.start) + (opts.metaLives ?? eco.lives.metaBonus);
   const state: SimState = {
     tick: 0,
     wave: 0,

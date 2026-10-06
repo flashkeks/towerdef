@@ -9,6 +9,7 @@
  */
 import type { Ctx } from '../data/compile.js';
 import { nextInt, seedRng } from '../prng.js';
+import { ruleWave } from './rules.js';
 
 export interface GenGroup {
   type: string;
@@ -42,7 +43,7 @@ const cache = new WeakMap<Ctx, Map<number, GenWave>>();
 
 /** Wave n der Stage: feste Wave oder (Infinite) erzeugte Wave. */
 export function getWave(ctx: Ctx, n: number): GenWave {
-  if (n <= ctx.fixedWaves) return ctx.stage.waves[n - 1];
+  if (n <= ctx.fixedWaves) return ruleWave(ctx, n, ctx.stage.waves[n - 1]);
   if (!ctx.infinite) throw new Error(`Wave ${n} existiert nicht`);
   let m = cache.get(ctx);
   if (!m) cache.set(ctx, (m = new Map()));

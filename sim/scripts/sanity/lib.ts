@@ -6,6 +6,7 @@
 import { createSim, loadGameData, type DifficultyId, type GameData, type Sim, type UnitMod } from '../../src/index.js';
 import { BOTS } from '../../src/bots/index.js';
 import type { Bot, BotFactory } from '../../src/bots/types.js';
+import { DifficultySchema } from '../../src/data/schema.js';
 import { seedRng } from '../../src/prng.js';
 import { botTuning, policyBot, type Policy } from '../../src/bots/util.js';
 
@@ -31,6 +32,11 @@ if (process.env.P1_HP) {
 // P1_DIFF='{"normal":14600,"hard":14400}': HP-Basispunkte je Stufe absolut überschreiben (Kalibrierungs-Scans).
 if (process.env.P1_DIFF) {
   for (const [k, v] of Object.entries(JSON.parse(process.env.P1_DIFF) as Record<string, number>)) baseData.difficulties[k as 'normal'].hpBp = v;
+}
+
+// P3_RULES='{"hard":{"modifiers":{"densityBp":1500}}}': Regeln je Stufe überschreiben (flach je Feld, Kalibrierung ohne Dateiänderung).
+if (process.env.P3_RULES) {
+  for (const [k, v] of Object.entries(JSON.parse(process.env.P3_RULES) as Record<string, Record<string, unknown>>)) (baseData.difficulties[k as 'normal'] = DifficultySchema.parse({ ...baseData.difficulties[k as 'normal'], ...v }));
 }
 
 // P1_COOPH=9000: hpPerExtraPlayerBp (Koop-HP-Faktor) überschreiben.

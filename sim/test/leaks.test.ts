@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { GameData, StageData } from '../src/data/schema.js';
 import { leakCost } from '../src/systems/move.js';
-import { createSim, data, stage } from './helpers.js';
+import { createSim, data, plainData, stage } from './helpers.js';
 import { loadGameData, validateGameData } from '../src/data/load.js';
 
 /** Stage mit einer einzigen Wave (nur Leaks, keine Verteidigung). */
@@ -27,7 +27,7 @@ describe('Leben und Leaks (Runde 4 / P2)', () => {
   it('Startleben = start + metaBonus; metaLives überschreibt den Bonus', () => {
     expect(createSim({ stage: 'standard20', difficulty: 'normal', players: 1, seed: 1 }).state.lives).toBe(30);
     expect(createSim({ stage: 'standard20', difficulty: 'normal', players: 1, seed: 1, metaLives: 5 }).state).toMatchObject({ lives: 35, maxLives: 35 });
-    const d = loadGameData();
+    const d = plainData();
     d.economy.lives.metaBonus = 4;
     expect(createSim({ stage: 'standard20', difficulty: 'normal', players: 1, seed: 1, data: d }).state.lives).toBe(34);
   });
@@ -129,7 +129,7 @@ describe('Leben und Leaks (Runde 4 / P2)', () => {
   });
 
   it('Elite per Daten auf Sofort-Verlust umstellbar', () => {
-    const d = loadGameData();
+    const d = plainData();
     d.economy.lives.instantLoss = ['boss', 'elite'];
     const sim = run(oneWave('elite', 1), d);
     expect(sim.result()).toBe('loss');
@@ -137,13 +137,13 @@ describe('Leben und Leaks (Runde 4 / P2)', () => {
   });
 
   it('instantLoss mit unbekanntem Archetyp wird beim Laden abgelehnt', () => {
-    const d = loadGameData();
+    const d = plainData();
     d.economy.lives.instantLoss = ['drache'];
     expect(() => validateGameData(d)).toThrow(/instantLoss/);
   });
 
   it('Regeneration pro Wave: +N beim Wave-Ende (nach dem Leak), nie über dem Maximum', () => {
-    const d = loadGameData();
+    const d = plainData();
     d.economy.lives.regenPerWave = 3;
     const sim = createSim({ stage: oneWave('brute', 1), difficulty: 'normal', players: 1, seed: 1, data: d });
     const trace: number[] = [];
@@ -155,7 +155,7 @@ describe('Leben und Leaks (Runde 4 / P2)', () => {
   });
 
   it('Regeneration deckelt exakt am Maximum und heilt keine toten Runden', () => {
-    const d = loadGameData();
+    const d = plainData();
     d.economy.lives.regenPerWave = 100;
     const sim = run(oneWave('grunt', 1), d);
     expect(sim.state.lives).toBe(30);

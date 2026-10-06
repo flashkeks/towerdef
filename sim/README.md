@@ -80,6 +80,28 @@ Ersetzt die Base-HP (`state.lives`, `state.maxLives`; Daten `economy.lives`: `st
 - Das Leak-Event trägt `damage` (= Lebenskosten, bei Sofort-Verlust die verlorenen Restleben), `hp`, `maxHp`, `fatal`. Report-Felder `baseHpLost`/`baseHpEnd`/`baseHp` heißen aus Kompatibilität weiter so und meinen Leben.
 - Die Bots lesen die Leben nicht: ein Lauf mit riesigem Startwert liefert alle Leaks, die Siegquote für beliebige Regeln lässt sich danach nachrechnen (`scripts/sanity/q9-p2.ts`, `--part raw|eval|check`).
 
+## Stufen-Regeln (Runde 4 / P3)
+
+Die Stufen unterscheiden sich über Regeln (`data/difficulties.json`, zod `DifficultySchema`); `hpBp` ist nur noch Feinjustierung (Normal 15600, Hard 14800, Nightmare 14600).
+
+| Feld | Wirkung |
+|---|---|
+| `elementsActive`, `elementMode` | Elemente an/aus; `wave` = alle Gruppen einer Wave teilen ein Element, `mixed` = Element je Gruppe versetzt (`1 + ((e-1 + 2*Gruppe) mod 5)`) |
+| `modifiers {densityBp, fromWave, pool[{id, weight}]}` | Anteil regulärer Gruppen (nie Boss/Elite, nie Gruppen mit Stage-Modifier) ab `fromWave`, die einen gewichteten Modifier aus dem Pool bekommen |
+| `waveVariants[{id, chanceBp, fromWave, countBp, intervalBp, swap?, forceModifier?}]` | je Wave wird (seeded) höchstens eine Variante gewählt, in Listenreihenfolge: Anzahl-/Dichte-Faktor, Typ-Tausch (`swap.from -> to`, Anteil `shareBp`), ganze Wave mit einem Modifier |
+| `lives {start?, regenPerWave?, instantLoss?}` | überschreibt `economy.lives` je Stufe (nur gesetzte Felder) |
+| `bountyBp` | Münz-Faktor auf Kill-Bounties |
+| `rewardBp` | Belohnungsfaktor für Meta-Belohnungen (M3); die Sim rechnet damit nicht |
+| `bossAbilityTier` | 0/1/2, **Schnittstelle für P4**: Welches Boss-Fähigkeiten-Set aktiv ist. Zugriff: `ctx.difficulty.bossAbilityTier`. Die Sim wertet es nicht aus; P4 entscheidet, was Tier 0/1/2 je Boss-Kit bedeuten |
+
+Umsetzung: `src/systems/rules.ts` (`ruleWave`, `pickVariant`), eingehängt in `getWave` (`systems/infinite.ts`), also gilt jede Wave-Quelle (Spawn, `wavePool`, später `previewWave`) einheitlich. Die Würfe sind Ganzzahl-Hashes aus (Seed, Wave, Gruppe, Salz): kein Sim-PRNG, kein Einfluss auf den Zustands-Hash, gleiche Eingabe = gleiche Wave, andere Seeds = andere Waves (das verbreitert die Kennlinie, `kalibrierung.md` Runde 4 - P3). Eine Stufe ohne Regeln (Dichte 0, keine Varianten, Modus `wave`) liefert die Stage-Waves unverändert. Infinite: nur Waves 1-20 (feste Waves) laufen durch die Regeln, erzeugte Waves nicht.
+
+**Für P4 (`previewWave`, Risikokarten, Boss-Kits):** Vorschau = `getWave(ctx, n)` (enthält Modifier, Varianten, Elemente der Stufe); die gewählte Variante liefert `pickVariant(ctx, n)`. Boss/Elite-Gruppen werden von den Regeln nie verändert (außer dem Element im Modus `mixed`). Boss-Kits lesen `bossAbilityTier`. Boss-HP, Boss-Kits, Risikokarten bleiben bei P4.
+
+**Challenges** (`data/challenges.json`, `ChallengesSchema`): nur Datenkonzept. Eine Challenge = Basis-Stufe (`extends`) + `overrides` (Teil von `DifficultySchema`) + `restrictions` (`bannedUnits`, `maxTeamSlots`, `noSell`) + `rewardBp`. Wird geladen und quergeprüft, die Sim wertet sie nicht aus.
+
+**Nachkalibrieren nach dem Merge mit P4:** `sh scripts/sanity/p3-check.sh 60 TAG` (3 Stufen parallel, ca. 1,5 min): Siegquote aller Bots solo je Stufe plus Kennlinie des besten Bots (Standard `aoe` für Normal, `wide` für Hard/Nightmare, `P3_BOT=upgrade` überschreibt). Einzeln: `npx tsx scripts/sanity/p3-check.ts --part rates|curve|rules --difficulty hard --n 60`. Regeln ohne Dateiänderung testen: `P3_RULES='{"hard":{"hpBp":14600}}'` (flach je Feld, wird mit dem Schema geprüft), `P2_BOSSHP=...` für den Boss-HP-Faktor. Stellschrauben in der Reihenfolge Wirkung je Schritt (n = 40): HP ±1 % ≈ ∓6 Punkte Siegquote, Modifier-Dichte ±5 %-Punkte ≈ ∓10 Punkte, Nightmare-Startleben ±2 ≈ ∓5.
+
 ## Daten ändern
 
 Alle Zahlen stehen in `data/*.json` (zod-validiert beim Laden, Querverweise in `load.ts`, z. B. Leak-Werte in `economy.json` = `enemies.json`). Neue Stage = neue Datei in `data/stages/` (Waves, Slots, Pfad). Die Wave-Tabelle der Standard-Stage wurde mit `scripts/gen-stage.ts` erzeugt (Ausgabe danach von Hand kompakt formatiert).
@@ -109,6 +131,7 @@ Weitere Optionen: `--jobs N` (worker_threads, Ergebnis unabhängig von N), `--na
 | `q7-p1 --part matrix\|raw\|sum\|loo\|phase\|static` | Siegquote, Kaufquote und Schaden je Münze je Unit; Leave-one-out für den besten Bot; Phasenprofil |
 | `q9-p2 --part raw\|eval\|check` | Leben-System (P2): Leaks sammeln, Siegquote für Startleben/Basiskosten/Elite-Regel/Regeneration nachrechnen, echte Gegenprobe |
 | `q8-hpscan` | Siegquote aller Bots gegen einen globalen HP-Faktor |
+| `p3-check.ts`, `p3-check.sh` | Abnahmezahlen der Stufen (Runde 4 / P3): Siegquote je Bot und Stufe, Kennlinie, Regel-Profil je Seed |
 | `p1-quick.sh N TAG`, `p1-sweep.sh N TAG` | Schnellläufe (je Stufe ein Prozess) |
 
 Experimente ohne Dateiänderung über Umgebungsvariablen (nur Sanity-Skripte, nie der Kern): `P1_PATCH='{"titan":{"dpsShareBp":5000}}'` (Unit-Felder je ID überschreiben), `P1_HP=1.4` (globaler HP-Faktor), `P1_DIFF='{"normal":15200}'` (HP-Basispunkte je Stufe), `P1_COOPH=9000` (Koop-HP je Zusatzspieler), `P1_NOSAVE=1` (Bots wie in Runde 3), `P2_BOSSHP=100000` / `P2_ELITEHP=80000` (HP-Faktor von Boss/Elite).
