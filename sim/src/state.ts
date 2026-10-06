@@ -18,6 +18,31 @@ export interface DotState {
   unit: number;
 }
 
+/** Laufzeitzustand eines Boss-Kits (P4, K5). Alles Ganzzahlen; Zeiten in Ticks, Faktoren in Basispunkten, `ward` in Centi-HP. */
+export interface BossRun {
+  /** Kit-ID (data/bosses.json). */
+  kit: string;
+  /** Aktuelle Phase (Index in `phases`, steigt nur). */
+  phase: number;
+  /** Rest-Schild (Centi-HP) und Ticks bis zum Ablauf; Fenster, das beim Brechen aufgeht. */
+  ward: number;
+  wardTicks: number;
+  wardWindowTicks: number;
+  wardWindowBp: number;
+  /** Schwachstellen-Fenster: solange `vulnTicks` > 0 nimmt der Boss `vulnBp`-fachen Schaden und volle Stun-Dauer. */
+  vulnTicks: number;
+  vulnBp: number;
+  /** Sturm (charge): Geschwindigkeitsfaktor, solange `hasteTicks` > 0; danach optionales Fenster `exhaustTicks`/`exhaustBp`. */
+  hasteTicks: number;
+  hasteBp: number;
+  exhaustTicks: number;
+  exhaustBp: number;
+  /** Restabklingzeit je Fähigkeit des Kits (Index = Position in `abilities`). */
+  cd: number[];
+  /** Laufender Telegraph: Fähigkeit (Index), Ticks bis zur Wirkung, wurde der Boss währenddessen betäubt? */
+  tele: { ability: number; left: number; interrupted: boolean } | null;
+}
+
 export interface EnemyState {
   id: number;
   type: string;
@@ -50,6 +75,10 @@ export interface EnemyState {
   poison: DotState | null;
   /** Wirksamer Schaden je Spieler (Index = Spieler-ID) für die Bounty-Verteilung. */
   dmgShare: number[];
+  /** Boss-Kit-Zustand (nur Boss mit Kit für seine Wave, sonst null). */
+  bossRun: BossRun | null;
+  /** Risikokarte, unter der die Wave gestartet wurde (null = keine). */
+  card: string | null;
 }
 
 export interface UnitState {
@@ -84,6 +113,8 @@ export interface SpawnEntry {
   wave: number;
   modifiers: string[];
   element: number;
+  /** Risikokarte der Wave (null = keine). */
+  card: string | null;
 }
 
 export interface SimStats {
@@ -110,6 +141,8 @@ export interface SimState {
   waveTimer: number;
   prepTicksLeft: number;
   skipPending: boolean;
+  /** Für die nächste zu startende Wave gewählte Risikokarte (P4, K1); wird beim Wave-Start verbraucht. */
+  nextCard: string | null;
   /** Verbleibende Leben (Team gemeinsam). Ersetzt Base-HP. */
   lives: number;
   /** Maximum (Startleben + Meta-Bonus); Regeneration deckelt hier. */
@@ -128,7 +161,7 @@ export interface SimState {
 export type IncomeSource = 'waveBonus' | 'bounty' | 'farm' | 'sell' | 'donate';
 
 export type SimEvent =
-  | { type: 'spawn'; tick: number; enemyId: number; enemy: string; wave: number }
+  | { type: 'spawn'; tick: number; enemyId: number; enemy: string; wave: number; summon?: true }
   | { type: 'kill'; tick: number; enemyId: number; enemy: string; wave: number; bounty: number }
   | { type: 'leak'; tick: number; enemyId: number; enemy: string; wave: number; damage: number; hp: number; maxHp: number; fatal: boolean }
   | { type: 'waveStart'; tick: number; wave: number }
@@ -139,7 +172,14 @@ export type SimEvent =
   | { type: 'upgrade'; tick: number; player: number; unitId: number; level: number; cost: number }
   | { type: 'sell'; tick: number; player: number; unitId: number; refund: number }
   | { type: 'ability'; tick: number; player: number; unitId: number; kind: string }
-  | { type: 'over'; tick: number; result: 'win' | 'loss' };
+  | { type: 'over'; tick: number; result: 'win' | 'loss' }
+  // Boss-Kits (P4, K5): Phase, Telegraph (Vorwarnung), Wirkung/Unterbrechung, Schwachstellen-Fenster, Schild.
+  | { type: 'bossPhase'; tick: number; enemyId: number; kit: string; phase: number; id: string; name: string }
+  | { type: 'bossTelegraph'; tick: number; enemyId: number; kit: string; ability: string; kind: string; warnTicks: number; fireTick: number; interruptible: boolean }
+  | { type: 'bossCast'; tick: number; enemyId: number; kit: string; ability: string; kind: string; interrupted: boolean }
+  | { type: 'bossWindow'; tick: number; enemyId: number; open: boolean; damageBp: number; ticks: number; cause: 'ward' | 'cast' | 'interrupt' | 'exhaust' | 'phase' }
+  | { type: 'bossWard'; tick: number; enemyId: number; state: 'up' | 'broken' | 'expired'; hp: number }
+  | { type: 'cardChosen'; tick: number; player: number; card: string | null; wave: number };
 
 /** Laufzeitkontext der Systeme: veränderlicher Zustand + unveränderliche abgeleitete Daten. */
 export interface World {

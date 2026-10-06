@@ -43,7 +43,10 @@ describe('Leben und Leaks (Runde 4 / P2)', () => {
   });
 
   it('Gesunde Gegner kosten die Basis; Summe über die Stage stimmt (godMode: Leben bleiben, Kosten werden gezählt)', () => {
-    const sim = createSim({ stage: 'standard20', difficulty: 'normal', players: 1, seed: 1, godMode: true });
+    // Boss-Kits aus (P4): Beschwörungen des Bosses wären zusätzliche Leaks außerhalb der Stage-Tabelle.
+    const noKits = structuredClone(data);
+    noKits.bosses = { ref: 'test', kits: [] };
+    const sim = createSim({ stage: 'standard20', difficulty: 'normal', players: 1, seed: 1, godMode: true, data: noKits });
     while (!sim.isOver()) sim.step(100);
     const events = sim.drainEvents();
     const leaks = events.filter((e) => e.type === 'leak');

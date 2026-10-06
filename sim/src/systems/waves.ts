@@ -9,19 +9,25 @@ import { parseModifier, type Ctx } from '../data/compile.js';
 import { mulBp } from '../fixed.js';
 import type { World } from '../state.js';
 import { payWaveEnd } from './economy.js';
+import { applyCardToGroup, waveHasBoss } from './cards.js';
 import { getWave } from './infinite.js';
 
 export function startWave(w: World, n: number): void {
   const { state, ctx } = w;
   const wave = getWave(ctx, n);
+  // Risikokarte (K1): gilt nur für diese Wave, auf Boss-Waves ist sie wirkungslos.
+  const card = state.nextCard !== null && !waveHasBoss(ctx, n) ? state.nextCard : null;
+  state.nextCard = null;
   for (const g of wave.groups) {
-    for (let i = 0; i < g.count; i++) {
+    const eff = applyCardToGroup(ctx, g, card);
+    for (let i = 0; i < eff.count; i++) {
       state.spawnQueue.push({
         atTick: state.tick + g.delayTicks + i * g.intervalTicks,
         type: g.type,
         wave: n,
-        modifiers: g.modifiers,
+        modifiers: eff.modifiers,
         element: g.element,
+        card,
       });
     }
   }

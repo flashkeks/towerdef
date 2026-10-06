@@ -5,6 +5,7 @@
 import { BP, mulBp } from '../fixed.js';
 import { positionAt } from '../path.js';
 import type { World } from '../state.js';
+import { cardLeakCost } from './cards.js';
 
 /**
  * Lebenskosten eines Leaks: ceil(Basis * RestHP / MaxHP), mindestens 1 (nur Ganzzahlen; Schild zählt nicht).
@@ -23,6 +24,7 @@ export function moveEnemies(w: World): void {
     if (e.hp <= 0 || e.stunTicks > 0) continue;
     let speed = e.speedMicro;
     if (e.slowTicks > 0) speed = mulBp(speed, BP - e.slowBp);
+    if (e.bossRun && e.bossRun.hasteTicks > 0) speed = mulBp(speed, e.bossRun.hasteBp);
     const total = e.frac + speed;
     e.progress += Math.floor(total / 1000);
     e.frac = total % 1000;
@@ -40,7 +42,7 @@ export function moveEnemies(w: World): void {
   for (const e of state.enemies) {
     if (e.hp > 0 && e.progress >= len) {
       const fatal = ctx.instantLoss.has(e.type);
-      const cost = fatal ? Math.max(state.lives, 0) : leakCost(e.leak, e.hp, e.maxHp);
+      const cost = fatal ? Math.max(state.lives, 0) : cardLeakCost(ctx, leakCost(e.leak, e.hp, e.maxHp), e.card);
       state.stats.leaks++;
       state.stats.leakDamage += cost;
       if (!state.godMode) state.lives = fatal ? 0 : Math.max(0, state.lives - cost);

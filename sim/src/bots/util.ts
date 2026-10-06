@@ -21,8 +21,12 @@ export interface Memo {
   saving: number;
   /** Early-Units wurden abgegeben: nicht neu kaufen (Runde 4 / P1). */
   rotated: boolean;
+  /** Risikokarten (P4): Wave, bei der `lives` zuletzt notiert wurde, die Leben damals, Anzahl Waves in Folge ohne Lebensverlust. */
+  cardWave: number;
+  cardLives: number;
+  streak: number;
 }
-export const newMemo = (): Memo => ({ armor: 0, airSeen: false, saving: 0, rotated: false });
+export const newMemo = (): Memo => ({ armor: 0, airSeen: false, saving: 0, rotated: false, cardWave: 0, cardLives: -1, streak: 0 });
 
 /**
  * Sparen (Runde 4 / P1, nur Policy-Option `save`): Ein Mensch spart auf eine teure, deutlich bessere Unit (Mythic/Legendary),
@@ -37,6 +41,15 @@ export const botTuning = {
   saveMinShare: 0.5,
   /** Nur Experimente: Sanity-Skripte setzen das per `P1_NOSAVE=1` (Verhalten der Runden 1-3). */
   disabled: false,
+  /**
+   * Runde 4 / P4: Boss-Fenster nutzen. An: Fähigkeiten gegen einen Boss mit Kit zünden erst im Schwachstellen-Fenster, bei
+   * gebrochenem/stehendem Schild bzw. zum Unterbrechen eines Telegraphs; aus (`P4_NOWINDOW=1`): wie vor P4 (sofort auf den Boss).
+   */
+  windowAware: true,
+  /** Pfadfortschritt (Milli-Tiles), ab dem ein Boss als Notfall gilt: Fähigkeiten feuern dann ohne Fenster (Standard-Stage: 42 Tiles lang). */
+  bossPanicMilli: 31000,
+  /** Risikokarten-Strategie global abschalten (`P4_NOCARDS=1`). Die Strategie läuft nur für Policies mit `cards: true`. */
+  cardsDisabled: false,
 };
 
 export interface Policy {
@@ -59,6 +72,8 @@ export interface Policy {
   save?: boolean;
   /** Münzen, die nicht für Kampf-Units ausgegeben werden. */
   reserve?: number;
+  /** Risikokarten nehmen, wenn das Team stark ist (P4, K1; Standard aus, Bot-Name mit Suffix `+cards`). */
+  cards?: boolean;
 }
 
 export interface Env {
@@ -378,7 +393,27 @@ export function manageTargeting(ctx: BotContext): void {
   }
 }
 
-/** Fähigkeiten: Frost-Stun bei >= N Gegnern in Radius oder Boss/Elite; Titan-Nuke auf Boss/Elite oder fetten Gegner. */
+/**
+ * Boss-Fenster (P4): Zustand des ersten lebenden Bosses mit Kit. `window` = Schwachstellen-Fenster offen, `ward` = Schild steht,
+ * `interruptible` = Telegraph läuft, der sich per Stun brechen lässt, `charging` = Sturm läuft, `panic` = Boss fast am Ziel.
+ */
+export function bossStatus(sim: Sim, live: EnemyState[]): { boss: EnemyState; window: boolean; ward: boolean; interruptible: boolean; charging: boolean; panic: boolean } | null {
+  const boss = live.find((e) => e.bossRun !== null);
+  if (!boss || !boss.bossRun) return null;
+  const run = boss.bossRun;
+  const kit = Object.values(sim.bossKits()).find((k) => k.id === run.kit);
+  const tele = run.tele && kit ? kit.abilities[run.tele.ability] : null;
+  return {
+    boss,
+    window: run.vulnTicks > 0,
+    ward: run.ward > 0,
+    interruptible: !!tele && tele.interruptible && run.tele !== null && !run.tele.interrupted,
+    charging: run.hasteTicks > 0,
+    panic: boss.progress >= botTuning.bossPanicMilli,
+  };
+}
+
+/** Fähigkeiten: Frost-Stun bei >= N Gegnern in Radius oder Boss/Elite; Titan-Nuke auf Boss/Elite oder fetten Gegner. Gegen einen Boss mit Kit im Fenster (P4). */
 export function useAbilities(ctx: BotContext, frostMin = 4): void {
   const { sim, playerId } = ctx;
   const st = sim.state;
@@ -386,6 +421,7 @@ export function useAbilities(ctx: BotContext, frostMin = 4): void {
   const slots = sim.slots();
   const live = st.enemies.filter((e) => e.hp > 0);
   if (live.length === 0) return;
+  const bs = botTuning.windowAware ? bossStatus(sim, live) : null;
   for (const u of st.units) {
     if (u.owner !== playerId || u.abilityCd > 0) continue;
     const d = defs.get(u.defId) as UnitDef;
@@ -394,15 +430,54 @@ export function useAbilities(ctx: BotContext, frostMin = 4): void {
     if (ab.kind === 'stunAoe') {
       const s = slots[u.slot];
       const inR = live.filter((e) => (!e.flying || d.canHitAir) && e.stunTicks <= 0 && dist(e, s) <= ab.radiusMilli);
+      if (bs) {
+        // Boss mit Kit lebt: Frost wartet auf das Fenster bzw. auf einen unterbrechbaren Telegraph (Notfall: kurz vor dem Ziel, Sturm).
+        const bossIn = inR.some((e) => e === bs.boss);
+        if (bossIn && (bs.window || bs.interruptible || bs.charging || bs.panic)) sim.apply(playerId, { type: 'useAbility', entityId: u.id });
+        else if (inR.filter((e) => e !== bs.boss).length >= frostMin * 2) sim.apply(playerId, { type: 'useAbility', entityId: u.id });
+        continue;
+      }
       if (inR.length >= frostMin || inR.some(isBig)) sim.apply(playerId, { type: 'useAbility', entityId: u.id });
     } else if (ab.kind === 'nuke') {
       const targets = live.filter((e) => !e.flying || d.canHitAir);
       if (targets.length === 0) continue;
       const dmg = (d.levels[u.level].damageCenti * ab.damageMulBp) / 10000;
+      if (bs) {
+        // Nuke ins Fenster oder auf den Schild (bricht ihn, öffnet das Fenster); sonst halten, außer Notfall oder Kill.
+        if (bs.window || bs.ward || bs.panic || bs.boss.hp <= dmg * 1.2) sim.apply(playerId, { type: 'useAbility', entityId: u.id });
+        continue;
+      }
       const top = targets.reduce((a, b) => (b.maxHp > a.maxHp ? b : a));
       if (targets.some(isBig) || top.hp >= dmg * 0.5) sim.apply(playerId, { type: 'useAbility', entityId: u.id });
     }
   }
+}
+
+/**
+ * Risikokarten (P4, K1): "nimmt Karten, wenn stark". Stärke = Waves in Folge ohne Lebensverlust und volle Leben (`streak`).
+ * Ab 3 Waves ohne Verlust Tier 1, ab 6 Tier 2, ab 10 Tier 3; gewählt wird die Karte mit dem höchsten Bounty-Aufschlag im erlaubten Tier.
+ * Nie auf Boss-Waves (der Befehl lehnt ab), nie bei weniger als 85 % Leben und nicht mehr für die späten Waves (ab `CARD_LAST_WAVE`):
+ * eine erste Fassung (ab 2/4/6 Waves, 70 % Leben, alle Waves) ließ `aoe` auf Normal von 88 auf 45 % und auf Hard von 43 auf 5 % fallen.
+ */
+const CARD_LAST_WAVE = 15;
+export function takeCard(ctx: BotContext, memo: Memo): void {
+  const { sim, playerId } = ctx;
+  const st = sim.state;
+  if (st.wave !== memo.cardWave) {
+    memo.streak = memo.cardLives >= 0 && st.lives >= memo.cardLives ? memo.streak + 1 : 0;
+    memo.cardWave = st.wave;
+    memo.cardLives = st.lives;
+  }
+  if (st.nextCard !== null || st.phase === 'over' || st.wave < 1 || st.lives * 100 < st.maxLives * 85 || st.wave + 1 > CARD_LAST_WAVE) return;
+  const maxTier = memo.streak >= 10 ? 3 : memo.streak >= 6 ? 2 : memo.streak >= 3 ? 1 : 0;
+  if (maxTier === 0) return;
+  const next = sim.previewWave(st.wave + 1);
+  if (!next || !next.cardAllowed) return;
+  let best: { id: string; bp: number } | null = null;
+  for (const c of sim.cards()) {
+    if (c.tier <= maxTier && (best === null || c.bountyBp > best.bp)) best = { id: c.id, bp: c.bountyBp };
+  }
+  if (best) sim.apply(playerId, { type: 'chooseCard', cardId: best.id });
 }
 
 /** Spendet in 50er-Schritten an den Mitspieler aus `to` mit den wenigsten Münzen. */
@@ -419,6 +494,7 @@ export function donateSurplus(ctx: BotContext, to: number[], keep: number): void
 /** Eine komplette Entscheidungsrunde nach Policy (Fähigkeiten, Targeting, Farm, Kauf). */
 export function playTurn(ctx: BotContext, memo: Memo, pol: Policy): void {
   useAbilities(ctx, pol.frostMin ?? 4);
+  if (pol.cards && !botTuning.cardsDisabled) takeCard(ctx, memo);
   manageTargeting(ctx);
   if (pol.farm) {
     if (pol.farm.sellLate) sellLateFarms(ctx);

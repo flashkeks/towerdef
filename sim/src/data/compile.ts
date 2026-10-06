@@ -6,11 +6,13 @@
 import { buildPath, type Path } from '../path.js';
 import { TILE } from '../fixed.js';
 import type {
+  BossKit,
   DifficultyDef,
   DifficultyId,
   EnemyArchetype,
   GameData,
   OnHitEffect,
+  RiskCard,
   StageData,
   UnitData,
 } from './schema.js';
@@ -93,6 +95,13 @@ export interface Ctx {
   instantLoss: ReadonlySet<string>;
   /** Leben-Regeneration am Wave-Ende. */
   regenLives: number;
+  /** Boss-Kits nach Wave-Nummer (P4); nur Waves der festen Stage, Infinite-Bosse ab Wave 21 haben keins. */
+  bossKits: Record<number, BossKit>;
+  /** Risikokarten (P4) nach ID und in Datei-Reihenfolge. */
+  cards: Record<string, RiskCard>;
+  cardList: RiskCard[];
+  /** Rang der Stufe (normal 0, hard 1, nightmare 2) für `minDifficulty` der Boss-Kits. */
+  difficultyRank: number;
   /** HP des Grunt (Normal, ohne Faktoren) in Centi-HP für Wave n. */
   hpGrunt(n: number): number;
   /** Kill-Bounty in Münzen für einen Gegner mit Bounty-Basis-HP (Centi) in Wave n. */
@@ -147,6 +156,8 @@ export function parseModifier(m: string): ParsedModifier {
 
 /** Infinite: höchstens 60 Gegner gleichzeitig (recommendations §3, Performance). */
 export const INFINITE_ENEMY_CAP = 60;
+
+export const DIFFICULTY_RANK: Record<DifficultyId, number> = { normal: 0, hard: 1, nightmare: 2 };
 
 export interface CompileOpts {
   seed?: number;
@@ -225,6 +236,11 @@ export function compile(data: GameData, stage: StageData, difficultyId: Difficul
     waveTimerTicks: stage.waveTimerTicks ?? data.economy.waveTimerTicks,
     instantLoss: new Set(data.difficulties[difficultyId].lives.instantLoss ?? data.economy.lives.instantLoss),
     regenLives: data.difficulties[difficultyId].lives.regenPerWave ?? data.economy.lives.regenPerWave,
+    bossKits: Object.fromEntries((data.bosses?.kits ?? []).filter((k) => k.wave <= fixedWaves).map((k) => [k.wave, k])),
+    cards: Object.fromEntries((data.cards?.cards ?? []).map((c) => [c.id, c])),
+    cardList: data.cards?.cards ?? [],
+    // P3 x P4: das Boss-Fähigkeiten-Set der Stufe (difficulties.json bossAbilityTier) entscheidet über minDifficulty der Boss-Kits.
+    difficultyRank: data.difficulties[difficultyId].bossAbilityTier ?? DIFFICULTY_RANK[difficultyId],
     coopHpBp: 10000 + data.economy.coop.hpPerExtraPlayerBp * (players - 1),
     hpGrunt,
     bounty,

@@ -4,6 +4,7 @@
  */
 import type { TargetMode, World } from './state.js';
 import { triggerAbility } from './systems/abilities.js';
+import { nextWaveNumber, waveHasBoss } from './systems/cards.js';
 import { addCoins, flushDamage, sellValue } from './systems/economy.js';
 
 export type Command =
@@ -13,6 +14,8 @@ export type Command =
   | { type: 'setTargeting'; entityId: number; mode: TargetMode }
   | { type: 'useAbility'; entityId: number }
   | { type: 'skipWave' }
+  /** Risikokarte (K1) für die nächste zu startende Wave wählen; `null` nimmt die Wahl zurück. Gilt für ein Team, die letzte Wahl zählt. */
+  | { type: 'chooseCard'; cardId: string | null }
   /** Erweiterung (§16): Münzen an Mitspieler in 50er-Schritten. */
   | { type: 'donate'; to: number; amount: number };
 
@@ -117,6 +120,15 @@ export function applyCommand(w: World, playerId: number, cmd: Command): CommandR
       const votes = state.players.filter((p) => p.skipVote).length;
       // Mehrheit der Spieler (§16): mehr als die Hälfte.
       if (votes * 2 > state.players.length) state.skipPending = true;
+      return { ok: true };
+    }
+    case 'chooseCard': {
+      const n = nextWaveNumber(state);
+      if (state.phase === 'wave' && state.wave >= ctx.totalWaves) return fail('no-next-wave');
+      if (cmd.cardId !== null && !ctx.cards[cmd.cardId]) return fail('unknown-card');
+      if (cmd.cardId !== null && waveHasBoss(ctx, n)) return fail('boss-wave');
+      state.nextCard = cmd.cardId;
+      w.events.push({ type: 'cardChosen', tick: state.tick, player: playerId, card: cmd.cardId, wave: n });
       return { ok: true };
     }
     case 'donate': {

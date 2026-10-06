@@ -2,19 +2,22 @@
  * Fassade des Simulationskerns: `createSim` liefert ein `Sim` mit stabiler API.
  *
  * Tick-Reihenfolge (alles in aufsteigender Entity-ID):
- *  1. Waves (Prep-Timer, Wave-Ende/-Start, Skip)   2. Spawns   3. Statuseffekte/DoT/Regen + Tode
+ *  1. Waves (Prep-Timer, Wave-Ende/-Start, Skip)   2. Spawns   2b. Boss-Kits (Phasen, Telegraph, Fenster)
+ *  3. Statuseffekte/DoT/Regen + Tode
  *  4. Bewegung + Leaks (Niederlage)                5. Units: Cooldowns, Angriffe + Tode
  *  6. Sieg-Prüfung                                 7. tick++
  */
 import { applyCommand, type Command, type CommandResult } from './commands.js';
 import { compile, type Ctx, type UnitDef } from './data/compile.js';
 import { loadGameData } from './data/load.js';
-import type { DifficultyId, GameData, StageData } from './data/schema.js';
+import type { BossKit, DifficultyId, GameData, RiskCard, StageData } from './data/schema.js';
 import { hashState } from './hash.js';
 import { coverage } from './path.js';
 import { seedRng } from './prng.js';
 import type { SimEvent, SimState, UnitMod, World } from './state.js';
 import { moveEnemies } from './systems/move.js';
+import { tickBosses } from './systems/boss.js';
+import { previewWave, type WavePreview } from './systems/cards.js';
 import { tickEffects } from './systems/effects.js';
 import { processSpawns } from './systems/spawn.js';
 import { resolveDeaths } from './systems/economy.js';
@@ -63,6 +66,12 @@ export interface Sim {
   catalog(): UnitDef[];
   upgradeCost(entityId: number): number | null;
   placeCost(unitId: string): number;
+  /** Wellenvorschau (K1, P4): Gegnertypen, Anzahl, Modifier, Boss ja/nein. `cardId`: hypothetische Karte (Standard: gewählte Karte der nächsten Wave). null außerhalb der Stage. */
+  previewWave(n: number, cardId?: string | null): WavePreview | null;
+  /** Katalog der Risikokarten (P4, K1) in Datei-Reihenfolge. */
+  cards(): RiskCard[];
+  /** Boss-Kits der Stage nach Wave (P4, K5), z. B. für Bots und UI (Telegraph-Namen, Phasen). */
+  bossKits(): Record<number, BossKit>;
 }
 
 export function createSim(opts: SimOptions): Sim {
@@ -80,6 +89,7 @@ export function createSim(opts: SimOptions): Sim {
     waveTimer: 0,
     prepTicksLeft: eco.prepTicks,
     skipPending: false,
+    nextCard: null,
     lives: startLives,
     maxLives: startLives,
     result: null,
@@ -110,6 +120,7 @@ export function createSim(opts: SimOptions): Sim {
     if (state.phase === 'over') return;
     updateWaves(w);
     processSpawns(w);
+    tickBosses(w);
     tickEffects(w);
     resolveDeaths(w);
     moveEnemies(w);
@@ -183,6 +194,9 @@ export function createSim(opts: SimOptions): Sim {
       const def = ctx.units[u.defId];
       return u.level >= def.maxLevel ? null : def.upgradeCosts[u.level];
     },
+    previewWave: (n, cardId) => previewWave(ctx, state, n, cardId),
+    cards: () => ctx.cardList,
+    bossKits: () => ctx.bossKits,
     placeCost(unitId) {
       const d = ctx.units[unitId];
       if (!d) throw new Error(`Unbekannte Unit ${unitId}`);

@@ -12,6 +12,9 @@ import { botTuning, policyBot, type Policy } from '../../src/bots/util.js';
 
 // P1_NOSAVE=1: Bots verhalten sich wie in Runde 1-3 (kein Sparen auf teure Platzierungen).
 if (process.env.P1_NOSAVE === '1') botTuning.disabled = true;
+// P4_NOWINDOW=1: Bots zünden Fähigkeiten gegen Bosse sofort (Verhalten vor P4); P4_NOCARDS=1: keine Risikokarten.
+if (process.env.P4_NOWINDOW === '1') botTuning.windowAware = false;
+if (process.env.P4_NOCARDS === '1') botTuning.cardsDisabled = true;
 
 export const baseData: GameData = loadGameData();
 // Experiment-Override ohne Dateiänderung: P1_PATCH='{"titan":{"dpsShareBp":7000,"ability":{...}}}' (je Unit-ID, flach überschrieben).

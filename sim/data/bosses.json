@@ -1,0 +1,61 @@
+{
+  "ref": "ENTSCHEIDUNGEN.md Kniff K5 (Bosse als Rätsel); gdd.md K5; Runde 4 P4 (kalibrierung.md, Runde 4 - P4)",
+  "_comment": "Zeiten in Ticks (20/s), Faktoren in Basispunkten (16000 = x1,6 Schaden im Fenster). Schwierigkeits-Schnittstelle: jede Fähigkeit/Phasen-Aktion hat minDifficulty (normal|hard|nightmare, Standard normal) - darunter ist sie aus. Bosse ohne Kit (andere Waves, Infinite ab Wave 21) bleiben schlichte HP-Klötze.",
+  "kits": [
+    {
+      "id": "warden",
+      "name": "Hollow Warden",
+      "_comment": "Wave 10, Lehr-Boss: Rufer (Beschwörung) und Schildphase mit Fenster. Auf Hard kommt der Sturm dazu (Frost-Stun unterbricht ihn).",
+      "wave": 10,
+      "phases": [
+        { "id": "awake", "name": "Awake", "fromHpBp": 10000 },
+        {
+          "id": "ward", "name": "Stoneward", "fromHpBp": 6500,
+          "onEnter": [ { "kind": "ward", "hpBp": 1200, "expireTicks": 300, "window": { "ticks": 100, "bp": 16000 } } ]
+        },
+        { "id": "rage", "name": "Fury", "fromHpBp": 3000, "onEnter": [] }
+      ],
+      "abilities": [
+        { "id": "call", "name": "Call of the Hollow", "kind": "summon", "type": "grunt", "count": 3, "fromPhase": 0, "firstTicks": 160, "cooldownTicks": 400, "telegraphTicks": 40 },
+        {
+          "id": "surge", "name": "Hollow Surge", "kind": "charge", "speedBp": 20000, "durationTicks": 60, "fromPhase": 2, "minDifficulty": "hard",
+          "firstTicks": 100, "cooldownTicks": 300, "telegraphTicks": 40, "interruptible": true,
+          "interruptWindow": { "ticks": 80, "bp": 14000 }, "window": { "ticks": 60, "bp": 15000 }
+        }
+      ]
+    },
+    {
+      "id": "colossus",
+      "name": "Rift Colossus",
+      "_comment": "Wave 20, Final-Boss: zitiert die Mechaniken der Stage (Rufer, Schild + Fenster, Heilung unterbrechen, Sturm). Zweiter Schild ab Hard.",
+      "wave": 20,
+      "phases": [
+        { "id": "awake", "name": "Awake", "fromHpBp": 10000 },
+        {
+          "id": "ward", "name": "Riftward", "fromHpBp": 7500,
+          "onEnter": [ { "kind": "ward", "hpBp": 1200, "expireTicks": 300, "window": { "ticks": 100, "bp": 16000 } } ]
+        },
+        { "id": "mending", "name": "Mending", "fromHpBp": 5000, "onEnter": [] },
+        {
+          "id": "laststand", "name": "Last Stand", "fromHpBp": 2500,
+          "onEnter": [
+            { "kind": "summon", "type": "brute", "count": 2 },
+            { "kind": "ward", "hpBp": 800, "expireTicks": 240, "window": { "ticks": 100, "bp": 16000 }, "minDifficulty": "hard" }
+          ]
+        }
+      ],
+      "abilities": [
+        { "id": "call", "name": "Rift Call", "kind": "summon", "type": "grunt", "count": 4, "fromPhase": 0, "toPhase": 1, "firstTicks": 160, "cooldownTicks": 400, "telegraphTicks": 40 },
+        {
+          "id": "mend", "name": "Mend the Rift", "kind": "mend", "healBp": 800, "fromPhase": 2, "firstTicks": 100, "cooldownTicks": 400, "telegraphTicks": 60,
+          "interruptible": true, "interruptWindow": { "ticks": 100, "bp": 16000 }
+        },
+        {
+          "id": "surge", "name": "Rift Surge", "kind": "charge", "speedBp": 20000, "durationTicks": 60, "fromPhase": 3,
+          "firstTicks": 80, "cooldownTicks": 300, "telegraphTicks": 40, "interruptible": true,
+          "interruptWindow": { "ticks": 80, "bp": 14000 }, "window": { "ticks": 60, "bp": 15000 }
+        }
+      ]
+    }
+  ]
+}
