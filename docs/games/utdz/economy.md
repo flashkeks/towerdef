@@ -44,7 +44,7 @@ Zusatzmechaniken [O/HIGH UTDZ-S7]:
 - Traits für Einkommen: Fortunate (1 %, "Farm Only") +20 % Einkommen; Ruler +20 % Einkommen [O/HIGH UTDZ-S13].
 - Dragon-Ball-Wunsch: 5 % Chance pro Wave auf einen Wish Ball (+5 % je eigene Unit in Reichweite), 7 Bälle nötig [O/HIGH UTDZ-S7]. Erwartete Wartezeit grob: bei 5 % und z. B. 3 Units in Range (20 %) ca. 7 / 0,2 = 35 Waves [D, Näherung], also nur in langen Modi erreichbar.
 
-Weitere Farm-Units: Ruler-Trait ("Limits to 1 placement") und "Farm"-Flag existiert in den Unit-Daten (`farm = true`); weitere Farm-Units nicht erfasst `UNKNOWN`.
+Weitere Farm-Units: Die Unit-Daten kennen ein Flag `farm = true` (Bulmo) [O/HIGH UTDZ-S14]; weitere Farm-Units wurden nicht erfasst (`UNKNOWN`).
 
 ## Kostenkurve der Upgrades (Beispiele)
 
