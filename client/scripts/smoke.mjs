@@ -9,7 +9,7 @@ import { chromium } from 'playwright';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const docs = resolve(root, 'docs');
 mkdirSync(docs, { recursive: true });
-const PORT = 4173;
+const PORT = Number(process.env.SMOKE_PORT ?? 4173);
 const URL_ = `http://127.0.0.1:${PORT}/`;
 const failures = [];
 const check = (ok, msg) => {
