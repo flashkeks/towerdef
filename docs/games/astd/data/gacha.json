@@ -1,0 +1,13 @@
+{
+  "_meta": {"game": "ASTD OG", "retrieved": "2026-10-06", "source": "ASTD-S10", "tag": "O/MEDIUM"},
+  "banners": {
+    "X": {"cost_single_gems": 50, "cost_multi10_gems": 450, "slots": [{"rarity": 5, "pct": 2}, {"rarity": 4, "pct": 8}, {"rarity": 4, "pct": 8}, {"rarity": 3, "pct": 25}, {"rarity": 3, "pct": 27}, {"rarity": 3, "pct": 30}], "pity_spins": 80, "pity_target_rarity": 5},
+    "Y": {"cost_single_gems": 50, "cost_multi10_gems": 450, "slots": [{"rarity": 5, "pct": 2}, {"rarity": 4, "pct": 10}, {"rarity": 4, "pct": 10}, {"rarity": 3, "pct": 23}, {"rarity": 3, "pct": 27}, {"rarity": 3, "pct": 28}], "pity_spins": 80, "pity_target_rarity": 5},
+    "Z": {"cost_single_gems": 100, "cost_multi10_gems": 900, "slots": [{"rarity": 6, "pct": 1}, {"rarity": 5, "pct": 7}, {"rarity": 5, "pct": 9}, {"rarity": 4, "pct": 25}, {"rarity": 4, "pct": 28}, {"rarity": 4, "pct": 30}], "pity_spins": 140, "pity_note": "Seite widerspruechlich: 140 und 120", "pity_target_rarity": 6},
+    "W_removed": {"cost_single_gems": 135, "cost_multi10_gems": 1200, "slots": [{"rarity": 5, "pct": 1}, {"rarity": 6, "pct": 9}, {"rarity": 6, "pct": 15}, {"rarity": 5, "pct": 20}, {"rarity": 5, "pct": 30}, {"rarity": 3, "pct": 25}], "pity_spins": null},
+    "Gold": {"cost_single_gold": 150, "cost_multi10_gold": 1100, "slots_pct": [35, 25, 25, 15], "rarities": "4/3/2", "pity_spins": null},
+    "Special": {"cost_single_stardust": 5, "cost_multi10_stardust": 50, "featured_pct": 1.5, "global_pool_pct": 98.5, "pity_spins": null, "note": "jede 3. Multi gibt freien 10er"}
+  },
+  "secret_rate": "1/2000",
+  "banner_rotation": "stuendlich"
+}

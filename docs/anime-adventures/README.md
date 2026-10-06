@@ -12,7 +12,7 @@ Recherchestand: **2026-10-06** (Sitzung 2, Volltextquellen)
 
 **Sitzung 1** lief ohne direkten Seitenabruf, nur mit Such-Auszügen. Werte aus dieser Zeit tragen Quellen-IDs S01–S64.
 
-**Sitzung 2** (Arbeitsauftrag [`run.md`](../../run.md)) hatte über einen Recherche-Connector Volltextzugriff:
+**Sitzung 2** (Arbeitsauftrag [`run-runde1.md`](run-runde1.md)) hatte über einen Recherche-Connector Volltextzugriff:
 
 - komplettes Fandom-Wiki samt Lua-Datenmodulen und Versionsgeschichte
 - Trello-API
@@ -84,6 +84,7 @@ Jede wichtige Aussage trägt ein Tag in der Form `ART · CONFIDENCE · [Quellen]
 | [simulation.md](simulation.md) | Durchgerechnete Beispielrunde |
 | [technical-reconstruction.md](technical-reconstruction.md) | **Recommended Web Architecture** und Datenmodell |
 | [STATUS.md](STATUS.md) | Recherche-Fortschritt, Quellenlandkarte, nächster Schritt |
+| [design-brief.md](design-brief.md) | **Kurzfassung für Entwickler** (Runde 2, P1): Core Loop, Formeln, Zahlenbereiche, Lücken |
 | [sources.md](sources.md) | Quellenverzeichnis mit Bewertung A–E |
 | [unknowns.md](unknowns.md) | **Known Unknowns & Conflicts** |
 | [data/](data/) | Strukturierte Referenzdaten (JSON) |
