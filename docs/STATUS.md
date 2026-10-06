@@ -12,7 +12,7 @@ Letzte Aktualisierung: 2026-10-06 (Runde 2, Sitzung 1)
 | P0 | Aufräumen, Status, Spiele verifizieren | **erledigt** | Hauptsitzung | siehe „Spiele“ |
 | P1 | `anime-adventures/design-brief.md` | **erledigt** | 1 × Sonnet | 390 Zeilen, Zahlenbereiche je Rarity aus units.json (Stichprobe geprüft) |
 | P2 | Bloons TD6 | **erledigt** | 1 × Sonnet | Runden 1–140 als JSON (RBE, Cash, Bonus; R63 stichprobengeprüft), Startgeld/Leben/Kostenfaktoren, Sell 70 %, Steuerstufen, Freeplay-HP-Rampe, Targeting, 26 Tower | |
-| P3 | Roblox-Anime-TDs (ASTD, AV, ALS, UTDZ, AE) | läuft: ASTD, ALS, AV **erledigt**; UTDZ, AE laufen | je Spiel 1 × Sonnet | ASTD: Farm-Kurve, Gacha, Startgeld nur Sondermodi. ALS: Upgrade-Kurven, Verkauf 50 %, Traits; In-Match-Geld und Gegner-HP UNKNOWN. AV: Datenmodule (UnitData 224 Units, EnemyData mit Kill-Yen und HP-Multiplikatoren, TraitValues) | |
+| P3 | Roblox-Anime-TDs (ASTD, AV, ALS, UTDZ, AE) | läuft: ASTD, ALS, AV, UTDZ **erledigt**; AE läuft | je Spiel 1 × Sonnet | ASTD: Farm-Kurve, Gacha, Startgeld nur Sondermodi. ALS: Upgrade-Kurven, Verkauf 50 %, Traits; In-Match-Geld und Gegner-HP UNKNOWN. AV: Datenmodule (UnitData 224 Units, EnemyData mit Kill-Yen und HP-Multiplikatoren, TraitValues) | |
 | P4 | Vergleich und Empfehlung | offen | – | |
 | P5 | Vorarbeiten (Technik, Assets, Recht, Balancing) | läuft | 2 × Sonnet (Technik+Assets, Recht+Balancing) | |
 | P6 | Abschluss | offen | – | |
@@ -39,6 +39,8 @@ Namensvetter (geprüft, **nicht** gemeint):
 - „Anime Last Stand“ hat bei 1,08 Mrd. Besuchen nur 17 gleichzeitige Spieler: Das Spiel ist praktisch tot oder abgelöst. Ein Nachfolger wurde nicht gefunden (eine Suche). Es wird trotzdem ausgewertet, mit Fokus auf `design-lessons.md`.
 
 ## Offene Spuren
+
+- UTDZ: Hauptquelle ist das zweite Wiki `universal-tdx.fandom.com` (Datenmodule, Stand eher Update 2.x–3.x). Startgeld, Kill/Wave-Einkommen, Verkauf, Gegner-HP UNKNOWN. Widersprüche zwischen den beiden Wikis (Bulmo, Zorus).
 
 - BTD6: Preis-Konflikt Preismodul vs. Infobox (Heli 1500/1600, Mortar 600/750, Mermonkey 300/275); Spawn-Timings, absolute Bloon-Speeds, Co-Op-Geldregeln UNKNOWN.
 
