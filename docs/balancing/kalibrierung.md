@@ -251,3 +251,88 @@ Regeneration (Nachrechnung, Normal / Hard / Nightmare, bester Bot): 0 → 100/60
 - **P4:** Boss-HP-Faktor ×10 ist **Zwischenstand**; mit Phasen/Fenstern neu setzen. Boss-Killer (Titan) bleibt unbelegt (alle Bots lassen ihn auf Stufe 0). Elite ggf. mit Kit und dann `instantLoss`-Frage erneut.
 - **P5:** Koop braucht Boss-Skalierung (h = 4,3 bei 4P) und die Frage Leben je Spieler; Normal 4P `upgrade` verliert allein am Boss.
 - **P6:** Bots reagieren nicht auf Leben (kein Panik-Kauf bei niedrigen Leben, keine Boss-Vorbereitung); menschliche Bots sollten beides tun.
+
+---
+
+# Runde 4 — P3: Schwierigkeit über Regeln
+
+Paket P3 aus `run.md` (Runde 4). Nach `docs/design/ENTSCHEIDUNGEN.md`: Stufen unterscheiden sich über Regeln (Modifier-Dichte, Elemente, Boss-Fähigkeiten, andere Waves), HP-Faktoren nur Feinjustierung. Stand: P2 (Boss-HP ×10 als Zwischenstand). **Die Kalibrierung ist vorläufig**, weil P4 parallel den Boss-HP-Faktor neu setzt; Nachkalibrierung nach dem Merge siehe „Werkzeuge".
+
+## Was die Stufen jetzt unterscheidet
+
+| | Normal (entspannt) | Hard (fordernd) | Nightmare (fordernd, voll) |
+|---|---|---|---|
+| HP-Faktor (Feinjustierung) | 15600 | 14800 | 14600 |
+| Elemente | aus | an, ein Element je Wave | an, **gemischt** (Element je Gruppe versetzt: man braucht mehrere Elemente je Wave) |
+| Modifier-Vergabe | keine | 6 % der regulären Gruppen ab Wave 6 (armored, fast, shield:2, regen) | 30 % ab Wave 4 (armored, fast, shield:3, regen) |
+| Wellen-Varianten (je Wave seeded) | swarm 30 % (+25 % Anzahl, Abstand ×0,9), air 20 % (20 % der Grunts → Flyer), ab Wave 4 | swarm 20 % (+30 %, ×0,85), air 20 % (40 % der Grunts → Flyer), ab Wave 4 | swarm 30 % (+30 %, ×0,85), air 30 % (40 % → Flyer), ab Wave 3 |
+| Leben | Start 30, **+1 je Wave** | Start 30, keine Regeneration | **Start 22**, keine Regeneration |
+| Boss-Fähigkeiten-Set (`bossAbilityTier`, für P4) | 0 | 1 | 2 |
+| Belohnungsfaktor (`rewardBp`, Meta) | 1,0 | 1,5 | 2,5 |
+| Bounty (`bountyBp`) | 1,0 | 1,0 | 1,0 |
+
+Normal ist nicht regelfrei, sondern nur mild: die Varianten geben dem Lauf Abwechslung und verbreitern die Kennlinie (siehe unten), tun aber wenig weh. Neue Regelmechanik: `src/systems/rules.ts` (Modifier-Vergabe, Wellen-Varianten inkl. Typ-Tausch und forcierter Modifier, Element-Modus), Schema-Erweiterung in `difficulties.json`, Challenges als Datenkonzept in `challenges.json` (nicht ausgewertet). Details `sim/README.md` „Stufen-Regeln".
+
+## Änderungen an `sim/data/`
+
+| # | Datei/Feld | alt | neu | Grund (Messwert, n = 40-60, solo, Bots ohne Fehlermodell) |
+|---|---|---|---|---|
+| 1 | `difficulties.json` `normal.hpBp` | 15200 | **15600** | Normal bekommt Regeneration +1 (#5); das hebt den besten Bot von 88 auf 100 %. Scan (aoe, Regen +1, Variante swarm): 15200 → 100, 15800 → 92,5, 16400 → 67,5 %. 15600 → 90 % |
+| 2 | `difficulties.json` `hard.hpBp` | 14800 | **14800** (unverändert), jetzt zusätzlich Regeln | Ohne Regeln lag Hard bei 60 % (`wide`, nur Elemente und HP). Mit den Regeln aus der Tabelle 51,7 % |
+| 3 | `difficulties.json` `nightmare.hpBp` | 15600 | **14600** | Die Regeln (Modifier 30 %, Varianten, 22 Leben) tragen die Schwierigkeit; HP wäre sonst doppelt gezählt. 15600 + Regeln lag bei ~0 %, 14600 + Regeln bei 26,7 % |
+| 4 | `difficulties.json` neue Felder | – | `elementMode`, `modifiers`, `waveVariants`, `bossAbilityTier`, `lives`, `bountyBp`, `rewardBp` | Schema (zod), Defaults = keine Wirkung. `bossAbilityTier` und `rewardBp` sind nur Daten |
+| 5 | `difficulties.json` `normal.lives.regenPerWave` | – (global 0) | **1** | „Entspannt" als Regel: Chip-Leaks heilen. Nachrechnung P2: +1 je Wave hebt Normal bester Bot 88 → 100 %, auf Hard/Nightmare 60 → 60 / 38 → 43 %, deshalb nur Normal |
+| 6 | `difficulties.json` `nightmare.lives.start` | – (global 30) | **22** | Leben als Regel-Hebel (fordernd): Start 22 statt 30 senkt Nightmare um ~13 Punkte (n = 40: 62,5 → 42,5 bei Modifier 22 %); kombiniert mit Modifier 30 % → 27,5 |
+| 7 | `challenges.json` | – | neu (zwei Beispiele) | nur Datenkonzept |
+
+## Messung: Siegquote Bots solo (n = 60), Stand der eingecheckten Daten
+
+| Stufe | greedy | farm | aoe | upgrade | wide | coop | **bester** | Ziel run.md | Vorher (P2) |
+|---|---|---|---|---|---|---|---|---|---|
+| Normal | 11,7 | 63,3 | **90** | 85 | 18,3 | 63,3 | **90** | 85-95 | 88 |
+| Hard | 15 | 6,7 | 26,7 | 11,7 | **51,7** | 6,7 | **51,7** | 45-65 | 60 |
+| Nightmare | 5 | 0 | 0 | **26,7** | 25 | 0 | **26,7** | 15-35 | 35 |
+
+Alle drei Ziele liegen im Korridor (Stichprobenfehler bei n = 60 etwa ±6 Punkte). Beste Bots wechseln je Stufe (`aoe` Normal, `wide` Hard, `upgrade`/`wide` Nightmare): das ist Bot-Struktur (P6), nicht Regel.
+
+## Kennlinie (Siegquote gegen globalen HP-Faktor f, bester Bot, n = 60)
+
+| Stufe (Bot) | 90 % bei f | 50 % bei f | 10 % bei f | Fenster 90 → 10 | Ziel |
+|---|---|---|---|---|---|
+| Normal (`aoe`) | 1,000 | 1,086 | 1,157 | **15,7** | ≥ 25 |
+| Hard (`wide`) | 0,875 | 1,005 | 1,125 | **25,0** | ≥ 25 |
+| Nightmare (`wide`) | 0,814 | 0,927 | 1,045 | **23,1** | ≥ 25 |
+
+Vorher (P1/P2): ~14 Punkte. **Erreicht für Hard (25,0), knapp verfehlt für Nightmare (23,1), nicht erreicht für Normal (15,7).** Ursache und Befund:
+- Die Bots sind ohne Fehlermodell deterministisch bis auf Crit-Würfe. Eine Siegquoten-Kennlinie wird nur so breit wie die Streuung der Lauf-Stärke. Die **seeded Wellen-Varianten sind die einzige Streuungsquelle**, die P3 hat: ohne Varianten ist die Normal-Kennlinie 9,5 Punkte breit (nur Regeneration), mit leichter swarm-Variante 12,0, mit swarm + air 15,4-15,7; Hard ohne Varianten (nur Modifier) ~18, mit 20 %-Varianten 25.
+- Normal ist bewusst „entspannt": stärkere Varianten (mehr Streuung) wären dort kein Entspannen mehr. Die verbleibende Lücke (≥ 25) schließt realistisch nur das Fehlermodell der Bots (P6, Streuung der Spielerstärke); `q6-hp-curve.ts` zeigt, wie eine Streuung von ±10 % Spielerstärke die Kurve faltet. Das ist **nicht durch Datenbiegen erzwungen**, sondern offen für P6.
+
+## Befunde
+
+- **Modifier sind der stärkste Regel-Hebel:** Hard bei HP 14800, Wide-Bot: Elemente allein 60 %, + Modifier 15 % ab Wave 6: 30 %, + Modifier 7 %: 47,5 %; swarm (20 %, +15 %): 55 %; air (20 %, 25 % der Grunts): 52,5 %. Hauptursache: `armored` (+80 Rüstung) macht alle Units mit niedrigem Schaden je Treffer nutzlos, `shield:n` frisst Treffer von Schnellfeuer-Units.
+- **Ganze Waves mit forciertem Modifier (`forceModifier: armored`/`shield:2`, Chance 12 %) sind zu hart** für die jetzigen Bots (Hard bester Bot ≤ 10 %). Das Feld bleibt im Schema (getestet), aber in keiner Stufe aktiv; für Challenges gedacht.
+- **Flyer-Tausch ist spürbar, aber moderat** (−8 Punkte bei 25 % der Grunts in 20 % der Waves): Flyer brauchen Hill/Hybrid-Units (Entscheidung Flyer), das ist genau der Regel-Unterschied, den die Stufen zeigen sollen.
+- **Regeneration** wirkt auf Normal stark und fast nicht auf Hard (siehe #5), deshalb nur dort.
+- **Der `upgrade`-Bot gewinnt Nightmare bei höherer Modifier-Dichte nicht schlechter** (n = 40: 55 → 62 % von Dichte 15 auf 22 %), `aoe`/`greedy`/`farm` brechen ein: Er investiert in wenige starke Units, die Rüstung und Schilde schlagen. Messrauschen (±8) eingerechnet bleibt Nightmare ein Ein-Bot-Ziel; Ziel „Rollen" aus P1 lässt sich mit P6 neu prüfen.
+- **HP-Spreizung:** 15600 / 14800 / 14600 = 6,8 % zwischen Normal und Nightmare (vorher 15200 / 14800 / 15600, aber ohne Regeln). Die Reihenfolge ist umgekehrt zur Schwierigkeit, weil Normal Regeneration hat und die Regeln den Rest tragen.
+
+## Verworfene Versuche
+
+- **Alle Stufen HP 15200, Regeln allein:** Hard dann 27-37 %, zu schwer; Nightmare 0-10 % mit Modifier 40 %.
+- **Nightmare nur über mehr Modifier (kein Leben-Abzug):** Dichte 22 % bei 30 Leben → 62,5 % (`upgrade`), nicht im Ziel.
+- **Normal ganz ohne Varianten, regen +1:** funktioniert (Kennlinie 9,5 breit), aber schmaler; Varianten behalten wegen der Streuung.
+- **Messfehler (ohne Folgen für die Daten):** erste Scans mit `P3_RULES` umgingen das Schema (fehlende `countBp` → NaN); danach läuft `P3_RULES` über `DifficultySchema.parse`, alle genannten Zahlen stammen aus Läufen danach, außer den ersten beiden Zeilen „Hard ohne Regeln".
+
+## Tests
+
+Neu `test/difficulty.test.ts` (16 Tests): Daten (HP-Spreizung < 8 %, Regel-Unterschiede, Schema-Defaults, Querprüfungen, Challenges), Waves (Determinismus, Seed-Abhängigkeit, Boss/Elite unverändert, Modifier-Dichte und fromWave, swarm/air/forceModifier, Element-Modus, Stufe ohne Regeln), Sim (Leben je Stufe, Modifier tatsächlich auf Gegnern, `bountyBp`, `rewardBp`/`bossAbilityTier` ohne Wirkung). `test/helpers.ts`: `plainData()` (Stufen-Regeln neutral, HP bleibt) ist jetzt Standard für alle regelunabhängigen Tests; `createSim` aus den Helpers nutzt es. 160 Tests grün, `tsc` sauber.
+
+## Werkzeuge
+
+`sim/scripts/sanity/p3-check.sh N TAG` (alle Zahlen oben, ~1,5 min bei N = 60) und `p3-check.ts --part rates|curve|rules`; `lib.ts`: `P3_RULES` (Regeln je Stufe überschreiben, schema-geprüft). `q9-p2.ts raw` hebt jetzt auch die Leben-Überschreibung der Stufen auf.
+
+## Übergabe
+
+- **P4:** Boss-HP-Faktor neu setzen, danach `sh scripts/sanity/p3-check.sh 60 nachmerge` und die Stellschrauben (HP je Stufe ±1 % ≈ ∓6 Punkte, Modifier-Dichte, Nightmare-Startleben) anpassen. `bossAbilityTier` ist belegt (0/1/2), `previewWave` liest `getWave(ctx, n)` (enthält Stufen-Regeln), `pickVariant(ctx, n)` nennt die Variante. Wellen-Varianten, die den Boss ändern, gehören zu P4.
+- **P5:** Koop nicht gemessen; die Regeln gelten für jede Spielerzahl, Leben bleiben team-gemeinsam.
+- **P6:** Kennlinie Normal ≥ 25 und die Rollen-Fairness der Bots (`upgrade` trägt Nightmare) hängen am Fehlermodell.

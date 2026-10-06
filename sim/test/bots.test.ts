@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { BOTS, getBot, runMatch } from '../src/bots/index.js';
-import { createSim, loadGameData } from '../src/index.js';
+import { createSim } from '../src/index.js';
+import { plainData } from './helpers.js';
 import { seedRng } from '../src/prng.js';
 
 const base = { stage: 'standard20', difficulty: 'normal' as const };
@@ -80,7 +81,7 @@ describe('Bots', () => {
   });
 
   it('Early-Units: ein volles Team (6 Typen) gibt Striker ab, wenn ein Legendary-Typ fehlt (Runde 4 P1)', () => {
-    const sim = createSim({ ...base, players: 1, seed: 3, data: { ...loadGameData(), economy: { ...loadGameData().economy, startCoins: 6000 } } });
+    const sim = createSim({ ...base, players: 1, seed: 3, data: { ...plainData(), economy: { ...plainData().economy, startCoins: 6000 } } });
     // Team mit 6 Typen: striker, blaster, banner, lancer, frost, gunner
     const slots = sim.slots();
     const ground = slots.filter((x) => x.kind === 'ground' && x.size === 1).map((x) => x.id);

@@ -223,8 +223,8 @@ export function compile(data: GameData, stage: StageData, difficultyId: Difficul
       return infinite && n > fixedWaves ? Math.min(inf?.speedMaxBp ?? 15000, 10000 + (inf?.speedPerWaveBp ?? 100) * (n - fixedWaves)) : 10000;
     },
     waveTimerTicks: stage.waveTimerTicks ?? data.economy.waveTimerTicks,
-    instantLoss: new Set(data.economy.lives.instantLoss),
-    regenLives: data.economy.lives.regenPerWave,
+    instantLoss: new Set(data.difficulties[difficultyId].lives.instantLoss ?? data.economy.lives.instantLoss),
+    regenLives: data.difficulties[difficultyId].lives.regenPerWave ?? data.economy.lives.regenPerWave,
     coopHpBp: 10000 + data.economy.coop.hpPerExtraPlayerBp * (players - 1),
     hpGrunt,
     bounty,

@@ -23,7 +23,7 @@ export function createEnemy(
   if (!def) throw new Error(`Unbekannter Gegnertyp ${type}`);
   let hp = mulBp(ctx.hpGrunt(wave), def.fHpBp);
   hp = mulBp(hp, ctx.coopHpBp);
-  const bounty = ctx.bounty(wave, hp);
+  const bounty = mulBp(ctx.bounty(wave, hp), ctx.difficulty.bountyBp);
   const maxHp = mulBp(hp, ctx.difficulty.hpBp);
   const baseSpeedMicro = Math.floor((ctx.data.enemies.baseSpeedMilliPerSec * 1000) / 20);
   let speedMicro = mulBp(mulBp(baseSpeedMicro, def.fSpeedBp), ctx.difficulty.speedBp);

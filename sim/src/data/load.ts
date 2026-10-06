@@ -5,6 +5,7 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import {
+  ChallengesSchema,
   DifficultiesSchema,
   EconomySchema,
   EnemiesSchema,
@@ -28,6 +29,23 @@ export function validateGameData(d: GameData): void {
     if (a.child && !enemyIds.has(a.child.type)) throw new Error(`Kind-Typ unbekannt: ${a.child.type}`);
     const leak = d.economy.leakDamage[a.id] as number | undefined;
     if (leak !== a.leak) throw new Error(`Leak-Wert ${a.id}: economy=${leak} enemies=${a.leak}`);
+  }
+  for (const k of ['normal', 'hard', 'nightmare'] as const) {
+    const df = d.difficulties[k];
+    for (const id of df.lives.instantLoss ?? []) if (!enemyIds.has(id)) throw new Error(`difficulties.${k}.lives.instantLoss: Archetyp unbekannt: ${id}`);
+    for (const v of df.waveVariants) {
+      for (const t of v.swap ? [v.swap.from, v.swap.to] : []) if (!enemyIds.has(t)) throw new Error(`difficulties.${k}.waveVariants.${v.id}: Typ ${t}`);
+    }
+    for (const f of df.waveVariants.map((x) => x.forceModifier)) {
+      if (f?.startsWith('shield:') && Number(f.slice(7)) > d.modifiers.shield.maxStacks) throw new Error(`difficulties.${k}.waveVariants: Schild über Maximum`);
+    }
+    for (const m of df.modifiers.pool) {
+      if (m.id.startsWith('shield:') && Number(m.id.slice(7)) > d.modifiers.shield.maxStacks) throw new Error(`difficulties.${k}.modifiers: Schild über Maximum`);
+    }
+    if (df.modifiers.densityBp > 0 && df.modifiers.pool.length === 0) throw new Error(`difficulties.${k}.modifiers: Dichte > 0 ohne Pool`);
+  }
+  for (const c of d.challenges?.challenges ?? []) {
+    for (const u of c.restrictions.bannedUnits) if (!d.units.units.some((x) => x.id === u)) throw new Error(`challenge ${c.id}: Unit ${u} unbekannt`);
   }
   for (const id of d.economy.lives.instantLoss) if (!enemyIds.has(id)) throw new Error(`lives.instantLoss: Archetyp unbekannt: ${id}`);
   const unitIds = new Set<string>();
@@ -79,6 +97,7 @@ export function loadGameData(): GameData {
     enemies: EnemiesSchema.parse(readJson('enemies.json')),
     modifiers: ModifiersSchema.parse(readJson('modifiers.json')),
     difficulties: DifficultiesSchema.parse(readJson('difficulties.json')),
+    challenges: ChallengesSchema.parse(readJson('challenges.json')),
     units: UnitsSchema.parse(readJson('units.json')),
     stages,
   };

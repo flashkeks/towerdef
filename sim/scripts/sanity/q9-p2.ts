@@ -30,6 +30,8 @@ if (part === 'raw') {
   const free = patched((d) => {
     d.economy.lives.start = 1_000_000;
     d.economy.lives.instantLoss = [];
+    // P3: Stufen überschreiben economy.lives, daher dort ebenfalls aufheben
+    for (const k of ['normal', 'hard', 'nightmare'] as const) d.difficulties[k].lives = {};
   });
   const out: Record<string, Run[]> = {};
   for (const d of diffs) for (const p of players) for (const bn of botNames) {
