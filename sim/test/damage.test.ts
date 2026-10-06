@@ -110,9 +110,11 @@ describe('HP-Kette', () => {
     const solo = enemy(ctxFor(1, 'normal'), 'grunt', 10);
     const hard = enemy(ctxFor(1, 'hard'), 'grunt', 10);
     const coop = enemy(ctxFor(4, 'normal'), 'grunt', 10);
-    expect(hard.maxHp).toBe(Math.floor((solo.maxHp * data.difficulties.hard.hpBp) / 10000));
+    // Normal hat seit Runde 4 P1 selbst einen HP-Faktor (kalibrierung.md); Hard verhält sich zu Normal wie hardBp/normalBp.
+    expect(Math.abs(hard.maxHp - Math.floor((solo.maxHp * data.difficulties.hard.hpBp) / data.difficulties.normal.hpBp))).toBeLessThanOrEqual(1);
     expect(hard.bounty).toBe(solo.bounty);
-    expect(coop.maxHp).toBe(Math.floor((solo.maxHp * (10000 + 3 * data.economy.coop.hpPerExtraPlayerBp)) / 10000));
+    // Rundung je Faktor (Schwierigkeit, Koop): +-2 Centi-HP gegen den Direktwert
+    expect(Math.abs(coop.maxHp - Math.floor((solo.maxHp * (10000 + 3 * data.economy.coop.hpPerExtraPlayerBp)) / 10000))).toBeLessThanOrEqual(2);
     expect(coop.bounty).toBeGreaterThan(solo.bounty * 3);
   });
 });

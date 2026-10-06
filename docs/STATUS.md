@@ -9,22 +9,22 @@ Letzte Aktualisierung: 2026-10-06 (Runde 4, gestartet; Arbeit ab jetzt über Max
 
 | Paket | Inhalt | Status | Agent (Modell) | Notiz |
 |---|---|---|---|---|
-| P0 | Archiv, Entscheidungen, gdd, Status | **in Arbeit** | Hauptsitzung | Runde-3-`run.md` archiviert, ENTSCHEIDUNGEN.md + beantwortete FRAGEN.md abgelegt. Verifikation in eigener Node-Umgebung: `npm ci && npm test && npm run typecheck` → 130/130 grün, tsc sauber |
-| P1 | Unit-Rebalance | offen | 1 × Sonnet | zuerst im Sim-Strang |
+| P0 | Archiv, Entscheidungen, gdd, Status | **erledigt** | Hauptsitzung | Runde-3-`run.md` archiviert, ENTSCHEIDUNGEN.md + beantwortete FRAGEN.md abgelegt. Verifikation in eigener Node-Umgebung: `npm ci && npm test && npm run typecheck` → 130/130 grün, tsc sauber |
+| P1 | Unit-Rebalance | **erledigt, Ziele teilweise** | 1 × Sonnet | 132 Tests grün. Erreicht: Schaden/Münze solo Faktor 1,6 (vorher 3,5), AoE-Bot Normal solo 52 % (vorher 0), jede Unit ≥ 91 % gekauft, Titan keine Pflicht mehr, LOO Normal ≤ +5. Verfehlt: LOO Hard/NM (+38…+50, Bot-Rollenwahl → P6), Titan als Boss-Killer nicht belegt (Bosse leaken → P4), Frost jetzt Pflicht (Flyer-Pulks), Titan+Lancer+Frost Normal weiter 100 %, 4P regrediert (greedy/wide 0–2 % → P5), HP-Faktoren der Stufen Platzhalter (→ P3). Details [kalibrierung.md § Runde 4 — P1](balancing/kalibrierung.md) |
 | P2 | Leben-System, Fail-State | offen | – | nach P1 |
 | P3 | Schwierigkeit über Regeln | offen | – | nach P2 |
 | P4 | Boss-Kits, Wellenvorschau, Risikokarten | offen | – | parallel zu P3 möglich |
 | P5 | Koop-Skalierung | offen | – | nach P3 |
 | P6 | Fehlermodell Bots, Endkalibrierung | offen | – | zuletzt |
-| P7 | Architektur M1 (`docs/architecture.md`) | offen | 1 × Sonnet | parallel |
-| P8 | Art-Styleguide, Asset-Quellen | offen | 1 × Sonnet | parallel |
-| P9 | Name | offen | 1 × Sonnet | parallel |
+| P7 | Architektur M1 (`docs/architecture.md`) | **erledigt** | 1 × Sonnet | parallel |
+| P8 | Art-Styleguide, Asset-Quellen | **erledigt** | 1 × Sonnet | parallel |
+| P9 | Name | **erledigt: „Duskwardens“** (Max) | 1 × Sonnet | parallel |
 | P10 | Client-Gerüst (optional) | offen | – | erst nach P1–P6 |
 | P11 | Abschluss | offen | Hauptsitzung | |
 
 ## Nächster Schritt (Runde 4)
 
-P1 (Sim) sowie P7, P8, P9 (Doku/Recherche) parallel starten.
+P2 (Leben-System) auf Basis von P1. Danach P3 und P4 parallel (getrennte Dateien), dann P5, P6. Offene Fragen an die Menschen: [architecture.md § 10](architecture.md), OFL-Fonts ([asset-sources.md](design/asset-sources.md)), EUIPO/USPTO für den Namen.
 
 ---
 

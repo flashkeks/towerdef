@@ -51,7 +51,7 @@ describe('Trefferflächen', () => {
     expect(near.burn).not.toBeNull();
     expect(far.burn).toBeNull();
   });
-  it('Frost (cone 60 Grad): trifft im Kegel, nicht dahinter oder seitlich; Slow -40 %', () => {
+  it('Frost (cone 60 Grad): trifft im Kegel, nicht dahinter oder seitlich; Slow aus den Daten', () => {
     const { sim, put, place } = mk();
     const hill = sim.slots().find((s) => s.kind === 'hill')!; // (2000, 2000)
     place('frost', hill.id);
@@ -61,8 +61,10 @@ describe('Trefferflächen', () => {
     sim.step();
     expect(hurt(t) && hurt(inCone)).toBe(true);
     expect(hurt(behind)).toBe(false);
-    expect(t.slowBp).toBe(4000);
-    expect(t.slowTicks).toBe(80);
+    // Slow-Stärke aus den Daten (Runde 4 P1: -20 % statt -40 %, kalibrierung.md)
+    const slow = data.units.units.find((u) => u.id === 'frost')!.onHit.find((o) => o.kind === 'slow') as { pctBp: number; ticks: number };
+    expect(t.slowBp).toBe(slow.pctBp);
+    expect(t.slowTicks).toBe(slow.ticks);
   });
   it('Striker: Bleed auf Treffer, Rüstung senkt Direktschaden', () => {
     const { sim, put, place } = mk();
@@ -88,9 +90,10 @@ describe('Aura (§11)', () => {
     sim.step();
     return g.maxHp - g.hp;
   };
-  it('+10 % im Radius, kein Effekt außerhalb, mehrere Banner stapeln nicht (höchster zählt)', () => {
+  it('Aura (Stufe 0) im Radius, kein Effekt außerhalb, mehrere Banner stapeln nicht (höchster zählt)', () => {
     const base = dmg(0);
-    expect(dmg(1, 1)).toBe(Math.floor((base * 11000) / 10000)); // Slot 1 = (5000,0): 3 Tiles Abstand
+    const bp = 10000 + data.units.units.find((u) => u.id === 'banner')!.aura!.damageBpByLevel[0]; // Runde 4 P1: +15 % statt +10 %
+    expect(dmg(1, 1)).toBe(Math.floor((base * bp) / 10000)); // Slot 1 = (5000,0): 3 Tiles Abstand
     expect(dmg(1, 3)).toBe(base); // Slot 3 = (11000,0): außerhalb Radius 3
     expect(dmg(2)).toBe(dmg(1, 1));
   });
@@ -98,7 +101,7 @@ describe('Aura (§11)', () => {
 
 describe('Fähigkeiten', () => {
   it('Titan-Nuke: True Damage auf den stärksten Gegner (ignoriert Rüstung/Reichweite), Cooldown 45 s', () => {
-    const { sim, put, place } = mk();
+    const { sim, put, place, ctx } = mk();
     const hill = sim.slots().find((s) => s.kind === 'hill')!;
     const id = place('titan', hill.id);
     const grunt = put('grunt', 9000);
@@ -106,7 +109,9 @@ describe('Fähigkeiten', () => {
     const hpB = boss.hp;
     const r = sim.apply(0, { type: 'useAbility', entityId: id });
     expect(r.ok).toBe(true);
-    expect(hpB - boss.hp).toBe(190 * 100 * 8); // 8 x Treffer, Rüstung 40 ignoriert
+    const titan = ctx.units['titan'];
+    const mul = (titan.ability as { damageMulBp: number }).damageMulBp;
+    expect(hpB - boss.hp).toBe(Math.floor((titan.levels[0].damageCenti * mul) / 10000)); // Nuke-Vielfaches des Treffers (Runde 4 P1: 5x), Rüstung 40 ignoriert
     expect(hurt(grunt)).toBe(false);
     expect(sim.apply(0, { type: 'useAbility', entityId: id })).toEqual({ ok: false, reason: 'ability-cooldown' });
     sim.step(899);
@@ -188,7 +193,9 @@ describe('Elemente ab Hard, Crit, Splitter', () => {
       expect(c.type).toBe('splitter_child');
       expect(c.progress).toBe(12345);
       expect(c.leak).toBe(1);
-      expect(c.maxHp).toBe(Math.floor((ctx.hpGrunt(15) * 3500) / 10000));
+      // 35 % der Eltern-HP; die Normal-Stufe trägt seit Runde 4 P1 einen HP-Faktor, Rundung je Faktor (+-1 Centi-HP)
+      const parent = Math.floor((ctx.hpGrunt(15) * data.difficulties.normal.hpBp) / 10000);
+      expect(Math.abs(c.maxHp - Math.floor((parent * 3500) / 10000))).toBeLessThanOrEqual(1);
     }
     expect(st.enemies[0].id).toBeLessThan(st.enemies[1].id);
   });

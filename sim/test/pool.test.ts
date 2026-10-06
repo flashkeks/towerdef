@@ -7,6 +7,8 @@ const POOL = [200, 252, 317, 429, 629, 705, 938, 1122, 1436, 2634, 2081, 2383, 2
 
 // §5-Pools gelten für g = 1,12; kalibriertes g (docs/balancing/kalibrierung.md #2) skaliert Wave n um (g/1,12)^(n-1).
 const G = data.enemies.hpCurve.growthBp / 10000;
+// Runde 4 P1: die Normal-Stufe trägt einen eigenen HP-Faktor (kalibrierung.md), der Pool skaliert mit.
+const D = data.difficulties.normal.hpBp / 10000;
 
 describe('Pool-Check (§5, skaliert mit kalibriertem g)', () => {
   const ctx = ctxFor();
@@ -16,7 +18,7 @@ describe('Pool-Check (§5, skaliert mit kalibriertem g)', () => {
   POOL.forEach((expected0, i) => {
     it(`Wave ${i + 1}: Pool ${expected0} HP x (g/1,12)^${i} (+-1 %)`, () => {
       const pool = wavePool(ctx, i + 1) / 100;
-      const expected = expected0 * (G / 1.12) ** i;
+      const expected = expected0 * D * (G / 1.12) ** i;
       expect(Math.abs(pool - expected) / expected).toBeLessThanOrEqual(0.01);
     });
   });

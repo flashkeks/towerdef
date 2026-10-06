@@ -45,7 +45,10 @@ describe('Upgrade-Kosten (§6)', () => {
     expect(seen).toEqual([1000, 1290, 1665, 2145, 2770, 3570, 4610]);
     expect(sim.apply(0, { type: 'upgrade', entityId: id })).toEqual({ ok: false, reason: 'max-level' });
     const titan = sim.catalog().find((u) => u.id === 'titan');
-    expect(titan?.levels[0]).toEqual({ damageCenti: 19000, spaTicks: 100, rangeMilli: 4500 });
+    // Level-0-Schaden aus Rarity-DPS x Anteil der Unit (Runde 4 P1: Titan-Anteil 60 %, kalibrierung.md)
+    const tu = data.units.units.find((u) => u.id === 'titan')!;
+    const dps0 = Math.floor((data.units.rarities.mythic.dpsCenti[0] * tu.dpsShareBp) / 10000);
+    expect(titan?.levels[0]).toEqual({ damageCenti: Math.floor((dps0 * 100) / 20), spaTicks: 100, rangeMilli: 4500 });
     expect(titan?.levels[7].spaTicks).toBe(80);
     expect(titan?.levels[7].rangeMilli).toBe(6500);
   });
@@ -68,11 +71,14 @@ describe('Verkauf (§8)', () => {
     const sim = createSim({ stage: 'standard20', difficulty: 'normal', players: 1, seed: 1 });
     const slot = slotsOf(sim, 'ground')[0];
     const id = (sim.apply(0, { type: 'place', unitId: 'striker', slot }) as { entityId: number }).entityId;
-    expect(sim.state.players[0].coins).toBe(700);
+    const def = ctxFor().units['striker']; // Runde 4 P1: Striker-Platzierung 200 statt 300
+    const afterPlace = 1000 - def.placeCost;
+    expect(sim.state.players[0].coins).toBe(afterPlace);
     sim.apply(0, { type: 'upgrade', entityId: id });
-    expect(sim.state.players[0].coins).toBe(400);
+    const afterUp = afterPlace - def.upgradeCosts[0];
+    expect(sim.state.players[0].coins).toBe(afterUp);
     expect(sim.apply(0, { type: 'sell', entityId: id })).toEqual({ ok: true, entityId: id });
-    expect(sim.state.players[0].coins).toBe(400 + 360);
+    expect(sim.state.players[0].coins).toBe(afterUp + Math.floor(((def.placeCost + def.upgradeCosts[0]) * 6000) / 10000));
     expect(sim.slots()[slot].free).toBe(true);
     expect(sim.state.units).toHaveLength(0);
   });

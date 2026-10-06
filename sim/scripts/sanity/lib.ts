@@ -7,9 +7,34 @@ import { createSim, loadGameData, type DifficultyId, type GameData, type Sim, ty
 import { BOTS } from '../../src/bots/index.js';
 import type { Bot, BotFactory } from '../../src/bots/types.js';
 import { seedRng } from '../../src/prng.js';
-import { policyBot, type Policy } from '../../src/bots/util.js';
+import { botTuning, policyBot, type Policy } from '../../src/bots/util.js';
+
+// P1_NOSAVE=1: Bots verhalten sich wie in Runde 1-3 (kein Sparen auf teure Platzierungen).
+if (process.env.P1_NOSAVE === '1') botTuning.disabled = true;
 
 export const baseData: GameData = loadGameData();
+// Experiment-Override ohne Dateiänderung: P1_PATCH='{"titan":{"dpsShareBp":7000,"ability":{...}}}' (je Unit-ID, flach überschrieben).
+if (process.env.P1_PATCH) {
+  const pt = JSON.parse(process.env.P1_PATCH) as Record<string, Record<string, unknown>>;
+  for (const [id, f] of Object.entries(pt)) {
+    const u = baseData.units.units.find((x) => x.id === id);
+    if (!u) throw new Error(`P1_PATCH: Unit ${id} unbekannt`);
+    Object.assign(u, f);
+  }
+}
+
+// P1_HP=1.38: globaler HP-Faktor auf alle drei Stufen schon in baseData (Experiment ohne Dateiänderung).
+if (process.env.P1_HP) {
+  for (const k of ['normal', 'hard', 'nightmare'] as const) baseData.difficulties[k].hpBp = Math.round(baseData.difficulties[k].hpBp * Number(process.env.P1_HP));
+}
+
+// P1_DIFF='{"normal":14600,"hard":14400}': HP-Basispunkte je Stufe absolut überschreiben (Kalibrierungs-Scans).
+if (process.env.P1_DIFF) {
+  for (const [k, v] of Object.entries(JSON.parse(process.env.P1_DIFF) as Record<string, number>)) baseData.difficulties[k as 'normal'].hpBp = v;
+}
+
+// P1_COOPH=9000: hpPerExtraPlayerBp (Koop-HP-Faktor) überschreiben.
+if (process.env.P1_COOPH) baseData.economy.coop.hpPerExtraPlayerBp = Number(process.env.P1_COOPH);
 
 /** Tiefe Kopie der Daten, dann mutieren (die JSON-Dateien bleiben unverändert). */
 export function patched(mut: (d: GameData) => void): GameData {
@@ -52,6 +77,10 @@ export interface PlayResult {
   spent: Record<string, number>;
   /** Anzahl Platzierungen je Unit-Typ. */
   placed: Record<string, number>;
+  /** Leaks als "Typ@Wave" -> Anzahl. */
+  leaks: Record<string, number>;
+  /** Je Unit-Typ und Wave: Schaden (HP) und bis dahin investierte Münzen (für Schaden je Münze nach Spielphase). */
+  byWave: Record<string, { dmg: number[]; invested: number[] }>;
 }
 
 export function play(o: PlayOpts): PlayResult {
@@ -61,7 +90,7 @@ export function play(o: PlayOpts): PlayResult {
     difficulty: o.difficulty,
     players: n,
     seed: o.seed,
-    data: o.data,
+    data: o.data ?? baseData,
     unitMods: o.unitMods,
     godMode: o.godMode,
     maxWaves: o.maxWaves,
@@ -73,6 +102,10 @@ export function play(o: PlayOpts): PlayResult {
   const dmg: Record<string, number> = {};
   const spent: Record<string, number> = {};
   const placed: Record<string, number> = {};
+  const leaks: Record<string, number> = {};
+  const byWave: Record<string, { dmg: number[]; invested: number[] }> = {};
+  let wave = 0;
+  const bw = (u: string): { dmg: number[]; invested: number[] } => (byWave[u] ??= { dmg: Array(24).fill(0), invested: Array(24).fill(0) });
   const defOf = new Map<number, string>();
   const drain = (): boolean => {
     let started = false;
@@ -81,13 +114,24 @@ export function play(o: PlayOpts): PlayResult {
         defOf.set(e.unitId, e.unit);
         spent[e.unit] = (spent[e.unit] ?? 0) + e.cost;
         placed[e.unit] = (placed[e.unit] ?? 0) + 1;
+        bw(e.unit).invested[wave] += e.cost;
       } else if (e.type === 'upgrade') {
         const d = defOf.get(e.unitId) as string;
         spent[d] = (spent[d] ?? 0) + e.cost;
+        bw(d).invested[wave] += e.cost;
       } else if (e.type === 'damage') {
         const d = defOf.get(e.unitId);
-        if (d) dmg[d] = (dmg[d] ?? 0) + e.amount / 100;
-      } else if (e.type === 'waveStart') started = true;
+        if (d) {
+          dmg[d] = (dmg[d] ?? 0) + e.amount / 100;
+          bw(d).dmg[Math.min(wave, 23)] += e.amount / 100;
+        }
+      } else if (e.type === 'leak') {
+        const k = `${e.enemy}@${e.wave}`;
+        leaks[k] = (leaks[k] ?? 0) + 1;
+      } else if (e.type === 'waveStart') {
+        started = true;
+        wave = Math.min(e.wave, 23);
+      }
     }
     return started;
   };
@@ -108,7 +152,7 @@ export function play(o: PlayOpts): PlayResult {
     if (started || st.tick % 20 === 0) decideAll();
   }
   drain();
-  return { result: st.result ?? 'timeout', endWave: st.wave, ticks: st.tick, sim, dmg, spent, placed };
+  return { result: st.result ?? 'timeout', endWave: st.wave, ticks: st.tick, sim, dmg, spent, placed, leaks, byWave };
 }
 
 /** Experiment-Bot: greedy-Policy, eingeschränkt auf erlaubte Unit-Typen (optional mit Gewichten). */

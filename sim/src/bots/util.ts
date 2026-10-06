@@ -17,8 +17,27 @@ const ABILITY_BONUS = 1.5;
 export interface Memo {
   armor: number;
   airSeen: boolean;
+  /** Entscheidungen in Folge, in denen auf eine teure Option gespart wurde (Runde 4 / P1). */
+  saving: number;
+  /** Early-Units wurden abgegeben: nicht neu kaufen (Runde 4 / P1). */
+  rotated: boolean;
 }
-export const newMemo = (): Memo => ({ armor: 0, airSeen: false });
+export const newMemo = (): Memo => ({ armor: 0, airSeen: false, saving: 0, rotated: false });
+
+/**
+ * Sparen (Runde 4 / P1, nur Policy-Option `save`): Ein Mensch spart auf eine teure, deutlich bessere Unit (Mythic/Legendary),
+ * statt jede Münze sofort in billige Upgrades zu stecken. Ein Wert-je-Münze-Bot kauft Units mit hoher Platzierungskost sonst
+ * nur zufällig (die Münzen erreichen nie 1000). Standard an für alle Bots (Mensch-Verhalten); `P1_NOSAVE=1` reproduziert die Runden 1-3.
+ */
+export const botTuning = {
+  saveFactor: 1.5,
+  saveMaxDecisions: 45,
+  /** Mythic-Platzierungen frühestens ab dieser Wave (Mythic hat Sparfaktor 1,0 statt `saveFactor`). */
+  mythicFromWave: 4,
+  saveMinShare: 0.5,
+  /** Nur Experimente: Sanity-Skripte setzen das per `P1_NOSAVE=1` (Verhalten der Runden 1-3). */
+  disabled: false,
+};
 
 export interface Policy {
   /** Präferenz-Multiplikator je Unit (Standard 1). */
@@ -31,6 +50,13 @@ export interface Policy {
   maxNonFarmInvest?: number;
   /** Frost-Stun ab so vielen Gegnern in Range (Standard 4). */
   frostMin?: number;
+  /**
+   * Plan: diese Unit ab `fromWave` anschaffen, auch wenn sie je Münze nie die beste Option ist. Der Bot spart darauf (sobald
+   * 40 % der Kosten da sind) und kauft sie als Erstes. Ein Mensch plant so für den Boss (Titan vor Wave 10).
+   */
+  plan?: { unit: string; fromWave: number };
+  /** Auf teure, deutlich bessere Platzierungen sparen (siehe `botTuning`). Standard an, `false` schaltet ab. */
+  save?: boolean;
   /** Münzen, die nicht für Kampf-Units ausgegeben werden. */
   reserve?: number;
 }
@@ -190,6 +216,9 @@ export function buildOptions(env: Env, pol: Policy): Option[] {
     if (!canPlaceBase(env, def)) continue;
     const cost = def.placeCost;
     if (cost > budget || nonFarm + cost > cap) continue;
+    // Mythic nicht als Eröffnung: die ersten Waves brauchen mehrere billige Körper (Runde 4 / P1).
+    if (def.rarity === 'mythic' && env.wave < botTuning.mythicFromWave && !botTuning.disabled) continue;
+    if (env.memo.rotated && EARLY_UNITS.includes(def.id)) continue;
     if (pol.canPlace && !pol.canPlace(def, env)) continue;
     const w = pol.weight ? pol.weight(def, 'place') : 1;
     if (w <= 0) continue;
@@ -217,6 +246,40 @@ export function buildOptions(env: Env, pol: Policy): Option[] {
   return out;
 }
 
+/** Plan-Unit: 'wait' = sparen, Option-Liste = nur diese Platzierungen, null = Plan greift nicht. */
+function planStep(env: Env, plan: { unit: string; fromWave: number }, opts: Option[]): Option[] | 'wait' | null {
+  const def = env.defs.get(plan.unit);
+  if (!def || env.wave < plan.fromWave) return null;
+  if (env.own.some((u) => u.defId === def.id) || !canPlaceBase(env, def)) return null;
+  if (env.coins < def.placeCost) return env.coins >= def.placeCost * 0.4 ? 'wait' : null;
+  const mine = opts.filter((o) => o.kind === 'place' && o.def.id === def.id);
+  return mine.length > 0 ? mine : null;
+}
+
+/**
+ * Sparen: Ist die beste Option insgesamt (ohne Budget) deutlich besser je Münze als die beste bezahlbare,
+ * kostet mehr als verfügbar und liegen schon `saveMinShare` davon vor (nur Platzierungen), wird gewartet (höchstens `saveMaxDecisions` Entscheidungen
+ * in Folge, ~ 1,5 Waves), damit Teure-Platzierungen (Titan, Frost, Lancer) nicht strukturell verhungern.
+ */
+function shouldSave(env: Env, memo: Memo, pol: Policy, opts: Option[], failed: Set<string>, key: (o: Option) => string): boolean {
+  const budget = env.coins - (pol.reserve ?? 0);
+  const all = buildOptions({ ...env, coins: 1e9 }, { ...pol, reserve: 0 }).filter((o) => !failed.has(key(o)));
+  if (all.length === 0) return false;
+  const top = all.find((o) => o.kind === 'place');
+  if (!top || top.cost <= budget) return false;
+  if (budget < top.cost * botTuning.saveMinShare) return false;
+  const best = opts.length > 0 ? opts[0].score : 0;
+  const factor = top.def.rarity === 'mythic' ? 1 : botTuning.saveFactor;
+  if (best * factor >= top.score) return false;
+  if (memo.saving >= botTuning.saveMaxDecisions) {
+    if (memo.saving >= 2 * botTuning.saveMaxDecisions) memo.saving = 0;
+    memo.saving++;
+    return false;
+  }
+  memo.saving++;
+  return true;
+}
+
 /** Kauf-Schleife: wählt unter den Top-3-Optionen (seeded) und kauft, bis nichts mehr geht. */
 export function spend(ctx: BotContext, memo: Memo, pol: Policy): void {
   const failed = new Set<string>();
@@ -224,7 +287,12 @@ export function spend(ctx: BotContext, memo: Memo, pol: Policy): void {
   for (let i = 0; i < 80; i++) {
     const env = makeEnv(ctx, memo);
     const opts = buildOptions(env, pol).filter((o) => !failed.has(key(o)));
+    const planned = pol.plan ? planStep(env, pol.plan, opts) : null;
+    if (planned === 'wait') return;
+    if (planned) opts.splice(0, opts.length, ...planned);
+    if (!planned && !botTuning.disabled && pol.save !== false && shouldSave(env, memo, pol, opts, failed, key)) return;
     if (opts.length === 0) return;
+    memo.saving = 0;
     const o = pickTop(ctx.rng, opts);
     const res =
       o.kind === 'place'
@@ -356,7 +424,31 @@ export function playTurn(ctx: BotContext, memo: Memo, pol: Policy): void {
     if (pol.farm.sellLate) sellLateFarms(ctx);
     farmStep(ctx, memo, pol);
   }
+  rotateEarly(ctx, memo);
   spend(ctx, memo, pol);
+}
+
+/**
+ * Early-Unit abgeben (Runde 4 / P1): Striker ist als billige Einstiegs-Unit gedacht und fällt später zurück. Ein Team hat nur
+ * 6 Typ-Plätze; ist es voll und fehlt ein Legendary/Mythic-Typ, verkauft der Bot ab Wave 8 alle Striker (60 % zurück) und
+ * schafft Platz und Münzen. Ohne diese Regel blockiert der Striker den Typ-Platz bis zum Ende (Leave-one-out +43 Punkte).
+ */
+export const EARLY_UNITS = ['striker'];
+export const ROTATE_FROM_WAVE = 8;
+export function rotateEarly(ctx: BotContext, memo: Memo): void {
+  if (botTuning.disabled) return;
+  const env = makeEnv(ctx, memo);
+  if (env.wave < ROTATE_FROM_WAVE) return;
+  if (new Set(env.own.map((u) => u.defId)).size < 6) return;
+  const early = env.own.filter((u) => EARLY_UNITS.includes(u.defId));
+  if (early.length === 0) return;
+  const refund = early.reduce((a, u) => a + Math.floor((u.invested * (env.defs.get(u.defId) as UnitDef).sellBp) / 10000), 0);
+  const missing = [...env.defs.values()].filter(
+    (d) => d.attack && (d.rarity === 'legendary' || d.rarity === 'mythic') && !env.own.some((u) => u.defId === d.id) && env.own.filter((u) => u.defId === d.id).length < d.cap,
+  );
+  if (!missing.some((d) => env.coins + refund >= d.placeCost)) return;
+  for (const u of early) ctx.sim.apply(ctx.playerId, { type: 'sell', entityId: u.id });
+  memo.rotated = true;
 }
 
 /** Baut einen Bot aus einer Policy (je Spieler eigene Instanz mit eigenem Gedächtnis). */

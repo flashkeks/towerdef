@@ -1,6 +1,6 @@
 {
   "ref": "recommendations §6, §9-§12",
-  "_comment": "DPS-Verteilung: Single-Target 100 % des Rarity-DPS (Striker 70 % + Bleed ~ +30 %, Gunner 90 % + Crit-Erwartung 1,125), Multi-Target (circle/line) 60 % je Ziel, Kontrolle (frost) 50 %, Support/Farm 0 %. Schaden/Treffer = DPS(k) * Anteil * SPA(k).",
+  "_comment": "DPS-Verteilung: Single-Target 100 % des Rarity-DPS (Striker 70 % + Bleed ~ +30 %, Gunner 90 % + Crit-Erwartung 1,125), Multi-Target (circle/line) 60 % je Ziel, Kontrolle (frost) 50 %, Support/Farm 0 %. Schaden/Treffer = DPS(k) * Anteil * SPA(k). Runde 4 P1: die Anteile der Units sind neu kalibriert (Striker 110 %, Gunner 115 %, Blaster 65 %, Lancer 85 %, Frost 70 %, Titan 50 %), siehe docs/balancing/kalibrierung.md, Runde 4 - P1.",
   "rarities": {
     "rare": {
       "ref": "§6 Rare: P 300, g 1,50, 4 Upgrades, SPA 2,0->1,6 s, DPS 10->45, Range 3,0->4,0, Cap 5",
@@ -26,29 +26,29 @@
   },
   "units": [
     {
-      "id": "striker", "name": "Striker", "ref": "Auftrag P2a; §6 Rare, §10 Bleed 0,6x in 6 s",
+      "id": "striker", "name": "Striker", "ref": "Auftrag P2a; §6 Rare, §10 Bleed 0,6x in 6 s; Runde 4 P1: Platzierung 200 statt 300, Anteil 70 -> 110 % (kalibrierung.md, Runde 4 - P1)",
       "rarity": "rare", "placement": "ground", "role": "Single-Target-DPS",
-      "dpsShareBp": 7000, "attack": { "kind": "single" }, "defaultTargeting": "first", "element": 1,
+      "placeCost": 200, "dpsShareBp": 11000, "attack": { "kind": "single" }, "defaultTargeting": "first", "element": 1,
       "onHit": [{ "kind": "bleed", "totalBp": 6000, "ticks": 120 }]
     },
     {
-      "id": "gunner", "name": "Gunner", "ref": "Auftrag P2a; §6 Rare, §10 Crit c 0,25 m 1,5",
+      "id": "gunner", "name": "Gunner", "ref": "Auftrag P2a; §6 Rare, §10 Crit c 0,25 m 1,5; Runde 4 P1: Anteil 90 -> 115 %",
       "rarity": "rare", "placement": "hill", "role": "Anti-Air, Single",
-      "dpsShareBp": 9000, "attack": { "kind": "single" }, "defaultTargeting": "first", "element": 2,
+      "dpsShareBp": 11500, "attack": { "kind": "single" }, "defaultTargeting": "first", "element": 2,
       "crit": { "chanceBp": 2500, "multBp": 15000 }
     },
     {
-      "id": "blaster", "name": "Blaster", "ref": "Auftrag P2a; §6 Epic, §10 Burn 0,9x in 4 s",
+      "id": "blaster", "name": "Blaster", "ref": "Auftrag P2a; §6 Epic, §10 Burn 0,9x in 4 s; Runde 4 P1: Anteil 60 -> 65 %",
       "rarity": "epic", "placement": "ground", "role": "AoE",
-      "dpsShareBp": 6000, "attack": { "kind": "circle", "radiusMilli": 1200 }, "defaultTargeting": "first", "element": 3,
+      "dpsShareBp": 6500, "attack": { "kind": "circle", "radiusMilli": 1200 }, "defaultTargeting": "first", "element": 3,
       "onHit": [{ "kind": "burn", "totalBp": 9000, "ticks": 80 }]
     },
     {
       "id": "banner", "name": "Banner", "ref": "Auftrag P2a; §6 Epic (5 Upgrades), §11 Aura +10 % bis +40 %",
-      "_comment": "Aura-Schaden linear +10 % (Stufe 0) bis +40 % (Stufe 5): +6 %/Stufe. Radius ~3 Tiles.",
+      "_comment": "Aura-Schaden linear +15 % (Stufe 0) bis +55 % (Stufe 5): +8 %/Stufe (Runde 4 P1, vorher +10 bis +40 %). Radius ~3 Tiles.",
       "rarity": "epic", "placement": "hybrid", "role": "Support",
       "dpsShareBp": 0, "attack": null,
-      "aura": { "radiusMilli": 3000, "damageBpByLevel": [1000, 1600, 2200, 2800, 3400, 4000] }
+      "aura": { "radiusMilli": 3000, "damageBpByLevel": [1500, 2300, 3100, 3900, 4700, 5500] }
     },
     {
       "id": "farm", "name": "Farm", "ref": "§12 Farm-Tabelle: 400 M, Upgrades 300/450/700/1100, Ertrag 50/90/135/205/310 -> KALIBRIERT x1,3 (kalibrierung.md #6), Cap 2, Verkauf 40 %",
@@ -58,26 +58,26 @@
       "farm": { "yieldByLevel": [65, 117, 176, 267, 403] }
     },
     {
-      "id": "lancer", "name": "Lancer", "ref": "Auftrag P2a; §6 Legendary, §10 Pen 30-60",
+      "id": "lancer", "name": "Lancer", "ref": "Auftrag P2a; §6 Legendary, §10 Pen 30-60; Runde 4 P1: Anteil 60 -> 85 %, Platzierung ground -> hybrid (Luft-Linie)",
       "_comment": "Linie: Länge = Range, Breite 0,6 Tiles. Multi-Target 60 % je Ziel; Pen 40.",
-      "rarity": "legendary", "placement": "ground", "role": "Anti-Armor",
-      "dpsShareBp": 6000, "attack": { "kind": "line", "widthMilli": 600 }, "defaultTargeting": "first", "element": 4,
+      "rarity": "legendary", "placement": "hybrid", "role": "Anti-Armor, Linie, Luft",
+      "dpsShareBp": 8500, "attack": { "kind": "line", "widthMilli": 600 }, "defaultTargeting": "first", "element": 4,
       "penetration": 40
     },
     {
-      "id": "frost", "name": "Frost", "ref": "Auftrag P2a; §6 Legendary, §10 Slow -40 % 4 s, Stun 1,5 s",
+      "id": "frost", "name": "Frost", "ref": "Auftrag P2a; §6 Legendary, §10 Slow -40 % 4 s, Stun 1,5 s; Runde 4 P1: Slow -20 %, Anteil 50 -> 70 %",
       "_comment": "Kegel ~60 Grad (Länge = Range), 50 % DPS (Kontrolle). Fähigkeit: Stun im Radius 2,5 Tiles um die Unit, Abklingzeit 30 s.",
       "rarity": "legendary", "placement": "hybrid", "role": "Kontrolle",
-      "dpsShareBp": 5000, "attack": { "kind": "cone", "coneDeg": 60 }, "defaultTargeting": "first", "element": 5,
-      "onHit": [{ "kind": "slow", "pctBp": 4000, "ticks": 80 }],
+      "dpsShareBp": 7000, "attack": { "kind": "cone", "coneDeg": 60 }, "defaultTargeting": "first", "element": 5,
+      "onHit": [{ "kind": "slow", "pctBp": 2000, "ticks": 80 }],
       "ability": { "kind": "stunAoe", "cooldownTicks": 600, "radiusMilli": 2500, "stunTicks": 30 }
     },
     {
-      "id": "titan", "name": "Titan", "ref": "Auftrag P2a; §6 Mythic, §9 Strongest",
-      "_comment": "Nuke = True Damage auf den stärksten Gegner, 8x Treffer-Schaden der aktuellen Stufe, Abklingzeit 45 s (Stufe 0: 8*190 = 1520 HP ~ 4 DPS-Äquivalent über 45 s mehr).",
+      "id": "titan", "name": "Titan", "ref": "Auftrag P2a; §6 Mythic, §9 Strongest; Runde 4 P1: Anteil 100 -> 50 %, Nuke 8x -> 5x",
+      "_comment": "Nuke = True Damage auf den stärksten Gegner, 5x Treffer-Schaden der aktuellen Stufe (Runde 4 P1, vorher 8x), Abklingzeit 45 s.",
       "rarity": "mythic", "placement": "hill", "role": "Boss-Killer",
-      "dpsShareBp": 10000, "attack": { "kind": "single" }, "defaultTargeting": "strongest", "element": 0,
-      "ability": { "kind": "nuke", "cooldownTicks": 900, "damageMulBp": 80000 }
+      "dpsShareBp": 5000, "attack": { "kind": "single" }, "defaultTargeting": "strongest", "element": 0,
+      "ability": { "kind": "nuke", "cooldownTicks": 900, "damageMulBp": 50000 }
     }
   ]
 }

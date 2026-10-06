@@ -113,8 +113,10 @@ describe('Infinite', () => {
     expect(maxAlive).toBeLessThanOrEqual(60);
     expect(maxAlive).toBeGreaterThan(20);
     const g = (n: number) => compile(data, inf, 'normal', 1).hpGrunt(n);
-    for (const n of [21, 30, 40]) if (maxHpByWave.has(n)) expect(maxHpByWave.get(n)).toBe(g(n));
-    if (maxHpByWave.has(40)) expect(maxHpByWave.get(40)).toBe(g(20) * 4);
+    // Normal trägt seit Runde 4 P1 einen HP-Faktor (kalibrierung.md); Rundung je Faktor, daher +-1 Centi-HP
+    const f = (v: number) => Math.floor((v * data.difficulties.normal.hpBp) / 10000);
+    for (const n of [21, 30, 40]) if (maxHpByWave.has(n)) expect(Math.abs(maxHpByWave.get(n)! - f(g(n)))).toBeLessThanOrEqual(1);
+    if (maxHpByWave.has(40)) expect(Math.abs(maxHpByWave.get(40)! - f(g(20) * 4))).toBeLessThanOrEqual(1);
     if (speedByWave.has(30) && speedByWave.has(20)) {
       expect(speedByWave.get(30)! * 10000).toBeGreaterThanOrEqual(speedByWave.get(20)! * 10990);
     }

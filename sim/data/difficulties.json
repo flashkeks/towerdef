@@ -1,6 +1,6 @@
 {
   "ref": "recommendations §4 (Schwierigkeit), §18",
-  "normal": { "ref": "§4 Normal x1,0", "hpBp": 10000, "speedBp": 10000, "elementsActive": false },
-  "hard": { "ref": "§4 Hard HP x1,4, Speed x1,1, Elemente aktiv; KALIBRIERT HP x1,03, Speed x1,0 (kalibrierung.md #4)", "hpBp": 10300, "speedBp": 10000, "elementsActive": true },
-  "nightmare": { "ref": "§4 Nightmare HP x2,0, Speed x1,2, Elemente aktiv; KALIBRIERT HP x1,07, Speed x1,0 (kalibrierung.md #4)", "hpBp": 10700, "speedBp": 10000, "elementsActive": true }
+  "normal": { "ref": "§4 Normal x1,0; Runde 4 P1: HP 15200 (kalibrierung.md, Runde 4 - P1)", "hpBp": 15200, "speedBp": 10000, "elementsActive": false },
+  "hard": { "ref": "§4 Hard HP x1,4, Speed x1,1, Elemente aktiv; KALIBRIERT HP x1,03, Speed x1,0 (kalibrierung.md #4); Runde 4 P1: HP 14800 (kalibrierung.md, Runde 4 - P1)", "hpBp": 14800, "speedBp": 10000, "elementsActive": true },
+  "nightmare": { "ref": "§4 Nightmare HP x2,0, Speed x1,2, Elemente aktiv; KALIBRIERT HP x1,07, Speed x1,0 (kalibrierung.md #4); Runde 4 P1: HP 15600 (kalibrierung.md, Runde 4 - P1)", "hpBp": 15600, "speedBp": 10000, "elementsActive": true }
 }
