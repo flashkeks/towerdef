@@ -81,6 +81,8 @@ Verbindlich für alle weiteren Runden. Die beantwortete Fragenliste liegt in
 - **Nichts „ausleihen"**, was keine solche Lizenz hat. Auch keine Sprites aus anderen
   Spielen und keine Fan-Art. Das wäre ein echtes Risiko für das ganze Projekt, sobald es
   öffentlich ist.
+- **Schriften unter SIL Open Font License (OFL) sind erlaubt** (Max, 06.10.2026). Behandlung wie
+  CC-BY: Eintrag in `ATTRIBUTIONS.md`, Lizenztext im Repo, Schrift nicht einzeln weitergeben.
 - Erst passende freie Packs suchen. Was fehlt, wird selbst gezeichnet. Dafür gibt es einen
   Styleguide (Paket P8).
 

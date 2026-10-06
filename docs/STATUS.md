@@ -8,6 +8,14 @@ Letzte Aktualisierung: 2026-10-06 (Runde 4, P6b Balance-Reste; Arbeit ab jetzt �
 ## Runde 5 (Start offen)
 
 Auftrag liegt seit 06.10.2026 in `run.md`. Die Sitzung, die Runde 5 beginnt, legt hier die Pakettabelle an (P0).
+**Antworten auf die offenen Fragen von Runde 4** (Homelab-Sitzung/Max, 06.10.2026):
+- Domain-Betrieb: `cloudflared` läuft auf `edge` als Host-Dienst, Ingress wird bei Cloudflare per API gepflegt. Ziel ist immer `http://127.0.0.1:PORT`, Compose braucht **kein** eigenes Netz für den Tunnel, nur einen auf `127.0.0.1` gebundenen Port. Port vergibt die Homelab-Seite.
+- Backup `/data` (ab M2): wie bei den anderen Apps über CT 113 per tar zum PBS, eigene backup-id. Baut die Homelab-Seite; das TD muss nur einen konsistenten Stand liefern (SQLite: Online-Backup oder WAL-Checkpoint, im Deploy-Entwurf beschreiben).
+- Koop-Bibliothek (Colyseus vs. `ws`) und bitECS: Entscheidung zu Beginn von M2, nicht jetzt.
+- OFL-Schriften: **erlaubt**, siehe ENTSCHEIDUNGEN.md § Grafik-Herkunft.
+- EUIPO/USPTO „Duskwardens": macht Max vor einem öffentlichen Release, für die Arbeit kein Blocker.
+- Kek-Game-Seite (`/td/launch`, Schlüsselablage, `kid`-Schema): baut die Homelab-Seite zusammen mit M2. Vorschlag aus `architecture.md` (`iss=kek-game`) gilt bis dahin.
+
 Vorab erledigt (Homelab-Sitzung, 06.10.2026): Preview `https://duskwardens.flashkeks.com` (statisch, Access, Betrieb durch Homelab); Slot-Knöpfe lagen in Festkomma statt Kacheln, Units ließen sich nicht setzen → behoben in `41515c4`, Smoke prüft jetzt die Lage der Slot-Knöpfe.
 
 # Runde 4 (abgeschlossen bis auf Balance-Reste, die in Runde 5 P3 aufgehen)
