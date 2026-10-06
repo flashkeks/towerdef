@@ -31,6 +31,8 @@ export interface SimOptions {
   godMode?: boolean;
   /** Hooks für Trait-/Level-Multiplikatoren je Spieler und Unit-Typ (Standard x1). */
   unitMods?: UnitMod[];
+  /** Nur Infinite: Abbruch, sobald diese Wave endet (Phase 'over', result null). Standard: unbegrenzt. */
+  maxWaves?: number;
 }
 
 export interface SlotInfo {
@@ -65,7 +67,7 @@ export function createSim(opts: SimOptions): Sim {
   const data = opts.data ?? loadGameData();
   const stage = typeof opts.stage === 'string' ? data.stages[opts.stage] : opts.stage;
   if (!stage) throw new Error(`Unbekannte Stage ${String(opts.stage)}`);
-  const ctx: Ctx = compile(data, stage, opts.difficulty, opts.players);
+  const ctx: Ctx = compile(data, stage, opts.difficulty, opts.players, { seed: opts.seed, maxWaves: opts.maxWaves });
   const eco = data.economy;
   const state: SimState = {
     tick: 0,

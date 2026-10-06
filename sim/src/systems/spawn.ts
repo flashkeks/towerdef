@@ -27,6 +27,7 @@ export function createEnemy(
   const maxHp = mulBp(hp, ctx.difficulty.hpBp);
   const baseSpeedMicro = Math.floor((ctx.data.enemies.baseSpeedMilliPerSec * 1000) / 20);
   let speedMicro = mulBp(mulBp(baseSpeedMicro, def.fSpeedBp), ctx.difficulty.speedBp);
+  if (ctx.infinite) speedMicro = mulBp(speedMicro, ctx.speedInfBp(wave));
   let armor = def.armor;
   let shield = 0;
   let regen = false;
@@ -75,7 +76,7 @@ export function processSpawns(w: World): void {
   const q = state.spawnQueue;
   let n = 0;
   while (n < q.length && q[n].atTick <= state.tick) {
-    if (state.enemies.length >= ctx.data.economy.caps.enemies) break; // DESIGN-OFFEN: Spawn wartet am Limit
+    if (state.enemies.length >= ctx.enemyCap) break; // DESIGN-OFFEN: Spawn wartet am Limit
     const s = q[n++];
     const e = createEnemy(ctx, state.nextId++, s.type, s.wave, s.modifiers, s.element);
     state.enemies.push(e);

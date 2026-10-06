@@ -9,10 +9,11 @@ import { parseModifier, type Ctx } from '../data/compile.js';
 import { mulBp } from '../fixed.js';
 import type { World } from '../state.js';
 import { payWaveEnd } from './economy.js';
+import { getWave } from './infinite.js';
 
 export function startWave(w: World, n: number): void {
   const { state, ctx } = w;
-  const wave = ctx.stage.waves[n - 1];
+  const wave = getWave(ctx, n);
   for (const g of wave.groups) {
     for (let i = 0; i < g.count; i++) {
       state.spawnQueue.push({
@@ -56,6 +57,11 @@ export function updateWaves(w: World): void {
   const cleared = state.spawnQueue.length === 0 && state.enemies.length === 0;
   if (state.waveTimer >= ctx.waveTimerTicks || cleared || state.skipPending) {
     endWave(w);
+    if (state.wave >= ctx.maxWaves) {
+      // DESIGN-OFFEN: Infinite-Abbruch nach maxWaves: Phase 'over', result bleibt null, kein 'over'-Event.
+      state.phase = 'over';
+      return;
+    }
     if (state.wave < ctx.totalWaves) startWave(w, state.wave + 1);
   }
 }
@@ -81,7 +87,7 @@ export function finish(w: World, result: 'win' | 'loss'): void {
 /** HP-Summe (Centi) einer Wave laut Stage-Daten, inkl. Splitter-Kinder (Pool-Spalte aus §5). */
 export function wavePool(ctx: Ctx, n: number): number {
   let pool = 0;
-  for (const g of ctx.stage.waves[n - 1].groups) {
+  for (const g of getWave(ctx, n).groups) {
     const def = ctx.enemies[g.type];
     for (const m of g.modifiers) parseModifier(m); // validiert
     let hp = mulBp(ctx.hpGrunt(n), def.fHpBp);

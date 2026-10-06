@@ -72,7 +72,20 @@ export interface Ctx {
   units: Record<string, UnitDef>;
   unitList: UnitDef[];
   enemies: Record<string, EnemyArchetype>;
+  /** Anzahl fester Waves; im Infinite-Modus Infinity (kein Sieg). */
   totalWaves: number;
+  /** Infinite-Modus (Waves > stage.waves.length werden erzeugt). */
+  infinite: boolean;
+  /** Anzahl fest definierter Waves der Stage. */
+  fixedWaves: number;
+  /** Infinite: Abbruch nach dieser Wave (Infinity = nie). */
+  maxWaves: number;
+  /** Infinite-Seed für die Wave-Erzeugung (unabhängig vom Sim-PRNG). */
+  waveSeed: number;
+  /** Max. gleichzeitig lebende Gegner (Spawns warten am Limit). */
+  enemyCap: number;
+  /** Infinite-Speed-Faktor v_Infinite(n) in Basispunkten (10000 für n <= 20). */
+  speedInfBp(n: number): number;
   waveTimerTicks: number;
   /** Koop-HP-Faktor h(Spielerzahl) in Basispunkten. */
   coopHpBp: number;
@@ -128,7 +141,17 @@ export function parseModifier(m: string): ParsedModifier {
   throw new Error(`Unbekannter Modifier ${m}`);
 }
 
-export function compile(data: GameData, stage: StageData, difficultyId: DifficultyId, players: number): Ctx {
+/** Infinite: höchstens 60 Gegner gleichzeitig (recommendations §3, Performance). */
+export const INFINITE_ENEMY_CAP = 60;
+
+export interface CompileOpts {
+  seed?: number;
+  maxWaves?: number;
+}
+
+export function compile(data: GameData, stage: StageData, difficultyId: DifficultyId, players: number, opts: CompileOpts = {}): Ctx {
+  const infinite = stage.infinite === true;
+  const fixedWaves = stage.waves.length;
   if (!Number.isInteger(players) || players < 1 || players > data.economy.coop.maxPlayers) {
     throw new Error(`Spielerzahl ${players} ungültig`);
   }
@@ -143,6 +166,12 @@ export function compile(data: GameData, stage: StageData, difficultyId: Difficul
   const hpGrunt = (n: number): number => {
     let v = hpCache[n];
     if (v === undefined) {
+      if (infinite && n > fixedWaves) {
+        // Infinite (§3): HP_grunt(n) = HP_grunt(Ende fester Waves) * (n/N)^2, floor.
+        v = Math.floor((hpGrunt(fixedWaves) * n * n) / (fixedWaves * fixedWaves));
+        hpCache[n] = v;
+        return v;
+      }
       const e = BigInt(n - 1);
       v = Number((BigInt(data.enemies.hpCurve.baseCenti) * g ** e) / 10000n ** e);
       hpCache[n] = v;
@@ -152,6 +181,15 @@ export function compile(data: GameData, stage: StageData, difficultyId: Difficul
   const gs = BigInt(data.economy.bounty.gammaStartBp);
   const gd = BigInt(data.economy.bounty.gammaDecayBp);
   const bounty = (n: number, hpBasisCenti: number): number => {
+    if (infinite && n > fixedWaves) {
+      // Infinite (§3): gamma(n) = gamma(N) * (N/n)^2; exakt in BigInt, kaufmännisch gerundet.
+      const N = BigInt(fixedWaves);
+      const nn = BigInt(n);
+      const e0 = N - 1n;
+      const num0 = gs * gd ** e0 * N * N * BigInt(hpBasisCenti);
+      const den0 = 10000n * 10000n ** e0 * 100n * nn * nn;
+      return Number((2n * num0 + den0) / (2n * den0));
+    }
     const e = BigInt(n - 1);
     const num = gs * gd ** e * BigInt(hpBasisCenti);
     const den = 10000n * 10000n ** e * 100n;
@@ -169,7 +207,14 @@ export function compile(data: GameData, stage: StageData, difficultyId: Difficul
     units,
     unitList,
     enemies,
-    totalWaves: stage.waves.length,
+    totalWaves: infinite ? Infinity : fixedWaves,
+    infinite,
+    fixedWaves,
+    maxWaves: infinite && opts.maxWaves !== undefined ? opts.maxWaves : Infinity,
+    waveSeed: opts.seed ?? 0,
+    enemyCap: infinite ? INFINITE_ENEMY_CAP : data.economy.caps.enemies,
+    // DESIGN-OFFEN: Infinite-Speed +1 %/Wave ab Wave N+1 bis x1,5 (wirkt zusätzlich zu Archetyp-/Schwierigkeitsfaktor).
+    speedInfBp: (n: number) => (infinite && n > fixedWaves ? Math.min(15000, 10000 + 100 * (n - fixedWaves)) : 10000),
     waveTimerTicks: stage.waveTimerTicks ?? data.economy.waveTimerTicks,
     coopHpBp: 10000 + data.economy.coop.hpPerExtraPlayerBp * (players - 1),
     hpGrunt,

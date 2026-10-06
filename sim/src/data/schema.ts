@@ -105,6 +105,8 @@ export const StageSchema = z.object({
   id: z.string(),
   name: z.string(),
   waveTimerTicks: pos.optional(),
+  /** Infinite-Modus: Waves ab Wave (waves.length+1) werden seeded erzeugt, kein Sieg (recommendations §3/§4). */
+  infinite: z.boolean().optional(),
   /** Waypoints in Tiles (Tile-Mitten, dürfen .5 haben); werden zu Milli-Tiles. */
   path: z.array(z.tuple([z.number(), z.number()])).min(2),
   slots: z

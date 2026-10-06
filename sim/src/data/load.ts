@@ -70,6 +70,9 @@ export function loadGameData(): GameData {
     const s = StageSchema.parse(readJson('stages/' + f));
     stages[s.id] = s;
   }
+  // Infinite: gleiche Map und gleiche Waves 1-20 wie standard20, danach seeded erzeugte Waves (systems/infinite.ts).
+  const base = stages['standard20'];
+  if (base && !stages['infinite']) stages['infinite'] = { ...base, id: 'infinite', name: 'Infinite', infinite: true };
   const data: GameData = {
     economy: EconomySchema.parse(readJson('economy.json')),
     enemies: EnemiesSchema.parse(readJson('enemies.json')),
