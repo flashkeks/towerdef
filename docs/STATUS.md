@@ -10,7 +10,7 @@ Letzte Aktualisierung: 2026-10-06 (Runde 2, Sitzung 1)
 | Paket | Inhalt | Status | Agent (Modell) | Notiz |
 |---|---|---|---|---|
 | P0 | Aufräumen, Status, Spiele verifizieren | **erledigt** | Hauptsitzung | siehe „Spiele“ |
-| P1 | `anime-adventures/design-brief.md` | läuft | 1 × Sonnet | |
+| P1 | `anime-adventures/design-brief.md` | **erledigt** | 1 × Sonnet | 390 Zeilen, Zahlenbereiche je Rarity aus units.json (Stichprobe geprüft) |
 | P2 | Bloons TD6 | läuft | 1 × Sonnet | |
 | P3 | Roblox-Anime-TDs (ASTD, AV, ALS, UTDZ, AE) | läuft (ASTD, AV) | 2 × Sonnet, danach ALS/UTDZ/AE | |
 | P4 | Vergleich und Empfehlung | offen | – | |

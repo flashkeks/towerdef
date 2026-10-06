@@ -84,6 +84,7 @@ Jede wichtige Aussage trägt ein Tag in der Form `ART · CONFIDENCE · [Quellen]
 | [simulation.md](simulation.md) | Durchgerechnete Beispielrunde |
 | [technical-reconstruction.md](technical-reconstruction.md) | **Recommended Web Architecture** und Datenmodell |
 | [STATUS.md](STATUS.md) | Recherche-Fortschritt, Quellenlandkarte, nächster Schritt |
+| [design-brief.md](design-brief.md) | **Kurzfassung für Entwickler** (Runde 2, P1): Core Loop, Formeln, Zahlenbereiche, Lücken |
 | [sources.md](sources.md) | Quellenverzeichnis mit Bewertung A–E |
 | [unknowns.md](unknowns.md) | **Known Unknowns & Conflicts** |
 | [data/](data/) | Strukturierte Referenzdaten (JSON) |
