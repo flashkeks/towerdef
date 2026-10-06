@@ -16,7 +16,7 @@ Letzte Aktualisierung: 2026-10-06 (Runde 5 gestartet, Max' Claude-Account)
 | P1 | Bedienbarkeit, Smoke mit echten Mausklicks | offen | 1 × Sonnet | nach P0b |
 | P2 | Playtest-Daten, Replay | offen | 1 × Sonnet | nach P0b |
 | P3 | Boss-Design, Hard-Kennlinie | offen | 1 × Sonnet | nur `sim/` |
-| P4 | Pixel-Grafik | offen | 1 × Sonnet | nach P0b |
+| P4 | Pixel-Grafik | **erledigt (eigene Sprites, keine Packs)**, nicht gepusht (`wip5-p4`) | 1 × Sonnet | Terrassenweg aus Kacheln (Gras, Pfad mit 16 Kantenmasken, Deko, Spawn/Basis), drei Slot-Untergründe auf einen Blick unterscheidbar (graue Steinplatte = Boden, Sockel mit Frontmauer = Hügel, Holzdeck mit Münze = 2×2), 8 Units + 8 Gegnertypen (je 2 Geh-Frames) = 54 Quellbilder, **alle eigen und code-generiert** (`client/scripts/gen-sprites.mjs`). Atlas-Pipeline `build-atlas.mjs` (reproduzierbar, nearest), Figuren ganzzahlig skaliert. Bundle: `dist` 860 kB gesamt, Atlas 10 kB, `index` unverändert. Lizenzen: nur Eigenes, `ATTRIBUTIONS.md`. Screenshots `client/docs/screenshot-p4-*.png`. **Offene Spuren:** CC0-Packs (Kenney Tiny Town/Dungeon, OGA Tiny Creatures, Pixel Frog Tiny Swords) waren aus der Session nicht erreichbar (Proxy 403 auf kenney.nl, opengameart.org, itch.io), nicht umgangen; Homelab-Seite könnte per CT 113 holen. Tile-Größe folgt dem Fenster (nicht ganzzahlig), Einrasten wäre Einzeiler in `renderer.fit` (P0b-Datei) |
 | P5 | Spielgefühl, Ton | offen | 1 × Sonnet | nach P0b und P3 (Telegraph-Liste) |
 | P6 | M1-Lücken (Menü, Team 6 aus 8, Einstellungen, Ergebnis) | offen | 1 × Sonnet | nach P0b |
 | P7 | Abschluss | offen | Hauptsitzung | |
