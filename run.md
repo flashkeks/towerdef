@@ -1,328 +1,249 @@
-# run.md — Arbeitsauftrag: Anime Adventures für den Web-Nachbau rekonstruieren
+# run.md — Runde 2: Vergleichsrecherche Tower Defense + Vorarbeiten für unser Spiel
 
-Du arbeitest in diesem Repository (`flashkeks/towerdef`), auf **dem Branch, auf dem
-diese Datei liegt**. Lege keine neuen Branches an und öffne keine Pull Requests.
-Committe und pushe auf diesen Branch.
+Du arbeitest in diesem Repository auf dem Branch, auf dem diese Datei liegt. Keine neuen
+Branches. Commit und Push nach jedem Paket. Pull Requests nur, wenn der Mensch es sagt.
 
-Diese Datei ist dein kompletter Auftrag. Lies sie einmal ganz, bevor du anfängst.
-Danach arbeitest du sie **paketweise** ab (Abschnitt 6) und hältst den Fortschritt
-in `docs/anime-adventures/STATUS.md` fest. So kann jede neue Sitzung dort weitermachen,
-wo die letzte aufgehört hat.
+**Runde 1 (Anime Adventures) ist abgeschlossen** und war sehr gut: Datenmodule über
+die Wiki-API statt HTML, 561 Units mit echten Werten, saubere Etiketten, Quellen,
+Konflikte. Die Konventionen von dort gelten weiter (Abschnitt 3). Der alte Auftrag liegt
+als `docs/anime-adventures/run-runde1.md` im Archiv (P0 verschiebt ihn dorthin).
 
----
-
-## 1. Ziel
-
-Wir bauen ein **eigenes Web-Tower-Defense-Spiel**, das sich spielerisch an
-**Anime Adventures** orientiert (Roblox, Gomu Development). Dafür brauchen wir keine
-Wiki-Nacherzählung, sondern eine **technische Rekonstruktion**: Regeln, Zahlen,
-Formeln, Abläufe, Datenmodelle. Ein Entwickler soll ohne weitere Recherche
-daraus Spielsysteme implementieren können.
-
-Arbeite wie ein **Game-Systems-Analyst**: Was genau passiert, in welcher
-Reihenfolge, mit welchen Zahlen, und woher wissen wir das?
-
-Im Repo liegt schon ein erster Stand. Er wurde **ohne echten Internetzugang**
-erstellt. Deshalb fehlen dort viele genaue Werte, und manche Angaben sind
-vermutlich geraten. Deine Hauptaufgabe ist es, diese Lücken mit **belegten Daten**
-zu füllen und geratene Werte zu entlarven.
+Lies diese Datei einmal ganz. Danach liest jede Sitzung **zuerst `docs/STATUS.md`**
+und macht beim „Nächsten Schritt" weiter.
 
 ---
 
-## 2. Dein Werkzeug: der Recherche-Connector
+## 1. Was sich gegenüber Runde 1 ändert
 
-Du hast einen MCP-Connector mit zwei Werkzeugen. Nutze ihn für **alles**, was
-Internet braucht. Er ist schneller und ergiebiger als eingebaute Websuche.
+Runde 1 hat AA **enzyklopädisch** erfasst. Für den Bau unseres Spiels brauchen wir das
+nicht bei jedem Spiel. Ab jetzt gilt **Systeme und Zahlenbereiche statt Vollständigkeit**:
 
-| Tool | Wofür | Wichtige Parameter |
-|---|---|---|
-| `search` | Websuche (Google, Bing, Wikipedia u. a. über SearXNG) | `query`, `max_results` (bis 50), `page`, `categories` (`general`, `it`, `videos`, `social media`, `news`), `time_range` (`day`, `week`, `month`, `year`) |
-| `fetch` | Jede öffentliche URL lesen. HTML kommt als Markdown (Hauptinhalt), PDFs als Text | `url`, `max_chars` (Standard 20000, bis 100000), `start` (zum Weiterlesen), `raw=true` für rohes HTML/JSON |
-
-Grenzen: 60 Aufrufe pro Minute, 10 MB pro Abruf. Interne/private Adressen sind
-gesperrt — das ist Absicht, nicht ein Fehler.
-
-### Rechercheknigge — so holst du die genauen Zahlen
-
-Die wertvollsten Daten stecken fast immer in **Wiki-Infoboxen und Tabellen**.
-Gerendertes HTML verliert dabei oft Werte. Darum:
-
-1. **Fandom/MediaWiki: hol den Quelltext, nicht die Seite.**
-   - Rohtext einer Seite:
-     `https://WIKI.fandom.com/api.php?action=parse&page=SEITENNAME&prop=wikitext&format=json`
-     mit `raw=true`. Darin stehen Infobox-Parameter wie `|damage1 = 120` direkt.
-   - Alle Seiten einer Kategorie (z. B. alle Units):
-     `https://WIKI.fandom.com/api.php?action=query&list=categorymembers&cmtitle=Category:Units&cmlimit=500&format=json`
-   - Versionsgeschichte einer Seite (für alte Werte):
-     `...api.php?action=query&prop=revisions&titles=SEITE&rvlimit=50&rvprop=timestamp|comment|ids&format=json`,
-     alte Fassung dann mit `action=parse&oldid=REVID&prop=wikitext`.
-   - Finde zuerst heraus, **welche** Wikis es zu Anime Adventures gibt (es gab
-     mehrere, teils umgezogen). Nimm jedes ernstzunehmende auf.
-2. **Legacy-Stände: Wayback Machine.**
-   - Verfügbare Schnappschüsse:
-     `http://archive.org/wayback/available?url=URL&timestamp=20230101`
-   - Liste aller Schnappschüsse:
-     `https://web.archive.org/cdx/search/cdx?url=URL&output=json&limit=50`
-   - Abruf: `https://web.archive.org/web/ZEITSTEMPEL/URL`
-3. **Reddit: JSON statt HTML.** Suche:
-   `https://www.reddit.com/r/SUBREDDIT/search.json?q=BEGRIFF&restrict_sr=1&limit=50`,
-   einzelner Thread: Thread-URL + `.json`. Kommt nichts, `old.reddit.com` probieren.
-4. **Roblox-Seiten:** Spielseite, Updates/Beschreibung, Gamepässe
-   (`https://games.roblox.com/v1/games/...`-APIs sind öffentlich, wenn du die
-   Universe-ID findest).
-5. **YouTube:** Videos selbst kannst du nicht ansehen. Nutze Titel,
-   Beschreibungen, Kapitelmarken und angepinnte Kommentare. Dort stehen oft
-   Patch-Inhalte und Zahlen. Werte daraus sind höchstens **OBSERVED**.
-6. **Discord/Trello:** Viele Roblox-Spiele führen Patch Notes oder Trello-Boards.
-   Öffentliche Trello-Boards gehen als JSON: Board-URL + `.json`.
-7. **Lange Seiten:** Mit `max_chars` 40000–60000 lesen und mit `start` blättern.
-   Nicht dieselbe Seite mehrfach holen. Was du gelesen hast, notierst du sofort
-   (Abschnitt 4).
-
-Suche gezielt auf **Englisch** (die Community ist englischsprachig) und probiere
-Synonyme: `SPA` = Seconds Per Attack, `placement`, `upgrade cost`, `wave`,
-`gems`, `banner rates`, `trait`, `star remnants`, `portal`, `raid`, `evolve`.
-
----
-
-## 3. Kennzeichnung — keine erfundenen Daten
-
-**Erfinde niemals Werte.** Jede Zahl, jede Regel bekommt zwei Etiketten.
-
-**Herkunft:**
-
-| Etikett | Bedeutung |
+| Brauchen wir | Brauchen wir nicht (nur wenn billig nebenbei) |
 |---|---|
-| `VERIFIED` | offiziell bestätigt (Entwickler, offizielle Patch Notes, Spiel-UI-Screenshot) |
-| `OBSERVED` | aus Gameplay/Videos beobachtet |
-| `DERIVED` | aus bekannten Werten berechnet (Rechenweg angeben) |
-| `RECONSTRUCTED` | aus mehreren Quellen logisch geschlossen (Begründung angeben) |
-| `UNKNOWN` | nicht öffentlich dokumentiert — so stehen lassen |
+| Regeln, Abläufe, Formeln | jedes einzelne Item, Rezept, Skin |
+| In-Match-Ökonomie: Startgeld, Kill-/Wave-Einkommen, Verkaufswert | komplette Unit-Datenbanken mit allen Varianten |
+| Gegner-HP/-Speed und **wie sie mit der Welle skalieren** | Update-Zeitleisten bis aufs Datum |
+| Wave-Zusammensetzung (wenigstens für einige Stages) | Legacy-gegen-aktuell-Diffs jedes Werts |
+| Archetypen von Towern/Units mit **repräsentativen** Zahlen | Trading-/Social-Historie, Gamepass-Preislisten |
+| Meta-Progression und Gacha als **System** (Raten, Pity, Sinks) | Lore, Namen, Bossangriffe im Einzelnen |
+| Was Spieler lieben und hassen (Design-Lehren) | |
 
-**Sicherheit:** `CONFIRMED`, `HIGH`, `MEDIUM`, `LOW`, `UNKNOWN`.
+**Genau die Lücken, die bei AA offen geblieben sind, sind die wichtigsten:**
+In-Match-Yen, Gegner-HP, Wave-Zusammensetzung, Targeting-Modi, Level-Kurve. Wer
+Balance-Zahlen für ein TD bauen will, braucht genau die. Bloons TD6 hat dafür die
+beste öffentliche Datenlage. Darum steht es vorn.
 
-Pflicht bei Drop-/Gacha-/Trait-/Shiny-/Portal-Raten, Damage-Formeln,
-Enemy-Scaling, Wave-Generierung und allem, was nach Serverlogik riecht.
-
-**Versionen:** Anime Adventures hat sich stark verändert. Trenne Legacy und
-spätere Stände **immer**. Bei abweichenden Werten:
-`Zeitraum/Version | alter Wert | neuer Wert | letzter bekannter Wert | Quelle`.
-
-Kurzform in Tabellen, z. B. `120 [V/HIGH S12]` = 120, VERIFIED, HIGH, Quelle S12
-aus `sources.md`. Die Legende steht oben in jeder Datei.
-
----
-
-## 4. Arbeitsweise
-
-1. **Erst das Repo lesen.** Struktur, vorhandene Doku, vorhandene
-   Datenmodelle, Unit-/Enemy-/Map-Dateien. Was es schon gibt, wird **erweitert**,
-   nicht parallel neu angelegt. Halte die vorhandenen Konventionen ein
-   (Pfade, Sprache, Dateiformat).
-2. **Bestand prüfen.** Für jeden vorhandenen Wert: Ist er belegt? Wenn nicht,
-   belegen oder als `UNKNOWN`/`LOW` markieren. Falsche Werte korrigieren und den
-   alten Wert in `unknowns.md` unter „Korrekturen" notieren.
-3. **`STATUS.md` führen** (`docs/anime-adventures/STATUS.md`, oder wo die
-   vorhandene Doku liegt):
-   - welches Paket (Abschnitt 6) erledigt, angefangen oder offen ist,
-   - welche Quellen schon ausgewertet sind (damit niemand sie zweimal holt),
-   - offene Spuren („Wiki X hat Kategorie Y noch nicht durchgesehen").
-   Eine neue Sitzung liest **zuerst** `STATUS.md` und macht dort weiter.
-4. **Quellen sofort erfassen.** Jede genutzte URL kommt in `sources.md` mit
-   ID (`S1`, `S2` …), Titel, Abrufdatum, Version/Zeitraum, was daraus stammt und
-   Bewertung `A`–`E`:
-   - `A` offiziell/primär
-   - `B` verlässliche Community-Doku
-   - `C` mehrere unabhängige Bestätigungen
-   - `D` einzelne Community-Quelle
-   - `E` Schluss/Beobachtung
-5. **Nach jedem Paket committen und pushen.** Eine Nachricht pro Paket, z. B.
-   `docs(aa): Units – Basiswerte und Upgrade-Tabellen aus Fandom-Wikitext`.
-   Lieber oft committen als Arbeit verlieren.
-6. **Breite vor Tiefe, dann Tiefe.** Erst alle Systeme grob mit Quellen, dann die
-   Datenbanken (Units, Enemies, Waves) so vollständig wie möglich.
-7. **Kein Füllmaterial.** Ein ehrliches `UNKNOWN` ist mehr wert als eine
-   plausible Zahl.
+**Stopp-Regel:** Findest du einen Wert nach **drei gezielten Versuchen** (verschiedene
+Quellen oder Suchbegriffe) nicht, trägst du ihn als `UNKNOWN` ein und machst weiter.
+Keine Endlosschleifen auf einem Wert.
 
 ---
 
-## 5. Rechtliche Grenze
+## 2. Agenten und Token-Budget — WICHTIG
 
-Wir dokumentieren Systeme und Zahlen. Wir übernehmen **keine Assets**: keine
-Bilder, Texturen, Modelle, Sounds, Animationen oder extrahierten Spieldateien
-ins Repo. Bei Audio/VFX/Animationen beschreibst du nur Typ, Zweck, Auslöser,
-ungefähre Dauer und Verhalten. Lange Wiki-Fließtexte nicht kopieren, sondern
-die Fakten strukturiert übernehmen. Tabellenwerte sind Fakten und dürfen rein.
+Subagenten sind ausdrücklich erwünscht (ein Spiel oder Paket je Agent). Aber:
 
----
-
-## 6. Arbeitspakete (in dieser Reihenfolge)
-
-Jedes Paket endet mit Commit und Eintrag in `STATUS.md`.
-
-### P0 — Bestandsaufnahme
-- Repo-Struktur, vorhandene Doku und Datenmodelle erfassen.
-- Liste: Welche Aussagen im Bestand sind unbelegt oder verdächtig rund?
-- Quellenlandkarte: Welche Wikis, Subreddits, Trello/Discord und Patch-Note-Quellen
-  gibt es? Welche haben Legacy-Stände?
-- Ergebnis: `STATUS.md` angelegt, `sources.md` mit den Hauptquellen.
-
-### P1 — Systemübersicht (`game-overview.md`)
-Core Loop und alle Systeme mit je 3–10 Zeilen, Unlock-Bedingung und Quelle:
-Lobby, Spieler-Level, Units/Inventar, Upgrades, Traits, Shiny, Evolution,
-Summoning/Banner, Währungen (Gems, Yen, Tickets, Star Remnants, Reroll Tokens,
-Star Fruits …), Items/Crafting, Quests/Dailies, Story, Infinite, Raids, Portals,
-Challenges, Events, Limited Units, Trading, Multiplayer, Leaderboards,
-Achievements, Codes, Shops, NPCs, Gamepasses, Settings, Tutorial.
-Plus eine **Zeitleiste** der großen Updates (Datum, was sich geändert hat).
-
-### P2 — Kern-Mechanik einer Partie (`core-mechanics.md`, `combat-system.md`)
-Der Ablauf einer Runde Schritt für Schritt, mit allen Sonderfällen:
-Start-Yen, Wave-Start und -Timer, Spawn-Reihenfolge und -Abstände, Pfade,
-Bewegung, Targeting-Modi (genaue Regeln: First/Last/Strongest/Weakest/Closest …),
-Angriffszyklus (Ziel, Windup, Treffer, Schaden, Effekte, Cooldown, Neubewertung),
-AoE-Formen (Single, Circle, Cone, Line, Full, Multi) und wie Treffer bestimmt
-werden, Leaks und Base-HP, Wave-Abschluss, Belohnungen.
-Status-Effekte: Stun, Slow, Time Stop, Burn/Bleed/Poison, Freeze, Shields,
-Resistenzen, Immunitäten — mit Stärke, Dauer, Stapelbarkeit und Interaktion.
-
-### P3 — Units (`units.md` + `data/units.json`, falls die Struktur passt)
-**Das wichtigste Paket.** Für jede Unit, die du findest:
-Name, ID, Anime-Vorlage, Rarity (Rare/Epic/Legendary/Mythic/Secret), Limited,
-beschwörbar, Herkunft/Banner, Placement-Limit, Boden/Luft, Angriffstyp,
-Targeting, AoE, **Basis-Damage/SPA/Range**, **jede Upgrade-Stufe mit Kosten,
-Damage, SPA, Range und neuen Effekten**, Fähigkeit (Schaden, Cooldown, Dauer),
-Passive, Farm/Buff/Debuff, Evolution, Shiny-Variante, Quelle.
-Berechne (`DERIVED`): DPS, DPS je Yen, Gesamtkosten bis Max, Upgrade-Effizienz.
-Fang mit den Units an, die das Wiki am vollständigsten führt. Arbeite dich dann
-per Kategorie-Liste durch alle.
-
-### P4 — Upgrade-, Trait-, Shiny-, Stat-Systeme
-- `unit-upgrades.md`: allgemeine Regeln (Kostenkurven, Verkaufswert).
-- `traits.md`: jeder Trait mit Rarity, Roll-Chance und allen Modifikatoren.
-  Dazu Reroll-Kosten, Locking, Pity. Berechnet: erwartete Rerolls und Kosten
-  für einen bestimmten Trait.
-- Shiny: Chance, Effekte, Wechselwirkung mit Traits/Evolution, Star Remnants.
-- Randomisierte Stats/Powerups: Spannen, Rarity-Abhängigkeit, angezeigt vs. echt.
-
-### P5 — Evolution (`evolution.md`)
-Matrix: Basis-Unit → Evo, Materialien (Star Fruits, Rainbow, Raid/Portal-Items,
-Units, Währung), Statänderungen, neue Fähigkeiten.
-
-### P6 — Gegner, Waves, Maps (`enemies.md`, `waves.md`, `maps.md`)
-- Gegner: HP, Speed, Defense/Resistenzen, Luft/Boden, Boss/Mini-Boss, Schild,
-  Regeneration, Fähigkeiten, Immunitäten, Belohnung, Welt/Stage.
-- Waves je Map/Stage: Wave-Anzahl, Gegnerfolge, Anzahl, Spawn-Delay, Bosswaves,
-  HP-Skalierung je Wave und Schwierigkeit. Tabelle
-  `Wave | Enemy | Count | Spawn Delay | HP | Reward`.
-- Maps: Welt, Modus, Pfade, Spawn/Exit, Platzierungsflächen, Einschränkungen,
-  Besonderheiten. Geometrie nur beschreiben (z. B. „ein Pfad, zwei Kurven,
-  Platzierung links breit"), keine Bilder einbinden.
-- Pathing: Waypoints, Bewegung, Stacking/Kollision, Wirkung von Slow, Stun,
-  Time Stop, Knockback und Teleport. Wie man das im Web umsetzt.
-
-### P7 — Modi (`game-modes.md`, `portals.md`, `raids.md`)
-Story (Welten, Acts, Schwierigkeiten, Unlocks, Belohnungen), Infinite (Skalierung,
-Belohnungen, Leaderboards), Raids, Portals (Erwerb, Rarity, Stufen, Secret-Chancen,
-Bosse, Bedingungen), Challenges (Modifikatoren), historische Events.
-
-### P8 — Summoning und Economy (`summoning.md`, `economy.md`, `items.md`, `quests.md`)
-- Banner-Typen, Rotation, Kosten (Single/Multi), **Raten je Rarity**, Pity
-  (soft/hard), Tickets, Limited. Berechnet: Wahrscheinlichkeit nach N Pulls,
-  erwartete Gems für eine bestimmte Unit, Pity-Wahrscheinlichkeit.
-  Raten nach Version getrennt.
-- Jede Währung/Ressource: Quellen, Verwendung, Sinks, Farm-Rate, Limits,
-  handelbar ja/nein. Yen in der Partie: Start, Kill-/Wave-/Boss-Belohnung,
-  Farm-Units, Verkaufswert.
-- Quests, Dailies, Login-Belohnungen, Achievements, Battle Pass (falls vorhanden),
-  Reset-Zeiten, Belohnungstabellen.
-- Shops und Gamepässe **nur als Systembeschreibung**, ohne Kaufempfehlungen.
-
-### P9 — Multiplayer, Trading, UI, Audio/VFX (`ui.md`, `audio-vfx.md`)
-- Multiplayer: max. Spieler, Party, Matchmaking, Host, geteilte und getrennte
-  Ressourcen, Placement-Limits im Team, Buffs, Disconnect/Rejoin/AFK.
-- Trading: was handelbar ist, Ablauf, Bestätigung, Sperren, Anti-Scam, Limits.
-- UI: jede wichtige Ansicht mit Elementen, Zuständen, Interaktionen und
-  Fehlermeldungen (Lobby, Inventar, Unit-Detail, Upgrade, Summon, Trait,
-  Evolution, Map-Auswahl, In-Game-HUD, Wave-Anzeige, Ability-Buttons, Targeting).
-- Audio/VFX: nur beschreiben (siehe Abschnitt 5).
-
-### P10 — Mathematik und Beispielrunde (`mathematics.md`)
-Formeln mit Herkunfts-Etikett: DPS, Final Damage, Crit, SPA, Range,
-Enemy-HP-Skalierung, Wave-Skalierung, Yen-Generierung, Verkaufswert,
-Upgrade-Effizienz, Summon-, Pity-, Trait-, Shiny- und Portal-Wahrscheinlichkeit.
-Eine Schadensformel nur aufstellen, wenn Quellen sie tragen. Sonst die
-beobachteten Fälle zeigen und die Formel als `RECONSTRUCTED`/`LOW` kennzeichnen.
-Dazu **eine komplett durchgerechnete Beispielrunde**: Wave 1 → Spawn →
-Platzierung → Angriffe → Kills → Yen → Upgrade → Wave 2 → Ability → Boss,
-mit allen Zahlen und deren Herkunft.
-
-### P11 — Architektur und Datenmodell (`technical-reconstruction.md`)
-- Empfohlene Web-Architektur (Frontend, Game Engine mit Wave-/Enemy-/Unit-/
-  Combat-/Targeting-/Status-/Economy-/Ability-/Map-System, Backend mit Auth,
-  Spielerdaten, Inventar, Progression, Währung, Trading, Matchmaking, Anti-Cheat).
-  An die tatsächlich recherchierten Systeme anpassen.
-- Datenmodelle (JSON-Schema oder TypeScript-Typen, je nach Repo) für Player, Unit,
-  UnitInstance, UnitUpgrade, Trait, Enemy, Wave, Map, Stage, Banner, Item,
-  Evolution, Portal, Quest, Currency. Wenn es im Repo schon Modelle gibt:
-  diese erweitern.
-
-### P12 — Lücken, Widersprüche, Abschluss (`unknowns.md`, `README.md`)
-- **Known Unknowns & Conflicts:** widersprüchliche Werte (beide mit Quelle),
-  fehlende Daten, historische Änderungen, nur beobachtete Mechaniken,
-  unbekannte Raten und Serverlogik, Korrekturen am alten Bestand.
-- `README.md` als Einstieg: was wo steht, Legende, Stand.
-- Abschlussprüfung: Sind Units, Enemies, Maps, Waves, Upgrade-Kosten, Gacha-Raten,
-  Traits, Evolutionen, Economy, Portals/Raids und Formeln erfasst? Sind alle
-  unbekannten Werte markiert und alle Quellen eingetragen? Sind Widersprüche
-  sichtbar und Versionen getrennt?
+1. **Subagenten immer mit `model: "sonnet"` starten.** Nie Opus. Runde 1 hat mit
+   Opus-Agenten extrem viele Tokens verbraucht. Sonnet reicht, wenn der Auftrag klar ist.
+   Für rein Mechanisches (Seitenlisten holen, JSON parsen, Tabellen füllen) darf es
+   `model: "haiku"` sein.
+2. **Höchstens 4 Agenten gleichzeitig.** Mehr bremst sich am Rate-Limit des
+   Connectors (60 Aufrufe pro Minute, für alle zusammen).
+3. **Briefing statt Kontext:** Jeder Agent bekommt einen kurzen, vollständigen Auftrag:
+   Spiel, Zieldateien, die Feldliste aus Abschnitt 5, Stopp-Regel, Etiketten. Gib ihm
+   **nicht** diese ganze Datei und nicht die AA-Doku zum Lesen.
+4. **Agenten schreiben in Dateien, nicht in die Antwort.** Rückmeldung an dich: höchstens
+   10 Zeilen (was erledigt, was `UNKNOWN`, welche Dateien).
+5. **Kein Doppelabruf:** Bevor ein Agent eine Quelle holt, prüft er
+   `docs/games/SPIEL/sources.md`. Große Rohdaten (Wiki-Dumps) bleiben im Scratchpad,
+   nicht im Repo.
+6. Die **Hauptsitzung** koordiniert, prüft und fasst zusammen. Recherchieren sollen die
+   Agenten.
 
 ---
 
-## 7. Zielstruktur
+## 3. Konventionen (unverändert aus Runde 1)
 
-Richte dich nach dem, was im Repo schon existiert. Gibt es nichts Passendes:
+- **Herkunft:** `VERIFIED` · `OBSERVED` · `DERIVED` (Rechenweg) · `RECONSTRUCTED` (Begründung) · `UNKNOWN`
+- **Sicherheit:** `CONFIRMED` · `HIGH` · `MEDIUM` · `LOW` · `UNKNOWN`
+- **Kurzform in Tabellen:** `120 [O/HIGH S12]`
+- **Quellen:** je Spiel eigene `sources.md` mit IDs (`BTD-S1` …), Bewertung `A`–`E`, Abrufdatum
+- **Versionen:** nur trennen, wo sich ein **für uns relevanter** Wert geändert hat
+- **Nichts erfinden.** Ein ehrliches `UNKNOWN` ist mehr wert als eine plausible Zahl.
+- **Keine Assets** (Bilder, Sounds, Modelle, extrahierte Spieldateien) ins Repo, keine
+  langen Fließtexte kopieren. Zahlen und Fakten strukturiert übernehmen ist ok.
+
+### Recherche-Technik (bewährt in Runde 1)
+
+- **Fandom/MediaWiki:** `api.php?action=parse&page=SEITE&prop=wikitext&format=json` mit
+  `raw=true`. Nach **Datenmodulen** suchen (`Module:…/Data`): Dort steht die
+  Spielkonfiguration, das ist der Jackpot. Kategorien über `list=categorymembers`.
+  Alte Stände über `prop=revisions` und `oldid`.
+- **Wayback Machine:** `web.archive.org/cdx/search/cdx?url=URL&output=json` und dann
+  `web.archive.org/web/ZEIT/URL`
+- **Reddit** war über den Connector gesperrt (403). Versuche
+  `https://old.reddit.com/r/SUB/search.json?q=…&restrict_sr=1`, sonst Reddit-Treffer aus
+  der `search`-Ergebnisliste (Snippets) nutzen. Nicht lange daran festbeißen.
+- **Steam** (BTD6): Store-API `store.steampowered.com/api/appdetails?appids=960090`,
+  Reviews `store.steampowered.com/appreviews/960090?json=1&filter=all&num_per_page=100`
+- **Roblox:** Universe/Place-IDs über die Spielseite, dann `games.roblox.com/v1/games?universeIds=…`
+  und `games.roblox.com/v1/games/ID/game-passes`
+- **YouTube:** nur Titel, Beschreibungen, Kapitel → höchstens `OBSERVED`
+- **Trello:** Board-URL + `.json`
+
+---
+
+## 4. Ordnerstruktur
 
 ```text
-docs/anime-adventures/
-  README.md  STATUS.md  sources.md  unknowns.md
-  game-overview.md  core-mechanics.md  combat-system.md
-  units.md  unit-upgrades.md  traits.md  evolution.md
-  enemies.md  waves.md  maps.md  game-modes.md  portals.md  raids.md
-  summoning.md  economy.md  items.md  quests.md
-  ui.md  audio-vfx.md  mathematics.md  technical-reconstruction.md
-data/   (nur wenn es zur Projektstruktur passt)
-  units.json  enemies.json  maps.json  waves.json  banners.json  traits.json  items.json
+docs/
+  STATUS.md                    globaler Fortschritt (neu, ersetzt die Rolle von anime-adventures/STATUS.md)
+  anime-adventures/            Runde 1, bleibt wie sie ist (+ design-brief.md aus P1)
+  games/
+    btd6/  astd/  anime-vanguards/  anime-last-stand/  anime-expeditions/  utdz/
+      overview.md  mechanics.md  economy.md  units.md  enemies-waves.md
+      meta.md  design-lessons.md  sources.md
+      data/*.json   (optional, klein: max. ~200 KB je Spiel)
+  comparison/
+    systems-matrix.md  numbers.md  recommendations.md
+  research/
+    tech-options.md  assets-licensing.md  legal-gacha.md  balancing.md
 ```
 
-Jede JSON-Zahl, die nicht `VERIFIED` ist, bekommt ein Begleitfeld, z. B.
-`"damage": 120, "damage_meta": {"origin": "OBSERVED", "confidence": "MEDIUM", "source": "S12"}`.
-Oder es gibt ein einheitliches `meta`-Objekt pro Eintrag, das passt besser zu der
-vorhandenen Struktur. Entscheide einmal und bleib dabei.
+---
+
+## 5. Steckbrief je Spiel (Feldliste für die Agenten)
+
+**`overview.md`:** Entwickler, Plattform, Start, Status (aktiv/tot), Spielerzahlen
+(Roblox-API/SteamDB), Kurzbeschreibung des Core Loops in fünf Sätzen, was das Spiel
+**einzigartig** macht.
+
+**`mechanics.md`:**
+- Platzierung: Boden/Luft/Hügel, Raster oder frei, Limits je Unit und gesamt
+- Targeting-Modi und ihre **genauen** Regeln
+- Angriffszyklus, AoE-Formen, Treffer-Bestimmung
+- Statuseffekte mit Stärke, Dauer und Stacking
+- Schadensformel, Resistenzen und Schadensarten, Crits
+- Fähigkeiten: aktiv/passiv, Cooldowns, Auren/Buffs mit Caps
+- Wie Upgrades strukturiert sind (lineare Stufen, Pfade wie in BTD6, Evolutions)
+
+**`economy.md` (Priorität!):**
+- Startgeld je Modus und Schwierigkeit
+- Einkommen je Kill, je Wave, passiv, Farm-Units und ihre Rendite
+- Verkaufswert
+- **Kostenkurve der Upgrades** (Beispiele: Billig-, Mittel-, Top-Unit)
+
+**`units.md`:** **Kein Vollkatalog.** Rollen-Archetypen (Single-Target-DPS, AoE,
+Support/Buffer, Farm, Debuffer, Anti-Air, Hidden-Detection …), pro Archetyp 2–4
+repräsentative Units mit Kosten, Damage, SPA bzw. Cooldown, Range und Max-Upgrade-Kosten.
+Dazu die Rarity-Verteilung und typische Stat-Spannen je Rarity.
+**Ausnahme BTD6:** alle Tower (das sind nur rund 25) mit Basiswerten und Pfadstruktur.
+
+**`enemies-waves.md` (Priorität!):**
+- Gegnertypen mit HP, Speed und Eigenschaften (Schild, Fliegen, Stealth, Regen,
+  Spawn-on-death)
+- **HP-Skalierung über die Wellen** (Formel oder Tabelle)
+- Wave-Zusammensetzung für wenigstens eine komplette Stage
+- Boss-Waves
+- **Ausnahme BTD6:** Runden 1–100 (oder so weit belegt) mit Zusammensetzung, RBE und
+  Cash je Runde als JSON, außerdem Freeplay-Skalierung
+
+**`meta.md`:** Account-Progression, Währungen mit Quellen und Sinks, Gacha (Raten, Pity,
+Banner), Traits/Rerolls, Evolution, Modi (Story/Infinite/Raids/Challenges/Events),
+Multiplayer (max. Spieler, geteiltes oder getrenntes Geld). Monetarisierung **nur als
+Struktur**, ohne Preislisten.
+
+**`design-lessons.md`:** Was Spieler loben und was sie hassen (Reviews, Reddit-Snippets,
+Wiki-Diskussionen). Woran das Spiel gestorben ist bzw. warum es lebt. 5–10 konkrete
+Lehren für unser Spiel.
 
 ---
 
-## 8. Ende einer Sitzung
+## 6. Arbeitspakete
 
-Bevor deine Sitzung endet (oder wenn du merkst, dass der Kontext knapp wird):
+Jedes Paket endet mit Commit, Push und einem Eintrag in `docs/STATUS.md`.
 
-1. `STATUS.md` aktualisieren: erledigt, angefangen, nächster konkreter Schritt.
-2. Committen und pushen.
-3. Kurzbericht ausgeben:
+### P0 — Aufräumen und Status (Hauptsitzung, kein Agent)
+- `run.md` von Runde 1 → `docs/anime-adventures/run-runde1.md`. Diese Datei wird
+  `run.md`.
+- `docs/STATUS.md` anlegen: Pakete, Agenten mit Modell, offene Spuren. Den Verweis in
+  `README.md` anpassen.
+- Spielnamen und Plattform verifizieren. Exakte Schreibweise und Roblox-Universe-ID je
+  Spiel. Vorsicht bei Namensvetter-Spielen: „Anime Expeditions" kann auch anders
+  geschrieben sein, und „Universal Tower Defense Z" ist nicht dasselbe wie „Universal
+  Tower Defense". Bei Zweifel beide notieren und die aktivere nehmen.
+
+### P1 — AA-Design-Brief (ein Sonnet-Agent)
+`docs/anime-adventures/design-brief.md`, **höchstens rund 400 Zeilen**: die Essenz von
+Runde 1 für Entwickler. Core Loop, Kampf, Ökonomie, Gacha, Progression, die wichtigsten
+Formeln, typische Zahlenbereiche, offene Lücken. Verweise auf die Detaildateien statt
+Wiederholung. Keine neue Recherche.
+
+### P2 — Bloons TD6 (ein bis zwei Sonnet-Agenten)
+Steckbrief wie Abschnitt 5, mit den genannten Ausnahmen. **Hier die AA-Lücken füllen:**
+Startgeld, Cash je Pop und je Runde, RBE- und HP-Skalierung, Rundenzusammensetzung,
+Targeting-Modi, Verkaufswert, Schwierigkeitsmultiplikatoren.
+
+### P3 — Roblox-Anime-TDs (bis zu 4 Sonnet-Agenten parallel, einer je Spiel)
+In dieser Reihenfolge, falls weniger Agenten:
+1. All Star Tower Defense (ASTD)
+2. Anime Vanguards
+3. Anime Last Stand
+4. Universal Tower Defense Z (UTDZ)
+5. Anime Expeditions
+
+Steckbrief wie Abschnitt 5. Bei jedem Spiel zuerst nach Wiki-**Datenmodulen** suchen.
+
+### P4 — Vergleich und Empfehlung (Hauptsitzung oder ein Sonnet-Agent)
+- `comparison/systems-matrix.md`: Systeme × Spiele (hat es / wie gelöst), inklusive AA
+- `comparison/numbers.md`: Zahlenbereiche nebeneinander. Startgeld, Einkommen je Wave
+  relativ zum Startgeld, Kosten erste Platzierung relativ zum Startgeld, SPA-Spannen,
+  Range-Spannen, Placement-Caps, HP-Skalierung (Formeln nebeneinander), Gacha-Raten
+  und Pity
+- `comparison/recommendations.md`: konkrete **Startwerte und Regeln für unser Spiel**,
+  jeweils mit Begründung („BTD6 macht X, AA macht Y, wir nehmen Z, weil …"). Das ist
+  das wichtigste Ergebnis dieser Runde.
+
+### P5 — Vorarbeiten ohne Spielbezug (Sonnet-Agenten, gern parallel zu P3)
+Alles nur mit Internetzugang:
+- `research/tech-options.md`: Web-Engine (z. B. Phaser, PixiJS, Three.js/Babylon,
+  Godot-Web-Export), ECS-Bibliotheken, Pathfinding/Waypoints, deterministische
+  Simulation (Fixed Timestep), Koop-Multiplayer (autoritativer Server, z. B. Colyseus
+  oder eigene WebSockets), Speichern (Server-Inventar gegen Cheats). Je Option Lizenz,
+  Reife, Aktivität (letzter Release, GitHub-Stars) und eine **Empfehlung**.
+- `research/assets-licensing.md`: Quellen für freie bzw. CC0-Grafik und -Sound
+  (Kenney, OpenGameArt, itch.io-CC0-Packs u. a.) mit Lizenz und Eignung für den
+  Anime-/TD-Stil. **Nur Links und Lizenzen, nichts herunterladen.**
+- `research/legal-gacha.md`: Lootbox- und Gacha-Regeln in DE/EU (Jugendschutzgesetz,
+  USK-Deskriptoren, Belgien/Niederlande), Pflicht zur Ratenangabe, Risiken bei
+  anime-ähnlichen Namen und Figuren (Markenrecht, Parodie). **Keine Rechtsberatung**,
+  nur eine Übersicht mit Quellen.
+- `research/balancing.md`: öffentliche Artikel, GDC-Talks und Postmortems zu
+  TD-Balancing und Gacha-Ökonomie. Kernaussagen und Formeln mit Quellen.
+
+### P6 — Abschluss
+`docs/STATUS.md` aktualisieren und Links prüfen. Dann der Kurzbericht:
 
 ```text
-RESEARCH STATUS
+RESEARCH STATUS — Runde 2
 Pakete erledigt / offen:
-Quellen gesamt:
-Units / Enemies / Maps / Stages dokumentiert:
-Systeme dokumentiert:
-VERIFIED / RECONSTRUCTED / UNKNOWN (ungefähr):
-Neue/geänderte Dateien:
-Commit(s):
+Spiele mit Steckbrief:
+Gefüllte AA-Lücken (welche, woher):
+Agenten gestartet (Anzahl, Modell):
+Neue Dateien:
+Commits:
 Größte Lücken:
 Nächster Schritt:
 ```
 
-> Ziel ist nicht zu wissen, wie man Anime Adventures **spielt**, sondern genug
-> über Regeln, Daten und Mathematik zu wissen, um ein funktional ähnliches
-> Web-Tower-Defense-Spiel zu **bauen**.
+---
+
+## 7. Ende einer Sitzung
+
+Bevor der Kontext knapp wird oder die Sitzung endet: `docs/STATUS.md` aktualisieren
+(erledigt, angefangen, laufende Agenten, nächster konkreter Schritt), committen und
+pushen. Laufende Agenten vorher fertig werden lassen oder ihren Stand als
+„Zwischenstand" committen.
+
+> Ziel dieser Runde: Wir wissen danach, **welche Zahlen und Regeln wir für unser eigenes
+> Tower Defense nehmen**, und warum. Wir wissen nicht jedes Detail jedes Spiels.

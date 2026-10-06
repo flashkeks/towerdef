@@ -12,7 +12,7 @@ Recherchestand: **2026-10-06** (Sitzung 2, Volltextquellen)
 
 **Sitzung 1** lief ohne direkten Seitenabruf, nur mit Such-Auszügen. Werte aus dieser Zeit tragen Quellen-IDs S01–S64.
 
-**Sitzung 2** (Arbeitsauftrag [`run.md`](../../run.md)) hatte über einen Recherche-Connector Volltextzugriff:
+**Sitzung 2** (Arbeitsauftrag [`run-runde1.md`](run-runde1.md)) hatte über einen Recherche-Connector Volltextzugriff:
 
 - komplettes Fandom-Wiki samt Lua-Datenmodulen und Versionsgeschichte
 - Trello-API
