@@ -110,7 +110,10 @@ export interface SimState {
   waveTimer: number;
   prepTicksLeft: number;
   skipPending: boolean;
-  baseHp: number;
+  /** Verbleibende Leben (Team gemeinsam). Ersetzt Base-HP. */
+  lives: number;
+  /** Maximum (Startleben + Meta-Bonus); Regeneration deckelt hier. */
+  maxLives: number;
   result: 'win' | 'loss' | null;
   godMode: boolean;
   nextId: number;
@@ -127,7 +130,7 @@ export type IncomeSource = 'waveBonus' | 'bounty' | 'farm' | 'sell' | 'donate';
 export type SimEvent =
   | { type: 'spawn'; tick: number; enemyId: number; enemy: string; wave: number }
   | { type: 'kill'; tick: number; enemyId: number; enemy: string; wave: number; bounty: number }
-  | { type: 'leak'; tick: number; enemyId: number; enemy: string; wave: number; damage: number }
+  | { type: 'leak'; tick: number; enemyId: number; enemy: string; wave: number; damage: number; hp: number; maxHp: number; fatal: boolean }
   | { type: 'waveStart'; tick: number; wave: number }
   | { type: 'waveEnd'; tick: number; wave: number }
   | { type: 'income'; tick: number; player: number; amount: number; source: IncomeSource }

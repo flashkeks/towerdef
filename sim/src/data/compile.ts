@@ -89,6 +89,10 @@ export interface Ctx {
   waveTimerTicks: number;
   /** Koop-HP-Faktor h(Spielerzahl) in Basispunkten. */
   coopHpBp: number;
+  /** Archetypen, deren Leak sofort verliert (economy.lives.instantLoss). */
+  instantLoss: ReadonlySet<string>;
+  /** Leben-Regeneration am Wave-Ende. */
+  regenLives: number;
   /** HP des Grunt (Normal, ohne Faktoren) in Centi-HP für Wave n. */
   hpGrunt(n: number): number;
   /** Kill-Bounty in Münzen für einen Gegner mit Bounty-Basis-HP (Centi) in Wave n. */
@@ -219,6 +223,8 @@ export function compile(data: GameData, stage: StageData, difficultyId: Difficul
       return infinite && n > fixedWaves ? Math.min(inf?.speedMaxBp ?? 15000, 10000 + (inf?.speedPerWaveBp ?? 100) * (n - fixedWaves)) : 10000;
     },
     waveTimerTicks: stage.waveTimerTicks ?? data.economy.waveTimerTicks,
+    instantLoss: new Set(data.economy.lives.instantLoss),
+    regenLives: data.economy.lives.regenPerWave,
     coopHpBp: 10000 + data.economy.coop.hpPerExtraPlayerBp * (players - 1),
     hpGrunt,
     bounty,

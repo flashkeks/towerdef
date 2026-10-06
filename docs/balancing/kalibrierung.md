@@ -162,3 +162,92 @@ Grenze der Metrik: "Schaden je Münze" ist ein Verteilungsmaß (die Summe aller 
 - **P5 (Koop):** `economy.coop.hpPerExtraPlayerBp` 11000 muss neu bestimmt werden; Mythic-/Legendary-Caps team-weit prüfen (Titan + Lancer + Frost 4P 100/97/60 %).
 - **P6 (Fehlermodell):** Rollenwahl der Bots (billigste zuerst, 6 Typ-Plätze) ist die Hauptursache der LOO-Ausreißer auf Hard/Nightmare. `rotateEarly` und `Policy.plan` sind Ansätze, die sich auf alle Rollen verallgemeinern lassen.
 - **Luft:** Flyer-Druck (Waves 8-18) macht Frost zur Pflicht. Wenn Frost kein Muss sein soll, braucht Luft eine zweite Flächen-Antwort oder weniger Pulk-Flyer (Stage/Waves, P3/P4).
+
+---
+
+# Runde 4 — P2: Leben-System und Fail-State
+
+Paket P2 aus `run.md` (Runde 4). Regeln nach `docs/design/ENTSCHEIDUNGEN.md` (Schwierigkeit und Fail-State). Gemessen mit den sechs Registry-Bots (ohne Fehlermodell), `standard20`, Stand nach P1.
+
+## Regeln (Implementierung: `sim/src/systems/move.ts`, `waves.ts`; Daten `economy.json` Block `lives`)
+
+| Regel | Wert |
+|---|---|
+| Startleben | **30**, für das ganze Team gemeinsam (auch im Koop; Skalierung je Spieler wäre P5) |
+| Leak-Kosten | `max(1, ceil(Basis × RestHP / MaxHP))`, reine Ganzzahl-Rechnung, Schild zählt nicht |
+| Basis je Typ | Grunt 2, Runner 2, Flyer 3, Splitter 3, Brute 5, Splitter-Kind 1, **Elite 8** |
+| Boss | **Leak = sofort verloren**, unabhängig von Rest-HP und Lebensstand (`lives.instantLoss: ["boss"]`) |
+| Elite | **viele Leben (8 von 30), nach Rest-HP skaliert, kein Sofort-Verlust** (Begründung unten); per Daten umstellbar (`["boss","elite"]`) |
+| Meta-Ausbau | Datenfeld `lives.metaBonus` = 0 (Wert kommt mit M3), zusätzlich `createSim({ metaLives })` |
+| Regeneration | Datenfeld `lives.regenPerWave`, **Default 0**; wirkt am Wave-Ende, gedeckelt auf das Maximum |
+
+Warum Basis 2 statt 1: Mit Grunt = 1 greift "mindestens 1" immer, und der Rest-HP-Anteil wäre bei den häufigen Typen wirkungslos. Mit 2 kostet ein Grunt/Runner unter der Hälfte der HP nur 1 Leben, ein fast toter Brute 1 statt 5.
+
+**Elite-Entscheidung (Vorschlag, umgesetzt): viele Leben, nicht sofort verloren.**
+1. Die Entscheidung trennt Boss (Rundenende, im Voraus angekündigt, hat Kit) von normalen Gegnern. Die Elite erscheint in Wave 5, 15, 19 (2x) und 20, also auch früh, wo die Verteidigung klein ist; Sofort-Verlust in Wave 5 wäre wieder die Base-HP-Klippe, die das Leben-System ablösen soll.
+2. Gemessen (Daten oben, n = 40 je Zelle, Start 30): Elite sofort verloren senkt den besten Bot auf Normal von 90 auf 38 %, auf Hard von 60 auf 15 %, auf Nightmare von 38 auf 3 %. Elite als Leben-Posten (8) kostet gegenüber "Elite ignoriert" nur 3-8 Punkte. Die Elite bleibt damit ein spürbarer Posten, aber überlebbar, und ein angeschlagener Elite-Leak (z. B. 20 % HP → 2 Leben) wird belohnt.
+3. Hebel bleibt offen: `instantLoss` um `"elite"` ergänzen, wenn P4 die Elite zum Mini-Boss mit Kit macht.
+
+## Recherche: Leben in Anime Vanguards
+
+`docs/games/anime-vanguards/` kennt nur die Gegnerfähigkeit "Extra Life / Multiple Lives" (Heracles, Homunculus, Shogamo, Valentine; `enemies-waves.md`); zur **Base-Lebenszahl** steht nichts im Bestand. Netz-Stopp-Regel (3 Versuche): nicht ausgeführt, weil der Bestand schon bestätigt, dass die Basiswerte (Base-HP/Leben je Modus) im Wiki als UNKNOWN geführt werden (`enemies-waves.md`, Zeile 6: drei Versuche in P-Runde 3 ohne Zahl). Die Zahlen hier sind daher Eigenwerte aus dem Simulator, nicht aus dem Vorbild.
+
+## Messmethode
+
+Die Bots lesen die Leben nicht. Ein Lauf mit praktisch unendlichem Startwert und ohne Sofort-Verlust liefert deshalb alle Leaks eines Laufs (Typ, Wave, Rest-HP, Max-HP). Daraus rechnet `scripts/sanity/q9-p2.ts --part eval` die Siegquote für jede beliebige Regel nach (Startleben, Basiskosten, Elite-Regel, Regeneration). `--part check` fährt echte Läufe mit den Daten aus `sim/data` und bestätigte die Nachrechnung (Normal solo, n = 60: Nachrechnung aoe 88, upgrade 80 gegen echten Lauf 88/80; Hard `wide` 60/60; Nightmare `wide` 35/35).
+
+## Änderungen an `sim/data/`
+
+| # | Datei/Feld | alt | neu | Grund (Messwert) |
+|---|---|---|---|---|
+| 1 | `economy.json` `baseHp` | 100 | **entfällt**, ersetzt durch Block `lives` (`start` 30, `metaBonus` 0, `regenPerWave` 0, `instantLoss` `["boss"]`) | Leben-System statt Base-HP |
+| 2 | `economy.json` `leakDamage` und `enemies.json` `leak` je Archetyp | grunt 1, runner 1, flyer 2, splitter 2, brute 3, splitter_child 1, elite 10, boss 34 | grunt 2, runner 2, flyer 3, splitter 3, brute 5, splitter_child 1, elite 8, boss 30 | Basiswerte für `ceil(Basis × Rest-HP-Anteil)`. Skalierung ×1,5-2 wegen der Rundung; Startleben 30 statt 100 entspricht in etwa Base-HP 100 bei alten Kosten (Grunt: 15 statt 100 Leaks bis zum Tod, dafür sind Leaks am Ende deutlich teurer; kalibriert nach unten). Elite 10 → 8: Wert 12 und 5 ändern die Siegquote nur um 0-3 Punkte, 8 = ein Viertel der Leben. Boss = Startleben (30), damit auch ein Wechsel von `instantLoss` das Leben leert |
+| 3 | `economy.json` `lives.start` | – | 30 | Scan (n = 40, nach Boss-Anpassung #4), bester Bot je Stufe solo: Start 30 → Normal 90 (`aoe`), Hard 60 (`wide`), Nightmare 38 (`wide`); Start 40 → 100/63/43. 30 liegt für Normal im Ziel 85-95, Hard im Ziel 45-65, Nightmare knapp über 15-35 |
+| 4 | `enemies.json` Boss `fHpBp` | 300000 (×30) | **100000 (×10)** | **Zwischenstand bis P4**, nicht kalibriert, sondern nötig: Mit "Boss-Leak = verloren" gewann **kein Bot in keiner Zelle** (0 von 18 Zellen), weil jeder Bot beide Bosse in 100 % der Läufe durchließ (Median Rest-HP boss@10 30 %, boss@20 59-71 %; `aoe` Normal solo 0 %). Scan Boss-HP-Faktor (Normal solo, n = 40, Start 20-40): ×20 → alle 0 %; ×14 → farm 33, upgrade 25, aoe 5; ×12 → aoe 70, farm 68, upgrade 63; **×10 → aoe 90, upgrade 85, farm 80**. Der Boss ist damit zehnmal Grunt-HP, nur etwas über der Elite (×8); sein Rätsel (Phasen, Schwachstellen-Fenster, Schild) kommt mit P4, dann ist der Faktor neu zu setzen |
+
+`difficulties.json` **nicht** angefasst: die HP-Faktoren (#12-#14 aus P1) bleiben Platzhalter für P3. Sie lieferten mit den neuen Regeln ohne Änderung Siegquoten im Zielkorridor, siehe nächste Tabelle.
+
+Tests angepasst bzw. neu: `leaks.test.ts` (komplett neu: Datenfelder, Startleben/Meta, `leakCost`, Kosten nach Rest-HP, Tod bei 0 Leben, Boss-Leak = Niederlage mit fast totem Boss und im godMode, Elite-Regel und Umstellung, Regeneration mit Deckel, unbekannter `instantLoss`-Typ, Determinismus), `income.test.ts`/`infinite.test.ts` (`lives` statt `baseHp`), `pool.test.ts` (Boss-Anteil in Wave 10/20 skaliert mit dem Zwischenstand-Faktor), `report.test.ts` (Basis-Leben aus den Daten). 144 Tests grün, `tsc` sauber.
+
+## Ergebnis: Siegquote vorher / nachher (Bots ohne Fehlermodell)
+
+"Vorher" = Stand P1 (Base-HP 100, Boss-Leak 34 Leben; Messung dieser Sitzung mit n = 40: Normal `upgrade` 95, Hard `wide` 47,5, Nightmare `wide` 22,5; P1-Dokument n = 60: 95/47/27). "Zwischen" = neue Regeln mit unverändertem Boss-HP-Faktor (×30). "Nachher" = Daten wie eingecheckt, echte Läufe (n = 60 solo, n = 30 4P).
+
+| Zelle | vorher bester Bot | Zwischen (Boss ×30) | **nachher bester Bot** | Ziel run.md |
+|---|---|---|---|---|
+| Normal solo | 95 (`upgrade`) | 0 (alle) | **88** (`aoe`; `upgrade` 80, `farm`/`coop` 68) | 85-95 |
+| Hard solo | 47 (`wide`) | 0 | **60** (`wide`; `aoe` 42) | 45-65 |
+| Nightmare solo | 27 (`wide`) | 0 | **35** (`wide`; `aoe` 22) | 15-35 |
+| Normal 4P | 100 (`upgrade`) | – | **23** (`upgrade`; Rest 0) | ±10 zu 1P |
+| Hard 4P | 15 (`upgrade`) | – | **77** (`upgrade`; `aoe` 17) | |
+| Nightmare 4P | 2 (`upgrade`) | – | **30** (`upgrade`; Rest 0-3) | |
+
+Alle Bots solo nachher (Normal / Hard / Nightmare): greedy 13/20/2, farm 68/3/3, aoe 88/42/22, upgrade 80/13/7, wide 7/60/35, coop 68/3/3. `greedy` und `wide` verlieren auf Normal an den Bossen (`wide` 38 von 40 Läufen am Boss, nicht an Leben), das ist Bot-Struktur (kein Titan-Plan, billigste Units zuerst) und gehört zu P6.
+
+Regeneration (Nachrechnung, Normal / Hard / Nightmare, bester Bot): 0 → 100/60/38; +1 je Wave → 100/60/43; **+2 je Wave → 100/63/48**. Bei `aoe` (Hard/NM): 38/20 → 50/33 (+1) → 78/48 (+2). Regeneration ist also ein sehr wirksamer Hebel auf Hard/Nightmare (bis +40 Punkte), deshalb Default 0 und nur als Stellschraube für P3 (z. B. Normal +1/+2, Nightmare 0) gedacht.
+
+## Befunde
+
+- **Boss-Leak als Fail-State legt die Boss-Frage offen:** Vor P2 konnte ein Boss-Leak (34 von 100 Base-HP) "mitgenommen" werden und alle Bots gewannen trotzdem. Jetzt entscheidet allein der Boss: Bei Faktor ×30 kein einziger Sieg, bei ×14 nur 5-33 %, bei ×10 Normal 80-90 %. Die Boss-Wave ist die schmalste Klippe im Spiel; P4 muss den Boss so gestalten, dass Titan/Schwachstellen-Fenster ihn lösbar machen, nicht der Faktor.
+- **Leben selbst sind selten der Engpass auf Normal:** `upgrade` verliert im Median 2 Leben (P90 ohne Boss/Elite 17), `aoe` 18, `wide` 9; erst bei `greedy`/`farm`/`coop` (Median 20-25, P90 49-58) sterben Läufe an Leben (Normal solo 22 von 40 bzw. 17 von 40 bei Start 20, 4-8 bei Start 30-40).
+- **4P ist durch den Boss kaputt, nicht durch Leben:** `upgrade` 4P Normal 23 %, davon 23 von 30 Läufen Boss-Tod, 0 Leben-Tod; Start 60 oder 100 ändert nichts. Der Boss-HP-Faktor skaliert im Koop mit h = 4,3 (3 Zusatzspieler × 1,10), das ist ein Koop-/Boss-Thema (P4/P5), kein Lebensthema. Das Leben-Konto ist team-gemeinsam; ob Leben je Spieler skalieren sollen, gehört zu P5.
+- **Hard 4P (77 %) über Normal 4P (23 %)** und Hard solo 13 % für `upgrade`: gleiche Ursache wie in P1 (Stufen unterscheiden sich nur über Elemente/HP-Platzhalter); P3 räumt das ab.
+- **Infinite:** Boss alle 10 Waves nutzt dieselbe Boss-HP-Regel (Faktor ×10) und beendet die Runde beim Leak. Die Infinite-Kalibrierung (`economy.json` `infinite`, Runde 3) wurde **nicht** nachgemessen; Tests grün.
+
+## Verworfene Versuche
+
+- **Elite = sofort verloren:** Normal bester Bot 90 → 38 %, Hard 60 → 15 %, Nightmare 38 → 3 % (Nachrechnung Start 30). Verworfen, s. o.
+- **Boss-HP ×20 / ×14 / ×12:** Normal 0 / 25 (`upgrade`) / 63-70 %. Zu steil für "nicht ins Bodenlose". Faktor ×10 gewählt.
+- **Mehr Startleben statt weniger Boss-HP:** Start 60 oder 100 ändert die Boss-Todesfälle nicht (Normal 4P `upgrade` 23 % bei 30, 60 und 100). Leben helfen nur gegen die Chip-Leaks, nicht gegen den Boss.
+- **Grunt-Basis 1 (Leak-Kosten wie vorher):** Rest-HP-Skalierung würde bei den häufigsten Typen nie greifen (ceil und Minimum 1), daher Basis 2.
+
+## Werkzeuge
+
+`sim/scripts/sanity/q9-p2.ts` (`--part raw|eval|check`, siehe Kopfkommentar). `lib.ts`: `PlayResult.leakLog` (jeder Leak einzeln), `P2_BOSSHP` und `P2_ELITEHP` (Experimentüberschreibung des HP-Faktors). Aufruf der Nachrechnung: `npx tsx scripts/sanity/q9-p2.ts --part raw --n 60 --difficulty normal --players 1 --out X.json`, dann `--part eval --files X.json --start 30 --regen 1 --elite loss --verbose 1`.
+
+## Übergabe
+
+- **P3:** HP-Faktoren der Stufen unverändert (Platzhalter). Neue Hebel je Stufe: `lives.start` (Daten sind global, eine stufenabhängige Variante wäre ein kleiner Zusatz) und `regenPerWave` als Entspannung für Normal. Stufen-Zahlen oben sind nur ein Zwischenstand: beste Bots wechseln je Stufe (`aoe` Normal, `wide` Hard/Nightmare).
+- **P4:** Boss-HP-Faktor ×10 ist **Zwischenstand**; mit Phasen/Fenstern neu setzen. Boss-Killer (Titan) bleibt unbelegt (alle Bots lassen ihn auf Stufe 0). Elite ggf. mit Kit und dann `instantLoss`-Frage erneut.
+- **P5:** Koop braucht Boss-Skalierung (h = 4,3 bei 4P) und die Frage Leben je Spieler; Normal 4P `upgrade` verliert allein am Boss.
+- **P6:** Bots reagieren nicht auf Leben (kein Panik-Kauf bei niedrigen Leben, keine Boss-Vorbereitung); menschliche Bots sollten beides tun.

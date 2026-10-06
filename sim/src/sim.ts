@@ -27,8 +27,10 @@ export interface SimOptions {
   players: number;
   seed: number;
   data?: GameData;
-  /** Base-HP sinkt nicht (Leaks werden weiter gezählt); für Einkommenstests. */
+  /** Leben sinken nicht (Leaks werden weiter gezählt); für Einkommenstests. */
   godMode?: boolean;
+  /** Meta-Ausbau der Leben (zusätzlich zu `economy.lives.start`); überschreibt `economy.lives.metaBonus`. */
+  metaLives?: number;
   /** Hooks für Trait-/Level-Multiplikatoren je Spieler und Unit-Typ (Standard x1). */
   unitMods?: UnitMod[];
   /** Nur Infinite: Abbruch, sobald diese Wave endet (Phase 'over', result null). Standard: unbegrenzt. */
@@ -69,6 +71,7 @@ export function createSim(opts: SimOptions): Sim {
   if (!stage) throw new Error(`Unbekannte Stage ${String(opts.stage)}`);
   const ctx: Ctx = compile(data, stage, opts.difficulty, opts.players, { seed: opts.seed, maxWaves: opts.maxWaves });
   const eco = data.economy;
+  const startLives = eco.lives.start + (opts.metaLives ?? eco.lives.metaBonus);
   const state: SimState = {
     tick: 0,
     wave: 0,
@@ -77,7 +80,8 @@ export function createSim(opts: SimOptions): Sim {
     waveTimer: 0,
     prepTicksLeft: eco.prepTicks,
     skipPending: false,
-    baseHp: eco.baseHp,
+    lives: startLives,
+    maxLives: startLives,
     result: null,
     godMode: opts.godMode === true,
     nextId: 1,
@@ -109,7 +113,7 @@ export function createSim(opts: SimOptions): Sim {
     tickEffects(w);
     resolveDeaths(w);
     moveEnemies(w);
-    if (state.baseHp <= 0) {
+    if (state.lives <= 0) {
       finish(w, 'loss');
       return;
     }

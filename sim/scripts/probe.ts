@@ -8,6 +8,6 @@ while(!sim.isOver()){
   if (w===4) buy('banner','ground');
   for (const u of sim.state.units) for(let i=0;i<3;i++) if(sim.upgradeCost(u.id)!==null) sim.apply(0,{type:'upgrade',entityId:u.id});
   sim.runWave(); w++;
-  console.log(w, 'baseHp', sim.state.baseHp, 'coins', sim.state.players[0].coins, 'kills', sim.state.stats.kills, 'leaks', sim.state.stats.leaks);
+  console.log(w, 'baseHp', sim.state.lives, 'coins', sim.state.players[0].coins, 'kills', sim.state.stats.kills, 'leaks', sim.state.stats.leaks);
 }
 console.log(sim.result(), sim.state.tick);

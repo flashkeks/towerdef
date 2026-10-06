@@ -16,7 +16,12 @@ export const EconomySchema = z.object({
   _comment: comment,
   tickRate: z.literal(20),
   startCoins: pos,
-  baseHp: pos,
+  /**
+   * Leben-System (Runde 4 / P2), ersetzt Base-HP. `start` + `metaBonus` (Meta-Ausbau, M3; bis dahin 0) = Maximum.
+   * `regenPerWave`: Leben, die am Ende jeder Wave zurückkommen (höchstens bis zum Maximum).
+   * `instantLoss`: Archetyp-IDs, deren Leak die Runde sofort beendet (Boss; Elite = Entscheidung, s. kalibrierung.md).
+   */
+  lives: z.object({ ref, start: pos, metaBonus: nat, regenPerWave: nat, instantLoss: z.array(z.string()) }),
   waveTimerTicks: pos,
   prepTicks: pos,
   waveBonus: z.object({ ref, base: nat, perWave: nat }),

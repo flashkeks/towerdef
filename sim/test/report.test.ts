@@ -62,7 +62,7 @@ describe('Aggregation', () => {
   });
   it('Leak-Quellen nach Typ mit Anteil und Schaden', () => {
     expect(c.leakSources.map((s) => s.type)).toEqual(['grunt', 'boss', 'brute']);
-    expect(c.leakSources[0]).toMatchObject({ count: 2, damage: 2 });
+    expect(c.leakSources[0]).toMatchObject({ count: 2, damage: 2 * Number(loadGameData().economy.leakDamage.grunt) });
     expect(c.leakSources[1]).toMatchObject({ count: 1, damage: Number(loadGameData().economy.leakDamage.boss) });
     expect(c.leakSources.reduce((a, s) => a + s.share, 0)).toBeCloseTo(1);
   });

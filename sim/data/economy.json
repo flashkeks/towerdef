@@ -3,7 +3,10 @@
   "_comment": "Alle Werte DESIGN (Startwerte). Einheiten: Münzen, Ticks (20/s), Basispunkte (10000 = x1,0), Milli-Tiles, Centi-HP.",
   "tickRate": 20,
   "startCoins": 1000,
-  "baseHp": 100,
+  "lives": {
+    "ref": "ENTSCHEIDUNGEN.md, Schwierigkeit und Fail-State; Runde 4 P2 (kalibrierung.md): Leben statt Base-HP. Boss-Leak = sofort verloren (instantLoss), Rest kostet ceil(Basis x RestHP/MaxHP), min. 1. metaBonus = Meta-Ausbau (M3, bis dahin 0), regenPerWave = Leben je beendeter Wave.",
+    "start": 30, "metaBonus": 0, "regenPerWave": 0, "instantLoss": ["boss"]
+  },
   "waveTimerTicks": 900,
   "prepTicks": 900,
   "waveBonus": { "ref": "recommendations §3: W(n) = 100 + 5n", "base": 100, "perWave": 5 },
@@ -14,8 +17,8 @@
   },
   "sell": { "ref": "recommendations §8: Kampf 60 %, Farm 40 %, floor", "combatBp": 6000, "farmBp": 4000 },
   "leakDamage": {
-    "ref": "recommendations §2 (Tabelle Base-HP/Leak); KALIBRIERT boss 50 -> 34 (kalibrierung.md #1)",
-    "grunt": 1, "runner": 1, "splitter_child": 1, "flyer": 2, "splitter": 2, "brute": 3, "elite": 10, "boss": 34
+    "ref": "Runde 4 P2: Basis-Lebenskosten je Archetyp bei vollen Rest-HP (kalibrierung.md, Runde 4 - P2); Boss = sofort verloren",
+    "grunt": 2, "runner": 2, "splitter_child": 1, "flyer": 3, "splitter": 3, "brute": 5, "elite": 8, "boss": 30
   },
   "coop": {
     "ref": "recommendations §16: h = 1 + 0,75(n-1); KALIBRIERT h = 1 + 1,10(n-1) (kalibrierung.md #5); Spenden in 50er-Schritten",

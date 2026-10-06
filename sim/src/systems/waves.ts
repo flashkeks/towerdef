@@ -37,8 +37,10 @@ export function startWave(w: World, n: number): void {
 }
 
 function endWave(w: World): void {
-  const { state } = w;
+  const { state, ctx } = w;
   payWaveEnd(w, state.wave);
+  // Leben-Regeneration (economy.lives.regenPerWave), gedeckelt auf das Maximum.
+  if (ctx.regenLives > 0 && state.lives > 0) state.lives = Math.min(state.maxLives, state.lives + ctx.regenLives);
   state.waveOpen = false;
   w.events.push({ type: 'waveEnd', tick: state.tick, wave: state.wave });
 }

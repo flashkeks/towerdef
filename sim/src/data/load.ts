@@ -29,6 +29,7 @@ export function validateGameData(d: GameData): void {
     const leak = d.economy.leakDamage[a.id] as number | undefined;
     if (leak !== a.leak) throw new Error(`Leak-Wert ${a.id}: economy=${leak} enemies=${a.leak}`);
   }
+  for (const id of d.economy.lives.instantLoss) if (!enemyIds.has(id)) throw new Error(`lives.instantLoss: Archetyp unbekannt: ${id}`);
   const unitIds = new Set<string>();
   for (const u of d.units.units) {
     if (unitIds.has(u.id)) throw new Error(`Doppelte Unit-ID ${u.id}`);

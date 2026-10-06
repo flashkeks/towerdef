@@ -11,7 +11,7 @@ Letzte Aktualisierung: 2026-10-06 (Runde 4, gestartet; Arbeit ab jetzt über Max
 |---|---|---|---|---|
 | P0 | Archiv, Entscheidungen, gdd, Status | **erledigt** | Hauptsitzung | Runde-3-`run.md` archiviert, ENTSCHEIDUNGEN.md + beantwortete FRAGEN.md abgelegt. Verifikation in eigener Node-Umgebung: `npm ci && npm test && npm run typecheck` → 130/130 grün, tsc sauber |
 | P1 | Unit-Rebalance | **erledigt, Ziele teilweise** | 1 × Sonnet | 132 Tests grün. Erreicht: Schaden/Münze solo Faktor 1,6 (vorher 3,5), AoE-Bot Normal solo 52 % (vorher 0), jede Unit ≥ 91 % gekauft, Titan keine Pflicht mehr, LOO Normal ≤ +5. Verfehlt: LOO Hard/NM (+38…+50, Bot-Rollenwahl → P6), Titan als Boss-Killer nicht belegt (Bosse leaken → P4), Frost jetzt Pflicht (Flyer-Pulks), Titan+Lancer+Frost Normal weiter 100 %, 4P regrediert (greedy/wide 0–2 % → P5), HP-Faktoren der Stufen Platzhalter (→ P3). Details [kalibrierung.md § Runde 4 — P1](balancing/kalibrierung.md) |
-| P2 | Leben-System, Fail-State | offen | – | nach P1 |
+| P2 | Leben-System, Fail-State | **erledigt** | 1 × Sonnet | 144 Tests grün. Startleben 30 (Team), Leak `max(1, ceil(Basis × RestHP/MaxHP))`, Basis Grunt/Runner 2, Flyer/Splitter 3, Brute 5, Elite 8; Boss-Leak = verloren, Elite = viele Leben (Sofort-Verlust per Daten umstellbar). Boss-HP ×30 → ×10 als **Zwischenstand bis P4**. Bester Bot solo N/H/NM: 95/47/27 → 88/60/35 %. 4P (upgrade) 23/77/30 → P4/P5. Regeneration +2/Wave ist starker Hebel für P3. [kalibrierung.md § Runde 4 — P2](balancing/kalibrierung.md) |
 | P3 | Schwierigkeit über Regeln | offen | – | nach P2 |
 | P4 | Boss-Kits, Wellenvorschau, Risikokarten | offen | – | parallel zu P3 möglich |
 | P5 | Koop-Skalierung | offen | – | nach P3 |
@@ -24,7 +24,7 @@ Letzte Aktualisierung: 2026-10-06 (Runde 4, gestartet; Arbeit ab jetzt über Max
 
 ## Nächster Schritt (Runde 4)
 
-P2 (Leben-System) auf Basis von P1. Danach P3 und P4 parallel (getrennte Dateien), dann P5, P6. Offene Fragen an die Menschen: [architecture.md § 10](architecture.md), OFL-Fonts ([asset-sources.md](design/asset-sources.md)), EUIPO/USPTO für den Namen.
+P3 (Schwierigkeit über Regeln) und P4 (Boss-Kits, Vorschau, Risikokarten) parallel, dann P5, P6. P4 setzt den Boss-HP-Faktor neu (Zwischenstand ×10 aus P2). Offene Fragen an die Menschen: [architecture.md § 10](architecture.md), OFL-Fonts ([asset-sources.md](design/asset-sources.md)), EUIPO/USPTO für den Namen.
 
 ---
 

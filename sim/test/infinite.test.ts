@@ -123,12 +123,12 @@ describe('Infinite', () => {
     expect(s.state.stats.spawned).toBeGreaterThan(500);
   });
 
-  it('ohne Verteidigung: Base-HP <= 0 beendet mit loss (kein godMode)', () => {
+  it('ohne Verteidigung: Leben <= 0 beendet mit loss (kein godMode)', () => {
     const s = mk(2, undefined, false);
     let guard = 0;
     while (!s.isOver() && guard++ < 100) s.runWave();
     expect(s.result()).toBe('loss');
-    expect(s.state.baseHp).toBeLessThanOrEqual(0);
+    expect(s.state.lives).toBeLessThanOrEqual(0);
   });
 
   it('standard20 bleibt unverändert (Sieg nach Wave 20 möglich, Gegner-Limit 80)', () => {

@@ -46,10 +46,10 @@ export interface WaveStat {
   spawned: number;
   poolHp: number;
   kills: number;
-  /** Leaks nach Gegner-Typ, verlorene Base-HP (Leak-Schaden). */
+  /** Leaks nach Gegner-Typ, verlorene Leben (Leak-Schaden). */
   leaks: Record<string, number>;
   baseHpLost: number;
-  /** Base-HP am Ende der Wave (nach letztem Leak dieser Wave im Verlauf, sonst Wert des Vorgängers). */
+  /** Leben am Ende der Wave (nach letztem Leak dieser Wave im Verlauf, sonst Wert des Vorgängers). */
   baseHpEnd: number;
 }
 
@@ -105,7 +105,7 @@ export function runMatch(opts: MatchOptions): MatchResult {
         kills: 0,
         leaks: {},
         baseHpLost: 0,
-        baseHpEnd: waves.length ? waves[i - 1].baseHpEnd : st.baseHp,
+        baseHpEnd: waves.length ? waves[i - 1].baseHpEnd : st.lives,
       });
     }
     return waves[w];
@@ -167,7 +167,7 @@ export function runMatch(opts: MatchOptions): MatchResult {
           break;
       }
     }
-    row(cur).baseHpEnd = st.baseHp;
+    row(cur).baseHpEnd = st.lives;
     return waveStarted;
   };
 
@@ -202,7 +202,7 @@ export function runMatch(opts: MatchOptions): MatchResult {
   return {
     result: st.result ?? 'timeout',
     endWave: st.wave,
-    baseHp: st.baseHp,
+    baseHp: st.lives,
     ticks: st.tick,
     hash: sim.hash(),
     stage: typeof opts.stage === 'string' ? opts.stage : opts.stage.id,

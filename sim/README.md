@@ -48,7 +48,7 @@ sim/
   test/                vitest (Determinismus, Einkommen, Schaden, Leaks, Ökonomie, Targeting, Status, Pool, Kampf)
 ```
 
-Tick-Reihenfolge: Waves -> Spawns -> Status/DoT/Regen -> Tode -> Bewegung/Leaks (Niederlage) -> Units (Angriffe) -> Tode -> Sieg-Prüfung -> `tick++`.
+Tick-Reihenfolge: Waves (Wave-Ende: Lebens-Regeneration) -> Spawns -> Status/DoT/Regen -> Tode -> Bewegung/Leaks (Leben, Niederlage) -> Units (Angriffe) -> Tode -> Sieg-Prüfung -> `tick++`.
 
 ## API
 
@@ -61,7 +61,7 @@ sim.step(20);             // 1 s
 sim.hash(); sim.result(); sim.drainEvents();
 ```
 
-`createSim`-Optionen: `stage` (ID oder `StageData`), `difficulty` (`normal|hard|nightmare`), `players` (1-4), `seed`, `data` (Override, z. B. mehr Startgeld), `godMode` (Base-HP sinkt nicht, Leaks werden gezählt), `unitMods` (Hooks je Spieler/Unit: `lvlBp`, `traitBp`, `yieldBp`, Standard x1/+0).
+`createSim`-Optionen: `stage` (ID oder `StageData`), `difficulty` (`normal|hard|nightmare`), `players` (1-4), `seed`, `data` (Override, z. B. mehr Startgeld), `godMode` (Leben sinken nicht, Leaks werden gezählt), `metaLives` (Meta-Ausbau der Leben, überschreibt `economy.lives.metaBonus`; Default 0), `unitMods` (Hooks je Spieler/Unit: `lvlBp`, `traitBp`, `yieldBp`, Standard x1/+0).
 
 `Sim`: `state` (live, readonly), `apply`, `step`, `runWave`, `isOver`, `result`, `hash`, `drainEvents`, `slots()` (mit `coverageByRange(range)`), `catalog()`, `upgradeCost(entityId)`, `placeCost(unitId)`.
 
@@ -70,13 +70,23 @@ Befehle wirken zu Tick-Beginn: `apply` verändert den Zustand zwischen zwei Tick
 
 Events (`drainEvents`): `spawn`, `kill`, `leak`, `waveStart`, `waveEnd`, `income{source: waveBonus|bounty|farm|sell|donate}`, `damage` (je Unit aggregiert, bei Wave-Ende/Verkauf), `place`, `upgrade`, `sell`, `ability`, `over`.
 
+## Leben-System (Runde 4 / P2)
+
+Ersetzt die Base-HP (`state.lives`, `state.maxLives`; Daten `economy.lives`: `start` 30, `metaBonus` 0 (M3), `regenPerWave` 0, `instantLoss` `["boss"]`). Das Leben-Konto ist für das ganze Team gemeinsam.
+
+- **Leak-Kosten** je Gegner: `max(1, ceil(Basis x RestHP / MaxHP))` (`leakCost` in `src/systems/move.ts`, reine Ganzzahl-Rechnung, Schild zählt nicht). Basis = `leak` aus `enemies.json` (= `economy.leakDamage`): Grunt/Runner 2, Flyer/Splitter 3, Brute 5, Splitter-Kind 1, Elite 8.
+- **Sofort verloren:** Archetypen in `instantLoss` (Boss) beenden die Runde beim Leak, unabhängig von Rest-HP und Lebensstand. Die Elite steht bewusst **nicht** drin (Begründung `kalibrierung.md`, Runde 4 - P2); per Daten umstellbar (`["boss","elite"]`).
+- **Regeneration:** `regenPerWave` Leben beim Ende jeder Wave, höchstens bis `maxLives`.
+- Das Leak-Event trägt `damage` (= Lebenskosten, bei Sofort-Verlust die verlorenen Restleben), `hp`, `maxHp`, `fatal`. Report-Felder `baseHpLost`/`baseHpEnd`/`baseHp` heißen aus Kompatibilität weiter so und meinen Leben.
+- Die Bots lesen die Leben nicht: ein Lauf mit riesigem Startwert liefert alle Leaks, die Siegquote für beliebige Regeln lässt sich danach nachrechnen (`scripts/sanity/q9-p2.ts`, `--part raw|eval|check`).
+
 ## Daten ändern
 
 Alle Zahlen stehen in `data/*.json` (zod-validiert beim Laden, Querverweise in `load.ts`, z. B. Leak-Werte in `economy.json` = `enemies.json`). Neue Stage = neue Datei in `data/stages/` (Waves, Slots, Pfad). Die Wave-Tabelle der Standard-Stage wurde mit `scripts/gen-stage.ts` erzeugt (Ausgabe danach von Hand kompakt formatiert).
 
 ## Infinite-Modus
 
-`createSim({ stage: 'infinite', ..., maxWaves? })`: Map und Waves 1-20 wie `standard20`, ab Wave 21 seeded erzeugt (`src/systems/infinite.ts`): HP_grunt ~ (n/20)^2, gamma ~ (20/n)^2, Speed +1 %/Wave bis x1,5, höchstens 60 Gegner gleichzeitig, Boss alle 10 Waves. Kein Sieg; Ende bei Base-HP <= 0 (`loss`) oder per `maxWaves` (`result` null). Offene Punkte: `docs/balancing/offene-regeln.md` #30-33; kalibrierte Parameter: `economy.json` Block `infinite`, `docs/balancing/kalibrierung.md`.
+`createSim({ stage: 'infinite', ..., maxWaves? })`: Map und Waves 1-20 wie `standard20`, ab Wave 21 seeded erzeugt (`src/systems/infinite.ts`): HP_grunt ~ (n/20)^2, gamma ~ (20/n)^2, Speed +1 %/Wave bis x1,5, höchstens 60 Gegner gleichzeitig, Boss alle 10 Waves. Kein Sieg; Ende bei Leben <= 0 oder Boss-Leak (`loss`) oder per `maxWaves` (`result` null). Offene Punkte: `docs/balancing/offene-regeln.md` #30-33; kalibrierte Parameter: `economy.json` Block `infinite`, `docs/balancing/kalibrierung.md`.
 
 ## Simulations-CLI und Reports
 
@@ -97,9 +107,10 @@ Weitere Optionen: `--jobs N` (worker_threads, Ergebnis unabhängig von N), `--na
 |---|---|
 | `q1-dominant`, `q1b-top3`, `q2-roles` | Dominanz-, Mengen- und Rollenmessung (nach jeder Unit-Änderung wiederholen) |
 | `q7-p1 --part matrix\|raw\|sum\|loo\|phase\|static` | Siegquote, Kaufquote und Schaden je Münze je Unit; Leave-one-out für den besten Bot; Phasenprofil |
+| `q9-p2 --part raw\|eval\|check` | Leben-System (P2): Leaks sammeln, Siegquote für Startleben/Basiskosten/Elite-Regel/Regeneration nachrechnen, echte Gegenprobe |
 | `q8-hpscan` | Siegquote aller Bots gegen einen globalen HP-Faktor |
 | `p1-quick.sh N TAG`, `p1-sweep.sh N TAG` | Schnellläufe (je Stufe ein Prozess) |
 
-Experimente ohne Dateiänderung über Umgebungsvariablen (nur Sanity-Skripte, nie der Kern): `P1_PATCH='{"titan":{"dpsShareBp":5000}}'` (Unit-Felder je ID überschreiben), `P1_HP=1.4` (globaler HP-Faktor), `P1_DIFF='{"normal":15200}'` (HP-Basispunkte je Stufe), `P1_COOPH=9000` (Koop-HP je Zusatzspieler), `P1_NOSAVE=1` (Bots wie in Runde 3).
+Experimente ohne Dateiänderung über Umgebungsvariablen (nur Sanity-Skripte, nie der Kern): `P1_PATCH='{"titan":{"dpsShareBp":5000}}'` (Unit-Felder je ID überschreiben), `P1_HP=1.4` (globaler HP-Faktor), `P1_DIFF='{"normal":15200}'` (HP-Basispunkte je Stufe), `P1_COOPH=9000` (Koop-HP je Zusatzspieler), `P1_NOSAVE=1` (Bots wie in Runde 3), `P2_BOSSHP=100000` / `P2_ELITEHP=80000` (HP-Faktor von Boss/Elite).
 
 Bot-Regeln aus P1 (`src/bots/util.ts`, Details und Begründung in `kalibrierung.md`): Sparen auf teure Platzierungen (`Policy.save`), Mythic frühestens ab Wave 4, `Policy.plan` (feste Anschaffung ab Wave X, genutzt vom `aoe`-Bot für den Titan) und `rotateEarly` (Striker verkaufen, wenn das 6-Typ-Team voll ist und ein Legendary/Mythic fehlt). Alle Regeln sind über `botTuning.disabled` abschaltbar.

@@ -18,6 +18,6 @@ describe('Einkommen ohne Units', () => {
     const sim = createSim({ stage: 'standard20', difficulty: 'normal', players: 1, seed: 1 });
     while (!sim.isOver()) sim.step(50);
     expect(sim.result()).toBe('loss');
-    expect(sim.state.baseHp).toBeLessThanOrEqual(0);
+    expect(sim.state.lives).toBeLessThanOrEqual(0);
   });
 });

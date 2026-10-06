@@ -36,6 +36,17 @@ if (process.env.P1_DIFF) {
 // P1_COOPH=9000: hpPerExtraPlayerBp (Koop-HP-Faktor) überschreiben.
 if (process.env.P1_COOPH) baseData.economy.coop.hpPerExtraPlayerBp = Number(process.env.P1_COOPH);
 
+// P2_BOSSHP=120000: HP-Faktor (Basispunkte) des Archetyps boss überschreiben (Zwischenstand bis P4, Boss-Kits).
+if (process.env.P2_BOSSHP) {
+  const b = baseData.enemies.archetypes.find((a) => a.id === 'boss');
+  if (b) b.fHpBp = Number(process.env.P2_BOSSHP);
+}
+// P2_ELITEHP=40000: dasselbe für elite.
+if (process.env.P2_ELITEHP) {
+  const b = baseData.enemies.archetypes.find((a) => a.id === 'elite');
+  if (b) b.fHpBp = Number(process.env.P2_ELITEHP);
+}
+
 /** Tiefe Kopie der Daten, dann mutieren (die JSON-Dateien bleiben unverändert). */
 export function patched(mut: (d: GameData) => void): GameData {
   const d = structuredClone(baseData);
@@ -79,6 +90,8 @@ export interface PlayResult {
   placed: Record<string, number>;
   /** Leaks als "Typ@Wave" -> Anzahl. */
   leaks: Record<string, number>;
+  /** Jeder Leak einzeln (Typ, Spawn-Wave, aktuelle Wave, Rest-HP, Max-HP in Centi-HP) für Leben-Auswertungen (q9-p2). */
+  leakLog: { type: string; wave: number; cur: number; hp: number; maxHp: number }[];
   /** Je Unit-Typ und Wave: Schaden (HP) und bis dahin investierte Münzen (für Schaden je Münze nach Spielphase). */
   byWave: Record<string, { dmg: number[]; invested: number[] }>;
 }
@@ -103,6 +116,7 @@ export function play(o: PlayOpts): PlayResult {
   const spent: Record<string, number> = {};
   const placed: Record<string, number> = {};
   const leaks: Record<string, number> = {};
+  const leakLog: PlayResult['leakLog'] = [];
   const byWave: Record<string, { dmg: number[]; invested: number[] }> = {};
   let wave = 0;
   const bw = (u: string): { dmg: number[]; invested: number[] } => (byWave[u] ??= { dmg: Array(24).fill(0), invested: Array(24).fill(0) });
@@ -128,6 +142,7 @@ export function play(o: PlayOpts): PlayResult {
       } else if (e.type === 'leak') {
         const k = `${e.enemy}@${e.wave}`;
         leaks[k] = (leaks[k] ?? 0) + 1;
+        leakLog.push({ type: e.enemy, wave: e.wave, cur: st.wave, hp: e.hp, maxHp: e.maxHp });
       } else if (e.type === 'waveStart') {
         started = true;
         wave = Math.min(e.wave, 23);
@@ -152,7 +167,7 @@ export function play(o: PlayOpts): PlayResult {
     if (started || st.tick % 20 === 0) decideAll();
   }
   drain();
-  return { result: st.result ?? 'timeout', endWave: st.wave, ticks: st.tick, sim, dmg, spent, placed, leaks, byWave };
+  return { result: st.result ?? 'timeout', endWave: st.wave, ticks: st.tick, sim, dmg, spent, placed, leaks, leakLog, byWave };
 }
 
 /** Experiment-Bot: greedy-Policy, eingeschränkt auf erlaubte Unit-Typen (optional mit Gewichten). */

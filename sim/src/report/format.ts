@@ -18,7 +18,7 @@ export const DEFINITIONS = `## Definitionen
 - **Verlustrate Wave n**: Anteil *aller* Runs, die in Wave n verlieren; "Verlust-Wave" ist die Wave des Gegners, dessen Leak die Base auf <= 0 bringt (Waves überlappen). **Hazard** = Verluste in Wave n / Runs, die Wave n erreicht haben. **Leak-Rate** = Anteil der erreichenden Runs mit mindestens einem Leak von Gegnern der Wave n.
 - **Geldkurve**: Münzen des gesamten Teams am Ende der Wave n (nach Wave-Bonus/Farm, vor den Käufen der nächsten Wave; bei Verlust: Stand beim Ende); P10/Median/P90 über die Runs, die Wave n erreicht haben. **Einkommen** = Kill-Bounty + Wave-Bonus + Farm, die während der Wave n (Zeitraum zwischen Start Wave n und Start Wave n+1) eingehen; Quellen als Medianwerte. Münzen/Einkommen sind Team-Summen.
 - **Pool/Münze** (Kapazitätsmaß, je Wave): Pool-HP der Wave (Summe Max-HP aller gespawnten Gegner inkl. Splitter-Kinder, mit Schwierigkeits- und Koop-Faktor, ohne Rüstung) geteilt durch die netto eingesetzten Münzen (kumulativ Platzierung + Upgrade - Verkaufserlös bis einschließlich Wave n, Teamsumme). Referenz aus recommendations §4: 0,025 DPS je Münze x 20 s = 0,5 HP Pool je Münze entspricht Pool/Kapazität 1,0 (Näherung, Anlage der Münzen unterschiedlich wirksam). Median über Runs.
-- **Leak-Quellen**: Anzahl, Anteil und Base-Schaden aller Leaks nach Gegnertyp über alle Runs der Zelle.
+- **Leak-Quellen**: Anzahl, Anteil und Basis-Lebenskosten (Anzahl x Basiswert; ohne Rest-HP-Abschlag, Boss = Sofort-Verlust) aller Leaks nach Gegnertyp über alle Runs der Zelle.
 - **Farm-Anteil** = Farm-Einkommen / Gesamteinkommen (Summe über alle Runs und Waves). **Payback** = je Run (Summe der Farm-Investitionen: Platzierung + Upgrades) / (mittlerer Farm-Ertrag je Wave mit Ertrag) in Waves, Median über Runs mit Farm.
 - **Upgrade-Anteil** = Upgrade-Münzen / (Platzierungs- + Upgrade-Münzen).
 - **Spielminuten** = Ticks / 20 / 60 (Median, P10, P90).
@@ -61,7 +61,7 @@ export function toMarkdown(cells: CellStats[], meta: ReportMeta, charts: Record<
     for (const svg of charts[c.key] ?? []) L.push(`![${svg}](${svg})`, '');
     L.push(...waveRows(c), '');
     if (c.leakSources.length) {
-      L.push('Leak-Quellen:', '', '| Typ | Leaks | Anteil | Base-Schaden |', '|---|---:|---:|---:|');
+      L.push('Leak-Quellen:', '', '| Typ | Leaks | Anteil | Basis-Leben |', '|---|---:|---:|---:|');
       for (const s of c.leakSources) L.push(`| ${s.type} | ${s.count} | ${pct(s.share, 1)} | ${s.damage} |`);
       L.push('');
     }
