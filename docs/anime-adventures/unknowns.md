@@ -138,6 +138,25 @@ Siehe [sources.md](sources.md#explizit-verworfene-daten). Die Infinite-HP-Formel
 | P2 | Kill-/Wave-Yen VERIFIED · CONFIRMED [S42] | herabgestuft auf OBSERVED · HIGH bzw. MEDIUM: im Wiki-Volltext keine Beschreibung oder Werte | S72 (Volltextsuche negativ) |
 | P2 | Crit ×1,5 bis ×2 | Modulwerte 1,5 / 1,85 / 2; Mehrfach-Crit über 100 % seit Update 11 (LEGACY); Crit-Damage als „true multiplier“ seit 20.4.1 (RR) | S65, S72:Update Log |
 | P2 | Armored-Gegner nicht berücksichtigt | Full-AoE macht 50 % Schaden; Ice-Gegner: Fire ×3 | S72:Enemy Mechanics |
+| P9 | social.md: „Enemy-HP-Scaling steigt mit Spielerzahl“ OBSERVED · HIGH [S06] (gleiche Aussage auch in core-mechanics.md Z. 112 und waves.md Z. 12) | nicht belegt: weder aktuelle Infinite-Seite noch Rev. 18621 (2023-06) noch ein anderer Wiki-Artikel enthält das → UNKNOWN. Belegt ist nur „base HP scales with level difficulty“ (U9) | S72:Infinite, Wiki-API Rev. 18621, S72:Update Log (U9) |
+| P9 | social.md: Trade-Tax zahlt „die Seite mit dem besseren Deal“ OBSERVED · HIGH [S19] | steht nicht in S72:Trading → UNKNOWN. Belegt: Tax nach Rarity; ein Gift im Trade entfernt die Tax „for you“ (Gem-Gifts ausgenommen) | S72:Trading, S72:Update Log (U12) |
+| P9 | social.md: nicht handelbar sind „Units, die nach dem Platzieren nicht verkaufbar sind“ [S19] | nicht belegt, gestrichen. Belegt nicht handelbar: Banner-Units, Battle-Pass-Units, explizit „untradable“-Varianten | S72:Trading, S72:Update Log (U14) |
+| P9 | social.md: Leaderboard „Player Level“ OBSERVED · HIGH [S06] | kein Player-Level-Ranking belegt → UNKNOWN; Level-Milestones (Prayer Master) sind kein Ranking | S72:Infinite, S72:Level Milestones |
+| P9 | social.md: Trading-Einführung „Update 6 (Skins); Units folgten später“ | präzisiert: Units ab U8 (21.12.2022), Relics ab U10.5, Level 40 + Slots 6→9 ab U12 | S72:Update Log |
+| P9 | social.md: Trade-Level 40 „seit Update 12 gesenkt“ VERIFIED · CONFIRMED [S19, S45] | Wert bestätigt, Tag auf OBSERVED · HIGH gesenkt (Wiki-Patchnote, keine offizielle Quelle) | S72:Update Log (U12) |
+| P9 | social.md: „Unit-Limit: Spawn Cap pro Spieler (nicht pro Party)“ RECONSTRUCTED · MEDIUM | präzisiert: pro Spieler bei 557 Units; 4 Units (Commander, Wind Dragon, Elfy, Elfy (Sylph)) haben „6 (Global)“ = über alle Spieler; früher 3 pro Person | S65, S66, S72:Commander, S72:Wind Dragon |
+| P9 | social.md: „Buff-Interaktion … vermutlich auch auf Units anderer Spieler“ UNKNOWN | teilweise gelöst: Griffin (Reincarnation) wirkt auf fremde Units; Idol (Star) und Limit Break nur auf eigene; Modul-Flags `_global`/`_only_same_player`. Normale Range-Buffs weiter UNKNOWN | S65, S72:Damage Affinities Elements, S72:Idol (Star), S72:Powerups |
+| P9 | social.md: Leaderboard „Infinity Castle … wie oben, saisonal“ | präzisiert: seit U10 Perzentil-Rang relativ zu allen Spielern, Stufen-Belohnungen | S72:Update Log (U10), S72:Infinity Mansion |
+| P9 | ui.md: „Skip-Wave-Button“ OBSERVED · MEDIUM | in keinem Volltext (Wiki, Trello) belegt → UNKNOWN (gleiche Aussage auch in core-mechanics.md Z. 15 „Skip-Wave-Button vorhanden“) | S72, S73 |
+| P9 | ui.md: Summon-Buttons „1× / 10× (?)“ | 10×/Multi weiterhin UNKNOWN; belegt: 50 Gems (40 mit VIP) bzw. Ticket je Summon, Pity-Leiste 1/400, Luck-Potions im Banner-Fenster, Quick Summon | S72:Summon, S72:Update Log (U20.4.1) |
+| P9 | ui.md: Banner-Tabs „Standard/Special/Event/Legacy“ ohne Versionsangabe | präzisiert: Event seit U13.5, Legacy-Banner (Legacy Gems) erst RR | S72:Summon |
+| P9 | ui.md: Settings „Musik/SFX-Lautstärke (Genre-Standard)“ | belegt ist nur ein Lobby-Musik-Setting (U19); neu belegt: Depth of Field, Return to Spawn (U12.5), Auto-Activate (U13.5), Back to Lobby, Pfad-Indikatoren, Skin-Autosell (U19), Quick Summon (U20.4.1) | S72:Update Log |
+| P9 | ui.md: „Unit-Panel … Targeting-Modus-Umschalter“ RECONSTRUCTED | belegt: Targeting als Dropdown seit U19.5, Ability-Cooldown sichtbar, Damage dealt + Takedowns im Spiel, Tasten R (Upgrade) / X (Sell) | S72:Update Log (U19.5) |
+| P9 | ui.md: Lobby „Time Machine neben Play“ | Lage „neben Play“ nicht belegt; belegt nur „Landmarke in der Lobby“ | S72:Time Machine |
+| P9 | audio-vfx.md: „Öffentliche Asset-IDs wurden nicht recherchiert (Videos und Roblox-Seiten nicht abrufbar)“ | neu begründet: Asset-Felder liegen in den Datenmodulen vor, werden aber aus Rechtsgründen bewusst nicht übernommen | S65–S67, run.md §5 |
+| P9 | audio-vfx.md: Status-VFX „Burn = Flammen (Black Burn dunkel) … OBSERVED (Existenz Black Burn) · LOW“ | Aussehen nicht belegt → DESIGN; belegt ist nur die Passive „Black Flames“ (Izo (Samurai)) | S72:Izo (Samurai) |
+| P9 | audio-vfx.md: „Trait-Effekt … UNKNOWN“ | gelöst für 6 Traits: Godspeed blaue Blitz-Aura, Reaper rot-schwarze Aura, Celestial lila Galaxie-Aura, Divine Flügel, Golden Gold-Optik, Unique Runen-Aura | S72:Traits, S73 Traits |
+| P9 | audio-vfx.md: „Display Units … Units laufen neben dem Spieler“ | präzisiert: Gamepass „Display 3 Units“ bzw. „Display All Units“ (so viele wie Loadout-Slots) | S72:Store |
 
 ## H. Paketbefunde (Sitzung 2)
 
@@ -201,3 +220,34 @@ Konflikte, Lücken und erledigte Einträge aus den Paketen der Sitzung 2. Die ä
 - DoT-Tick-Intervall; Knockback-Distanz; Regen-Rate; Tank-Reduktion; Ice-Reduktion für Nicht-Fire; Penetration-Formel.
 - Bedeutung der Modul-Rohfelder `cooldown` (meist 10) und `knockback_points` (meist [0.5]).
 - Verrechnung Trait/Potential mit Buffs (additiv oder multiplikativ); Rundung beim Verkauf.
+
+### P9
+
+#### Neue / weiter offene Einträge (P9)
+
+- **Max. Spieler pro Partie (Story, Infinite, Legend, Raid, Challenge):** UNKNOWN. Belegt nur Secret Portal 6 [S72:Secret Portal] und Dungeon „you and up to 6 others“ (6 oder 7?) [S72:Dungeons]. Die 30 aus S74 sind Lobby-Serverkapazität. Reddit (403) und Websuche ohne Ergebnis.
+- **Konflikt/Unklarheit Dungeon-Größe:** „you and up to 6 others“ (wörtlich 7) [S72:Dungeons] vs. 6 bei Secret Portals [S72:Secret Portal].
+- **Gegner-HP-Skalierung nach Spielerzahl:** Aussage aus Sitzung 1 (S06) in keinem Volltext belegt → UNKNOWN. Betrifft auch core-mechanics.md Z. 112 und waves.md Z. 12 (Koordinator bitte anpassen).
+- **Skip-Wave-Button:** in keinem Volltext belegt → UNKNOWN. Betrifft auch core-mechanics.md (Ablauf-Diagramm).
+- **Spielgeschwindigkeit (2×), Damage-Numbers:** UNKNOWN.
+- **Trade-Tax: wer zahlt, wie werden mehrere Items summiert?** UNKNOWN (die Angabe „Seite mit dem besseren Deal“ war unbelegt). Belegt: Gift im Trade → eigene Tax 0.
+- **Trade-Slots 9: pro Seite oder gesamt?** Wortlaut U12 unklar.
+- **Trade-Ablauf (Bestätigung, Countdown, Reset bei Änderung), Tageslimits, Handelbarkeit gesperrter Units:** UNKNOWN.
+- **Matchmaking-Regeln** (Füllgröße, Wartezeit, Kriterien), Matchmaking für Story-Acts: UNKNOWN.
+- **Host-Wechsel, Rejoin, Verbleib der Units nach Verlassen:** UNKNOWN.
+- **Normale Range-Buffs auf Units anderer Spieler** (Commander, Wind Dragon, Blossom …): UNKNOWN. Geteilter „Global Cooldown“ zwischen Spielern: UNKNOWN.
+- **Unique-Trait-Limit (1 Platzierung): pro Spieler oder pro Partie?** UNKNOWN.
+- **Datenmodul-Auffälligkeit:** `femto_egg` (Griffin (Ascension)) trägt in Upgrade „+ Stage“ eine Aura mit `_only_same_player`, `cost_add −0.1`, Effekt-ID `hoshino_buff_fx` – inhaltlich Idol (Star). Vermutlich Pflegefehler im Modul S65 (RECONSTRUCTED · MEDIUM).
+- **Gilden: max. Mitglieder, RR-Status:** UNKNOWN.
+- **Player-Level-Leaderboard:** nicht belegt (UNKNOWN).
+- **Slot-Freischaltung (6 Team-Slots) nach Spielerlevel:** Level-Werte UNKNOWN (U14 „requirement reduced“).
+- **Kein UI-Meldungstext** des Spiels in Quellen; alle Fehlermeldungen in ui.md sind DESIGN.
+- **Status-Effekt-Optik** (Burn, Freeze, Stun …) und alle Animations-/Sounddauern: nicht dokumentiert, nur DESIGN.
+
+#### Erledigt / teilweise gelöst (P9)
+
+- „Buff-Interaktion zwischen Spielern“ (social.md, UNKNOWN): teilweise gelöst. `aura_buff._global` = mapweit, `_only_same_player` = nur eigene Units; Griffin (Reincarnation) +100 % auch für fremde Units; Idol (Star) und Limit Break nur eigene [S65, S72].
+- „Unit-Limit im Team“ (social.md / core-mechanics.md Z. 58 „Globales Unit-Limit pro Spieler UNKNOWN“): Spawn Caps gelten pro Spieler; 4 Units mit „6 (Global)“ = mapweit über alle Spieler [S65, S72:Commander, S72:Wind Dragon]. Ein Gesamtlimit aller Units pro Spieler (über die 6 Team-Slots × Cap hinaus) ist weiter nicht belegt.
+- „Trait-Effekt UNKNOWN“ (audio-vfx.md): Optik für 6 Traits belegt [S72:Traits, S73].
+- „Matchmaking: kein automatisches Matchmaking belegt“ (social.md): gelöst. Global Matchmaking ab U18 (Infinite, Legend, Halloween), U18.5 Raids/Daily Challenge, U19 Holiday, U19.5 Contracts [S72:Update Log].
+- „Disconnect/AFK“: Infinite-Gutschrift trotz Disconnect (U3), Time-Machine-Speicherregeln, Return-to-Spawn-Setting belegt.

@@ -13,7 +13,7 @@ Player Setup (Team aus dem Loadout; RR: Team vor Spielstart im Match änderbar)
 ↓
 Initial Resources (Start-Yen pro Spieler)                        ← Wert UNKNOWN
 ↓
-Wave Start (Wave 1; es gibt einen Wave-Timer und einen Skip-Wave-Button)
+Wave Start (Wave 1; ein Wave-Timer existiert, Skip-Button unbelegt)
 ↓
 Enemy Spawn (am Pfadanfang; Story: 1 Pfad, Shibuya/Event-Modifikatoren: mehrere Pfade)
 ↓
@@ -106,7 +106,7 @@ Das alte „Beispiel Oshi“ (Sitzung 1, [S19]) ist durch die Wiki-Liste ersetzt
 | Infinite-Gems pro Wave | Wave 1–5: 0; Wave 6: 18; Wave 7–15: 3; Wave 15–100: 5 je Wave; ab Wave 105 keine mehr, Maximum 497 | OBSERVED · HIGH · [S72:Infinite] |
 | Event-/Portal-Modi | Teils 50 Waves mit Modifikator-Wahl „every few waves“ | OBSERVED · HIGH · [S72:Update Log] |
 | Dungeon Cursed Womb | Boss „Finger Bearer“ in **Wave 15** | OBSERVED · MEDIUM · [S56] |
-| Skip Wave | Button vorhanden (in Scripts als „Auto Skip Wave“ automatisiert); ob per Abstimmung im Koop: UNKNOWN | OBSERVED · MEDIUM · [S06] |
+| Skip Wave | im Volltext (S72) **nicht** belegt; die Aussage aus Sitzung 1 stammte aus einem Such-Auszug zu Exploit-Scripts | UNKNOWN · LOW · [S06 → S72 geprüft] |
 | Wave-Timer | Existiert (s. o.), Dauer **UNKNOWN** | OBSERVED · HIGH (Existenz) · [S72:JIO (Over Heaven)] / UNKNOWN (Wert) |
 | Spawn-Reihenfolge und -Abstände | **UNKNOWN**. Sonderfall Burst-Gegner: schnell beim Spawn, werden zur Basis hin langsamer | UNKNOWN / OBSERVED · HIGH · [S72:Enemy Mechanics] |
 | Pfadlänge (Laufzeit) | Story-Maps: 8–36 s Laufzeit eines Normalgegners vom Spawn bis Pfadende (Stand 2023-12, LEGACY) | OBSERVED · MEDIUM · [S72:Map Lengths] |
@@ -145,7 +145,7 @@ Details in [waves.md](waves.md) und [maps.md](maps.md).
 
 - Story-Acts haben **Normal** und **Hard**. Hard bringt mehr Belohnung und ist schwieriger. Multiplikatoren: **UNKNOWN**. OBSERVED · MEDIUM · [S07]
 - Infinite gibt es **nur auf Hard**. OBSERVED · HIGH · [S06 → S72:Infinite]
-- Gegner-HP steigen mit der **Spielerzahl** in der Party (Story und Infinite). Formel: **UNKNOWN**. OBSERVED · HIGH · [S06]
+- Ob Gegner-HP mit der **Spielerzahl** steigen, ist **unbelegt**: Weder die aktuelle Infinite-Seite noch eine ihrer 29 Revisionen (inkl. Legacy-Rev. 18621) erwähnt es. UNKNOWN · LOW · [S72:Infinite, S80, S81]
 - Base-HP skaliert mit der Level-Schwierigkeit (seit Update 9, LEGACY). OBSERVED · HIGH · [S72:Update Log]
 - Challenges als Difficulty-Modifikatoren (Tank, High Cost, Shield, Regen, Short Range, Fast; Portal-only: Hyper-Regen, Flying, Steel-Plated, Godspeed, Mini Range, Triple Cost). Wechsel alle 30 min. Wirkung im Kampf siehe [combat-system.md](combat-system.md#10-gegner-mechaniken-im-kampf). OBSERVED · HIGH · [S72:Challenges]
 
@@ -158,6 +158,6 @@ Details in [waves.md](waves.md) und [maps.md](maps.md).
 | Start-Yen | 600–1.000 pro Spieler (≈ 1 Platzierung einer günstigen Unit) | Deployment-Median in AA 1.350 ¥, Rare-Units ab 300 ¥ |
 | Wave-Yen | linear steigend, z. B. `100 + 25 × wave` | Indiz für modusabhängige „Yen-Verteilung“ in AA |
 | Kill-Yen | pro Gegnertyp in den Gegnerdaten | AA-Formel UNKNOWN |
-| Wave-Timer | fester Timer pro Wave (z. B. 30–45 s) plus Skip-Button | Existenz in AA belegt, Wert UNKNOWN |
+| Wave-Timer | fester Timer pro Wave (z. B. 30–45 s) plus Skip-Button | Timer-Existenz in AA belegt, Wert UNKNOWN; Skip-Button unbelegt |
 | Sell | 25 % der investierten Yen, abgerundet | AA-Regel (Rundung DESIGN) |
 | Base HP / Leak | s. o. | |

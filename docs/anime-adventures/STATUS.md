@@ -17,7 +17,7 @@ Letzte Aktualisierung: 2026-10-05 (Sitzung 2)
 | P6 | Gegner, Waves, Maps | offen | Wiki hat **keine** Gegner-Datenmodule; nur `Story`, `Infinite`, `Map Lengths`, `Enemy Mechanics` |
 | P7 | Modi, Portals, Raids | offen | |
 | P8 | Summoning, Economy, Items, Quests | offen | Kapsel-Raten und Pity in `S68` |
-| P9 | Multiplayer, Trading, UI, Audio/VFX | offen | |
+| P9 | Multiplayer, Trading, UI, Audio/VFX | **erledigt** | Matchmaking-Zeitachse, Host-Regeln, globale Caps/Auren, Trading-Zeitachse. Offen: Max. Spieler je Modus, Trade-Ablauf, Rejoin |
 | P10 | `mathematics.md`, Beispielrunde | offen | |
 | P11 | `technical-reconstruction.md` | offen | |
 | P12 | `unknowns.md` (inkl. Korrekturen), `README.md`, Abschlussprüfung | offen | |

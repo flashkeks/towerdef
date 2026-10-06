@@ -105,7 +105,7 @@ Hinweis zum Modul: Die `_only_same_player`-Aura steht im Datensatz `femto_egg` (
 
 | Aussage | Stand | Tag |
 |---|---|---|
-| Gegner-HP steigen mit der Spielerzahl | **nicht belegt**. Sitzung 1 nannte S06 (Infinite); die Infinite-Seite enthält das in keiner Fassung (geprüft: aktuelle Fassung und Rev. 18621 von 2023-06) | UNKNOWN · korrigiert (vorher OBSERVED · HIGH) |
+| Gegner-HP steigen mit der Spielerzahl | **nicht belegt**. Sitzung 1 nannte S06 (Infinite); die Infinite-Seite enthält das in keiner Fassung (geprüft: aktuelle Fassung und Rev. 18621 von 2023-06) | UNKNOWN · korrigiert (vorher OBSERVED · HIGH) · [S80, S81] |
 | Base-HP | „Adjusted base HP (now scales with level difficulty)“ (U9). Skaliert mit der Schwierigkeit, nicht mit Spielern | OBSERVED · HIGH · [S72:Update Log (U9)] |
 
 ### Disconnect, Rejoin, AFK
