@@ -1,0 +1,2 @@
+stage,bot,difficulty,players,runs,wins,losses,capped,win_rate,endwave_p10,endwave_med,endwave_p90,minutes_p10,minutes_med,minutes_p90,farm_share_income,upgrade_share,farm_payback_med,farm_payback_n
+infinite,greedy,normal,1,200,0,200,0,0,28,32,41,16.2225,19.0212,24.3258,0,0.7186,0,0

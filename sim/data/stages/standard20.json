@@ -1,0 +1,124 @@
+{
+ "ref": "recommendations §0, §5 (Beispiel-Stage Standard 20)",
+ "_comment": "S-förmiger Pfad, Länge 42 Tiles: 13+3+11+3+11+1. Waves laut §5; Spawn-Abstände Grunt 0,8 s, Runner 0,5 s, Flyer 0,9 s, Brute 2,0 s, Splitter 1,5 s, Elite 3,0 s; Gruppen nacheinander (Delay = Summe Anzahl*Abstand der Vorgänger), Boss erscheint einzeln bei Delay 0. Element je Wave 1+((n-1) mod 5), wirkt erst ab Hard. Slots: ground/hill neben dem Pfad, 3 große (2x2) Ground-Slots für Farms.",
+ "id": "standard20",
+ "name": "Standard 20",
+ "waveTimerTicks": 900,
+ "path": [[0,1],[13,1],[13,4],[2,4],[2,7],[13,7],[13,8]],
+ "slots": [
+  {"id":0,"x":2,"y":0,"kind":"ground","size":1},
+  {"id":1,"x":5,"y":0,"kind":"ground","size":1},
+  {"id":2,"x":8,"y":0,"kind":"ground","size":1},
+  {"id":3,"x":11,"y":0,"kind":"ground","size":1},
+  {"id":4,"x":2,"y":2,"kind":"hill","size":1},
+  {"id":5,"x":5,"y":2,"kind":"hill","size":1},
+  {"id":6,"x":8,"y":2,"kind":"hill","size":1},
+  {"id":7,"x":11,"y":2,"kind":"hill","size":1},
+  {"id":8,"x":3,"y":3,"kind":"ground","size":1},
+  {"id":9,"x":6,"y":3,"kind":"ground","size":1},
+  {"id":10,"x":9,"y":3,"kind":"ground","size":1},
+  {"id":11,"x":4,"y":5,"kind":"ground","size":1},
+  {"id":12,"x":7,"y":5,"kind":"ground","size":1},
+  {"id":13,"x":10,"y":5,"kind":"ground","size":1},
+  {"id":14,"x":5,"y":6,"kind":"hill","size":1},
+  {"id":15,"x":8,"y":6,"kind":"hill","size":1},
+  {"id":16,"x":11,"y":6,"kind":"hill","size":1},
+  {"id":17,"x":3,"y":8,"kind":"ground","size":1},
+  {"id":18,"x":6,"y":8,"kind":"ground","size":1},
+  {"id":19,"x":9,"y":8,"kind":"ground","size":1},
+  {"id":20,"x":4,"y":9,"kind":"hill","size":1},
+  {"id":21,"x":7,"y":9,"kind":"hill","size":1},
+  {"id":22,"x":10,"y":9,"kind":"hill","size":1},
+  {"id":23,"x":15,"y":2.5,"kind":"ground","size":2},
+  {"id":24,"x":15,"y":5.5,"kind":"ground","size":2},
+  {"id":25,"x":15,"y":8.5,"kind":"ground","size":2}
+ ],
+ "waves": [
+  {"n": 1, "groups": [
+    {"type":"grunt","count":8,"intervalTicks":16,"delayTicks":0,"modifiers":[],"element":1}
+  ]},
+  {"n": 2, "groups": [
+    {"type":"grunt","count":9,"intervalTicks":16,"delayTicks":0,"modifiers":[],"element":2}
+  ]},
+  {"n": 3, "groups": [
+    {"type":"grunt","count":8,"intervalTicks":16,"delayTicks":0,"modifiers":[],"element":3},
+    {"type":"runner","count":3,"intervalTicks":10,"delayTicks":128,"modifiers":[],"element":3}
+  ]},
+  {"n": 4, "groups": [
+    {"type":"grunt","count":8,"intervalTicks":16,"delayTicks":0,"modifiers":[],"element":4},
+    {"type":"runner","count":6,"intervalTicks":10,"delayTicks":128,"modifiers":[],"element":4}
+  ]},
+  {"n": 5, "groups": [
+    {"type":"elite","count":1,"intervalTicks":60,"delayTicks":0,"modifiers":[],"element":5},
+    {"type":"grunt","count":8,"intervalTicks":16,"delayTicks":60,"modifiers":[],"element":5}
+  ]},
+  {"n": 6, "groups": [
+    {"type":"grunt","count":9,"intervalTicks":16,"delayTicks":0,"modifiers":[],"element":1},
+    {"type":"runner","count":10,"intervalTicks":10,"delayTicks":144,"modifiers":[],"element":1}
+  ]},
+  {"n": 7, "groups": [
+    {"type":"brute","count":3,"intervalTicks":40,"delayTicks":0,"modifiers":[],"element":2},
+    {"type":"grunt","count":10,"intervalTicks":16,"delayTicks":120,"modifiers":[],"element":2}
+  ]},
+  {"n": 8, "groups": [
+    {"type":"flyer","count":7,"intervalTicks":18,"delayTicks":0,"modifiers":[],"element":3},
+    {"type":"grunt","count":14,"intervalTicks":16,"delayTicks":126,"modifiers":[],"element":3}
+  ]},
+  {"n": 9, "groups": [
+    {"type":"brute","count":4,"intervalTicks":40,"delayTicks":0,"modifiers":[],"element":4},
+    {"type":"runner","count":6,"intervalTicks":10,"delayTicks":160,"modifiers":[],"element":4},
+    {"type":"grunt","count":7,"intervalTicks":16,"delayTicks":220,"modifiers":[],"element":4}
+  ]},
+  {"n": 10, "groups": [
+    {"type":"boss","count":1,"intervalTicks":0,"delayTicks":0,"modifiers":[],"element":5},
+    {"type":"grunt","count":8,"intervalTicks":16,"delayTicks":0,"modifiers":[],"element":5}
+  ]},
+  {"n": 11, "groups": [
+    {"type":"flyer","count":12,"intervalTicks":18,"delayTicks":0,"modifiers":[],"element":1},
+    {"type":"grunt","count":16,"intervalTicks":16,"delayTicks":216,"modifiers":[],"element":1}
+  ]},
+  {"n": 12, "groups": [
+    {"type":"brute","count":4,"intervalTicks":40,"delayTicks":0,"modifiers":["regen"],"element":2},
+    {"type":"runner","count":12,"intervalTicks":10,"delayTicks":160,"modifiers":[],"element":2},
+    {"type":"grunt","count":7,"intervalTicks":16,"delayTicks":280,"modifiers":[],"element":2}
+  ]},
+  {"n": 13, "groups": [
+    {"type":"grunt","count":15,"intervalTicks":16,"delayTicks":0,"modifiers":["shield:3"],"element":3},
+    {"type":"runner","count":22,"intervalTicks":10,"delayTicks":240,"modifiers":[],"element":3}
+  ]},
+  {"n": 14, "groups": [
+    {"type":"brute","count":4,"intervalTicks":40,"delayTicks":0,"modifiers":[],"element":4},
+    {"type":"flyer","count":11,"intervalTicks":18,"delayTicks":160,"modifiers":[],"element":4},
+    {"type":"grunt","count":10,"intervalTicks":16,"delayTicks":358,"modifiers":[],"element":4}
+  ]},
+  {"n": 15, "groups": [
+    {"type":"elite","count":1,"intervalTicks":60,"delayTicks":0,"modifiers":[],"element":5},
+    {"type":"splitter","count":6,"intervalTicks":30,"delayTicks":60,"modifiers":[],"element":5},
+    {"type":"grunt","count":12,"intervalTicks":16,"delayTicks":240,"modifiers":[],"element":5}
+  ]},
+  {"n": 16, "groups": [
+    {"type":"brute","count":5,"intervalTicks":40,"delayTicks":0,"modifiers":[],"element":1},
+    {"type":"runner","count":15,"intervalTicks":10,"delayTicks":200,"modifiers":[],"element":1},
+    {"type":"flyer","count":12,"intervalTicks":18,"delayTicks":350,"modifiers":[],"element":1}
+  ]},
+  {"n": 17, "groups": [
+    {"type":"brute","count":6,"intervalTicks":40,"delayTicks":0,"modifiers":["armored"],"element":2},
+    {"type":"grunt","count":18,"intervalTicks":16,"delayTicks":240,"modifiers":[],"element":2}
+  ]},
+  {"n": 18, "groups": [
+    {"type":"splitter","count":9,"intervalTicks":30,"delayTicks":0,"modifiers":[],"element":3},
+    {"type":"flyer","count":13,"intervalTicks":18,"delayTicks":270,"modifiers":[],"element":3},
+    {"type":"runner","count":16,"intervalTicks":10,"delayTicks":504,"modifiers":[],"element":3}
+  ]},
+  {"n": 19, "groups": [
+    {"type":"elite","count":2,"intervalTicks":60,"delayTicks":0,"modifiers":[],"element":4},
+    {"type":"brute","count":4,"intervalTicks":40,"delayTicks":120,"modifiers":[],"element":4},
+    {"type":"grunt","count":8,"intervalTicks":16,"delayTicks":280,"modifiers":[],"element":4}
+  ]},
+  {"n": 20, "groups": [
+    {"type":"boss","count":1,"intervalTicks":0,"delayTicks":0,"modifiers":[],"element":5},
+    {"type":"elite","count":1,"intervalTicks":60,"delayTicks":0,"modifiers":[],"element":5},
+    {"type":"grunt","count":7,"intervalTicks":16,"delayTicks":60,"modifiers":[],"element":5}
+  ]}
+ ]
+}

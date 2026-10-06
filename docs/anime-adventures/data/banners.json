@@ -1,0 +1,131 @@
+{
+  "_meta": {
+    "description": "Banner definitions per version (Anime Adventures). Rates as fractions (0.005 = 0.5 %).",
+    "researchDate": "2026-10-06",
+    "provenanceLegend": "VERIFIED|OBSERVED|RECONSTRUCTED|DERIVED|UNKNOWN|DESIGN",
+    "note": "Reference data about the original game (Anime Adventures, Gomu) for system reconstruction only. Names are AA in-game names (third-party IP) and must not be used in our game. null = UNKNOWN.",
+    "sources": "see ../sources.md; S72:Summon@<revid> = older revision of the wiki page Summon (33626 = 2023-12-25 LEGACY end, 42938 = 2025-03-04 RR before 20.4.1)",
+    "baseRates": {
+      "wiki": {"rare": 0.819, "epic": 0.16, "legendary": 0.02, "mythic": 0.0025, "sum": 1.0015},
+      "normalized": {"rare": 0.8175, "epic": 0.16, "legendary": 0.02, "mythic": 0.0025, "sum": 1.0},
+      "secret": 0.0000025,
+      "shiny": 0.01,
+      "shinyShinyHunter": 0.03,
+      "meta": {"origin": "OBSERVED", "confidence": "HIGH", "source": "S72:Summon; normalized rare 0.8175 DERIVED/MEDIUM from S68 capsule tables (0.81545625 = 0.9975 x 0.8175); secret 1/400000 OBSERVED/MEDIUM (since 20.4.1)"}
+    },
+    "bannerTiers": [
+      {"tier": 0, "minPlayerLevel": 0, "shiny": false, "secret": false},
+      {"tier": 1, "minPlayerLevel": 5, "shiny": true, "secret": false},
+      {"tier": 2, "minPlayerLevel": 20, "shiny": true, "secret": true}
+    ],
+    "bannerTiersMeta": {"origin": "OBSERVED", "confidence": "HIGH", "source": "S72:Summon, S73 (since Update 1.5)"},
+    "luck": {
+      "luckPotion": {"multiplier": 1.25, "priceGems": 200, "durationSeconds": 1800, "note": "since Update 10.5 counted per banner; does not lower pity; no effect on event banner"},
+      "superLucky": {"multiplierLegendaryMythic": 2, "robux": 99},
+      "ultraLucky": {"multiplierLegendaryMythic": 3, "robux": 149},
+      "allStackedMythic": 0.00936,
+      "stackingRule": null,
+      "meta": {"origin": "OBSERVED", "confidence": "MEDIUM", "source": "S73 (x1.25), S72:Store, S72:Summon, S68 (1800 s); LEGACY text says Super/Ultra are flat +0.125 %/+0.25 % -> conflict, stacking rule UNKNOWN"}
+    },
+    "multiSummon": null,
+    "multiSummonMeta": {"origin": "UNKNOWN", "confidence": "UNKNOWN", "source": "no source mentions a 10x pull"}
+  },
+  "legacy": [
+    {
+      "id": "standard",
+      "period": "2022-07 .. 2023-12",
+      "cost": {"gems": 50, "vipGems": 40, "ticket": 1},
+      "rates": {"rare": 0.819, "epic": 0.16, "legendary": 0.02, "mythic": 0.0025},
+      "ratesSumConflict": "1.0015 (C1, resolved: rare = 0.8175)",
+      "display": {"rare": 3, "epic": 1, "legendary": 1, "mythic": 1},
+      "rotationSeconds": 3600,
+      "pity": {
+        "mythic": {"pulls": 400, "target": "any mythic of the banner", "visible": false, "resetOn": ["mythic_pulled", "banner_refresh"]},
+        "legendary": {"pulls": 50, "visible": true, "resetOn": ["legendary_pulled", "banner_refresh"]}
+      },
+      "extraDrops": [{"item": "star_remnant", "chance": null, "note": "'low chance' (S72:Items); 0.0025 from session 1 (S03) not confirmed"}],
+      "meta": {"origin": "OBSERVED", "confidence": "MEDIUM", "source": "S72:Summon@33626, S73 (Mythic Pity / Legendary Pity cards)"}
+    },
+    {
+      "id": "special",
+      "period": "Update 7 (2022-11-12) .. 2023-12",
+      "cost": {"gems": 50, "vipGems": 40, "ticket": 1},
+      "rates": {"mythic": 0.005, "others": null},
+      "featured": {"count": 3, "centerShareOfMythic": 0.5, "sideShareOfMythic": 0.1, "unfeaturedShareEach": 0.00526},
+      "rotationSeconds": 3600,
+      "pity": {
+        "mythic": null,
+        "legendary": {"pulls": 50, "visible": true, "resetOn": ["legendary_pulled", "banner_refresh"]}
+      },
+      "meta": {"origin": "OBSERVED", "confidence": "MEDIUM", "source": "S72:Summon@33626 ('NO pity for Mythic units unlike the standard banner'), S72:Update Log (Update 7)"}
+    },
+    {
+      "id": "event",
+      "period": "Update 13.5 (2023-05-26) .. 2023-12",
+      "currency": "eventCurrency",
+      "costPerSummonEventCurrency": 10,
+      "rates": {"mythic": 0.01},
+      "featured": {"count": 4, "limitedOnly": true, "rotation": "fixed for event duration"},
+      "pity": {"mythic": {"pulls": 100, "target": "unowned featured first", "visible": true, "costEventCurrency": 1000}, "legendary": null},
+      "meta": {"origin": "OBSERVED", "confidence": "MEDIUM", "source": "S72:Summon@33626; cost per summon DERIVED 1000/100"}
+    }
+  ],
+  "rerelease": [
+    {
+      "id": "legacy",
+      "period": "Update 19 (2024-12-25) ..",
+      "currency": "legacyGems",
+      "cost": {"legacyGems": 50, "vipLegacyGems": 40, "ticket": 1},
+      "gemsToLegacyGemsRate": null,
+      "rates": {"mythic": 0.005},
+      "featured": {"count": 3, "centerShareOfMythic": 0.5, "sideShareOfMythic": 0.1, "unfeaturedShareEach": 0.00714},
+      "rotationSeconds": 3600,
+      "pityHistory": [
+        {"from": "Update 19", "to": "Update 20.4", "mythic": {"pulls": 400, "target": "any mythic", "visible": false, "disputed": true}, "legendary": {"pulls": 50}, "source": "S72:Summon@42938"},
+        {"from": "Update 20.4.1 (~2025-04-01)", "to": null, "mythic": {"pulls": 400, "target": "center featured", "visible": true}, "legendary": null, "source": "S72:Summon, S72:Update Log"}
+      ],
+      "pity": {"mythic": {"pulls": 400, "target": "center featured", "resetOn": ["any_mythic_pulled", "banner_refresh"]}, "legendary": null},
+      "meta": {"origin": "OBSERVED", "confidence": "HIGH", "source": "S72:Summon; cost in legacy gems assumed equal to gem cost (RECONSTRUCTED/MEDIUM)"}
+    },
+    {
+      "id": "special",
+      "period": "Update 19 (2024-12-25) ..",
+      "cost": {"gems": 50, "vipGems": 40, "ticket": 1},
+      "rates": {"mythic": 0.005},
+      "featured": {"count": 3, "centerShareOfMythic": 0.5, "sideShareOfMythic": 0.1, "unfeaturedShareEach": 0.00625, "unfeaturedShareEachAltText": 0.00526},
+      "rotationSeconds": 3600,
+      "pity": {"mythic": {"pulls": 400, "since": "Update 20.4.1", "target": "center featured", "resetOn": ["any_mythic_pulled", "banner_refresh"]}, "legendary": null},
+      "pityConflict": "S72:Summon trivia says 200 pulls; main text and cost (20,000 gems) say 400",
+      "meta": {"origin": "OBSERVED", "confidence": "HIGH", "source": "S72:Summon, S72:Update Log 20.4.1"}
+    },
+    {
+      "id": "event",
+      "period": "Update 19 (2024-12-25) ..",
+      "currency": "eventCurrency",
+      "costPerSummonEventCurrency": 10,
+      "rates": {"mythic": 0.005},
+      "featured": {"count": 3, "limitedOnly": true, "rotation": "fixed for event duration"},
+      "pity": {"mythic": {"pulls": 200, "target": "unowned featured first", "costEventCurrency": 2000}, "legendary": null},
+      "luckPotionsApply": false,
+      "meta": {"origin": "OBSERVED", "confidence": "HIGH", "source": "S72:Summon; cost per summon DERIVED 2000/200"}
+    },
+    {
+      "id": "event_capsule",
+      "period": "Christmas 2022 .. Winter 2024 (Frozen/Haunted/Summer/Spooky/Icy Star)",
+      "currency": "eventCurrency",
+      "costPerOpenEventCurrency": 150,
+      "rates": {"mythicUnitTotal": 0.0025, "mythicSkin": 0.00249375, "legendarySkinTotal": 0.01995, "epicSkinTotal": 0.1596, "rareSkinTotal": 0.81545625},
+      "pity": {"mythicUnit": 400},
+      "note": "S43 'event banner 0.25 % mythic / 0.249 % mythic skin' matches this capsule structure",
+      "meta": {"origin": "OBSERVED", "confidence": "HIGH", "source": "S68 (capsule_christmas, _mythic_unit_pity), S72:Events (150 per star)"}
+    }
+  ],
+  "derived": {
+    "rrCenterFeatured": {"p": 0.005, "share": 0.5, "pity": 400, "expectedPulls": 304.9, "expectedGems": 15245, "expectedGemsVip": 12196, "pWithin400": 0.7676, "pWithin200": 0.3938, "pCycleReachesPity": 0.1353},
+    "legacyStandardAnyMythic": {"p": 0.0025, "pity": 400, "expectedPulls": 253.0, "pPityTriggers": 0.3683},
+    "legendaryPity50": {"p": 0.02, "pity": 50, "expectedPulls": 31.8, "pPityTriggers": 0.3716},
+    "eventRrAll3": {"expectedPulls": 505.8, "expectedPullsSpecific": 218.0},
+    "eventLegacyAll4": {"expectedPulls": 351.5, "expectedPullsSpecific": 119.8},
+    "meta": {"origin": "DERIVED", "confidence": "HIGH", "source": "exact DP + Monte Carlo (Python random.Random(20261006)), see summoning.md; event values assume uniform featured split (LOW)"}
+  }
+}

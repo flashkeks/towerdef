@@ -1,0 +1,218 @@
+import { describe, expect, it } from 'vitest';
+import { createEnemy } from '../src/systems/spawn.js';
+import { resolveDeaths } from '../src/systems/economy.js';
+import type { EnemyState, World } from '../src/state.js';
+import { ctxFor, createSim, data, mutable, richData } from './helpers.js';
+
+/** Sim mit viel Geld; Gegner werden eingefroren auf Lane 1 (y = 1000, x = Fortschritt) platziert. */
+function mk(difficulty: 'normal' | 'hard' = 'normal', players = 1) {
+  const sim = createSim({ stage: 'standard20', difficulty, players, seed: 9, data: richData() });
+  const ctx = ctxFor(players, difficulty);
+  const st = mutable(sim);
+  const put = (type: string, progress: number, over: Partial<EnemyState> = {}, wave = 1, element = 0): EnemyState => {
+    const e = createEnemy(ctx, st.nextId++, type, wave, [], element, progress, 0);
+    Object.assign(e, { x: progress, y: 1000, stunTicks: 100000 }, over);
+    st.enemies.push(e);
+    return e;
+  };
+  const place = (unit: string, slot: number): number => {
+    const r = sim.apply(0, { type: 'place', unitId: unit, slot });
+    if (!r.ok) throw new Error(r.reason);
+    return r.entityId as number;
+  };
+  return { sim, st, ctx, put, place };
+}
+const hurt = (e: EnemyState) => e.hp < e.maxHp;
+
+describe('Trefferflächen', () => {
+  it('Lancer (line, Pen 40): trifft Linie, nicht daneben; Rüstung 20 wirkungslos', () => {
+    const { sim, put, place } = mk();
+    place('lancer', 0); // Slot 0 = (2000, 0), ground
+    const a = put('brute', 5000);
+    const b = put('brute', 6000);
+    const off = put('brute', 2000);
+    sim.step();
+    expect(hurt(a)).toBe(true);
+    expect(hurt(b)).toBe(true);
+    expect(hurt(off)).toBe(false);
+    const lancer = sim.catalog().find((u) => u.id === 'lancer')!;
+    expect(a.maxHp - a.hp).toBe(lancer.levels[0].damageCenti); // Pen 40 >= R 20 -> volle Wirkung
+  });
+  it('Blaster (circle 1,2 Tiles): Ziel + Umgebung, Burn auf allen Getroffenen', () => {
+    const { sim, put, place } = mk();
+    place('blaster', 0);
+    const t = put('grunt', 5000);
+    const near = put('grunt', 4000);
+    const far = put('grunt', 3000);
+    sim.step();
+    expect(hurt(t) && hurt(near)).toBe(true);
+    expect(hurt(far)).toBe(false);
+    expect(t.burn).not.toBeNull();
+    expect(near.burn).not.toBeNull();
+    expect(far.burn).toBeNull();
+  });
+  it('Frost (cone 60 Grad): trifft im Kegel, nicht dahinter oder seitlich; Slow -40 %', () => {
+    const { sim, put, place } = mk();
+    const hill = sim.slots().find((s) => s.kind === 'hill')!; // (2000, 2000)
+    place('frost', hill.id);
+    const t = put('grunt', 4000); // Ziel (First)
+    const inCone = put('grunt', 3500);
+    const behind = put('grunt', 1000); // hinter der Unit-Richtung
+    sim.step();
+    expect(hurt(t) && hurt(inCone)).toBe(true);
+    expect(hurt(behind)).toBe(false);
+    expect(t.slowBp).toBe(4000);
+    expect(t.slowTicks).toBe(80);
+  });
+  it('Striker: Bleed auf Treffer, Rüstung senkt Direktschaden', () => {
+    const { sim, put, place } = mk();
+    place('striker', 0);
+    const g = put('grunt', 3000);
+    const b = put('brute', 4000, {}, 1); // First = größter Fortschritt: nur der Brute wird getroffen
+    sim.step();
+    expect(b.bleed).not.toBeNull();
+    expect(g.bleed).toBeNull();
+    const striker = sim.catalog().find((u) => u.id === 'striker')!;
+    // Brute R20: Faktor 100/120; Direktschaden unter dem Basisschaden
+    expect(b.maxHp - b.hp).toBe(Math.floor((striker.levels[0].damageCenti * 100) / 120));
+  });
+});
+
+describe('Aura (§11)', () => {
+  const dmg = (withBanner: 0 | 1 | 2, bannerSlot = 1): number => {
+    const { sim, put, place } = mk();
+    place('striker', 0); // (2000, 0)
+    if (withBanner >= 1) place('banner', bannerSlot);
+    if (withBanner === 2) place('banner', 2);
+    const g = put('grunt', 3000);
+    sim.step();
+    return g.maxHp - g.hp;
+  };
+  it('+10 % im Radius, kein Effekt außerhalb, mehrere Banner stapeln nicht (höchster zählt)', () => {
+    const base = dmg(0);
+    expect(dmg(1, 1)).toBe(Math.floor((base * 11000) / 10000)); // Slot 1 = (5000,0): 3 Tiles Abstand
+    expect(dmg(1, 3)).toBe(base); // Slot 3 = (11000,0): außerhalb Radius 3
+    expect(dmg(2)).toBe(dmg(1, 1));
+  });
+});
+
+describe('Fähigkeiten', () => {
+  it('Titan-Nuke: True Damage auf den stärksten Gegner (ignoriert Rüstung/Reichweite), Cooldown 45 s', () => {
+    const { sim, put, place } = mk();
+    const hill = sim.slots().find((s) => s.kind === 'hill')!;
+    const id = place('titan', hill.id);
+    const grunt = put('grunt', 9000);
+    const boss = put('boss', 500, {}, 10);
+    const hpB = boss.hp;
+    const r = sim.apply(0, { type: 'useAbility', entityId: id });
+    expect(r.ok).toBe(true);
+    expect(hpB - boss.hp).toBe(190 * 100 * 8); // 8 x Treffer, Rüstung 40 ignoriert
+    expect(hurt(grunt)).toBe(false);
+    expect(sim.apply(0, { type: 'useAbility', entityId: id })).toEqual({ ok: false, reason: 'ability-cooldown' });
+    sim.step(899);
+    expect(sim.apply(0, { type: 'useAbility', entityId: id })).toEqual({ ok: false, reason: 'ability-cooldown' });
+    sim.step(1);
+    expect(sim.apply(0, { type: 'useAbility', entityId: id }).ok).toBe(true);
+  });
+  it('Frost-Stun: Radius, 1,5 s, Boss halb, Sperre 6 s, Abklingzeit 30 s', () => {
+    const { sim, put, place } = mk();
+    const hill = sim.slots().find((s) => s.kind === 'hill')!; // (2000, 2000)
+    const id = place('frost', hill.id);
+    const tough = { stunTicks: 0, hp: 10_000_000, maxHp: 10_000_000 };
+    const g = put('grunt', 2500, tough);
+    const boss = put('boss', 1500, tough, 10);
+    const far = put('grunt', 9000, tough);
+    expect(sim.apply(0, { type: 'useAbility', entityId: id }).ok).toBe(true);
+    expect(g.stunTicks).toBe(30);
+    expect(boss.stunTicks).toBe(15);
+    expect(far.stunTicks).toBe(0);
+    sim.step(30);
+    expect(g.stunImmune).toBeGreaterThan(0);
+    expect(sim.apply(0, { type: 'useAbility', entityId: id })).toEqual({ ok: false, reason: 'ability-cooldown' });
+    sim.step(570);
+    // 30 s nach Einsatz: Cooldown vorbei; ein frischer Gegner im Radius wird wieder betäubt
+    const fresh = put('grunt', 2200, tough);
+    expect(sim.apply(0, { type: 'useAbility', entityId: id }).ok).toBe(true);
+    expect(fresh.stunTicks).toBe(30);
+  });
+  it('Ability ohne Fähigkeit / fremde Unit', () => {
+    const { sim, place } = mk('normal', 2);
+    const id = place('striker', 0);
+    expect(sim.apply(0, { type: 'useAbility', entityId: id })).toEqual({ ok: false, reason: 'no-ability' });
+    expect(sim.apply(1, { type: 'upgrade', entityId: id })).toEqual({ ok: false, reason: 'not-owner' });
+    expect(sim.apply(1, { type: 'sell', entityId: id })).toEqual({ ok: false, reason: 'not-owner' });
+    expect(sim.apply(0, { type: 'setTargeting', entityId: id, mode: 'last' }).ok).toBe(true);
+    const banner = sim.apply(0, { type: 'place', unitId: 'banner', slot: 1 });
+    expect(sim.apply(0, { type: 'setTargeting', entityId: (banner as { entityId: number }).entityId, mode: 'last' })).toEqual({ ok: false, reason: 'no-targeting' });
+  });
+});
+
+describe('Elemente ab Hard, Crit, Splitter', () => {
+  it('Normal: Elemente inaktiv; Hard: Striker (Element 1) gegen Element 2 = x1,5, gegen 4 = x0,5', () => {
+    const run = (diff: 'normal' | 'hard', el: number): number => {
+      const { sim, put, place } = mk(diff);
+      place('striker', 0);
+      const g = put('grunt', 3000, {}, 1, el);
+      sim.step();
+      return g.maxHp - g.hp;
+    };
+    const base = run('normal', 2);
+    expect(run('normal', 4)).toBe(base);
+    const hardNeutral = run('hard', 0);
+    expect(run('hard', 2)).toBe(Math.floor((hardNeutral * 15000) / 10000));
+    expect(run('hard', 4)).toBe(Math.floor((hardNeutral * 5000) / 10000));
+  });
+  it('Nur Crit-Units verbrauchen PRNG-Werte', () => {
+    const a = mk();
+    a.place('striker', 0);
+    a.put('grunt', 3000);
+    const r0 = [...a.st.rng];
+    a.sim.step(5);
+    expect(a.st.rng).toEqual(r0);
+    const b = mk();
+    b.place('gunner', b.sim.slots().find((s) => s.kind === 'hill')!.id);
+    b.put('grunt', 3000);
+    const r1 = [...b.st.rng];
+    b.sim.step(5);
+    expect(b.st.rng).not.toEqual(r1);
+  });
+  it('Splitter: 2 Kinder mit 35 % HP an derselben Pfadposition, Kinder-Leak 1', () => {
+    const { st, ctx } = mk();
+    const w: World = { state: st, ctx, events: [], unitMods: [] };
+    const sp = createEnemy(ctx, st.nextId++, 'splitter', 15, [], 0, 12345, 77);
+    sp.hp = 0;
+    st.enemies.push(sp);
+    resolveDeaths(w);
+    expect(st.enemies).toHaveLength(2);
+    for (const c of st.enemies) {
+      expect(c.type).toBe('splitter_child');
+      expect(c.progress).toBe(12345);
+      expect(c.leak).toBe(1);
+      expect(c.maxHp).toBe(Math.floor((ctx.hpGrunt(15) * 3500) / 10000));
+    }
+    expect(st.enemies[0].id).toBeLessThan(st.enemies[1].id);
+  });
+  it('Modifier: Armored +80, Shield, Fast, Regen', () => {
+    const ctx = ctxFor();
+    const e = createEnemy(ctx, 1, 'brute', 17, ['armored', 'shield:3', 'fast', 'regen'], 0);
+    expect(e.armor).toBe(100);
+    expect(e.shield).toBe(3);
+    expect(e.regen).toBe(true);
+    const plain = createEnemy(ctx, 2, 'brute', 17, [], 0);
+    expect(e.speedMicro).toBe(Math.floor((plain.speedMicro * 13000) / 10000));
+    expect(data.modifiers.armored.armorBonus).toBe(80);
+  });
+});
+
+describe('Slots', () => {
+  it('Abdeckung: Pfadlänge in Reichweite wächst mit der Reichweite und ist durch die Pfadlänge begrenzt', () => {
+    const { sim } = mk();
+    const s = sim.slots()[0];
+    const c3 = s.coverageByRange(3000);
+    const c5 = s.coverageByRange(5000);
+    expect(c3).toBeGreaterThan(0);
+    expect(c5).toBeGreaterThan(c3);
+    expect(s.coverageByRange(100000)).toBe(42000);
+    expect(sim.slots()).toHaveLength(26);
+  });
+});

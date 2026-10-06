@@ -1,0 +1,134 @@
+{
+ "source": "UTDZ-S12",
+ "tag": "O/HIGH",
+ "difficulty_meter": {
+  "75-99": "x1",
+  "100-299": "x1-2",
+  "300-499": "x1-3",
+  "500-699": "x1-4",
+  "700-899": "x1-5",
+  "900+": "x1-6"
+ },
+ "story_gems": {
+  "easy": 79,
+  "hard": 98,
+  "nightmare": 118
+ },
+ "chapters": [
+  {
+   "level": 1,
+   "name": "Ninja Forest",
+   "bosses": [
+    "Kakuza",
+    "Hidan",
+    "Kisame",
+    "Itachi",
+    "Obito",
+    "NineTails"
+   ]
+  },
+  {
+   "level": 2,
+   "name": "Marine Base",
+   "bosses": [
+    "Kizaru",
+    "Aokiji",
+    "Akainu",
+    "Garp",
+    "Sengoku",
+    "Blackbeard"
+   ]
+  },
+  {
+   "level": 3,
+   "name": "Hollowed Moon",
+   "bosses": [
+    "Menos",
+    "Grimmjow",
+    "Nnoitra",
+    "Ulquiorra",
+    "Starrk",
+    "Aizen"
+   ]
+  },
+  {
+   "level": 4,
+   "name": "The Invasion",
+   "bosses": [
+    "CellJr",
+    "Android19",
+    "Android20",
+    "Android18",
+    "Android17",
+    "CellImperfect"
+   ]
+  },
+  {
+   "level": 5,
+   "name": "Shinobi World War",
+   "bosses": [
+    "Gamabunta",
+    "Sasuke",
+    "Gaara",
+    "Kabuto",
+    "ItachiReanimated",
+    "MadaraReanimated"
+   ]
+  },
+  {
+   "level": 6,
+   "name": "Beyond Fantasy",
+   "bosses": [
+    "FrierenDemonBoss1",
+    "FrierenDemonBoss2",
+    "Stark",
+    "Fern",
+    "Frieren",
+    "FrierenClone"
+   ]
+  },
+  {
+   "level": 7,
+   "name": "Sorcerer Games",
+   "bosses": [
+    "Hakari",
+    "Higuruma",
+    "Ryu",
+    "Yuta",
+    "Gojo",
+    "Sukuna"
+   ]
+  },
+  {
+   "level": 8,
+   "name": "Conquered Lands",
+   "bosses": [
+    "BlackMaria",
+    "King",
+    "InfamousPirate",
+    "BigMom",
+    "KaidoStory",
+    "KaidoHybridStory"
+   ]
+  },
+  {
+   "level": 9,
+   "name": "Otherworld Disturbance",
+   "bosses": [
+    "Ginyu",
+    "Cell",
+    "Cooler",
+    "Bojack",
+    "Frieza",
+    "Janemba"
+   ]
+  },
+  {
+   "level": 10,
+   "name": "Beast Desert",
+   "bosses": [
+    "GurrenBoss x6"
+   ]
+  }
+ ]
+}
