@@ -24,7 +24,9 @@ Letzte Aktualisierung: 2026-10-06 (Runde 4, gestartet; Arbeit ab jetzt über Max
 
 ## Nächster Schritt (Runde 4)
 
-P3 (Schwierigkeit über Regeln) und P4 (Boss-Kits, Vorschau, Risikokarten) parallel, dann P5, P6. P4 setzt den Boss-HP-Faktor neu (Zwischenstand ×10 aus P2). Offene Fragen an die Menschen: [architecture.md § 10](architecture.md), OFL-Fonts ([asset-sources.md](design/asset-sources.md)), EUIPO/USPTO für den Namen.
+P3 × P4 gemergt und nachkalibriert (Hard `bountyBp` 11000, siehe [kalibrierung.md § Nachkalibrierung](balancing/kalibrierung.md)). Stand solo bester Bot: Normal 93 %, Hard ~53 %, Nightmare 30 %. Kennlinie ≥ 25 verfehlt (deterministische Bots, Boss-Klippe) → P6.
+Als Nächstes: **P5 Koop-Skalierung** (4P regrediert seit P1/P2), dann **P6 Fehlermodell + Boss-Plan für alle Bots** (aus `previewWave(n).boss`) und Endkalibrierung.
+Offene Fragen an die Menschen: [architecture.md § 10](architecture.md), OFL-Fonts ([asset-sources.md](design/asset-sources.md)), EUIPO/USPTO für „Duskwardens“.
 
 ---
 

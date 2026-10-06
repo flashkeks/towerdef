@@ -441,3 +441,19 @@ Lesart: Karten sind eine echte Wette. Schwache Bots (`wide`, `upgrade`) profitie
 ## Werkzeuge
 
 `sim/scripts/sanity/q10-p4.ts` (Siegquote und Boss-Tod-Anteil, `--bots aoe+cards`), `q11-boss.ts` (Boss-Diagnose, Experiment-Bot `aoe-notitan`). Experimente per Umgebung: `P2_BOSSHP` (Boss-HP-Faktor), `P1_PATCH` (Unit-Felder, z. B. Nuke), `P4_NOWINDOW=1`, `P4_NOCARDS=1`.
+
+# Runde 4 — Nachkalibrierung nach dem Merge P3 × P4 (Hauptsitzung)
+
+Nach dem Merge steuert `bossAbilityTier` (P3) das `minDifficulty`-Gate der Boss-Kits (P4). Messung `sh scripts/sanity/p3-check.sh 60 merge` (solo, n = 60, Bots ohne Fehlermodell, Boss-HP ×11, Titan-Nuke 12×):
+
+| Stufe | bester Bot direkt nach Merge | Ziel | Maßnahme |
+|---|---|---|---|
+| Normal | 93,3 % (aoe) | 85–95 | keine |
+| Hard | 30 % (wide) | 45–65 | Regel-Hebel `bountyBp` (nicht HP) |
+| Nightmare | 30 % (upgrade) | 15–35 | keine |
+
+| Datei/Feld | alt | neu | Grund |
+|---|---|---|---|
+| `difficulties.json` `hard.bountyBp` | 10000 | **11000** | Boss-Kits ab Hard (Sturm, zweiter Schild beim Colossus) senkten Hard auf 30 %. Erster Versuch `hard.hpBp` 14800 → 13900 (wide 56,7 %) verworfen: verletzt „HP nur Feinjustierung" (Test `difficulty.test.ts`, Spreizung ≤ 8 %, wäre 12 %). Stattdessen mehr Münzen als Regel. Scan n = 60: 11000 → aoe 53,3 / wide 50 %; 11500 → 91,7 %; 12000 → 93,3 %. **Steile Klippe** zwischen 11000 und 11500: Hard hängt am Kauf-Zeitpunkt des Titan vor dem Colossus. Das ist ein Thema für P6 (Fehlermodell) und den Boss-Plan der Bots. |
+
+Kennlinien nach Merge (vor der Hard-Änderung, `hard.hpBp` bleibt 14800): Normal aoe 90 → 10 % über **8,8** Punkte HP-Faktor (schmaler als in P3, weil die Boss-Kits eine harte Klippe setzen); Hard und Nightmare nicht bestimmbar, weil die Kurve im Scanbereich 0,8–1,3 die 90 % nicht erreicht. Das Ziel „Breitere Kennlinie ≥ 25" ist damit **verfehlt**; erst das Fehlermodell (P6) bringt Streuung in die Bots. Ehrlich: Mit deterministischen Bots ist die Kennlinie eine Treppe, keine Kurve.
