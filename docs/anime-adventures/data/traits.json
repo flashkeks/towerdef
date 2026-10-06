@@ -1,8 +1,13 @@
 {
   "_meta": {
-    "description": "Trait pool (LEGACY). rollWeight in percent; sum 99.93 (conflict C7).",
-    "researchDate": "2026-10-05",
+    "description": "Trait-Pool Anime Adventures. Aktueller Pool = RR-Stand (identisch mit LEGACY-Endstand ab 2022-12-25). rollWeight in Prozent; Summe 100.03 (gerundete Anzeigewerte; C7 geloest: Unique fehlte).",
+    "researchDate": "2026-10-06",
     "provenanceLegend": "VERIFIED|OBSERVED|RECONSTRUCTED|DERIVED|UNKNOWN|DESIGN",
+    "conventions": {
+      "damage/spa/range": "additiver Anteil (0.2 = +20 %); spa negativ = schneller. DPS-Faktor = (1+damage)/(1+spa).",
+      "damageMultiplier": "multiplikativ (Unique x4)",
+      "null": "UNKNOWN"
+    },
     "note": "Reference data about the original game (Anime Adventures, Gomu) for system reconstruction only. Names are AA in-game names (third-party IP) and must not be used in our game. null = UNKNOWN.",
     "sources": "see ../sources.md"
   },
@@ -17,18 +22,67 @@
     "rerollToken": {
       "any": 1
     },
-    "npc": "Ethereal Guide",
-    "provenance": "VERIFIED",
-    "confidence": "CONFIRMED",
-    "sources": [
-      "S03",
-      "S47"
-    ]
+    "npc": {
+      "RR": "Ethereal Guide",
+      "LEGACY": "Wis"
+    },
+    "meta": {
+      "origin": "OBSERVED",
+      "confidence": "HIGH",
+      "source": "S72:Traits; S73:Traits"
+    }
+  },
+  "rules": {
+    "newUnitTraitChance": {
+      "RR": 0.01,
+      "LEGACY": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "MEDIUM",
+        "source": "S72:Traits (Trivia)"
+      }
+    },
+    "doubleTraitChanceOnNewUnitGivenTrait": {
+      "RR": 0.01,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "MEDIUM",
+        "source": "S72:Traits (Trivia)"
+      }
+    },
+    "doubleTraitChancePerReroll": {
+      "RR": 0.002,
+      "LEGACY": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "MEDIUM",
+        "source": "S72:Traits (Trivia)",
+        "note": "LEGACY nur 'rare chance'"
+      }
+    },
+    "doubleTraitStacking": "additive",
+    "transferOnEvolution": true,
+    "traitTransfer": {
+      "since": "RR Update 19",
+      "successChance": 1.0,
+      "sameUnitOnly": true,
+      "sacrificeCount": null,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Update Log"
+      }
+    },
+    "locking": null,
+    "pity": null,
+    "tierProbabilities": null
   },
   "traits": [
     {
       "id": "superior",
       "name": "Superior",
+      "rarity": "Rare",
+      "rarityTier3": "Epic",
       "rollWeight": 29.97,
       "tiers": [
         {
@@ -44,12 +98,17 @@
           "damage": 0.15
         }
       ],
-      "provenance": "OBSERVED",
-      "confidence": "HIGH"
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Traits"
+      }
     },
     {
       "id": "nimble",
       "name": "Nimble",
+      "rarity": "Rare",
+      "rarityTier3": "Epic",
       "rollWeight": 24.98,
       "tiers": [
         {
@@ -65,12 +124,17 @@
           "spa": -0.12
         }
       ],
-      "provenance": "OBSERVED",
-      "confidence": "HIGH"
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Traits"
+      }
     },
     {
       "id": "range",
       "name": "Range",
+      "rarity": "Rare",
+      "rarityTier3": "Epic",
       "rollWeight": 24.98,
       "tiers": [
         {
@@ -86,86 +150,220 @@
           "range": 0.15
         }
       ],
-      "provenance": "OBSERVED",
-      "confidence": "HIGH"
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Traits"
+      }
     },
     {
       "id": "adept",
       "name": "Adept",
+      "rarity": "Legendary",
       "rollWeight": 9.99,
       "xp": 0.5,
-      "provenance": "OBSERVED",
-      "confidence": "HIGH"
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Traits"
+      }
     },
     {
       "id": "culling",
       "name": "Culling",
+      "rarity": "Legendary",
       "rollWeight": 5.0,
       "conditional": {
         "vsLowHpDamage": 0.2,
-        "lowHpThreshold": null
+        "lowHpThreshold": 0.3
       },
-      "provenance": "OBSERVED",
-      "confidence": "MEDIUM"
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Traits; S73:Traits"
+      }
     },
     {
       "id": "sniper",
       "name": "Sniper",
+      "rarity": "Legendary",
       "rollWeight": 2.5,
       "range": 0.25,
-      "provenance": "VERIFIED",
-      "confidence": "CONFIRMED"
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Traits"
+      }
     },
     {
       "id": "godspeed",
       "name": "Godspeed",
+      "rarity": "Legendary",
       "rollWeight": 1.0,
       "spa": -0.2,
-      "provenance": "OBSERVED",
-      "confidence": "HIGH"
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Traits"
+      }
     },
     {
       "id": "reaper",
       "name": "Reaper",
+      "rarity": "Mythic",
       "rollWeight": 0.8,
       "damage": 0.15,
       "conditional": {
-        "vsBossDamage": 0.25
+        "vsBossDamage": 0.25,
+        "stacking": "multiplicative"
       },
-      "provenance": "OBSERVED",
-      "confidence": "MEDIUM"
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Traits",
+        "note": "Boss: 1.15*1.25=1.4375"
+      }
     },
     {
       "id": "celestial",
       "name": "Celestial",
+      "rarity": "Mythic",
       "rollWeight": 0.36,
       "damage": 0.1,
       "range": 0.1,
       "conditional": {
-        "trueDamagePct": 0.2
+        "trueDamageShareOfBaseDamage": 0.2,
+        "appliesToDot": true
       },
-      "provenance": "OBSERVED",
-      "confidence": "MEDIUM"
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Traits",
+        "note": "True-Damage-Anteil bezieht sich auf unverstaerkten Damage; Interaktion mit Buffern MEDIUM"
+      }
     },
     {
       "id": "divine",
       "name": "Divine",
+      "rarity": "Mythic",
       "rollWeight": 0.2,
       "damage": 0.2,
       "spa": -0.1,
       "range": 0.2,
-      "provenance": "VERIFIED",
-      "confidence": "CONFIRMED"
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Traits"
+      }
     },
     {
       "id": "golden",
       "name": "Golden",
+      "rarity": "Mythic",
       "rollWeight": 0.15,
       "damage": 0.3,
       "yen": 0.2,
-      "provenance": "OBSERVED",
-      "confidence": "HIGH"
+      "yenAppliesTo": [
+        "speedwagon",
+        "bulma"
+      ],
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Traits",
+        "note": "Yen-Bonus nicht bei Weather Girl (Thief)"
+      }
+    },
+    {
+      "id": "unique",
+      "name": "Unique",
+      "rarity": "Mythic",
+      "rollWeight": 0.1,
+      "damageMultiplier": 4.0,
+      "spa": -0.1,
+      "range": 0.1,
+      "placementLimit": 1,
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Traits; S73:Traits",
+        "note": "x4 Damage (+300 %); max. 1 Platzierung pro Besitzer"
+      }
     }
   ],
-  "tierProbabilities": null
+  "legacyV1": {
+    "validUntil": "2022-12-24",
+    "rollWeights": {
+      "superior": 30,
+      "range": 25,
+      "nimble": 25,
+      "adept": 9.99,
+      "culling": 5,
+      "sniper": 2.5,
+      "godspeed": 1.5,
+      "reaper": 0.6,
+      "divine": 0.2,
+      "golden": 0.2,
+      "unique": 0.1
+    },
+    "sum": 100.09,
+    "effectDiffs": {
+      "golden": {
+        "damage": 0.1,
+        "yen": 0.2
+      },
+      "reaper": {
+        "damage": 0.125,
+        "vsBossDamage": 0.25
+      }
+    },
+    "meta": {
+      "origin": "OBSERVED",
+      "confidence": "HIGH",
+      "source": "S72:Traits@rev6052 (2022-10-13)",
+      "note": "Celestial existierte noch nicht"
+    }
+  },
+  "changes": [
+    {
+      "date": "2022-12-25",
+      "version": "LEGACY Christmas 2022",
+      "change": "Celestial neu (0.36); Golden Damage 0.10->0.30; Chancen Superior 30->29.97, Range/Nimble 25->24.98, Godspeed 1.5->1, Reaper 0.6->0.8, Golden 0.2->0.15",
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Traits@rev8911; S72:Update Log"
+      }
+    },
+    {
+      "date": "2023-02-03",
+      "version": "LEGACY Update 10.5",
+      "change": "Reaper Damage 0.125->0.15 ('buffed slightly')",
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Update Log; S72:Traits@rev33631"
+      }
+    },
+    {
+      "date": "2024-12-25",
+      "version": "RR Update 19",
+      "change": "Trait Transfer (100 % Erfolg, gleiche Unit)",
+      "meta": {
+        "origin": "OBSERVED",
+        "confidence": "HIGH",
+        "source": "S72:Update Log"
+      }
+    }
+  ],
+  "conflicts": [
+    {
+      "topic": "Reaper Boss-Bonus fruehes LEGACY",
+      "valueA": 0.2,
+      "sourceA": "S73:Traits (2022-08)",
+      "valueB": 0.25,
+      "sourceB": "S72:Traits@rev6052 (2022-10)",
+      "lastKnown": 0.25
+    }
+  ]
 }
