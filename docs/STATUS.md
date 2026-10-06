@@ -10,17 +10,17 @@ Letzte Aktualisierung: 2026-10-06 (Runde 3, Sitzung 1)
 | Paket | Inhalt | Status | Agent (Modell) | Notiz |
 |---|---|---|---|---|
 | P0 | Archiv, Status | **erledigt** | Hauptsitzung | `run.md` Runde 1/2 → `docs/archiv/` |
-| P2a | Simulationskern `sim/` | offen | – | |
+| P2a | Simulationskern `sim/` | läuft | 1 × Sonnet | Auftrag: Unit-IDs striker, gunner, blaster, banner, farm, lancer, frost, titan |
 | P2b | Bot-Strategien | offen | – | nach P2a |
 | P2c | Reports und Kalibrierung | offen | – | nach P2a |
 | P3 | Content-Sanity | offen | – | nach P2c |
-| P4 | Game-Design-Entwurf `docs/design/` | offen | – | parallel zu P2 |
-| P5 | Fähigkeiten-Musterkatalog (optional) | offen | – | |
+| P4 | Game-Design-Entwurf `docs/design/` | läuft | 1 × Sonnet | parallel zu P2 |
+| P5 | Fähigkeiten-Musterkatalog (optional) | läuft | 1 × Sonnet | |
 | P6 | Abschluss | offen | – | |
 
 ## Nächster Schritt (Runde 3)
 
-P2a und P4 mit Sonnet-Agenten starten.
+Laufende Agenten (P2a, P4, P5) abwarten; danach P2b und P2c parallel starten.
 
 ---
 
