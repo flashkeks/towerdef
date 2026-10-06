@@ -1,40 +1,53 @@
-/** Karte: Wiese, Pfad, Start/Ziel, Slots. Wird bei Rundenstart und Tile-Wechsel neu gezeichnet. Besitzer: P4 (Grafik). */
-import { Graphics } from 'pixi.js';
-import { C } from './palette';
+/**
+ * Karte: Atlas-Kacheln (Gras, Pfad, Deko, Slot-Untergruende, Spawn, Basis) einmal auf eine Zeichenflaeche setzen und als ein Sprite zeigen.
+ * Wird bei Rundenstart, Tile-Wechsel und nach dem Laden des Atlas neu gezeichnet. Besitzer: P4 (Grafik).
+ * Das Spiel skaliert die Karte mit der Fenster-Kachel (nearest); Figuren skalieren ganzzahlig (`RenderContext.art`).
+ */
+import { Container, Sprite, Texture } from 'pixi.js';
+import { getAtlas, loadAtlas } from './atlas';
 import { WORLD_H, WORLD_W, type RenderContext } from './context';
+import { ART, buildMapOps } from './map-compose';
 
 export class MapLayer {
-  readonly container = new Graphics();
+  readonly container = new Container();
+  private sprite: Sprite | null = null;
+  private tex: Texture | null = null;
+  private texStage: unknown = null;
 
-  constructor(private readonly ctx: RenderContext) {}
+  constructor(private readonly ctx: RenderContext) {
+    // Atlas kommt asynchron: danach Karte setzen und alle Figuren-Ansichten neu bauen lassen (Version hochzaehlen).
+    void loadAtlas().then(() => {
+      ctx.version++;
+      this.draw();
+    });
+  }
 
   draw(): void {
-    const g = this.container;
     const ctx = this.ctx;
-    g.clear();
-    const T = ctx.tile;
-    if (!ctx.stage) return;
-    // Rasterflecken, damit die Wiese nicht flach wirkt
-    for (let x = 0; x < WORLD_W; x++) for (let y = 0; y < WORLD_H; y++) if ((x + y) % 2 === 0) g.rect(x * T, y * T, T, T).fill({ color: C.grassLight, alpha: 0.1 });
-    const pts = ctx.stage.path.map(([x, y]) => ctx.px(x, y));
-    // Pfad: dunkler Rand, helle Mitte
-    for (const [w, col] of [[T * 0.98, C.pathEdge], [T * 0.8, C.path]] as const) {
-      g.moveTo(pts[0].x, pts[0].y);
-      for (const p of pts.slice(1)) g.lineTo(p.x, p.y);
-      g.stroke({ width: w, color: col, cap: 'round', join: 'round' });
+    const atlas = getAtlas();
+    if (!ctx.stage || !atlas) return;
+    if (!this.tex || this.texStage !== ctx.stage) {
+      const canvas = document.createElement('canvas');
+      canvas.width = WORLD_W * ART;
+      canvas.height = WORLD_H * ART;
+      const c2 = canvas.getContext('2d');
+      if (!c2) return;
+      c2.imageSmoothingEnabled = false;
+      for (const op of buildMapOps(ctx.stage)) {
+        const r = atlas.rect(op.frame);
+        c2.drawImage(atlas.image, r.x, r.y, r.w, r.h, op.x, op.y, r.w, r.h);
+      }
+      this.tex?.destroy(true);
+      this.tex = Texture.from(canvas);
+      this.tex.source.scaleMode = 'nearest';
+      this.texStage = ctx.stage;
+      this.sprite?.destroy();
+      this.sprite = new Sprite(this.tex);
+      this.container.addChild(this.sprite);
     }
-    // Start und Ziel
-    const a = pts[0];
-    const b = pts[pts.length - 1];
-    g.circle(a.x, a.y, T * 0.3).fill(C.rim);
-    g.circle(b.x, b.y, T * 0.4).fill({ color: C.gold, alpha: 0.9 }).stroke({ width: 3, color: C.ink });
-    // Slots
-    for (const s of ctx.stage.slots) {
-      const c = ctx.px(s.x, s.y);
-      const size = s.size * T * 0.92;
-      const hill = s.kind === 'hill';
-      g.roundRect(c.x - size / 2, c.y - size / 2, size, size, 6).fill(hill ? C.hill : C.ground).stroke({ width: 2, color: hill ? C.hillEdge : C.groundEdge });
-      if (hill) g.poly([c.x, c.y - size * 0.3, c.x + size * 0.3, c.y + size * 0.2, c.x - size * 0.3, c.y + size * 0.2]).fill({ color: C.hillEdge, alpha: 0.45 });
+    if (this.sprite) {
+      this.sprite.width = WORLD_W * ctx.tile;
+      this.sprite.height = WORLD_H * ctx.tile;
     }
   }
 }

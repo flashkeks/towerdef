@@ -4,11 +4,11 @@
  */
 import { Container, Graphics, Text } from 'pixi.js';
 import type { EnemyState, UnitState } from '../sim';
-import { enemyHpRatio, enemyStyle, hpBarColor } from '../view/model';
+import { enemyHpRatio, hpBarColor } from '../view/model';
 import { C } from './palette';
 import type { RenderContext } from './context';
 import type { Session } from './session';
-import { drawUnit, makeEnemyBody, makeUnitNode, type UnitNode } from './sprites';
+import { drawUnit, makeEnemyBody, makeUnitNode, setEnemyFrame, type EnemyBody, type UnitNode } from './sprites';
 
 interface UnitView extends UnitNode {
   version: number;
@@ -16,7 +16,8 @@ interface UnitView extends UnitNode {
 }
 interface EnemyView {
   c: Container;
-  body: Graphics;
+  body: EnemyBody;
+  faceLeft: boolean;
   bar: Graphics;
   tag: Text | null;
   version: number;
@@ -31,7 +32,9 @@ export class EntitiesLayer {
   /** Letzte Canvas-Position je Gegner (fuer Effekte an Gegner-Positionen, z. B. Kill-Popup). */
   private lastPos = new Map<number, { x: number; y: number }>();
 
-  constructor(private readonly ctx: RenderContext) {}
+  constructor(private readonly ctx: RenderContext) {
+    this.enemyLayer.sortableChildren = true; // hintere (obere) Gegner zuerst, Boss/Elite ueberdecken Kleine nicht falsch
+  }
 
   /** Alle Ansichten verwerfen (neue Runde). */
   reset(): void {
@@ -75,13 +78,13 @@ export class EntitiesLayer {
         this.unitViews.set(u.id, v);
       }
       const pos = ctx.px(slot.x, slot.y);
-      v.c.position.set(pos.x, pos.y);
+      v.c.position.set(Math.round(pos.x), Math.round(pos.y));
       const ready = def.ability !== undefined && u.abilityCd === 0;
       const selected = session.selectedUnit === u.id;
       const sig = `${u.level}|${selected}|${ready}`;
       if (sig === v.sig) continue;
       v.sig = sig;
-      drawUnit(v, ctx, def, u, selected, ready);
+      drawUnit(v, ctx, def, u, selected, ready, slot.kind === 'hill' ? 'hill' : 'ground');
     }
     for (const [id, v] of this.unitViews) {
       if (!seen.has(id)) {
@@ -108,13 +111,16 @@ export class EntitiesLayer {
       const y = (prev.y + (e.y - prev.y) * session.alpha) / 1000;
       const p = ctx.px(x, y);
       const bob = e.flying ? Math.sin(nowMs / 220 + e.id) * T * 0.05 - T * 0.12 : 0;
-      v.c.position.set(p.x, p.y + bob);
+      // Blickrichtung nur bei sichtbarer Bewegung wechseln (kein Flackern an Kurven)
+      if (Math.abs(e.x - prev.x) > 20) v.faceLeft = e.x < prev.x;
+      setEnemyFrame(ctx, e, v.body, nowMs, v.faceLeft);
+      v.c.position.set(Math.round(p.x), Math.round(p.y + bob));
+      v.c.zIndex = p.y;
       this.lastPos.set(e.id, { x: p.x, y: p.y });
       v.c.alpha = e.stunTicks > 0 ? 0.6 : 1;
       // Lebensbalken, Schild-Pips, Statuszeichen
-      const style = enemyStyle(e.type);
-      const w = Math.max(T * 0.6, style.radius * T * 1.6);
-      const top = -style.radius * T - T * 0.18;
+      const w = Math.max(T * 0.6, Math.min(v.body.half * 1.6, T * 1.6));
+      const top = -v.body.half - T * 0.12;
       const ratio = enemyHpRatio(e);
       const fillPx = Math.round(w * ratio);
       const marks = `${e.armor > 0 ? 'A' : ''}${e.regen ? '+' : ''}${e.slowTicks > 0 ? '~' : ''}`;
@@ -147,11 +153,11 @@ export class EntitiesLayer {
   }
 
   private makeEnemy(e: EnemyState): EnemyView {
-    const c = new Container();
     const body = makeEnemyBody(this.ctx, e);
+    const c = body.c;
     const bar = new Graphics();
-    c.addChild(body, bar);
+    c.addChild(bar);
     this.enemyLayer.addChild(c);
-    return { c, body, bar, tag: null, version: this.ctx.version, sig: '' };
+    return { c, body, faceLeft: false, bar, tag: null, version: this.ctx.version, sig: '' };
   }
 }
