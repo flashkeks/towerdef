@@ -23,7 +23,7 @@ src = rows(f"{out}/sources_{pkg}.md")
 if src and len(sys.argv) > 3:
     s = open(D + "sources.md").read()
     n = int(sys.argv[3]); new = []
-    for r in src:
+    for r in [x for x in src if "keine neue Quelle" not in x and "http" in x]:
         cells = [c.strip() for c in r.strip("|").split("|")]
         new.append(f"| S{n} | {cells[0]} ({cells[1]}) | Abruf 2026-10-06 | {cells[2]} | {cells[3]} | {cells[4]} |"); n += 1
     s = s.replace("\n\n## Explizit verworfene Daten", "\n" + "\n".join(new) + "\n\n## Explizit verworfene Daten", 1)
