@@ -13,7 +13,7 @@ Letzte Aktualisierung: 2026-10-06 (Runde 2, Sitzung 1)
 | P1 | `anime-adventures/design-brief.md` | **erledigt** | 1 × Sonnet | 390 Zeilen, Zahlenbereiche je Rarity aus units.json (Stichprobe geprüft) |
 | P2 | Bloons TD6 | **erledigt** | 1 × Sonnet | Runden 1–140 als JSON (RBE, Cash, Bonus; R63 stichprobengeprüft), Startgeld/Leben/Kostenfaktoren, Sell 70 %, Steuerstufen, Freeplay-HP-Rampe, Targeting, 26 Tower | |
 | P3 | Roblox-Anime-TDs (ASTD, AV, ALS, UTDZ, AE) | **erledigt** (alle 5) | je Spiel 1 × Sonnet | ASTD: Farm-Kurve, Gacha, Startgeld nur Sondermodi. ALS: Upgrade-Kurven, Verkauf 50 %, Traits; In-Match-Geld und Gegner-HP UNKNOWN. AV: Datenmodule (UnitData 224 Units, EnemyData mit Kill-Yen und HP-Multiplikatoren, TraitValues) | |
-| P4 | Vergleich und Empfehlung | offen | – | |
+| P4 | Vergleich und Empfehlung | läuft | 1 × Sonnet | |
 | P5 | Vorarbeiten (Technik, Assets, Recht, Balancing) | läuft: tech-options, assets-licensing **erledigt**; Recht + Balancing laufen | 2 × Sonnet (Technik+Assets, Recht+Balancing) | |
 | P6 | Abschluss | offen | – | |
 
