@@ -13,9 +13,9 @@ Letzte Aktualisierung: 2026-10-05 (Sitzung 2)
 | P2 | `core-mechanics.md`, `combat-system.md` | **erledigt** | 22 Effekte, Affinitäten (Schwäche additiv, Resistenz 100/(100+R)), C5 gelöst. Offen: Start-/Kill-/Wave-Yen, Base-HP (in keiner Wiki-Seite); Reddit-JSON über Connector gesperrt (403) |
 | P3 | `units.md` + `data/units.json` | **erledigt** | 561 Einträge, `units-index.md`, Legacy-Diff. Offen: Fähigkeitstexte (Passives) aus Unit-Seiten in `units.json` übernehmen (optional) |
 | P4 | Upgrades, Traits, Shiny, Powerups | offen | `S72:Traits`, `S72:Powerups`, `S69` |
-| P5 | `evolution.md` | offen | Rezepte vollständig in `S65` (`evolve`) |
-| P6 | Gegner, Waves, Maps | offen | Wiki hat **keine** Gegner-Datenmodule; nur `Story`, `Infinite`, `Map Lengths`, `Enemy Mechanics` |
-| P7 | Modi, Portals, Raids | offen | |
+| P5 | `evolution.md` | **erledigt** | 219 Rezepte (`evolution-matrix.md`, `items.json.evolutionRecipes`); Ketten bis 4 Stufen. Offen: Level/XP bei Evo, Elize-Normierung |
+| P6 | Gegner, Waves, Maps | **erledigt** | C6 und C12 gelöst, alle Bosse 22×6 + Legend, Map-Längen 21 Welten. Offen: HP/Speed/Yen je Gegner, Wave-Zusammensetzung |
+| P7 | Modi, Portals, Raids | **erledigt** | 22 Welten, 8 Legend Stages, 14 Secret Portals, 12 Raids, Challenge-Werte (Legacy). Offen: Portal-Tier-Multiplikatoren |
 | P8 | Summoning, Economy, Items, Quests | offen | Kapsel-Raten und Pity in `S68` |
 | P9 | Multiplayer, Trading, UI, Audio/VFX | **erledigt** | Matchmaking-Zeitachse, Host-Regeln, globale Caps/Auren, Trading-Zeitachse. Offen: Max. Spieler je Modus, Trade-Ablauf, Rejoin |
 | P10 | `mathematics.md`, Beispielrunde | offen | |

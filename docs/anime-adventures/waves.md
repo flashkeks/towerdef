@@ -18,7 +18,7 @@
 | Infinite-Scaling | „each wave progressively getting harder“; Zahl UNKNOWN | LEGACY + RR | OBSERVED · HIGH (qualitativ) · [S72:Infinite] |
 | Infinite: Secret Boss | „every wave there's a chance for secret boss“ (Hollow World Infinite, U3) | LEGACY | OBSERVED · MEDIUM · [S73] |
 | Infinite: Star Golem | Spawn-Chance in der jeweils neuesten Infinite-Map (seit U7) | LEGACY + RR | OBSERVED · HIGH · [S72:Update Log] |
-| Party-Scaling | Gegner-HP steigen mit der Spielerzahl | VER? | OBSERVED · LOW · [S06] (nicht im Volltext S72 wiedergefunden) |
+| Party-Scaling | „Gegner-HP steigen mit der Spielerzahl“ steht in keiner Fassung der Infinite-Seite (aktuell und LEGACY-Rev. 18621); der Wert aus dem S06-Suchauszug ist unbelegt | VER? | UNKNOWN · LOW · [S72:Infinite, S80, S81] |
 | Base HP | skaliert seit Update 9 mit der Level-Schwierigkeit | LEGACY | OBSERVED · HIGH · [S72:Update Log] |
 | Wave-Timer | Es gibt einen **Wave-Timer**: JIO (Over Heaven) stoppt 20 s lang „enemy spawns, the wave timer“ und alle Gegner | RR | OBSERVED · HIGH · [S72:JIO (Over Heaven), S72:Tier Lists] |
 | Rundenlänge | Update 1: „made rounds last shorter“ | LEGACY | OBSERVED · HIGH · [S72:Update Log] |
@@ -29,7 +29,7 @@
 
 ### Infinite-Gems pro Wave (RR)
 
-Die Gem-Tabelle wurde am 2025-01-02 ins Wiki eingetragen, ist also **RR-Stand** (Sitzung 1 führte sie als LEGACY). Wortlaut der Seite: W1–5 keine, W6 18, W7–15 je 3, W15–100 je 5, „from wave 105 onwards“ keine mehr, Maximum **497** (geprüft bis Wave 146). OBSERVED · HIGH · [S06 → S72:Infinite; Versionsgeschichte S-P6a*]
+Die Gem-Tabelle wurde am 2025-01-02 ins Wiki eingetragen, ist also **RR-Stand** (Sitzung 1 führte sie als LEGACY). Wortlaut der Seite: W1–5 keine, W6 18, W7–15 je 3, W15–100 je 5, „from wave 105 onwards“ keine mehr, Maximum **497** (geprüft bis Wave 146). OBSERVED · HIGH · [S06 → S72:Infinite; Versionsgeschichte S80, S82]
 
 Versionsgeschichte der Seite (Wiki-API):
 
@@ -53,13 +53,12 @@ Gegenproben:
 | 15–105 | 5 | 497 (bei W105) |
 | ≥ 106 | 0 | 497 |
 
-`*` S-P6a = Platzhalter-ID für die neue Quelle „Wiki-API Versionsgeschichte Infinite“; endgültige ID vergibt der Koordinator (siehe `sources_P6.md`).
 
 ### Infinite-Tagesbelohnung (Daily Infinite)
 
 | Zeitraum/Version | alter Wert | neuer Wert | letzter bekannter Wert | Quelle |
 |---|---|---|---|---|
-| LEGACY 2022-07 (Wiki-Erstfassung) | – | W10 15, W25 25, W50 50 Gems | – | [Wiki-Rev. 298, S-P6a*] |
+| LEGACY 2022-07 (Wiki-Erstfassung) | – | W10 15, W25 25, W50 50 Gems | – | [Wiki-Rev. 298, S80, S82] |
 | LEGACY 2022-08 (Trello) | 15/25/50 | W10 +30, W25 +70, W50 +100 | – | [S73] |
 | ab Update 7 (2022-11): Infinite-Quests, 3 zufällige Welten pro Tag | 30/70/100 | **W10 90, W25 180, W50 330** | 90/180/330 | [S23 → S72:Quests, S72:Infinite] |
 | RR Update 20.4.1 | Daily-Infinite-Quest bis W50 | **bis W40** verkürzt | W40-Quest; Gem-Höhe UNKNOWN | [S72:Update Log] |
@@ -122,7 +121,7 @@ RECONSTRUCTED · MEDIUM
 
 ## Infinite-Generator (DESIGN – kein AA-Wert)
 
-Weil AA-Werte fehlen, folgt ein Vorschlag, der die **qualitativen** Belege respektiert: monoton steigende HP, Boss alle 10 Waves, Gem-Kurve wie in AA, Party-Scaling.
+Weil AA-Werte fehlen, folgt ein Vorschlag, der die **qualitativen** Belege respektiert: monoton steigende HP, Boss alle 10 Waves, Gem-Kurve wie in AA. Party-Scaling ist in AA nicht belegt und hier reine DESIGN-Option.
 
 ```text
 hp(w)    = baseHP × g^(w−1) × (w > W_jump ? J : 1) × partyMult(n)

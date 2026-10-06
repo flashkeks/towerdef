@@ -107,11 +107,12 @@
       }
     },
     "hpScalesWithPartySize": {
-      "value": true,
+      "value": null,
+      "note": "claim from S06 search excerpt not present in any version of the Infinite page (current and legacy rev. 18621)",
       "meta": {
-        "origin": "OBSERVED",
+        "origin": "UNKNOWN",
         "confidence": "LOW",
-        "source": "S06 (not found in S72)"
+        "source": "S72:Infinite, S80, S81"
       }
     },
     "baseHpScalesWithDifficulty": {
@@ -187,7 +188,7 @@
       "meta": {
         "origin": "DERIVED",
         "confidence": "MEDIUM",
-        "source": "S72:Infinite + revision history S-P6a (2025-01), S73 (97 gems at W25), S72:Map Lengths"
+        "source": "S72:Infinite + revision history S80, S82 (2025-01), S73 (97 gems at W25), S72:Map Lengths"
       }
     },
     "infiniteDaily": [
@@ -201,7 +202,7 @@
         "meta": {
           "origin": "OBSERVED",
           "confidence": "LOW",
-          "source": "wiki revision 298 (S-P6a)"
+          "source": "wiki revision 298 (S80, S82)"
         }
       },
       {
@@ -413,6 +414,7 @@
     "W_jump": 50,
     "J": 2.0,
     "bossEvery": 10,
-    "secretBossChancePerWave": 0.02
+    "secretBossChancePerWave": 0.02,
+    "note": "partyMult is DESIGN only; AA party scaling not documented"
   }
 }

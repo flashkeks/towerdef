@@ -116,6 +116,8 @@ Die Fandom-Seiten S01–S41 liegen seit Sitzung 2 im Volltext vor (Dump S72). We
 | S79 | https://games.roblox.com/v1/games?universeIds=6930929888 (Roblox Games API, Teaser-Experience „[❓RETURN???] Anime Adventures“ (Abruf 2026-10-06)) | Abruf 2026-10-06 | RR (Teaser) | Creator „Gomu Development“ (34564273), erstellt 2024-12-17, 319.166 Besuche, 1.799 Favoriten, Beschreibung/Prämisse | A |
 | S80 | https://animeadventures.fandom.com/api.php?action=query&prop=revisions&titles=Infinite&rvlimit=50&rvprop=timestamp\ (comment\) | Abruf 2026-10-06 | ids\ | size&format=json | Versionsgeschichte Wiki-Seite „Infinite“ (29 Revisionen 2022-07-06 bis 2025-02-22) |
 | S81 | https://animeadventures.fandom.com/api.php?action=parse&oldid=18621&prop=wikitext&format=json (Wiki „Infinite“, Rev. 18621 (2023-06-12)) | Abruf 2026-10-06 | LEGACY | Legacy-Fassung der Infinite-Seite: Daily-Rewards 90/180/330, keine Spielerzahl-Skalierung | B |
+| S82 | https://animeadventures.fandom.com/api.php?action=query&revids=36814\ (39813\) | Abruf 2026-10-06 | 39814\ | 40081\ | 40093&prop=revisions&rvprop=content\ |
+| S83 | https://animeadventures.fandom.com/api.php?action=query&list=search&srsearch=Vogita&srwhat=text&srlimit=20&format=json (Wiki-API-Volltextsuche „Vogita“) | Abruf 2026-10-06 | Stand 2026-10 | Negativbeleg: Bossnamen aus Sitzung 1 nicht im Wiki | B |
 
 ## Explizit verworfene Daten
 

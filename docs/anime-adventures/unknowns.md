@@ -157,6 +157,64 @@ Siehe [sources.md](sources.md#explizit-verworfene-daten). Die Infinite-HP-Formel
 | P9 | audio-vfx.md: Status-VFX „Burn = Flammen (Black Burn dunkel) … OBSERVED (Existenz Black Burn) · LOW“ | Aussehen nicht belegt → DESIGN; belegt ist nur die Passive „Black Flames“ (Izo (Samurai)) | S72:Izo (Samurai) |
 | P9 | audio-vfx.md: „Trait-Effekt … UNKNOWN“ | gelöst für 6 Traits: Godspeed blaue Blitz-Aura, Reaper rot-schwarze Aura, Celestial lila Galaxie-Aura, Divine Flügel, Golden Gold-Optik, Unique Runen-Aura | S72:Traits, S73 Traits |
 | P9 | audio-vfx.md: „Display Units … Units laufen neben dem Spieler“ | präzisiert: Gamepass „Display 3 Units“ bzw. „Display All Units“ (so viele wie Loadout-Slots) | S72:Store |
+| P5 | Kiro (Calm Killer) braucht zusätzlich die Unit „Stray Cat“ | Stray Cat ist ein Item (1×, `jojop4_cat`); dazu SF 12/4/4/3/0/1 und 7.500 Takedowns | S65, S66, S68 |
+| P5 | Chairman Neteru: nur Gold Rose | Golden Rose + 40× Cooked Fish | S65, S66 |
+| P5 | Fuji (Admiral): 40 Smile Fruit + SF 12/4/4/4/4/1 | gilt nur für LEGACY vor Update 18; LEGACY-Endstand und RR: 12 SMILE Fruit + SF 3/1/0/1/2/1 + 7.500 Takedowns | S46 vs. S66, S65, S72:Update_Log |
+| P5 | Dezu (Vigilante) 36/36/18 + SF 12/3/–/4/4/1 als einziger Wert | LEGACY-Wert; RR (Update 20): 12/12/6 + SF 3/1/0/1/1/1 | S66, S65 |
+| P5 | Erein (Founder): 9 Path Branches, 25 Fluids, 4 Erein + 4 Zeike als einziger Wert | LEGACY-Wert; RR: 3 Path Branch, 8 Mysterious Fluid, nur die Basis-Unit | S66, S65 |
+| P5 | Veko entsteht aus Goku oder Vegeta (auch Shiny) | 15 Vego + 15 Carrot (Shiny: je 5 Shiny) + Fusion Jacket (999 Gold), April-Fools-Event 2023; kein Modul-Rezept, heute nicht erhältlich | S72:??? |
+| P5 | „Captain (Timeskip), Captain (God)“ als zwei Evolutionen von „Captain“ | eine Kette: Captain (Timeskip) → Captain (God); 12 SMILE Fruit + SF 3/1/0/1/2/1 + 1.000 Takedowns | S65 |
+| P5 | Evolution macht einen „Potential-Reroll“ | kein Reroll: Die Potential-Werte werden immer besser, ein SSS-Wert bleibt gleich, hohe Werte steigen weniger | S72:Powerups |
+| P5 | Standardbündel „12 normal, je 3–6 Farbe, 1 (bis 3) Regenbogen“ (aus 9 Rezepten geschlossen) | aus 107 SF-Rezepten: 12 normal (75×), 3 oder 4 Farben mit zusammen 10–12, Regenbogen 1 (95×); 16 reduzierte Bündel mit 3–4 normal; große Bündel bis 35 normal | S65 |
+| P5 | Erhalt des Traits UNKNOWN | Trait wird übernommen (belegt für Legendary → Mythic); Level weiterhin UNKNOWN | S72:Traits |
+| P5 | Stat-Änderungen pro Evolution größtenteils UNKNOWN | für 216 Rezepte aus `levels` berechnet: Stufe-0-Damage = Basis × (1 + Text-%) bei 178/192; Faktor auf Maximalstufe im Median ×2,33 | S65 (DERIVED) |
+| P5 | items.json `evolutions` (13 Einträge, Sitzung 1, LEGACY-Namen, teils falsch, z. B. Kiro/Stray Cat als Unit) | durch `evolutionRecipes` (219 Rezepte) ersetzt; den alten Block hat P5 nicht gelöscht (er gehört P8/dem Koordinator), Löschung empfohlen | S65 |
+| P7 | Challenges: „Flying Enemies“ als normaler Modifikator | Flying Enemies gibt es nur im Demon Academy Portal | S72:Challenges |
+| P7 | Short Range „wahrscheinlich ×2/3“ (unbestätigt) | Legacy: −33,33 %, also Range ×2/3; zusätzlich Tank +25 % HP/25 % DR, Regen 1 % HP/s, Fast +50 %, High Cost +50 % | S73 (Modes) |
+| P7 | Mini Range „wahrscheinlich ×1/4“ | „1/4 shorter“, AoE nicht betroffen; Faktor wahrscheinlich ×0,75 (RECONSTRUCTED) | S72:Challenges |
+| P7 | Challenge-Belohnungen ohne Chancen | Legacy-Chancen 65 % Star Fruits / 5 % Rainbow / 12,5 % 200 Gold / 12,5 % 100 Gems / 5 % Star Remnant; zusätzlich Option „1 Rainbow Star Fruit“ | S73, S72:Challenges |
+| P7 | Legend Stages: 10 Einträge, „Magic Hills (Elf Invasion)“ und „Clover Kingdom (Elf Invasion)“ getrennt, „Cape Canaveral“ eigene Stage | 8 Legend Stages; Magic Hills = Clover Kingdom (Elf Invasion), Cape Canaveral = Location von Space Center; 3 oder 6 Acts | S72:Legend_Stages |
+| P7 | Legend Stages: Anzahl Acts UNKNOWN | 3 oder 6 Acts je Stage, Bosse und Drops tabelliert | S72:Legend_Stages |
+| P7 | Infinite-Leaderboard: Top 25 / Top 10 | bis Update 10 Top 25 (Unit) / Top 10 (Shiny), ab Update 11 Top 50 / Top 10 | S65 special_note |
+| P7 | Infinite-Unlock „alle Acts einer Welt“ (HIGH) | im Volltext nicht belegt → RECONSTRUCTED · MEDIUM | S72:Infinite |
+| P7 | Story: Normal/Hard pro Act (MEDIUM) | nur Existenz eines Hard-Modus belegt → RECONSTRUCTED · LOW | S72:Infinite, S72:Story |
+| P7 | Story-Belohnung nur 80/20 Gems | zusätzlich 150 Gems Story-Quest pro Act; 1.380 Gems pro Welt beim First Clear | S72:Quests |
+| P7 | Tournaments: „Top-100 bekommen 1.000+ Gems“ (LOW); Kriterium UNKNOWN | Kriterium „Most DMG“ in 20 min; Perzentil-Tabelle (500–4.000 Gems, Trophies, Unit für Top 1 %) | S72:Tournament |
+| P7 | Infinity Castle: Modifikatoren/Scaling UNKNOWN | 150 Gems/Raum, Räume 1–63 = 3 Acts je Welt, Hard Mode ab Update 16, Resistenzen ab Raum 100 (bzw. 50), Meilenstein- und Perzentil-Tabellen; RR-Name Infinity Mansion | S72:Infinity_Mansion |
+| P7 | Contracts nur als RR-Modus beschrieben | zwei Systeme: Legacy Devil Contracts (Update 9, Rank 0–5 → Devil Portal) und RR Assassin Contracts (16 Tiers, Reset 5 min bis 12 h, 4 Death Dice → Deception Portal) | S68, S72:Contracts |
+| P7 | Dungeons: nur Cursed Womb | Legacy-Dungeons (Cursed Parade, Cursed Womb, The Fire, Anniversary Island, Heavenly Invasion) und RR-Roguelike-Dungeon (Update 20) mit Curses/Blessings | S72:Dungeons, S72:Dungeon |
+| P7 | April Fools (RR) Quelle „Suchauszug“ | Fool's Hunt (Update 20.4.1): 30 Waves, ~25 min, zufällige Units/Powers, Blessing/Curse-Karten | S72:Events, S72:Update_Log |
+| P7 | Raids: „seit Update 12 unbegrenzte tägliche Versuche“ | Update 12: verlorene Raid-Versuche zählen nicht mehr gegen das Tageslimit | S72:Update_Log |
+| P7 | Raids Marine's Ford, Ruined City, Cursed Festival, Storm Hideout, Nightmare Train, Shigashinu, Sand Village: Belohnungen UNKNOWN | Belohnungen, Shops, Einführungs-Updates und Legacy-Namen tabelliert; Shigashinu und Marine's Ford seit Update 19.0 entfernt | S72:Raids, S72:Update_Log, S73, S68 |
+| P7 | Raid-Tickets „im Gold-Shop kaufbar“ | 1.500 Gold beim NPC Shanks, nur während ein Raid aktiv ist | S73 |
+| P7 | Sacred Planet: Relic Shard Act 4 10 %, ohne Bubblegum in Act 4 | Act 4 zusätzlich Bubblegum 1 %, Act 5 Bubblegum 3 % | S72:Raids |
+| P7 | „Secret Units droppen aus Raids oder Dungeons mit 1–5 %“ | kein Secret-Drop aus Raids belegt; Raid-Units 1 % bzw. 2,5 % aus Kapseln, Dungeon-Secrets 1 %/2 %/5 % | S72:Raids, S72:Dungeons, S68 |
+| P7 | Noble Portal: Erwerb „Mountain Temple Act 6 (Gilgamesh)“ | Mountain-Temple-Infinite; Gilgamesh/Golden King stammt aus dem Secret-Portal Golden Portal | S72:Portals, S72:Secret_Portal |
+| P7 | Witch/Demon Academy/Demon Leader's/Puppet/Path Portal: Erwerb/Drops UNKNOWN; Path Portal „vermutlich Path Branches“ | Erwerb, Map, Tiers und Drops tabelliert; Path Portal = Secret-Portal (Pain/Agony für Host 100 %, Ninja Scrolls, Chakra Rod) aus Rain-Village-Legend | S72:Portals |
+| P7 | Final Disc: Erwerb/Drops UNKNOWN | 6 Final Disc Fragments (Space-Center-Legend) → Portal; Heavenly Clock, Stone Pendant 1–6 | S72:Portals, S68 |
+| P7 | Summer Portal: „Ant Kingdom Act 6 nötig“ | im Volltext nicht bestätigt; Summer Portals mit Pearls, Tier 1→11/1–12, Sea God's Portal ab Tier 3 | S72:Events, S72:Portals |
+| P7 | Secret-Portal-Dropchance UNKNOWN | Schätzwerte: Restriction ~1 %, Fallen Star < 1 %, Time Traveller's Shard ~3 %→4,5 % (bzw. 5 %→7,5 %), Detective Shard ~2,5 %/5 %; Craft-Weg 4 Teile | S72:Sorcerer_Killer, S72:Dark_Mage_(Fallen_Star), S72:Time_Traveller_s_Shard, S72:Portals |
+| P7 | Portal-Inventarlimit nicht genannt | 200 Portale | S72:Time_Traveller_s_Shard |
+| P6 | Planet Greenie Acts 1–5: Prodigal Prince/Vogita, Reckless Rage/Doria, Dazzling Disgust/Argon, Formidable Fighting Force/Giyu, Terrifying Tyrant/Friezo (S07) | Act-Namen Evil Elegeance … The Purple Tyrant; Bosse Zarbo → Zarbo (Evolved), Goldeo, Zezoom, Jayce + Vurtor, Gunyu, Freezo → Freezo (Final). Alte Namen nicht im Wiki (Volltextsuche „Vogita“ = 0 Treffer), vermutlich anderes Spiel | S72:Story; Wiki-API-Suche |
+| P6 | „The Purple Tyrant / Freezo“, Welt unbekannt | Planet Greenie, Act 6 | S72:Story |
+| P6 | Spirit World Act 6 „The Wolf“, Boss Coyote/Spirit Wolf, LOW | bestätigt, HIGH | S72:Story |
+| P6 | Mountain Temple Act 6 Endboss Gilgamesh (S48) | Act-6-Boss ist Kirai; Gilgamesh ist Unit aus dem Golden Portal (Map Mountain Temple) | S72:Story, S72:Portals |
+| P6 | Weltposition 19: LEGACY „The Eclipse“ ↔ RR „Dungeon Throne“ (LOW) | LEGACY „Undead Tomb“ (U16) ↔ RR „Dungeon Throne“; The Eclipse ist eine Portal-Map aus U15 | S72:Story (location), S72:Map Lengths, S72:Portals, S72:Update Log |
+| P6 | Weltpositionen 11, 12, 15, 18 Mapping LOW–MEDIUM | direkt belegt über Story-MapBox `location`: Clover Kingdom ↔ Magic Hills, Cape Canaveral ↔ Space Center, Hero City ↔ Ruined City, Windhym ↔ Snowy Kingdom (HIGH) | S72:Story |
+| P6 | Cape Canaveral „U8/9?“, Puppet Island „U13?“ | Cape Canaveral U8 (2022-12-21), Puppet Island U13 (2023-05); Devil City (U9) war eine LEGACY-Event-Welt, nicht im RR | S72:Update Log |
+| P6 | Map-Längen nur für 5 Maps, Rest UNKNOWN | 21 Welten mit Länge 8–36 s (u. a. Hidden Sand 16, Marine's Ford 14, Ghoul City 20, Undead Tomb 36) plus AFK-Gems/-Zeit | S72:Map Lengths |
+| P6 | Legend Stages: 10 Einträge (LEGACY- und RR-Namen gemischt) | 8 Legend Stages mit RR-Name, LEGACY-`location`, Acts und Bossen | S72:Legend Stages |
+| P6 | Infinite-Gem-Tabelle als LEGACY (S06) | RR-Stand (ins Wiki eingetragen 2025-01-02); Schema passt auch zu Trello 2023-01 | S72:Infinite, Wiki-Versionsgeschichte |
+| P6 | Infinite-Gems W7–15: 3, W15–100: 5, Summe 490–495 ≠ 497 | W7–14: 3, W15–105: 5 → genau 497 (DERIVED · MEDIUM) | S72:Infinite, S73 |
+| P6 | Shield: „statt HP-Schaden?“ (RECONSTRUCTED · MEDIUM) | ein Treffer auf Shield macht keinen HP-Schaden (OBSERVED · HIGH) | S72:Enemy Mechanics, S73 |
+| P6 | Tank-Reduktion, Fast-Multiplikator, Regen-Rate nur DESIGN | LEGACY-Challenge: Tank +25 % HP / −25 % Schaden, Fast +50 % Speed, Regen 1 % maxHP/s (OBSERVED · MEDIUM); RR-Werte weiter UNKNOWN | S73 |
+| P6 | Stealth und Mini-Boss beide UNKNOWN | Stealth weiterhin ohne Beleg; Mini-Boss in LEGACY-Raids belegt (Enmu) | S73 |
+| P6 | Gegner greifen Units nicht an (RECONSTRUCTED · MEDIUM) | Ausnahmen belegt: Explosive-Gegner stunnen Units beim Tod; Boss-Angriffe im Angriffsmodul | S72:Illusionist (Transcended), S67 |
+| P6 | Teleportation UNKNOWN | Operator „Scramble“ teleportiert Gegner um 50 % der Range zurück, auch Bosse | S72:Operator (ROOM) |
+| P6 | Slow-Schutzzeit 4 s; Freeze 10 s | Wiki widerspricht sich: Slow 4 s oder 7 s; Freeze 10 s, 12–13 s oder 10–12 s (Modul) | S72:Effects, S67 |
+| P6 | Party-Scaling OBSERVED · HIGH (S06) | im Volltext S72 nicht wiedergefunden → OBSERVED · LOW | S72 (keine Fundstelle) |
+| P6 | Infinite-Scaling „ab einer bestimmten Wave signifikant“ (S06) | im Volltext S72 nicht enthalten; nur „each wave progressively getting harder“ | S72:Infinite |
+| P6 | Wave-Start: ob per Timer UNKNOWN | Wave-Timer existiert (JIO Over Heaven stoppt „the wave timer“); Dauer UNKNOWN | S72:JIO (Over Heaven) |
 
 ## H. Paketbefunde (Sitzung 2)
 
@@ -251,3 +309,77 @@ Konflikte, Lücken und erledigte Einträge aus den Paketen der Sitzung 2. Die ä
 - „Trait-Effekt UNKNOWN“ (audio-vfx.md): Optik für 6 Traits belegt [S72:Traits, S73].
 - „Matchmaking: kein automatisches Matchmaking belegt“ (social.md): gelöst. Global Matchmaking ab U18 (Infinite, Legend, Halloween), U18.5 Raids/Daily Challenge, U19 Holiday, U19.5 Contracts [S72:Update Log].
 - „Disconnect/AFK“: Infinite-Gutschrift trotz Disconnect (U3), Time-Machine-Speicherregeln, Return-to-Spawn-Setting belegt.
+
+### P5
+
+#### Neu / offen (P5)
+- Evolution: Bleiben Level/XP erhalten? Wie genau verbessern sich die Potential-Werte? (S72:Powerups nennt nur „immer besser, SSS bleibt“) → UNKNOWN
+- Konflikt Elize-Zufallsevolution: 3 Ziele mit je chance 0,25, Summe 0,75 [S65]. Werden die Chancen normiert (je 1/3)? → UNKNOWN
+- Konflikt Crafting-Rezepte: bei 8 Evo-Items weichen S68 (RR 2025-04) und die Tabelle auf S72:Evolution ab, z. B. Arsenal Briefcase 7.500 Gold + 35/10/0/8/8/3 [S68] gegenüber 2.500 Gold + 12/3/0/2/2/1 [S72:Evolution]; Hat of the Conqueror 7.000 [S68] gegenüber 2.000 Gold [S72]. Arbeitsannahme: S68 = RR.
+- Shiny-Rezepte: Bei 14 Rezepten fehlt die Shiny-Pflicht im Modul. Wirkung UNKNOWN. Bei Diane fehlt im Shiny-Rezept die Regenbogen-Frucht; bei Stringy ist das Shiny-Rezept günstiger (= LEGACY-Wert). Vermutlich Modulfehler.
+- `_custom_requirements` (3×) sind nur über Wiki-Fließtext erklärt (Sunshine 1.000.000, Takedowns auf Cape Canaveral, Lyla-Schlüssel); Zähllogik UNKNOWN.
+- Gold-Shop-Preise für Star Fruits und RR-Merchant-Preise für Star Fruits: UNKNOWN.
+- Hestia Knife (`cranelsword`) sowie `smoker_sword`, `conrad_sword`, `x_glove`: fehlen in S68; Rezept und Name nur aus S46 bzw. ganz unbekannt.
+- Menge der Stat Cubes als Evolutionsbelohnung und Inhalt der Evolve-Quests: UNKNOWN.
+- evolvedFrom ohne Rezept: Jose → Jose (Shining Gem) (laut Wiki nur per Summon), Illusionist (Betrayal) → (Chrysalis) (Kills + Awakening, außerhalb des Moduls).
+#### Erledigt
+- Evolution-Matrix: alle 219 Rezepte belegt (S65/S66), siehe evolution-matrix.md; Sitzung-1-Zeilen mit UNKNOWN (Honey, Legendary Assassin, Black Assassin, Fiery Commander, Captain, Curse, Spider, Bubblegum) gefüllt.
+- Stat-Änderungen bei Evolution: per DERIVED-Faktoren beantwortet.
+
+### P7
+
+#### Neue Konflikte (P7)
+
+| Thema | Wert A | Wert B | Bemerkung |
+|---|---|---|---|
+| Infinite Daily-Wave-Ziele (W10/25/50) | Wiki: früher 10/25/50, jetzt 90/180/330 Gems [S72:Infinite] | Trello 2022-08-28: 30/70/100 Gems [S73] | Zeitliche Abfolge unklar; Update 1 hob die Werte an, Update 7 stellte auf Infinite-Quests (3 Welten, dreifach) um |
+| Infinite max. Gems pro Run | Wiki: 497 [S72:Infinite] | Nachrechnung aus der Wave-Tabelle: 490–492 (DERIVED) | Wiki-Tabelle und Summe passen nicht exakt zusammen |
+| Time Machine VIP + Premium | 2.304 / 8 h = 288/h [S72:Time_Machine] | 4.608 / 24 h = 192/h [S72:Time_Machine] | interner Widerspruch der Wiki-Seite |
+| Time Machine deaktiviert seit | Update 19.5 (Haupttext) | Update 19.0 (Trivia) | [S72:Time_Machine] |
+| Time Traveller's Shard Dropchance | ~3 % → 4,5 % (Witch Portal ≥ T5) [S72:Time_Traveller_s_Shard] | ~5 % → 7,5 % ab 23.07.2023 (aus Walpurges) [S72:Portals] | beides Community-Schätzungen; gleicher Faktor +50 % |
+| Summer-Portal-Tiers | 1–12 [S72:Events] | 1 → 11 [S72:Portals] | – |
+| Infinity-Castle-Resistenzen | ab Raum 100 (ab Season 2) | ab Raum 50 (Trivia, Update 16) | beides [S72:Infinity_Mansion]; evtl. verschiedene Seasons |
+| Events-Tab „Halloween 2024“ | Wiki-Bezeichnung | Nightmare Hunt wurde 2023-10-28 eingeführt (Legacy) und blieb laut RR-Update 19 aktiv | Datierung RECONSTRUCTED |
+
+#### Weiterhin fehlend (P7)
+
+- Portal-Tier-Multiplikatoren (HP, Belohnung) pro Tier; Verlust des Portals bei Fail.
+- Path-Portal-Chance aus Rain-Village-Legend; Death-Dice-Chance pro Contract-Tier; Perfect-Stat-Cube-Chance der Daily Challenge; Secret-Chance der RR-Dungeon-Rare-Chests.
+- Effekt-Zahlen für Godspeed, Hyper-Regen, Mini Range (Faktor) sowie Tournament-Modifikatoren (Powerful Enemies, Boss Waves, Max 10 Enemies, Short Range II, Armored, Low Cost …).
+- RR-Werte der Challenge-Belohnungen nach dem Buff in Update 19.
+- Raid: Party-Größe, Level-Anforderung, Tageslimit für gewonnene Runs, RR-Boss-HP.
+- Infinity-Castle-Raum-Scaling (HP-Formel); Gems bei Hard-Mode-Doppelraum.
+- Ob Story-Acts separat Normal/Hard haben.
+- Status von Devil City und The Eclipse in RR.
+
+#### Erledigt (P7)
+
+- Short Range: Faktor geklärt (Legacy −33,33 % = Range ×2/3) [S73].
+- Secret-Portal-Dropchance: Schätzwerte vorhanden (1 %, < 1 %, 2,5–7,5 % für Craft-Teile), Status UNKNOWN → LOW.
+- Legend-Stage-Acts: 3 oder 6 je Stage [S72:Legend_Stages].
+- Tournament-Bewertungskriterium: „Most DMG“ in 20 min [S72:Tournament].
+- Raid-Belohnungen der bisher als UNKNOWN geführten Raids [S72:Raids].
+
+### P6
+
+#### Erledigt
+- **C6 gelöst (DERIVED · MEDIUM):** Infinite-Gems W6 = 18, W7–14 je 3, W15–105 je 5, danach 0 → genau 497. Belege: S72:Infinite samt Versionsgeschichte (2025-01), Trello-Gegenprobe 97 Gems bis W25 (S73), AFK-Gems aus Map Lengths. Die Tabelle ist RR-Stand, nicht LEGACY.
+- **C12 gelöst (OBSERVED · HIGH):** Die Story-MapBox nennt den LEGACY-Namen im Feld `location`: Clover Kingdom ↔ Magic Hills, Cape Canaveral ↔ Space Center, Hero City ↔ Ruined City, Windhym ↔ Snowy Kingdom, **Undead Tomb ↔ Dungeon Throne** (nicht The Eclipse; das ist eine Portal-Map). Devil City (U9) war eine LEGACY-Event-Welt ohne RR-Gegenstück.
+
+#### Neue Konflikte
+| Thema | Wert A | Wert B | Quellen |
+|---|---|---|---|
+| Slow-Schutzzeit | 4 s (Abschnitt „Movement“) | 7 s (Abschnitt „How each effect works“) | S72:Effects |
+| Freeze-Schutzzeit | 10 s bzw. 12–13 s | 10–12 s | S72:Effects vs. S67 |
+| Unconscious-Dauer | 3–4 s | 0,5 s | S72:Effects vs. S67 |
+| Daily-Infinite-Altwerte | 15/25/50 Gems (Wiki-Erstfassung 2022-07) | 10/25/50 (Wiki-Trivia); 30/70/100 (Trello 2022-08) | Wiki-Rev. 298, S72:Infinite, S73 |
+| Party-HP-Scaling | belegt laut S06-Suchauszug | im Volltext S72 nicht auffindbar | S06 vs. S72 |
+
+#### Weiterhin fehlend
+- HP, Speed und Yen-Belohnung jedes normalen Gegners; HP aller RR-Bosse (nur 3 LEGACY-Raid-Bosse von 2022 belegt, danach HP-Nerfs).
+- Wave-Anzahl pro Story-Act (≥ 15 abgeleitet), Spawn-Reihenfolge, Anzahl und Spawn-Delay pro Wave; Wave-Timer-Dauer; Bedingung für Wave-Start.
+- RR-Zahlen für Tank, Fortify, Regen, Hyper-Regen, Fast, Godspeed, Burst-Geschwindigkeitsprofil, Explosive-Stun (Dauer, Radius).
+- Spawn-Chance von Star Golem und Secret Bosses.
+- Map-Geometrie (Wegpunkte, Platzierungsflächen) aller Maps; Map-Länge Shibuya; ob RR-Maps geometrisch den LEGACY-Maps entsprechen.
+- Bedeutung des Feldes `knockback_points` (S65: 0,5 bei 385 Units, 3 bei einer).
+- Wirkung der Boss-Angriffe in S67 (spawn_units, rock, heal, teleport, shield).
