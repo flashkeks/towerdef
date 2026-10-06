@@ -250,8 +250,9 @@ export class Ui {
         const size = slot.size * tile * 0.92;
         b.style.width = `${size}px`;
         b.style.height = `${size}px`;
-        b.style.left = `${(slot.x + 0.5) * tile - size / 2}px`;
-        b.style.top = `${(slot.y + 0.5) * tile - size / 2}px`;
+        // sim.slots() liefert Festkomma (1000 = eine Kachel), nicht Kacheln wie stage.slots im Renderer.
+        b.style.left = `${(slot.x / 1000 + 0.5) * tile - size / 2}px`;
+        b.style.top = `${(slot.y / 1000 + 0.5) * tile - size / 2}px`;
       });
     }
     const slots = s.sim.slots();

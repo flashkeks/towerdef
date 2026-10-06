@@ -109,6 +109,16 @@ try {
     await page.click('.diff[data-difficulty="normal"]');
     await page.waitForSelector('canvas.board');
     check((await page.locator('.overlay.hidden').count()) === 1, 'Start-Overlay verschwindet nach Stufenwahl');
+    // Slot-Knoepfe muessen ueber dem Canvas liegen. page.click scrollt sonst zu weit entfernten Knoepfen hin
+    // und verdeckt so, dass ein echter Mausklick ins Leere geht (06.10.2026: Festkomma statt Kacheln, x ~ 216000 px).
+    const outside = await page.evaluate(() => {
+      const c = document.querySelector('canvas.board').getBoundingClientRect();
+      return [...document.querySelectorAll('.slot')].filter((e) => {
+        const r = e.getBoundingClientRect();
+        return r.left < c.left - 1 || r.top < c.top - 1 || r.right > c.right + 1 || r.bottom > c.bottom + 1;
+      }).length;
+    });
+    check(outside === 0, `alle Slot-Knoepfe liegen ueber dem Spielfeld (ausserhalb: ${outside})`);
 
     const state = () => page.evaluate(() => {
       const s = window.__duskwardens?.session();
