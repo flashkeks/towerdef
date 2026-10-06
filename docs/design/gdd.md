@@ -2,13 +2,13 @@
 
 Stand: 2026-10-06. Entwurf, keine Netzrecherche. Browser-Spiel, Anime-artiger Stil mit **eigenen** Figuren, Unit-Sammeln/Gacha nur mit Spielwährung, Koop bis 4 Spieler.
 
-**Lesehilfe.** `DESIGN` = eigener Vorschlag. Belegte Aussagen nennen die Quelldatei. Kürzel: `rec §n` = `docs/comparison/recommendations.md` Abschnitt n; `matrix` = `docs/comparison/systems-matrix.md`; `lessons-XX` = `docs/games/<spiel>/design-lessons.md` (AV, ASTD, ALS, UTDZ, AE, BTD6), `AA-brief` = `docs/anime-adventures/design-brief.md`; `assets` = `docs/research/assets-licensing.md`; `tech` = `docs/research/tech-options.md`; `legal` = `docs/research/legal-gacha.md`. Alle Zahlen stehen im Simulator (`sim/data/units.json`, noch nicht vorhanden) bzw. in `rec §6/§18`; dieses Dokument wiederholt sie nur, wo sie für das Verständnis nötig sind. `ENTSCHEIDUNG OFFEN` verweist auf [FRAGEN.md](FRAGEN.md).
+**Lesehilfe.** `DESIGN` = eigener Vorschlag. Belegte Aussagen nennen die Quelldatei. Kürzel: `rec §n` = `docs/comparison/recommendations.md` Abschnitt n; `matrix` = `docs/comparison/systems-matrix.md`; `lessons-XX` = `docs/games/<spiel>/design-lessons.md` (AV, ASTD, ALS, UTDZ, AE, BTD6), `AA-brief` = `docs/anime-adventures/design-brief.md`; `assets` = `docs/research/assets-licensing.md`; `tech` = `docs/research/tech-options.md`; `legal` = `docs/research/legal-gacha.md`. Alle Zahlen stehen im Simulator (`sim/data/units.json`, noch nicht vorhanden) bzw. in `rec §6/§18`; dieses Dokument wiederholt sie nur, wo sie für das Verständnis nötig sind. `ENTSCHIEDEN` verweist auf [ENTSCHEIDUNGEN.md](ENTSCHEIDUNGEN.md) (Stand 06.10.2026, verbindlich; die beantwortete Fragenliste steht in [FRAGEN.md](FRAGEN.md)). Wo dieses Dokument und ENTSCHEIDUNGEN.md sich widersprechen, gilt ENTSCHEIDUNGEN.md. `VERWORFEN` markiert Beschlossenes, das nicht kommt.
 
 ---
 
 ## 1. Elevator Pitch (vier Varianten)
 
-Die Varianten betonen verschiedene Schwerpunkte; sie schließen sich nicht aus. → ENTSCHEIDUNG OFFEN, FRAGEN.md #1.
+Die Varianten betonen verschiedene Schwerpunkte; sie schließen sich nicht aus. → ENTSCHIEDEN ([ENTSCHEIDUNGEN.md](ENTSCHEIDUNGEN.md) „Pitch“): Kern ist **A + C** („The team you collect“ + „Every coin is a bet“), Solo voll spielbar, entspannte und fordernde Modi; D gilt als Haltung (faires, transparentes Gacha), nicht als Schlagzeile.
 
 **A: „Das Team, das du sammelst“.** Du sammelst Helden mit eigenem Charakter und stellst daraus ein Sechser-Team zusammen, das eine Welle nach der anderen aufhält. Jede Figur spielt sich anders: Ein Kurier schneidet, eine Scharfschützin deckt den Himmel, ein Steinriese wartet auf den Boss. Gesammelt wird nur mit Spielwährung, die Chancen stehen vor jedem Zug auf dem Bildschirm.
 
@@ -45,37 +45,37 @@ Alle Kandidaten sind `DESIGN`. Gemeinsame Ausgangslage: Die sieben Vorbilder lie
 - **Vorbild:** AV Modifier-Karten mit Belohnung nach Risiko (`lessons-AV` 6, `rec §4` Schwierigkeit); AE Modifier je Act und Star Missions (`lessons-AE` 1, 2); BTD6 feste, lernbare Runden (`lessons-BTD6` 1).
 - **Aufwand:** M (Modifier-Katalog und Vorschau-UI; Karten-Auswahl kann später kommen).
 - **Risiko:** niedrig bis mittel. Karten müssen mit Koop-Skalierung (`rec §16`) zusammenpassen; Unterschied zu AV ist klein, wenn nur Karten gezeigt werden.
-- ENTSCHEIDUNG OFFEN → FRAGEN.md #2.
+- ENTSCHIEDEN → [ENTSCHEIDUNGEN.md](ENTSCHEIDUNGEN.md): **ja, schon im Prototyp (M1)** zusammen mit K5.
 
 ### K2: Koop-Kombos über Spielergrenzen
 - **Idee:** Fähigkeiten verschiedener Spieler lösen sichtbare Kombos aus (Frost-Stun → Titan-Nuke zählt ×1,5; Fahnen-Aura wirkt auf alle Spieler). Ein Kombo-Anzeiger zeigt die Fenster („Stun aktiv, jetzt zünden“).
 - **Vorbild:** AA globale Buffs (`rec §11`, `rec §16`); AV Unit-Gruppen und Buff-Kategorien (`lessons-AV` 5); UTDZ Raid-Tag-Boni für Team-Komposition (`lessons-UTDZ` 10). Kombo-Anzeige selbst: kein Vorbild in den sieben belegt.
 - **Aufwand:** M bis L (Fenster-Logik im Server, UI, Balancing der Kombo-Faktoren; Solo braucht eine Ersatzregel).
 - **Risiko:** mittel bis hoch: Solo-Spieler dürfen nicht benachteiligt sein; Buff-Caps (`rec §11`) müssen Kombos mitzählen; Koop erst in M2, der Kniff trägt also den MVP nicht.
-- ENTSCHEIDUNG OFFEN → FRAGEN.md #2.
+- ENTSCHIEDEN → [ENTSCHEIDUNGEN.md](ENTSCHEIDUNGEN.md): **ja, mit M2.**
 
-### K3: Weichen (Pfad-Eingriff)
+### K3: Weichen (Pfad-Eingriff) — VERWORFEN
 - **Idee:** Einzelne Kreuzungen haben Weichen, die der Spieler gegen Abklingzeit umlegt (Gegner nehmen Lane A oder B). Wer richtig umlegt, führt eine Welle durch die stärkere Kill-Zone.
 - **Vorbild:** keines der sieben in den Dokumenten belegt (Pfad ist in allen fest; `rec §0` „1 Pfad“). Technisch passt es zu Waypoint-Pfaden mit zwei Verzweigungen (`tech` §3).
 - **Aufwand:** L (Map-Format, Pfad-Verzweigung in der Sim, Lesbarkeit, Netzsync der Weichen).
 - **Risiko:** hoch. Greift in Balance (Reichweiten, Leak-Zeiten, Kapazitätsmodell `rec §4` setzt feste 28 s Laufzeit) und in Lesbarkeit; Flyer-Route muss geklärt werden.
-- ENTSCHEIDUNG OFFEN → FRAGEN.md #2.
+- **VERWORFEN** → [ENTSCHEIDUNGEN.md](ENTSCHEIDUNGEN.md): K3 Weichen kommt nicht. Abschnitt bleibt zur Nachvollziehbarkeit stehen.
 
 ### K4: Bindung statt Würfeln (deterministische Perks)
 - **Idee:** Statt eines zufälligen Traits (`rec §14`) wachsen Units durch Einsätze in „Bindungsstufen“ mit je 2 wählbaren Perks und kleinen Kurz-Geschichten. Zufall bleibt nur im Gacha, mit sichtbarem Pity. Charakter-Persönlichkeit wird so Teil der Progression.
 - **Vorbild:** Gegenstück zu den Zufallsstapeln (`lessons-ALS` 3, `lessons-UTDZ` 1, `lessons-AE` 7); Pity-Disziplin aus `lessons-AV` 7. Ein Bindungssystem selbst ist in den sieben nicht belegt.
 - **Aufwand:** M (Daten + UI, danach Content-Pflege: Text und Bilder pro Unit).
 - **Risiko:** mittel. Weniger „Jackpot“-Gefühl (Einzigartig-Trait ×3 entfiele); Content-Menge wächst mit der Unit-Zahl; trifft nur M3, nicht den MVP.
-- ENTSCHEIDUNG OFFEN → FRAGEN.md #2.
+- ENTSCHIEDEN → [ENTSCHEIDUNGEN.md](ENTSCHEIDUNGEN.md): **ja, mit M3**; Gacha bleibt daneben bestehen.
 
 ### K5: Bosse als Rätsel mit Fenstern
 - **Idee:** Jeder Boss hat ein lesbares Kit (Telegraph, Schildphase, Stun-Fenster), das eine bestimmte Team-Antwort belohnt, statt nur HP zu fressen. Final-Boss Wave 20 zitiert alle Mechaniken der Stage.
 - **Vorbild:** AV Boss-Kits (Stun, Phasen, Summon; `lessons-AV` 3) und CC-Lockouts (`lessons-AV` 4, `rec §10`); ASTD Konter-Fragen (`lessons-ASTD` 4); Boss-Einzelrunden in BTD6 (`rec §4`).
 - **Aufwand:** M (Phasen-System in der Sim, Telegraph-Effekte, 2 Bosse im MVP).
 - **Risiko:** niedrig. Ist die konservativste Wahl; unterscheidet uns aber nur graduell von AV.
-- ENTSCHEIDUNG OFFEN → FRAGEN.md #2.
+- ENTSCHIEDEN → [ENTSCHEIDUNGEN.md](ENTSCHEIDUNGEN.md): **ja, schon im Prototyp (M1)**: Phasen, Telegraph, Schwachstellen-Fenster, zwei Bosse (W10, W20).
 
-**Kombinierbarkeit (DESIGN):** K5 und K1 lassen sich im MVP anteilig mitnehmen (Vorschau, 2 Boss-Kits); K2 und K4 gehören zu M2 bzw. M3; K3 nur, wenn es das Alleinstellungsmerkmal sein soll.
+**Kombinierbarkeit:** ENTSCHIEDEN → [ENTSCHEIDUNGEN.md](ENTSCHEIDUNGEN.md): K5 + K1 in M1, K2 in M2, K4 in M3, K3 verworfen.
 
 ---
 
@@ -90,10 +90,10 @@ CORE LOOP (ein Match, ca. 15 min, 20 Waves)                       [rec §0, §5]
         │                          ▼
    Wave-Bonus + Kill-Bounty ◄── Wave läuft (45-s-Timer, Skip möglich)
    (Farm zahlt am Wave-Ende)       │
-        │                          ├─ Gegner erreichen Basis ──► Leak: Base-HP sinkt (100)
+        │                          ├─ Gegner erreichen Basis ──► Leak: Leben sinken (Boss-Leak = verloren, ENTSCHIEDEN)
         │                          └─ Boss/Elite ──► Fähigkeit zünden (Frost, Titan)
         └────────── nächste Wave ───────────────────────────────────────┐
-                                   Wave 20 geschafft ──► SIEG / Base-HP 0 ──► NIEDERLAGE
+                                   Wave 20 geschafft ──► SIEG / Leben 0 ──► NIEDERLAGE
 
 META LOOP (zwischen Matches; ab M3)                              [rec §13–§15]
   Match-Ende ──► Belohnung: Kristalle, Gold, Spieler-XP, Unit-XP
@@ -121,7 +121,7 @@ Der Meta-Zufluss (Kristalle 100/150/200 je Erst-Clear, ca. 240 Kristalle/Tag bei
 - **8 Units**: `striker`, `gunner`, `blaster`, `banner`, `farm`, `lancer`, `frost`, `titan`; 6 Team-Slots, also Auswahl von 6 aus 8 vor dem Match (`rec §7`). Werte: `sim/data/units.json`, Herleitung `rec §6`, `§18`.
 - **20 Waves** nach der Beispiel-Stage `rec §5`: alle sieben Archetypen, Modifier Schild, Regen, Armored; Elite W5/15/19, Boss W10/W20.
 - **Solo**, lokal, **ohne Account**, ohne Server (Sim läuft im Client; Server-Autorität erst M2, `tech` §5).
-- Regeln: Münzen, Base-HP 100 und Leaks, Verkauf 60 %/Farm 40 %, vier Targeting-Modi, Caps je Unit, Statuseffekte inkl. CC-Sperren (`rec §2`, `§7`–`§10`).
+- Regeln: Münzen, **Leben statt Base-HP** (ENTSCHIEDEN → [ENTSCHEIDUNGEN.md](ENTSCHEIDUNGEN.md) „Schwierigkeit und Fail-State“: Boss-Leak = verloren, normale Gegner kosten Leben nach Typ und Rest-HP, Leben über Meta ausbaubar; Zahlen aus Runde 4, P2) und Leaks, Verkauf 60 %/Farm 40 %, vier Targeting-Modi, Caps je Unit, Statuseffekte inkl. CC-Sperren (`rec §2`, `§7`–`§10`).
 - Komfort: Wave-Skip, 1×/2×/3×, Auto-Ability-Schalter, Pause, Wellenvorschau (`rec §0`).
 - Onboarding nach Abschnitt 8 und Muss-Feedback nach Abschnitt 9; Ergebnisbildschirm mit Leaks, Geld nach Wave, Schaden je Unit (für S1).
 - Telemetrie lokal (Wave-Ergebnis, Käufe), damit Playtests auswertbar sind (`lessons-ALS` 10).
@@ -129,18 +129,19 @@ Der Meta-Zufluss (Kristalle 100/150/200 je Erst-Clear, ca. 240 Kristalle/Tag bei
 **Ausdrücklich nicht drin:**
 - Gacha, Kristalle, Gold, Konten, Inventar, Sterne, Unit-/Spieler-Level, Traits/Bindung (alles M3).
 - Koop, Netzwerk, Spenden, Reconnect (M2).
-- Schwierigkeiten Hard/Nightmare, Infinite, Elemente, Modifier-Karten, Sternziele (M4).
-- Weitere Maps, weitere Units, Heiler-Support (`rec §2` nennt ihn; nicht in den 8 IDs), Camo (`rec §4`), Weichen (K3).
+- Infinite, Sternziele (M4). **Geändert durch [ENTSCHEIDUNGEN.md](ENTSCHEIDUNGEN.md):** Wellenvorschau und Risikokarten (K1) sowie Boss-Kits (K5) gehören in M1; Schwierigkeitsstufen unterscheiden sich über Regeln (Modifier-Dichte, Elemente, Boss-Fähigkeiten) und werden im Simulator (Runde 4, P3) mitgebaut.
+- Weitere Maps, weitere Units, Heiler-Support (`rec §2` nennt ihn; nicht in den 8 IDs), Camo (`rec §4`). Weichen (K3): VERWORFEN.
 - Shop, Events, Leaderboards, Handel, Echtgeld in jeder Form.
+- Handy/Touch: **VERWORFEN** ([ENTSCHEIDUNGEN.md](ENTSCHEIDUNGEN.md) „Plattform“): nur Desktop-Browser, Touch und kleine Viewports bekommen einen Hinweis-Bildschirm.
 - Finale Kunst und Musik: Platzhalter erlaubt (Abschnitt 10), Effekte der Kategorie „Muss“ nicht.
 
-**Abnahme:** siehe M1 in Abschnitt 11. Falls der Aufwand zu groß wird, welche Units zuerst fallen: → ENTSCHEIDUNG OFFEN, FRAGEN.md #4.
+**Abnahme:** siehe M1 in Abschnitt 11. Falls der Aufwand zu groß wird, welche Units zuerst fallen: nicht gesondert entschieden; laut [ENTSCHEIDUNGEN.md](ENTSCHEIDUNGEN.md) gilt „kein Zeitdruck, Qualität vor Tempo“, der Umfang bleibt bei 8 Units.
 
 ---
 
 ## 6. Unit-Entwürfe für den MVP
 
-Alle Figuren sind eigene Entwürfe. Namen sind Platzhalter ohne Bezug auf bestehende Franchises; vor Veröffentlichung Namens- und Markenprüfung (Risiko-Matrix e1 „niedrig“, e2 „mittel“, `legal` §6). Setting-Annahme `DESIGN`: eine Welt, in der ein „Nebelriss“ Schattenwesen schickt und eine kleine Grenzgilde („Wachposten Lindenhain“, Arbeitsname) die Linie hält. Ton und Name: → ENTSCHEIDUNG OFFEN, FRAGEN.md #3. Alle Zahlen (Kosten, Schaden, Reichweite, Caps): `sim/data/units.json`, ansonsten `rec §6`, `§7`, `§18`.
+Alle Figuren sind eigene Entwürfe. Namen sind Platzhalter ohne Bezug auf bestehende Franchises; vor Veröffentlichung Namens- und Markenprüfung (Risiko-Matrix e1 „niedrig“, e2 „mittel“, `legal` §6). Setting ENTSCHIEDEN ([ENTSCHEIDUNGEN.md](ENTSCHEIDUNGEN.md) „Welt“): **Grenzgilde im Nebelriss**, Fantasy-Abenteuer, warmherzig; eine Welt, in der ein „Nebelriss“ Schattenwesen schickt und eine kleine Grenzgilde („Wachposten Lindenhain“, Arbeitsname) die Linie hält. Spielsprache Englisch; Name: Arbeitsname „Riftwatch“, Vorschläge in [name.md](name.md) (Runde 4, P9), entscheiden die Menschen. Alle Zahlen (Kosten, Schaden, Reichweite, Caps): `sim/data/units.json`, ansonsten `rec §6`, `§7`, `§18`.
 
 ### `striker` – Tamsin Rook (Rare, Ground, Single-Target, Bleed)
 - **Figur:** Kurierin der Gilde, kurzer orangefarbener Mantel, langer Schal, zwei gebogene Messer; schnell, frech, redet beim Zustechen mit sich selbst.
@@ -202,9 +203,9 @@ Alle Figuren sind eigene Entwürfe. Namen sind Platzhalter ohne Bezug auf besteh
 
 ## 7. Map-Konzepte (drei)
 
-Alle Maps: Raster, 1 Tile pro Unit, 2×2 für Farm; `ground`-Felder für Boden-Units, `hill`-Felder für Hill und Hybrid (Flyer treffen nur Hill/Hybrid, `rec §7`). Rasterform (z. B. 18×11) und Feldanzahl sind `DESIGN` und werden im Prototyp gesetzt. Pfadlänge ca. 42 Tiles bei Grunt 1,5 Tiles/s = 28 s (`rec §0`). Flyer folgen in allen drei Maps im MVP dem Pfad; Luftlinie → ENTSCHEIDUNG OFFEN, FRAGEN.md #6.
+Alle Maps: Raster, 1 Tile pro Unit, 2×2 für Farm; `ground`-Felder für Boden-Units, `hill`-Felder für Hill und Hybrid (Flyer treffen nur Hill/Hybrid, `rec §7`). Rasterform (z. B. 18×11) und Feldanzahl sind `DESIGN` und werden im Prototyp gesetzt. Pfadlänge ca. 42 Tiles bei Grunt 1,5 Tiles/s = 28 s (`rec §0`). Flyer folgen dem normalen Pfad, nur Hill/Hybrid-Units treffen sie (ENTSCHIEDEN → [ENTSCHEIDUNGEN.md](ENTSCHEIDUNGEN.md)).
 
-### M-A „Terrassenweg“ (MVP-Map): ENTSCHEIDUNG OFFEN → FRAGEN.md #5
+### M-A „Terrassenweg“ (MVP-Map): ENTSCHIEDEN → [ENTSCHEIDUNGEN.md](ENTSCHEIDUNGEN.md)
 - **Pfad:** S-Kurve über drei Terrassen, zwei Haarnadeln, Spawn oben links, Basis unten rechts; ca. 42 Tiles.
 - **Flächen:** Ground an den Innenseiten der Kurven; **zwei bis drei Hill-Felder** auf den Terrassenkanten mit Sicht auf zwei Pfadabschnitte; ein 2×2-Platz für Farm abseits der Linie (sicher, aber verschenkt Feuerkraft).
 - **Spielgefühl:** Innenkurven geben Reichweite-Überlappung (belohnt `blaster`, `frost`-Kegel); Hill-Knappheit macht Flyer-Wave 8 zur ersten echten Entscheidung.
@@ -265,7 +266,7 @@ Priorität für den MVP: **Muss** (ohne diese Effekte ist der Vertical Slice nic
 | **Fähigkeit** | Aufladen-Anzeige, Auslöse-Animation mit Name; `frost`: Frostfläche; `titan`: Risse, Schlag, Bildschirm-Ruck | Muss (Anzeige, Auslösung); Soll (Kamera-Effekt) |
 | **Wave-Start / -Ende** | Wave-Nummer-Banner, Gegner-Icons der Vorschau wandern an den Rand; Ende: kurzer „Clear“-Jingle, Bonus fliegt ins Konto | Muss |
 | **Boss-Auftritt** | Bildschirm dimmt 1 s, Boss-Name mit Silhouette, tiefer Ton, Gesundheitsbalken oben, Musikwechsel; Leak-Warnung bei < 30 % Pfad | Muss (Banner, Balken, Ton); Soll (Dimmen, Musik) |
-| **Leak** | roter Rand-Flash am Basis-Ende, Base-HP-Balken schüttelt sich, dumpfer Ton, Zahl „−3“ steigt auf; Boss-Leak: längerer Schock mit Zeitlupe 0,3 s | Muss (Flash, Balken, Ton); Kann (Zeitlupe) |
+| **Leak** | roter Rand-Flash am Basis-Ende, Lebensanzeige schüttelt sich, dumpfer Ton, Zahl „−3“ steigt auf; Boss-Leak: Niederlage mit Zeitlupe 0,3 s | Muss (Flash, Balken, Ton); Kann (Zeitlupe) |
 | **Niederlage/Sieg** | Zusammenfassung: „Du hast in Wave 12 verloren: 6 Brutes ohne Rüstungsbrecher“ (kurze Ursachenzeile, siehe S1); Sieg: Konfetti, Sternziele (M4) | Muss (Ergebnis + Ursache); Kann (Konfetti) |
 | **Figuren-Stimme** | je Unit 3–5 Kurzsprüche (Platzieren, Fähigkeit, Boss), als Text-Sprechblase, ohne Sprachausgabe | Soll |
 | **Lesbarkeit** | Reichweitenkreis bei Auswahl, Zielmodus-Icon, Ziellinie der Fähigkeit; Gegner-Rüstung als Symbol, Regen als Herz; Schaden unter 10^5 voll ausgeschrieben (`rec §17`) | Muss |
@@ -283,7 +284,7 @@ Grundlage: `assets` §3: Charaktere im Anime-Stil gibt es kaum frei; eigene Illu
 - **Aufwand:** mittel für die 8 MVP-Units (je ca. 8–12 Teile plus Portrait); Animation per Code günstig.
 - **Risiko:** Konsistenz zwischen Zeichnern; Rigging-Werkzeug nicht festgelegt (Spine-Lizenz: UNKNOWN).
 
-### B: „Pixel-Anime“ (kleine Sprites plus große Portraits)
+### B: „Pixel-Anime“ (kleine Sprites plus große Portraits) — GEWÄHLT
 - **Idee:** 32–48-px-Sprites für das Spielfeld (2–4 Frames Idle/Attack), die großen Auftritte (Gacha, Fähigkeit, Boss) über handgemalte Portraits/Cut-ins.
 - **Machbar mit:** CC0-Sprite-Packs als Platzhalter (itch.io, Kenney; Stil Pixel ist dort stark vertreten, `assets` §1); eigene Sprites später per Auftrag.
 - **Aufwand:** niedrig bis mittel; Portraits sind der Schwerpunkt (8 Stück im MVP).
@@ -295,16 +296,16 @@ Grundlage: `assets` §3: Charaktere im Anime-Stil gibt es kaum frei; eigene Illu
 - **Aufwand:** hoch (Modellierung/Rigging je Figur; Shader; Browser-Performance bei 80 Gegnern, `rec §7`).
 - **Risiko:** Stil weicht von „Anime-artig“ ab, solange Figuren kein eigenes Modell haben; größte Asset-Last.
 
-**Zwischenlösung (DESIGN):** in allen Optionen Platzhalter-first: Kenney-/CC0-Assets im Prototyp, `assets/ATTRIBUTIONS` ab Tag 1 (`assets` §3.6). Entscheidung: → ENTSCHEIDUNG OFFEN, FRAGEN.md #8 (Engine-Folge: FRAGEN.md #7).
+**Zwischenlösung (DESIGN):** in allen Optionen Platzhalter-first: Kenney-/CC0-Assets im Prototyp, `assets/ATTRIBUTIONS` ab Tag 1 (`assets` §3.6). ENTSCHIEDEN → [ENTSCHEIDUNGEN.md](ENTSCHEIDUNGEN.md): **B „Pixel-Anime“** (kleine Sprites im Spiel, große Portraits im Menü); A Flat-Chibi bleibt als spätere Option denkbar. Nur Assets mit sauberer Lizenz (CC0, CC-BY, Kauflizenz), Styleguide in [art-styleguide.md](art-styleguide.md).
 
 ---
 
 ## 11. Roadmap
 
-Reihenfolge: M1 → M2 → M3 → M4. Ob M2 (Koop) vor M3 (Meta/Gacha) liegen soll: → ENTSCHEIDUNG OFFEN, FRAGEN.md #10.
+Reihenfolge: M1 → M2 → M3 → M4. ENTSCHIEDEN → [ENTSCHEIDUNGEN.md](ENTSCHEIDUNGEN.md): M1 Solo-Prototyp → M2 Koop → M3 Sammeln/Gacha/Meta → M4 Inhalte.
 
 ### M1: Vertical Slice (Solo)
-Inhalt: Abschnitt 5. Technik: Sim in `sim/` (parallel in Arbeit), Rendering `DESIGN`: PixiJS getrennt von der Sim (`tech` §1), Waypoint-Pfade (`tech` §3). Engine-Wahl: → ENTSCHEIDUNG OFFEN, FRAGEN.md #7.
+Inhalt: Abschnitt 5. Technik: Sim in `sim/` (parallel in Arbeit), Rendering `DESIGN`: PixiJS getrennt von der Sim (`tech` §1), Waypoint-Pfade (`tech` §3). Engine ENTSCHIEDEN → [ENTSCHEIDUNGEN.md](ENTSCHEIDUNGEN.md): **PixiJS v8** (Rückfall Phaser), Simulation strikt getrennt. Architektur: [../architecture.md](../architecture.md).
 
 **Abnahme-Checkliste:**
 - [ ] Ein Match der Map „Terrassenweg“ (20 Waves) ist ohne Absturz in 12–18 Minuten durchspielbar.
@@ -330,7 +331,7 @@ Inhalt: autoritativer Server (Colyseus oder `ws`, `tech` §5), getrennte Konten,
 - [ ] Wellen-Skip nach Mehrheit getestet; Spenden in 50er-Schritten.
 
 ### M3: Meta und Gacha (nur Spielwährung)
-Inhalt: Konten (Passwort-Hash, HTTPS/WSS, `tech` §6), Kristalle/Gold, Gacha serverseitig mit Pity, Banner (Standard/Featured/Starter), Duplikate zu Sternen, Unit-/Spieler-Level, Trait (oder Bindung, K4), Tages-/Wochenaufgaben, Teamauswahl aus Sammlung (`rec §13–§15`). Echtgeld: nicht vorgesehen (→ ENTSCHEIDUNG OFFEN, FRAGEN.md #9).
+Inhalt: Konten (**geändert durch [ENTSCHEIDUNGEN.md](ENTSCHEIDUNGEN.md) „Konto“:** dasselbe Konto wie Kek-Game per signiertem Start-Token, das TD speichert keine Passwörter; HTTPS/WSS, `tech` §6), Kristalle/Gold, Gacha serverseitig mit Pity, Banner (Standard/Featured/Starter), Duplikate zu Sternen, Unit-/Spieler-Level, Trait (oder Bindung, K4), Tages-/Wochenaufgaben, Teamauswahl aus Sammlung (`rec §13–§15`). Echtgeld ENTSCHIEDEN → [ENTSCHEIDUNGEN.md](ENTSCHEIDUNGEN.md): Architektur für Premium-Währung + Gacha mit Mock-Zahlungsanbieter wird gebaut, **kein echter Zahlungsdienst**; ob echtes Geld kommt, entscheiden die Menschen nach rechtlicher Prüfung (`legal`).
 
 **Abnahme-Checkliste:**
 - [ ] Alle Raten, Pity-Zähler und Erwartungswerte sind vor jedem Zug sichtbar (`rec §13`, `legal` §2).
