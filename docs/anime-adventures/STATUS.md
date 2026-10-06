@@ -9,7 +9,7 @@ Letzte Aktualisierung: 2026-10-05 (Sitzung 2)
 | Paket | Inhalt | Status | Notiz |
 |---|---|---|---|
 | P0 | Bestandsaufnahme, Quellenlandkarte, Wiki-Dump | **erledigt** | siehe unten |
-| P1 | `game-overview.md` + Zeitleiste | offen | `S72:Update Log` liegt im Volltext vor |
+| P1 | `game-overview.md` + Zeitleiste | **erledigt** | 45 Update-Einträge; RR-Place-ID korrigiert (S78/S79); Update vom 2025-09-03 ohne Wiki-Log |
 | P2 | `core-mechanics.md`, `combat-system.md` | offen | Effekte: `S67` (22 Effektdefinitionen), `S72:Effects`, `S72:Enemy Mechanics` |
 | P3 | `units.md` + `data/units.json` | **erledigt** | 561 Einträge, `units-index.md`, Legacy-Diff. Offen: Fähigkeitstexte (Passives) aus Unit-Seiten in `units.json` übernehmen (optional) |
 | P4 | Upgrades, Traits, Shiny, Powerups | offen | `S72:Traits`, `S72:Powerups`, `S69` |

@@ -87,7 +87,7 @@ Die Fandom-Seiten S01–S41 liegen seit Sitzung 2 im Volltext vor (Dump S72). We
 | S56 | https://progameguides.com/roblox/how-to-get-the-cursed-womb-key-in-anime-adventures-roblox/ | Pro Game Guides | LEGACY | Cursed Womb, Finger Bearer Wave 15, Key 199 R$ | D |
 | S57 | https://www.sportskeeda.com/roblox-news/anime-adventures-silver-hunt-battlepass-premium-pass-price-rewards | Sportskeeda | LEGACY | Battle Pass | D |
 | S58 | https://www.thegamer.com/roblox-anime-adventures-trading-units-how-to-trade/ | TheGamer | LEGACY | Trading | D |
-| S60 | https://www.roblox.com/games/117965110267191/Anime-Adventures und https://www.rolimons.com/game/8304191830 | Roblox / Rolimons | RR / LEGACY | Place-IDs | A (nur Existenz) |
+| S60 | https://www.roblox.com/games/117965110267191/Anime-Adventures und https://www.rolimons.com/game/8304191830 | Roblox / Rolimons | RR / LEGACY | Place-IDs. **Korrektur Sitzung 2:** 117965110267191 ist nur die Teaser-Seite (S78/S79); das Spiel läuft auch im RR auf 8304191830 (S74) | A (nur Existenz) |
 | S61 | https://tryhardguides.com/anime-adventures-1-year-anniversary-windhym-the-eclipse-update-log/ | Try Hard Guides | LEGACY | Update 15 | D |
 | S62 | https://itemlevel.net/anime-adventures-complete-beginners-guide/ | Item Level Gaming | LEGACY | Allgemeines | D |
 | S63 | https://www.destructoid.com/how-to-curse-units-and-get-cursed-tokens-anime-adventures/ | Destructoid | RR | Curse-Tokens | D |
@@ -112,6 +112,8 @@ Die Fandom-Seiten S01–S41 liegen seit Sitzung 2 im Volltext vor (Dump S72). We
 | S75 | Roblox Game-Pass API `apis.roblox.com/game-passes/v1/universes/3183403065/game-passes` | Abruf 2026-10-05 | RR | Gamepässe mit Preis und offizieller Beschreibung | A |
 | S76 | `Module:UnitData` (Lua-Code der Infobox) | 2025 | RR | Wiki-Darstellungsregeln, z. B. „Hits“ teilt den Damage auf mehrere Treffer | B |
 | S77 | Wiki-API Versionsgeschichte `Module:UnitData/Data` | 2022-08-26 bis 2026-03-18 | LEGACY + RR | Zeitachse von Buffs und Datenständen | B |
+| S78 | https://apis.roblox.com/universes/v1/places/117965110267191/universe (Roblox Universes API: Place → Universe (Abruf 2026-10-06)) | Abruf 2026-10-06 | RR | Nachweis: Place 117965110267191 gehört zu Universe 6930929888 | A |
+| S79 | https://games.roblox.com/v1/games?universeIds=6930929888 (Roblox Games API, Teaser-Experience „[❓RETURN???] Anime Adventures“ (Abruf 2026-10-06)) | Abruf 2026-10-06 | RR (Teaser) | Creator „Gomu Development“ (34564273), erstellt 2024-12-17, 319.166 Besuche, 1.799 Favoriten, Beschreibung/Prämisse | A |
 
 ## Explizit verworfene Daten
 
