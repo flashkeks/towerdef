@@ -98,7 +98,7 @@ Die Werte stehen in der Spalte „Länge“ der Weltentabelle oben. Spanne: 8 s 
 
 Ableitung für den Nachbau (DERIVED · MEDIUM): `Pfadlänge = Laufzeit × Basis-Speed`. Bei `DESIGN`-Basis-Speed 4 Einheiten/s ergeben sich 32–144 Einheiten.
 
-**Gegenprobe der AFK-Gems (DERIVED · HIGH):** Mit den Infinite-Gems aus [waves.md](waves.md#was-belegt-ist) (W6 = 18, danach 3 pro Wave) ergibt 18 → Verlust nach Wave 6, 21 → nach Wave 7, 24 → nach Wave 8, 27 → nach Wave 9. Snowy Town mit 0 Gems verliert vor Wave 6. Die Werte passen zur Gem-Tabelle.
+**Gegenprobe der AFK-Gems (DERIVED · HIGH):** Mit den Infinite-Gems aus [waves.md](waves.md#infinite-gems-pro-wave-rr) (W6 = 18, danach 3 pro Wave) ergibt 18 → Verlust nach Wave 6, 21 → nach Wave 7, 24 → nach Wave 8, 27 → nach Wave 9. Snowy Town mit 0 Gems verliert vor Wave 6. Die Werte passen zur Gem-Tabelle.
 
 ## Map-Geometrie
 

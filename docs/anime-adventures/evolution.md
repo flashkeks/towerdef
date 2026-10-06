@@ -125,9 +125,9 @@ Viele „nur Spezialitem“-Rezepte verlangen genau **ein** Item, das aus Gold u
 
 | Kennzahl | Wert | Tag |
 |---|---|---|
-| Crafting-Rezepte in S68 | 44 Items mit `crafting_recipe` + `crafting_cost` (Gold), davon 41 Evo-Items | OBSERVED · HIGH · [S68] |
+| Crafting-Rezepte in S68 | 44 Items mit `crafting_recipe` + `crafting_cost` (Gold), davon 42 Evo-Items (40 aus Gold + Star Fruits, 2 aus Gold + anderem Material: Promise Ring, Endless Tome) und 2 Relic-Materialien | OBSERVED · HIGH · [S68] |
 | Gold-Kosten | 2.000–8.000 Gold, häufig 3.500 / 7.000 / 7.500 | OBSERVED · HIGH · [S68] |
-| SF im Item | 7–56 Früchte, 1–4 Regenbogen | OBSERVED · HIGH · [S68] |
+| SF im Item | 14–73 Früchte, 1–4 Regenbogen (40 reine SF-Rezepte) | OBSERVED · HIGH · [S68] |
 | Merchant-Preis (LEGACY) | 1.850–8.000 Gems je Item | OBSERVED · MEDIUM · [S72:Evolution] |
 | Alternativen | einige Items aus Battle-Pass-Stufe 25/50 („Premium … Pass“), Raid-Shops (25–350 Raid-Währung), Event-Shops (5.000 Event-Währung) | OBSERVED · HIGH · [S72:Evolution] |
 

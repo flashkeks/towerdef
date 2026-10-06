@@ -187,7 +187,7 @@
       "meta": {
         "origin": "DERIVED",
         "confidence": "MEDIUM",
-        "source": "S72:Infinite + revision history (2025-01), S73 (97 gems at W25), S72:Map Lengths"
+        "source": "S72:Infinite + revision history S-P6a (2025-01), S73 (97 gems at W25), S72:Map Lengths"
       }
     },
     "infiniteDaily": [
@@ -201,7 +201,7 @@
         "meta": {
           "origin": "OBSERVED",
           "confidence": "LOW",
-          "source": "wiki revision 298"
+          "source": "wiki revision 298 (S-P6a)"
         }
       },
       {
