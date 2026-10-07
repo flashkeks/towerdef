@@ -31,7 +31,8 @@ Abnahmeziele:
     neues Profil → Lobby → Starter-Geschenk → 10er-Zug → Team aus Sammlung → Stage → Belohnung →
     Level-Up (mit dem ersten Gold) → zweites Match → Neuladen: Salden, Sammlung, Pity gleich.
     Abweichung: Level-Up erst nach dem ersten Match (neues Profil hat 0 Gold; davor prüft der Smoke den
-    gesperrten Knopf samt Grund)
+    gesperrten Knopf samt Grund). Smoke-Lauf nach allen Merges: 299 Prüfungen grün (EXIT 0); die kurzen
+    Matches bei 1920/2560 spielen jetzt bis Welle 8 echt, weil Vorrufen ohne Verteidigung nichts mehr zahlt
   Gacha ehrlich: erreicht — 1 Mio. Würfe Standard (≈0,5 s) und 100 000 Starter-10er innerhalb 5σ der exakten
     Quote (Markov-Kette), Abstand Mythic ≤ 150 / Legendary+ ≤ 35, Pity überlebt Neuladen und Export/Import
   Anzeige = Wirklichkeit: erreicht — bannerView und Wurf gehen über dasselbe resolveBanner (Test), ratesVersion

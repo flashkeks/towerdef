@@ -414,11 +414,13 @@ async function playStage(browser, [W, H]) {
   let toldPoor = false;
   const t0 = Date.now();
   let stuck = 0;
-  // nur die vollen Aufloesungen spielen die ganze Stage; die anderen rufen alle Wellen ohne Verteidigung (schnelle Niederlage, zahlt trotzdem)
-  while (full) {
+  // nur die vollen Aufloesungen spielen die ganze Stage; die anderen spielen bis Welle 8 echt (damit Wellen gehalten werden und
+  // die Belohnung Gold bringt: belohnt werden seit Runde 7 nur gehaltene, nicht gerufene Wellen) und rufen dann den Rest (schnelle Niederlage)
+  while (true) {
     s = await snap();
     if (!s) throw new Error('keine Session');
     if (s.over) break;
+    if (!full && s.wave >= 8) break;
     if ((Date.now() - t0) / 1000 > MAX_STAGE_S) {
       log(`Zeitlimit ${MAX_STAGE_S}s erreicht (Welle ${s.wave}, Leben ${s.lives})`);
       break;
