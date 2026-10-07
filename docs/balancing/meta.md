@@ -6,7 +6,7 @@
 
 ## Belohnung je Lauf (nachgerechnet aus dem Replay)
 
-Gold und Spieler-XP = Siegbonus (nur Sieg) + Wert je erreichter Welle (bis 20). Crystals nur beim Sieg. Eine Niederlage geht also nie leer aus.
+Gold und Spieler-XP = Siegbonus (nur Sieg) + Wert je gehaltener Welle (alle Gegner getötet, kein Leak; bis 20; bei Sieg alle 20). Crystals nur beim Sieg. Eine Niederlage mit mindestens einer gehaltenen Welle geht also nicht leer aus; wer nur Wellen vorruft, bekommt nichts.
 
 | Stufe | Crystals Erst / Wdh. | Gold Sieg (W20) | XP Sieg (W20) | Niederlage in W10: Gold / XP |
 |---|---|---|---|---|

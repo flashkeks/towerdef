@@ -24,6 +24,8 @@ export interface VerifiedMatch {
   outcome: 'win' | 'loss';
   /** vom Simulator gezaehlt (`state.wave`), nicht aus der Datei */
   waveReached: number;
+  /** Gehaltene Wellen (alle Gegner getötet, kein Leak); bei Sieg = erreichte Welle. Grundlage der Wellen-Belohnung. */
+  wavesHeld: number;
   /** eindeutige Kennung des Laufs; Ledger-Referenz `match/<replayId>` */
   replayId: string;
   endTick: number;
@@ -102,23 +104,38 @@ export function verifyReplay(replay: unknown, opts: VerifyOptions = {}): { ok: t
     const sim = createSim({ stage: r.stage, difficulty: r.difficulty as DifficultyId, players: 1, seed: r.seed, unitMods: mods, ...(opts.data ? { data: opts.data } : {}) });
     const st = sim.state;
     const placed: string[] = [];
+    // Gehaltene Wellen: alle Gegner einer Welle getötet, keiner durchgekommen. Gerufene Wellen zählen nicht
+    // (sonst bringt „alle Wellen vorrufen ohne Verteidigung" die volle Wellen-Belohnung, Befund P4).
+    const spawned = new Map<number, number>();
+    const killed = new Map<number, number>();
+    const leaked = new Set<number>();
+    const tally = (): void => {
+      for (const e of sim.drainEvents()) {
+        if (e.type === 'spawn') spawned.set(e.wave, (spawned.get(e.wave) ?? 0) + 1);
+        else if (e.type === 'kill') killed.set(e.wave, (killed.get(e.wave) ?? 0) + 1);
+        else if (e.type === 'leak') leaked.add(e.wave);
+      }
+    };
     let last = -1;
     for (const c of r.commands as { tick: unknown; player: unknown; cmd: unknown; ok: unknown }[]) {
       if (!c || !isInt(c.tick) || c.tick < last || c.tick > MAX_REPLAY_TICKS || !isInt(c.player) || !c.cmd || typeof c.cmd !== 'object' || typeof c.ok !== 'boolean') return fail('invalid-replay', 'Replay commands are invalid.');
       last = c.tick;
-      while (st.tick < c.tick && !sim.isOver()) sim.step(1);
+      while (st.tick < c.tick && !sim.isOver()) { sim.step(1); tally(); }
       if (st.tick !== c.tick) return fail('replay-mismatch', 'The replay does not match the game rules.');
       const res = sim.apply(c.player, c.cmd as Command);
       if (res.ok !== c.ok) return fail('replay-mismatch', 'The replay does not match the game rules.');
       const cmd = c.cmd as { type?: string; unitId?: string };
       if (res.ok && cmd.type === 'place' && typeof cmd.unitId === 'string') placed.push(cmd.unitId);
     }
-    while (st.tick < r.endTick && !sim.isOver()) sim.step(1);
+    while (st.tick < r.endTick && !sim.isOver()) { sim.step(1); tally(); }
     // Der letzte Schritt einer Niederlage zaehlt den Tick nicht mehr hoch (siehe replay.ts): bis zum Ende weiterlaufen, solange der Tick passt.
-    while (!sim.isOver() && st.tick <= r.endTick) sim.step(1);
+    while (!sim.isOver() && st.tick <= r.endTick) { sim.step(1); tally(); }
+    tally();
     const hash = sim.hash();
     if (st.tick !== r.endTick || hash !== r.endHash || sim.result() !== r.result) return fail('replay-mismatch', 'The replay does not match the game rules.');
     const outcome = sim.result() as 'win' | 'loss';
+    let wavesHeld = 0;
+    for (const [wave, n] of spawned) if (n > 0 && !leaked.has(wave) && (killed.get(wave) ?? 0) >= n) wavesHeld++;
     return {
       ok: true,
       match: {
@@ -126,6 +143,7 @@ export function verifyReplay(replay: unknown, opts: VerifyOptions = {}): { ok: t
         difficulty: r.difficulty,
         outcome,
         waveReached: Math.max(0, st.wave),
+        wavesHeld: outcome === 'win' ? Math.max(0, st.wave) : wavesHeld,
         replayId: `${r.stage}-${r.difficulty}-${r.seed}-${st.tick}-${hash}`,
         endTick: st.tick,
         endHash: hash,

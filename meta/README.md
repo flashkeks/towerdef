@@ -152,7 +152,7 @@ Formate v2 und v3: Im v3-Kopf stehende `unitMods` gehen unveraendert in `createS
 (`unitModsFor(profile, team)`): sonst koennte ein Replay sich selbst Level geben. Ein Replay mit `team: null` (aktueller Client) hat keine Besitzpruefung der platzierten Units.
 
 **Werte** (alles Startwerte, Rechnung in `docs/balancing/meta.md`): `data/rewards.json` (Crystals Erst-Clear 100/150/200, Wiederholung 25 %; Gold und Spieler-XP = Siegbonus +
-Wert je erreichter Welle; Niederlage zahlt Gold und XP nach Welle, keine Crystals). Stage-Fortschritt im Profil: `stages[stage][difficulty] = { clears, firstClearAt, bestWave }`.
+Wert je **gehaltener** Welle — alle Gegner der Welle getötet, kein Leak; gerufene Wellen zählen nicht, sonst wäre „alle Wellen vorrufen ohne Verteidigung" farmbar (Befund P4, Test in `rewards-p5.test.ts`); Niederlage zahlt Gold und XP nach Welle, keine Crystals). Stage-Fortschritt im Profil: `stages[stage][difficulty] = { clears, firstClearAt, bestWave }`.
 Unit-XP gibt es nicht (Units steigen mit Gold).
 **Leveling** (`leveling.ts`): `levelUpCost(L) = 40 + 10(L-1)`, Level 1-40, `levelUpTotalCost(von, bis)`; Codes `unit-not-owned`, `max-level`, `not-enough-gold`. Wirkung auf den Schaden: P2.
 **Spieler-XP** (`progression.ts`): `xpToReach(L) = 100(L-1) + 25(L-1)(L-2)/2` (L5 = 550, L25 = 9 300, L50 = 34 300); Freischaltung Hard/Nightmare unveraendert (P2).

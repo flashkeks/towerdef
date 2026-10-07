@@ -139,7 +139,7 @@ export function rewardFromReplay(p: Profile, replay: unknown, env: Pick<MetaEnv,
     const stray = m.placedUnits.find((u) => !m.team!.includes(u));
     if (stray) return fail('team-invalid', `${stray} is not in the team of this replay.`);
   }
-  const r = rewardForMatch(p, { stageId: m.stageId, difficulty: m.difficulty, outcome: m.outcome, waveReached: m.waveReached, replayHash: m.replayId }, env);
+  const r = rewardForMatch(p, { stageId: m.stageId, difficulty: m.difficulty, outcome: m.outcome, waveReached: m.wavesHeld, replayHash: m.replayId }, env);
   return r.ok ? { ...r, result: { ...r.result, verifyMs: m.ms } } : r;
 }
 

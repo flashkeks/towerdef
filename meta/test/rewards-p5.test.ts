@@ -1,4 +1,5 @@
 import { beforeAll, describe, expect, it } from 'vitest';
+import { createSim } from '../../sim/src/index';
 import { REWARD_TABLE, addPlayerXp, balanceOf, newProfile, repeatCrystals, rewardAmounts, rewardFromReplay, testEnv, verifyReplay, xpToReach, type Profile } from '../src';
 import { botReplay } from './replay-fixture';
 
@@ -40,10 +41,12 @@ describe('Belohnung aus dem Replay (nachgerechnet)', () => {
     expect(v.match.waveReached).toBeLessThan(20);
     expect(r.result.crystals).toBe(0);
     expect(r.result.firstClear).toBe(false);
-    expect(r.result.gold).toBe(10 * v.match.waveReached);
+    // Belohnt werden gehaltene Wellen (alle Gegner getötet, kein Leak), nicht gerufene.
+    expect(v.match.wavesHeld).toBeLessThanOrEqual(v.match.waveReached);
+    expect(r.result.gold).toBe(10 * v.match.wavesHeld);
     expect(r.result.gold).toBeGreaterThan(0);
-    expect(r.result.xp).toBe(2 * v.match.waveReached);
-    expect(r.profile.stages['standard20']!['normal']).toMatchObject({ clears: 0, firstClearAt: null, bestWave: v.match.waveReached });
+    expect(r.result.xp).toBe(2 * v.match.wavesHeld);
+    expect(r.profile.stages['standard20']!['normal']).toMatchObject({ clears: 0, firstClearAt: null, bestWave: v.match.wavesHeld });
   });
 
   it('Doppelmeldung: dasselbe Replay zahlt nur einmal', () => {
@@ -134,5 +137,29 @@ describe('Zahlen der Tabelle', () => {
     expect(rewardAmounts('normal', 'loss', 10, false)).toEqual({ crystals: 0, gold: 100, xp: 20 });
     expect(rewardAmounts('normal', 'loss', 0, false)).toEqual({ crystals: 0, gold: 0, xp: 0 });
     expect(rewardAmounts('normal', 'loss', 99, false).gold).toBe(200); // gekappt auf 20 Wellen
+  });
+});
+
+describe('Wellen vorrufen ohne Verteidigung (Befund P4)', () => {
+  it('zahlt keine Wellen-Belohnung: gerufene Wellen zählen nicht, nur gehaltene', () => {
+    const sim = createSim({ stage: 'standard20', difficulty: 'normal', players: 1, seed: 11 });
+    const commands: { tick: number; player: number; cmd: unknown; ok: boolean }[] = [];
+    while (!sim.isOver() && sim.state.tick < 20 * 60 * 30) {
+      if (sim.state.tick % 20 === 0) {
+        const cmd = { type: 'skipWave' } as const;
+        commands.push({ tick: sim.state.tick, player: 0, cmd, ok: sim.apply(0, cmd).ok });
+      }
+      sim.step(1);
+    }
+    const replay = { format: 'towerdef-replay', formatVersion: 3, stage: 'standard20', difficulty: 'normal', players: 1, seed: 11, team: null, unitMods: [], complete: true, result: sim.result(), endTick: sim.state.tick, endHash: sim.hash(), commands };
+    const v = verifyReplay(replay);
+    if (!v.ok) throw new Error(v.message);
+    expect(v.match.outcome).toBe('loss');
+    expect(v.match.waveReached).toBeGreaterThan(5);
+    expect(v.match.wavesHeld).toBe(0);
+    const r = rewardFromReplay(newProfile(testEnv()), replay, testEnv());
+    if (!r.ok) throw new Error(r.message);
+    expect(r.result.gold).toBe(0);
+    expect(r.result.xp).toBe(0);
   });
 });
