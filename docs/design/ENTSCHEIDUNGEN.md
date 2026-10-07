@@ -4,6 +4,33 @@ Verbindlich für alle weiteren Runden. Die beantwortete Fragenliste liegt in
 `docs/design/FRAGEN.md`. Hier steht die Auslegung, nach der gearbeitet wird.
 Änderungen nur durch die Menschen.
 
+## Kurswechsel 07.10.2026 (Max) — gilt vor allem anderen in dieser Datei
+
+Nach Runde 7 war das Spiel spielbar, aber **deutlich zu klein und zu simpel**: 14 handgemachte Units,
+eine Map, viel Aufwand in Bot-Balancing statt in Inhalt. Das war nicht das Ziel. Das Ziel war von
+Anfang an ein Spiel **im Umfang von Anime Adventures**: sehr viele Anime-Units, viele Systeme,
+viel zu tun. Deshalb ab sofort:
+
+1. **Nur intern.** Das Spiel spielen Max, Plori und einige Freunde. Es bleibt hinter Cloudflare
+   Access und wird nicht öffentlich beworben. Auch eine spätere Monetarisierung bliebe intern.
+2. **AA-Inhalte sind erlaubt und erwünscht:** Unit-Namen, Werte, Angriffe, Effekte, Evolutionen,
+   Traits, Banner, Bosse, Welten aus `docs/anime-adventures/data/` werden **direkt übernommen**
+   (Importer), Bilder aus dem AA-Wiki ebenso. Der Hinweis „nur Referenz, fremde IP“ in
+   `docs/anime-adventures/data/README.md` ist damit überholt.
+3. **Masse vor Feinschliff.** Eine neue Unit ist **nur Daten plus Bild**, null Zeilen Code. Ziel ist
+   der komplette AA-Bestand (561 Units), nicht 14.
+4. **Bot-Balancing nur noch als Rauchtest** („läuft eine Stage überhaupt durch, ist nichts völlig
+   kaputt“). Keine Kennlinien, keine Leave-one-out-Matrizen, keine stundenlangen Messläufe.
+5. **Interface: eigener, hochwertiger Look**, deutlich abgehoben vom Kek-Game-Stil. Komplex, edel,
+   „geil“, angelehnt an AA und moderne Gacha-Spiele (Seltenheits-Rahmen, Leuchten, Animationen,
+   große Porträts).
+6. **Jede Runde liefert etwas Sichtbares** (z. B. „300 Units ziehbar und spielbar“), kurz, mit
+   Screenshot-Beweis. Keine Runde mehr, die nur Messungen liefert.
+
+Was dem unten widerspricht (8-Unit-MVP, Welt „Grenzgilde im Nebelriss“, Lizenzregeln für Assets,
+eigene Figuren aus der Zeichenliste), ist **überholt**. Kein-Limit je Unit-Typ und freie Platzierung
+bleiben (Max, 07.10.2026); die AA-`spawnCap`-Werte werden importiert, aber nicht durchgesetzt.
+
 ## Fest
 
 | Thema | Entscheidung |
@@ -12,7 +39,7 @@ Verbindlich für alle weiteren Runden. Die beantwortete Fragenliste liegt in
 | Flyer | folgen dem normalen Pfad. Treffen können sie Hill/Hybrid-Units **und der Blaster mit 75 % Schaden** (`airDamageBp`, zweite Flächen-Antwort auf Flieger-Pulks; Max, 06.10.2026) |
 | Engine | PixiJS v8 (Rückfall Phaser), Simulation strikt getrennt (`sim/`) |
 | Reihenfolge | M1 Solo-Prototyp → **M3 Sammeln/Gacha/Meta** (zuerst lokal im Browser) → **M2 Koop** (Server, Kek-Game-Konto, Speicherstand wandert auf den Server) → M4 Inhalte. Geändert von M1→M2→M3 durch Max, 07.10.2026 |
-| Welt | **Grenzgilde im Nebelriss**: Fantasy-Abenteuer, warmherzig, eine Gilde hält die Linie gegen Schattenwesen |
+| Welt | ~~Grenzgilde im Nebelriss~~ **überholt (Kurswechsel 07.10.2026):** Anime-Multiversum wie AA, Welten und Figuren aus AA |
 | Plattform | **nur Desktop-Browser.** Handy und Touch werden aktiv gesperrt (freundlicher Hinweis-Bildschirm), keine Mobile-Optimierung |
 | Sprache | **Englisch** (UI, Texte, Namen). Doku im Repo bleibt Deutsch |
 | Hosting | auf `edge` (Netcup) hinter dem vorhandenen Cloudflare-Tunnel, **eigene Domain**. Den Betrieb machen die Menschen bzw. die Homelab-Seite |
@@ -102,15 +129,13 @@ Verbindlich für alle weiteren Runden. Die beantwortete Fragenliste liegt in
 
 ## Grafik-Herkunft
 
-- **Nur Assets mit sauberer Lizenz:** CC0, CC-BY (mit Namensnennung in `ATTRIBUTIONS`),
-  gekaufte Packs mit kommerzieller Lizenz, oder selbst gezeichnet.
-- **Nichts „ausleihen"**, was keine solche Lizenz hat. Auch keine Sprites aus anderen
-  Spielen und keine Fan-Art. Das wäre ein echtes Risiko für das ganze Projekt, sobald es
-  öffentlich ist.
-- **Schriften unter SIL Open Font License (OFL) sind erlaubt** (Max, 06.10.2026). Behandlung wie
-  CC-BY: Eintrag in `ATTRIBUTIONS.md`, Lizenztext im Repo, Schrift nicht einzeln weitergeben.
-- Erst passende freie Packs suchen. Was fehlt, wird selbst gezeichnet. Dafür gibt es einen
-  Styleguide (Paket P8).
+**Geändert durch den Kurswechsel vom 07.10.2026** (siehe oben). Die frühere Regel „nur CC0/CC-BY,
+nichts ausleihen“ gilt **nicht mehr**. Neu:
+- Erlaubt sind **Bilder aus dem Internet**, insbesondere Unit-Porträts und Grafiken aus dem
+  Anime-Adventures-Wiki, sowie Bibliotheken und Assets **ohne Rücksicht auf die Lizenz**.
+- `ATTRIBUTIONS.md` führt weiter die **Herkunft** (Quelle, Abrufdatum), damit man Material später
+  gezielt tauschen kann. Das ist Ordnung, keine Lizenzpflicht.
+- KI-generierte Bilder sind erlaubt, wo eine Vorlage fehlt.
 
 ## Name
 

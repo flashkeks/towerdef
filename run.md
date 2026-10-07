@@ -1,144 +1,153 @@
-# run.md — Runde 8: Gründe zum Wiederkommen (Bindung, Aufgaben, Infinite, Challenges, Stufe 4)
+# run.md — Runde 8 (neu): AA-Import, 561 Units, echtes Interface
 
 Du arbeitest in diesem Repository auf dem Branch `dev`. Commit und Push nach jedem
 Paket. Pull Requests nach `main` nur, wenn der Mensch es sagt.
 
-Reihenfolge beim Einstieg: **`docs/design/ENTSCHEIDUNGEN.md`** (verbindlich), dann
-**`docs/STATUS.md`**, dann diese Datei. Runde 7 liegt in
-[`docs/archiv/run-runde7.md`](docs/archiv/run-runde7.md).
+**Zuerst lesen: `docs/design/ENTSCHEIDUNGEN.md`, Abschnitt „Kurswechsel 07.10.2026“.** Er ersetzt
+alles, was ihm widerspricht. Dann `docs/STATUS.md`, dann diese Datei. Die zuerst geplante Runde 8
+(Bindung, Tagesaufgaben …) ist **verworfen** und liegt in `docs/archiv/run-runde8-verworfen.md`.
 
 ---
 
-## 1. Lage und Ziel
+## 1. Was schiefgelaufen ist und was jetzt zählt
 
-Runde 7 hat den Kreislauf geschlossen: Lobby, Gacha mit sichtbaren Raten/Pity, Sammlung,
-Level/Sterne, Team aus der Sammlung, Belohnung aus nachgerechneten Replays, 14 Units, lokaler
-Speicherstand. Preview mit Runde 7 läuft seit 07.10.2026.
+Runde 4–7 haben ein sauberes, aber **kleines** Spiel gebaut: 14 handgemachte Units, eine Map, und sehr
+viel Zeit in Bot-Balancing. Max und Plori wollten etwas anderes: ein Spiel im **Umfang von Anime
+Adventures**, mit sehr vielen bekannten Anime-Figuren, vielen Systemen und viel zu tun. Die Recherche
+dafür liegt seit Runde 1 fertig in `docs/anime-adventures/data/`:
 
-**Neue Entscheidung (Max, 07.10.2026), steht in ENTSCHEIDUNGEN.md § Schwierigkeit:** Mit
-gelevelten Units werden Hard und Nightmare leicht. Das bleibt so: **keine Kopplung der
-Gegner an das Team-Level.** Herausforderung für starke Teams kommt aus **Inhalt oben drauf**.
-
-**Ziel dieser Runde:** Ein Spieler mit fertigem Team hat noch etwas vor. Ein Spieler mit
-frischem Team weiß, was er als Nächstes anstreben kann. Und es gibt einen Grund, morgen wieder
-reinzuschauen, **ohne** Druck (keine Streaks, keine Countdowns).
-
-**Balance bleibt grob** (höchstens ca. 30 Minuten Bot-Messungen je Paket). **Bots ab jetzt mit
-6er-Team** messen (`teamSlots`), wie ein Mensch. In Runde 7 waren sie unbeschränkt.
-
----
-
-## 2. Agenten und Token-Budget
-
-- Subagenten **immer `model: "sonnet"`**, nie Opus. Mechanisches darf `"haiku"` sein.
-- Höchstens **4 Agenten gleichzeitig**, Rückmeldung höchstens 10 Zeilen.
-- **P1 zuerst und allein** (Team-Stärke als gemeinsame Kennzahl, Profil-Schema-Erweiterung).
-  Danach P2–P5 parallel, an getrennten Dateien. Wer `sim/` ändert, steht in der Pakettabelle;
-  nicht zwei Agenten gleichzeitig an `sim/src/`.
-- Profil-Schema-Änderungen nur mit **Migration** (Schema-Version hoch, alte Stände laden weiter).
-- Vor jedem Commit: Tests + Typecheck in `sim/` und `client/`, `npm run build`, `npm run smoke`.
-
----
-
-## 3. Abnahmeziele
-
-| Ziel | Prüfung |
+| Datei | Inhalt |
 |---|---|
-| Team-Stärke sichtbar | eine Zahl je Unit und je Team (aus Level, Sternen, Seltenheit, Bindung), überall gleich berechnet (`meta/`), in Team-Auswahl und Stage-Auswahl sichtbar |
-| Empfohlene Stärke | jede Stufe/Challenge zeigt „Recommended power"; grob kalibriert: mit empfohlener Stärke gewinnt der beste Bot (6er-Team) 60–90 % |
-| Stufe 4 | neue Stufe über Nightmare, mit eigenen Regeln (nicht nur HP), für Teams mit `max`-Profil schaffbar, aber nicht sicher (Bot 30–60 %) |
-| Infinite | spielbar, endet erst mit Niederlage, persönliche Bestwerte je Team gespeichert, Belohnung mit abnehmendem Ertrag (kein Endlos-Farmen von Crystals) |
-| Challenges | mindestens 6 feste Challenges mit eigener Regel (z. B. „nur Boden-Units", „Flieger-Sturm", „kein Verkauf"), einmalige Belohnung je Challenge |
-| K4 Bindung | jede Unit sammelt Bindungs-XP durch Einsätze; 5 Bindungsstufen, je Stufe Wahl aus 2 Perks; Perks wirken im Simulator; Umwählen kostet Gold |
-| Tagesaufgaben | 3 Aufgaben je Tag, 1 × kostenlos neu würfeln, Belohnung Crystals; **kein Streak-Bonus, keine Strafe** für verpasste Tage, kein Countdown in der UI außer „new tasks tomorrow" |
-| Mythic-Tempo | erstes Mythic im Mittel nach 14–28 Tagen (4 Siege/Tag + Aufgaben), Rechnung in `docs/balancing/meta.md` |
-| Replays | Format v4 trägt Modus, Challenge, Perks; alte Replays werden erkannt, nicht falsch gewertet |
-| Smoke | neuer Pfad: Lobby → Aufgabe ansehen → Challenge starten → Infinite starten → Perk wählen, mit echten Mausklicks |
+| `units.json` | **561 Units** mit allen Stufen (Kosten, Schaden, SPA, Reichweite, Angriff je Stufe), Placement, Damage-Typ, Element, Crit, Evolution; dazu **1.098 Angriffe** (Form, Winkel, Breite, Radius, Hits, Effekte) und **22 Effekte** |
+| `traits.json` | 12 Traits mit Chancen und Wirkung, Reroll |
+| `banners.json` | Banner, Raten, Pity |
+| `items.json` | 219 Evolutionsrezepte, Items, Shops |
+| `enemies.json` | Gegner-Modifikatoren, **144 Bosse**, Boss-Angriffe, CC-Immunitäten |
+| `maps.json`, `waves.json` | **22 Story-Welten**, Legend Stages, Raids, Wave-Anzahlen |
+
+Die Namen und Inhalte dürfen **direkt übernommen** werden (intern, hinter Access, Entscheidung Max).
+
+**Ziel dieser Runde, sichtbar und vorzeigbar:**
+1. **Alle 561 AA-Units** stecken als Daten im Spiel, sind über Gacha ziehbar und im Match spielbar.
+2. Eine **neue Unit braucht null Zeilen Code**, nur einen Datensatz (und ein Bild).
+3. Das **Interface** sieht hochwertig und eigenständig aus, nicht mehr wie Kek-Game.
+4. **Story-Gerüst:** mehrere Welten mit Acts, AA-Namen und AA-Bossen, mindestens 3 spielbare Maps.
+
+**Kein Feinschliff, keine Bot-Messreihen.** Bots nur als Rauchtest: Eine Stage läuft mit zufälligen
+AA-Units ohne Absturz durch, und eine starke Unit schafft Story Act 1. Mehr nicht.
 
 ---
 
-## 4. Arbeitspakete
+## 2. Arbeitsweise (neu)
 
-### P0 — Status (Hauptsitzung)
-`docs/STATUS.md`: Runde-8-Tabelle; Runde 7 abgeschlossen zusammenfassen.
+- Subagenten **immer `model: "sonnet"`**, nie Opus; Mechanisches `"haiku"`. Höchstens 4 gleichzeitig.
+- **Jedes Paket endet mit Screenshots** in `client/docs/r8/` und einer Zeile in STATUS: „was man jetzt
+  sehen kann“. Ein Paket ohne sichtbares Ergebnis ist nicht fertig.
+- **Zeitbudget:** keine Messläufe über 10 Minuten. Wenn etwas „ungefähr läuft“, weiter.
+- `sim/` bleibt deterministisch (Festkomma, Seed). Replays bleiben gültig; Format-Version hoch, alte
+  Replays werden als „altes Regelwerk“ erkannt.
+- Vor jedem Commit: Tests + Typecheck in `sim/` und `client/`, `npm run build`, `npm run smoke`.
+  Tests, die an den 14 alten Units hängen, auf AA-Units umstellen oder eine kleine feste Testauswahl
+  verwenden.
 
-### P1 — Team-Stärke und Schema (ein Agent, allein, zuerst)
-- `meta/power.ts`: Stärke je Unit und Team als **eine** Formel (Level, Sterne, Seltenheit, Bindung).
-  Grob an der Bot-Siegquote ausgerichtet, nicht feinkalibriert.
-- Profil-Schema v-next: Bindung je Unit (XP, Stufe, gewählte Perks), Aufgaben-Zustand, Infinite-
-  Bestwerte, Challenge-Fortschritt. Migration von Runde-7-Ständen mit Test.
-- Bots: Meta-Profile `fresh`/`mid`/`max` bekommen ihre Team-Stärke ausgewiesen; Messungen ab
-  jetzt mit 6er-Team.
+---
 
-### P2 — Stufe 4, Challenges, empfohlene Stärke (ein Agent, nach P1, ändert `sim/data`)
-- **Stufe 4** (Name englisch, passend zur Welt; Arbeitsname „Abyss"): neue Regeln, z. B. Elite in
-  jeder Welle, zweite Boss-Phase, Element-Pflichtwellen. Freischaltung über Spieler-Level und
-  Nightmare-Sieg.
-- **Challenges** als Daten (`sim/data/challenges.json` gibt es als Konzept seit Runde 4):
-  mindestens 6, je eine klare Regel, Empfehlung, einmalige Belohnung.
-- „Recommended power" je Stufe und Challenge aus Bot-Messung (grob, 6er-Team).
+## 3. Arbeitspakete
 
-### P3 — Infinite (ein Agent, nach P1, Client + `meta/`; `sim/` nur wenn nötig)
-- Der Simulator kann Infinite seit Runde 3. Client-Modus, Anzeige der aktuellen Welle und des
-  Bestwerts, Ergebnis-Bildschirm mit „New best!".
-- Bestwert je Team-Zusammenstellung und gesamt, lokal. **Globale Rangliste kommt mit M2**
-  (Server), nicht jetzt; Datenformat schon so, dass der Server es später prüfen kann (Replay).
-- Belohnung: Gold und XP je Welle mit abnehmendem Ertrag, Crystals nur für neue Bestwerte
-  (Meilensteine, einmalig).
+### P1 — Baukasten im Simulator (ein Agent, allein, zuerst)
+Alles, was in `units.json` vorkommt, muss der Kern **generisch** können:
+- **Angriffsformen** `single`, `circle` (Radius um das Ziel), `cone` (Winkel ab Unit, begrenzt durch
+  Range), `line` (Breite, ab Unit), `full` (alles in Range); **Hits** (Schaden geteilt, nicht vervielfacht).
+- **Wechselnde Angriffe je Stufe** (z. B. `rokuhira:one` → `:two` → `:three`).
+- **Damage-Typen** physical/magic/true, **Elemente** und Gegner-Schwächen/Resistenzen nach
+  `design-brief.md` § 2.4 (Schwäche additiv, Resistenz `100/(100+R)`, True ignoriert).
+- **Crit** (Chance, Multiplikator).
+- **Alle 22 Effekte** aus `units.json` (`effects`): Burn, Bleed, Poison, Wither, Slow, Stun, Freeze,
+  Knockback, Confused, Sunshine … nach `combat-system.md` § 7. Was sich nicht sinnvoll modellieren
+  lässt: als No-op mit Eintrag in `docs/aa-import/unsupported.md`, **nicht** blockieren.
+- **Maßstab:** feste Umrechnung AA-Studs → Kacheln und AA-Yen → Match-Münzen als Konstanten in
+  `economy.json`. Am einfachsten: **AA-Werte unverändert übernehmen** (Yen, Schaden, SPA) und Gegner-HP,
+  Start-Yen und Einkommen auf AA-Maßstab heben. Begründung in `docs/aa-import/massstab.md`.
+- `spawnCap` wird gelesen, aber **nicht** durchgesetzt (Entscheidung Max: kein Typ-Limit).
 
-### P4 — K4 Bindung (ein Agent, nach P1, ändert `sim/src` für Perk-Wirkungen)
-- Bindungs-XP je Einsatz (Teilnahme, Schaden, Sieg), 5 Stufen, je Stufe Wahl aus 2 Perks.
-  Perks als Daten (`sim/data/perks.json`), Wirkung über `unitMods` bzw. kleine, klar benannte
-  Regel-Hooks. **Kein Zufall**, beide Optionen sichtbar.
-- Je Unit ein kurzer Satz Charakter-Text pro Bindungsstufe (Englisch, Welt „Grenzgilde im
-  Nebelriss", warmherzig). Kurz halten, Platzhalter-Qualität ist ok.
-- Perk-Umwahl kostet Gold. Bindung zählt in die Team-Stärke (P1).
-- Grob prüfen: Kein einzelner Perk ist Pflicht oder macht eine Unit allein übermächtig.
+### P2 — Importer (ein Agent, nach P1)
+- `tools/aa-import/`: liest `docs/anime-adventures/data/*.json`, schreibt `sim/data/units/aa.json`
+  (oder eine Datei je Unit), **alle 561**. Lauf ist wiederholbar (`npm run aa-import`).
+- Report `docs/aa-import/report.md`: wie viele Units voll unterstützt, welche Felder/Effekte fehlen,
+  welche Units ausgeblendet werden mussten (Ziel: ≥ 95 % spielbar).
+- **Evolutionen** (219 Rezepte), **Traits** (12, Reroll), **Banner/Raten/Pity** aus den AA-Dateien
+  übernehmen und an das bestehende Gacha (Runde 7) anschließen. Seltenheiten Rare/Epic/Legendary/
+  Mythic/Secret/Exclusive.
+- Die 14 alten Units fliegen aus dem Pool (Spielstände aus Runde 7: Migration, alte Units werden
+  gegen Crystals erstattet).
+- **Bild-Manifest** `client/public/aa/manifest.json`: je Unit-ID der erwartete Wiki-Dateiname
+  (`nameRR` mit `_` statt Leerzeichen + `.png`, Varianten wie `(Shiny)` mit aufnehmen). Die Bilder
+  selbst holt die **Homelab-Seite** (Abschnitt 5), sie sind in deiner Umgebung gesperrt.
 
-### P5 — Tagesaufgaben (ein Agent, nach P1, nur `meta/` + Client)
-- Aufgaben-Pool als Daten (z. B. „Win a stage with Frost", „Clear wave 15 in Infinite", „Pull
-  once"). 3 je Tag, deterministisch aus Datum + Profil-ID, 1 × gratis neu würfeln.
-- Tageswechsel nach lokaler Mitternacht. Belohnung Crystals, Summe so, dass das Mythic-Tempo
-  ins Ziel kommt (Abschnitt 3), Rechnung in `meta.md`.
-- **Verboten:** Streak-Zähler, „Komm morgen wieder sonst ..."-Texte, Push-artige Hinweise,
-  Countdown-Uhren.
-- Lobby zeigt die Aufgaben dezent, mit Fortschritt.
+### P3 — Welten, Acts, Maps (ein Agent, nach P1, parallel zu P2)
+- Story-Struktur nach `maps.json`: Welt → 6 Acts, Boss am Act-Ende (Bosse aus `enemies.json`, so weit
+  der Kern ihre Fähigkeiten kann, sonst vereinfacht).
+- **Mindestens 3 Welten spielbar**, jede mit eigener Map (eigener Pfad, eigene Zonen, eigene Farbwelt),
+  Welle-Anzahl und Gegner-Modifikatoren aus `waves.json`/`enemies.json`.
+- Infinite (gibt es im Kern) als eigener Modus in der Lobby, Legend Stages und Raids als Daten-
+  Gerüst (spielbar ab der nächsten Runde reicht).
+- Fortschritt: Acts schalten sequenziell frei, Erst-Clear-Belohnung nach `design-brief.md` § 1.
 
-### P6 — Abschluss (Hauptsitzung)
-Alle Abnahmeziele messen, Screenshots (Team-Stärke, Stufe 4, Challenges, Infinite-Ergebnis,
-Bindung mit Perk-Wahl, Aufgaben), `docs/STATUS.md` Kurzbericht:
+### P4 — Interface-Neubau (ein Agent, nach P1, parallel; Recherche erlaubt)
+Max: „Das soll sich abheben und wirklich gut aussehen, komplex sein, ein wirklich geiles Interface.“
+- **Eigenes Design-System** (nicht der Kek-Game-Look): Farbwelt, Typo (Display-Schrift mit Charakter),
+  Panels mit Tiefe, Seltenheits-Rahmen mit Verlauf/Glow (Secret/Mythic animiert), Icons.
+  Vorbilder: AA, Genshin, Honkai Star Rail, Arknights, Blue Archive. Eine kurze Moodboard-Notiz in
+  `docs/design/ui.md` mit 5–10 Bezugspunkten.
+- **Lobby** als Hub mit großem Hintergrund und Figur(en) im Vordergrund, Menü-Kacheln statt Knopfliste.
+- **Summon:** Banner-Artwork mit Featured-Units, dramatische Zieh-Animation (Licht, Seltenheits-Farbe,
+  Porträt-Reveal), 10er-Übersicht als Karten; Raten/Pity weiterhin sichtbar.
+- **Sammlung:** Raster mit Porträt-Karten (Seltenheit, Level, Element-Symbol, Trait-Badge), Filter und
+  Sortierung (Seltenheit, Element, Placement, DPS), Detailseite mit großem Porträt, Werten je Stufe,
+  Angriffsform-Vorschau, Evolution, Trait-Reroll.
+- **Im Match:** Unit-Leiste mit Porträts, Upgrade-Panel mit Werten alt → neu, Wellen-/Boss-Anzeige im
+  gleichen Stil.
+- Bibliotheken frei wählbar (Lizenz egal): z. B. GSAP für Animationen, pixi-filters für Glow.
+- Bilder kommen aus `/aa/units/...` (Abschnitt 5). **Fallback** ohne Bild: gestaltete Karte mit Initialen,
+  Element-Farbe und Rahmen, damit lokal und in Screenshots nichts kaputt aussieht.
+
+### P5 — Abschluss (Hauptsitzung)
+Screenshots (Lobby, Summon-Reveal, 10er-Ergebnis, Sammlung mit vielen Units, Unit-Detail, Weltkarte,
+Match in Welt 2 und 3), `docs/STATUS.md` Kurzbericht:
 
 ```text
-STATUS — Runde 8
-Pakete erledigt / offen:
-Abnahmeziele: je Ziel erreicht / verfehlt (Wert):
-Team-Stärke-Formel (kurz):
-Stufe 4: Regeln, empfohlene Stärke, Bot-Quote:
-Challenges (Liste):
-Perks (Anzahl, Beispiele):
-Mythic-Tempo (alt → neu):
-Was die Menschen als Nächstes testen sollen (max. 5 Punkte):
-Vorschlag Runde 9 (Kandidaten: M2-Start mit Server/Konto, zweite Map, eigene Portraits): 3–5 Sätze
+STATUS — Runde 8 (AA-Import)
+Was man jetzt sehen kann (5 Zeilen):
+Units: importiert / spielbar / ausgeblendet (Gründe):
+Effekte: unterstützt / No-op:
+Welten spielbar:
+Maßstab (Yen, HP, Studs):
+Interface: was neu ist:
+Bekannte Lücken:
+Vorschlag Runde 9: 3–5 Sätze
 Agenten (Anzahl, Modell):
 Commits:
 ```
 
 ---
 
-## 5. Was du nicht tust
+## 4. Was du nicht tust
 
-- **Nichts deployen.** Die Preview baut die Homelab-Seite aus `dev`, auf Ansage von Max.
-- Kein Server, kein Konto, keine globale Rangliste, kein echter Zahlungsanbieter.
-- Keine Streaks, keine Countdown-Banner, keine versteckten Raten, keine Währungsketten.
-- Gegner **nicht** mit dem Team-Level skalieren (Entscheidung Max).
-- Keine Assets ohne geprüfte Lizenz. `ENTSCHEIDUNGEN.md` nicht ändern; Fragen an die Menschen
-  kommen in STATUS unter „Offene Fragen", mit Empfehlung.
+- **Nichts deployen.** Die Homelab-Seite baut die Preview aus `dev`.
+- Keine Balance-Messreihen, keine Kennlinien, keine Leave-one-out-Tabellen.
+- Kein Server, kein Konto (M2 kommt später).
+- `ENTSCHEIDUNGEN.md` nicht ändern; Fragen an die Menschen in STATUS unter „Offene Fragen“.
 
 ---
 
-## 6. Ende einer Sitzung
+## 5. Was die Homelab-Seite parallel macht (nur zur Info)
 
-Vor Kontextende: `docs/STATUS.md` aktualisieren, Tests laufen lassen, committen, pushen.
+- Lädt alle Bilder aus dem AA-Wiki über CT 113 (das Wiki ist aus deiner Umgebung gesperrt), legt sie
+  auf `edge` unter `/srv/duskwardens/aa/` ab und liefert sie auf der Preview unter `/aa/` aus.
+  Grundlage ist dein `client/public/aa/manifest.json` (P2) bzw. bis dahin die Unit-Namen aus
+  `units.json`.
+- Format: `/aa/units/<unit-id>.png` (Original) und `/aa/units/<unit-id>.webp` (verkleinert), dazu
+  `/aa/index.json` mit allen vorhandenen IDs. Fehlende Bilder stehen in `/aa/missing.json`.
 
-> Ziel dieser Runde: Ein volles Team hat ein Ziel, ein frisches Team einen Weg dorthin, und
-> morgen gibt es einen kleinen Grund, wieder reinzuschauen, ohne schlechtes Gewissen, wenn nicht.
+> Ziel dieser Runde: Wer die Preview öffnet, sieht ein Spiel, das nach Anime Adventures aussieht und
+> sich so anfühlt: Hunderte bekannte Figuren, ein Summon, das Spaß macht, und mehrere Welten.
