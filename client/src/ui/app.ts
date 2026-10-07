@@ -15,6 +15,7 @@ import { Help } from './help';
 import { Hints } from './hints';
 import { Hud } from './hud';
 import { Input } from './input';
+import { Nudges } from './nudges';
 import { WavePanels } from './panels';
 import { Screens } from './screens';
 import { Shop } from './shop';
@@ -40,6 +41,7 @@ export class Ui {
   private readonly unitPanel = new UnitPanel();
   private readonly banner = new BossBanner();
   private readonly toast = new Toast();
+  private readonly nudges = new Nudges();
   private readonly screens: Screens;
   private session: Session | null = null;
   private mvp = new MvpTracker();
@@ -51,7 +53,7 @@ export class Ui {
     root.classList.add('game');
     const side = h('aside', 'side');
     side.append(this.hints.el, this.waves.previewEl, this.waves.cardsEl, this.unitPanel.el);
-    this.boardWrap.append(this.banner.el, this.toast.el, this.screens.pausedEl);
+    this.boardWrap.append(this.banner.el, this.nudges.el, this.toast.el, this.screens.pausedEl);
     const main = h('main', 'main');
     main.append(this.boardWrap, side);
     root.append(this.hud.el, main, this.shop.el, this.screens.el, this.help.el, versionEl());
@@ -73,6 +75,7 @@ export class Ui {
     this.waves.bind();
     this.unitPanel.bind();
     this.hud.bind(session);
+    this.nudges.bind(session);
     this.hints.bind();
   }
 
@@ -93,6 +96,7 @@ export class Ui {
     this.hints.update(s);
     this.banner.update(s);
     this.toast.update(s);
+    this.nudges.update(s);
     if (s.over && this.screens.hidden) this.screens.showEnd(s, this.mvp.mvp());
   }
 }

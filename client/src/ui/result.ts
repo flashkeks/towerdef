@@ -1,6 +1,8 @@
 /** Ergebnis-Bildschirm (Sieg/Niederlage, Welle, Leaks, MVP, Dauer) und Pause-Menue. Besitzer: P6. */
 import { t } from '../i18n/t';
 import type { Session } from '../game/session';
+import { getRecorder } from '../game/recorder';
+import { defeatTips, type TipInput } from '../view/tips';
 import { h } from './dom';
 import { formatDuration, type Mvp } from './mvp';
 
@@ -13,6 +15,36 @@ export function replaySlot(session: Session, factory?: ReplayButtonFactory): HTM
   const btn = factory?.(session);
   if (btn) slot.append(btn);
   return slot;
+}
+
+/** Eingabe fuer die Tipps aus dem Recorder (Wellenstatistik, Befehle) und dem Team; ohne Recorder nur Endstand. */
+export function tipInput(s: Session): TipInput {
+  const rec = getRecorder()?.snapshot() ?? null;
+  const st = s.sim.state;
+  const bossWaves: number[] = [];
+  for (let n = 1; n <= s.totalWaves; n++) if (s.sim.previewWave(n)?.boss) bossWaves.push(n);
+  return {
+    result: st.result ?? null,
+    endWave: st.wave,
+    endCoins: st.players[0]?.coins ?? 0,
+    waves: rec?.waves ?? [],
+    commands: rec?.commands ?? [],
+    team: s.teamCatalog(),
+    bossWaves,
+  };
+}
+
+function tipsBox(s: Session): HTMLElement {
+  const box = h('div', 'tips');
+  box.append(h('h2', undefined, t('tips.title')));
+  const ul = h('ul', 'tip-list');
+  for (const tip of defeatTips(tipInput(s))) {
+    const li = h('li', undefined, tip.text);
+    li.dataset.tip = tip.id;
+    ul.append(li);
+  }
+  box.append(ul);
+  return box;
 }
 
 export interface ResultHandlers {
@@ -38,6 +70,7 @@ export function buildResult(s: Session, mvp: Mvp | null, handlers: ResultHandler
   row('result.stats.time', formatDuration(st.tick), 'r-time');
   row('result.stats.mvp', mvp ? t('result.mvp.value', { name: t(`unit.${mvp.unit}.name`), damage: Math.round(mvp.damage) }) : t('result.mvp.none'), 'r-mvp');
   box.append(stats);
+  if (!win) box.append(tipsBox(s));
   const btns = h('div', 'diff-row');
   const again = h('button', 'btn primary restart', t('result.again'));
   again.addEventListener('click', handlers.onAgain);

@@ -60,7 +60,14 @@ export function drawUnit(node: UnitNode, ctx: RenderContext, def: UnitDef, u: Un
     const rx = (big ? 30 : 12) * s;
     g.ellipse(0, (big ? 24 : 10) * s - lift * 0.0, rx, ry).stroke({ width: Math.max(2, s), color: C.white });
   }
-  if (ready) g.rect(half * 0.7, topY, px * 2, px * 2).fill(C.teal).stroke({ width: 1, color: C.ink });
+  if (ready) {
+    // Bereit-Marke: goldenes Plus mit dunklem Rand rechts ueber der Unit (gut sichtbar, auch auf dem Huegel)
+    const a = px * 3;
+    const cx = half * 0.7;
+    g.rect(cx, topY - px, a, a).fill(C.gold).stroke({ width: 1, color: C.ink });
+    g.rect(cx + px, topY - px * 2, px, a + px * 2).fill(C.gold).stroke({ width: 1, color: C.ink });
+    g.rect(cx + px, topY, px, px).fill(C.white);
+  }
 }
 
 export interface EnemyBody {

@@ -120,7 +120,7 @@ export class Session {
     const spec = failureToast(cmd, reason, {
       name: def ? t(`unit.${def.id}.name`) : undefined,
       def,
-      cost: unit ? (this.sim.upgradeCost(unit.id) ?? 0) : def?.placeCost,
+      cost: unit ? (this.sim.upgradeCost(unit.id) ?? 0) : def ? this.sim.placeCost(PLAYER, def.id) : undefined,
       coins: this.sim.state.players[PLAYER]?.coins ?? 0,
       teamUnits: caps.teamUnits,
       teamSlots: caps.teamSlots,

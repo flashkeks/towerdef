@@ -57,6 +57,8 @@ Seit P0b (Runde 5) sind `ui/app.ts` und `game/renderer.ts` nur noch Verdrahtung.
 | `src/ui/board-input.ts` | Maus aufs Spielfeld (Runde 6, ersetzt `slots.ts`): Brett-Groesse, Zeiger in Pixeln und Milli-Tiles, Klick (+ Shift) -> `Session.clickBoard` | P1, Runde 6: P3 |
 | `src/ui/hints.ts`, `hints-store.ts`, `help.ts`, `version.ts` | Ersthinweise (Speicher + Schritte getrennt, getestet), Hilfe-Overlay, Versionsanzeige | P1 |
 | `src/view/placement.ts`, `unit-info.ts` | Bildschirm <-> Welt (`pxToMilli`, `pointerToWorld`), Geist-Status, Zonen-Passung, Treffer auf Units, Shift-Logik, Fehlertoasts, Reichweite und Upgrade-Wirkung (reine Logik, getestet) | P1, Runde 6: P3 |
+| `src/view/readability.ts`, `tips.ts` | Runde 6 P4, reine Logik (getestet): Unit-Symbole (`unitTags`: air/area/boss/support/income aus `canHitAir`, `attack.kind`, `ability.kind`, `aura`, `farm`), Flieger-Warnung (`flyerWarning`), Muenz-Hinweis (`coinNudge`), Bereit-Faehigkeiten, Boss-Helfer; `defeatTips`: drei Tipps nach Niederlage aus Recorder-Wellenstatistik, Befehlen, Team | P4 (Runde 6) |
+| `src/ui/nudges.ts` | Hinweise unten links im Feld: Muenzen (Leak-Fenster ueber den Bus) und Faehigkeit bereit | P4 (Runde 6) |
 | `src/ui/unit-panel.ts` | Auswahl-Panel einer gesetzten Unit | P1 |
 | `src/ui/toast.ts` | Fehler-Toast | P1 |
 | `src/ui/input.ts` | Tastatur und Rechtsklick (Maus aufs Feld: `board-input.ts`) | P1 |

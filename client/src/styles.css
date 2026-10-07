@@ -200,3 +200,30 @@ canvas.board { display: block; }
 @media (prefers-reduced-motion: reduce) { .hud .stat.lives.leak-hit, .boss-banner.enter, .boss-banner.phase, .boss-banner[data-mode='danger'] { animation: none; } }
 .boss-banner[data-pos='bottom'] { top: auto; bottom: 8px; }
 .boardwrap.placing { cursor: crosshair; }
+
+/* ---- Runde 6, P4: Lesbarkeit und Hilfe ---- */
+.utags { display: inline-flex; gap: 3px; }
+.utag { font: 800 0.58rem monospace; letter-spacing: 0.04em; padding: 1px 4px; border-radius: 3px; color: var(--ink); background: #a9aec2; cursor: help; }
+.utag.air { background: #7cc4f0; }
+.utag.area { background: var(--orange); }
+.utag.boss { background: #e8707f; }
+.utag.support { background: var(--gold); }
+.utag.income { background: #8ad07a; }
+.unit-btn .ucost.up { color: var(--orange); }
+.sym.fly { display: inline-block; font: 800 0.6rem monospace; letter-spacing: 0.04em; padding: 1px 4px; margin-right: 5px; border-radius: 3px; color: var(--ink); background: #7cc4f0; }
+.rows li.flying .cnt { color: #bfe6fb; }
+.flyer-warning { display: flex; align-items: flex-start; gap: 4px; margin: 4px 0 6px; padding: 5px 8px; border-radius: 6px; font-weight: 700; font-size: 0.82rem; border: 2px solid #7cc4f0; background: #7cc4f01f; }
+.flyer-warning.none { border-color: var(--red); background: #d8344a33; color: #fff; animation: warn-pulse 1.4s ease-in-out infinite; }
+@keyframes warn-pulse { 0%, 100% { background-color: #d8344a33; } 50% { background-color: #d8344a77; } }
+.boss-help { margin: 4px 0; font-size: 0.8rem; color: var(--parch); }
+.btn.primary.start.warn-air { background: var(--red); color: #fff; animation: warn-pulse 1.4s ease-in-out infinite; }
+.nudges { position: absolute; left: 10px; bottom: 10px; display: flex; flex-direction: column; gap: 4px; align-items: flex-start; pointer-events: none; z-index: 4; }
+.nudge { padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; background: #1b2036dd; border: 1px solid var(--stone); color: var(--parch); }
+.nudge.coins { border-color: var(--gold); color: var(--gold); }
+.nudge.ability { border-color: var(--teal); color: var(--teal); }
+.nudge.hidden { display: none; }
+.tips { margin-top: 14px; text-align: left; }
+.tips h2 { margin: 0 0 6px; text-align: center; }
+.tip-list { margin: 0; padding-left: 1.2rem; color: var(--parch); }
+.tip-list li { margin: 3px 0; }
+@media (prefers-reduced-motion: reduce) { .flyer-warning.none, .btn.primary.start.warn-air { animation: none; } }

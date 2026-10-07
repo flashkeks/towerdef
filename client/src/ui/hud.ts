@@ -2,6 +2,7 @@
 import { t } from '../i18n/t';
 import { SPEEDS, type Session } from '../game/session';
 import { hudModel } from '../view/model';
+import { flyerWarning } from '../view/readability';
 import { h, setClass, setText } from './dom';
 
 export class Hud {
@@ -52,14 +53,18 @@ export class Hud {
 
   /** Jeden Frame. Gibt die Nummer der naechsten Welle zurueck (null = keine mehr), die Panels brauchen sie. */
   update(s: Session): number | null {
-    const hud = hudModel(s.sim.state, s.totalWaves, s.waveTimerTicks);
+    const st = s.sim.state;
+    const hud = hudModel(st, s.totalWaves, s.waveTimerTicks);
     setText(this.livesText, `${hud.lives} / ${hud.maxLives}`);
     this.livesFill.style.width = `${Math.round(hud.livesRatio * 100)}%`;
     setClass(this.livesFill, 'low', hud.livesRatio < 0.3);
     setText(this.coinsText, String(hud.coins));
     setText(this.waveText, hud.wave === 0 ? t('hud.prep') : t('hud.wave', { wave: hud.wave, total: hud.totalWaves }));
     setText(this.countdownText, hud.countdownSeconds !== null ? t('hud.countdown', { s: hud.countdownSeconds }) : hud.finalWave ? t('hud.lastWave') : '');
-    setText(this.startBtn, hud.nextWave !== null ? t('hud.startWave', { n: hud.nextWave }) : t('hud.lastWave'));
+    const noAir = hud.nextWave !== null && (flyerWarning(s.nextPreview(hud.nextWave), st.units, s.sim.catalog())?.airUnits ?? 1) === 0;
+    setClass(this.startBtn, 'warn-air', noAir);
+    this.startBtn.title = noAir ? t('hud.startWave.noair.tip') : '';
+    setText(this.startBtn, hud.nextWave === null ? t('hud.lastWave') : t(noAir ? 'hud.startWave.noair' : 'hud.startWave', { n: hud.nextWave }));
     this.startBtn.disabled = !hud.canStartWave;
     setText(this.pauseBtn, s.paused ? t('hud.resume') : t('hud.pause'));
     this.speedBtns.forEach((b) => setClass(b, 'active', b.dataset.speed === String(s.speed)));
