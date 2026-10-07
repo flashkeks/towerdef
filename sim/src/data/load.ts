@@ -16,6 +16,14 @@ import {
   ProgressionSchema,
   StageSchema,
   UnitFileSchema,
+  WaveTemplateSchema,
+  WorldFileSchema,
+  LegendStagesSchema,
+  RaidsSchema,
+  type LegendStagesData,
+  type RaidsData,
+  type WorldFile,
+  type WaveTemplate,
   type AttackData,
   type GameData,
   type ProgressionData,
@@ -24,6 +32,7 @@ import {
   type UnitFile,
   type UnitsData,
 } from './schema.js';
+import { expandWorld, validateWorlds } from './worlds.js';
 
 const DATA_DIR = fileURLToPath(new URL('../../data/', import.meta.url));
 
@@ -70,6 +79,7 @@ export function validateGameData(d: GameData): void {
   validateCards(d);
   validateCoop(d);
   for (const [sid, s] of Object.entries(d.stages)) validateStage(d, s, sid);
+  if (d.worlds && d.waveTemplate) validateWorlds(d.worlds, d.waveTemplate, new Set((d.bosses?.kits ?? []).map((k) => k.id)), enemyIds);
 }
 
 /** Boss-Kits (P4): Wave eindeutig, Phasen-Schwellen fallend, Querverweise auf Gegnertypen und Phasen-Indizes. */
@@ -77,9 +87,9 @@ function validateBosses(d: GameData, enemyIds: Set<string>): void {
   const waves = new Set<number>();
   const ids = new Set<string>();
   for (const k of d.bosses?.kits ?? []) {
-    if (waves.has(k.wave)) throw new Error(`Boss-Kit ${k.id}: Wave ${k.wave} doppelt belegt`);
+    if (k.wave !== undefined && waves.has(k.wave)) throw new Error(`Boss-Kit ${k.id}: Wave ${k.wave} doppelt belegt`);
     if (ids.has(k.id)) throw new Error(`Boss-Kit-ID ${k.id} doppelt`);
-    waves.add(k.wave);
+    if (k.wave !== undefined) waves.add(k.wave);
     ids.add(k.id);
     if (k.phases[0].fromHpBp !== 10000) throw new Error(`Boss-Kit ${k.id}: Phase 0 muss bei 10000 beginnen`);
     for (let i = 1; i < k.phases.length; i++) {
@@ -134,6 +144,11 @@ export function validateStage(d: GameData, s: StageData, label = s.id): void {
   s.zones.rows.forEach((row, j) => {
     if (row.length !== cols) throw new Error(`Stage ${label}: Zonenzeile ${j} hat ${row.length} Zeichen, erwartet ${cols}`);
   });
+  for (const [w, kitId] of Object.entries(s.bossKits ?? {})) {
+    if (!d.bosses?.kits.some((k) => k.id === kitId)) throw new Error(`Stage ${label}: Boss-Kit ${kitId} unbekannt`);
+    const wave = s.waves[Number(w) - 1];
+    if (!wave || !wave.groups.some((g) => g.type === 'boss')) throw new Error(`Stage ${label}: Boss-Kit ${kitId} an Welle ${w}, dort steht kein Boss`);
+  }
   s.waves.forEach((w, i) => {
     if (w.n !== i + 1) throw new Error(`Stage ${label}: Wave-Nummer ${w.n} an Index ${i}`);
     for (const g of w.groups) {
@@ -175,7 +190,21 @@ export function loadUnits(): UnitsData {
   return mergeUnitFiles(files);
 }
 
-/** Lädt und validiert alle Daten inklusive aller Stages in data/stages/. */
+/** Lädt alle Welt-Dateien (`data/worlds/*.json`) und die Wellen-Vorlage. */
+export function loadWorlds(): { worlds: WorldFile[]; waveTemplate: WaveTemplate } {
+  const worlds: WorldFile[] = [];
+  for (const f of readdirSync(DATA_DIR + 'worlds').sort()) {
+    if (f.endsWith('.json')) worlds.push(WorldFileSchema.parse(readJson('worlds/' + f)));
+  }
+  return { worlds, waveTemplate: WaveTemplateSchema.parse(readJson('wave-template.json')) };
+}
+
+/** Legend Stages und Raids (Daten-Gerüst, noch nicht spielbar). */
+export function loadModes(): { legend: LegendStagesData; raids: RaidsData } {
+  return { legend: LegendStagesSchema.parse(readJson('modes/legend-stages.json')), raids: RaidsSchema.parse(readJson('modes/raids.json')) };
+}
+
+/** Lädt und validiert alle Daten inklusive aller Stages in data/stages/ und aller Welten (jede Welt ergibt Act-Stages und Infinite). */
 export function loadGameData(): GameData {
   const stages: Record<string, StageData> = {};
   for (const f of readdirSync(DATA_DIR + 'stages').sort()) {
@@ -186,6 +215,8 @@ export function loadGameData(): GameData {
   // Infinite: gleiche Map und gleiche Waves 1-20 wie standard20, danach seeded erzeugte Waves (systems/infinite.ts).
   const base = stages['standard20'];
   if (base && !stages['infinite']) stages['infinite'] = { ...base, id: 'infinite', name: 'Infinite', infinite: true };
+  const { worlds, waveTemplate } = loadWorlds();
+  for (const w of worlds) for (const s of expandWorld(w, waveTemplate)) stages[s.id] = StageSchema.parse(s);
   const data: GameData = {
     economy: EconomySchema.parse(readJson('economy.json')),
     enemies: EnemiesSchema.parse(readJson('enemies.json')),
@@ -197,6 +228,8 @@ export function loadGameData(): GameData {
     bosses: BossesSchema.parse(readJson('bosses.json')),
     cards: CardsSchema.parse(readJson('cards.json')),
     stages,
+    worlds,
+    waveTemplate,
   };
   validateGameData(data);
   return data;

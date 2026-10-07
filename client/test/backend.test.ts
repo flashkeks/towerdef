@@ -56,7 +56,7 @@ describe('LocalBackend', () => {
     expect(played.result).toBe('win');
     const m = await be.reportMatch(played, key(3));
     if (!m.ok) throw new Error(m.message);
-    expect(m.reward.crystals).toBe(100);
+    expect(m.reward.crystals).toBe(80);
     const unit = Object.keys(m.profile.units)[0]!;
     const l = await be.levelUp(unit, key(4));
     expect(l.ok && l.level.level).toBe(2);

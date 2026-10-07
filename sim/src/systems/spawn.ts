@@ -40,6 +40,7 @@ export function enemyStats(ctx: Ctx, type: string, wave: number, card: string | 
   const def = ctx.enemies[type];
   let hp = mulBp(ctx.hpGrunt(wave), def.fHpBp);
   hp = mulBp(hp, coopHpFor(ctx, type));
+  if (ctx.stageHpBp !== 10000) hp = mulBp(hp, ctx.stageHpBp);
   let bounty = mulBp(ctx.bounty(wave, hp), ctx.difficulty.bountyBp);
   let maxHp = mulBp(hp, ctx.difficulty.hpBp);
   const c = card ? ctx.cards[card] : undefined;

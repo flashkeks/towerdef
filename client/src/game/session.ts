@@ -4,7 +4,7 @@
  */
 import { createSim, loadBrowserData, STAGE_ID, type CommandResult, type DifficultyId, type Sim, type TargetMode, type UnitDef, type UnitMod, type WavePreview } from '../sim';
 import { keyOr, t } from '../i18n/t';
-import { registerUnitColors, TICK_MS } from '../view/model';
+import { registerStageNames, registerUnitColors, TICK_MS } from '../view/model';
 import { failureToast, ghostStatus, placingAfterClick, unitAt, type GhostStatus, type ToastSpec } from '../view/placement';
 import { BossTracker } from '../view/telegraph';
 import { GameBus } from './events';
@@ -59,15 +59,20 @@ export class Session {
   /** Unit-Mods (Level/Sterne aus dem Profil, `meta/unit-mods.ts`); leer = neutral. Der Recorder schreibt sie ins Replay (v3). */
   readonly unitMods: UnitMod[];
 
-  constructor(difficulty: DifficultyId, seed: number = Math.floor(Math.random() * 0x7fffffff), bus: GameBus = new GameBus(), unitMods: UnitMod[] = []) {
+  /** Stage-ID dieser Runde (Welt-Act, Infinite oder `standard20`). */
+  readonly stageId: string;
+
+  constructor(difficulty: DifficultyId, seed: number = Math.floor(Math.random() * 0x7fffffff), bus: GameBus = new GameBus(), unitMods: UnitMod[] = [], stageId: string = STAGE_ID) {
+    this.stageId = stageId;
     this.unitMods = unitMods;
     this.seed = seed;
     this.bus = bus;
     const data = loadBrowserData();
     this.difficulty = difficulty;
-    this.sim = createSim({ stage: STAGE_ID, difficulty, players: 1, seed, data, unitMods });
+    this.sim = createSim({ stage: stageId, difficulty, players: 1, seed, data, unitMods });
     registerUnitColors(this.sim.catalog());
-    const stage = data.stages[STAGE_ID];
+    registerStageNames(data.stages[stageId]);
+    const stage = data.stages[stageId];
     this.totalWaves = stage.waves.length;
     this.waveTimerTicks = stage.waveTimerTicks ?? data.economy.waveTimerTicks;
   }

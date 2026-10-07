@@ -1,5 +1,5 @@
 // Smoke-Test: baut nichts, startet `vite preview` auf dem vorhandenen dist/ und treibt es mit Playwright (Chromium).
-// Je Aufloesung (1280x720, 1920x1080, 2560x1440) wird eine ganze Stage (W1-W20, Normal) nur mit echten Mausklicks
+// Je Aufloesung (1280x720, 1920x1080, 2560x1440) wird eine ganze Stage (Act 1 der ersten Welt, Normal) nur mit echten Mausklicks
 // (`page.mouse.click` auf aus dem Layout berechnete Koordinaten) und Tastatur gespielt, bis Sieg oder Niederlage.
 // Runde 6 (freie Platzierung): geklickt wird auf FREIE POSITIONEN im Feld. Die Stellen kommen lesend aus `placementGrid`/`canPlace`
 // der Sim (`scripts/lib/mouse.mjs`), umgerechnet ueber das Kartenmass (Canvas-Breite / 17 Kacheln). `evaluate` liest nur Zustand
@@ -139,7 +139,7 @@ async function playStage(browser, [W, H]) {
   const pickKey = async (def, s) => press(String(s.order.indexOf(def) + 1));
 
   const full = FULL.includes(tag);
-  const shot = (name) => (W === 1280 ? page.screenshot({ path: resolve(shotDir, `p1-smoke-${name}.png`) }) : Promise.resolve());
+  const shot = (name) => (W === 1280 ? page.screenshot({ path: resolve(shotDir, `p3-smoke-${name}.png`) }) : Promise.resolve());
   const text = async (selector) => ((await page.locator(selector).first().textContent().catch(() => '')) ?? '').trim();
   const wallet = () =>
     page.evaluate(() => {
@@ -259,6 +259,7 @@ async function playStage(browser, [W, H]) {
   const firstSlot = await page.locator('.team-slot.filled').first().getAttribute('data-unit');
   await clickSel('.team-slot.filled');
   ok((await page.locator('.team-slot.filled').count()) === 4 && (await page.locator('.team-save').isDisabled()), 'Slot leeren: 4 von 5, Speichern gesperrt');
+  await page.locator(`.team-pick .unit-tile[data-unit="${firstSlot}"]`).scrollIntoViewIfNeeded(); // Raster ist lang: Kachel kann unter dem Rand liegen
   await clickSel(`.team-pick .unit-tile[data-unit="${firstSlot}"]`);
   await sleep(150);
   ok((await page.locator('.team-slot.filled').count()) === 5 && !(await page.locator('.team-save').isDisabled()), 'Unit aus der Sammlung gewaehlt: 5 von 5');
@@ -269,11 +270,17 @@ async function playStage(browser, [W, H]) {
 
   // ---- Stage-Auswahl -----------------------------------------------------------------------------------------------------------
   await go('play');
+  await page.waitForSelector('.act-card');
+  ok((await page.locator('.world-tab').count()) >= 3 && (await page.locator('.act-card').count()) === 7, 'Weltkarte: mindestens 3 Welten, 6 Acts + Infinite');
+  ok(!(await page.locator('.act-card[data-stage="greenie-1"]').isDisabled()) && (await page.locator('.act-card[data-stage="greenie-2"]').isDisabled()) && (await page.locator('.act-card[data-stage="greenie-infinite"]').isDisabled()), 'Nur Act 1 offen, Act 2 und Infinite gesperrt');
+  ok(/Clear act 1 first/.test(await text('.act-card[data-stage="greenie-2"] .lock-reason')) && (await page.locator('.world-tab[data-world="walled-city"]').isDisabled()), 'Sperrgruende sichtbar, Welt 2 gesperrt');
+  await shot('world');
+  await clickSel('.act-card[data-stage="greenie-1"]');
   await page.waitForSelector('.stage-card');
   ok((await page.locator('.diff').count()) === 3, 'Stufenwahl Normal/Hard/Nightmare sichtbar');
   ok((await page.locator('.stage-card[data-difficulty="hard"]').isDisabled()) && /Player level 5/.test(await text('.stage-card[data-difficulty="hard"] .lock-reason')), 'Hard gesperrt: "Player level 5"');
   ok((await page.locator('.stage-card[data-difficulty="nightmare"]').isDisabled()) && /Player level 25/.test(await text('.stage-card[data-difficulty="nightmare"] .lock-reason')), 'Nightmare gesperrt: "Player level 25"');
-  ok(/First clear: 100 crystals/.test(await text('.stage-card[data-difficulty="normal"] .stage-reward')) && /Not played yet/.test(await text('.stage-card[data-difficulty="normal"] .stage-best')), 'Normal: Erst-Clear-Belohnung und Bestwelle sichtbar');
+  ok(/First clear: 80 crystals/.test(await text('.stage-card[data-difficulty="normal"] .stage-reward')) && /Not played yet/.test(await text('.stage-card[data-difficulty="normal"] .stage-best')), 'Normal: Erst-Clear-Belohnung und Bestwelle sichtbar');
   await shot('stage');
   await clickSel('.stage-card[data-difficulty="normal"]');
   await page.waitForSelector('canvas.board');
@@ -430,7 +437,7 @@ async function playStage(browser, [W, H]) {
     }
     if (s.wave !== lastWave) {
       lastWave = s.wave;
-      log(`Welle ${s.wave}/20, Leben ${s.lives}/${s.maxLives}, Muenzen ${s.coins}, Units ${s.units.length}, ${Math.round((Date.now() - t0) / 1000)}s`);
+      log(`Welle ${s.wave}/${s.total ?? 15}, Leben ${s.lives}/${s.maxLives}, Muenzen ${s.coins}, Units ${s.units.length}, ${Math.round((Date.now() - t0) / 1000)}s`);
     }
     let acted = false;
     // 1) naechste Unit des Plans platzieren: freie Stelle lesen, echter Mausklick dorthin
@@ -519,7 +526,7 @@ async function playStage(browser, [W, H]) {
   const r1 = await rewardOf();
   const won = fin.result === 'win';
   ok(r1.gold > 0 && r1.xp > 0, `Gold und XP sichtbar (${JSON.stringify(r1)})`);
-  ok(won ? r1.crystals === 100 && (await page.locator('.reward-firstclear').count()) === 1 : r1.crystals === undefined && /gold and XP count/.test(await text('.reward-consolation')), won ? 'Sieg: 100 Crystals und Erst-Clear-Hinweis' : 'Niederlage: Gold und XP, keine Crystals, freundlicher Hinweis');
+  ok(won ? r1.crystals === 80 && (await page.locator('.reward-firstclear').count()) === 1 : r1.crystals === undefined && /gold and XP count/.test(await text('.reward-consolation')), won ? 'Sieg: 80 Crystals und Erst-Clear-Hinweis' : 'Niederlage: Gold und XP, keine Crystals, freundlicher Hinweis');
   await shot('result');
   await clickSel('.dialog.end .btn.menu');
   await page.waitForSelector('.lobby:not(.loading)');
@@ -538,8 +545,10 @@ async function playStage(browser, [W, H]) {
   ok(/Collection bonus: \+\d+(\.\d+)?% damage/.test(await text('.ud-power')), `Sammlungs-Bonus sichtbar: "${await text('.ud-power')}"`);
   await shot('units');
   await go('play');
+  await page.waitForSelector('.act-card[data-stage="greenie-1"]');
+  await clickSel('.act-card[data-stage="greenie-1"]');
   await page.waitForSelector('.stage-card[data-difficulty="normal"]:not([disabled])');
-  ok(/Each clear: 25 crystals|First clear: 100 crystals/.test(await text('.stage-card[data-difficulty="normal"] .stage-reward')) && /Best wave \d+ \/ 20/.test(await text('.stage-card[data-difficulty="normal"] .stage-best')), `Stage zeigt Belohnung und Bestwelle: "${await text('.stage-card[data-difficulty="normal"] .stage-reward')}", "${await text('.stage-card[data-difficulty="normal"] .stage-best')}"`);
+  ok(/Each clear: 20 crystals|First clear: 80 crystals/.test(await text('.stage-card[data-difficulty="normal"] .stage-reward')) && /Best wave \d+ \/ 15/.test(await text('.stage-card[data-difficulty="normal"] .stage-best')), `Stage zeigt Belohnung und Bestwelle: "${await text('.stage-card[data-difficulty="normal"] .stage-reward')}", "${await text('.stage-card[data-difficulty="normal"] .stage-best')}"`);
   await clickSel('.stage-card[data-difficulty="normal"]');
   await page.waitForSelector('canvas.board');
   const mods2 = await page.evaluate(() => window.__duskwardens.session().unitMods.find((m) => m.unit === 'ichigo')?.lvlBp);
@@ -722,4 +731,4 @@ if (failures.length) {
   console.error(`\n${failures.length} Pruefung(en) fehlgeschlagen`);
   process.exit(1);
 }
-console.log('\nSmoke gruen. Screenshots: client/docs/r8/p1-smoke-*.png');
+console.log('\nSmoke gruen. Screenshots: client/docs/r8/p3-smoke-*.png');

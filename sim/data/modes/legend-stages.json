@@ -1,0 +1,148 @@
+{
+  "ref": "docs/anime-adventures/data/maps.json legendStages (S72:Legend Stages). Runde 8 / P3: Daten-Geruest, noch nicht spielbar.",
+  "_comment": "`world` und `unlock.afterWorld` sind AA-Welt-IDs (maps.json storyWorlds[].id), nicht zwingend Welten, die wir schon haben. Freischaltung wie in AA: Act 6 der Herkunftswelt. Spielbar ab der naechsten Runde (Karte, Wellen, Bosse je Act), dann `playable: true`.",
+  "stages": [
+    {
+      "id": "magic-hills-elf-invasion",
+      "name": "Magic Hills (Elf Invasion)",
+      "legacyName": "Clover Kingdom (Elf Invasion)",
+      "world": "clover_kingdom",
+      "acts": 3,
+      "bosses": [
+        "Patelo",
+        "Zagrad (Sealed)",
+        "Patelo (Dark) / Zagrad"
+      ],
+      "unlock": {
+        "afterWorld": "clover_kingdom",
+        "afterAct": 6
+      },
+      "playable": false
+    },
+    {
+      "id": "spirit-invasion",
+      "name": "Spirit Invasion",
+      "legacyName": "Hollow Invasion",
+      "world": "hollow_world",
+      "acts": 6,
+      "bosses": [
+        "Tiel",
+        "Toshe",
+        "Wes -> Wes (Abomination)",
+        "Barrago (Returned)",
+        "Ging (Traitor)",
+        "Aizo"
+      ],
+      "unlock": {
+        "afterWorld": "hollow_world",
+        "afterAct": 6
+      },
+      "playable": false
+    },
+    {
+      "id": "space-center",
+      "name": "Space Center",
+      "legacyName": "Cape Canaveral",
+      "world": "cape_canaveral",
+      "acts": 3,
+      "bosses": [
+        "Ungulo",
+        "Ricki",
+        "Donatallo"
+      ],
+      "unlock": {
+        "afterWorld": "cape_canaveral",
+        "afterAct": 6
+      },
+      "playable": false
+    },
+    {
+      "id": "fabled-kingdom-generals",
+      "name": "Fabled Kingdom (Generals)",
+      "legacyName": "Fabled Kingdom (Ten Commandments)",
+      "world": "fabled_kingdom",
+      "acts": 3,
+      "bosses": [
+        "Fairy Traitor",
+        "Snake Demon",
+        "Esta"
+      ],
+      "unlock": {
+        "afterWorld": "fabled_kingdom",
+        "afterAct": 6
+      },
+      "playable": false
+    },
+    {
+      "id": "ruined-city-midnight",
+      "name": "Ruined City (Midnight)",
+      "legacyName": "Hero City (Midnight)",
+      "world": "hero_city",
+      "acts": 6,
+      "bosses": [
+        "Gecko",
+        "Giganto",
+        "Shigaruko",
+        "Muscle",
+        "Dabo",
+        "Shigaruko (Awakened)"
+      ],
+      "unlock": {
+        "afterWorld": "hero_city",
+        "afterAct": 6
+      },
+      "playable": false
+    },
+    {
+      "id": "virtual-dungeon-bosses",
+      "name": "Virtual Dungeon (Bosses)",
+      "legacyName": "Virtual Dungeon (Bosses)",
+      "world": "virtual_dungeon",
+      "acts": 3,
+      "bosses": [
+        "Fatal Scythe",
+        "Crystal Wyrm",
+        "Skull Reaper"
+      ],
+      "unlock": {
+        "afterWorld": "virtual_dungeon",
+        "afterAct": 6
+      },
+      "playable": false
+    },
+    {
+      "id": "dungeon-throne",
+      "name": "Dungeon Throne",
+      "legacyName": "Undead Tomb",
+      "world": "undead_tomb",
+      "acts": 3,
+      "bosses": [
+        "Principality Observation",
+        "Archangel Flame",
+        "Dominion Authority"
+      ],
+      "unlock": {
+        "afterWorld": "undead_tomb",
+        "afterAct": 6
+      },
+      "playable": false
+    },
+    {
+      "id": "rain-village",
+      "name": "Rain Village",
+      "legacyName": "Rain Village",
+      "world": "rain_village",
+      "acts": 3,
+      "bosses": [
+        "Hell Path",
+        "Puppet Path",
+        "Animal Path"
+      ],
+      "unlock": {
+        "afterWorld": "rain_village",
+        "afterAct": 6
+      },
+      "playable": false
+    }
+  ]
+}

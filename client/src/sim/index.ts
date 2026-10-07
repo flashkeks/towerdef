@@ -22,6 +22,7 @@ export type {
   FxSpec,
   UnitMod,
   StageData,
+  Theme,
   GameData,
   DifficultyId,
 } from '../../../sim/src/index';

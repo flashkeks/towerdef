@@ -2,6 +2,7 @@
  * Reine Abbildung Sim-Zustand -> Anzeige. Keine Spielregeln, kein DOM, kein Pixi: gut testbar.
  * Alles, was hier "gerechnet" wird, ist Darstellung (Sekunden statt Ticks, Farben, Kuerzel).
  */
+import { t } from '../i18n/t';
 import type { EnemyState, SimState, UnitDef, UnitState, WavePreview } from '../sim';
 
 export const TICKS_PER_SECOND = 20;
@@ -216,3 +217,23 @@ export function compactNumber(n: number): string {
   if (n >= 1000) return `${(n / 1000).toFixed(1)}k`;
   return String(n);
 }
+
+// ---- Gegner-Anzeigenamen der Stage (Runde 8 / P3) -----------------------------------------------------------------------------
+
+let stageRoster: Record<string, string> = {};
+let stageBossName: string | null = null;
+
+/** Merkt sich die Anzeigenamen der Stage (`stage.roster`, `stage.bossName`); Standard-Stage ohne Eintraege -> englische Standardnamen. */
+export function registerStageNames(stage: { roster?: Record<string, string>; bossName?: string }): void {
+  stageRoster = stage.roster ?? {};
+  stageBossName = stage.bossName ?? null;
+}
+
+/** Anzeigename eines Gegnertyps: Name der Welt (AA-Name), sonst `enemy.<typ>.name`. */
+export function enemyName(type: string): string {
+  if (type === 'boss' && stageBossName) return stageBossName;
+  return stageRoster[type] ?? t(`enemy.${type}.name`);
+}
+
+/** Name des Bosses in Banner und Vorschau: AA-Name der Stage, sonst Name des Kits. */
+export const bossDisplayName = (kitName: string): string => stageBossName ?? kitName;

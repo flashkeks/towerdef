@@ -66,9 +66,9 @@ describe('Spieler-Level', () => {
     expect(levelFromXp(xpToReach(25))).toBe(25);
     expect(levelFromXp(10_000_000)).toBe(MAX_PLAYER_LEVEL);
   });
-  it('Belohnung aus dem Replay hebt das Level (Sieg = 100 XP)', () => {
+  it('Belohnung aus dem Replay hebt das Level (Sieg in 20 Wellen = 55 XP)', () => {
     const win = botReplay({ seed: 7 });
-    let p = addPlayerXp(newProfile(env()), xpToReach(2) - 100).profile;
+    let p = addPlayerXp(newProfile(env()), xpToReach(2) - 55).profile;
     expect(p.playerLevel).toBe(1);
     const r = rewardFromReplay(p, win, env());
     if (!r.ok) throw new Error(r.message);

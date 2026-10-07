@@ -10,6 +10,8 @@ import { MAX_TEAM, type Profile } from './profile';
 import { REWARD_TABLE, repeatCrystals } from './rewards';
 import { copiesForNextStar, MAX_STARS, starsForCopies } from './stars';
 import { damageBpOf, NEUTRAL_BP } from './unit-mods';
+import { stageInfoView, type StageInfoView } from './world-view';
+import { stageWaveCap } from './worlds';
 
 export interface PlayerView {
   displayName: string;
@@ -121,7 +123,16 @@ export interface StageDifficultyView {
   maxWaves: number;
 }
 
-export function stageView(p: Profile, stageId: string): { stageId: string; playerLevel: number; difficulties: StageDifficultyView[] } {
+export interface StageViewData {
+  stageId: string;
+  playerLevel: number;
+  difficulties: StageDifficultyView[];
+  /** Runde 8 / P3: Welt/Act/Boss/Sperre der Stage; `null` fuer Stages ausserhalb der Weltstruktur (`standard20`) */
+  info: StageInfoView | null;
+}
+
+export function stageView(p: Profile, stageId: string): StageViewData {
+  const maxWaves = stageWaveCap(stageId);
   const difficulties = Object.keys(REWARD_TABLE.crystals.firstClear).map((d): StageDifficultyView => {
     const prog = p.stages[stageId]?.[d];
     const unlockLevel = unlockLevelFor(d);
@@ -134,10 +145,10 @@ export function stageView(p: Profile, stageId: string): { stageId: string; playe
       cleared: !!prog?.firstClearAt,
       clears: prog?.clears ?? 0,
       bestWave: prog?.bestWave ?? 0,
-      maxWaves: REWARD_TABLE.maxWaves,
+      maxWaves,
     };
   });
-  return { stageId, playerLevel: p.playerLevel, difficulties };
+  return { stageId, playerLevel: p.playerLevel, difficulties, info: stageInfoView(p, stageId) };
 }
 
 export interface HistoryEntry {

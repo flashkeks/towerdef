@@ -189,11 +189,45 @@ export type DifficultiesData = z.infer<typeof DifficultiesSchema>;
 
 const Modifier = z.string().regex(/^(shield:\d+|regen|armored|fast)$/);
 
+/**
+ * Farbwelt einer Karte (Runde 8 / P3), reine Darstellung: Die Sim liest sie nicht. Der Client färbt die Atlas-Kacheln (Gras, Pfad, Hügel, Deko)
+ * damit ein, ohne neue Bilder: `color` wird mit `alpha` (0..1, Standard 0,6) über die Kachel gelegt (Form und Schattierung bleiben),
+ * `lift` hellt (> 0) oder dunkelt (< 0) danach auf (-0,6..0,6).
+ */
+const hex = z.string().regex(/^#[0-9a-fA-F]{6}$/);
+export const TintSchema = z.object({ color: hex, alpha: z.number().min(0).max(1).optional(), lift: z.number().min(-0.6).max(0.6).optional() });
+export const ThemeSchema = z.object({
+  id: z.string().min(1),
+  grass: TintSchema,
+  path: TintSchema,
+  hill: z.object({ top: hex, topLight: hex, wall: hex, wallDark: hex }).optional(),
+  /** Atlas-Bilder, die auf blockierte Kacheln (`#`) kommen, reihum nach Kachel-Hash. */
+  blocked: z.array(z.enum(['tiles/deco_tree', 'tiles/deco_rock', 'tiles/deco_bush'])).min(1).default(['tiles/deco_tree', 'tiles/deco_rock']),
+  deco: TintSchema.optional(),
+  /** Blumen auf Bodenkacheln. */
+  flowers: z.boolean().default(true),
+  /** Hintergrund um das Spielfeld (CSS-Farbe), optional. */
+  background: hex.optional(),
+});
+export type Theme = z.infer<typeof ThemeSchema>;
+
 export const StageSchema = z.object({
   ref,
   _comment: comment,
   id: z.string(),
   name: z.string(),
+  /** Runde 8 / P3: Welt und Act (Story-Struktur), nur für Anzeige und Fortschritt; die Sim braucht beides nicht. */
+  world: z.string().optional(),
+  act: pos.optional(),
+  /** Faktor auf die Gegner-HP (und die Bounty-Basis) dieser Stage in Basispunkten, Standard 10000. Act-Stufung der Welten. */
+  hpBp: pos.optional(),
+  /** Anzeigenamen der Gegnertypen dieser Stage (Archetyp-ID -> Name, z. B. grunt -> "Saibaman"); die Sim rechnet weiter mit dem Archetyp. */
+  roster: z.record(z.string(), z.string()).optional(),
+  /** Name des Act-Bosses (Anzeige). */
+  bossName: z.string().optional(),
+  /** Boss-Kits dieser Stage: Wave -> Kit-ID aus `bosses.json` (das `wave`-Feld des Kits wird überstimmt). Ohne Angabe gilt `kit.wave`. */
+  bossKits: z.record(z.string().regex(/^\d+$/), z.string()).optional(),
+  theme: ThemeSchema.optional(),
   waveTimerTicks: pos.optional(),
   /** Infinite-Modus: Waves ab Wave (waves.length+1) werden seeded erzeugt, kein Sieg (recommendations §3/§4). */
   infinite: z.boolean().optional(),
@@ -494,8 +528,8 @@ export const BossKitSchema = z.object({
   id: z.string(),
   name: z.string(),
   _comment: comment,
-  /** Wave der Stage, in der der Boss mit diesem Kit erscheint. */
-  wave: pos,
+  /** Wave der Stage, in der der Boss mit diesem Kit erscheint. Fehlt sie (Runde 8 / P3), gehört das Kit keiner Wave und wird nur über `stage.bossKits` gewählt. */
+  wave: pos.optional(),
   phases: z
     .array(z.object({ id: z.string(), name: z.string(), fromHpBp: pos.max(10000), onEnter: z.array(PhaseAction).default([]) }))
     .min(1),
@@ -544,6 +578,9 @@ export interface GameData {
   /** Runde 4 / P4. Optional, damit alte Datenobjekte (Tests, Overrides) ohne Kits weiter laufen. */
   bosses?: BossesData;
   cards?: CardsData;
+  /** Runde 8 / P3: Welt-Dateien und Wellen-Vorlage (aus den Welten sind die Stages in `stages` schon erzeugt). Optional wie `bosses`. */
+  worlds?: WorldFile[];
+  waveTemplate?: WaveTemplate;
 }
 export { int };
 
@@ -602,3 +639,117 @@ export const ProgressionSchema = z
     }
   });
 export type ProgressionData = z.infer<typeof ProgressionSchema>;
+
+// ---------------------------------------------------------------------------------------------------------------------------------
+// Welten (Runde 8 / P3): `data/worlds/*.json`, eine Datei je Welt. Eine Welt = Karte + Farbwelt + 6 Acts (Boss am Ende) + Infinite.
+// `data/wave-template.json` ist die gemeinsame Wellen-Vorlage; `worlds.ts` setzt daraus je Act eine fertige Stage zusammen
+// (`<welt>-<act>`, Infinite `<welt>-infinite`). Eine neue Welt braucht nur eine neue Datei, keinen Code.
+// ---------------------------------------------------------------------------------------------------------------------------------
+
+/** Wellen-Vorlage: Wellen 1..n-1 eines Acts (Gruppen als [Typ, Anzahl]), die letzte Welle ist die Boss-Welle. */
+export const WaveTemplateSchema = z.object({
+  ref,
+  _comment: comment,
+  /** Spawn-Abstand je Gegnertyp in Ticks (Gruppen laufen nacheinander: Delay = Summe Anzahl x Abstand der Vorgänger). */
+  intervals: z.record(z.string(), nat),
+  /** Wellen ohne Boss; ein Act mit N Wellen nimmt die ersten N-1. */
+  waves: z.array(z.array(z.tuple([z.string(), pos]))).min(1),
+  /** Letzte Welle: Boss einzeln bei Delay 0, danach Begleiter. */
+  boss: z.object({ escorts: z.array(z.tuple([z.string(), pos])), escortDelayTicks: nat }),
+});
+export type WaveTemplate = z.infer<typeof WaveTemplateSchema>;
+
+const ActModifier = z.object({
+  fromWave: pos,
+  /** Gegnertypen, die den Modifier bekommen (Boss und Elite nie). */
+  types: z.array(z.string()).min(1),
+  modifier: Modifier,
+});
+
+export const ActSchema = z.object({
+  act: pos,
+  name: z.string().min(1),
+  /** Act-Boss (AA-Name aus `enemies.json`); `kit` = Boss-Kit aus `bosses.json` (ohne Kit bleibt der Boss ein HP-Klotz). */
+  boss: z.object({ name: z.string().min(1), kit: z.string().optional() }),
+  /** Wellenzahl inklusive Boss-Welle. */
+  waves: pos.min(2).max(30),
+  /** Act-Stufung der Gegner-HP in Basispunkten (mal Welt-Faktor). */
+  hpBp: pos,
+  modifiers: z.array(ActModifier).default([]),
+});
+export type ActData = z.infer<typeof ActSchema>;
+
+export const WorldFileSchema = z.object({
+  ref,
+  _comment: comment,
+  id: z.string().regex(/^[a-z0-9]+(-[a-z0-9]+)*$/),
+  order: pos,
+  name: z.string().min(1),
+  legacyName: z.string().optional(),
+  /** ID in `docs/anime-adventures/data/maps.json`. */
+  aaId: z.string().optional(),
+  /** Kurzer Anreißer für die Weltkarte (Englisch). */
+  blurb: z.string().default(''),
+  /** Freischaltung der Welt: Act `afterAct` der Welt `afterWorld` muss geschafft sein; `null` = von Anfang an. */
+  unlock: z.object({ afterWorld: z.string(), afterAct: pos }).nullable(),
+  /** Karte (Kachelraster, Wegpunkte in Tiles, Zonenmaske); gleiches Format wie in `StageData`. */
+  map: z.object({
+    path: z.array(z.tuple([z.number(), z.number()])).min(2),
+    pathWidth: z.number().positive().default(1),
+    zones: z.object({ ref: z.string().optional(), rows: z.array(z.string().regex(/^[.hp#]+$/)).min(1) }),
+  }),
+  theme: ThemeSchema,
+  /** Welt-Faktor auf die Gegner-HP (Basispunkte). */
+  hpBp: pos,
+  /** Verschiebt den Element-Zyklus der Wellen (Welle 1 bekommt Element 1 + Versatz). */
+  elementOffset: nat.default(0),
+  /** Anzeigenamen der Gegnertypen (Archetyp-ID -> Name). */
+  roster: z.record(z.string(), z.string()),
+  acts: z.array(ActSchema).min(1),
+  infinite: z.object({
+    /** Infinite ist offen, sobald dieser Act (Normal oder höher) geschafft ist. */
+    unlockAct: pos,
+    hpBp: pos,
+    /** Feste Wellen vor der Erzeugung (aus der Vorlage), Standard 14. */
+    fixedWaves: pos.default(14),
+  }),
+});
+export type WorldFile = z.infer<typeof WorldFileSchema>;
+
+/** Legend Stages (Runde 8 / P3, Daten-Gerüst: noch nicht spielbar). Quelle `maps.json` `legendStages`. */
+export const LegendStagesSchema = z.object({
+  ref,
+  _comment: comment,
+  stages: z.array(
+    z.object({
+      id: z.string().regex(/^[a-z0-9]+(-[a-z0-9]+)*$/),
+      name: z.string(),
+      legacyName: z.string().optional(),
+      /** Herkunftswelt (`WorldFile.id` oder `aaId`). */
+      world: z.string(),
+      acts: pos,
+      bosses: z.array(z.string()),
+      unlock: z.object({ afterWorld: z.string(), afterAct: pos }),
+      playable: z.boolean().default(false),
+    }),
+  ),
+});
+export type LegendStagesData = z.infer<typeof LegendStagesSchema>;
+
+/** Raids (Runde 8 / P3, Daten-Gerüst: noch nicht spielbar). Quelle `maps.json` `raids`, `waves.json` (`raid_legacy_2022`: 20 Wellen). */
+export const RaidsSchema = z.object({
+  ref,
+  _comment: comment,
+  raids: z.array(
+    z.object({
+      id: z.string().regex(/^[a-z0-9]+(-[a-z0-9]+)*$/),
+      name: z.string(),
+      legacyName: z.string().optional(),
+      acts: pos.optional(),
+      waves: pos,
+      players: z.object({ min: pos, max: pos }),
+      playable: z.boolean().default(false),
+    }),
+  ),
+});
+export type RaidsData = z.infer<typeof RaidsSchema>;

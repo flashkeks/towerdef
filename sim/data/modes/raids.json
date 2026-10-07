@@ -1,0 +1,123 @@
+{
+  "ref": "docs/anime-adventures/data/maps.json raids (S72:Raids), waves.json (raid_legacy_2022: 20 Wellen, MEDIUM). Runde 8 / P3: Daten-Geruest, noch nicht spielbar.",
+  "_comment": "Wellenzahl 20 = einzige belegte Raid-Laenge (LEGACY 2022), fuer alle Raids angenommen. Spielerzahl 1-4 ist DESIGN (Koop kommt mit M2). Entfernte Raids (z. B. Marine's Ford (Buddha), U19) sind nicht aufgenommen.",
+  "raids": [
+    {
+      "id": "ant-kingdom-midnight",
+      "name": "Ant Kingdom (Midnight)",
+      "waves": 20,
+      "players": {
+        "min": 1,
+        "max": 4
+      },
+      "playable": false
+    },
+    {
+      "id": "sacred-planet",
+      "name": "Sacred Planet",
+      "acts": 5,
+      "waves": 20,
+      "players": {
+        "min": 1,
+        "max": 4
+      },
+      "playable": false
+    },
+    {
+      "id": "strange-town",
+      "name": "Strange Town",
+      "legacyName": "Bizarre Town (U16.5)?",
+      "acts": 5,
+      "waves": 20,
+      "players": {
+        "min": 1,
+        "max": 4
+      },
+      "playable": false
+    },
+    {
+      "id": "ruined-city-the-menace",
+      "name": "Ruined City (The Menace)",
+      "legacyName": "Hero City - The Hero Slayer (U14)",
+      "waves": 20,
+      "players": {
+        "min": 1,
+        "max": 4
+      },
+      "playable": false
+    },
+    {
+      "id": "cursed-festival",
+      "name": "Cursed Festival",
+      "waves": 20,
+      "players": {
+        "min": 1,
+        "max": 4
+      },
+      "playable": false
+    },
+    {
+      "id": "future-city-tyrant-s-invasion",
+      "name": "Future City (Tyrant's Invasion)",
+      "legacyName": "West City: Freezo's Invasion (U11.7.5)?",
+      "waves": 20,
+      "players": {
+        "min": 1,
+        "max": 4
+      },
+      "playable": false
+    },
+    {
+      "id": "future-city",
+      "name": "Future City",
+      "legacyName": "West City - Android Attack (U5.6)?",
+      "waves": 20,
+      "players": {
+        "min": 1,
+        "max": 4
+      },
+      "playable": false
+    },
+    {
+      "id": "storm-hideout",
+      "name": "Storm Hideout",
+      "waves": 20,
+      "players": {
+        "min": 1,
+        "max": 4
+      },
+      "playable": false
+    },
+    {
+      "id": "nightmare-train",
+      "name": "Nightmare Train",
+      "legacyName": "Infinity Train - Demonic Invasion (U2.5)",
+      "waves": 20,
+      "players": {
+        "min": 1,
+        "max": 4
+      },
+      "playable": false
+    },
+    {
+      "id": "sand-village-midnight-attack",
+      "name": "Sand Village (Midnight Attack)",
+      "waves": 20,
+      "players": {
+        "min": 1,
+        "max": 4
+      },
+      "playable": false
+    },
+    {
+      "id": "the-spider",
+      "name": "The Spider",
+      "waves": 20,
+      "players": {
+        "min": 1,
+        "max": 4
+      },
+      "playable": false
+    }
+  ]
+}

@@ -3,7 +3,7 @@
  * als Rechtecke (Runde 6: keine Slot-Platten mehr, Zonen aus `stage.zones`).
  * Koordinaten in Quellpixeln (32 je Kachel). `map-layer.ts` setzt die Liste auf eine Zeichenflaeche und skaliert sie auf die Fenstergroesse.
  */
-import type { StageData } from '../sim';
+import type { StageData, Theme } from '../sim';
 import { WORLD_H, WORLD_W } from './context';
 
 export const ART = 32;
@@ -45,6 +45,22 @@ const hash = (x: number, y: number): number => {
 /** Zonenzeichen der Kachel (x, y) aus `stage.zones.rows`: `.` Boden, `h` Huegel, `#` blockiert, `p` Pfad; ausserhalb `.`. */
 export const zoneChar = (stage: StageData, x: number, y: number): string => stage.zones.rows[y]?.[x] ?? '.';
 
+/** Farbton einer Kachel-Gruppe (Welt-Farbwelt, Runde 8 / P3): `color` + Staerke `alpha`, danach `lift` (hell/dunkel). */
+export interface Tint {
+  color: string;
+  alpha?: number;
+  lift?: number;
+}
+
+/** Tint fuer ein Atlas-Bild nach der Farbwelt der Stage; `null` = Bild bleibt unveraendert (Standard-Stage, Spawn, Basis). */
+export function tintFor(frame: string, theme: Theme | undefined): Tint | null {
+  if (!theme) return null;
+  if (frame.startsWith('tiles/grass_')) return theme.grass;
+  if (frame.startsWith('tiles/path_')) return theme.path;
+  if (frame.startsWith('tiles/deco_')) return theme.deco ?? null;
+  return null;
+}
+
 export interface MapRect {
   x: number;
   y: number;
@@ -63,6 +79,7 @@ export const HILL = { top: '#6f9a4c', topLight: '#8cb35e', wall: '#8a5a3a', wall
  */
 export function hillRects(stage: StageData): MapRect[] {
   const out: MapRect[] = [];
+  const hc = stage.theme?.hill ?? HILL;
   const isHill = (x: number, y: number): boolean => zoneChar(stage, x, y) === 'h';
   for (let y = 0; y < WORLD_H; y++) {
     for (let x = 0; x < WORLD_W; x++) {
@@ -70,14 +87,14 @@ export function hillRects(stage: StageData): MapRect[] {
       const px = x * ART;
       const py = y * ART;
       const wall = isHill(x, y + 1) ? 0 : 8;
-      out.push({ x: px, y: py, w: ART, h: ART - wall, color: HILL.top });
-      if (!isHill(x, y - 1)) out.push({ x: px, y: py, w: ART, h: 2, color: HILL.topLight });
+      out.push({ x: px, y: py, w: ART, h: ART - wall, color: hc.top });
+      if (!isHill(x, y - 1)) out.push({ x: px, y: py, w: ART, h: 2, color: hc.topLight });
       if (wall > 0) {
-        out.push({ x: px, y: py + ART - wall, w: ART, h: wall, color: HILL.wall });
-        out.push({ x: px, y: py + ART - 2, w: ART, h: 2, color: HILL.wallDark });
+        out.push({ x: px, y: py + ART - wall, w: ART, h: wall, color: hc.wall });
+        out.push({ x: px, y: py + ART - 2, w: ART, h: 2, color: hc.wallDark });
       }
-      if (!isHill(x - 1, y)) out.push({ x: px, y: py, w: 2, h: ART - wall, color: HILL.topLight });
-      if (!isHill(x + 1, y)) out.push({ x: px + ART - 2, y: py, w: 2, h: ART - wall, color: HILL.wallDark });
+      if (!isHill(x - 1, y)) out.push({ x: px, y: py, w: 2, h: ART - wall, color: hc.topLight });
+      if (!isHill(x + 1, y)) out.push({ x: px + ART - 2, y: py, w: 2, h: ART - wall, color: hc.wallDark });
     }
   }
   return out;
@@ -106,8 +123,9 @@ export function buildMapOps(stage: StageData): MapOp[] {
       const z = zoneChar(stage, x, y);
       const h = hash(x * 3 + 1, y * 5 + 2);
       let frame: string | null = null;
-      if (z === '#') frame = h % 3 === 0 ? 'tiles/deco_rock' : 'tiles/deco_tree';
-      else if (z === '.' && h % 6 === 2) frame = 'tiles/deco_flowers';
+      const blocked = stage.theme?.blocked;
+      if (z === '#') frame = blocked ? blocked[h % blocked.length] : h % 3 === 0 ? 'tiles/deco_rock' : 'tiles/deco_tree';
+      else if (z === '.' && h % 6 === 2 && stage.theme?.flowers !== false) frame = 'tiles/deco_flowers';
       if (frame) ops.push({ frame, x: x * ART, y: y * ART });
     }
   }

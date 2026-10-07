@@ -56,7 +56,7 @@ describe('Sichtmodelle ueber das Backend', () => {
     const m = await be.reportMatch(starterReplay({ seed: 1 }), key(3));
     if (!m.ok) throw new Error(m.message);
     const after = await be.stageView(STAGE_ID);
-    expect(after.ok && after.difficulties[0]).toMatchObject({ cleared: true, clears: 1, bestWave: 20, firstClearCrystals: 100, repeatCrystals: 25 });
+    expect(after.ok && after.difficulties[0]).toMatchObject({ cleared: true, clears: 1, bestWave: 20, firstClearCrystals: 80, repeatCrystals: 20 });
   });
 
   it('pullHistory: neueste zuerst, begrenzt', async () => {
