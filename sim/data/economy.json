@@ -36,6 +36,9 @@
     "unitRadiusMilli": { "1": 400, "2": 900 },
     "pathMarginMilli": 0
   },
+  "placeCostGrowthBp": 1000,
+  "placeCostFreeCopies": 5,
+  "_placeCostRef": "Runde 6 / P2: Spam ohne Limit. Die ersten 5 Exemplare je Typ und Spieler kosten den Basispreis, jedes weitere +10 % des Basispreises je Exemplar (Exemplar 6 = +10 %, 7 = +20 % ...). Unit-Feld placeGrowthBp ueberstimmt den Zuwachs. Begruendung und Messung: kalibrierung.md, Runde 6 - P2.",
   "caps": {
     "ref": "recommendations §7: 6 Team-Slots je Spieler, 60 Units, 80 Gegner. Runde 6: kein Limit je Unit-Typ mehr (Rarity/Unit-Feld `cap` entfernt); teamUnits bleibt technische Obergrenze",
     "teamUnits": 60,

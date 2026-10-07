@@ -960,3 +960,91 @@ Kein Balance-Paket: `sim/data/` hat sich nur in der Mechanik geändert (kein Zah
 **Performance (Bot-Matrix, gleiche Rechner, nacheinander gemessen):** Hard, alle sechs Bots, n = 60 (360 Matches, inkl. Start): **32,5 s → 38,6 s (×1,19)**, Ziel höchstens ×2. `scripts/bench.ts` (ohne Bot): 258 000 → 230 000 Ticks/s. Gründe, warum es schnell bleibt: Abdeckung wird je (x, y, Reichweite) gecacht und von allen Sims mit gleichem Pfad geteilt, die Stichpunkte des Pfads liegen einmal im `Path`, die Bots durchsuchen nur das Halbkachel-Raster (statisch gültige Punkte mit Pfadabdeckung, je Typ einmal sortiert) und nehmen je Typ vier Stellen als Optionen.
 
 **Abnahme P1:** `cd sim && npm test && npm run typecheck` grün (259 Tests, davon 21 neu in `test/placement.test.ts`: Pfad, Rand, Blockiert, Zone, Überlappung, Farm-Radius, 15 gleiche Units ohne `cap-reached`, Teamgrenzen, Determinismus, Bots).
+
+## Runde 6 — P2 (Balance grob auf dem Modell mit freier Platzierung)
+
+Auftrag: nur Sicherheitsnetz gegen grobe Fehler (ENTSCHEIDUNGEN.md: „Balance-Tiefe bis nach M3: nur grob“, „Messlatte = beste echte Strategie“). Messung mit `sim/scripts/sanity/r6-p2.ts` (fehlerfreie Bots, solo, `standard20`, n = 100 für die Endtabelle, n = 40–60 für Suchläufe; Messfehler ±5 bis ±10 Punkte). Suchläufe ohne Dateiänderung per `P2_ECON`, `P2_UNITS`, `P2_BAN`.
+
+**Datenänderungen (alt → neu → Grund):**
+
+| Datei, Feld | alt | neu | Grund |
+|---|---|---|---|
+| `units.json` Farm `farm.yieldByLevel` | 65 / 117 / 176 / 267 / 403 | **42 / 75 / 110 / 165 / 240** (×0,65) | `farm` lag auf Hard 90 gegen `wide` 55 (Abstand 33); Ziel ≤ 15–20 |
+| `economy.json` `placeCostGrowthBp` | (neu) | **1000** | Spam ohne Limit: `mono-frost` schlug Normal 100 %, Hard 97 %, Nightmare 53 % |
+| `economy.json` `placeCostFreeCopies` | (neu) | **5** | die ersten 5 Exemplare je Typ und Spieler kosten den Basispreis, danach +10 % des Basispreises je weiterer Unit |
+| `units.json` Unit-Feld `placeGrowthBp` | (neu, optional) | nicht gesetzt | überstimmt den Zuwachs je Unit (Hebel für später, z. B. Farm) |
+
+**Sim-Änderung:** `placeCostFor` (`commands.ts`) = `Basis × (10000 + Zuwachs × max(0, eigene Exemplare + 1 − frei)) / 10000`, abgerundet, gezählt über die **stehenden** eigenen Units gleichen Typs (Verkauf senkt den Preis wieder, Koop je Spieler). `place` bucht genau diesen Betrag ab (`unit.invested` = gezahlter Preis, Verkauf zahlt 60 % davon). Abfrage: `sim.placeCost(player, unitId)` (README). Test `test/placecost.test.ts`. Bots lesen den Preis über die API (`buildOptions`, `farmStep`).
+
+### Farm (Hebel-Reihenfolge laut Auftrag)
+
+1. **Ertragskurve hoher Stufen allein wirkt nicht, eher umgekehrt.** `[65,117,165,230,310]` und `[65,110,150,195,250]` hoben `farm` auf Hard von 90 auf 93–95 und auf Nightmare von 48 auf 62–65: Der Bot kauft die Farm-Upgrades nur, wenn der Payback in die Restwaves passt, und steckt das Geld bei schwächerer Spitze lieber in Kampf-Units. Die Stärke der Farm liegt im **frühen** Ertrag (Stufe 0/1), nicht in der Spitze.
+2. **Ganze Kurve ×0,7 / ×0,65** (`45/80/120/180/270`, `42/75/110/165/240`): Hard 73 / 72, Nightmare 38 / 27 (n = 60). Genommen: ×0,65.
+3. Verkaufswert (40 → 25 %) brachte bei ×0,7 nichts (Hard 72, NM 33), Platzierkosten 400 → 700 kippte die Farm (Hard 23, NM 7): zu steil, nicht genommen. Steigende Kosten je weiterer Farm: nicht nötig (der Bot baut höchstens 2, `farmLimit`).
+
+Ergebnis n = 100: **Hard `farm` 64 / `wide` 55 (Abstand 9)**, Nightmare 21 / 24, Normal 100 / 99.
+
+### Spam ohne Limit (`mono-X`)
+
+Neue Bots `mono-X` (nur Sorte X, so viele wie bezahlbar, keine Upgrades, kein Sparen, kein Boss-Plan, `sim/src/bots/mono.ts`) und `mono-X+up` (danach auch Upgrades, zeigt die ausgebaute Variante). Siegquote n = 100, **mit** dem neuen Aufschlag (Spalte „ohne“ = n = 60 vor der Änderung):
+
+| Bot | Normal ohne → mit | Hard ohne → mit | Nightmare ohne → mit | `+up` N / H / NM |
+|---|---|---|---|---|
+| mono-striker | 0 → 0 | 0 → 0 | 0 → 0 | 0 / 0 / 0 |
+| mono-gunner | 0 → 0 | 0 → 0 | 0 → 0 | 0 / 0 / 0 |
+| mono-blaster | 0 → 0 | 0 → 0 | 0 → 0 | 1 / 10 / 0 |
+| mono-lancer | 20 → 0 | 0 → 0 | 0 → 0 | 0 / 0 / 0 |
+| **mono-frost** | **100 → 16** | **97 → 0** | **53 → 0** | **100 / 70 / 12** |
+| mono-titan | 0 → 0 | 0 → 0 | 0 → 0 | 0 / 0 / 0 (kauft nur 1 Stück, 1000 Münzen) |
+
+- **Nur Frost ist als Spam gefährlich** (Kegel, Slow, Flächen-Stun, Luft): 21 Frost ohne Aufschlag gewinnen alle Stufen. Alle anderen Sorten schaffen als Spam nicht einmal 20 %.
+- **Aufschlag-Suche** (`mono-frost` Normal / `wide` Normal, n = 40): +10 % ab dem ersten Exemplar → 0 / 20 (zerstört `wide`!), +5 % → 5 / 40, +3 % → 73 / 65. Ein Aufschlag ab dem **ersten** Exemplar trifft die normale Spielweise (`wide`: 5 Rare, 4 Epic, 3 Legendary, 2 Mythic) mehr als den Spam. Deshalb **5 Exemplare je Typ zum Basispreis** (das deckt jede Bot-Stückzahl und die Teambreite eines Menschen ab), danach +10 %: `mono-frost` Normal 16, `wide`/`farm` unverändert (99 / 100). +20 % ab dem 6. brachte nicht mehr (Normal 0 statt 15, Hard schon bei +10 % 0), also 10 %.
+- **Grenze der Maßnahme:** `mono-frost+up` (7 voll ausgebaute Frost) bleibt Normal 100 / Hard 70 / Nightmare 12, also **so stark wie die beste Strategie** (aoe Hard 70). Das ist kein Spam-Problem, sondern „Frost ist die stärkste Einzel-Unit“ (schon Runde 4: Frost Pflicht, Verbot −95). Kein Eingriff (kein Fehler, innerhalb des Korridors), Hinweis für spätere Feinarbeit.
+
+### Stufen (n = 100, nach den Änderungen)
+
+| Bot | Normal | Hard | Nightmare |
+|---|---|---|---|
+| aoe | 99 | **70** | **26** |
+| farm | 100 | 64 | 21 |
+| greedy | 100 | 63 | 21 |
+| wide (zweite Linie) | 99 | 55 | 24 |
+| mono-frost+up | 100 | 70 | 12 |
+
+Beste echte Strategie: **Normal 100 (Ziel ≥ 80), Hard 70 (35–70), Nightmare 26 (10–40)**, `wide` 99 / 55 / 24. Im Korridor, Normal leicht darüber (Ziel 85–95, wegen „Normal = entspannter Modus“ unverändert gelassen).
+
+### Pflicht-Unit und Falle (Leave-one-out, n = 40, Verbot = Bot kennt die Unit nicht)
+
+| Verbot | Normal farm / wide / aoe | Hard farm / wide / aoe |
+|---|---|---|
+| striker | 100 / 100 / 100 | 95 / 80 / 68 |
+| gunner | 100 / 100 / 100 | 60 / 45 / 95 |
+| **blaster** | **3 / 15 / 50** | **0 / 8 / 0** |
+| banner | 100 / 100 / 95 | 63 / 58 / 70 |
+| lancer | 100 / 85 / 98 | 65 / 50 / 85 |
+| frost | 98 / 50 / 98 | 40 / 3 / 35 |
+| **titan** | 100 / 100 / 100 | **98 / 90 / 95** |
+
+Basis (n = 100): Normal 100 / 99 / 99, Hard 64 / 55 / 70.
+
+1. **Blaster ist Pflicht-Unit** (Verbot −50 bis −97 Punkte, Auftrag: höchstens ≈ 30). Dasselbe Bild wie P3b („plant um den Blaster herum“): die einzige billige, volle Flächen-Antwort auf Grunt-Pulks. Kein Eingriff in P2 (Unit-Pool-Entscheidung, „nur grob“); **Frage an Max/Plori:** Lancer/Frost-Fläche stärken oder Blaster bewusst als Kern-Unit akzeptieren.
+2. **Frost** auf Hard −25 bis −52 (wide −52): knapp über der Grenze, bekannt aus Runde 4 (Flieger-Pulks).
+3. **Titan ist eine Falle für die Bots.** Ohne Titan (der Boss-Plan kauft ihn für 1000) siegen `farm`/`wide`/`aoe` auf Hard zu 98 / 90 / 95 (+34 bis +43), Nightmare 52 / 53 / 57 (`greedy` 45 / `farm` 52, +31); die Bosse fallen auch ohne ihn. **Folge für die Messlatte:** die „beste echte Strategie“ ohne Titan liegt auf Hard bei ~98 und damit **über** dem Korridor 35–70. Hebel wären Titan aufwerten (billiger/stärker, damit er sich lohnt) oder Hard härter; beides verschiebt viele Werte (Klippen-System, Runde 4) und gehört nicht in „nur grob“. Entscheidung an die Menschen.
+4. Striker-Verbot hebt `farm` Hard auf 95 (Rotationsregel, nicht neu: Runde 4 P6b).
+
+### Abnahme P2
+
+`cd sim && npm test && npm run typecheck` grün (265 Tests, davon 6 neu in `test/placecost.test.ts`). v2-Beispiel-Replay `beispiel-v2-bot-normal.json` neu erzeugt (Daten haben sich geändert). Nicht untersucht (Zeitbudget 30–45 min Messung): Koop, `wide` ohne Bot-Limit nach der Änderung, Hard-Kennlinie.
+
+## Analyse Max-Replay (07.10.2026, Normal, verloren in Welle 18)
+
+Datei `docs/balancing/playtests/2026-10-07-max-normal-loss.json` (v1, Slots), nachgespielt im Stand `c2d79e5` (Scratch-Verzeichnis, `replay.ts --compare`, Hash OK) gegen `wide@normal`, gleicher Seed. Eingabe für **P4 (Lesbarkeit)**.
+
+Mensch: 41 Befehle in 11 278 Ticks (9:24 min), 18 Waves, 26 Leaks (**14 davon Flyer**, W16 allein 11), Leben 30 → 0, Endmünzen 1172 ungenutzt. Gekauft: 9 Striker, 3 Blaster, 2 Lancer, 2 Frost, 4 Gunner; nur **7 Upgrades**. Bot: Sieg, 22 Leben übrig, Leaks nur 5 insgesamt, am Ende Frost 3, Blaster 4, Gunner 5, Lancer 3, Titan 1, Striker 2.
+
+1. **Luftabwehr kam zu spät und blieb schwach.** Erste Flieger-Welle W8 (4 Leaks, −6 Leben), erster Frost und erster Gunner erst in W10; W16 mit 10 Fliegern leakt 11 (−11 Leben, 19 → 15 → 6). Der Bot hat Gunner/Frost vor W8 und leakt dort nichts. Für P4: Wellenvorschau muss „Flieger“ **vor** der Welle deutlich zeigen, und die Unit-Karten müssen „trifft Luft“ sichtbar machen (Gunner, Hybrid, Blaster 75 %).
+2. **Wenig Eingriffe, kaum Ausbau, Verkauf-und-Neukauf.** In W11–W12 (Tick 5761–6033) fünf Platzierversuche auf Striker-Slot 1, alle `cap-reached` (zusätzlich 3 × `not-enough-coins` für den Blaster in W2/W3): der Mensch verstand die Ablehnung offenbar nicht oder sah sie nicht. In W10 verkauft er vier Striker (60 %) und kauft sofort vier andere (Verlust ≈ 320 Münzen, kaum Mehrwert). Der Blaster (die Pflicht-Unit, s. o.) bekam nur 2 Upgrades, der dritte Blaster kam erst in W16. Für P4: Ablehnungsgrund am Mauszeiger, Upgrade-Hinweis „bezahlbar“ an der Unit, Marker, welche Unit auf Stufe 0 steht.
+3. **Münzen liegen herum, die Fähigkeit kaum genutzt.** Fast jede Welle startet mit 400–1100 Münzen; bei W16–W18 stehen 728 / 397 / 1132 ungenutzt, in der Todeswelle 1172. Fähigkeiten wurden nur einmal gezündet (einzige `useAbility` des Laufs in W17, trotz 2 Frost), der Titan wurde nie gekauft (919 Münzen in W10, Preis 1000). Für P4: Hinweis „Du hast X Münzen“ bei Wave-Start/-Vorschau, Fähigkeiten mit sichtbarem Bereit-Zustand und Taste; Titan-Kauf als erkennbares Ziel (Sparen-Anzeige).
+
+Was **nicht** zum Verlust beitrug: Wellenstart (der Mensch ließ Wave 1 sofort starten, `skipWave` bei Tick 244; Verluste kamen erst ab W8), und die Zahl der Strikers (9 Käufe, aber 4 davon Wiederkauf).
+

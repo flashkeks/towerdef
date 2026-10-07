@@ -25,6 +25,8 @@ export interface Memo {
   saving: number;
   /** Early-Units wurden abgegeben: nicht neu kaufen (Runde 4 / P1). */
   rotated: boolean;
+  /** Runde 6 / P2: `mono-X`-Bot: nur diese Unit-ID, ohne Bot-Limit (aus `Policy.mono`). */
+  mono: string | null;
   /** Risikokarten (P4): Wave, bei der `lives` zuletzt notiert wurde, die Leben damals, Anzahl Waves in Folge ohne Lebensverlust. */
   cardWave: number;
   cardLives: number;
@@ -107,6 +109,7 @@ export const newMemo = (): Memo => ({
   airSeen: false,
   saving: 0,
   rotated: false,
+  mono: null,
   cardWave: 0,
   cardLives: -1,
   streak: 0,
@@ -230,6 +233,8 @@ export interface Policy {
   save?: boolean;
   /** Münzen, die nicht für Kampf-Units ausgegeben werden. */
   reserve?: number;
+  /** Runde 6 / P2: nur diese Unit-ID platzieren, so viele wie bezahlbar (kein Bot-Limit, kein Boss-Plan, kein Early-Cap). Messbot `mono-X`. */
+  mono?: string;
   /** Risikokarten nehmen, wenn das Team stark ist (P4, K1; Standard aus, Bot-Name mit Suffix `+cards`). */
   cards?: boolean;
 }
@@ -502,6 +507,7 @@ function sacrificeFor(env: Env, def: UnitDef): UnitState | null {
 
 function canPlaceBase(env: Env, def: UnitDef): boolean {
   if (botTuning.banned.includes(def.id)) return false;
+  if (env.memo.mono) return def.id === env.memo.mono && env.team.length < 60;
   if (env.own.filter((u) => u.defId === def.id).length >= limitOf(def)) return false;
   if (env.team.length >= 60) return false;
   if (!env.own.some((u) => u.defId === def.id) && new Set(env.own.map((u) => u.defId)).size >= 6) return false;
@@ -517,12 +523,12 @@ export function buildOptions(env: Env, pol: Policy): Option[] {
   for (const def of env.defs.values()) {
     if (def.farm || !def.attack && !def.aura) continue;
     if (!canPlaceBase(env, def)) continue;
-    const cost = def.placeCost;
+    const cost = env.sim.placeCost(env.playerId, def.id);
     if (cost > budget || nonFarm + cost > cap) continue;
     // Mythic nicht als Eröffnung: die ersten Waves brauchen mehrere billige Körper (Runde 4 / P1).
-    if (def.rarity === 'mythic' && env.wave < botTuning.mythicFromWave && !botTuning.disabled) continue;
+    if (def.rarity === 'mythic' && env.wave < botTuning.mythicFromWave && !botTuning.disabled && !env.memo.mono) continue;
     if (env.memo.rotated && EARLY_UNITS.includes(def.id)) continue;
-    if (EARLY_UNITS.includes(def.id) && env.own.filter((u) => u.defId === def.id).length >= botTuning.earlyCap) continue;
+    if (!env.memo.mono && EARLY_UNITS.includes(def.id) && env.own.filter((u) => u.defId === def.id).length >= botTuning.earlyCap) continue;
     if (pol.canPlace && !pol.canPlace(def, env)) continue;
     const w = pol.weight ? pol.weight(def, 'place') : 1;
     if (w <= 0) continue;
@@ -773,7 +779,10 @@ export function farmStep(ctx: BotContext, memo: Memo, pol: Policy): void {
     const ys = farmDef.farm.yieldByLevel;
     const cands: { payback: number; cost: number; place: boolean; unit?: UnitState }[] = [];
     const myFarms = env.own.filter((u) => u.defId === farmDef.id);
-    if (myFarms.length < limitOf(farmDef)) cands.push({ payback: farmDef.placeCost / ys[0], cost: farmDef.placeCost, place: true });
+    if (myFarms.length < limitOf(farmDef)) {
+      const pc = env.sim.placeCost(env.playerId, farmDef.id);
+      cands.push({ payback: pc / ys[0], cost: pc, place: true });
+    }
     for (const u of myFarms) {
       if (u.level >= farmDef.maxLevel) continue;
       const c = farmDef.upgradeCosts[u.level];
@@ -958,6 +967,7 @@ export function donateSurplus(ctx: BotContext, to: number[], keep: number): void
 
 /** Eine komplette Entscheidungsrunde nach Policy (Fähigkeiten, Targeting, Farm, Kauf). */
 export function playTurn(ctx: BotContext, memo: Memo, pol: Policy): void {
+  if (pol.mono) memo.mono = pol.mono;
   useAbilities(ctx, pol.frostMin ?? 4, memo);
   if (pol.cards && !botTuning.cardsDisabled) takeCard(ctx, memo);
   manageTargeting(ctx);

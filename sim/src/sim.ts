@@ -7,7 +7,7 @@
  *  4. Bewegung + Leaks (Niederlage)                5. Units: Cooldowns, Angriffe + Tode
  *  6. Sieg-Prüfung                                 7. tick++
  */
-import { applyCommand, placeError, type Command, type CommandResult } from './commands.js';
+import { applyCommand, placeCostFor, placeError, type Command, type CommandResult } from './commands.js';
 import { compile, type Ctx, type UnitDef } from './data/compile.js';
 import { loadGameData } from './data/load.js';
 import type { BossKit, DifficultyId, GameData, RiskCard, StageData } from './data/schema.js';
@@ -75,6 +75,11 @@ export interface Sim {
   map(): Readonly<MapDef>;
   catalog(): UnitDef[];
   upgradeCost(entityId: number): number | null;
+  /**
+   * Aktuelle Platzierkosten (Münzen) von `unitId` für `player`: Basispreis plus Zuwachs je eigener Unit gleichen Typs, die gerade steht
+   * (`economy.placeCostGrowthBp`, Unit-Feld `placeGrowthBp`). Genau der Betrag, den `place` abbucht. Ohne `player` (nur `unitId`): Spieler 0.
+   */
+  placeCost(player: number, unitId: string): number;
   placeCost(unitId: string): number;
   /** Wellenvorschau (K1, P4): Gegnertypen, Anzahl, Modifier, Boss ja/nein. `cardId`: hypothetische Karte (Standard: gewählte Karte der nächsten Wave). null außerhalb der Stage. */
   previewWave(n: number, cardId?: string | null): WavePreview | null;
@@ -199,10 +204,12 @@ export function createSim(opts: SimOptions): Sim {
     previewWave: (n, cardId) => previewWave(ctx, state, n, cardId),
     cards: () => ctx.cardList,
     bossKits: () => ctx.bossKits,
-    placeCost(unitId) {
+    placeCost(a: number | string, b?: string) {
+      const player = typeof a === 'number' ? a : 0;
+      const unitId = typeof a === 'number' ? (b as string) : a;
       const d = ctx.units[unitId];
       if (!d) throw new Error(`Unbekannte Unit ${unitId}`);
-      return d.placeCost;
+      return placeCostFor(w, player, d);
     },
   };
   return sim;

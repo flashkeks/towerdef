@@ -1,6 +1,7 @@
 import { aoe } from './aoe.js';
 import { coop } from './coop.js';
 import { farm } from './farm.js';
+import { mono } from './mono.js';
 import { greedy } from './greedy.js';
 import { upgrade } from './upgrade.js';
 import { wide } from './wide.js';
@@ -42,6 +43,9 @@ export function getBot(name: string): BotFactory {
       };
     };
   }
+  // `mono-X` / `mono-X+up` (Runde 6 / P2): nur die Unit X, so viele wie bezahlbar (`+up`: danach auch Upgrades).
+  const m = /^mono-([a-z]+)(\+up)?$/.exec(name);
+  if (m) return () => mono(m[1], !!m[2]);
   const f = BOTS[name];
   if (!f) throw new Error(`Unbekannter Bot "${name}" (verfügbar: ${Object.keys(BOTS).join(', ')})`);
   return f;

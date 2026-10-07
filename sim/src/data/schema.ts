@@ -55,6 +55,10 @@ export const EconomySchema = z.object({
     .optional(),
   /** Runde 6 / P1: freie Platzierung. Unit-Radius je footprint (Milli-Tiles, Schlüssel "1"/"2") und Zusatzabstand zum Pfadrand. */
   placement: z.object({ ref, unitRadiusMilli: z.object({ '1': pos, '2': pos }), pathMarginMilli: nat }),
+  /** Runde 6 / P2: steigende Platzierkosten je weiterer gleicher Unit des Spielers (Bp je Exemplar, linear). Fehlt/0 = aus. Unit-Feld `placeGrowthBp` überstimmt. */
+  placeCostGrowthBp: nat.optional(),
+  /** Anzahl Exemplare je Typ und Spieler, die noch den Basispreis kosten (Exemplar Nr. k > free kostet Basis x (1 + Zuwachs x (k - free))). Fehlt oder < 1: wirkt wie 1 (das erste Exemplar kostet immer den Basispreis). */
+  placeCostFreeCopies: nat.optional(),
   caps: z.object({ ref, teamUnits: pos, teamSlots: pos, enemies: pos }),
   cc: z.object({
     ref,
@@ -253,6 +257,8 @@ export const UnitSchema = z.object({
   footprint: z.union([z.literal(1), z.literal(2)]).default(1),
   /** Überschreibungen der Rarity-Werte (Farm). */
   placeCost: pos.optional(),
+  /** Zuwachs der Platzierkosten je weiterer eigener Unit gleichen Typs (Bp), überstimmt `economy.placeCostGrowthBp`. */
+  placeGrowthBp: nat.optional(),
   upgradeCosts: z.array(pos).optional(),
   sellBp: nat.optional(),
   /** Anteil am Rarity-DPS (AoE ~60 %, Kontrolle ~50 %, Support/Farm 0). */

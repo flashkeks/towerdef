@@ -33,6 +33,8 @@ export interface UnitDef {
   role: string;
   footprint: 1 | 2;
   placeCost: number;
+  /** Unit-eigener Zuwachs der Platzierkosten (Bp je Exemplar), sonst gilt `economy.placeCostGrowthBp`. */
+  placeGrowthBp?: number;
   /** Kosten je Upgrade (Stufe k -> k+1 kostet upgradeCosts[k]). */
   upgradeCosts: number[];
   maxLevel: number;
@@ -139,6 +141,7 @@ function build(u: UnitData, d: GameData): UnitDef {
     role: u.role,
     footprint: u.footprint,
     placeCost: u.placeCost ?? r.placeCost,
+    placeGrowthBp: u.placeGrowthBp,
     upgradeCosts,
     maxLevel: n,
     radiusMilli: d.economy.placement.unitRadiusMilli[String(u.footprint) as '1' | '2'],
