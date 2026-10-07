@@ -9,7 +9,7 @@ const data = (growth: number, free: number, unit?: Record<string, unknown>) => {
   d.economy.startCoins = 100_000;
   d.economy.placeCostGrowthBp = growth;
   d.economy.placeCostFreeCopies = free;
-  if (unit) Object.assign(d.units.units.find((u) => u.id === 'striker') as object, unit);
+  if (unit) Object.assign(d.units.units.find((u) => u.id === "ichigo") as object, unit);
   return d;
 };
 const mk = (d = data(1000, 2)) => createSim({ stage: 'standard20', difficulty: 'normal', players: 1, seed: 1, data: d });
@@ -26,56 +26,54 @@ describe('placeCost: steigende Platzierkosten', () => {
     const sim = mk();
     const costs: number[] = [];
     for (let i = 0; i < 5; i++) {
-      costs.push(sim.placeCost(0, 'striker'));
+      costs.push(sim.placeCost(0, 'ichigo'));
       const p = spot(i);
       const c0 = sim.state.players[0].coins;
-      expect(sim.apply(0, { type: 'place', unitId: 'striker', ...p }).ok).toBe(true);
+      expect(sim.apply(0, { type: 'place', unitId: 'ichigo', ...p }).ok).toBe(true);
       expect(c0 - sim.state.players[0].coins).toBe(costs[i]); // `placeCost` ist genau der abgebuchte Betrag
     }
-    expect(costs).toEqual([200, 200, 220, 240, 260]); // Exemplar 3 = +10 %, 4 = +20 %, 5 = +30 %
+    expect(costs).toEqual([350, 350, 385, 420, 455]); // Exemplar 3 = +10 %, 4 = +20 %, 5 = +30 %
   });
   it('gilt je Spieler und je Typ, Verkauf senkt den Preis wieder, `placeCost(unitId)` = Spieler 0', () => {
     const sim = createSim({ stage: 'standard20', difficulty: 'normal', players: 2, seed: 1, data: data(1000, 0) });
-    const r = sim.apply(0, { type: 'place', unitId: 'striker', ...spot(0) });
+    const r = sim.apply(0, { type: 'place', unitId: 'ichigo', ...spot(0) });
     expect(r.ok).toBe(true);
-    expect(sim.placeCost(0, 'striker')).toBe(220);
-    expect(sim.placeCost('striker')).toBe(220);
-    expect(sim.placeCost(1, 'striker')).toBe(200); // anderer Spieler: eigener Zähler
-    expect(sim.placeCost(0, 'gunner')).toBe(sim.placeCost(1, 'gunner')); // anderer Typ: Basis
+    expect(sim.placeCost(0, 'ichigo')).toBe(385);
+    expect(sim.placeCost('ichigo')).toBe(385);
+    expect(sim.placeCost(1, 'ichigo')).toBe(350); // anderer Spieler: eigener Zähler
+    expect(sim.placeCost(0, 'krillin')).toBe(sim.placeCost(1, 'krillin')); // anderer Typ: Basis
     if (r.ok) sim.apply(0, { type: 'sell', entityId: r.entityId as number });
-    expect(sim.placeCost(0, 'striker')).toBe(200);
+    expect(sim.placeCost(0, 'ichigo')).toBe(350);
   });
   it('zu wenig Münzen wegen des Aufschlags: `not-enough-coins`, Unit-Feld überstimmt die Wirtschaft', () => {
     const d = data(0, 0, { placeGrowthBp: 5000 });
-    d.economy.startCoins = 650;
+    d.economy.startCoins = 1500;
     const sim = mk(d);
-    expect(sim.placeCost(0, 'striker')).toBe(200);
-    expect(sim.apply(0, { type: 'place', unitId: 'striker', ...spot(0) }).ok).toBe(true);
-    expect(sim.placeCost(0, 'striker')).toBe(300); // +50 % nur für den Striker
-    expect(sim.placeCost(0, 'gunner')).toBe(sim.catalog().find((u) => u.id === 'gunner')?.placeCost);
-    expect(sim.apply(0, { type: 'place', unitId: 'striker', ...spot(1) }).ok).toBe(true); // 300, bleiben 150
-    const bad = sim.apply(0, { type: 'place', unitId: 'striker', ...spot(2) }); // 400 > 150
+    expect(sim.placeCost(0, 'ichigo')).toBe(350);
+    expect(sim.apply(0, { type: 'place', unitId: 'ichigo', ...spot(0) }).ok).toBe(true);
+    expect(sim.placeCost(0, 'ichigo')).toBe(525); // +50 % nur für Ichigo
+    expect(sim.placeCost(0, 'krillin')).toBe(sim.catalog().find((u) => u.id === 'krillin')?.placeCost);
+    expect(sim.apply(0, { type: 'place', unitId: 'ichigo', ...spot(1) }).ok).toBe(true); // 525, bleiben 625
+    const bad = sim.apply(0, { type: 'place', unitId: 'ichigo', ...spot(2) }); // 700 > 625
     expect(bad.ok ? null : bad.reason).toBe('not-enough-coins');
   });
   it('Standarddaten: ohne Zuwachs (0) unverändert, Bot-Lauf deterministisch mit Aufschlag', () => {
     const d0 = data(0, 0);
     const sim = mk(d0);
-    sim.apply(0, { type: 'place', unitId: 'striker', ...spot(0) });
-    expect(sim.placeCost(0, 'striker')).toBe(200);
-    const a = runMatch({ stage: 'standard20', difficulty: 'normal', players: 1, seed: 3, bots: ['wide'] });
-    const b = runMatch({ stage: 'standard20', difficulty: 'normal', players: 1, seed: 3, bots: ['wide'] });
+    sim.apply(0, { type: 'place', unitId: 'ichigo', ...spot(0) });
+    expect(sim.placeCost(0, 'ichigo')).toBe(350);
+    const a = runMatch({ stage: 'standard20', difficulty: 'normal', players: 1, seed: 3, bots: ['auto'] });
+    const b = runMatch({ stage: 'standard20', difficulty: 'normal', players: 1, seed: 3, bots: ['auto'] });
     expect(a.finalUnits).toEqual(b.finalUnits);
   });
 });
 
 describe('mono-X Bots', () => {
-  it('getBot kennt mono-X und mono-X+up, platziert nur diese Unit', () => {
-    expect(getBot('mono-frost')().name).toBe('mono-frost');
-    expect(getBot('mono-frost+up')().name).toBe('mono-frost+up');
-    const r = runMatch({ stage: 'standard20', difficulty: 'normal', players: 1, seed: 1, bots: ['mono-striker'] });
-    expect(r.finalUnits.length).toBeGreaterThan(3);
+  it('getBot kennt mono-X, platziert nur diese Unit', () => {
+    expect(getBot('mono-ichigo')().name).toBe('auto:ichigo');
+    const r = runMatch({ stage: 'standard20', difficulty: 'normal', players: 1, seed: 1, bots: ['mono-ichigo'] });
+    expect(r.finalUnits.length).toBeGreaterThan(0);
     expect(new Set(r.finalUnits.map((u) => u.unit)).size).toBe(1);
-    expect(r.finalUnits[0].unit).toBe('striker');
-    expect(r.finalUnits.every((u) => u.level === 0)).toBe(true);
+    expect(r.finalUnits[0].unit).toBe('ichigo');
   });
 });

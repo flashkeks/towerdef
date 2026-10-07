@@ -100,11 +100,11 @@ describe('Koop-Upgrade-Kosten (P6b)', () => {
     const base = ctx(plainData(), 1).units;
     for (const [players, bp] of [[1, 10000], [2, 12000], [4, 15000]] as const) {
       const u = ctx(d, players).units;
-      expect(u.striker.upgradeCosts).toEqual(base.striker.upgradeCosts.map((c) => Math.round((c * bp) / 10000)));
-      expect(u.farm.upgradeCosts).toEqual(base.farm.upgradeCosts);
+      expect(u.ichigo.upgradeCosts).toEqual(base.ichigo.upgradeCosts.map((c) => Math.round((c * bp) / 10000)));
+      expect(u.speedwagon.upgradeCosts).toEqual(base.speedwagon.upgradeCosts);
     }
     // Platzierungskosten unberührt
-    expect(ctx(d, 4).units.striker.placeCost).toBe(base.striker.placeCost);
+    expect(ctx(d, 4).units.ichigo.placeCost).toBe(base.ichigo.placeCost);
   });
 
   it('Validierung: Eintrag für 1 Spieler muss 10000 sein, Länge = maxPlayers', () => {

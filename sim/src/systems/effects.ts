@@ -9,49 +9,71 @@ import { wardBroken } from './boss.js';
 
 type CcEco = Pick<EconomyData, 'cc'>;
 
-/** Betäubung. Gibt false zurück, wenn bereits betäubt oder in der Sperre (kein Refresh). */
-export function applyStun(e: EnemyState, ticks: number, eco: CcEco): boolean {
-  // DESIGN-OFFEN: Stun wird weder während des Stuns noch in der 6-s-Sperre erneuert; die Sperre beginnt, wenn der Stun endet.
-  // P4: Im Schwachstellen-Fenster eines Bosses gilt die volle Dauer und keine Sperre ("CC möglich"); ein Stun unterbricht den Telegraph.
+/**
+ * CC-Gruppe (Stun, Freeze, Timestop, Rückwärtslaufen): höchstens eins zugleich, danach `immune` Ticks Sperre (nach Ablauf).
+ * Im Schwachstellen-Fenster eines Bosses gilt die volle Dauer ohne Sperre; sonst Boss-Dauer x `cc.bossCcBp`.
+ * Ein Stun unterbricht den Telegraph des Bosses. Gibt false zurück, wenn gesperrt oder wirkungslos.
+ */
+export function applyCc(e: EnemyState, kind: 'stun' | 'back', ticks: number, immune: number, eco: CcEco): boolean {
   const inWindow = e.bossRun !== null && e.bossRun.vulnTicks > 0;
-  if (e.stunTicks > 0 || (e.stunImmune > 0 && !inWindow)) return false;
-  e.stunTicks = e.boss && !inWindow ? mulBp(ticks, eco.cc.bossCcBp) : ticks;
-  if (e.stunTicks > 0 && e.bossRun?.tele && !e.bossRun.tele.interrupted) {
-    e.bossRun.tele.interrupted = true;
-    e.bossRun.tele.cause = 'stun';
-  }
-  return e.stunTicks > 0;
+  if (e.stunTicks > 0 || e.backTicks > 0 || (e.stunImmune > 0 && !inWindow)) return false;
+  const dur = e.boss && !inWindow ? mulBp(ticks, eco.cc.bossCcBp) : ticks;
+  if (dur <= 0) return false;
+  if (kind === 'stun') {
+    e.stunTicks = dur;
+    if (e.bossRun?.tele && !e.bossRun.tele.interrupted) {
+      e.bossRun.tele.interrupted = true;
+      e.bossRun.tele.cause = 'stun';
+    }
+  } else e.backTicks = dur;
+  e.stunImmuneAfter = immune;
+  return true;
 }
 
-/** Verlangsamung: stärkster Slow gewinnt (nicht additiv), Gesamt max. slowMaxBp, Boss-Dauer halbiert. */
-export function applySlow(e: EnemyState, pctBp: number, ticks: number, eco: CcEco): boolean {
+/** Betäubung mit der Standard-Sperre. */
+export function applyStun(e: EnemyState, ticks: number, eco: CcEco): boolean {
+  return applyCc(e, 'stun', ticks, eco.cc.stunImmuneTicks, eco);
+}
+
+/** Verlangsamung: stärkster Slow gewinnt (nicht additiv), Gesamt max. slowMaxBp, Boss-Dauer verkürzt; nach Ablauf `immune` Ticks Sperre. */
+export function applySlow(e: EnemyState, pctBp: number, ticks: number, immune: number, eco: CcEco): boolean {
+  if (e.slowTicks === 0 && e.slowImmune > 0) return false;
   const pct = Math.min(pctBp, eco.cc.slowMaxBp);
   const dur = e.boss ? mulBp(ticks, eco.cc.bossCcBp) : ticks;
   if (e.slowTicks > 0) {
     if (e.slowBp > pct) return false;
     if (e.slowBp === pct) {
       e.slowTicks = Math.max(e.slowTicks, dur);
+      e.slowImmuneAfter = immune;
       return true;
     }
   }
   e.slowBp = pct;
   e.slowTicks = dur;
+  e.slowImmuneAfter = immune;
   return true;
 }
 
-/** Markierung (Runde 7 / P6): stärkste gewinnt, gleiche Stärke erneuert die Dauer; auf Bossen gilt die volle Dauer (kein CC). */
-export function applyMark(e: EnemyState, vulnBp: number, ticks: number): void {
-  if (e.markTicks > 0 && e.markBp > vulnBp) return;
-  if (e.markTicks > 0 && e.markBp === vulnBp) e.markTicks = Math.max(e.markTicks, ticks);
-  else {
-    e.markBp = vulnBp;
-    e.markTicks = ticks;
+/** Mehr erhaltener Schaden (Cursed/Hexed/Dismembered): stärkster gewinnt, gleiche Stärke erneuert die Dauer, kein Stapeln. `ticks` -1 = dauerhaft. */
+export function applyCurse(e: EnemyState, dtype: 'magic' | 'physical', bp: number, ticks: number): void {
+  const cur = dtype === 'magic' ? e.magicTakenBp : e.physTakenBp;
+  const curT = dtype === 'magic' ? e.magicTakenTicks : e.physTakenTicks;
+  const active = cur > 0;
+  if (active && cur > bp) return;
+  const t = active && cur === bp ? (curT < 0 || ticks < 0 ? -1 : Math.max(curT, ticks)) : ticks;
+  if (dtype === 'magic') {
+    e.magicTakenBp = bp;
+    e.magicTakenTicks = t;
+  } else {
+    e.physTakenBp = bp;
+    e.physTakenTicks = t;
   }
 }
 
 /**
- * DoT anwenden: totalCenti verteilt sich auf ticks/intervalTicks Intervalle.
- * Gleicher Typ: Dauer wird erneuert, Rate = Maximum (kein Stapeln). Boss/Elite nehmen x0,5.
+ * DoT anwenden: totalCenti verteilt sich auf ticks/intervalTicks Intervalle. Boss/Elite nehmen x0,5.
+ * Dieselbe Unit erneuert ihre Instanz je Art (Dauer neu, Rate = Maximum); verschiedene Units stapeln bis `economy.dot.maxStacks`
+ * je Art (am Limit ersetzt eine stärkere Instanz die schwächste).
  */
 export function applyDot(
   e: EnemyState,
@@ -67,19 +89,23 @@ export function applyDot(
   const intervals = Math.max(1, Math.floor(ticks / eco.dot.intervalTicks));
   const per = Math.floor(total / intervals);
   if (per <= 0) return;
-  // DESIGN-OFFEN: gleicher DoT-Typ: Dauer wird erneuert, Rate = Maximum (kein Stapeln); DoT ignoriert Schild und Mindestschaden.
-  const cur = e[kind];
+  const cur = e.dots.find((d) => d.kind === kind && d.unit === unit);
   if (cur) {
     cur.ticksLeft = ticks;
     if (per >= cur.perIntervalCenti) {
       cur.perIntervalCenti = per;
       cur.owner = owner;
-      cur.unit = unit;
     }
-  } else {
-    const d: DotState = { ticksLeft: ticks, nextIn: eco.dot.intervalTicks, perIntervalCenti: per, owner, unit };
-    e[kind] = d;
+    return;
   }
+  const same = e.dots.filter((d) => d.kind === kind);
+  if (same.length >= eco.dot.maxStacks) {
+    let weakest = same[0];
+    for (const d of same) if (d.perIntervalCenti < weakest.perIntervalCenti) weakest = d;
+    if (per <= weakest.perIntervalCenti) return;
+    e.dots.splice(e.dots.indexOf(weakest), 1);
+  }
+  e.dots.push({ kind, ticksLeft: ticks, nextIn: eco.dot.intervalTicks, perIntervalCenti: per, owner, unit });
 }
 
 /**
@@ -138,28 +164,39 @@ export function tickEffects(w: World): void {
   for (const e of state.enemies) {
     if (e.hp <= 0) continue;
     if (e.stunTicks > 0) {
-      e.stunTicks--;
-      if (e.stunTicks === 0) e.stunImmune = eco.cc.stunImmuneTicks;
+      if (--e.stunTicks === 0) e.stunImmune = e.stunImmuneAfter;
+    } else if (e.backTicks > 0) {
+      if (--e.backTicks === 0) e.stunImmune = e.stunImmuneAfter;
     } else if (e.stunImmune > 0) e.stunImmune--;
+    if (e.uncTicks > 0) e.uncTicks--;
     if (e.slowTicks > 0) {
-      e.slowTicks--;
-      if (e.slowTicks === 0) e.slowBp = 0;
-    }
-    if (e.markTicks > 0 && --e.markTicks === 0) e.markBp = 0;
-    for (const kind of ['bleed', 'burn', 'poison'] as const) {
-      const d = e[kind];
-      if (!d) continue;
-      d.nextIn--;
-      if (d.nextIn === 0) {
-        d.nextIn = eco.dot.intervalTicks;
-        const src = state.units.find((u) => u.id === d.unit) ?? null;
-        applyDamage(w, e, d.perIntervalCenti, d.owner, src, true);
+      if (--e.slowTicks === 0) {
+        e.slowBp = 0;
+        e.slowImmune = e.slowImmuneAfter;
       }
-      d.ticksLeft--;
-      if (d.ticksLeft <= 0) e[kind] = null;
+    } else if (e.slowImmune > 0) e.slowImmune--;
+    if (e.kbImmune > 0) e.kbImmune--;
+    if (e.regenBlock > 0) e.regenBlock--;
+    if (e.bleedAmpTicks > 0 && --e.bleedAmpTicks === 0) e.bleedAmpBp = 0;
+    if (e.physTakenTicks > 0 && --e.physTakenTicks === 0) e.physTakenBp = 0;
+    if (e.magicTakenTicks > 0 && --e.magicTakenTicks === 0) e.magicTakenBp = 0;
+    if (e.dots.length > 0) {
+      const keep: DotState[] = [];
+      for (const d of e.dots) {
+        d.nextIn--;
+        if (d.nextIn === 0) {
+          d.nextIn = eco.dot.intervalTicks;
+          const src = state.units.find((u) => u.id === d.unit) ?? null;
+          const amp = d.kind === 'bleed' && e.bleedAmpTicks > 0 ? e.bleedAmpBp : BP;
+          applyDamage(w, e, mulBp(d.perIntervalCenti, amp), d.owner, src, true);
+        }
+        d.ticksLeft--;
+        if (d.ticksLeft > 0) keep.push(d);
+      }
+      e.dots = keep;
     }
     if (e.regen && e.hp > 0 && state.tick % 20 === 0 && e.hp < e.maxHp) {
-      if (!regenStops.some((k) => e[k] !== null)) {
+      if (e.regenBlock === 0 && !regenStops.some((k) => e.dots.some((d) => d.kind === k))) {
         e.hp = Math.min(e.maxHp, e.hp + mulBp(e.maxHp, eco.regen.perSecondBp));
       }
     }

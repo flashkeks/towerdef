@@ -37,7 +37,6 @@ export function startWave(w: World, n: number): void {
   state.phase = 'wave';
   state.waveOpen = true;
   state.waveTimer = 0;
-  state.guardUsed = 0;
   state.skipPending = false;
   for (const p of state.players) p.skipVote = false;
   w.events.push({ type: 'waveStart', tick: state.tick, wave: n });

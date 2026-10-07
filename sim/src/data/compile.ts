@@ -7,29 +7,84 @@ import { buildPath, type Path } from '../path.js';
 import { buildMap, type MapDef } from '../placement.js';
 import { TILE } from '../fixed.js';
 import type {
+  AttackData,
   BossKit,
   DifficultyDef,
   DifficultyId,
+  DotData,
+  EffectDef,
   EnemyArchetype,
   GameData,
-  OnHitEffect,
   RiskCard,
+  SpecialData,
   StageData,
   UnitData,
 } from './schema.js';
 
+/** Ein Effekt in Festkomma (Ticks, Basispunkte, Milli-Tiles), abgeleitet aus dem Effekt-Katalog plus den Überschreibungen des Angriffs. */
+export type FxSpec =
+  | { kind: 'slow'; name: string; ticks: number; bp: number; immune: number }
+  | { kind: 'stun' | 'freeze' | 'timestop'; name: string; ticks: number; immune: number }
+  | { kind: 'unconscious'; name: string; ticks: number }
+  | { kind: 'walkback'; name: string; ticks: number; chanceBp: number; immune: number }
+  | { kind: 'knockback'; name: string; distMilli: number; immune: number }
+  /** `ticks` -1 = dauerhaft. */
+  | { kind: 'curse'; name: string; dtype: 'magic' | 'physical'; bp: number; ticks: number }
+  | { kind: 'bleedAmp'; name: string; ticks: number; factorBp: number }
+  | { kind: 'overCrit'; name: string }
+  | { kind: 'battlelust'; name: string; stepBp: number; maxBp: number }
+  | { kind: 'snatched'; name: string; stepBp: number; maxBp: number; maxBpMaxLevel: number; ticks: number }
+  | { kind: 'sunshine'; name: string; maxWaves: number; dmgBp: number; rangeBp: number }
+  | { kind: 'motivate'; name: string; dmgBp: number; rangeBp: number; ticks: number }
+  | { kind: 'shatter'; name: string }
+  | { kind: 'wither'; name: string; ticks: number }
+  | { kind: 'dot'; name: string; dot: CompiledDot }
+  | { kind: 'wildcard'; name: string; pool: FxSpec[] };
+
+export interface CompiledDot {
+  kind: 'burn' | 'bleed' | 'poison' | 'wither';
+  /** Gesamtschaden in Bp des Treffer-Schadens (multiplierPerTick x ticks). */
+  totalBp: number;
+  /** Dauer in Spiel-Ticks (AA-Ticks x `economy.dot.intervalTicks`). */
+  ticks: number;
+}
+
+export type AttackKind = 'single' | 'circle' | 'cone' | 'line' | 'full';
+
+export interface CompiledAttack {
+  id: string;
+  kind: AttackKind;
+  /** circle: Radius um das Ziel (Milli-Tiles). */
+  radiusMilli: number;
+  /** line: Breite (Milli-Tiles). */
+  widthMilli: number;
+  /** cone: Gesamtwinkel in Grad und cos^2(Halbwinkel) in Bp. */
+  coneDeg: number;
+  cos2Bp: number;
+  hits: number;
+  dot: CompiledDot | null;
+  fx: FxSpec[];
+}
+
 export interface LevelStat {
-  /** Basis-Schaden je Treffer in Centi-HP (vor Level/Trait/Buff/Element/Rüstung). */
+  /** Basis-Schaden je Angriff in Centi-HP (vor Level/Trait/Buff/Schwäche/Resistenz); wird auf `attack.hits` geteilt. 0 = diese Stufe greift nicht an. */
   damageCenti: number;
   spaTicks: number;
   rangeMilli: number;
+  /** Angriff dieser Stufe (null = greift nicht an). */
+  attack: CompiledAttack | null;
+  /** Farm-Ertrag je Wave in Münzen. */
+  farm: number;
 }
+
+export type DamageType = 'physical' | 'magic' | 'true';
 
 export interface UnitDef {
   id: string;
   name: string;
   rarity: UnitData['rarity'];
   placement: UnitData['placement'];
+  /** Aus den Daten abgeleitet: economy | control | aoe | single (nur Anzeige und Bot-Hinweise, nie Regel). */
   role: string;
   footprint: 1 | 2;
   placeCost: number;
@@ -41,22 +96,20 @@ export interface UnitDef {
   /** Kollisionsradius in Milli-Tiles (aus `footprint`, `economy.placement.unitRadiusMilli`). */
   radiusMilli: number;
   sellBp: number;
-  attack: UnitData['attack'];
-  defaultTargeting: UnitData['defaultTargeting'];
-  element: number;
-  penetration: number;
-  crit?: UnitData['crit'];
-  onHit: OnHitEffect[];
-  aura?: UnitData['aura'];
-  farm?: UnitData['farm'];
-  guard?: UnitData['guard'];
-  bountyAura?: UnitData['bountyAura'];
-  windowExtend?: UnitData['windowExtend'];
-  slowAura?: UnitData['slowAura'];
-  ability?: UnitData['ability'];
+  unsellable: boolean;
+  /** Der erste Angriff der Unit (Stufe mit Angriff), für Anzeige und Effekte; je Stufe zählt `levels[k].attack`. */
+  attack: CompiledAttack | null;
+  defaultTargeting: 'first' | 'last' | 'close' | 'strongest';
+  damageType: DamageType;
+  elements: string[];
+  /** Crit-Chance in Bp (0 = kein Crit) und Multiplikator in Bp. */
+  critBp: number;
+  critMultBp: number;
+  /** Gelesen, nicht durchgesetzt. */
+  spawnCap: number | null;
+  /** Hat irgendeine Stufe Farm-Ertrag? (Farm-Units) */
+  farm?: { yieldByLevel: number[] };
   canHitAir: boolean;
-  /** Schadensanteil gegen Flieger in Bp (nur gesetzt, wenn die Unit Luft abweichend vom vollen Schaden trifft). */
-  airDamageBp?: number;
   levels: LevelStat[];
 }
 
@@ -74,6 +127,11 @@ export interface ParsedModifier {
   n: number;
 }
 
+export interface Affinity {
+  weakBp: Record<string, number>;
+  resist: Record<string, number>;
+}
+
 export interface Ctx {
   data: GameData;
   stage: StageData;
@@ -88,6 +146,10 @@ export interface Ctx {
   units: Record<string, UnitDef>;
   unitList: UnitDef[];
   enemies: Record<string, EnemyArchetype>;
+  /** Wave-Element (Index) -> AA-Element (`enemies.waveElements`); 0 = keins. */
+  waveElement(index: number): string | null;
+  /** Schwächen (Bp) und Resistenzen (R) eines Gegnertyps mit Element (Archetyp + Element-Affinität), je Typ/Element gecacht. */
+  affinity(type: string, element: number): Affinity;
   /** Anzahl fester Waves; im Infinite-Modus Infinity (kein Sieg). */
   totalWaves: number;
   /** Infinite-Modus (Waves > stage.waves.length werden erzeugt). */
@@ -124,47 +186,157 @@ export interface Ctx {
   bounty(n: number, hpBasisCenti: number): number;
 }
 
-function build(u: UnitData, d: GameData): UnitDef {
-  const r = d.units.rarities[u.rarity];
-  const upgradeCosts = u.upgradeCosts ?? r.upgradeCosts;
-  const n = upgradeCosts.length;
-  const levels: LevelStat[] = [];
-  for (let k = 0; k <= n; k++) {
-    // DESIGN-OFFEN: Level-Stats linear interpoliert (DPS, SPA, Range), jeweils abgerundet; Schaden/Treffer = floor(floor(DPS*Anteil) * SPA / 20).
-    const dps = r.dpsCenti[0] + Math.floor(((r.dpsCenti[1] - r.dpsCenti[0]) * k) / n);
-    const spa = r.spaTicks[0] - Math.floor(((r.spaTicks[0] - r.spaTicks[1]) * k) / n);
-    const range = r.rangeMilli[0] + Math.floor(((r.rangeMilli[1] - r.rangeMilli[0]) * k) / n);
-    const dpsShare = Math.floor((dps * u.dpsShareBp) / 10000);
-    levels.push({ damageCenti: Math.floor((dpsShare * spa) / 20), spaTicks: spa, rangeMilli: range });
+const ticksOf = (sec: number): number => Math.round(sec * 20);
+const bpOf = (x: number): number => Math.round(x * 10000);
+
+/** Katalog-Eintrag + Überschreibungen des Angriffs -> Festkomma-Effekt. `null`: Name unbekannt (No-op, wird gemeldet). */
+export function compileFx(name: string, catalog: Record<string, EffectDef>, over: Pick<SpecialData, 'duration' | 'influence' | 'chance'>, d: GameData, depth = 0): FxSpec | null {
+  const e = catalog[name];
+  if (!e) return null;
+  const sec = (x: number): number => ticksOf(over.duration ?? x);
+  switch (e.kind) {
+    case 'slow':
+      return { kind: 'slow', name, ticks: sec(e.durationSec), bp: bpOf(over.influence ?? e.influence), immune: ticksOf(e.immuneSec) };
+    case 'stun':
+    case 'freeze':
+    case 'timestop':
+      return { kind: e.kind, name, ticks: sec(e.durationSec), immune: ticksOf(e.immuneSec) };
+    case 'unconscious':
+      return { kind: 'unconscious', name, ticks: sec(e.durationSec) };
+    case 'walkback':
+      return { kind: 'walkback', name, ticks: sec(e.durationSec), chanceBp: bpOf(over.chance ?? e.chance), immune: ticksOf(e.immuneSec) };
+    case 'knockback':
+      return { kind: 'knockback', name, distMilli: Math.round(e.distanceTiles * 1000), immune: ticksOf(e.immuneSec) };
+    case 'curse':
+      return { kind: 'curse', name, dtype: e.damageType, bp: Math.round(e.percent * 100), ticks: e.durationSec > 0 ? sec(e.durationSec) : -1 };
+    case 'bleedAmp':
+      return { kind: 'bleedAmp', name, ticks: sec(e.durationSec), factorBp: bpOf(e.factor) };
+    case 'overCrit':
+      return { kind: 'overCrit', name };
+    case 'battlelust':
+      return { kind: 'battlelust', name, stepBp: Math.round(e.stepPercent * 100), maxBp: Math.round(e.maxPercent * 100) };
+    case 'snatched':
+      return { kind: 'snatched', name, stepBp: Math.round(e.stepPercent * 100), maxBp: Math.round(e.maxPercent * 100), maxBpMaxLevel: Math.round(e.maxPercentAtMaxLevel * 100), ticks: sec(e.durationSec) };
+    case 'sunshine':
+      return { kind: 'sunshine', name, maxWaves: e.maxWaves, dmgBp: bpOf(e.damageFactor - 1), rangeBp: bpOf(e.rangeFactor - 1) };
+    case 'motivate':
+      return { kind: 'motivate', name, dmgBp: Math.round(e.damagePercent * 100), rangeBp: Math.round(e.rangePercent * 100), ticks: sec(e.durationSec) };
+    case 'shatter':
+      return { kind: 'shatter', name };
+    case 'wither':
+      return { kind: 'wither', name, ticks: sec(e.durationSec) };
+    case 'dot':
+      return { kind: 'dot', name, dot: compileDot({ type: e.type, multiplierPerTick: e.multiplierPerTick, ticks: e.ticks }, d) };
+    case 'wildcard': {
+      if (depth > 0) return null;
+      const pool: FxSpec[] = [];
+      for (const n of e.pool) {
+        const f = compileFx(n, catalog, {}, d, depth + 1);
+        if (f) pool.push(f);
+      }
+      return pool.length > 0 ? { kind: 'wildcard', name, pool } : null;
+    }
   }
+}
+
+function compileDot(x: Pick<DotData, 'type' | 'multiplierPerTick' | 'ticks'> & { totalMultiplier?: number | null }, d: GameData): CompiledDot {
+  const total = x.totalMultiplier ?? x.multiplierPerTick * x.ticks;
+  return { kind: x.type.toLowerCase() as CompiledDot['kind'], totalBp: Math.round(total * 10000), ticks: x.ticks * d.economy.dot.intervalTicks };
+}
+
+/** Katalog-Eintrag eines Angriffs -> Festkomma. Fehlende Formparameter bekommen Standardwerte (kein Absturz bei unvollständigen Importen). */
+export function compileAttack(id: string, a: AttackData | null | undefined, d: GameData, unknown: Set<string>): CompiledAttack {
+  const spt = d.economy.scale.studsPerTile;
+  const kind: AttackKind = a?.aoe ?? 'single';
+  const coneDeg = a?.angle ?? 60;
+  const fx: FxSpec[] = [];
+  const sp = a?.special;
+  for (const x of sp === undefined || sp === null ? [] : Array.isArray(sp) ? sp : [sp]) {
+    const f = compileFx(x.name, d.effects.effects, x, d);
+    if (f) fx.push(f);
+    else unknown.add(x.name);
+  }
+  return {
+    id,
+    kind,
+    radiusMilli: Math.round(((a?.radius ?? 8) * 1000) / spt),
+    widthMilli: Math.round(((a?.width ?? 4) * 1000) / spt),
+    coneDeg,
+    // cos^2(Halbwinkel) = (1 + cos(Winkel)) / 2, auf Basispunkte gerundet (einmalig beim Laden).
+    cos2Bp: Math.round((10000 * (1 + Math.cos((coneDeg * Math.PI) / 180))) / 2),
+    hits: a?.hits ?? 1,
+    dot: a?.dot ? compileDot(a.dot, d) : null,
+    fx,
+  };
+}
+
+const CC_KINDS = new Set(['slow', 'stun', 'freeze', 'timestop', 'unconscious', 'walkback', 'knockback']);
+
+function build(u: UnitData, d: GameData, unknown: Set<string>): UnitDef {
+  const eco = d.economy;
+  const yen = (v: number): number => Math.max(1, Math.round(v / eco.scale.yenPerCoin));
+  const attackCache = new Map<string, CompiledAttack>();
+  const attackFor = (id: string | null): CompiledAttack => {
+    const key = id ?? '';
+    let c = attackCache.get(key);
+    if (!c) {
+      c = compileAttack(key, id ? d.units.attacks[id] : undefined, d, unknown);
+      attackCache.set(key, c);
+    }
+    return c;
+  };
+  const levels: LevelStat[] = [];
+  let damage = 0;
+  let spa = 1;
+  let range = 0;
+  let attackId: string | null = null;
+  let cost = 0;
+  const costs: number[] = [];
+  u.levels.forEach((l, k) => {
+    damage = l.damage ?? damage;
+    spa = l.spa ?? spa;
+    range = l.range ?? range;
+    attackId = l.attack ?? attackId;
+    cost = l.cost ?? cost;
+    costs.push(yen(cost));
+    const attacks = damage > 0 && spa > 0 && range > 0;
+    levels.push({
+      damageCenti: attacks ? Math.max(1, Math.round(damage * 100)) : 0,
+      spaTicks: Math.max(1, ticksOf(spa)),
+      rangeMilli: Math.round((range * 1000) / eco.scale.studsPerTile),
+      attack: attacks ? attackFor(attackId) : null,
+      farm: l.farm ? yen(l.farm) : 0,
+    });
+    void k;
+  });
+  const first = levels.find((l) => l.attack)?.attack ?? null;
+  const last = [...levels].reverse().find((l) => l.attack)?.attack ?? null;
+  const hasFarm = levels.some((l) => l.farm > 0);
+  const allFx = levels.flatMap((l) => l.attack?.fx ?? []);
+  const role = hasFarm ? 'economy' : allFx.some((f) => CC_KINDS.has(f.kind)) ? 'control' : last && last.kind !== 'single' ? 'aoe' : 'single';
   return {
     id: u.id,
     name: u.name,
     rarity: u.rarity,
     placement: u.placement,
-    role: u.role,
+    role,
     footprint: u.footprint,
-    placeCost: u.placeCost ?? r.placeCost,
-    placeGrowthBp: u.placeGrowthBp,
-    upgradeCosts,
-    maxLevel: n,
-    radiusMilli: d.economy.placement.unitRadiusMilli[String(u.footprint) as '1' | '2'],
-    sellBp: u.sellBp ?? d.economy.sell.combatBp,
-    attack: u.attack,
-    defaultTargeting: u.defaultTargeting,
-    element: u.element,
-    penetration: u.penetration,
-    crit: u.crit,
-    onHit: u.onHit,
-    aura: u.aura,
-    farm: u.farm,
-    guard: u.guard,
-    bountyAura: u.bountyAura,
-    windowExtend: u.windowExtend,
-    slowAura: u.slowAura,
-    ability: u.ability,
-    canHitAir: u.placement !== 'ground' || u.airDamageBp !== undefined,
-    airDamageBp: u.airDamageBp,
+    placeCost: costs[0],
+    placeGrowthBp: u.placeGrowthBp ?? undefined,
+    upgradeCosts: costs.slice(1),
+    maxLevel: levels.length - 1,
+    radiusMilli: eco.placement.unitRadiusMilli[String(u.footprint) as '1' | '2'],
+    sellBp: u.unsellable ? 0 : hasFarm ? eco.sell.farmBp : eco.sell.combatBp,
+    unsellable: u.unsellable === true,
+    attack: first,
+    defaultTargeting: 'first',
+    damageType: u.damageType,
+    elements: u.elements,
+    critBp: u.critChance ? bpOf(u.critChance) : 0,
+    critMultBp: u.critDamage ? bpOf(u.critDamage) : eco.damage.critDefaultMultBp,
+    spawnCap: u.spawnCap ?? null,
+    farm: hasFarm ? { yieldByLevel: levels.map((l) => l.farm) } : undefined,
+    canHitAir: u.hitsAir ?? u.placement !== 'ground',
     levels,
   };
 }
@@ -202,7 +374,8 @@ export function compile(data: GameData, stage: StageData, difficultyId: Difficul
   if (!Number.isInteger(players) || players < 1 || players > data.economy.coop.maxPlayers) {
     throw new Error(`Spielerzahl ${players} ungültig`);
   }
-  const unitList = data.units.units.map((u) => build(u, data));
+  const unknownFx = new Set<string>();
+  const unitList = data.units.units.map((u) => build(u, data, unknownFx));
   const units: Record<string, UnitDef> = {};
   // P6b: Koop-Upgrade-Kosten (Tabelle je Spielerzahl, nur Kampf-Units); 1 Spieler = unverändert.
   const upBp = coopTable(data.economy.coop.upgradeCostTableBp, players) ?? 10000;
@@ -210,6 +383,23 @@ export function compile(data: GameData, stage: StageData, difficultyId: Difficul
   for (const u of unitList) units[u.id] = u;
   const enemies: Record<string, EnemyArchetype> = {};
   for (const a of data.enemies.archetypes) enemies[a.id] = a;
+  const affCache = new Map<string, Affinity>();
+  const waveElement = (i: number): string | null => (i >= 1 && i <= 5 ? data.enemies.waveElements[i - 1] : null);
+  const affinity = (type: string, element: number): Affinity => {
+    const key = `${type}:${element}`;
+    let a = affCache.get(key);
+    if (!a) {
+      const base = enemies[type];
+      const el = waveElement(element);
+      const extra = el ? data.enemies.elementAffinity[el] : undefined;
+      a = { weakBp: { ...base.weakBp }, resist: { ...base.resist } };
+      for (const [k, v] of Object.entries(extra?.weakBp ?? {})) a.weakBp[k] = (a.weakBp[k] ?? 0) + v;
+      for (const [k, v] of Object.entries(extra?.resist ?? {})) a.resist[k] = (a.resist[k] ?? 0) + v;
+      affCache.set(key, a);
+    }
+    return a;
+  };
+  void unknownFx;
 
   const coopHpBp = coopTable(data.difficulties[difficultyId].coopHpTableBp ?? data.economy.coop.hpTableBp, players) ?? 10000 + data.economy.coop.hpPerExtraPlayerBp * (players - 1);
   const hpCache: number[] = [];
@@ -259,6 +449,8 @@ export function compile(data: GameData, stage: StageData, difficultyId: Difficul
     units,
     unitList,
     enemies,
+    waveElement,
+    affinity,
     totalWaves: infinite ? Infinity : fixedWaves,
     infinite,
     fixedWaves,
@@ -283,4 +475,11 @@ export function compile(data: GameData, stage: StageData, difficultyId: Difficul
     hpGrunt,
     bounty,
   };
+}
+
+/** Effektnamen, die in Angriffen vorkommen, aber nicht im Katalog stehen (No-op in der Sim). Zum Prüfen von Importen. */
+export function unknownEffects(data: GameData): string[] {
+  const unknown = new Set<string>();
+  for (const u of data.units.units) build(u, data, unknown);
+  return [...unknown].sort();
 }

@@ -1,60 +1,59 @@
 /**
- * Angriffe: Abklingzeit, Zielwahl, Trefferfläche (single/circle/line/cone), Schaden, On-Hit-Effekte.
+ * Angriffe (Runde 8 / P1, generisch aus Daten): Abklingzeit, Zielwahl, Trefferfläche (single/circle/cone/line/full), Treffer-Teilung,
+ * Schaden (Typ, Schwäche, Resistenz, Crit), DoT und Spezialeffekte.
  * Units werden in aufsteigender ID abgearbeitet; getroffene Gegner in aufsteigender ID.
  * Geometrie rein ganzzahlig: Richtungsvektor auf Länge ~1024 normiert (Integer-Sqrt).
+ *
+ * Ablauf eines Angriffs: Ziel wählen (Reichweite der Stufe) -> Crit würfeln (ein Wurf je Angriff, nur Units mit Crit verbrauchen
+ * PRNG) -> Trefferfläche bestimmen (einmal) -> Shatter -> `hits` Treffer reihum auf alle Gegner der Fläche, jeder Treffer mit
+ * `damage / hits` -> Spezialeffekte je Gegner (einmal je Angriff) -> Selbst-Buffs der Unit.
  */
-import type { UnitDef } from '../data/compile.js';
-import { computeHit, elementBp } from '../damage.js';
+import type { CompiledAttack, FxSpec, LevelStat, UnitDef } from '../data/compile.js';
+import { computeHit } from '../damage.js';
 import { BP, dist2, isqrt, mulBp } from '../fixed.js';
 import { nextInt } from '../prng.js';
 import type { EnemyState, UnitState, World } from '../state.js';
-import { applyDamage, applyDot, applyMark, applySlow } from './effects.js';
+import { applyDamage, applyDot } from './effects.js';
 import { effectiveArmor } from './boss.js';
+import { applyFx } from './special.js';
 import { selectTarget } from './target.js';
 
 export interface Buffs {
+  /** Buff-Schaden von Verbündeten (Motivate), wird auf `buffCaps.damageBp` begrenzt. */
   damageBp: number;
   tempoBp: number;
+  /** Reichweiten-Zuwachs (Motivate, Sunshine), Cap `buffCaps.rangeBp` für Buffs, Sunshine zusätzlich (siehe `computeBuffs`). */
   rangeBp: number;
+  /** Selbst-Buffs der Unit (Battlelust, Snatched, Sunshine) auf den Schaden, ohne Cap. */
+  selfBp: number;
 }
+
+/** Effekte (`FxSpec`) einer Art in einem Angriff. */
+const fxOf = <K extends FxSpec['kind']>(atk: CompiledAttack | null, kind: K): Extract<FxSpec, { kind: K }> | undefined =>
+  atk?.fx.find((f): f is Extract<FxSpec, { kind: K }> => f.kind === kind);
 
 /**
- * Buff-Summe für eine Unit (§11): je Buff-ID (= Support-Unit-Typ) zählt nur der höchste Wert
- * (auch über Spieler hinweg); verschiedene Buff-IDs addieren sich. Caps greifen bei der Anwendung.
+ * Buffs einer Unit für ihren aktuellen Angriff: Motivate-Buffs von Verbündeten (Schaden/Reichweite, je mit Cap), eigene
+ * Selbst-Buffs aus den Effekten des Angriffs (Battlelust: +Schritt je Angriff bis Maximum; Snatched: dito, solange nicht abgelaufen,
+ * auf der letzten Stufe mit höherem Maximum; Sunshine: wächst je Wave linear bis auf den Faktor, auch bei der Reichweite).
  */
-export function computeBuffs(w: World, u: UnitState, ux: number, uy: number): Buffs {
-  const { state, ctx } = w;
-  // DESIGN-OFFEN: Buff-ID = Support-Unit-Typ; je ID zählt nur der höchste Wert im Radius (auch spielerübergreifend), verschiedene IDs addieren sich.
-  const best: { id: string; bp: number }[] = [];
-  for (const b of state.units) {
-    const bd = ctx.units[b.defId];
-    if (!bd.aura) continue;
-    const r = bd.aura.radiusMilli;
-    if (dist2(b.x, b.y, ux, uy) > r * r) continue;
-    const bp = bd.aura.damageBpByLevel[b.level];
-    const cur = best.find((x) => x.id === b.defId);
-    if (!cur) best.push({ id: b.defId, bp });
-    else if (bp > cur.bp) cur.bp = bp;
+export function computeBuffs(w: World, u: UnitState, def: UnitDef): Buffs {
+  const eco = w.ctx.data.economy;
+  const atk = def.levels[u.level].attack;
+  let selfBp = 0;
+  let rangeExtra = 0;
+  const bl = fxOf(atk, 'battlelust');
+  if (bl) selfBp += Math.min(u.lust * bl.stepBp, bl.maxBp);
+  const sn = fxOf(atk, 'snatched');
+  if (sn && u.snatchTicks > 0) selfBp += Math.min(u.snatch * sn.stepBp, u.level >= def.maxLevel ? sn.maxBpMaxLevel : sn.maxBp);
+  const sun = fxOf(atk, 'sunshine');
+  if (sun) {
+    const k = Math.min(u.sun, sun.maxWaves);
+    selfBp += Math.floor((sun.dmgBp * k) / sun.maxWaves);
+    rangeExtra = Math.floor((sun.rangeBp * k) / sun.maxWaves);
   }
-  let damageBp = 0;
-  for (const x of best) damageBp += x.bp;
-  return { damageBp, tempoBp: 0, rangeBp: 0 };
-}
-
-/** cos^2(Halbwinkel) in bp für unterstützte Kegelwinkel. */
-export function coneCos2Bp(coneDeg: number): number {
-  switch (coneDeg) {
-    case 30:
-      return 9330;
-    case 45:
-      return 8536;
-    case 60:
-      return 7500;
-    case 90:
-      return 5000;
-    default:
-      throw new Error(`Kegelwinkel ${coneDeg} nicht unterstützt (30/45/60/90)`);
-  }
+  const mot = u.motRangeTicks > 0 ? Math.min(u.motRangeBp, eco.buffCaps.rangeBp) : 0;
+  return { damageBp: u.motDmgTicks > 0 ? u.motDmgBp : 0, tempoBp: 0, rangeBp: mot + rangeExtra, selfBp };
 }
 
 /** Normierte Richtung (Länge ~1024) von (ux,uy) nach (tx,ty). */
@@ -109,51 +108,101 @@ export function inCone(
 export interface HitCtx {
   buffs: Buffs;
   crit: boolean;
+  /** OverCrit: Treffer auf blutende Gegner sind garantiert Crits. */
+  overCrit: boolean;
 }
 
-/** Ein Treffer einer Unit auf einen Gegner (Schaden + On-Hit-Effekte). */
-export function hitEnemy(w: World, u: UnitState, def: UnitDef, e: EnemyState, hc: HitCtx, baseCenti: number, trueDamage: boolean): number {
+/** Summe der Schwächen/Resistenzen eines Gegners gegen Elemente (Bp bzw. R) und gegen den Damage-Typ. */
+function affinityOf(w: World, def: UnitDef, e: EnemyState): { weakBp: number; resist: number } {
+  const aff = w.ctx.affinity(e.type, e.element);
+  let weakBp = 0;
+  let resist = aff.resist[def.damageType] ?? 0;
+  for (const el of def.elements) {
+    weakBp += aff.weakBp[el] ?? 0;
+    resist += aff.resist[el] ?? 0;
+  }
+  return { weakBp, resist };
+}
+
+/**
+ * Ein Treffer einer Unit auf einen Gegner (Schaden + DoT). Gibt den Treffer-Schaden vor Schwäche/Rüstung zurück (`dotBase`,
+ * Grundlage für Wild-Card-DoT).
+ */
+export function hitEnemy(w: World, u: UnitState, def: UnitDef, atk: CompiledAttack, e: EnemyState, hc: HitCtx, baseCenti: number): number {
   const eco = w.ctx.data.economy;
-  if (e.flying && def.airDamageBp !== undefined) baseCenti = mulBp(baseCenti, def.airDamageBp);
+  const trueDamage = def.damageType === 'true';
+  const aff = affinityOf(w, def, e);
   const r = computeHit(
     {
       baseCenti,
       lvlBp: u.lvlBp,
       traitBp: u.traitBp,
       buffBp: hc.buffs.damageBp,
-      vulnBp: e.markTicks > 0 ? e.markBp : 0,
-      elementBp: elementBp(def.element, e.element, eco),
-      armor: effectiveArmor(e),
-      pen: def.penetration,
-      crit: hc.crit,
-      critMultBp: def.crit?.multBp ?? eco.damage.critDefaultMultBp,
+      selfBp: hc.buffs.selfBp,
+      vulnBp: def.damageType === 'physical' ? e.physTakenBp : def.damageType === 'magic' ? e.magicTakenBp : 0,
+      weakBp: aff.weakBp,
+      armor: effectiveArmor(e) + aff.resist,
+      pen: 0,
+      crit: hc.crit || (hc.overCrit && e.dots.some((d) => d.kind === 'bleed')),
+      critMultBp: def.critMultBp,
       trueDamage,
     },
     eco,
   );
-  const dealt = applyDamage(w, e, r.damageCenti, u.owner, u, trueDamage);
-  // DESIGN-OFFEN: On-Hit-Effekte (Bleed/Burn/Slow) wirken auch, wenn ein Schild-Stack den Direktschaden absorbiert hat.
-  for (const fx of def.onHit) {
-    if (fx.kind === 'slow') applySlow(e, fx.pctBp, fx.ticks, eco);
-    else if (fx.kind === 'mark') applyMark(e, fx.vulnBp, fx.ticks);
-    else applyDot(e, fx.kind, mulBp(r.dotBaseCenti, fx.totalBp), fx.ticks, u.owner, u.id, eco);
+  applyDamage(w, e, r.damageCenti, u.owner, u, trueDamage);
+  // DESIGN-OFFEN: DoTs wirken auch, wenn ein Schild-Stack den Direktschaden absorbiert hat. Burn zählt als Fire (Schwäche gegen Fire).
+  if (atk.dot) {
+    let total = mulBp(r.dotBaseCenti, atk.dot.totalBp);
+    if (atk.dot.kind === 'burn') total = mulBp(total, BP + (w.ctx.affinity(e.type, e.element).weakBp.fire ?? 0));
+    applyDot(e, atk.dot.kind, total, atk.dot.ticks, u.owner, u.id, eco);
   }
-  return dealt;
+  return r.dotBaseCenti;
 }
 
-/** Alle Units: Abklingzeiten herunterzählen und angreifen. */
+/** Gegner in der Trefferfläche des Angriffs (aufsteigende ID). */
+function areaOf(w: World, u: UnitState, def: UnitDef, atk: CompiledAttack, target: EnemyState, range: number): EnemyState[] {
+  const { state } = w;
+  if (atk.kind === 'single') return [target];
+  const radius = w.ctx.data.economy.targeting.enemyRadiusMilli;
+  const dir = direction(u.x, u.y, target.x, target.y);
+  const out: EnemyState[] = [];
+  for (const e of state.enemies) {
+    if (e.hp <= 0 || (e.flying && !def.canHitAir)) continue;
+    let inside: boolean;
+    switch (atk.kind) {
+      case 'circle':
+        inside = dist2(target.x, target.y, e.x, e.y) <= (atk.radiusMilli + radius) ** 2;
+        break;
+      case 'line':
+        inside = inLine(e, u.x, u.y, dir.nx, dir.ny, range, atk.widthMilli, radius);
+        break;
+      case 'cone':
+        inside = inCone(e, u.x, u.y, dir.nx, dir.ny, range, atk.cos2Bp, radius);
+        break;
+      default: // full: alles in Reichweite der Unit
+        inside = dist2(u.x, u.y, e.x, e.y) <= (range + radius) ** 2;
+    }
+    if (inside) out.push(e);
+  }
+  return out;
+}
+
+/** Alle Units: Timer herunterzählen und angreifen. */
 export function runUnits(w: World): void {
   const { state, ctx } = w;
   const eco = ctx.data.economy;
   for (const u of state.units) {
     const def = ctx.units[u.defId];
-    if (u.abilityCd > 0) u.abilityCd--;
     if (u.cd > 0) u.cd--;
-    // DESIGN-OFFEN: kein Windup - der Treffer erfolgt im selben Tick wie die Zielwahl (§9 Regel 2 braucht damit keine Verfall-Sonderfälle).
-    if (!def.attack || u.cd > 0) continue;
-    const lv = def.levels[u.level];
-    const buffs = computeBuffs(w, u, u.x, u.y);
-    const range = mulBp(lv.rangeMilli, BP + Math.min(buffs.rangeBp, eco.buffCaps.rangeBp));
+    if (u.snatchTicks > 0 && --u.snatchTicks === 0) u.snatch = 0;
+    if (u.motDmgTicks > 0 && --u.motDmgTicks === 0) u.motDmgBp = 0;
+    if (u.motRangeTicks > 0 && --u.motRangeTicks === 0) u.motRangeBp = 0;
+    const lv: LevelStat = def.levels[u.level];
+    const atk = lv.attack;
+    // DESIGN-OFFEN: kein Windup - der Treffer erfolgt im selben Tick wie die Zielwahl.
+    if (!atk || u.cd > 0) continue;
+    const buffs = computeBuffs(w, u, def);
+    const range = mulBp(lv.rangeMilli, BP + buffs.rangeBp);
     const target = selectTarget(state.enemies, {
       ux: u.x,
       uy: u.y,
@@ -163,56 +212,51 @@ export function runUnits(w: World): void {
       enemyRadiusMilli: eco.targeting.enemyRadiusMilli,
       strongestShieldBp: eco.targeting.strongestShieldBp,
     });
-    if (!target) continue;
-    // DESIGN-OFFEN: ein Crit-Wurf je Angriff, gilt für alle Treffer dieses Angriffs (Flächenangriffe).
-    // Ein Crit-Wurf je Angriff (nur Units mit Crit verbrauchen PRNG-Werte).
-    const crit = def.crit ? nextInt(state.rng, BP) < def.crit.chanceBp : false;
-    const hc: HitCtx = { buffs, crit };
-    const radius = eco.targeting.enemyRadiusMilli;
-    const a = def.attack;
-    if (a.kind === 'single') {
-      hitEnemy(w, u, def, target, hc, lv.damageCenti, false);
-    } else if (a.kind === 'chain') {
-      // Kettenblitz (Runde 7 / P6): erster Treffer voll, dann je Sprung der nächste noch nicht getroffene Gegner (kleinster Abstand zum
-      // zuletzt getroffenen, Gleichstand: kleinere ID) in `jumpRadiusMilli`, Schaden je Sprung x falloffBp.
-      const hit = new Set<number>([target.id]);
-      let cur = target;
-      let dmg = lv.damageCenti;
-      hitEnemy(w, u, def, cur, hc, dmg, false);
-      const jr = (a.jumpRadiusMilli as number) + radius;
-      for (let j = 0; j < (a.jumps as number); j++) {
-        let next: EnemyState | null = null;
-        let nd = Infinity;
-        for (const e of state.enemies) {
-          if (e.hp <= 0 || hit.has(e.id) || (e.flying && !def.canHitAir)) continue;
-          const d2 = dist2(cur.x, cur.y, e.x, e.y);
-          if (d2 <= jr * jr && d2 < nd) {
-            next = e;
-            nd = d2;
-          }
-        }
-        if (!next) break;
-        hit.add(next.id);
-        dmg = mulBp(dmg, a.falloffBp as number);
-        hitEnemy(w, u, def, next, hc, dmg, false);
-        cur = next;
-      }
-    } else {
-      const tx = target.x;
-      const ty = target.y;
-      const dir = direction(u.x, u.y, tx, ty);
-      const cos2 = a.kind === 'cone' ? coneCos2Bp(a.coneDeg ?? 60) : 0;
-      const hits: EnemyState[] = [];
-      for (const e of state.enemies) {
-        if (e.hp <= 0 || (e.flying && !def.canHitAir)) continue;
-        let inside: boolean;
-        if (a.kind === 'circle') inside = dist2(tx, ty, e.x, e.y) <= (a.radiusMilli as number) ** 2;
-        else if (a.kind === 'line') inside = inLine(e, u.x, u.y, dir.nx, dir.ny, range, a.widthMilli as number, radius);
-        else inside = inCone(e, u.x, u.y, dir.nx, dir.ny, range, cos2, radius);
-        if (inside) hits.push(e);
-      }
-      for (const e of hits) hitEnemy(w, u, def, e, hc, lv.damageCenti, false);
+    if (!target) {
+      u.lust = 0; // Battlelust gilt nur, solange die Unit ein Ziel hat
+      continue;
     }
+    // DESIGN-OFFEN: ein Crit-Wurf je Angriff, gilt für alle Treffer und Gegner dieses Angriffs (nur Units mit Crit verbrauchen PRNG-Werte).
+    const crit = def.critBp > 0 ? nextInt(state.rng, BP) < def.critBp : false;
+    const hc: HitCtx = { buffs, crit, overCrit: fxOf(atk, 'overCrit') !== undefined };
+    const area = areaOf(w, u, def, atk, target, range);
+    if (fxOf(atk, 'shatter')) for (const e of area) e.shield = 0;
+    // Schaden wird auf die Treffer geteilt (nicht vervielfacht). Treffer reihum über alle Gegner der Fläche; Tote fallen heraus.
+    const per = Math.max(1, Math.floor(lv.damageCenti / atk.hits));
+    const dotBase = new Map<number, number>();
+    for (let h = 0; h < atk.hits; h++) {
+      for (const e of area) if (e.hp > 0) dotBase.set(e.id, hitEnemy(w, u, def, atk, e, hc, per));
+    }
+    for (const fx of atk.fx) {
+      for (const e of area) if (e.hp > 0) applyFx(w, u, e, fx, dotBase.get(e.id) ?? 0);
+    }
+    selfBuffs(w, u, def, atk, lv, range);
     u.cd = Math.max(1, Math.floor((lv.spaTicks * BP) / (BP + Math.min(buffs.tempoBp, eco.buffCaps.tempoBp))));
   }
+}
+
+/** Selbst-Buffs nach einem Angriff: Battlelust/Snatched-Stapel, Motivate auf Verbündete in Reichweite. */
+function selfBuffs(w: World, u: UnitState, def: UnitDef, atk: CompiledAttack, lv: LevelStat, range: number): void {
+  for (const fx of atk.fx) {
+    if (fx.kind === 'battlelust') u.lust = Math.min(u.lust + 1, Math.ceil(fx.maxBp / fx.stepBp));
+    else if (fx.kind === 'snatched') {
+      u.snatch = Math.min(u.snatch + 1, Math.ceil(fx.maxBpMaxLevel / fx.stepBp));
+      u.snatchTicks = fx.ticks;
+    } else if (fx.kind === 'motivate') {
+      // "Same effects do not stack": die Dauer wird erneuert, die Stärke ist die des stärksten Motivators.
+      for (const o of w.state.units) {
+        if (o.id === u.id || dist2(o.x, o.y, u.x, u.y) > range * range) continue;
+        if (fx.dmgBp > 0) {
+          o.motDmgBp = Math.max(o.motDmgTicks > 0 ? o.motDmgBp : 0, fx.dmgBp);
+          o.motDmgTicks = fx.ticks;
+        }
+        if (fx.rangeBp > 0) {
+          o.motRangeBp = Math.max(o.motRangeTicks > 0 ? o.motRangeBp : 0, fx.rangeBp);
+          o.motRangeTicks = fx.ticks;
+        }
+      }
+    }
+  }
+  void def;
+  void lv;
 }

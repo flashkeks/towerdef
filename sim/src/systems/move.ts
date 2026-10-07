@@ -2,11 +2,10 @@
  * Bewegung entlang des Pfads in Mikro-Milli-Tiles (Ganzzahl-Akkumulator) und Leaks.
  * Betäubte Gegner bewegen sich nicht; Slow reduziert die Tick-Geschwindigkeit (floor).
  */
-import { BP, dist2, mulBp } from '../fixed.js';
+import { BP, mulBp } from '../fixed.js';
 import { positionAt } from '../path.js';
 import type { World } from '../state.js';
 import { cardLeakCost } from './cards.js';
-import { guardLeft } from './economy.js';
 
 /**
  * Lebenskosten eines Leaks: ceil(Basis * RestHP / MaxHP), mindestens 1 (nur Ganzzahlen; Schild zählt nicht).
@@ -20,22 +19,23 @@ export function moveEnemies(w: World): void {
   const { state, ctx } = w;
   const len = ctx.path.length;
   let leaked = false;
-  // Tempo-Auren (Runde 7 / P6): einmal je Tick die Träger sammeln.
-  const auras = state.units.filter((u) => ctx.units[u.defId].slowAura);
-  const cc = ctx.data.economy.cc;
   // DESIGN-OFFEN: Flyer folgen derselben Polylinie wie Bodengegner (kein separater Luftpfad); alle spawnen bei Fortschritt 0.
   for (const e of state.enemies) {
-    if (e.hp <= 0 || e.stunTicks > 0) continue;
+    if (e.hp <= 0 || e.stunTicks > 0 || e.uncTicks > 0) continue;
     let speed = e.speedMicro;
-    let slow = e.slowTicks > 0 ? e.slowBp : 0;
-    for (const a of auras) {
-      const sa = ctx.units[a.defId].slowAura as NonNullable<(typeof ctx.units)[string]['slowAura']>;
-      if (dist2(a.x, a.y, e.x, e.y) > sa.radiusMilli * sa.radiusMilli) continue;
-      const bp = Math.min(e.boss ? mulBp(sa.slowBpByLevel[a.level], cc.bossCcBp) : sa.slowBpByLevel[a.level], cc.slowMaxBp);
-      if (bp > slow) slow = bp;
-    }
-    if (slow > 0) speed = mulBp(speed, BP - slow);
+    if (e.slowTicks > 0 && e.slowBp > 0) speed = mulBp(speed, BP - e.slowBp);
     if (e.bossRun && e.bossRun.hasteTicks > 0) speed = mulBp(speed, e.bossRun.hasteBp);
+    if (e.backTicks > 0) {
+      // Rückwärtslaufen (Confused, Mind Control): mit der aktuellen Geschwindigkeit zurück, nie vor den Pfadanfang.
+      const back = e.progress * 1000 + e.frac - speed;
+      const k = Math.max(0, back);
+      e.progress = Math.floor(k / 1000);
+      e.frac = k % 1000;
+      const q = positionAt(ctx.path, e.progress);
+      e.x = q.x;
+      e.y = q.y;
+      continue;
+    }
     const total = e.frac + speed;
     e.progress += Math.floor(total / 1000);
     e.frac = total % 1000;
@@ -53,13 +53,11 @@ export function moveEnemies(w: World): void {
   for (const e of state.enemies) {
     if (e.hp > 0 && e.progress >= len) {
       const fatal = ctx.instantLoss.has(e.type);
-      const guarded = !fatal && guardLeft(w) > 0;
-      if (guarded) state.guardUsed++;
-      const cost = guarded ? 0 : fatal ? Math.max(state.lives, 0) : cardLeakCost(ctx, leakCost(e.leak, e.hp, e.maxHp), e.card);
+      const cost = fatal ? Math.max(state.lives, 0) : cardLeakCost(ctx, leakCost(e.leak, e.hp, e.maxHp), e.card);
       state.stats.leaks++;
       state.stats.leakDamage += cost;
       if (!state.godMode) state.lives = fatal ? 0 : Math.max(0, state.lives - cost);
-      w.events.push({ type: 'leak', tick: state.tick, enemyId: e.id, enemy: e.type, wave: e.wave, damage: cost, hp: e.hp, maxHp: e.maxHp, fatal, ...(guarded ? { guarded: true as const } : {}) });
+      w.events.push({ type: 'leak', tick: state.tick, enemyId: e.id, enemy: e.type, wave: e.wave, damage: cost, hp: e.hp, maxHp: e.maxHp, fatal });
     } else keep.push(e);
   }
   state.enemies = keep;

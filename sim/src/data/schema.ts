@@ -15,6 +15,12 @@ export const EconomySchema = z.object({
   ref,
   _comment: comment,
   tickRate: z.literal(20),
+  /**
+   * Maßstab AA -> Match (Runde 8 / P1, Begründung docs/aa-import/massstab.md). `studsPerTile`: 1 Kachel = so viele AA-Studs
+   * (Reichweite, Radius, Breite). `yenPerCoin`: 1 Match-Münze = so viele AA-Yen (Kosten, Farm-Ertrag); 1 = Werte unverändert.
+   * Schaden, SPA und Sekunden werden unverändert übernommen.
+   */
+  scale: z.object({ ref, studsPerTile: z.number().positive(), yenPerCoin: z.number().positive() }),
   startCoins: pos,
   /**
    * Leben-System (Runde 4 / P2), ersetzt Base-HP. `start` + `metaBonus` (Meta-Ausbau, M3; bis dahin 0) = Maximum.
@@ -67,15 +73,14 @@ export const EconomySchema = z.object({
     slowMaxBp: nat,
     bossCcBp: pos,
   }),
-  dot: z.object({ ref, intervalTicks: pos, bossEliteBp: pos }),
+  /** DoT: ein Tick je `intervalTicks`; `maxStacks`: höchstens so viele gleichzeitige Instanzen je Gegner und Art (verschiedene Units stapeln, dieselbe Unit erneuert nur). */
+  dot: z.object({ ref, intervalTicks: pos, bossEliteBp: pos, maxStacks: pos.default(12) }),
   regen: z.object({ ref, perSecondBp: nat }),
   buffCaps: z.object({ ref, damageBp: nat, tempoBp: nat, rangeBp: nat, vulnerableBp: nat }),
   damage: z.object({
     ref,
     minDamageCenti: pos,
     armorBase: pos,
-    elementStrongBp: pos,
-    elementWeakBp: pos,
     critDefaultMultBp: pos,
   }),
   targeting: z.object({ ref, enemyRadiusMilli: nat, strongestShieldBp: nat }),
@@ -94,12 +99,21 @@ export const EnemyArchetypeSchema = z.object({
   boss: z.boolean(),
   elite: z.boolean(),
   child: z.object({ type: z.string(), count: pos }).optional(),
+  /** Runde 8 / P1: Schwächen (je Element/Damage-Typ Bp Zusatzschaden, additiv: Faktor = 1 + Summe) und Resistenzen (R je Element/Damage-Typ, Faktor 100/(100+R); True ignoriert sie). */
+  weakBp: z.record(z.string(), pos).default({}),
+  resist: z.record(z.string(), nat).default({}),
 });
 export const EnemiesSchema = z.object({
   ref,
   _comment: comment,
   hpCurve: z.object({ ref, baseCenti: pos, growthBp: pos }),
   baseSpeedMilliPerSec: pos,
+  /** Wave-Element 1..5 (Stage-Gruppen, wirkt ab `elementsActive`) -> AA-Element. */
+  waveElements: z.array(z.string()).length(5).default(['fire', 'ice', 'lightning', 'water', 'air']),
+  /** Zusätzliche Schwächen/Resistenzen eines Gegners mit diesem Element (zu denen seines Archetyps addiert). */
+  elementAffinity: z
+    .record(z.string(), z.object({ weakBp: z.record(z.string(), pos).default({}), resist: z.record(z.string(), nat).default({}) }))
+    .default({}),
   archetypes: z.array(EnemyArchetypeSchema).min(1),
 });
 export type EnemyArchetype = z.infer<typeof EnemyArchetypeSchema>;
@@ -109,7 +123,7 @@ export const ModifiersSchema = z.object({
   ref,
   _comment: comment,
   shield: z.object({ ref, maxStacks: pos }),
-  regen: z.object({ ref, stoppedBy: z.array(z.enum(['bleed', 'poison'])) }),
+  regen: z.object({ ref, stoppedBy: z.array(z.enum(['bleed', 'burn', 'poison', 'wither'])) }),
   armored: z.object({ ref, armorBonus: nat }),
   fast: z.object({ ref, speedBp: pos }),
 });
@@ -225,94 +239,181 @@ export const StageSchema = z.object({
 });
 export type StageData = z.infer<typeof StageSchema>;
 
-const Effect = z.discriminatedUnion('kind', [
-  z.object({ kind: z.literal('bleed'), totalBp: pos, ticks: pos }),
-  z.object({ kind: z.literal('burn'), totalBp: pos, ticks: pos }),
-  z.object({ kind: z.literal('poison'), totalBp: pos, ticks: pos }),
-  z.object({ kind: z.literal('slow'), pctBp: pos, ticks: pos }),
-  /** Runde 7 / P6: Markierung ("Verwundbar", `economy.buffCaps.vulnerableBp`): jeder Direktschaden auf das Ziel steigt um `vulnBp`, stärkste Markierung gewinnt, Dauer wird erneuert. */
-  z.object({ kind: z.literal('mark'), vulnBp: pos, ticks: pos }),
-]);
-export type OnHitEffect = z.infer<typeof Effect>;
+// ---------------------------------------------------------------------------------------------------------------------------------
+// Unit-Format (Runde 8 / P1): AA-nah. Werte in AA-Einheiten (Yen, Schaden, Sekunden, Studs); `compile.ts` rechnet sie mit den
+// Konstanten aus `economy.json` (`scale`) in Festkomma um. Unbekannte Zusatzfelder (AA-Rohdaten) werden beim Parsen verworfen.
+// ---------------------------------------------------------------------------------------------------------------------------------
 
-const Rarity = z.object({
-  ref,
-  _comment: comment,
-  placeCost: pos,
-  /** Upgrade-Kosten je Stufe (§6: round5(P*g^(k-1)), Halbwerte abwärts). */
-  upgradeCosts: z.array(pos),
-  growthBp: pos,
-  spaTicks: z.tuple([pos, pos]),
-  dpsCenti: z.tuple([nat, nat]),
-  rangeMilli: z.tuple([pos, pos]),
+/** Die 8 AA-Elemente (Reihenfolge fest: Index in Affinitätstabellen). */
+export const ELEMENTS = ['dark', 'fire', 'lightning', 'ice', 'air', 'light', 'water', 'rose'] as const;
+export type Element = (typeof ELEMENTS)[number];
+export const UNIT_RARITIES = ['Rare', 'Epic', 'Legendary', 'Mythic', 'Secret', 'Exclusive'] as const;
+export type UnitRarity = (typeof UNIT_RARITIES)[number];
+
+const optNum = z.number().nullish();
+const optPos = z.number().positive().nullish();
+
+/** DoT eines Angriffs (AA-Feld `dot`): je Treffer `hitDamage x multiplierPerTick x ticks`, ein Tick je `economy.dot.intervalTicks`. */
+export const DotSchema = z.object({
+  type: z.enum(['Burn', 'Bleed', 'Poison', 'Wither']),
+  multiplierPerTick: z.number().nonnegative(),
+  ticks: z.number().int().positive(),
+  totalMultiplier: optNum,
 });
-export type RarityData = z.infer<typeof Rarity>;
+export type DotData = z.infer<typeof DotSchema>;
 
-export const UnitSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  ref,
-  _comment: comment,
-  rarity: z.enum(['rare', 'epic', 'legendary', 'mythic']),
+/** Spezialeffekt eines Angriffs (AA-Feld `special`): `name` = Schlüssel im Effekt-Katalog (`effects.json`); die Felder überstimmen dessen Standardwerte. */
+export const SpecialSchema = z.object({
+  name: z.string().min(1),
+  /** Sekunden. */
+  duration: optPos,
+  /** Stärke 0..1 (Slow: Anteil Tempoverlust). */
+  influence: optPos,
+  /** Wahrscheinlichkeit 0..1 je getroffenem Gegner (nur Effekte mit Wurf). */
+  chance: optPos,
+});
+export type SpecialData = z.infer<typeof SpecialSchema>;
+
+/** Angriffsform (AA-Katalog `attacks`). `aoe` fehlend/null = single. Zahlen in Studs bzw. Grad. */
+export const AttackSchema = z.object({
+  aoe: z.enum(['single', 'circle', 'cone', 'line', 'full']).nullish(),
+  /** circle: Radius um das Ziel (Studs). */
+  radius: optPos,
+  /** cone: Gesamtwinkel ab der Unit (Grad), Länge = Range. */
+  angle: z.number().min(1).max(180).nullish(),
+  /** line: Breite (Studs), ab der Unit Richtung Ziel, Länge = Range. */
+  width: optPos,
+  /** Anzahl Treffer: der Schaden wird auf die Treffer geteilt, nicht vervielfacht. */
+  hits: z.number().int().min(1).max(30).nullish(),
+  dot: DotSchema.nullish(),
+  special: z.union([SpecialSchema, z.array(SpecialSchema)]).nullish(),
+});
+export type AttackData = z.infer<typeof AttackSchema>;
+
+export const UnitLevelSchema = z.object({
+  /** 0 = Platzierung, 1..n = Upgrades (Reihenfolge im Array = Stufe). */
+  level: z.number().int().nonnegative(),
+  /** Yen dieser Stufe (Stufe 0: Platzierung, sonst Upgrade-Preis). */
+  cost: optNum,
+  /** Schaden je Angriff (AA-Einheiten, wird auf `hits` geteilt). Fehlend = Vorwert. */
+  damage: optNum,
+  /** Sekunden pro Angriff. Fehlend = Vorwert. */
+  spa: optNum,
+  /** Reichweite in Studs. Fehlend = Vorwert. */
+  range: optNum,
+  /** Angriffs-ID aus dem Katalog. Fehlend = Vorwert (wechselnde Angriffe je Stufe: einfach andere ID eintragen). */
+  attack: z.string().nullish(),
+  /** Farm-Units: Yen je Wave. */
+  farm: optNum,
+  note: z.string().nullish(),
+});
+
+/**
+ * AA-Rohdaten werden ohne Umbau gelesen: `nameRR` gilt als `name`, `secondaryDamageTypes` als `elements`. Alle übrigen AA-Felder
+ * (dps, cumulativeCost, extra, meta ...) kennt das Schema nicht und verwirft sie beim Parsen.
+ */
+const aaAlias = (v: unknown): unknown => {
+  if (!v || typeof v !== 'object') return v;
+  const o = { ...(v as Record<string, unknown>) };
+  if (o.name === undefined && typeof o.nameRR === 'string') o.name = o.nameRR;
+  if (o.elements === undefined && o.secondaryDamageTypes !== undefined) o.elements = o.secondaryDamageTypes;
+  return o;
+};
+
+export const UnitSchema = z.preprocess(aaAlias, z.object({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  rarity: z.enum(UNIT_RARITIES),
   placement: z.enum(['ground', 'hill', 'hybrid']),
-  role: z.string(),
+  /** AA: `true_damage` wird als `true` gelesen; fehlend = physical. */
+  damageType: z
+    .enum(['physical', 'magic', 'true', 'true_damage'])
+    .nullish()
+    .transform((v): 'physical' | 'magic' | 'true' => (v === 'true_damage' ? 'true' : (v ?? 'physical'))),
+  /** AA `secondaryDamageTypes`: die Elemente der Unit. */
+  elements: z.array(z.enum(ELEMENTS)).nullish().transform((v) => v ?? []),
+  /** Crit-Chance 0..1 und Multiplikator (fehlend: `economy.damage.critDefaultMult`). */
+  critChance: z.number().min(0).max(1).nullish(),
+  critDamage: z.number().min(1).nullish(),
+  /** Gelesen, NICHT durchgesetzt (Entscheidung Max 07.10.2026: kein Typ-Limit). */
+  spawnCap: z.number().int().nullish(),
+  spawnCapGlobal: z.boolean().nullish(),
+  /** 1 = normal (Radius `economy.placement.unitRadiusMilli["1"]`), 2 = groß. */
   footprint: z.union([z.literal(1), z.literal(2)]).default(1),
-  /** Überschreibungen der Rarity-Werte (Farm). */
-  placeCost: pos.optional(),
+  /** Überstimmt die Platzier-Regel (Standard: Boden trifft keine Flieger, Hügel/Hybrid schon). */
   /** Zuwachs der Platzierkosten je weiterer eigener Unit gleichen Typs (Bp), überstimmt `economy.placeCostGrowthBp`. */
-  placeGrowthBp: nat.optional(),
-  upgradeCosts: z.array(pos).optional(),
-  sellBp: nat.optional(),
-  /** Anteil am Rarity-DPS (AoE ~60 %, Kontrolle ~50 %, Support/Farm 0). */
-  dpsShareBp: nat,
-  attack: z
-    .object({
-      kind: z.enum(['single', 'circle', 'line', 'cone', 'chain']),
-      radiusMilli: pos.optional(),
-      /** Runde 7 / P6, `chain`: Sprünge nach dem ersten Treffer, Sprungweite (Milli-Tiles vom zuletzt getroffenen Gegner) und Restschaden je Sprung (Bp des vorigen Treffers). */
-      jumps: pos.optional(),
-      jumpRadiusMilli: pos.optional(),
-      falloffBp: pos.optional(),
-      widthMilli: pos.optional(),
-      coneDeg: pos.optional(),
-    })
-    .nullable(),
-  defaultTargeting: z.enum(['first', 'last', 'close', 'strongest']).default('first'),
-  element: z.number().int().min(0).max(5).default(0),
-  penetration: nat.default(0),
-  /** Runde 5 P3b: Bodeneinheit trifft Luft mit diesem Anteil ihres Schadens (Bp). Ohne Feld: unverändert (Boden trifft keine Luft, Hügel/Hybrid voll). */
-  airDamageBp: pos.optional(),
-  crit: z.object({ chanceBp: nat, multBp: pos }).optional(),
-  onHit: z.array(Effect).default([]),
-  aura: z.object({ radiusMilli: pos, damageBpByLevel: z.array(nat) }).optional(),
-  farm: z.object({ yieldByLevel: z.array(pos) }).optional(),
-  /**
-   * Runde 7 / P6, Leak-Schild: je Wave fängt das Team so viele nicht-tödliche Leaks vollständig ab (Leben kosten sie nichts). Je Typ zählt nur
-   * der höchste Wert (wie Auren, §11), mehrere Exemplare stapeln nicht. Boss-Leaks (`economy.lives.instantLoss`) fängt es nie ab.
-   */
-  guard: z.object({ chargesByLevel: z.array(nat) }).optional(),
-  /** Runde 7 / P6, Kopfgeld-Aura: Kill-Bounty von Gegnern, die im Radius sterben, steigt um den Wert (Bp). Je Typ zählt nur der höchste Wert. */
-  bountyAura: z.object({ radiusMilli: pos, bonusBpByLevel: z.array(nat) }).optional(),
-  /** Runde 7 / P6, K5: verlängert jedes Schwachstellen-Fenster eines Bosses um diesen Anteil (Bp). Je Typ zählt nur der höchste Wert. */
-  windowExtend: z.object({ bpByLevel: z.array(nat) }).optional(),
-  /** Runde 7 / P6, Tempo-Aura: Gegner im Radius laufen um den Wert langsamer (wie Slow: stärkster gewinnt, Cap `cc.slowMaxBp`, Boss x`cc.bossCcBp`). */
-  slowAura: z.object({ radiusMilli: pos, slowBpByLevel: z.array(nat) }).optional(),
-  ability: z
-    .discriminatedUnion('kind', [
-      z.object({ kind: z.literal('nuke'), cooldownTicks: pos, damageMulBp: pos }),
-      z.object({ kind: z.literal('stunAoe'), cooldownTicks: pos, radiusMilli: pos, stunTicks: pos }),
-    ])
-    .optional(),
-});
+  placeGrowthBp: z.number().int().nonnegative().nullish(),
+  hitsAir: z.boolean().nullish(),
+  unsellable: z.boolean().nullish(),
+  /** Rein beschreibend (Katalog/UI), die Sim wertet es nicht aus. */
+  flavor: z.string().nullish(),
+  levels: z.array(UnitLevelSchema).min(1),
+  evolvedFrom: z.string().nullish(),
+  evolution: z.unknown().optional(),
+  limited: z.boolean().nullish(),
+  hideFromBanner: z.boolean().nullish(),
+  rateupBannerOnly: z.boolean().nullish(),
+  shinyVariant: z.boolean().nullish(),
+  imageQuery: z.string().nullish(),
+  source: z.string().nullish(),
+}));
 export type UnitData = z.infer<typeof UnitSchema>;
+export type UnitLevelData = z.infer<typeof UnitLevelSchema>;
 
-export const UnitsSchema = z.object({
+/** Eine Datei in `sim/data/units/`: Units plus ihr Angriffs-Katalog. Alle Dateien werden zusammengeführt, Angriffs-IDs sind global. */
+export const UnitFileSchema = z.object({
+  ref: z.string().optional(),
+  _comment: comment,
+  units: z.array(UnitSchema).default([]),
+  attacks: z.record(z.string(), AttackSchema.nullable()).default({}),
+});
+export type UnitFile = z.infer<typeof UnitFileSchema>;
+
+export interface UnitsData {
+  units: UnitData[];
+  attacks: Record<string, AttackData>;
+}
+
+/**
+ * Effekt-Katalog (`sim/data/effects.json`, Runde 8 / P1): ein Eintrag je AA-Effekt (`units.json.effects`), Parameter in Daten.
+ * Sekunden/Anteile wie im AA-Datensatz; ein Angriff kann `duration`/`influence`/`chance` je Treffer überstimmen.
+ * `immuneSec`: Sperre nach Ablauf auf demselben Gegner (Gruppe: stun, freeze, timestop, walkback teilen sich eine Sperre).
+ */
+const Sec = z.number().nonnegative();
+export const EffectDefSchema = z.discriminatedUnion('kind', [
+  z.object({ kind: z.literal('slow'), durationSec: Sec, influence: z.number().positive().max(1), immuneSec: Sec }),
+  z.object({ kind: z.enum(['stun', 'freeze', 'timestop']), durationSec: Sec, immuneSec: Sec }),
+  /** Bewusstlos: Gegner steht, keine Sperre, stapelt mit den anderen CC. */
+  z.object({ kind: z.literal('unconscious'), durationSec: Sec }),
+  /** Rückwärtslaufen. `chance` < 1 würfelt je Gegner über die Sim-PRNG. */
+  z.object({ kind: z.literal('walkback'), durationSec: Sec, chance: z.number().positive().max(1), immuneSec: Sec }),
+  z.object({ kind: z.literal('knockback'), distanceTiles: z.number().positive(), immuneSec: Sec }),
+  /** Mehr erhaltener Schaden einer Schadensart (`magic`/`physical`); `durationSec` 0 = dauerhaft. Stärkster gewinnt, kein Stapeln. */
+  z.object({ kind: z.literal('curse'), damageType: z.enum(['magic', 'physical']), percent: z.number().positive(), durationSec: Sec }),
+  z.object({ kind: z.literal('bleedAmp'), durationSec: Sec, factor: z.number().positive() }),
+  z.object({ kind: z.literal('overCrit') }),
+  /** Selbst-Buff je Angriff: +stepPercent je Angriff bis maxPercent (`maxPercentAtMaxLevel` auf der letzten Stufe), solange die Unit ein Ziel hat. */
+  z.object({ kind: z.literal('battlelust'), stepPercent: z.number().positive(), maxPercent: z.number().positive() }),
+  z.object({ kind: z.literal('snatched'), stepPercent: z.number().positive(), maxPercent: z.number().positive(), maxPercentAtMaxLevel: z.number().positive(), durationSec: Sec }),
+  /** Wächst je beendeter Wave bis `maxWaves`: Schaden und Reichweite steigen linear bis auf die Faktoren. */
+  z.object({ kind: z.literal('sunshine'), maxWaves: z.number().int().positive(), damageFactor: z.number().positive(), rangeFactor: z.number().positive() }),
+  /** Jeder Angriff stärkt alle Verbündeten in der Reichweite der Unit. */
+  z.object({ kind: z.literal('motivate'), damagePercent: z.number().nonnegative(), rangePercent: z.number().nonnegative(), durationSec: Sec }),
+  z.object({ kind: z.literal('shatter') }),
+  /** Heilung (Regen) des Gegners gesperrt. */
+  z.object({ kind: z.literal('wither'), durationSec: Sec }),
+  /** DoT als Effekt (Hilfseintrag für Wild Card; Angriffe tragen ihren DoT im Feld `dot`). Gesamt = multiplierPerTick x ticks x Treffer-Schaden. */
+  z.object({ kind: z.literal('dot'), type: z.enum(['Burn', 'Bleed', 'Poison', 'Wither']), multiplierPerTick: z.number().positive(), ticks: z.number().int().positive() }),
+  /** Zufälliger Effekt aus `pool` (Katalog-Namen), gewürfelt mit der Sim-PRNG. */
+  z.object({ kind: z.literal('wildcard'), pool: z.array(z.string()).min(1) }),
+]);
+export type EffectDef = z.infer<typeof EffectDefSchema>;
+export const EffectsSchema = z.object({
   ref,
   _comment: comment,
-  rarities: z.object({ rare: Rarity, epic: Rarity, legendary: Rarity, mythic: Rarity }),
-  units: z.array(UnitSchema).min(1),
+  effects: z.record(z.string(), EffectDefSchema),
 });
-export type UnitsData = z.infer<typeof UnitsSchema>;
+export type EffectsData = z.infer<typeof EffectsSchema>;
 
 /**
  * Challenges (vorbereitetes Datenkonzept, Runde 4 / P3): eine Stufe als Basis plus Regel-Überschreibungen und Einschränkungen.
@@ -437,6 +538,8 @@ export interface GameData {
   /** Optional; nur Datenkonzept (P3). */
   challenges?: ChallengesData;
   units: UnitsData;
+  /** Effekt-Katalog (`effects.json`). */
+  effects: EffectsData;
   stages: Record<string, StageData>;
   /** Runde 4 / P4. Optional, damit alte Datenobjekte (Tests, Overrides) ohne Kits weiter laufen. */
   bosses?: BossesData;

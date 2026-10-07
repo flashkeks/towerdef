@@ -8,11 +8,13 @@ import type { Sim } from './sim.js';
 import type { WavePreview } from './systems/cards.js';
 /** Wellenvorschau (K1): Gegnertypen, Anzahl, Modifier, Boss ja/nein. Gleichwertig zu `sim.previewWave(n, cardId?)`. */
 export const previewWave = (sim: Sim, n: number, cardId?: string | null): WavePreview | null => sim.previewWave(n, cardId);
-export type { UnitDef, LevelStat } from './data/compile.js';
+export type { UnitDef, LevelStat, CompiledAttack, CompiledDot, FxSpec, AttackKind, DamageType } from './data/compile.js';
+export { unknownEffects } from './data/compile.js';
 export type { GameData, StageData, DifficultyId } from './data/schema.js';
-export { loadGameData, loadProgression } from './data/load.js';
+export { loadGameData, loadProgression, loadUnits, mergeUnitFiles } from './data/load.js';
+export { UnitFileSchema, EffectsSchema, ELEMENTS, UNIT_RARITIES } from './data/schema.js';
 export type { ProgressionData } from './data/schema.js';
 export { damageBpFor, starsForCopies, unitModFor, metaProfileLevels, metaProfileMods, type MetaProfileName } from './progression.js';
 export { hashState, stableStringify } from './hash.js';
-export { computeHit, elementBp } from './damage.js';
+export { computeHit } from './damage.js';
 export * as fixed from './fixed.js';

@@ -1,10 +1,9 @@
 /**
- * Bot-Lauf als Replay exportieren (Format v3: Positionen + Unit-Mods; ohne --meta ist `unitMods` leer = neutral): so entsteht ein vom Simulator selbst erzeugtes Beispiel,
+ * Bot-Lauf als Replay exportieren (Format v4: AA-Baukasten, Positionen + Unit-Mods; ohne --meta ist `unitMods` leer = neutral): so entsteht ein vom Simulator selbst erzeugtes Beispiel,
  * dessen End-Hash `npm run replay` und `test/replay.test.ts` prüfen. Kein Client, kein Browser.
  *
- *   npx tsx scripts/export-replay.ts --bot wide@normal --difficulty normal --seed 7 --out ../docs/balancing/playtests/beispiel-v3-bot-normal.json
- *   npx tsx scripts/export-replay.ts --bot wide --difficulty hard --seed 7 --meta mid --out ../docs/balancing/playtests/beispiel-v3-bot-hard-mid.json
- *   --format 2 schreibt das alte v2 (ohne unitMods; nur ohne --meta), z. B. fuer das v2-Beispiel.
+ *   npx tsx scripts/export-replay.ts --bot mono-goku_ssj3 --difficulty normal --seed 7 --out ../docs/balancing/playtests/beispiel-v4-bot-normal.json
+ *   npx tsx scripts/export-replay.ts --bot mono-goku_ssj3 --difficulty normal --seed 7 --meta mid --out ../docs/balancing/playtests/beispiel-v4-bot-normal-mid.json
  *
  * Das Format entspricht dem, was `client/src/game/recorder.ts` schreibt (nur ohne Tempo-Wechsel, Wellen-Tabelle und Freitext).
  */
@@ -20,14 +19,13 @@ const arg = (k: string, d: string): string => {
   const i = process.argv.indexOf(`--${k}`);
   return i >= 0 ? process.argv[i + 1] : d;
 };
-const bot = arg('bot', 'wide@normal');
+const bot = arg('bot', 'mono-goku_ssj3');
 const difficulty = arg('difficulty', 'normal') as DifficultyId;
 const seed = Number(arg('seed', '7'));
 const out = arg('out', '');
 const meta = arg('meta', '') as MetaProfileName | '';
 const format = Number(arg('format', String(REPLAY_FORMAT_VERSION)));
 if (meta && !['fresh', 'mid', 'max'].includes(meta)) throw new Error(`--meta ${meta} unbekannt (fresh, mid, max)`);
-if (format === 2 && meta) throw new Error('--format 2 kennt keine Mods');
 const unitMods = meta ? metaProfileMods(loadProgression(), meta, loadGameData().units.units.map((u) => u.id), 1) : [];
 
 const commands: ReplayCommand[] = [];

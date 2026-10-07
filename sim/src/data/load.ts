@@ -5,21 +5,24 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import {
-  BotProfilesSchema,
   ChallengesSchema,
   BossesSchema,
   CardsSchema,
   DifficultiesSchema,
   EconomySchema,
+  EffectsSchema,
   EnemiesSchema,
   ModifiersSchema,
   ProgressionSchema,
   StageSchema,
-  UnitsSchema,
-  type BotProfile,
+  UnitFileSchema,
+  type AttackData,
   type GameData,
   type ProgressionData,
   type StageData,
+  type UnitData,
+  type UnitFile,
+  type UnitsData,
 } from './schema.js';
 
 const DATA_DIR = fileURLToPath(new URL('../../data/', import.meta.url));
@@ -58,12 +61,10 @@ export function validateGameData(d: GameData): void {
   for (const u of d.units.units) {
     if (unitIds.has(u.id)) throw new Error(`Doppelte Unit-ID ${u.id}`);
     unitIds.add(u.id);
-    const costs = u.upgradeCosts ?? d.units.rarities[u.rarity].upgradeCosts;
-    if (u.farm && u.farm.yieldByLevel.length !== costs.length + 1) throw new Error(`Farm-Ertrag ${u.id}: Länge`);
-    if (u.aura && u.aura.damageBpByLevel.length !== costs.length + 1) throw new Error(`Aura ${u.id}: Länge`);
-    if (u.attack?.kind === 'circle' && !u.attack.radiusMilli) throw new Error(`${u.id}: circle ohne Radius`);
-    if (u.attack?.kind === 'line' && !u.attack.widthMilli) throw new Error(`${u.id}: line ohne Breite`);
-    if (u.attack?.kind === 'cone' && !u.attack.coneDeg) throw new Error(`${u.id}: cone ohne Winkel`);
+    if (u.levels[0].cost === null || u.levels[0].cost === undefined || u.levels[0].cost <= 0) throw new Error(`${u.id}: Stufe 0 ohne Kosten`);
+    u.levels.forEach((l, k) => {
+      if (l.level !== k) throw new Error(`${u.id}: Stufe ${l.level} an Index ${k}`);
+    });
   }
   validateBosses(d, enemyIds);
   validateCards(d);
@@ -147,6 +148,33 @@ export function validateStage(d: GameData, s: StageData, label = s.id): void {
   });
 }
 
+/**
+ * Führt Unit-Dateien zusammen (Reihenfolge = Dateinamen, alphabetisch): Units aneinandergehängt, Angriffs-Katalog vereinigt.
+ * Doppelte Angriffs-IDs mit abweichendem Inhalt sind ein Fehler (`null`-Einträge = unbekannter Angriff, werden übersprungen).
+ */
+export function mergeUnitFiles(files: readonly UnitFile[]): UnitsData {
+  const units: UnitData[] = [];
+  const attacks: Record<string, AttackData> = {};
+  for (const f of files) {
+    units.push(...f.units);
+    for (const [id, a] of Object.entries(f.attacks)) {
+      if (a === null) continue;
+      if (id in attacks && JSON.stringify(attacks[id]) !== JSON.stringify(a)) throw new Error(`Angriff ${id} in mehreren Unit-Dateien mit verschiedenem Inhalt`);
+      attacks[id] = a;
+    }
+  }
+  return { units, attacks };
+}
+
+/** Lädt alle `data/units/*.json` (AA, Crossover, Beispiele ...) und führt sie zusammen. */
+export function loadUnits(): UnitsData {
+  const files: UnitFile[] = [];
+  for (const f of readdirSync(DATA_DIR + 'units').sort()) {
+    if (f.endsWith('.json')) files.push(UnitFileSchema.parse(readJson('units/' + f)));
+  }
+  return mergeUnitFiles(files);
+}
+
 /** Lädt und validiert alle Daten inklusive aller Stages in data/stages/. */
 export function loadGameData(): GameData {
   const stages: Record<string, StageData> = {};
@@ -164,18 +192,14 @@ export function loadGameData(): GameData {
     modifiers: ModifiersSchema.parse(readJson('modifiers.json')),
     difficulties: DifficultiesSchema.parse(readJson('difficulties.json')),
     challenges: ChallengesSchema.parse(readJson('challenges.json')),
-    units: UnitsSchema.parse(readJson('units.json')),
+    units: loadUnits(),
+    effects: EffectsSchema.parse(readJson('effects.json')),
     bosses: BossesSchema.parse(readJson('bosses.json')),
     cards: CardsSchema.parse(readJson('cards.json')),
     stages,
   };
   validateGameData(data);
   return data;
-}
-
-/** Bot-Profile (Runde 4 / P6, `data/botProfiles.json`); getrennt von `GameData`, weil sie nur Bots betreffen. */
-export function loadBotProfiles(): Record<string, BotProfile> {
-  return BotProfilesSchema.parse(readJson('botProfiles.json')).profiles;
 }
 
 /** Level-/Sterne-Kurven (Runde 7 / P2, `data/progression.json`); getrennt von `GameData`, damit die Sim-Daten unverändert bleiben. */

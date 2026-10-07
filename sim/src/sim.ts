@@ -105,7 +105,6 @@ export function createSim(opts: SimOptions): Sim {
     prepTicksLeft: eco.prepTicks,
     skipPending: false,
     nextCard: null,
-    guardUsed: 0,
     lives: startLives,
     maxLives: startLives,
     result: null,

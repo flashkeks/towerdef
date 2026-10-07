@@ -3,7 +3,7 @@ import type { Sim } from '../src/index.js';
 import { at, createSim } from './helpers.js';
 import { placementIds } from './placement-helpers.js';
 
-/** Einfacher skriptgesteuerter Spieler: baut Striker/Gunner/Blaster/Banner und upgradet reihum. */
+/** Einfacher skriptgesteuerter Spieler: baut Ichigo/Krillin/Stain/Josuke und upgradet reihum. */
 function script(sim: Sim, wave: number): void {
   // Freie Altbestand-Position der Art: erste, an der `place` jetzt erlaubt wäre.
   const buy = (unit: string, kind: 'ground' | 'hill') => {
@@ -16,12 +16,12 @@ function script(sim: Sim, wave: number): void {
     }
   };
   if (wave === 0) {
-    buy('striker', 'ground');
-    buy('gunner', 'hill');
+    buy('ichigo', 'ground');
+    buy('krillin', 'hill');
   }
-  if (wave === 2) buy('blaster', 'ground');
-  if (wave === 4) buy('banner', 'ground');
-  if (wave === 7) buy('striker', 'ground');
+  if (wave === 2) buy('stain', 'ground');
+  if (wave === 4) buy('josuke', 'ground');
+  if (wave === 7) buy('ichigo', 'ground');
   for (const u of sim.state.units) {
     for (let i = 0; i < 3; i++) if (sim.upgradeCost(u.id) !== null) sim.apply(0, { type: 'upgrade', entityId: u.id });
   }
@@ -60,7 +60,7 @@ describe('Determinismus', () => {
     const a = mk();
     const b = mk();
     for (const s of [a, b]) {
-      s.apply(0, { type: 'place', unitId: 'gunner', ...at(s, 4) });
+      s.apply(0, { type: 'place', unitId: 'krillin', ...at(s, 4) });
     }
     a.step(900);
     for (let i = 0; i < 900; i++) b.step();
@@ -69,7 +69,7 @@ describe('Determinismus', () => {
   it('Befehle ändern den Hash', () => {
     const a = createSim({ stage: 'standard20', difficulty: 'normal', players: 1, seed: 5 });
     const h0 = a.hash();
-    a.apply(0, { type: 'place', unitId: 'striker', ...at(a, 0) });
+    a.apply(0, { type: 'place', unitId: 'ichigo', ...at(a, 0) });
     expect(a.hash()).not.toBe(h0);
   });
 });

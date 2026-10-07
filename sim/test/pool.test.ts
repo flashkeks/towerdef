@@ -10,6 +10,8 @@ const G = data.enemies.hpCurve.growthBp / 10000;
 // Runde 4 P1: die Normal-Stufe trägt einen eigenen HP-Faktor (kalibrierung.md), der Pool skaliert mit.
 const D = data.difficulties.normal.hpBp / 10000;
 // Runde 4 P2: der Boss-HP-Faktor ist Zwischenstand (kalibrierung.md); §5 rechnet mit 30. Die Boss-Anteile von Wave 10/20 skalieren entsprechend.
+// Runde 8: AA-Maßstab hebt die HP-Basis (enemies.json hpCurve.baseCenti) gegenüber den 25 HP des §5-Beispiels.
+const S = data.enemies.hpCurve.baseCenti / 2500;
 const bossF = data.enemies.archetypes.find((a) => a.id === 'boss')!.fHpBp / 10000;
 
 describe('Pool-Check (§5, skaliert mit kalibriertem g)', () => {
@@ -22,7 +24,7 @@ describe('Pool-Check (§5, skaliert mit kalibriertem g)', () => {
       const pool = wavePool(ctx, i + 1) / 100;
       const hasBoss = stage.waves[i].groups.some((g) => g.type === 'boss');
       const bossShare = hasBoss ? 25 * 30 * 1.12 ** i * (1 - bossF / 30) : 0; // Boss-HP der §5-Tabelle (Faktor 30) minus Zwischenstand
-      const expected = (expected0 - bossShare) * D * (G / 1.12) ** i;
+      const expected = (expected0 - bossShare) * D * S * (G / 1.12) ** i;
       expect(Math.abs(pool - expected) / expected).toBeLessThanOrEqual(0.01);
     });
   });

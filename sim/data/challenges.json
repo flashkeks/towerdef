@@ -11,11 +11,11 @@
       "rewardBp": 15000
     },
     {
-      "id": "no-titan",
-      "name": "Without the Titan",
+      "id": "no-rokuhira",
+      "name": "Without Rokuhira",
       "extends": "nightmare",
       "overrides": { "bossAbilityTier": 2 },
-      "restrictions": { "bannedUnits": ["titan"], "noSell": false },
+      "restrictions": { "bannedUnits": ["rokuhira"], "noSell": false },
       "rewardBp": 20000
     }
   ]

@@ -241,21 +241,24 @@ describe('Boss-Kits: Schwachstellen-Fenster und Schild', () => {
     expect(e.bossRun!.vulnTicks).toBe(0);
     expect(m.evs.some((x) => x.type === 'bossWindow' && !x.open)).toBe(true);
   });
-  it('Fenster in der echten Simulation: Titan-Nuke im Fenster richtet mehr Schaden an als außerhalb', () => {
+  it('Fenster in der echten Simulation: ein Treffer im Fenster richtet mehr Schaden an als außerhalb (x1,6)', () => {
     const run = (window: boolean): number => {
       const m = mk('normal', 10);
       const hill = m.sim.slotCenters().find((s) => s.kind === 'hill')!;
-      const r = m.sim.apply(0, { type: 'place', unitId: 'titan', x: hill.x, y: hill.y });
+      const r = m.sim.apply(0, { type: 'place', unitId: 'krillin', x: hill.x, y: hill.y });
       if (!r.ok) throw new Error(r.reason);
       if (window) {
         m.boss.bossRun!.vulnTicks = 100;
         m.boss.bossRun!.vulnBp = 16000;
       }
       m.boss.hp = m.boss.maxHp = m.boss.maxHp * 10; // HP-Deckel (Schaden ist durch die Rest-HP begrenzt) aus dem Weg
+      m.boss.x = hill.x + 500;
+      m.boss.y = hill.y;
       const hp0 = m.boss.hp;
-      m.sim.apply(0, { type: 'useAbility', entityId: r.entityId as number });
+      m.sim.step(1);
       return hp0 - m.boss.hp;
     };
+    expect(run(false)).toBeGreaterThan(0);
     expect(run(true)).toBe(Math.floor((run(false) * 16000) / 10000));
   });
 });

@@ -52,21 +52,21 @@ describe('Stun (§10)', () => {
 });
 
 describe('Slow (§10)', () => {
-  it('Gesamt-Slow max -60 %', () => {
+  it('Gesamt-Slow max -80 % (AA)', () => {
     const e = enemy(ctx, 'grunt');
-    applySlow(e, 9000, 80, eco);
-    expect(e.slowBp).toBe(6000);
+    applySlow(e, 9500, 80, 0, eco);
+    expect(e.slowBp).toBe(8000);
   });
   it('stärkster Slow gewinnt, schwächerer wird ignoriert, gleicher erneuert die Dauer', () => {
     const e = enemy(ctx, 'grunt');
-    expect(applySlow(e, 4000, 80, eco)).toBe(true);
-    expect(applySlow(e, 2000, 200, eco)).toBe(false);
+    expect(applySlow(e, 4000, 80, 0, eco)).toBe(true);
+    expect(applySlow(e, 2000, 200, 0, eco)).toBe(false);
     expect(e.slowBp).toBe(4000);
     expect(e.slowTicks).toBe(80);
-    expect(applySlow(e, 5000, 40, eco)).toBe(true);
+    expect(applySlow(e, 5000, 40, 0, eco)).toBe(true);
     expect(e.slowBp).toBe(5000);
     expect(e.slowTicks).toBe(40);
-    expect(applySlow(e, 5000, 90, eco)).toBe(true);
+    expect(applySlow(e, 5000, 90, 0, eco)).toBe(true);
     expect(e.slowTicks).toBe(90);
   });
   it('Slow läuft ab und reduziert die Geschwindigkeit um den Faktor', () => {
@@ -79,7 +79,7 @@ describe('Slow (§10)', () => {
     expect(free).toBe(20 * 75000); // 1,5 Tiles/s = 75 Milli-Tiles je Tick
     const e2 = enemy(ctx, 'grunt', 1, {}, 501);
     mutable(sim).enemies.push(e2);
-    applySlow(e2, 4000, 80, eco);
+    applySlow(e2, 4000, 80, 0, eco);
     sim.step(20);
     expect(e2.progress * 1000 + e2.frac).toBe(20 * 45000);
     sim.step(60);
@@ -87,32 +87,44 @@ describe('Slow (§10)', () => {
   });
   it('Boss: Slow-Dauer halbiert', () => {
     const b = enemy(ctx, 'boss', 10);
-    applySlow(b, 4000, 80, eco);
+    applySlow(b, 4000, 80, 0, eco);
     expect(b.slowTicks).toBe(40);
   });
 });
 
 describe('DoT (§10)', () => {
-  it('gleicher Typ erneuert nur (kein Stapeln), verschiedene Typen stapeln', () => {
+  it('dieselbe Unit erneuert nur (kein Stapeln), verschiedene Units und Arten stapeln', () => {
     const e = enemy(ctx, 'grunt', 10);
     applyDot(e, 'bleed', 1200, 120, 0, 1, eco);
-    const per = e.bleed?.perIntervalCenti;
-    e.bleed!.ticksLeft = 10;
+    const per = e.dots[0].perIntervalCenti;
+    e.dots[0].ticksLeft = 10;
     applyDot(e, 'bleed', 1200, 120, 0, 1, eco);
-    expect(e.bleed?.ticksLeft).toBe(120);
-    expect(e.bleed?.perIntervalCenti).toBe(per);
+    expect(e.dots).toHaveLength(1);
+    expect(e.dots[0].ticksLeft).toBe(120);
+    expect(e.dots[0].perIntervalCenti).toBe(per);
     applyDot(e, 'burn', 800, 80, 0, 1, eco);
-    expect(e.burn).not.toBeNull();
-    expect(e.bleed).not.toBeNull();
-    // Gesamtschaden über die Dauer: bleed 6 x 200 + burn 4 x 200
+    applyDot(e, 'bleed', 1200, 120, 0, 2, eco); // andere Unit: eigene Instanz
+    expect(e.dots.map((d) => d.kind)).toEqual(['bleed', 'burn', 'bleed']);
+    // Gesamtschaden über die Dauer: bleed 2 x (6 x 200) + burn 4 x 200
     const w = worldWith(e);
     const hp0 = e.hp;
     for (let i = 0; i < 120; i++) tickEffects(w);
-    expect(hp0 - e.hp).toBe(6 * 200 + 4 * 200);
-    expect(e.bleed).toBeNull();
-    expect(e.burn).toBeNull();
+    expect(hp0 - e.hp).toBe(2 * 6 * 200 + 4 * 200);
+    expect(e.dots).toHaveLength(0);
   });
-  it('Regen 2 %/s, Bleed und Poison stoppen sie, Burn nicht', () => {
+  it('höchstens economy.dot.maxStacks Instanzen je Art, eine stärkere ersetzt die schwächste', () => {
+    const e = enemy(ctx, 'grunt', 10);
+    const max = eco.dot.maxStacks;
+    for (let u = 1; u <= max; u++) applyDot(e, 'poison', 1200 * u, 120, 0, u, eco);
+    expect(e.dots).toHaveLength(max);
+    applyDot(e, 'poison', 100, 120, 0, 99, eco); // schwächer als alle: verworfen
+    expect(e.dots).toHaveLength(max);
+    applyDot(e, 'poison', 1_000_000, 120, 0, 100, eco);
+    expect(e.dots).toHaveLength(max);
+    expect(e.dots.some((d) => d.unit === 100)).toBe(true);
+    expect(e.dots.some((d) => d.unit === 1)).toBe(false);
+  });
+  it('Regen 2 %/s, Bleed und Wither stoppen sie, Burn nicht (modifiers.json)', () => {
     const mk = () => enemy(ctx, 'brute', 12, { regen: true });
     const e = mk();
     e.hp = Math.floor(e.maxHp / 2);
@@ -120,14 +132,16 @@ describe('DoT (§10)', () => {
     w.state.tick = 20;
     tickEffects(w);
     expect(e.hp).toBe(Math.floor(e.maxHp / 2) + Math.floor((e.maxHp * 200) / 10000));
-    const b = mk();
-    b.hp = Math.floor(b.maxHp / 2);
-    applyDot(b, 'bleed', 600, 120, 0, 1, eco);
-    const w2 = worldWith(b);
-    w2.state.tick = 20;
-    const before = b.hp;
-    tickEffects(w2);
-    expect(b.hp).toBe(before);
+    for (const kind of ['bleed', 'wither'] as const) {
+      const b = mk();
+      b.hp = Math.floor(b.maxHp / 2);
+      applyDot(b, kind, 600, 120, 0, 1, eco);
+      const w2 = worldWith(b);
+      w2.state.tick = 20;
+      const before = b.hp;
+      tickEffects(w2);
+      expect(b.hp, kind).toBe(before);
+    }
     const c = mk();
     c.hp = Math.floor(c.maxHp / 2);
     applyDot(c, 'burn', 600, 80, 0, 1, eco);

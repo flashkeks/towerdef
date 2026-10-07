@@ -15,22 +15,9 @@ import { createEnemy } from './spawn.js';
 
 const gate = (w: World, min: BossKit['abilities'][number]['minDifficulty']): boolean => w.ctx.difficultyRank >= DIFFICULTY_RANK[min];
 
-/** Verlängerung der Schwachstellen-Fenster durch Units mit `windowExtend` (Runde 7 / P6, K5): je Typ der höchste Wert, Typen addieren sich. */
-export function windowExtendBp(w: World): number {
-  const best = new Map<string, number>();
-  for (const u of w.state.units) {
-    const wx = w.ctx.units[u.defId].windowExtend;
-    if (wx) best.set(u.defId, Math.max(best.get(u.defId) ?? 0, wx.bpByLevel[u.level]));
-  }
-  let sum = 0;
-  for (const v of best.values()) sum += v;
-  return sum;
-}
-
 /** Öffnet (oder verlängert) das Schwachstellen-Fenster. Ein kürzeres Fenster ersetzt kein längeres. */
 export function openWindow(w: World, e: EnemyState, ticks: number, bp: number, cause: 'ward' | 'cast' | 'interrupt' | 'exhaust' | 'phase', armor = -1): void {
   const run = e.bossRun as BossRun;
-  ticks = mulBp(ticks, 10000 + windowExtendBp(w));
   if (ticks < run.vulnTicks) return;
   run.vulnTicks = ticks;
   run.vulnBp = bp;
@@ -99,7 +86,10 @@ function resolve(w: World, e: EnemyState, kit: BossKit, born: EnemyState[]): voi
   w.events.push({ type: 'bossCast', tick: w.state.tick, enemyId: e.id, kit: kit.id, ability: a.id, kind: a.kind, interrupted, cause: interrupted ? tele.cause : null });
   if (interrupted) {
     if (a.interruptWindow) openWindow(w, e, a.interruptWindow.ticks, a.interruptWindow.bp, 'interrupt', a.interruptWindow.armor ?? -1);
-    if (a.interruptStunTicks && e.stunTicks < a.interruptStunTicks) e.stunTicks = a.interruptStunTicks;
+    if (a.interruptStunTicks && e.stunTicks < a.interruptStunTicks) {
+      e.stunTicks = a.interruptStunTicks;
+      e.stunImmuneAfter = w.ctx.data.economy.cc.stunImmuneTicks;
+    }
     return;
   }
   if (a.kind === 'summon') summon(w, e, a.type, a.count, born);

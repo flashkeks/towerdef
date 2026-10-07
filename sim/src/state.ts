@@ -6,9 +6,10 @@ import type { Ctx } from './data/compile.js';
 import type { RngState } from './prng.js';
 
 export type TargetMode = 'first' | 'last' | 'close' | 'strongest';
-export type DotKind = 'bleed' | 'burn' | 'poison';
+export type DotKind = 'bleed' | 'burn' | 'poison' | 'wither';
 
 export interface DotState {
+  kind: DotKind;
   ticksLeft: number;
   /** Ticks bis zum nächsten Schadenstick. */
   nextIn: number;
@@ -71,16 +72,31 @@ export interface EnemyState {
   frac: number;
   x: number;
   y: number;
+  /** CC-Gruppe (Stun, Freeze, Timestop, Rückwärtslaufen): höchstens eins zugleich; danach `stunImmune` Ticks Sperre (`stunImmuneAfter` wird beim Ende übernommen). */
   stunTicks: number;
+  backTicks: number;
   stunImmune: number;
+  stunImmuneAfter: number;
+  /** Bewusstlos (Runde 8): steht still, keine Sperre, stapelt mit der CC-Gruppe. */
+  uncTicks: number;
   slowBp: number;
   slowTicks: number;
-  /** Markierung (Runde 7 / P6, `onHit.mark`): zusätzlicher Schaden in bp, solange `markTicks` > 0. */
-  markBp: number;
-  markTicks: number;
-  bleed: DotState | null;
-  burn: DotState | null;
-  poison: DotState | null;
+  slowImmune: number;
+  slowImmuneAfter: number;
+  /** Knockback-Sperre in Ticks. */
+  kbImmune: number;
+  /** Bleed-Verstärkung (Faktor in Bp, 10000 = keine) solange `bleedAmpTicks` > 0. */
+  bleedAmpBp: number;
+  bleedAmpTicks: number;
+  /** Heilsperre (Wither-Effekt) in Ticks. */
+  regenBlock: number;
+  /** Mehr erhaltener Schaden je Schadensart (Cursed/Hexed/Dismembered) in Bp; `*Ticks` = Rest, -1 = dauerhaft. */
+  physTakenBp: number;
+  physTakenTicks: number;
+  magicTakenBp: number;
+  magicTakenTicks: number;
+  /** Aktive DoT-Instanzen (Burn/Bleed/Poison/Wither), in Reihenfolge des Auftragens. */
+  dots: DotState[];
   /** Wirksamer Schaden je Spieler (Index = Spieler-ID) für die Bounty-Verteilung. */
   dmgShare: number[];
   /** Boss-Kit-Zustand (nur Boss mit Kit für seine Wave, sonst null). */
@@ -102,11 +118,19 @@ export interface UnitState {
   targeting: TargetMode;
   /** Ticks bis zum nächsten Angriff. */
   cd: number;
-  abilityCd: number;
   /** Hooks: Level-Multiplikator, Trait-Schaden (additiv), Farm-Ertrag (alle Basispunkte; Standard x1 / +0). */
   lvlBp: number;
   traitBp: number;
   yieldBp: number;
+  /** Selbst-Buffs aus Effekten (Runde 8): Battlelust-Stapel (je Angriff), Snatched-Stapel + Restdauer, Sunshine-Wellen, Motivate-Buffs von Verbündeten (Bp + Restticks). */
+  lust: number;
+  snatch: number;
+  snatchTicks: number;
+  sun: number;
+  motDmgBp: number;
+  motDmgTicks: number;
+  motRangeBp: number;
+  motRangeTicks: number;
   damageDealt: number;
   damageReported: number;
 }
@@ -153,8 +177,6 @@ export interface SimState {
   skipPending: boolean;
   /** Für die nächste zu startende Wave gewählte Risikokarte (P4, K1); wird beim Wave-Start verbraucht. */
   nextCard: string | null;
-  /** Runde 7 / P6: in dieser Wave schon vom Leak-Schild (`guard`) abgefangene Leaks; wird beim Wave-Start auf 0 gesetzt. */
-  guardUsed: number;
   /** Verbleibende Leben (Team gemeinsam). Ersetzt Base-HP. */
   lives: number;
   /** Maximum (Startleben + Meta-Bonus); Regeneration deckelt hier. */
@@ -183,7 +205,6 @@ export type SimEvent =
   | { type: 'place'; tick: number; player: number; unitId: number; unit: string; x: number; y: number; cost: number }
   | { type: 'upgrade'; tick: number; player: number; unitId: number; level: number; cost: number }
   | { type: 'sell'; tick: number; player: number; unitId: number; refund: number }
-  | { type: 'ability'; tick: number; player: number; unitId: number; kind: string }
   | { type: 'over'; tick: number; result: 'win' | 'loss' }
   // Boss-Kits (P4, K5): Phase, Telegraph (Vorwarnung), Wirkung/Unterbrechung, Schwachstellen-Fenster, Schild.
   | { type: 'bossPhase'; tick: number; enemyId: number; kit: string; phase: number; id: string; name: string }

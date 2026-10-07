@@ -3,7 +3,6 @@
  * also vor der Verarbeitung des nächsten Ticks). Rückgabe: `{ok:true, entityId?}` oder `{ok:false, reason}`.
  */
 import type { TargetMode, World } from './state.js';
-import { triggerAbility } from './systems/abilities.js';
 import { nextWaveNumber, waveHasBoss } from './systems/cards.js';
 import type { UnitDef } from './data/compile.js';
 import { addCoins, flushDamage, sellValue } from './systems/economy.js';
@@ -15,7 +14,6 @@ export type Command =
   | { type: 'upgrade'; entityId: number }
   | { type: 'sell'; entityId: number }
   | { type: 'setTargeting'; entityId: number; mode: TargetMode }
-  | { type: 'useAbility'; entityId: number }
   | { type: 'skipWave' }
   /** Risikokarte (K1) für die nächste zu startende Wave wählen; `null` nimmt die Wahl zurück. Gilt für ein Team, die letzte Wahl zählt. */
   | { type: 'chooseCard'; cardId: string | null }
@@ -84,11 +82,17 @@ export function applyCommand(w: World, playerId: number, cmd: Command): CommandR
         invested: cost,
         targeting: def.defaultTargeting,
         cd: 0,
-        // DESIGN-OFFEN: Fähigkeiten sind ab Platzierung bereit (Abklingzeit 0); es gibt keinen Auto-Ability-Schalter im Kern.
-        abilityCd: 0,
         lvlBp: mod?.lvlBp ?? 10000,
         traitBp: mod?.traitBp ?? 0,
         yieldBp: mod?.yieldBp ?? 10000,
+        lust: 0,
+        snatch: 0,
+        snatchTicks: 0,
+        sun: 0,
+        motDmgBp: 0,
+        motDmgTicks: 0,
+        motRangeBp: 0,
+        motRangeTicks: 0,
         damageDealt: 0,
         damageReported: 0,
       });
@@ -113,6 +117,7 @@ export function applyCommand(w: World, playerId: number, cmd: Command): CommandR
       const u = state.units.find((x) => x.id === cmd.entityId);
       if (!u) return fail('unknown-entity');
       if (u.owner !== playerId) return fail('not-owner');
+      if (ctx.units[u.defId].unsellable) return fail('unsellable');
       const refund = sellValue(ctx.units[u.defId], u);
       flushDamage(w, u);
       state.units = state.units.filter((x) => x.id !== u.id);
@@ -125,18 +130,10 @@ export function applyCommand(w: World, playerId: number, cmd: Command): CommandR
       const u = state.units.find((x) => x.id === cmd.entityId);
       if (!u) return fail('unknown-entity');
       if (u.owner !== playerId) return fail('not-owner');
-      if (!ctx.units[u.defId].attack) return fail('no-targeting');
+      if (!ctx.units[u.defId].levels[u.level].attack) return fail('no-targeting');
       if (!['first', 'last', 'close', 'strongest'].includes(cmd.mode)) return fail('invalid-mode');
       u.targeting = cmd.mode;
       return { ok: true, entityId: u.id };
-    }
-    case 'useAbility': {
-      const u = state.units.find((x) => x.id === cmd.entityId);
-      if (!u) return fail('unknown-entity');
-      if (u.owner !== playerId) return fail('not-owner');
-      if (!ctx.units[u.defId].ability) return fail('no-ability');
-      if (u.abilityCd > 0) return fail('ability-cooldown');
-      return triggerAbility(w, u) ? { ok: true, entityId: u.id } : fail('no-target');
     }
     case 'skipWave': {
       if (state.phase === 'wave' && state.wave >= ctx.totalWaves) return fail('no-next-wave');

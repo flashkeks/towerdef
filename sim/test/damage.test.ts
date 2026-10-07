@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { computeHit, elementBp, type HitInput } from '../src/damage.js';
+import { computeHit, type HitInput } from '../src/damage.js';
 import { applyDamage, applyDot } from '../src/systems/effects.js';
 import type { World } from '../src/state.js';
 import { createSim } from '../src/index.js';
@@ -7,7 +7,7 @@ import { ctxFor, data, enemy, mutable } from './helpers.js';
 
 const eco = data.economy;
 const base: HitInput = {
-  baseCenti: 7700, lvlBp: 14750, traitBp: 800, buffBp: 2500, vulnBp: 0, elementBp: 15000,
+  baseCenti: 7700, lvlBp: 14750, traitBp: 800, buffBp: 2500, selfBp: 0, vulnBp: 0, weakBp: 5000,
   armor: 20, pen: 0, crit: false, critMultBp: 15000, trueDamage: false,
 };
 
@@ -24,34 +24,37 @@ describe('Schadensformel (§10)', () => {
     expect(computeHit({ ...base, baseCenti: 10, armor: 100 }, eco).damageCenti).toBe(100);
   });
   it('Pen reduziert Rüstung, nie unter 0', () => {
-    const mk = (armor: number, pen: number) => computeHit({ ...base, armor, pen, elementBp: 10000, buffBp: 0, traitBp: 0, lvlBp: 10000 }, eco).damageCenti;
+    const mk = (armor: number, pen: number) => computeHit({ ...base, armor, pen, weakBp: 0, buffBp: 0, traitBp: 0, lvlBp: 10000 }, eco).damageCenti;
     expect(mk(100, 0)).toBe(3850); // x0,5
     expect(mk(100, 40)).toBe(Math.floor((7700 * 100) / 160));
     expect(mk(40, 40)).toBe(7700);
     expect(mk(40, 90)).toBe(7700);
   });
-  it('Buff- und Verwundbar-Caps (+100 % / +50 %)', () => {
-    const mk = (buffBp: number, vulnBp: number) => computeHit({ ...base, baseCenti: 10000, lvlBp: 10000, traitBp: 0, buffBp, vulnBp, elementBp: 10000, armor: 0 }, eco).damageCenti;
+  it('Buff-Cap +100 %, Verwundbar-Cap +100 % (Runde 8: AA-Curses bis +30 %, mehrere Quellen)', () => {
+    const mk = (buffBp: number, vulnBp: number) => computeHit({ ...base, baseCenti: 10000, lvlBp: 10000, traitBp: 0, buffBp, vulnBp, weakBp: 0, armor: 0 }, eco).damageCenti;
     expect(mk(5000, 0)).toBe(15000);
     expect(mk(30000, 0)).toBe(20000);
-    expect(mk(0, 9000)).toBe(15000);
+    expect(mk(0, 5000)).toBe(15000);
+    expect(mk(0, 30000)).toBe(20000);
     expect(mk(10000, 5000)).toBe(30000);
   });
   it('Crit multipliziert zuletzt', () => {
     expect(computeHit({ ...base, crit: true }, eco).damageCenti).toBe(Math.floor((19163 * 15000) / 10000));
   });
-  it('Element-Zyklus: stark bei {1,2}, schwach bei {3,4}, neutral bei 0 / gleich', () => {
-    const e = (a: number, d: number) => elementBp(a, d, eco);
-    expect(e(1, 2)).toBe(12000);
-    expect(e(1, 3)).toBe(12000);
-    expect(e(1, 4)).toBe(8000);
-    expect(e(1, 5)).toBe(8000);
-    expect(e(1, 1)).toBe(10000);
-    expect(e(5, 1)).toBe(12000); // Zyklus schließt sich
-    expect(e(5, 2)).toBe(12000);
-    expect(e(2, 1)).toBe(8000);
-    expect(e(0, 3)).toBe(10000);
-    expect(e(3, 0)).toBe(10000);
+  it('Schwäche additiv: 10 000 x (1 + 4,00 + 1,50) = 65 000 (design-brief § 2.4)', () => {
+    const mk = (weakBp: number) => computeHit({ ...base, baseCenti: 1_000_000, lvlBp: 10000, traitBp: 0, buffBp: 0, weakBp, armor: 0 }, eco).damageCenti;
+    expect(mk(0)).toBe(1_000_000);
+    expect(mk(40000 + 15000)).toBe(6_500_000);
+  });
+  it('Resistenz 100/(100+R): R = 150 ergibt 40 %, True Damage ignoriert sie', () => {
+    const mk = (armor: number, trueDamage = false) => computeHit({ ...base, baseCenti: 10000, lvlBp: 10000, traitBp: 0, buffBp: 0, weakBp: 0, armor, trueDamage }, eco).damageCenti;
+    expect(mk(150)).toBe(4000);
+    expect(mk(150, true)).toBe(10000);
+  });
+  it('Selbst-Buffs (Battlelust, Snatched, Sunshine) wirken ohne Cap und multiplikativ zu Buffs', () => {
+    const mk = (buffBp: number, selfBp: number) => computeHit({ ...base, baseCenti: 10000, lvlBp: 10000, traitBp: 0, buffBp, selfBp, weakBp: 0, armor: 0 }, eco).damageCenti;
+    expect(mk(0, 12500)).toBe(22500);
+    expect(mk(10000, 12500)).toBe(45000);
   });
 });
 
@@ -84,9 +87,9 @@ describe('Schild, DoT, Boss', () => {
     const b = enemy(ctx, 'boss', 10);
     const el = enemy(ctx, 'elite', 5);
     for (const e of [g, b, el]) applyDot(e, 'bleed', 1200, 120, 0, 1, eco);
-    expect(g.bleed?.perIntervalCenti).toBe(200);
-    expect(b.bleed?.perIntervalCenti).toBe(100);
-    expect(el.bleed?.perIntervalCenti).toBe(100);
+    expect(g.dots[0].perIntervalCenti).toBe(200);
+    expect(b.dots[0].perIntervalCenti).toBe(100);
+    expect(el.dots[0].perIntervalCenti).toBe(100);
   });
   it('Schadensanteil wird auf die verbleibende HP begrenzt (kein Overkill-Anteil)', () => {
     const w = world();
@@ -98,13 +101,14 @@ describe('Schild, DoT, Boss', () => {
 });
 
 describe('HP-Kette', () => {
-  it('Grunt-HP-Kurve 25 * g^(n-1) exakt in Centi-HP (g kalibriert: docs/balancing/kalibrierung.md #2)', () => {
+  it('Grunt-HP-Kurve base * g^(n-1) exakt in Centi-HP (Basis: AA-Maßstab, enemies.json)', () => {
     const ctx = ctxFor();
+    const base = BigInt(data.enemies.hpCurve.baseCenti);
     const g = BigInt(data.enemies.hpCurve.growthBp);
-    const exact = (n: number): number => Number((2500n * g ** BigInt(n - 1)) / 10000n ** BigInt(n - 1));
-    expect(ctx.hpGrunt(1)).toBe(2500);
+    const exact = (n: number): number => Number((base * g ** BigInt(n - 1)) / 10000n ** BigInt(n - 1));
+    expect(ctx.hpGrunt(1)).toBe(data.enemies.hpCurve.baseCenti);
     for (const n of [2, 10, 20]) expect(ctx.hpGrunt(n)).toBe(exact(n));
-    expect(ctx.hpGrunt(2)).toBe(Math.floor((2500 * data.enemies.hpCurve.growthBp) / 10000));
+    expect(ctx.hpGrunt(2)).toBe(Math.floor((data.enemies.hpCurve.baseCenti * data.enemies.hpCurve.growthBp) / 10000));
   });
   it('Schwierigkeit und Koop-Faktor skalieren HP, Bounty-Basis nur mit Koop', () => {
     const solo = enemy(ctxFor(1, 'normal'), 'grunt', 10);

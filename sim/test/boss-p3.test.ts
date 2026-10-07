@@ -173,13 +173,15 @@ describe('Rüstung des Bosses (Phase, Fenster)', () => {
     expect(m.boss.bossRun!.vulnTicks).toBe(0);
     expect(effectiveArmor(m.boss)).toBe(90);
   });
-  it('Schaden einer Einheit ohne Durchschlag sinkt mit der Rüstung, Lancer (Pen 40) verliert weniger', () => {
-    const dmg = (armor: number, unit: 'gunner' | 'lancer'): number => {
-      const m = mk(kitData());
+  it('Schaden sinkt mit der Rüstung (physical), True Damage ignoriert sie', () => {
+    const dmg = (armor: number, trueDamage: boolean): number => {
+      const kd = kitData();
+      if (trueDamage) kd.units.units.find((u) => u.id === 'krillin')!.damageType = 'true';
+      const m = mk(kd);
       m.boss.bossRun!.armor = armor;
       m.boss.hp = m.boss.maxHp = m.boss.maxHp * 100;
       const slot = m.sim.slotCenters().find((s) => s.kind === 'hill')!;
-      const r = m.sim.apply(0, { type: 'place', unitId: unit, x: slot.x, y: slot.y });
+      const r = m.sim.apply(0, { type: 'place', unitId: 'krillin', x: slot.x, y: slot.y });
       if (!r.ok) throw new Error(r.reason);
       m.boss.x = slot.x + 500;
       m.boss.y = slot.y;
@@ -187,11 +189,11 @@ describe('Rüstung des Bosses (Phase, Fenster)', () => {
       for (let i = 0; i < 80 && m.boss.hp === hp0; i++) m.sim.step(1);
       return hp0 - m.boss.hp;
     };
-    const g0 = dmg(0, 'gunner');
-    const g80 = dmg(80, 'gunner');
+    const g0 = dmg(0, false);
+    const g80 = dmg(80, false);
     expect(g0).toBeGreaterThan(0);
     expect(g80).toBeLessThan(g0);
-    expect(dmg(80, 'lancer')).toBeGreaterThan(0);
+    expect(dmg(80, true)).toBe(g0);
   });
 });
 

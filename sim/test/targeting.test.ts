@@ -60,8 +60,8 @@ describe('Flyer im Sim: nur Hill/Hybrid treffen', () => {
     const ground = slotsOf(sim, 'ground')[0];
     return { sim, st, hill, ground };
   }
-  it('Striker (ground) ignoriert Flyer, Gunner (hill) und Frost (hybrid) treffen ihn', () => {
-    for (const [unit, kind, expectHit] of [['striker', 'ground', false], ['gunner', 'hill', true], ['frost', 'hill', true]] as const) {
+  it('Ichigo (ground) ignoriert Flyer, Krillin (hill) und Rikka (hybrid) treffen ihn', () => {
+    for (const [unit, kind, expectHit] of [['ichigo', 'ground', false], ['krillin', 'hill', true], ['rikka_evo', 'hill', true]] as const) {
       const { sim, st } = setup();
       const slot = slotsOf(sim, kind)[0];
       const s = sim.slotCenters()[slot];

@@ -1,9 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { RiskCardSchema } from '../src/data/schema.js';
-import { getBot } from '../src/bots/index.js';
-import { botTuning } from '../src/bots/util.js';
 import { previewWave, type SimEvent } from '../src/index.js';
-import { seedRng } from '../src/prng.js';
 import { cardLeakCost } from '../src/systems/cards.js';
 import { data, ctxFor, createSim, mutable, stage } from './helpers.js';
 
@@ -177,32 +174,5 @@ describe('Wellenvorschau', () => {
     const b = collect({ 4: 'swarm', 7: 'ironclad' }).sim.hash();
     expect(a).toBe(b);
     expect(a).not.toBe(collect().sim.hash());
-  });
-});
-
-describe('Bot-Strategie: nimmt Karten, wenn stark', () => {
-  const play = (name: string, seed = 1): SimEvent[] => {
-    const sim = createSim({ stage: 'standard20', difficulty: 'normal', players: 1, seed });
-    const bot = getBot(name)();
-    const rng = seedRng(seed + 99);
-    const evs: SimEvent[] = [];
-    for (let t = 0; t < 14000 && !sim.isOver(); t++) {
-      if (t % 20 === 0) bot.decide({ sim, playerId: 0, rng });
-      sim.step(1);
-      evs.push(...sim.drainEvents());
-    }
-    return evs;
-  };
-  it('upgrade+cards wählt Karten (nie auf Boss-Waves); ohne Suffix und abgeschaltet keine', () => {
-    const picks = play('upgrade+cards').filter((e) => e.type === 'cardChosen' && e.card !== null);
-    expect(picks.length).toBeGreaterThan(0);
-    expect(picks.every((e) => e.type === 'cardChosen' && e.wave !== 10 && e.wave !== 20)).toBe(true);
-    expect(play('upgrade').some((e) => e.type === 'cardChosen')).toBe(false);
-    botTuning.cardsDisabled = true;
-    try {
-      expect(play('upgrade+cards').some((e) => e.type === 'cardChosen')).toBe(false);
-    } finally {
-      botTuning.cardsDisabled = false;
-    }
   });
 });
