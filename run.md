@@ -111,6 +111,26 @@ Max: „Das soll sich abheben und wirklich gut aussehen, komplex sein, ein wirkl
 - Bilder kommen aus `/aa/units/...` (Abschnitt 5). **Fallback** ohne Bild: gestaltete Karte mit Initialen,
   Element-Farbe und Rahmen, damit lokal und in Screenshots nichts kaputt aussieht.
 
+### P6 — Crossover-Figuren: Pop-Kultur und Memes (ein Agent, nach P2)
+Max: neben den AA-Anime-Figuren auch Figuren wie **Rick Astley** oder **Iron Man**, „so ein wirklich
+komplexes Spiel“. Umsetzung:
+- Eigene Datei `sim/data/units/crossover.json`, **gleiches Format wie die AA-Units**, nur Daten.
+- **Erster Schwung 25 Figuren** quer durch Pop-Kultur, Filme, Serien, Games, Memes, Musik
+  (z. B. Rick Astley, Iron Man, Shrek, Gandalf, John Wick, Doge, Gigachad, Mario, Darth Vader,
+  Goku-Parodien lassen, weil Goku schon AA ist). Keine Doppelungen mit AA.
+- **Fähigkeiten mit Witz und mit Mechanik**, die zur Figur passt, gebaut aus dem Baukasten (P1):
+  Rick Astley „Never Gonna Give You Up“ = Gegner laufen zurück (Confused), „Rickroll“ als Fähigkeit;
+  Iron Man = Hybrid, Strahl (`line`) plus Raketensalve (`circle`, mehrere Hits); Shrek = Tank-Aura
+  „Swamp“ (Slow-Fläche); usw. Je Figur ein Satz Flavor-Text.
+- Seltenheiten wie AA verteilt (die bekanntesten als Mythic/Secret), Werte im Rahmen der AA-Werte
+  gleicher Seltenheit (Median-Stufenkurve der Seltenheit als Vorlage, nicht neu erfinden).
+- Eigenes **„Crossover“-Banner** neben dem Standard-Banner (Featured-Format aus Runde 7).
+- Bilder: Eintrag im Bild-Manifest mit `source: "custom"` und einem **Suchhinweis**
+  (`imageQuery`, z. B. „Rick Astley Never Gonna Give You Up portrait“). Die Homelab-Seite besorgt
+  die Bilder (Abschnitt 5) und schneidet sie auf das einheitliche Porträt-Format zu.
+- Neue Figuren später = nur Datensatz + Bild. Eine kurze Anleitung `docs/aa-import/neue-unit.md`
+  („so fügt man eine Figur hinzu“) gehört dazu.
+
 ### P5 — Abschluss (Hauptsitzung)
 Screenshots (Lobby, Summon-Reveal, 10er-Ergebnis, Sammlung mit vielen Units, Unit-Detail, Weltkarte,
 Match in Welt 2 und 3), `docs/STATUS.md` Kurzbericht:
@@ -119,6 +139,7 @@ Match in Welt 2 und 3), `docs/STATUS.md` Kurzbericht:
 STATUS — Runde 8 (AA-Import)
 Was man jetzt sehen kann (5 Zeilen):
 Units: importiert / spielbar / ausgeblendet (Gründe):
+Crossover-Figuren (Liste):
 Effekte: unterstützt / No-op:
 Welten spielbar:
 Maßstab (Yen, HP, Studs):
@@ -145,7 +166,9 @@ Commits:
 - Lädt alle Bilder aus dem AA-Wiki über CT 113 (das Wiki ist aus deiner Umgebung gesperrt), legt sie
   auf `edge` unter `/srv/duskwardens/aa/` ab und liefert sie auf der Preview unter `/aa/` aus.
   Grundlage ist dein `client/public/aa/manifest.json` (P2) bzw. bis dahin die Unit-Namen aus
-  `units.json`.
+  `units.json`. Für Crossover-Figuren (P6) sucht sie Bilder nach `imageQuery`.
+- Alle Porträts werden auf ein **einheitliches Format** gebracht (quadratisch, gleicher Ausschnitt,
+  transparenter oder einheitlicher Hintergrund), damit AA- und Crossover-Figuren zusammenpassen.
 - Format: `/aa/units/<unit-id>.png` (Original) und `/aa/units/<unit-id>.webp` (verkleinert), dazu
   `/aa/index.json` mit allen vorhandenen IDs. Fehlende Bilder stehen in `/aa/missing.json`.
 
