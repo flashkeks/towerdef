@@ -4,7 +4,23 @@ Arbeitsauftrag: [`/run.md`](../run.md) (**Runde 8 neu: AA-Import** — 561 AA-Un
 Frühere Aufträge: [archiv/run-runde1.md](archiv/run-runde1.md), [archiv/run-runde2.md](archiv/run-runde2.md), [archiv/run-runde3.md](archiv/run-runde3.md), [archiv/run-runde4.md](archiv/run-runde4.md), [archiv/run-runde5.md](archiv/run-runde5.md), [archiv/run-runde6.md](archiv/run-runde6.md), [archiv/run-runde7.md](archiv/run-runde7.md), [archiv/run-runde8-verworfen.md](archiv/run-runde8-verworfen.md).
 
 
-## Runde 7
+## Runde 8 (AA-Import)
+
+Letzte Aktualisierung: 2026-10-07 (Runde 8 gestartet, P0)
+
+| Paket | Inhalt | Status | Agent (Modell) | Was man jetzt sehen kann |
+|---|---|---|---|---|
+| P0 | Status | **erledigt** | Hauptsitzung | Runde 7 abgeschlossen (Kurzbericht unten), Kurswechsel gelesen. Stand vor Runde 8: sim 290, meta 105, client 198 Tests, smoke 299 Prüfungen grün |
+| P1 | Baukasten im Simulator (Angriffsformen, Stufen-Angriffe, Damage-Typen, Elemente, Crit, 22 Effekte, Maßstab) | offen | 1 × Sonnet, allein | zuerst |
+| P2 | Importer (561 Units, Evolutionen, Traits, Banner, Bild-Manifest) | offen | 1 × Sonnet | nach P1 |
+| P3 | Welten, Acts, Maps (≥ 3 spielbar) | offen | 1 × Sonnet | nach P1, parallel zu P2 |
+| P4 | Interface-Neubau | offen | 1 × Sonnet | nach P1, parallel |
+| P6 | Crossover-Figuren (25) | offen | 1 × Sonnet | nach P2 |
+| P5 | Abschluss | offen | Hauptsitzung | |
+
+Plan: P1 allein. Danach P2, P3, P4 parallel in Worktrees, P6 sobald P2 gemerged ist. Keine Balance-Messreihen, Bots nur Rauchtest, jedes Paket mit Screenshots in `client/docs/r8/`.
+
+## Runde 7 (abgeschlossen)
 
 Letzte Aktualisierung: 2026-10-07 (Runde 7 abgeschlossen, P7)
 
