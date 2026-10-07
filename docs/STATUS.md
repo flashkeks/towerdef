@@ -15,7 +15,7 @@ Letzte Aktualisierung: 2026-10-07 (Runde 7 gestartet, P0)
 | P2 | Unit-Level und Sterne im Simulator, Replay v3 | offen | 1 × Sonnet | nach P1 |
 | P3 | Gacha und Mock-Shop | offen | 1 × Sonnet | nach P1 |
 | P4 | Lobby und Meta-UI, Smoke Kreislauf | offen | 1 × Sonnet | nach P1 |
-| P5 | Belohnungen und Fortschritt | offen | 1 × Sonnet | nach P1 |
+| P5 | Belohnungen und Fortschritt | **erledigt** | 1 × Sonnet | `rewardFromReplay` rechnet das Replay mit der Sim nach (`meta/src/verify.ts`, v2/v3, ca. 70–100 ms), Hash-Abweichung = `replay-mismatch`, keine Buchung; Doppelmeldung = `already-reported`. Werte in `meta/data/rewards.json` (Niederlage gibt Gold + XP nach Welle). Gold-Kurve 40+10·(L−1), Spieler-XP 100+25·(L−1). Starter: 450 Crystals + alle Rare/Epic + Lancer (ohne Legendary schafft kein Bot Normal). Mythic-Erwartung Tag 18–30 bei 4 Siegen/Tag. +20 meta-Tests (59), +9 client-Tests. [balancing/meta.md](balancing/meta.md), [meta/README.md](../meta/README.md) |
 | P6 | Sechs neue Units | offen | 1 × Sonnet | nach P1 |
 | P7 | Abschluss | offen | Hauptsitzung | |
 

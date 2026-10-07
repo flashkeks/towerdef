@@ -19,11 +19,10 @@ import {
   importProfile,
   levelUp,
   listBanners,
-  matchSummaryFromReplayHead,
   migrate,
   newProfile,
   pull,
-  rewardForMatch,
+  rewardFromReplay,
   setTeam,
   withIdempotency,
   withIdempotencyAsync,
@@ -32,6 +31,7 @@ import {
   type PaymentProvider,
   type Profile,
 } from './meta';
+import { loadBrowserData } from '../sim';
 import { cryptoRandomInt, cryptoUuid } from './random';
 import { defaultStorage, type Persistence, type ProfileStorage } from './storage';
 
@@ -172,10 +172,13 @@ export class LocalBackend implements Backend {
     });
   }
 
-  async reportMatch(replay: ReplayFile, idemKey: string): ReturnType<Backend['reportMatch']> {
-    const s = matchSummaryFromReplayHead(replay);
-    if (!s.ok) return fail(s.code, s.message);
-    return this.mutate('reportMatch', { replayHash: s.summary.replayHash }, idemKey, 'reward', (p) => rewardForMatch(p, s.summary, this.env));
+  /**
+   * Belohnung aus dem Replay: wird mit der Sim nachgerechnet (`meta/src/verify.ts`), Angaben des Clients ausser dem Replay zaehlen nicht.
+   * Fehler: `replay-mismatch` (Hash/Ergebnis stimmt nicht), `invalid-replay`, `replay-incomplete`, `already-reported` u. a.
+   */
+  reportMatch(replay: ReplayFile, idemKey: string): ReturnType<Backend['reportMatch']> {
+    const head = { stage: replay?.stage, difficulty: replay?.difficulty, seed: replay?.seed, endTick: replay?.endTick, endHash: replay?.endHash };
+    return this.mutate('reportMatch', head, idemKey, 'reward', (p) => rewardFromReplay(p, replay, this.env, { data: loadBrowserData() }));
   }
 
   async shopCatalog(): ReturnType<Backend['shopCatalog']> {

@@ -1,0 +1,19 @@
+{
+  "_note": "STARTWERTE (Runde 7, P5), noch nicht kalibriert. Herleitung und Rechnung: docs/balancing/meta.md. Quellen: recommendations.md 13 (Crystals), 15 (XP-Kurve). Ganzzahlen, Raten in Basispunkten.",
+  "maxWaves": 20,
+  "crystals": {
+    "_note": "Nur Siege geben Crystals. Erst-Clear je Stufe und Schwierigkeit einmal, danach repeatBp vom Erst-Clear (kaufmaennisch gerundet: 25/38/50).",
+    "firstClear": { "normal": 100, "hard": 150, "nightmare": 200 },
+    "repeatBp": 2500
+  },
+  "gold": {
+    "_note": "Gold = win (nur Sieg) + perWave x erreichte Welle. Eine Niederlage in Welle 10 bringt also die Haelfte der Wellenpunkte, keinen Siegbonus.",
+    "win": { "normal": 150, "hard": 225, "nightmare": 300 },
+    "perWave": { "normal": 10, "hard": 15, "nightmare": 20 }
+  },
+  "xp": {
+    "_note": "Spieler-XP wie Gold. Sieg in Welle 20 = 100/150/200 (recommendations.md 15). Unit-XP gibt es nicht: Units steigen mit Gold (leveling.ts).",
+    "win": { "normal": 60, "hard": 90, "nightmare": 120 },
+    "perWave": { "normal": 2, "hard": 3, "nightmare": 4 }
+  }
+}

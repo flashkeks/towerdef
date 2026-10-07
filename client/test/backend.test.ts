@@ -4,6 +4,7 @@ import { LocalStorageTier, MemoryTier, ProfileStorage, makeEnvelope, type KeyVal
 import { cryptoRandomInt, cryptoUuid } from '../src/backend/random';
 import { testEnv, SCHEMA_VERSION, newProfile } from '../src/backend/meta';
 import type { ReplayFile } from '../src/game/recorder';
+import { botReplay } from './replay-fixture';
 
 class FakeLs implements KeyValueStore {
   data = new Map<string, string>();
@@ -25,7 +26,9 @@ class BrokenLs implements KeyValueStore {
 
 const key = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
 const mk = (ls: KeyValueStore = new FakeLs(), seed = 1) => new LocalBackend({ storage: new ProfileStorage([new LocalStorageTier(ls), new MemoryTier()]), env: testEnv(seed) });
-const fakeReplay = (over: Partial<ReplayFile> = {}) => ({ stage: 'standard20', difficulty: 'normal', seed: 4, complete: true, result: 'win', endWave: 20, endTick: 12000, endHash: 'deadbeef', ...over }) as unknown as ReplayFile;
+// echtes Replay aus einem Sim-Bot-Lauf (die Belohnung wird nachgerechnet, ein ausgedachter Hash zaehlt nicht mehr)
+const realWin = botReplay({ bot: 'wide', seed: 7 });
+const fakeReplay = (over: Partial<ReplayFile> = {}): ReplayFile => ({ ...realWin, ...over });
 
 describe('LocalBackend', () => {
   it('legt beim ersten Start ein Profil an, danach dasselbe', async () => {
