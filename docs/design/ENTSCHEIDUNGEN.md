@@ -19,6 +19,17 @@ Verbindlich für alle weiteren Runden. Die beantwortete Fragenliste liegt in
 | Grafikstil | **Pixel-Anime**: kleine Sprites im Spiel, große Portraits im Menü. Flat-Chibi bleibt als spätere Option denkbar |
 | Team | ca. 120 Std./Woche gesamt, **kein Zeitdruck**. Qualität vor Tempo |
 
+## Platzierung (Max, 07.10.2026, nach dem ersten echten Playtest)
+
+- **Freie Platzierung statt fester Slots.** Units werden irgendwo neben den Pfad gesetzt
+  (Kollision mit Pfad und anderen Units, Hügel-/Boden-Zonen als Flächen statt Punkte), wie in
+  Anime Adventures.
+- **Kein Limit je Unit-Typ.** Der Spieler darf von einer Unit so viele setzen, wie er bezahlen kann.
+- Beides macht das Balancing schwerer. Gegenmittel werden **in der Ökonomie** gesucht
+  (Kosten, Upgrade-Kurven, ggf. steigende Platzierkosten je weiterer gleicher Unit), nicht
+  durch ein hartes Limit. Ob doch eine Obergrenze nötig ist, entscheiden die Menschen nach
+  Messung und Playtest.
+
 ## Pitch: Sammeln **und** Entscheidungstiefe
 
 - Kern: **„The team you collect" + „Every coin is a bet"** (Pitch A + C).

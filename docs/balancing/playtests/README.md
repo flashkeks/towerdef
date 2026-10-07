@@ -52,3 +52,10 @@ SMOKE_PORT=4302 npm run replay-check -- --full  # bis zum Ende, Freitext, Downlo
 
 Ein Replay ist Seed + Befehle. Ändern sich die Spieldaten (`sim/data/*.json`, z. B. Bounty, Boss-HP, Kosten), läuft dieselbe Befehlsliste anders ab: Käufe scheitern an fehlenden Münzen, der End-Hash weicht ab. Darum steht die Spiel-Version (Commit) in jeder Datei.
 Zum Auswerten älterer Replays den passenden Stand auschecken (`git checkout VERSION -- sim/data`) oder das Replay als Verhaltensdaten lesen (Bericht ohne Hash-Prüfung). Nach jeder Balance-Änderung `beispiel-normal.json` neu erzeugen: `cd client && npm run build && npm run replay-check -- --full`, Datei aus der Ausgabe hierher kopieren (so geschehen beim Merge von Runde 5 P3).
+
+
+## Playtest-Log
+
+| Datei | Wer | Stufe | Ergebnis | Befund |
+|---|---|---|---|---|
+| `2026-10-07-max-normal-loss.json` | Max | Normal | verloren W18, Hash OK | Team ohne Farm, Titan im Team aber nie gekauft. Flieger-Leaks W8 (4) und W16 (10) = Luftabwehr fehlte. 5 × `cap-reached` beim Striker (Max: „kein Limit je Typ"). Starb mit 1132 ungenutzten Münzen. Bot `wide` gewinnt Normal zu 92 %: Normal ist für einen Erstspieler ohne Erklärung härter als für den Bot, Lesbarkeit von Flieger-Wellen prüfen |

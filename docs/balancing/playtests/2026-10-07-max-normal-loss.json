@@ -1,0 +1,668 @@
+{
+ "format": "towerdef-replay",
+ "formatVersion": 1,
+ "gameVersion": "4dba968 2026-10-07",
+ "stage": "standard20",
+ "difficulty": "normal",
+ "players": 1,
+ "seed": 1714275228,
+ "team": [
+  "striker",
+  "gunner",
+  "blaster",
+  "frost",
+  "titan",
+  "lancer"
+ ],
+ "cards": [],
+ "complete": true,
+ "result": "loss",
+ "endTick": 11278,
+ "endHash": "2fc79a02db8b0eda",
+ "endWave": 18,
+ "endLives": 0,
+ "endCoins": 1172,
+ "durationTicks": 11278,
+ "durationMs": 220949,
+ "date": "2026-10-07",
+ "commands": [
+  {
+   "tick": 61,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 0
+   },
+   "ok": true
+  },
+  {
+   "tick": 75,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 1
+   },
+   "ok": true
+  },
+  {
+   "tick": 80,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 2
+   },
+   "ok": true
+  },
+  {
+   "tick": 146,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 3
+   },
+   "ok": true
+  },
+  {
+   "tick": 244,
+   "player": 0,
+   "cmd": {
+    "type": "skipWave"
+   },
+   "ok": true
+  },
+  {
+   "tick": 606,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "blaster",
+    "slot": 8
+   },
+   "ok": true
+  },
+  {
+   "tick": 652,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "blaster",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "not-enough-coins"
+  },
+  {
+   "tick": 1007,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "blaster",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "not-enough-coins"
+  },
+  {
+   "tick": 1033,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "blaster",
+    "slot": 9
+   },
+   "ok": false,
+   "reason": "not-enough-coins"
+  },
+  {
+   "tick": 1082,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "blaster",
+    "slot": 9
+   },
+   "ok": true
+  },
+  {
+   "tick": 1740,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 1
+   },
+   "ok": true
+  },
+  {
+   "tick": 2176,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 2
+   },
+   "ok": true
+  },
+  {
+   "tick": 2563,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 21
+   },
+   "ok": true
+  },
+  {
+   "tick": 3534,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "lancer",
+    "slot": 7
+   },
+   "ok": true
+  },
+  {
+   "tick": 4203,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "frost",
+    "slot": 5
+   },
+   "ok": true
+  },
+  {
+   "tick": 4352,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "gunner",
+    "slot": 6
+   },
+   "ok": true
+  },
+  {
+   "tick": 4636,
+   "player": 0,
+   "cmd": {
+    "type": "sell",
+    "entityId": 1
+   },
+   "ok": true
+  },
+  {
+   "tick": 4664,
+   "player": 0,
+   "cmd": {
+    "type": "sell",
+    "entityId": 2
+   },
+   "ok": true
+  },
+  {
+   "tick": 4694,
+   "player": 0,
+   "cmd": {
+    "type": "sell",
+    "entityId": 4
+   },
+   "ok": true
+  },
+  {
+   "tick": 4724,
+   "player": 0,
+   "cmd": {
+    "type": "sell",
+    "entityId": 3
+   },
+   "ok": true
+  },
+  {
+   "tick": 4815,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 17
+   },
+   "ok": true
+  },
+  {
+   "tick": 4830,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 18
+   },
+   "ok": true
+  },
+  {
+   "tick": 4841,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 19
+   },
+   "ok": true
+  },
+  {
+   "tick": 4852,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 11
+   },
+   "ok": true
+  },
+  {
+   "tick": 5221,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "gunner",
+    "slot": 22
+   },
+   "ok": true
+  },
+  {
+   "tick": 5276,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "gunner",
+    "slot": 4
+   },
+   "ok": true
+  },
+  {
+   "tick": 5512,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 0
+   },
+   "ok": true
+  },
+  {
+   "tick": 5761,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 1
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 5799,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 1
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 5870,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 1
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 5978,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 1
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 6033,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "slot": 1
+   },
+   "ok": false,
+   "reason": "cap-reached"
+  },
+  {
+   "tick": 6162,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 183
+   },
+   "ok": true
+  },
+  {
+   "tick": 6256,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 183
+   },
+   "ok": true
+  },
+  {
+   "tick": 6935,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 21
+   },
+   "ok": true
+  },
+  {
+   "tick": 7619,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "gunner",
+    "slot": 14
+   },
+   "ok": true
+  },
+  {
+   "tick": 8141,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 113
+   },
+   "ok": true
+  },
+  {
+   "tick": 8943,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "frost",
+    "slot": 10
+   },
+   "ok": true
+  },
+  {
+   "tick": 9599,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "lancer",
+    "slot": 3
+   },
+   "ok": true
+  },
+  {
+   "tick": 10110,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "blaster",
+    "slot": 1
+   },
+   "ok": true
+  },
+  {
+   "tick": 10804,
+   "player": 0,
+   "cmd": {
+    "type": "useAbility",
+    "entityId": 134
+   },
+   "ok": true
+  }
+ ],
+ "controls": [
+  {
+   "type": "speed",
+   "tick": 226,
+   "speed": 3
+  },
+  {
+   "type": "speed",
+   "tick": 4594,
+   "speed": 1
+  },
+  {
+   "type": "speed",
+   "tick": 5356,
+   "speed": 3
+  }
+ ],
+ "waves": [
+  {
+   "wave": 1,
+   "startTick": 244,
+   "coinsStart": 200,
+   "coinsEnd": 320,
+   "livesStart": 30,
+   "livesEnd": 30,
+   "leaks": 0,
+   "leaksByEnemy": {},
+   "kills": 8
+  },
+  {
+   "wave": 2,
+   "startTick": 485,
+   "coinsStart": 425,
+   "coinsEnd": 160,
+   "livesStart": 30,
+   "livesEnd": 30,
+   "leaks": 0,
+   "leaksByEnemy": {},
+   "kills": 9
+  },
+  {
+   "wave": 3,
+   "startTick": 718,
+   "coinsStart": 270,
+   "coinsEnd": 20,
+   "livesStart": 30,
+   "livesEnd": 30,
+   "leaks": 0,
+   "leaksByEnemy": {},
+   "kills": 11
+  },
+  {
+   "wave": 4,
+   "startTick": 1088,
+   "coinsStart": 135,
+   "coinsEnd": 315,
+   "livesStart": 30,
+   "livesEnd": 30,
+   "leaks": 0,
+   "leaksByEnemy": {},
+   "kills": 14
+  },
+  {
+   "wave": 5,
+   "startTick": 1353,
+   "coinsStart": 435,
+   "coinsEnd": 263,
+   "livesStart": 30,
+   "livesEnd": 29,
+   "leaks": 1,
+   "leaksByEnemy": {
+    "elite": 1
+   },
+   "kills": 8
+  },
+  {
+   "wave": 6,
+   "startTick": 2096,
+   "coinsStart": 388,
+   "coinsEnd": 342,
+   "livesStart": 30,
+   "livesEnd": 30,
+   "leaks": 0,
+   "leaksByEnemy": {},
+   "kills": 19
+  },
+  {
+   "wave": 7,
+   "startTick": 2521,
+   "coinsStart": 472,
+   "coinsEnd": 432,
+   "livesStart": 30,
+   "livesEnd": 30,
+   "leaks": 0,
+   "leaksByEnemy": {},
+   "kills": 15
+  },
+  {
+   "wave": 8,
+   "startTick": 2941,
+   "coinsStart": 567,
+   "coinsEnd": 208,
+   "livesStart": 30,
+   "livesEnd": 23,
+   "leaks": 4,
+   "leaksByEnemy": {
+    "flyer": 4
+   },
+   "kills": 17
+  },
+  {
+   "wave": 9,
+   "startTick": 3542,
+   "coinsStart": 348,
+   "coinsEnd": 774,
+   "livesStart": 24,
+   "livesEnd": 24,
+   "leaks": 0,
+   "leaksByEnemy": {},
+   "kills": 17
+  },
+  {
+   "wave": 10,
+   "startTick": 4188,
+   "coinsStart": 919,
+   "coinsEnd": 256,
+   "livesStart": 25,
+   "livesEnd": 25,
+   "leaks": 0,
+   "leaksByEnemy": {},
+   "kills": 14
+  },
+  {
+   "wave": 11,
+   "startTick": 5088,
+   "coinsStart": 406,
+   "coinsEnd": 530,
+   "livesStart": 26,
+   "livesEnd": 26,
+   "leaks": 0,
+   "leaksByEnemy": {},
+   "kills": 35
+  },
+  {
+   "wave": 12,
+   "startTick": 5975,
+   "coinsStart": 685,
+   "coinsEnd": 488,
+   "livesStart": 27,
+   "livesEnd": 27,
+   "leaks": 2,
+   "leaksByEnemy": {
+    "brute": 2
+   },
+   "kills": 26
+  },
+  {
+   "wave": 13,
+   "startTick": 6875,
+   "coinsStart": 648,
+   "coinsEnd": 367,
+   "livesStart": 28,
+   "livesEnd": 17,
+   "leaks": 4,
+   "leaksByEnemy": {
+    "runner": 3,
+    "grunt": 1
+   },
+   "kills": 33
+  },
+  {
+   "wave": 14,
+   "startTick": 7675,
+   "coinsStart": 532,
+   "coinsEnd": 536,
+   "livesStart": 18,
+   "livesEnd": 18,
+   "leaks": 0,
+   "leaksByEnemy": {},
+   "kills": 25
+  },
+  {
+   "wave": 15,
+   "startTick": 8575,
+   "coinsStart": 706,
+   "coinsEnd": 553,
+   "livesStart": 19,
+   "livesEnd": 18,
+   "leaks": 1,
+   "leaksByEnemy": {
+    "elite": 1
+   },
+   "kills": 30
+  },
+  {
+   "wave": 16,
+   "startTick": 9371,
+   "coinsStart": 728,
+   "coinsEnd": 217,
+   "livesStart": 19,
+   "livesEnd": 14,
+   "leaks": 11,
+   "leaksByEnemy": {
+    "flyer": 10,
+    "brute": 1
+   },
+   "kills": 21
+  },
+  {
+   "wave": 17,
+   "startTick": 10271,
+   "coinsStart": 397,
+   "coinsEnd": 947,
+   "livesStart": 15,
+   "livesEnd": 5,
+   "leaks": 3,
+   "leaksByEnemy": {
+    "brute": 3
+   },
+   "kills": 20
+  },
+  {
+   "wave": 18,
+   "startTick": 11171,
+   "coinsStart": 1132,
+   "coinsEnd": 1172,
+   "livesStart": 6,
+   "livesEnd": 0,
+   "leaks": 0,
+   "leaksByEnemy": {},
+   "kills": 3
+  }
+ ],
+ "feedback": ""
+}
