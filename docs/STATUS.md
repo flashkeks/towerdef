@@ -90,7 +90,8 @@ Nächster Schritt: Playtests der Menschen abwarten (Replays nach docs/balancing/
 ```
 
 **Offene Fragen an die Menschen** (mit Empfehlung):
-- Bot-Messlatte: Welcher Bot ist „der beste“ für die Abnahme? `farm`/`coop` liegen über dem Korridor (98/86/48), vermutlich ein Bot-Pfad-Artefakt. Empfehlung: `wide` als Messlatte festschreiben, farm/coop untersuchen.
+- ~~Bot-Messlatte~~ **entschieden (Max, 07.10.2026): beste echte Strategie**, siehe ENTSCHEIDUNGEN.md § Schwierigkeit. Befund der Homelab-Sitzung: `farm` ist kein Fehler, sondern greedy + Farmen + spätes Verkaufen (`policyBot('farm', {share 0.45, sellLate})`); `coop` solo nutzt dieselbe Politik, daher identische Zahlen. Bots gehen durch dieselbe Befehls-Schnittstelle, können also nicht schummeln. Farm: Einsatz bis Stufe 4 = 2950, Ertrag 403/Wave, Payback ≈ 7 Wellen, Verkauf 40 %. Folge: **Farm-Ökonomie ist auf Hard dominant (86 % gegen `wide` 49 %)**. Nächster Schritt: Farm abschwächen (Ertragskurve der hohen Stufen, Farm-Limit oder geringerer Verkaufswert), dann Hard gegen `farm` kalibrieren, `wide` als zweite Linie berichten.
+- ~~Blaster trifft Flieger~~ **übernommen** in ENTSCHEIDUNGEN.md (Max, 07.10.2026).
 - Blaster trifft Luft (P3b) weicht von ENTSCHEIDUNGEN.md ab („nur Hill/Hybrid treffen Flieger“). Empfehlung: in ENTSCHEIDUNGEN.md nachtragen (macht Max).
 
 # Runde 4 (abgeschlossen; Balance-Reste gehen in Runde 5 P3 auf)

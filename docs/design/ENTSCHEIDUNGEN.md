@@ -9,7 +9,7 @@ Verbindlich für alle weiteren Runden. Die beantwortete Fragenliste liegt in
 | Thema | Entscheidung |
 |---|---|
 | MVP-Map | „Terrassenweg" (S-Kurve, eine Spur) |
-| Flyer | folgen dem normalen Pfad, nur Hill/Hybrid-Units treffen sie |
+| Flyer | folgen dem normalen Pfad. Treffen können sie Hill/Hybrid-Units **und der Blaster mit 75 % Schaden** (`airDamageBp`, zweite Flächen-Antwort auf Flieger-Pulks; Max, 06.10.2026) |
 | Engine | PixiJS v8 (Rückfall Phaser), Simulation strikt getrennt (`sim/`) |
 | Reihenfolge | M1 Solo-Prototyp → M2 Koop → M3 Sammeln/Gacha/Meta → M4 Inhalte |
 | Welt | **Grenzgilde im Nebelriss**: Fantasy-Abenteuer, warmherzig, eine Gilde hält die Linie gegen Schattenwesen |
@@ -40,6 +40,13 @@ Verbindlich für alle weiteren Runden. Die beantwortete Fragenliste liegt in
 - **K3 Weichen im Pfad: nein.**
 
 ## Schwierigkeit und Fail-State
+
+- **Messlatte für die Ziel-Siegquoten** (Normal 85–95, Hard 45–65, Nightmare 15–35 %) ist die
+  **beste echte Strategie**, nicht ein ausgewählter Bot (Max, 07.10.2026). Zählt ein Bot als
+  Strategie, die ein Mensch genauso spielen würde (z. B. `farm`: früh Farmen, spät verkaufen),
+  gilt sein Wert. Ist ein Bot nachweislich fehlerhaft (Befehl, den ein Mensch nicht geben kann,
+  oder Logikfehler mit Test belegt), wird er repariert, nicht ausgeklammert.
+  `wide` bleibt als zweite Linie für „durchschnittlicher Spieler" mitgemessen.
 
 - Stufen unterscheiden sich **über Regeln**: Modifier-Dichte, Elemente, Boss-Fähigkeiten,
   andere Wellen. HP-Faktoren nur als Feinjustierung.
