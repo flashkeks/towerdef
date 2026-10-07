@@ -17,3 +17,4 @@ export * from './rewards';
 export * from './leveling';
 export * from './starter';
 export * from './unit-mods';
+export * from './verify';

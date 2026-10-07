@@ -105,3 +105,21 @@ Dieselben Funktionen, derselbe Code: Der Server laedt das Profil (Zeile bzw. JSO
 mit `env = { randomInt: crypto.randomInt, now, newId: randomUUID }` und schreibt das Ergebnis in **einer** Transaktion zurueck. Die Belohnung wird dort aus dem
 Replay nachgerechnet (P5 bereitet `matchSummaryFromReplayHead` darauf vor). Die Tabellenform aus architecture 7.5 laesst sich aus `ledger`, `pullHistory`,
 `units`, `pity` und `idem` ableiten; der Client aendert sich nicht, weil `ServerBackend` dieselbe `Backend`-Schnittstelle bedient.
+
+## Belohnungen, Leveling, Starter (P5)
+
+**Belohnung aus dem Replay** (`verify.ts`, `rewards.ts`): `rewardFromReplay(profile, replay, env, opts)` rechnet das Replay mit der Sim nach (`verifyReplay`: Seed, Stufe, Befehle ->
+Ergebnis, erreichte Welle, End-Hash) und belohnt nur das Nachgerechnete; `endWave`, `result` usw. aus der Datei zaehlen nicht. Ablauf je Befehl wie `sim/scripts/replay.ts`
+(Tick anfahren, `apply`, `ok` vergleichen), am Ende Tick, Hash und Ergebnis. Fehler (alle ohne Buchung): `invalid-replay`, `replay-incomplete`, `replay-old-rules` (v1),
+`replay-unsupported` (Format > 3, mehr als 1 Spieler), `replay-mismatch` (Hash/Ergebnis/Befehl stimmt nicht), `unknown-difficulty`, `difficulty-locked`, `unit-not-owned`/`team-invalid`
+(nur wenn das Replay ein Team nennt), `already-reported`. Ledger-Referenz `match/<stage>-<difficulty>-<seed>-<endTick>-<hash>`: dasselbe Replay zahlt nur einmal.
+Im Browser reicht der Client die Spieldaten ueber `opts.data` (`loadBrowserData()`), weil `loadGameData` Dateien liest. Dauer ca. 70-100 ms je Lauf in Node.
+Formate v2 und v3: Im v3-Kopf stehende `unitMods` gehen unveraendert in `createSim`; `opts.unitMods` hat Vorrang. **Der Aufrufer muss pruefen**, dass die Mods zum Profil passen
+(`unitModsFor(profile, team)`): sonst koennte ein Replay sich selbst Level geben. Ein Replay mit `team: null` (aktueller Client) hat keine Besitzpruefung der platzierten Units.
+
+**Werte** (alles Startwerte, Rechnung in `docs/balancing/meta.md`): `data/rewards.json` (Crystals Erst-Clear 100/150/200, Wiederholung 25 %; Gold und Spieler-XP = Siegbonus +
+Wert je erreichter Welle; Niederlage zahlt Gold und XP nach Welle, keine Crystals). Stage-Fortschritt im Profil: `stages[stage][difficulty] = { clears, firstClearAt, bestWave }`.
+Unit-XP gibt es nicht (Units steigen mit Gold).
+**Leveling** (`leveling.ts`): `levelUpCost(L) = 40 + 10(L-1)`, Level 1-40, `levelUpTotalCost(von, bis)`; Codes `unit-not-owned`, `max-level`, `not-enough-gold`. Wirkung auf den Schaden: P2.
+**Spieler-XP** (`progression.ts`): `xpToReach(L) = 100(L-1) + 25(L-1)(L-2)/2` (L5 = 550, L25 = 9 300, L50 = 34 300); Freischaltung Hard/Nightmare unveraendert (P2).
+**Starter** (`starter.ts`): einmalig (`starter-already-claimed`), 450 Crystals (10er-Preis aus dem Banner), alle Rare und Epic plus `STARTER_EXTRA` (Lancer), Team auf diese Units.
