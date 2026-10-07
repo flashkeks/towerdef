@@ -18,7 +18,7 @@ const mk = (ls: KeyValueStore = new FakeLs()) => new LocalBackend({ storage: new
 
 // Ab Runde 7 (P4) wird das Replay ans Profil gebunden: jedes Profil holt zuerst das Starter-Geschenk, das Replay nennt dessen Team und Mods
 const win = starterReplay({ seed: 1 });
-const loss = starterReplay({ seed: 3, only: ['ichigo'] });
+const loss = starterReplay({ seed: 3, only: ['krillin'] });
 const withStarter = async (be: LocalBackend): Promise<LocalBackend> => {
   const g = await be.claimStarterGift(key(900));
   if (!g.ok) throw new Error(g.message);

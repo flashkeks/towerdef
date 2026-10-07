@@ -6,7 +6,7 @@ Stand: Runde 8 / P1 (07.10.2026). Quelle der Wahrheit im Code: `sim/src/data/sch
 
 ## Dateien
 
-Alles in `sim/data/units/*.json` wird geladen (alphabetisch) und zusammengeführt. Heute: `sample.json` (26 Units). P2 schreibt `aa.json`, P6 `crossover.json`.
+Alles in `sim/data/units/*.json` wird geladen (alphabetisch) und zusammengeführt. Heute: `aa.json` (550 Units, Importer P2). `sample.json` ist als Test-Fixture nach `sim/test/fixtures/sample-units.json` gewandert (sonst Doppel-IDs). P6 schreibt `crossover.json`. Zusatzfelder des Importers: `support` (`full`/`limited`/`hidden`) und `supportNotes`.
 
 ```jsonc
 {

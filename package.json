@@ -2,5 +2,13 @@
   "name": "towerdef",
   "private": true,
   "description": "Duskwardens: Workspace-Wurzel (sim = Simulationskern, meta = Profil/Ledger/Gacha ohne DOM, client = Browser-Client).",
-  "workspaces": ["sim", "meta", "client"]
+  "workspaces": [
+    "sim",
+    "meta",
+    "client"
+  ],
+  "scripts": {
+    "aa-import": "cd sim && npx tsx ../tools/aa-import/index.ts",
+    "aa-import:check": "cd sim && npx tsx ../tools/aa-import/index.ts --check"
+  }
 }

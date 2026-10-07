@@ -23,6 +23,7 @@ import {
   testEnv,
   withIdempotency,
   unitsOfRarity,
+  poolOfRarity,
   type BannerRates,
   type Pity,
   type Profile,
@@ -38,21 +39,21 @@ const need = (id: string): BannerRates => getBanner(id)!;
 const sigma = (p: number, n: number) => Math.sqrt((p * (1 - p)) / n);
 
 describe('Banner-Dateien', () => {
-  it('alle Dateien gueltig, als Startwerte markiert, mit Version; aktiv sind Standard und Starter', () => {
+  it('alle Dateien gueltig, als Startwerte markiert, mit Version; aktiv sind Standard, Special und Starter', () => {
     const all = allBanners();
-    expect(all.map((b) => b.bannerId).sort()).toEqual(['featured-example', 'standard', 'starter']);
+    expect(all.map((b) => b.bannerId).sort()).toEqual(['featured-example', 'special', 'standard', 'starter']);
     for (const b of all) {
       expect(b.calibrated).toBe(false);
-      expect(b.note).toContain('Startwerte (Runde 7), nicht kalibriert');
+      expect(b.note).toMatch(/Startwerte \(Runde [78].*nicht kalibriert/);
       expect(b.ratesVersion).toMatch(/^2026-/);
     }
-    expect(listBanners().map((b) => b.bannerId).sort()).toEqual(['standard', 'starter']);
+    expect(listBanners().map((b) => b.bannerId).sort()).toEqual(['special', 'standard', 'starter']);
     expect(need('featured-example').active).toBe(false);
   });
-  it('Standard = rec 13: 50 / 450, 70/25/4/1, Pity 150 und 35', () => {
+  it('Standard (Runde 8): 50 / 450, sechs Seltenheiten 69/24/5.4/1.3/0.25/0.05, Pity 150 (Mythic oder besser) und 35', () => {
     const b = need('standard');
     expect([b.costPerPull, b.costTen]).toEqual([50, 450]);
-    expect(b.tiers.map((t) => [t.rarity, t.baseRateBp])).toEqual([['rare', 7000], ['epic', 2500], ['legendary', 400], ['mythic', 100]]);
+    expect(b.tiers.map((t) => [t.rarity, t.baseRateBp])).toEqual([['rare', 6900], ['epic', 2400], ['legendary', 540], ['mythic', 130], ['secret', 25], ['exclusive', 5]]);
     expect(b.pity).toEqual({ top: { rarity: 'mythic', hardAt: 150 }, mid: { rarity: 'legendary', hardAt: 35 } });
   });
   it('inaktives Featured-Banner ist nicht ziehbar, Starter nur als 10er', () => {
@@ -69,8 +70,8 @@ describe('1 Mio. Wuerfe gegen die angezeigte Rate', () => {
     const r = resolveBanner(b);
     const N = 1_000_000;
     const env = rng(20261007);
-    const hits = [0, 0, 0, 0];
-    const natural = [0, 0, 0, 0];
+    const hits = r.tiers.map(() => 0);
+    const natural = r.tiers.map(() => 0);
     let pity: Pity = { sinceTop: 0, sinceMid: 0 };
     let sinceMythic = 0;
     let sinceLeg = 0;
@@ -88,11 +89,11 @@ describe('1 Mio. Wuerfe gegen die angezeigte Rate', () => {
       if (o.pityForced === 'top') forcedTop++;
       sinceMythic++;
       sinceLeg++;
-      if (o.rarity === 'mythic') {
+      if (['mythic', 'secret', 'exclusive'].includes(o.rarity)) {
         maxMythicGap = Math.max(maxMythicGap, sinceMythic);
         sinceMythic = 0;
       }
-      if (o.rarity === 'mythic' || o.rarity === 'legendary') {
+      if (o.rarity !== 'rare' && o.rarity !== 'epic') {
         maxLegGap = Math.max(maxLegGap, sinceLeg);
         sinceLeg = 0;
       }
@@ -100,7 +101,7 @@ describe('1 Mio. Wuerfe gegen die angezeigte Rate', () => {
     }
     const an = analyze(r);
     const view = bannerView(b, null);
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < r.tiers.length; i++) {
       const p = an.tierRate[i]!;
       expect(Math.abs(hits[i]! / N - p), `Stufe ${r.tiers[i]!.rarity}`).toBeLessThan(5 * sigma(p, N));
       // die angezeigte effektive Rate ist dieselbe Zahl (3 Nachkommastellen in %)
@@ -109,9 +110,10 @@ describe('1 Mio. Wuerfe gegen die angezeigte Rate', () => {
       const base = r.tiers[i]!.baseBp / 10000;
       expect(Math.abs(natural[i]! / N - base)).toBeLessThan(5 * sigma(base, N));
     }
-    // mit Pity liegt die Gesamtquote ueber der Basisrate (Mythic 1 % -> ~1,28 %)
-    expect(an.tierRate[3]!).toBeGreaterThan(0.01);
-    expect(1 / an.tierRate[3]!).toBeCloseTo(77.85, 0); // rec 13: E = (1 - 0,99^150) / 0,01 = 77,9
+    // mit Pity liegt die Gesamtquote von Mythic oder besser ueber der Basisrate (1,6 %)
+    const top = an.tierRate[3]! + an.tierRate[4]! + an.tierRate[5]!;
+    expect(top).toBeGreaterThan(0.016);
+    expect(1 / top).toBeCloseTo((1 - Math.pow(1 - 0.016, 150)) / 0.016, 0); // E = (1 - (1-p)^150) / p = 56,9
     expect(maxMythicGap).toBeLessThanOrEqual(150);
     expect(maxLegGap).toBeLessThanOrEqual(35);
     expect(forcedTop).toBeGreaterThan(0);
@@ -123,7 +125,7 @@ describe('1 Mio. Wuerfe gegen die angezeigte Rate', () => {
     const r = resolveBanner(b);
     const blocks = 100_000;
     const env = rng(77);
-    const hits = [0, 0, 0, 0];
+    const hits = r.tiers.map(() => 0);
     let upgraded = 0;
     for (let k = 0; k < blocks; k++) {
       const out = rollBatch(b, { sinceTop: 0, sinceMid: 0 }, 10, env);
@@ -134,7 +136,7 @@ describe('1 Mio. Wuerfe gegen die angezeigte Rate', () => {
     }
     const N = blocks * 10;
     const an = analyze(r);
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < r.tiers.length; i++) {
       const p = an.tierRate[i]!;
       expect(Math.abs(hits[i]! / N - p), r.tiers[i]!.rarity).toBeLessThan(5 * sigma(p, N));
     }
@@ -180,7 +182,8 @@ describe('Pity: Zaehler, Ziehungsverlauf, Ledger', () => {
     const near = { ...rich(10_000), pity: { standard: { sinceTop: 149, sinceMid: 0 } } };
     const f = pull(near, 'standard', 1, env);
     if (!f.ok) throw new Error(f.message);
-    expect(f.profile.pullHistory[0]).toMatchObject({ rarity: 'mythic', pityBefore: 149, pityAfter: 0 });
+    expect(['mythic', 'secret', 'exclusive']).toContain(f.profile.pullHistory[0]!.rarity);
+    expect(f.profile.pullHistory[0]).toMatchObject({ pityBefore: 149, pityAfter: 0 });
     expect(['top', null]).toContain(f.profile.pullHistory[0]!.pityForced);
   });
   it('Duplikat -> copies + 1, kein Extra-Material; zu wenig / negativer Saldo -> Fehlercode', () => {
@@ -265,7 +268,7 @@ describe('Anzeige und Wurf lesen dieselben Daten', () => {
     expect(resolveBanner(manip)).toBe(resolveBanner(manip));
   });
   it('Hash der Anzeige = Hash der Datei auf der Platte', () => {
-    for (const id of ['standard', 'starter', 'featured-example']) {
+    for (const id of ['standard', 'starter', 'special', 'featured-example']) {
       const file = JSON.parse(readFileSync(new URL(`../data/banners/${id}.json`, import.meta.url), 'utf8'));
       expect(bannerView(need(id), null).ratesHash).toBe(checksum(canonicalJson(file)));
     }
@@ -274,26 +277,26 @@ describe('Anzeige und Wurf lesen dieselben Daten', () => {
     const b = need('standard');
     const prof = { ...rich(), pity: { standard: { sinceTop: 37, sinceMid: 12 } } };
     const v = bannerView(b, prof);
-    expect(v.tiers.map((t) => t.baseText)).toEqual(['70%', '25%', '4%', '1%']);
+    expect(v.tiers.map((t) => t.baseText)).toEqual(['69%', '24%', '5.4%', '1.3%', '0.25%', '0.05%']);
     for (const t of v.tiers) {
       expect(t.populated).toBe(true);
       expect(t.units.reduce((s, u) => s + u.basePct, 0)).toBeCloseTo(t.basePct, 1);
       expect(t.units.reduce((s, u) => s + u.effectivePct, 0)).toBeCloseTo(t.effectivePct, 1);
     }
-    expect(v.tiers[0]!.units.map((u) => u.unitId).sort()).toEqual(unitsOfRarity('rare').sort());
-    expect(v.pity.map((x) => x.text)).toEqual(['Pulls since last Mythic: 37 / 150', 'Pulls since last Legendary or better: 12 / 35']);
-    expect(v.rules.join(' ')).toContain('Guaranteed Mythic on pull 150');
+    expect(v.tiers[0]!.units.map((u) => u.unitId).sort()).toEqual(poolOfRarity('summonable', 'rare').sort());
+    expect(v.pity.map((x) => x.text)).toEqual(['Pulls since last Mythic or better: 37 / 150', 'Pulls since last Legendary or better: 12 / 35']);
+    expect(v.rules.join(' ')).toContain('Guaranteed Mythic or better on pull 150');
     expect(v.rules.join(' ')).toContain('no hidden soft pity');
     expect(v.prices).toEqual({ single: 50, ten: 450 });
     expect(v.startValuesNotice).toContain('not calibrated');
     expect(v.status).toBe('ok');
-    expect(v.expected.pullsPerTop).toBeCloseTo(77.85, 0);
-    expect(v.expected.crystalsPerTop).toBeGreaterThan(3000);
-    expect(v.expected.crystalsPerTop).toBeLessThan(4000);
+    expect(v.expected.pullsPerTop).toBeCloseTo((1 - Math.pow(1 - 0.016, 150)) / 0.016, 0);
+    expect(v.expected.crystalsPerTop).toBeGreaterThan(2000);
+    expect(v.expected.crystalsPerTop).toBeLessThan(3500);
     // naechster Zug: Basisrate, bis die Garantie greift; dann 100 %
-    expect(v.tiers[3]!.nextPullText).toBe('1%');
+    expect(v.tiers[3]!.nextPullText).toBe('1.3%');
     const v149 = bannerView(b, { ...prof, pity: { standard: { sinceTop: 149, sinceMid: 0 } } });
-    expect(v149.tiers[3]!.nextPullText).toBe('100%');
+    expect(v149.tiers[3]!.nextPullText).toBe('99.7%'); // Mythic-Stufe erzwungen; Secret/Exclusive (0,3 %) bleiben natuerlich
     expect(v149.expected.pullsToNextTop).toBe(1);
     expect(v.expected.pullsToNextTop!).toBeLessThan(v.expected.pullsPerTop! + 150);
     // Starter: Block-Garantie im Klartext
@@ -308,10 +311,10 @@ describe('Anzeige und Wurf lesen dieselben Daten', () => {
 describe('leere Seltenheit', () => {
   it('Rate wird umgelegt, Pity-Regel ohne Stufe abgeschaltet, Anzeige zeigt dasselbe', () => {
     const b: BannerRates = JSON.parse(JSON.stringify(need('standard')));
-    b.tiers = b.tiers.map((t) => (t.rarity === 'mythic' ? { ...t, units: [] } : t));
+    b.tiers = b.tiers.map((t) => (['mythic', 'secret', 'exclusive'].includes(t.rarity) ? { ...t, units: [] } : t));
     const v = bannerView(b, null);
     expect(v.tiers[3]!.populated).toBe(false);
-    expect(v.tiers[2]!.baseText).toBe('5%');
+    expect(v.tiers[2]!.baseText).toBe('7%');
     expect(v.tiers[3]!.effectivePct).toBe(0);
     expect(v.pity.map((x) => x.kind)).toEqual(['mid']);
     expect(v.notes.join(' ')).toContain('Mythic');
@@ -322,7 +325,7 @@ describe('leere Seltenheit', () => {
     for (let i = 0; i < 50_000; i++) {
       const o = rollOne(b, pity, env);
       if ('ok' in o) throw new Error('x');
-      expect(o.rarity).not.toBe('mythic');
+      expect(['mythic', 'secret', 'exclusive']).not.toContain(o.rarity);
       gap++;
       if (o.rarity === 'legendary') {
         maxLegGap = Math.max(maxLegGap, gap);

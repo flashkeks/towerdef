@@ -3,7 +3,8 @@
  * `rollOne`/`pull` und `bannerView` (banner-view.ts) lesen beide ueber `resolveBanner()` dasselbe Objekt.
  *
  * Regeln (alle Werte stehen in der Datei, nichts davon ist hier verdrahtet):
- * - Stufe nach `baseRateBp` (Summe 10000), Unit nach Gewicht (`weightBp`, sonst gleichverteilt) aus dem Pool der Stufe.
+ * - Stufe nach `baseRateBp` (Summe 10000), Unit nach Gewicht (`weightBp`, sonst gleichverteilt) aus dem Pool der Stufe (Runde 8: `pool` je Stufe,
+ *   561 AA-Units; Seltenheiten Rare/Epic/Legendary/Mythic/Secret/Exclusive).
  * - Pity: `top` (Hoechststufe) spaetestens beim `hardAt`-ten Zug seit dem letzten Treffer, `mid` (Mittelstufe oder besser) ebenso.
  *   Vorrang top > mid > Garantie im 10er. Zaehler `sinceTop` / `sinceMid` bleiben ueber Ziehungen und Sitzungen erhalten (Profil).
  *   KEINE weiche Pity: die Rate bleibt bis zum garantierten Zug bei der angezeigten Basisrate.
@@ -17,9 +18,10 @@
  */
 import { z } from 'zod';
 import featuredExampleJson from '../data/banners/featured-example.json';
+import specialJson from '../data/banners/special.json';
 import standardJson from '../data/banners/standard.json';
 import starterJson from '../data/banners/starter.json';
-import { RARITIES, unitsOfRarity, type Rarity } from './catalog';
+import { RARITIES, poolOfRarity, type PoolName, type Rarity } from './catalog';
 import type { MetaEnv } from './env';
 import { book, KIND } from './ledger';
 import { PULL_HISTORY_MAX, nextCounter, type Pity, type Profile, type PullRecord } from './profile';
@@ -58,6 +60,8 @@ export const BannerRatesSchema = z
           baseRateBp: z.number().int().min(0),
           /** Verteilung in der Stufe; ohne Angabe: alle Units der Seltenheit aus sim/data/units.json, gleichverteilt */
           units: z.array(z.object({ unitId: z.string(), weightBp: z.number().int().min(1).optional() })).optional(),
+          /** Pool ohne `units`-Liste (Runde 8): `summonable` (Standard, Vorgabe), `special` (begrenzt/Event/Rate-up) oder `all`. Siehe `poolOfRarity` in catalog.ts */
+          pool: z.enum(['summonable', 'special', 'all']).optional(),
         }),
       )
       .min(1),
@@ -75,7 +79,7 @@ export type BannerRates = z.infer<typeof BannerRatesSchema>;
 
 /** Registry: eine Datei je Banner. */
 const ALL_BANNERS: Record<string, BannerRates> = {};
-for (const raw of [standardJson, starterJson, featuredExampleJson]) {
+for (const raw of [standardJson, starterJson, specialJson, featuredExampleJson]) {
   const b = BannerRatesSchema.parse(raw);
   ALL_BANNERS[b.bannerId] = b;
 }
@@ -125,11 +129,11 @@ export interface ResolvedBanner {
 
 const cache = new WeakMap<BannerRates, ResolvedBanner>();
 
-/** Pool einer Stufe als (unitId, Gewicht). Eine ausdrueckliche Liste (auch leer) gilt; ohne Angabe alle Units der Seltenheit aus `units.json`. */
+/** Pool einer Stufe als (unitId, Gewicht). Eine ausdrueckliche Liste (auch leer) gilt; ohne Angabe der Pool der Stufe (`pool`, Vorgabe `summonable`) aus den Unit-Dateien. */
 export function tierPool(b: BannerRates, rarity: Rarity): { unitId: string; weight: number }[] {
   const tier = b.tiers.find((t) => t.rarity === rarity);
   if (tier?.units) return tier.units.map((u) => ({ unitId: u.unitId, weight: u.weightBp ?? 1 }));
-  return unitsOfRarity(rarity).map((unitId) => ({ unitId, weight: 1 }));
+  return poolOfRarity((tier?.pool ?? 'summonable') as PoolName, rarity).map((unitId) => ({ unitId, weight: 1 }));
 }
 
 export function resolveBanner(b: BannerRates): ResolvedBanner {

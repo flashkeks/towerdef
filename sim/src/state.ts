@@ -122,6 +122,9 @@ export interface UnitState {
   lvlBp: number;
   traitBp: number;
   yieldBp: number;
+  /** Trait-Reichweite und -Tempo (Bp, nur gesetzt wenn != 0). */
+  traitRangeBp?: number;
+  traitSpaBp?: number;
   /** Selbst-Buffs aus Effekten (Runde 8): Battlelust-Stapel (je Angriff), Snatched-Stapel + Restdauer, Sunshine-Wellen, Motivate-Buffs von Verbündeten (Bp + Restticks). */
   lust: number;
   snatch: number;
@@ -230,4 +233,7 @@ export interface UnitMod {
   lvlBp?: number;
   traitBp?: number;
   yieldBp?: number;
+  /** Trait (Runde 8 / P2): Reichweite in Bp (+1000 = +10 %) und Angriffsintervall in Bp (-1000 = 10 % schneller). Fehlt = 0; nur wenn gesetzt, landen die Felder im Unit-Zustand (Replay-Hashes älterer Läufe bleiben gleich). */
+  rangeBp?: number;
+  spaBp?: number;
 }

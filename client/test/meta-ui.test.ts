@@ -91,7 +91,7 @@ describe('Rolle und Filter (aus den Sim-Daten, keine Unit-Liste)', () => {
     const u = units();
     expect(filterUnits(u, defs, NO_FILTER)).toHaveLength(u.length);
     expect(filterUnits(u, defs, { ...NO_FILTER, rarity: 'epic' }).every((x) => x.rarity === 'epic')).toBe(true);
-    expect(filterUnits(u, defs, { ...NO_FILTER, role: 'economy' }).map((x) => x.unitId)).toEqual(['speedwagon']);
+    expect(filterUnits(u, defs, { ...NO_FILTER, role: 'economy' }).map((x) => x.unitId)).toContain('speedwagon');
     expect(filterUnits(u, defs, { ...NO_FILTER, placement: 'hill' }).every((x) => defs.get(x.unitId)!.placement === 'hill')).toBe(true);
     expect(filterUnits(u, defs, { ...NO_FILTER, ownedOnly: true }).every((x) => x.owned)).toBe(true);
     expect(filterUnits(u, defs, { ...NO_FILTER, rarity: 'secret', ownedOnly: true })).toEqual([]);
@@ -140,7 +140,7 @@ describe('Summon', () => {
   });
   it('Ratentabelle kommt komplett aus dem View (Summe 100 %, Raten stehen im Text)', () => {
     const v = std(null);
-    expect(v.tiers.map((t) => t.baseText)).toEqual(['70%', '25%', '4%', '1%']);
+    expect(v.tiers.map((t) => t.baseText)).toEqual(['69%', '24%', '5.4%', '1.3%', '0.25%', '0.05%']);
     expect(v.rules.length).toBeGreaterThan(0);
     expect(v.ratesHash.length).toBeGreaterThan(8);
   });

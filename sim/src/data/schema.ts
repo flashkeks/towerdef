@@ -390,6 +390,9 @@ export const UnitSchema = z.preprocess(aaAlias, z.object({
   shinyVariant: z.boolean().nullish(),
   imageQuery: z.string().nullish(),
   source: z.string().nullish(),
+  /** Importer (P2): `full` = voll modelliert, `limited` = spielbar mit Lücken (`supportNotes`), `hidden` = ohne Kampf-/Farm-Wirkung, nicht im Gacha. Die Sim wertet es nicht aus. */
+  support: z.enum(['full', 'limited', 'hidden']).nullish(),
+  supportNotes: z.array(z.string()).nullish(),
 }));
 export type UnitData = z.infer<typeof UnitSchema>;
 export type UnitLevelData = z.infer<typeof UnitLevelSchema>;

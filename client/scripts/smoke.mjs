@@ -136,7 +136,10 @@ async function playStage(browser, [W, H]) {
   /** Klick auf eine gesetzte Unit (Mitte). */
   const clickUnit = (u, opts) => clickWorld(page, u.x, u.y, opts);
   const press = (k) => page.keyboard.press(k);
-  const pickKey = async (def, s) => press(String(s.order.indexOf(def) + 1));
+  const pickKey = async (def, s) => {
+    await press(String(s.order.indexOf(def) + 1));
+    await sleep(250); // die Seitenleiste aendert beim Waehlen die Breite (Brett verschiebt sich): erst danach klicken
+  };
 
   const full = FULL.includes(tag);
   const shot = (name) => (W === 1280 ? page.screenshot({ path: resolve(shotDir, `p3-smoke-${name}.png`) }) : Promise.resolve());
@@ -171,7 +174,7 @@ async function playStage(browser, [W, H]) {
     await clickSel('.btn.speed[data-speed="3"]');
     if (placeFirst) {
       const s0 = await snap();
-      const unit = ['ichigo', 'josuke'].find((u) => s0.order.includes(u));
+      const unit = ['jotaro', 'law'].find((u) => s0.order.includes(u));
       const spots = await readSpots(page, unit, 2);
       await pickKey(unit, s0);
       await clickAt(...spots[0]);
@@ -202,7 +205,7 @@ async function playStage(browser, [W, H]) {
   await page.waitForSelector('.starter-card.done');
   w = await waitWallet('w.crystals === 450');
   ok(w.crystals === 450, `Starter-Geschenk: 450 Crystals (${w.crystals})`);
-  ok((await page.locator('.starter-units .strip-unit').count()) >= 5 && (await page.locator('.team-strip .strip-unit').count()) === 5, 'Starter-Units und Team (5) in der Lobby sichtbar');
+  ok((await page.locator('.starter-units .strip-unit').count()) >= 5 && (await page.locator('.team-strip .strip-unit').count()) === 6, 'Starter-Units und Team (6) in der Lobby sichtbar');
   ok(!(await page.locator('.lobby-play').isDisabled()), 'Play frei nach dem Geschenk');
   await shot('lobby');
 
@@ -211,11 +214,11 @@ async function playStage(browser, [W, H]) {
   await page.waitForSelector('.pull-btn[data-count="10"]');
   ok(await page.locator('.rates-table').isVisible(), 'Ratentabelle direkt auf dem Bildschirm sichtbar (nichts aufzuklappen)');
   const rates = await page.locator('.rates-table tr.tier .base').allTextContents();
-  ok(rates.join(',') === '70%,25%,4%,1%', `Raten 70/25/4/1 % (${rates.join(',')})`);
+  ok(rates.join(',') === '69%,24%,5.4%,1.3%,0.25%,0.05%', `Raten 69/24/5.4/1.3/0.25/0.05 % (${rates.join(',')})`);
   ok(/Starting values/.test(await text('.start-values')) && /Rates version/.test(await text('.rates-version')), 'Hinweis "Startwerte" und Ratenversion sichtbar');
   ok(/Pull x10 · Mythic pity 0\/150/.test(await text('.pull-btn[data-count="10"] strong')), `Pity-Zaehler auf dem Knopf: "${await text('.pull-btn[data-count="10"] strong')}"`);
-  ok((await page.locator('.pity-row').count()) === 2 && /Mythic: 0 \/ 150/.test(await text('.pity-top')), 'Pity-Zeilen (Mythic, Legendary oder besser) sichtbar');
-  ok((await page.locator('.banner-tab').count()) === 2, 'Banner: Standard und Starter (solange verfuegbar)');
+  ok((await page.locator('.pity-row').count()) === 2 && /Mythic or better: 0 \/ 150/.test(await text('.pity-top')), 'Pity-Zeilen (Mythic, Legendary oder besser) sichtbar');
+  ok((await page.locator('.banner-tab').count()) === 3, 'Banner: Standard, Starter und Special (solange verfuegbar)');
   await clickSel('.pull-btn[data-count="10"]');
   await page.waitForSelector('.reveal');
   ok(await page.evaluate(() => document.querySelector('.pull-btn[data-count="10"]').disabled), 'Knopf waehrend des Zugs gesperrt');
@@ -255,14 +258,14 @@ async function playStage(browser, [W, H]) {
   // ---- Team aus der Sammlung -----------------------------------------------------------------------------------------------
   await go('team');
   await page.waitForSelector('.team-slot.filled');
-  ok((await page.locator('.team-slot.filled').count()) === 5, 'Team: 5 Slots belegt (Starter: alle Rare/Epic plus Goku)');
+  ok((await page.locator('.team-slot.filled').count()) === 6, 'Team: 6 Slots belegt (Starter: 12 AA-Units, die ersten sechs)');
   const firstSlot = await page.locator('.team-slot.filled').first().getAttribute('data-unit');
   await clickSel('.team-slot.filled');
-  ok((await page.locator('.team-slot.filled').count()) === 4 && (await page.locator('.team-save').isDisabled()), 'Slot leeren: 4 von 5, Speichern gesperrt');
+  ok((await page.locator('.team-slot.filled').count()) === 5 && (await page.locator('.team-save').isDisabled()), 'Slot leeren: 5 von 6, Speichern gesperrt');
   await page.locator(`.team-pick .unit-tile[data-unit="${firstSlot}"]`).scrollIntoViewIfNeeded(); // Raster ist lang: Kachel kann unter dem Rand liegen
   await clickSel(`.team-pick .unit-tile[data-unit="${firstSlot}"]`);
   await sleep(150);
-  ok((await page.locator('.team-slot.filled').count()) === 5 && !(await page.locator('.team-save').isDisabled()), 'Unit aus der Sammlung gewaehlt: 5 von 5');
+  ok((await page.locator('.team-slot.filled').count()) === 6 && !(await page.locator('.team-save').isDisabled()), 'Unit aus der Sammlung gewaehlt: 6 von 6');
   await shot('team');
   await clickSel('.team-save');
   await page.waitForSelector('.flash.good');
@@ -289,7 +292,7 @@ async function playStage(browser, [W, H]) {
     const x = window.__duskwardens.session();
     return { team: x.team, mods: x.unitMods.length, defs: x.teamCatalog().length };
   });
-  ok(sess.team?.length === 5 && sess.mods === 5 && sess.defs === 5, `Session mit Team (${sess.team?.length}) und Unit-Mods (${sess.mods}) aus dem Profil`);
+  ok(sess.team?.length === 6 && sess.mods === 6 && sess.defs === 6, `Session mit Team (${sess.team?.length}) und Unit-Mods (${sess.mods}) aus dem Profil`);
 
   // ---- Layout: alles im Fenster, keine Slot-Knoepfe mehr --------------------------------------------------------------
   const lay = await page.evaluate(() => {
@@ -326,7 +329,7 @@ async function playStage(browser, [W, H]) {
     ok(re.test(t), `${what}: Toast "${t}"`);
   };
   const hillUnit = ['krillin', 'goku_ssj3'].find((u) => s.order.includes(u));
-  const groundUnit = ['ichigo', 'josuke'].find((u) => s.order.includes(u));
+  const groundUnit = ['jotaro', 'law'].find((u) => s.order.includes(u));
   const hybridUnit = ['rikka_evo', 'monet'].find((u) => s.order.includes(u)); // im Starter-Team keiner: Block entfaellt
   await toastAfter(() => clickAt(3000, 3000), /Nothing here/, 'Klick ins Leere ohne Unit-Wahl');
   await pickKey(hillUnit, s);
@@ -536,12 +539,12 @@ async function playStage(browser, [W, H]) {
   // ---- Unit leveln (Gold aus dem Match), zweites Match mit den Level-Mods --------------------------------------------------
   await go('units');
   await page.waitForSelector('.unit-tile');
-  await clickSel('.unit-tile[data-unit="ichigo"]');
+  await clickSel('.unit-tile[data-unit="jotaro"]');
   const goldBefore = (await wallet()).gold;
   ok(!(await page.locator('.levelup').isDisabled()), `Level-Up frei mit ${goldBefore} Gold`);
   await clickSel('.levelup');
   w = await waitWallet(`w.gold === ${goldBefore - 40}`);
-  ok(w.gold === goldBefore - 40 && /Level 2 \/ 40/.test(await text('.ud-level')), `Ichigo Level 2 fuer 40 Gold (Gold ${w.gold}, ${await text('.ud-level')})`);
+  ok(w.gold === goldBefore - 40 && /Level 2 \/ 40/.test(await text('.ud-level')), `Jotaro Level 2 fuer 40 Gold (Gold ${w.gold}, ${await text('.ud-level')})`);
   ok(/Collection bonus: \+\d+(\.\d+)?% damage/.test(await text('.ud-power')), `Sammlungs-Bonus sichtbar: "${await text('.ud-power')}"`);
   await shot('units');
   await go('play');
@@ -551,8 +554,8 @@ async function playStage(browser, [W, H]) {
   ok(/Each clear: 20 crystals|First clear: 80 crystals/.test(await text('.stage-card[data-difficulty="normal"] .stage-reward')) && /Best wave \d+ \/ 15/.test(await text('.stage-card[data-difficulty="normal"] .stage-best')), `Stage zeigt Belohnung und Bestwelle: "${await text('.stage-card[data-difficulty="normal"] .stage-reward')}", "${await text('.stage-card[data-difficulty="normal"] .stage-best')}"`);
   await clickSel('.stage-card[data-difficulty="normal"]');
   await page.waitForSelector('canvas.board');
-  const mods2 = await page.evaluate(() => window.__duskwardens.session().unitMods.find((m) => m.unit === 'ichigo')?.lvlBp);
-  ok(mods2 > 10000, `zweites Match: Ichigo-Mod aus dem Level (lvlBp ${mods2})`);
+  const mods2 = await page.evaluate(() => window.__duskwardens.session().unitMods.find((m) => m.unit === 'jotaro')?.lvlBp);
+  ok(mods2 > 10000, `zweites Match: Jotaro-Mod aus dem Level (lvlBp ${mods2})`);
   await rush(true);
   await page.waitForSelector('.reward-box[data-state="ok"], .reward-box[data-state="error"]', { timeout: 30000 });
   ok((await page.locator('.reward-box').getAttribute('data-state')) === 'ok', `zweites Match mit Level-Mods wird belohnt (Replay passt zum Profil; ${await text('.reward-error')})`);
@@ -581,7 +584,7 @@ async function playStage(browser, [W, H]) {
   const after = await readState();
   ok(JSON.stringify(after.wallet) === JSON.stringify(before.wallet), `Neuladen: Salden gleich (${JSON.stringify(before.wallet)} -> ${JSON.stringify(after.wallet)})`);
   ok(after.pity === before.pity && after.history === before.history && after.history === 10, `Neuladen: Pity und Verlauf gleich ("${before.pity}", ${after.history} Zuege)`);
-  ok(JSON.stringify(after.units) === JSON.stringify(before.units) && after.units.some((u) => u.startsWith('ichigo:true:Lv 2')), 'Neuladen: Sammlung und Level gleich (Ichigo Lv 2)');
+  ok(JSON.stringify(after.units) === JSON.stringify(before.units) && after.units.some((u) => u.startsWith('jotaro:true:Lv 2')), 'Neuladen: Sammlung und Level gleich (Jotaro Lv 2)');
 
   // ---- Export -> Reset -> Import (nur 1280x720) ------------------------------------------------------------------------------
   if (W === 1280) {
