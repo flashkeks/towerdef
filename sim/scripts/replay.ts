@@ -6,7 +6,7 @@
  *
  * Exit-Code 0 = Hash und Ergebnis stimmen, 1 = Abweichung, 2 = Datei/Aufruf unbrauchbar, 3 = altes Regelwerk (Format v1, Slots).
  *
- * Formatversionen: v1 = Befehl `place` mit Slot-ID (Regelwerk bis Runde 5), v2 = `place` mit Position `x`, `y` in Milli-Tiles
+ * Formatversionen: v3 = wie v2 plus `unitMods` im Kopf (Runde 7: Unit-Level/Sterne), fehlt es, gilt neutral. v1 = Befehl `place` mit Slot-ID (Regelwerk bis Runde 5), v2 = `place` mit Position `x`, `y` in Milli-Tiles
  * (freie Platzierung, Runde 6). v1-Dateien lassen sich nicht mehr nachspielen: Slots gibt es nicht mehr, ohne `cap` und mit anderem
  * Zustand stimmt kein Hash. Sie bleiben als Dokument lesbar (Bericht aus den Wellen-Daten der Datei, `--compare` geht weiter).
  * `--compare`: legt den Bot-Lauf (gleiche Stufe, gleicher Seed, Standard `wide@normal`) daneben.
@@ -17,7 +17,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { runMatch, type MatchResult } from '../src/bots/index.js';
-import { createSim, type Command, type DifficultyId, type SimEvent } from '../src/index.js';
+import { createSim, type Command, type DifficultyId, type SimEvent, type UnitMod } from '../src/index.js';
 
 export interface ReplayCommand {
   tick: number;
@@ -28,8 +28,10 @@ export interface ReplayCommand {
   reason?: string;
 }
 
-/** Aktuelles Format (Positionen statt Slot-IDs). Der Client schreibt es in `client/src/game/recorder.ts`. */
-export const REPLAY_FORMAT_VERSION = 2;
+/** Aktuelles Format (v3: Positionen + Unit-Mods im Kopf). Der Client schreibt es in `client/src/game/recorder.ts`. */
+export const REPLAY_FORMAT_VERSION = 3;
+/** Ältestes Format, das sich noch nachspielen lässt (v2: Positionen, keine Mods = neutral). */
+export const REPLAY_MIN_PLAYABLE_VERSION = 2;
 export const OLD_RULES_MESSAGE = 'altes Regelwerk (v1, Slots)';
 
 export interface ReplayFile {
@@ -41,6 +43,8 @@ export interface ReplayFile {
   players: number;
   seed: number;
   team?: string[] | null;
+  /** v3: Level-/Sterne-Mods je Spieler und Unit (`createSim({ unitMods })`); fehlt oder v2 = neutral. */
+  unitMods?: UnitMod[];
   complete?: boolean;
   result: 'win' | 'loss' | null;
   endTick: number;
@@ -85,8 +89,8 @@ export interface ReplayReport {
 export function parseReplay(text: string): ReplayFile {
   const r = JSON.parse(text) as Partial<ReplayFile>;
   if (r.format !== 'towerdef-replay') throw new Error('Keine Duskwardens-Replay-Datei (format fehlt/falsch)');
-  if (r.formatVersion !== 1 && r.formatVersion !== REPLAY_FORMAT_VERSION) {
-    throw new Error(`Replay-Format ${String(r.formatVersion)} wird nicht unterstützt (bekannt: 1 = ${OLD_RULES_MESSAGE}, ${REPLAY_FORMAT_VERSION})`);
+  if (r.formatVersion !== 1 && r.formatVersion !== 2 && r.formatVersion !== REPLAY_FORMAT_VERSION) {
+    throw new Error(`Replay-Format ${String(r.formatVersion)} wird nicht unterstützt (bekannt: 1 = ${OLD_RULES_MESSAGE}, 2, ${REPLAY_FORMAT_VERSION})`);
   }
   for (const k of ['stage', 'difficulty', 'players', 'seed', 'endTick', 'endHash', 'commands'] as const) {
     if (r[k] === undefined) throw new Error(`Feld "${k}" fehlt`);
@@ -98,7 +102,9 @@ export function parseReplay(text: string): ReplayFile {
 /** Spielt die Datei nach. Wirft nur bei kaputten Eingaben, Abweichungen stehen in `problems`. */
 export function replay(file: ReplayFile): ReplayReport {
   if (file.formatVersion === 1) return oldRulesReport(file);
-  const sim = createSim({ stage: file.stage, difficulty: file.difficulty, players: file.players, seed: file.seed });
+  // v3: Mods aus dem Kopf; v2 kennt keine Mods (auch ein zufällig vorhandenes Feld zählt dort nicht).
+  const unitMods = file.formatVersion >= 3 ? validMods(file.unitMods) : undefined;
+  const sim = createSim({ stage: file.stage, difficulty: file.difficulty, players: file.players, seed: file.seed, unitMods });
   const st = sim.state;
   const problems: string[] = [];
   const waves: WaveRow[] = [];
@@ -195,6 +201,16 @@ export function replay(file: ReplayFile): ReplayReport {
   };
 }
 
+function validMods(m: unknown): UnitMod[] | undefined {
+  if (m === undefined) return undefined;
+  if (!Array.isArray(m)) throw new Error('unitMods ist keine Liste');
+  for (const x of m as Partial<UnitMod>[]) {
+    if (!Number.isInteger(x?.player) || typeof x?.unit !== 'string') throw new Error('unitMods: Eintrag ohne player/unit');
+    for (const k of ['lvlBp', 'traitBp', 'yieldBp'] as const) if (x[k] !== undefined && !Number.isInteger(x[k])) throw new Error(`unitMods: ${k} keine ganze Zahl`);
+  }
+  return m as UnitMod[];
+}
+
 /** v1-Datei: nichts nachspielen, Wellen und Käufe aus den Daten der Datei selbst lesen. */
 function oldRulesReport(file: ReplayFile): ReplayReport {
   const bought: Record<string, number> = {};
@@ -252,6 +268,10 @@ const fmtMap = (m: Record<string, number>): string => Object.entries(m).map(([k,
 export function formatReport(file: ReplayFile, rep: ReplayReport, cmp?: MatchResult): string {
   const out: string[] = [];
   out.push(`Replay ${file.difficulty}, Seed ${file.seed}, Spiel ${file.gameVersion ?? '?'}, ${file.date ?? ''}`);
+  if (file.formatVersion >= 3) {
+    const bps = (file.unitMods ?? []).map((m) => m.lvlBp ?? 10000);
+    out.push(bps.length ? `Mods: ${bps.length} Einträge, Schadens-Faktor ${(Math.min(...bps) / 10000).toFixed(3)} bis ${(Math.max(...bps) / 10000).toFixed(3)}` : 'Mods: keine (neutral)');
+  }
   const secs = Math.round(rep.tick / 20);
   out.push(`Ergebnis: ${rep.result ?? 'läuft noch (Zwischenstand)'}, Tick ${rep.tick} (${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')} Spielzeit), Leben ${rep.lives}`);
   if (rep.oldRules) out.push(`Hash: nicht geprüft, ${OLD_RULES_MESSAGE}. Die Zahlen unten stammen aus der Datei (Aufnahme des Clients), nicht aus dem Simulator.`);
@@ -310,7 +330,7 @@ function main(argv: string[]): number {
   const cmp = compare ? runMatch({ stage: file.stage, difficulty: file.difficulty, players: file.players, seed: file.seed, bots: [bot] }) : undefined;
   console.log(formatReport(file, rep, cmp));
   if (rep.oldRules) {
-    console.error(`Replay: ${OLD_RULES_MESSAGE} - Format v${file.formatVersion}, nicht nachspielbar (Exit 3). Aktuelles Format: v${REPLAY_FORMAT_VERSION}.`);
+    console.error(`Replay: ${OLD_RULES_MESSAGE} - Format v${file.formatVersion}, nicht nachspielbar (Exit 3). Aktuelles Format: v${REPLAY_FORMAT_VERSION} (v2 und v3 spielbar).`);
     return 3;
   }
   return rep.ok ? 0 : 1;

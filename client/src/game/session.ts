@@ -2,7 +2,7 @@
  * Eine Spielrunde im Browser: haelt die Sim, taktet sie mit festem Tick (20/s, Akkumulator) und verwaltet Auswahl/Bedienung.
  * Spielregeln gibt es hier nicht - jede Aktion ist ein `sim.apply(...)`, jede Zahl kommt aus `sim.state`.
  */
-import { createSim, loadBrowserData, STAGE_ID, type CommandResult, type DifficultyId, type Sim, type TargetMode, type UnitDef, type WavePreview } from '../sim';
+import { createSim, loadBrowserData, STAGE_ID, type CommandResult, type DifficultyId, type Sim, type TargetMode, type UnitDef, type UnitMod, type WavePreview } from '../sim';
 import { keyOr, t } from '../i18n/t';
 import { TICK_MS } from '../view/model';
 import { failureToast, ghostStatus, placingAfterClick, unitAt, type GhostStatus, type ToastSpec } from '../view/placement';
@@ -55,12 +55,16 @@ export class Session {
   private acc = 0;
   private previewCache: { key: string; value: WavePreview | null } | null = null;
 
-  constructor(difficulty: DifficultyId, seed: number = Math.floor(Math.random() * 0x7fffffff), bus: GameBus = new GameBus()) {
+  /** Unit-Mods (Level/Sterne aus dem Profil, `meta/unit-mods.ts`); leer = neutral. Der Recorder schreibt sie ins Replay (v3). */
+  readonly unitMods: UnitMod[];
+
+  constructor(difficulty: DifficultyId, seed: number = Math.floor(Math.random() * 0x7fffffff), bus: GameBus = new GameBus(), unitMods: UnitMod[] = []) {
+    this.unitMods = unitMods;
     this.seed = seed;
     this.bus = bus;
     const data = loadBrowserData();
     this.difficulty = difficulty;
-    this.sim = createSim({ stage: STAGE_ID, difficulty, players: 1, seed, data });
+    this.sim = createSim({ stage: STAGE_ID, difficulty, players: 1, seed, data, unitMods });
     const stage = data.stages[STAGE_ID];
     this.totalWaves = stage.waves.length;
     this.waveTimerTicks = stage.waveTimerTicks ?? data.economy.waveTimerTicks;

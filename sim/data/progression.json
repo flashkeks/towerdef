@@ -1,0 +1,8 @@
+{
+  "ref": "Runde 7 P2; docs/comparison/recommendations.md §13 (Sterne aus Kopien) und §15 (Level-Kurve +2,5 %/Level, +5 %/Stern); Abnahmeziel §19 Nr. 16 (Faktor max/fresh <= ca. 2,5)",
+  "_comment": "Schadens-Faktor einer Unit = 1 + 0,025*(Level-1) + Sternbonus. Level 40 = 1,975. Stern 1 (eine Kopie) ist neutral, damit 'fresh' (Level 1, Stern 1) exakt dem Spiel ohne Mods entspricht; ab Stern 2 +5 % je Stern (rec §13), Stern 5 = +20 %: max (Level 40, Stern 5) = 2,175. Startwerte, grob gemessen in docs/balancing/kalibrierung.md (Runde 7 - P2).",
+  "maxLevel": 40,
+  "levelDamageBpPerLevel": 250,
+  "starCopies": [1, 2, 4, 8, 16],
+  "starDamageBp": [0, 500, 1000, 1500, 2000]
+}

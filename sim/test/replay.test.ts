@@ -8,14 +8,15 @@ const dir = new URL('../../docs/balancing/playtests/', import.meta.url).pathname
 const beispiele = readdirSync(dir).filter((f) => /^beispiel-.*\.json$/.test(f));
 const dateien = readdirSync(dir).filter((f) => f.endsWith('.json'));
 const load = (f: string) => parseReplay(readFileSync(join(dir, f), 'utf8'));
-const v2 = beispiele.filter((f) => load(f).formatVersion === REPLAY_FORMAT_VERSION);
+// v2 und v3 sind spielbar (v3 = v2 + unitMods); das aktuelle Format ist v3.
+const v2 = beispiele.filter((f) => load(f).formatVersion >= 2);
 
 describe('Replay (Export aus dem Browser nachspielen)', () => {
   it('es gibt mindestens ein eingechecktes v2-Beispiel (vom Simulator selbst erzeugt)', () => {
     expect(v2.length).toBeGreaterThan(0);
   });
-  it('das Format ist v2: Positionen statt Slot-IDs', () => {
-    expect(REPLAY_FORMAT_VERSION).toBe(2);
+  it('das Format ist v3 (v2 bleibt lesbar): Positionen statt Slot-IDs', () => {
+    expect(REPLAY_FORMAT_VERSION).toBe(3);
     for (const f of v2) {
       const places = load(f).commands.filter((c) => c.cmd.type === 'place');
       expect(places.length).toBeGreaterThan(0);
@@ -87,5 +88,6 @@ describe('Replay (Export aus dem Browser nachspielen)', () => {
   it('kaputte Dateien werden abgelehnt', () => {
     expect(() => parseReplay('{"format":"x"}')).toThrow();
     expect(() => parseReplay('{"format":"towerdef-replay","formatVersion":3}')).toThrow();
+    expect(() => parseReplay('{"format":"towerdef-replay","formatVersion":4}')).toThrow(/nicht unterst/);
   });
 });

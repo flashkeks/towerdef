@@ -1,0 +1,1473 @@
+{
+ "format": "towerdef-replay",
+ "formatVersion": 3,
+ "gameVersion": "sim-bot wide",
+ "stage": "standard20",
+ "difficulty": "hard",
+ "players": 1,
+ "seed": 7,
+ "team": null,
+ "unitMods": [
+  {
+   "player": 0,
+   "unit": "striker",
+   "lvlBp": 15750
+  },
+  {
+   "player": 0,
+   "unit": "gunner",
+   "lvlBp": 15750
+  },
+  {
+   "player": 0,
+   "unit": "blaster",
+   "lvlBp": 15750
+  },
+  {
+   "player": 0,
+   "unit": "banner",
+   "lvlBp": 15750
+  },
+  {
+   "player": 0,
+   "unit": "farm",
+   "lvlBp": 15750
+  },
+  {
+   "player": 0,
+   "unit": "lancer",
+   "lvlBp": 15750
+  },
+  {
+   "player": 0,
+   "unit": "frost",
+   "lvlBp": 15750
+  },
+  {
+   "player": 0,
+   "unit": "titan",
+   "lvlBp": 15750
+  }
+ ],
+ "cards": [],
+ "complete": true,
+ "result": "win",
+ "endTick": 13468,
+ "endHash": "db0ac7555bb10df4",
+ "endWave": 20,
+ "endLives": 30,
+ "endCoins": 1207,
+ "durationTicks": 13468,
+ "durationMs": 0,
+ "date": "2026-10-07",
+ "commands": [
+  {
+   "tick": 0,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "frost",
+    "x": 5500,
+    "y": 5500
+   },
+   "ok": true
+  },
+  {
+   "tick": 0,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "x": 11000,
+    "y": 5000
+   },
+   "ok": true
+  },
+  {
+   "tick": 1220,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "striker",
+    "x": 4500,
+    "y": 5000
+   },
+   "ok": true
+  },
+  {
+   "tick": 1690,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "blaster",
+    "x": 10000,
+    "y": 5000
+   },
+   "ok": true
+  },
+  {
+   "tick": 2360,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "gunner",
+    "x": 3500,
+    "y": 6000
+   },
+   "ok": true
+  },
+  {
+   "tick": 2482,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 2,
+    "mode": "strongest"
+   },
+   "ok": true
+  },
+  {
+   "tick": 2482,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 11,
+    "mode": "strongest"
+   },
+   "ok": true
+  },
+  {
+   "tick": 2482,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 47,
+    "mode": "strongest"
+   },
+   "ok": true
+  },
+  {
+   "tick": 2860,
+   "player": 0,
+   "cmd": {
+    "type": "useAbility",
+    "entityId": 1
+   },
+   "ok": true
+  },
+  {
+   "tick": 2960,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 2,
+    "mode": "first"
+   },
+   "ok": true
+  },
+  {
+   "tick": 2960,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 11,
+    "mode": "first"
+   },
+   "ok": true
+  },
+  {
+   "tick": 2960,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 47,
+    "mode": "first"
+   },
+   "ok": true
+  },
+  {
+   "tick": 2960,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "blaster",
+    "x": 8500,
+    "y": 5000
+   },
+   "ok": true
+  },
+  {
+   "tick": 3280,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "gunner",
+    "x": 9500,
+    "y": 6000
+   },
+   "ok": true
+  },
+  {
+   "tick": 3780,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "gunner",
+    "x": 4500,
+    "y": 6000
+   },
+   "ok": true
+  },
+  {
+   "tick": 4940,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "titan",
+    "x": 7500,
+    "y": 5500
+   },
+   "ok": true
+  },
+  {
+   "tick": 5160,
+   "player": 0,
+   "cmd": {
+    "type": "useAbility",
+    "entityId": 135
+   },
+   "ok": true
+  },
+  {
+   "tick": 5229,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 1,
+    "mode": "strongest"
+   },
+   "ok": true
+  },
+  {
+   "tick": 5229,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 2,
+    "mode": "strongest"
+   },
+   "ok": true
+  },
+  {
+   "tick": 5229,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 11,
+    "mode": "strongest"
+   },
+   "ok": true
+  },
+  {
+   "tick": 5229,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 22,
+    "mode": "strongest"
+   },
+   "ok": true
+  },
+  {
+   "tick": 5229,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 47,
+    "mode": "strongest"
+   },
+   "ok": true
+  },
+  {
+   "tick": 5229,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 57,
+    "mode": "strongest"
+   },
+   "ok": true
+  },
+  {
+   "tick": 5229,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 77,
+    "mode": "strongest"
+   },
+   "ok": true
+  },
+  {
+   "tick": 5229,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 91,
+    "mode": "strongest"
+   },
+   "ok": true
+  },
+  {
+   "tick": 5229,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "blaster",
+    "x": 6500,
+    "y": 5000
+   },
+   "ok": true
+  },
+  {
+   "tick": 5240,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 139,
+    "mode": "strongest"
+   },
+   "ok": true
+  },
+  {
+   "tick": 5620,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "gunner",
+    "x": 8500,
+    "y": 6000
+   },
+   "ok": true
+  },
+  {
+   "tick": 5640,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 150,
+    "mode": "strongest"
+   },
+   "ok": true
+  },
+  {
+   "tick": 5820,
+   "player": 0,
+   "cmd": {
+    "type": "useAbility",
+    "entityId": 1
+   },
+   "ok": true
+  },
+  {
+   "tick": 5931,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 1,
+    "mode": "first"
+   },
+   "ok": true
+  },
+  {
+   "tick": 5931,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 2,
+    "mode": "first"
+   },
+   "ok": true
+  },
+  {
+   "tick": 5931,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 11,
+    "mode": "first"
+   },
+   "ok": true
+  },
+  {
+   "tick": 5931,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 22,
+    "mode": "first"
+   },
+   "ok": true
+  },
+  {
+   "tick": 5931,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 47,
+    "mode": "first"
+   },
+   "ok": true
+  },
+  {
+   "tick": 5931,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 57,
+    "mode": "first"
+   },
+   "ok": true
+  },
+  {
+   "tick": 5931,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 77,
+    "mode": "first"
+   },
+   "ok": true
+  },
+  {
+   "tick": 5931,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 91,
+    "mode": "first"
+   },
+   "ok": true
+  },
+  {
+   "tick": 5931,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 139,
+    "mode": "first"
+   },
+   "ok": true
+  },
+  {
+   "tick": 5931,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 150,
+    "mode": "first"
+   },
+   "ok": true
+  },
+  {
+   "tick": 5931,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "blaster",
+    "x": 3500,
+    "y": 5000
+   },
+   "ok": true
+  },
+  {
+   "tick": 6480,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "gunner",
+    "x": 11500,
+    "y": 6000
+   },
+   "ok": true
+  },
+  {
+   "tick": 6675,
+   "player": 0,
+   "cmd": {
+    "type": "useAbility",
+    "entityId": 135
+   },
+   "ok": true
+  },
+  {
+   "tick": 7320,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "lancer",
+    "x": 10500,
+    "y": 6000
+   },
+   "ok": true
+  },
+  {
+   "tick": 7340,
+   "player": 0,
+   "cmd": {
+    "type": "useAbility",
+    "entityId": 1
+   },
+   "ok": true
+  },
+  {
+   "tick": 7860,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "lancer",
+    "x": 12000,
+    "y": 5000
+   },
+   "ok": true
+  },
+  {
+   "tick": 7940,
+   "player": 0,
+   "cmd": {
+    "type": "useAbility",
+    "entityId": 1
+   },
+   "ok": true
+  },
+  {
+   "tick": 8126,
+   "player": 0,
+   "cmd": {
+    "type": "useAbility",
+    "entityId": 135
+   },
+   "ok": true
+  },
+  {
+   "tick": 8540,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "frost",
+    "x": 6500,
+    "y": 6000
+   },
+   "ok": true
+  },
+  {
+   "tick": 8885,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 2,
+    "mode": "strongest"
+   },
+   "ok": true
+  },
+  {
+   "tick": 8885,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 11,
+    "mode": "strongest"
+   },
+   "ok": true
+  },
+  {
+   "tick": 8885,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 47,
+    "mode": "strongest"
+   },
+   "ok": true
+  },
+  {
+   "tick": 8885,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 77,
+    "mode": "strongest"
+   },
+   "ok": true
+  },
+  {
+   "tick": 8885,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 91,
+    "mode": "strongest"
+   },
+   "ok": true
+  },
+  {
+   "tick": 8885,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 150,
+    "mode": "strongest"
+   },
+   "ok": true
+  },
+  {
+   "tick": 8885,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 180,
+    "mode": "strongest"
+   },
+   "ok": true
+  },
+  {
+   "tick": 9040,
+   "player": 0,
+   "cmd": {
+    "type": "useAbility",
+    "entityId": 135
+   },
+   "ok": true
+  },
+  {
+   "tick": 9220,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 2,
+    "mode": "first"
+   },
+   "ok": true
+  },
+  {
+   "tick": 9220,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 11,
+    "mode": "first"
+   },
+   "ok": true
+  },
+  {
+   "tick": 9220,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 47,
+    "mode": "first"
+   },
+   "ok": true
+  },
+  {
+   "tick": 9220,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 77,
+    "mode": "first"
+   },
+   "ok": true
+  },
+  {
+   "tick": 9220,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 91,
+    "mode": "first"
+   },
+   "ok": true
+  },
+  {
+   "tick": 9220,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 150,
+    "mode": "first"
+   },
+   "ok": true
+  },
+  {
+   "tick": 9220,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 180,
+    "mode": "first"
+   },
+   "ok": true
+  },
+  {
+   "tick": 9220,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "lancer",
+    "x": 5500,
+    "y": 3000
+   },
+   "ok": true
+  },
+  {
+   "tick": 9565,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "frost",
+    "x": 4500,
+    "y": 3000
+   },
+   "ok": true
+  },
+  {
+   "tick": 9820,
+   "player": 0,
+   "cmd": {
+    "type": "useAbility",
+    "entityId": 302
+   },
+   "ok": true
+  },
+  {
+   "tick": 9940,
+   "player": 0,
+   "cmd": {
+    "type": "useAbility",
+    "entityId": 135
+   },
+   "ok": true
+  },
+  {
+   "tick": 9960,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 11
+   },
+   "ok": true
+  },
+  {
+   "tick": 10140,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 91
+   },
+   "ok": true
+  },
+  {
+   "tick": 10327,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 139
+   },
+   "ok": true
+  },
+  {
+   "tick": 10640,
+   "player": 0,
+   "cmd": {
+    "type": "useAbility",
+    "entityId": 302
+   },
+   "ok": true
+  },
+  {
+   "tick": 10840,
+   "player": 0,
+   "cmd": {
+    "type": "useAbility",
+    "entityId": 135
+   },
+   "ok": true
+  },
+  {
+   "tick": 10900,
+   "player": 0,
+   "cmd": {
+    "type": "useAbility",
+    "entityId": 262
+   },
+   "ok": true
+  },
+  {
+   "tick": 10920,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 2
+   },
+   "ok": true
+  },
+  {
+   "tick": 10940,
+   "player": 0,
+   "cmd": {
+    "type": "useAbility",
+    "entityId": 1
+   },
+   "ok": true
+  },
+  {
+   "tick": 11060,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 47
+   },
+   "ok": true
+  },
+  {
+   "tick": 11160,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 77
+   },
+   "ok": true
+  },
+  {
+   "tick": 11300,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 150
+   },
+   "ok": true
+  },
+  {
+   "tick": 11680,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 180
+   },
+   "ok": true
+  },
+  {
+   "tick": 11720,
+   "player": 0,
+   "cmd": {
+    "type": "useAbility",
+    "entityId": 302
+   },
+   "ok": true
+  },
+  {
+   "tick": 11900,
+   "player": 0,
+   "cmd": {
+    "type": "useAbility",
+    "entityId": 1
+   },
+   "ok": true
+  },
+  {
+   "tick": 11920,
+   "player": 0,
+   "cmd": {
+    "type": "useAbility",
+    "entityId": 262
+   },
+   "ok": true
+  },
+  {
+   "tick": 11920,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 22
+   },
+   "ok": true
+  },
+  {
+   "tick": 12013,
+   "player": 0,
+   "cmd": {
+    "type": "useAbility",
+    "entityId": 135
+   },
+   "ok": true
+  },
+  {
+   "tick": 12013,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 2,
+    "mode": "strongest"
+   },
+   "ok": true
+  },
+  {
+   "tick": 12013,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 11,
+    "mode": "strongest"
+   },
+   "ok": true
+  },
+  {
+   "tick": 12013,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 47,
+    "mode": "strongest"
+   },
+   "ok": true
+  },
+  {
+   "tick": 12013,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 77,
+    "mode": "strongest"
+   },
+   "ok": true
+  },
+  {
+   "tick": 12013,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 91,
+    "mode": "strongest"
+   },
+   "ok": true
+  },
+  {
+   "tick": 12013,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 150,
+    "mode": "strongest"
+   },
+   "ok": true
+  },
+  {
+   "tick": 12013,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 180,
+    "mode": "strongest"
+   },
+   "ok": true
+  },
+  {
+   "tick": 12013,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 152
+   },
+   "ok": true
+  },
+  {
+   "tick": 12480,
+   "player": 0,
+   "cmd": {
+    "type": "useAbility",
+    "entityId": 302
+   },
+   "ok": true
+  },
+  {
+   "tick": 12520,
+   "player": 0,
+   "cmd": {
+    "type": "useAbility",
+    "entityId": 1
+   },
+   "ok": false,
+   "reason": "no-target"
+  },
+  {
+   "tick": 12520,
+   "player": 0,
+   "cmd": {
+    "type": "useAbility",
+    "entityId": 262
+   },
+   "ok": false,
+   "reason": "no-target"
+  },
+  {
+   "tick": 12540,
+   "player": 0,
+   "cmd": {
+    "type": "useAbility",
+    "entityId": 1
+   },
+   "ok": false,
+   "reason": "no-target"
+  },
+  {
+   "tick": 12640,
+   "player": 0,
+   "cmd": {
+    "type": "useAbility",
+    "entityId": 262
+   },
+   "ok": true
+  },
+  {
+   "tick": 12640,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 57
+   },
+   "ok": true
+  },
+  {
+   "tick": 12660,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 2,
+    "mode": "first"
+   },
+   "ok": true
+  },
+  {
+   "tick": 12660,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 11,
+    "mode": "first"
+   },
+   "ok": true
+  },
+  {
+   "tick": 12660,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 47,
+    "mode": "first"
+   },
+   "ok": true
+  },
+  {
+   "tick": 12660,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 77,
+    "mode": "first"
+   },
+   "ok": true
+  },
+  {
+   "tick": 12660,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 91,
+    "mode": "first"
+   },
+   "ok": true
+  },
+  {
+   "tick": 12660,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 150,
+    "mode": "first"
+   },
+   "ok": true
+  },
+  {
+   "tick": 12660,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 180,
+    "mode": "first"
+   },
+   "ok": true
+  },
+  {
+   "tick": 12751,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 1,
+    "mode": "strongest"
+   },
+   "ok": true
+  },
+  {
+   "tick": 12751,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 2,
+    "mode": "strongest"
+   },
+   "ok": true
+  },
+  {
+   "tick": 12751,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 11,
+    "mode": "strongest"
+   },
+   "ok": true
+  },
+  {
+   "tick": 12751,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 22,
+    "mode": "strongest"
+   },
+   "ok": true
+  },
+  {
+   "tick": 12751,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 47,
+    "mode": "strongest"
+   },
+   "ok": true
+  },
+  {
+   "tick": 12751,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 57,
+    "mode": "strongest"
+   },
+   "ok": true
+  },
+  {
+   "tick": 12751,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 77,
+    "mode": "strongest"
+   },
+   "ok": true
+  },
+  {
+   "tick": 12751,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 91,
+    "mode": "strongest"
+   },
+   "ok": true
+  },
+  {
+   "tick": 12751,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 139,
+    "mode": "strongest"
+   },
+   "ok": true
+  },
+  {
+   "tick": 12751,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 150,
+    "mode": "strongest"
+   },
+   "ok": true
+  },
+  {
+   "tick": 12751,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 152,
+    "mode": "strongest"
+   },
+   "ok": true
+  },
+  {
+   "tick": 12751,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 180,
+    "mode": "strongest"
+   },
+   "ok": true
+  },
+  {
+   "tick": 12751,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 204,
+    "mode": "strongest"
+   },
+   "ok": true
+  },
+  {
+   "tick": 12751,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 242,
+    "mode": "strongest"
+   },
+   "ok": true
+  },
+  {
+   "tick": 12751,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 262,
+    "mode": "strongest"
+   },
+   "ok": true
+  },
+  {
+   "tick": 12751,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 282,
+    "mode": "strongest"
+   },
+   "ok": true
+  },
+  {
+   "tick": 12751,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 302,
+    "mode": "strongest"
+   },
+   "ok": true
+  },
+  {
+   "tick": 12751,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 282
+   },
+   "ok": true
+  },
+  {
+   "tick": 13000,
+   "player": 0,
+   "cmd": {
+    "type": "useAbility",
+    "entityId": 135
+   },
+   "ok": true
+  },
+  {
+   "tick": 13400,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 1,
+    "mode": "first"
+   },
+   "ok": true
+  },
+  {
+   "tick": 13400,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 2,
+    "mode": "first"
+   },
+   "ok": true
+  },
+  {
+   "tick": 13400,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 11,
+    "mode": "first"
+   },
+   "ok": true
+  },
+  {
+   "tick": 13400,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 22,
+    "mode": "first"
+   },
+   "ok": true
+  },
+  {
+   "tick": 13400,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 47,
+    "mode": "first"
+   },
+   "ok": true
+  },
+  {
+   "tick": 13400,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 57,
+    "mode": "first"
+   },
+   "ok": true
+  },
+  {
+   "tick": 13400,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 77,
+    "mode": "first"
+   },
+   "ok": true
+  },
+  {
+   "tick": 13400,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 91,
+    "mode": "first"
+   },
+   "ok": true
+  },
+  {
+   "tick": 13400,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 139,
+    "mode": "first"
+   },
+   "ok": true
+  },
+  {
+   "tick": 13400,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 150,
+    "mode": "first"
+   },
+   "ok": true
+  },
+  {
+   "tick": 13400,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 152,
+    "mode": "first"
+   },
+   "ok": true
+  },
+  {
+   "tick": 13400,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 180,
+    "mode": "first"
+   },
+   "ok": true
+  },
+  {
+   "tick": 13400,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 204,
+    "mode": "first"
+   },
+   "ok": true
+  },
+  {
+   "tick": 13400,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 242,
+    "mode": "first"
+   },
+   "ok": true
+  },
+  {
+   "tick": 13400,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 262,
+    "mode": "first"
+   },
+   "ok": true
+  },
+  {
+   "tick": 13400,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 282,
+    "mode": "first"
+   },
+   "ok": true
+  },
+  {
+   "tick": 13400,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 302,
+    "mode": "first"
+   },
+   "ok": true
+  }
+ ],
+ "controls": [],
+ "waves": [],
+ "feedback": "Vom Simulator erzeugt: Bot wide, hard, Seed 7, Meta-Profil mid. Kein Mensch."
+}

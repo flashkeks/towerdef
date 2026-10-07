@@ -4,6 +4,7 @@
  *   npm run sim -- --stage standard20 --bot greedy --runs 500 --difficulty normal --players 1 [--seed 1]
  *                  [--out ../docs/balancing/runs] [--matrix] [--bots greedy,farm] [--jobs 4] [--max-waves 100]
  *                  [--name <dateiname>] [--svg|--no-svg]
+ *                  [--meta fresh|mid|max[,..]]   Meta-Profil (Level/Sterne aus data/progression.json) fuer alle Units, Liste = je Profil eine Zelle
  *
  * Listen sind erlaubt (--difficulty normal,hard --players 1,2,4 --bot greedy,farm = jeweils eigene Zelle).
  * --bots a,b = ein Team, Spieler i nutzt Bot i mod Anzahl. --bot coop: Bot "coop" für alle Spieler.
@@ -12,6 +13,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { availableParallelism } from 'node:os';
 import { join, resolve } from 'node:path';
+import type { MetaProfileName } from '../src/progression.js';
 import type { DifficultyId } from '../src/data/schema.js';
 import { toMarkdown, summaryCsv, wavesCsv } from '../src/report/format.js';
 import { runMatches } from '../src/report/parallel.js';
@@ -33,6 +35,7 @@ interface Cli {
   maxWaves?: number;
   name?: string;
   svg?: boolean;
+  meta: (MetaProfileName | undefined)[];
 }
 
 const DIFFS: DifficultyId[] = ['normal', 'hard', 'nightmare'];
@@ -61,7 +64,12 @@ function parseArgs(argv: string[]): Cli {
     if (!Number.isInteger(n) || n < 0) throw new Error(`--${k} muss eine ganze Zahl >= 0 sein`);
     return n;
   };
+  const metas = list(o.meta, '').map((m) => {
+    if (!['fresh', 'mid', 'max'].includes(m)) throw new Error(`--meta ${m} unbekannt (fresh, mid, max)`);
+    return m as MetaProfileName;
+  });
   return {
+    meta: metas.length ? metas : [undefined],
     stage: String(o.stage ?? 'standard20'),
     bots,
     runs: int('runs', 100),
@@ -108,11 +116,13 @@ async function main(): Promise<void> {
   for (const bots of botSets) {
     for (const difficulty of diffs) {
       for (const p of players) {
-        for (let i = 0; i < cli.runs; i++) specs.push({ stage: cli.stage, difficulty, players: p, seed: cli.seed + i, bots, maxWaves });
+        for (const meta of cli.meta) {
+          for (let i = 0; i < cli.runs; i++) specs.push({ stage: cli.stage, difficulty, players: p, seed: cli.seed + i, bots, maxWaves, ...(meta ? { meta } : {}) });
+        }
       }
     }
   }
-  const cellsN = botSets.length * diffs.length * players.length;
+  const cellsN = botSets.length * diffs.length * players.length * cli.meta.length;
   console.error(`${specs.length} Runs in ${cellsN} Zellen, jobs=${cli.jobs}`);
   const t0 = performance.now();
   let last = 0;

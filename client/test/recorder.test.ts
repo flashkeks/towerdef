@@ -12,6 +12,22 @@ function setup(seed = 7) {
   return { bus, rec, s };
 }
 
+describe('Recorder v3: Unit-Mods im Kopf', () => {
+  it('Session reicht unitMods an die Sim durch, der Recorder schreibt sie mit', () => {
+    const bus = new GameBus();
+    const rec = new Recorder(bus);
+    const mods = [{ player: 0, unit: 'striker', lvlBp: 21750 }];
+    const s = new Session('normal', 5, bus, mods);
+    bus.emitRunStart(s);
+    s.choosePlacing('striker');
+    s.clickBoard(3000, 3000);
+    expect(s.sim.state.units[0].lvlBp).toBe(21750);
+    const snap = rec.snapshot()!;
+    expect(snap.unitMods).toEqual(mods);
+    expect(snap.unitMods).not.toBe(mods); // Kopie
+  });
+});
+
 describe('Recorder (nur am GameBus)', () => {
   it('zeichnet Befehle (auch abgelehnte), Steuerung und Wellen auf', () => {
     const { rec, s } = setup();
@@ -28,7 +44,8 @@ describe('Recorder (nur am GameBus)', () => {
     for (let i = 0; i < 40; i++) s.advance(TICK_MS * 2);
     const snap = rec.snapshot()!;
     expect(snap.format).toBe(REPLAY_FORMAT);
-    expect(snap.formatVersion).toBe(2);
+    expect(snap.formatVersion).toBe(3);
+    expect(snap.unitMods).toEqual([]); // Standard: neutral
     expect(snap.commands[0].cmd).toMatchObject({ type: 'place', x: 3000, y: 3000 });
     expect(snap.seed).toBe(7);
     expect(snap.difficulty).toBe('normal');

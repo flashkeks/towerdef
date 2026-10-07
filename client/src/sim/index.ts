@@ -17,6 +17,7 @@ export type {
   RiskCard,
   BossKit,
   UnitDef,
+  UnitMod,
   StageData,
   GameData,
   DifficultyId,

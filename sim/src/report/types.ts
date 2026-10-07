@@ -16,6 +16,8 @@ export interface MatchSpec {
   maxWaves?: number;
   /** Sicherheitslimit (Ticks); Standard des Runners. */
   maxTicks?: number;
+  /** Runde 7 / P2: Meta-Profil aller Spieler und Units (`fresh` = neutral, `mid`, `max`); fehlt = keine Mods. */
+  meta?: 'fresh' | 'mid' | 'max';
 }
 
 /** Zeitreihenzeile einer Wave n (n = 0: Prep-Phase, nur Ausgaben). */

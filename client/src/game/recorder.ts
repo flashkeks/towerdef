@@ -4,14 +4,14 @@
  * `sim/scripts/replay.ts` spielt die Datei nach und prueft `endHash`. Keine personenbezogenen Daten: kein Name,
  * keine IP, kein Geraet, nur Spieldaten und der freiwillige Freitext.
  */
-import type { Command, DifficultyId, SimEvent } from '../sim';
+import type { Command, DifficultyId, SimEvent, UnitMod } from '../sim';
 import { STAGE_ID } from '../sim';
 import { t } from '../i18n/t';
 import type { GameBus } from './events';
 import type { Session } from './session';
 
 export const REPLAY_FORMAT = 'towerdef-replay';
-export const REPLAY_FORMAT_VERSION = 2;
+export const REPLAY_FORMAT_VERSION = 3;
 
 declare const __APP_VERSION__: string | undefined;
 
@@ -65,6 +65,8 @@ export interface ReplayFile {
   seed: number;
   /** Team-Wahl (6 aus 8), `null` solange es im Spiel keine Wahl gibt */
   team: string[] | null;
+  /** v3: Level-/Sterne-Mods je Spieler und Unit, mit denen die Runde gespielt wurde (leer = neutral) */
+  unitMods: UnitMod[];
   /** Gewaehlte Risikokarten (aus den chooseCard-Befehlen, in Reihenfolge) */
   cards: { tick: number; card: string | null }[];
   /** false = Zwischenstand (z. B. aus der Pause), `endHash` gilt dann fuer `endTick` */
@@ -160,6 +162,7 @@ export class Recorder {
       players: s.sim.state.players.length,
       seed: s.seed,
       team: Array.isArray(team) ? team.map(String) : null,
+      unitMods: structuredClone(s.unitMods),
       cards: [],
       complete: false,
       result: null,

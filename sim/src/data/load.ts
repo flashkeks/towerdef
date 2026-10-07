@@ -13,10 +13,12 @@ import {
   EconomySchema,
   EnemiesSchema,
   ModifiersSchema,
+  ProgressionSchema,
   StageSchema,
   UnitsSchema,
   type BotProfile,
   type GameData,
+  type ProgressionData,
   type StageData,
 } from './schema.js';
 
@@ -174,4 +176,9 @@ export function loadGameData(): GameData {
 /** Bot-Profile (Runde 4 / P6, `data/botProfiles.json`); getrennt von `GameData`, weil sie nur Bots betreffen. */
 export function loadBotProfiles(): Record<string, BotProfile> {
   return BotProfilesSchema.parse(readJson('botProfiles.json')).profiles;
+}
+
+/** Level-/Sterne-Kurven (Runde 7 / P2, `data/progression.json`); getrennt von `GameData`, damit die Sim-Daten unverändert bleiben. */
+export function loadProgression(): ProgressionData {
+  return ProgressionSchema.parse(readJson('progression.json'));
 }

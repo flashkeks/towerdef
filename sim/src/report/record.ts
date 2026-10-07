@@ -6,6 +6,8 @@
  * Münzen am Wave-Ende n = Münzen beim Start von Wave n+1 (gleicher Tick, vor den Bot-Entscheidungen), letzte Wave: finalCoins.
  * Verlust-Wave: höchste Wave mit Base-Schaden (Näherung der Wave des tödlichen Leaks; Waves überlappen).
  */
+import { loadGameData, loadProgression } from '../data/load.js';
+import { metaProfileMods } from '../progression.js';
 import { runMatch, type MatchResult } from '../bots/index.js';
 import type { MatchSpec, RunRecord, WaveRec } from './types.js';
 
@@ -16,7 +18,7 @@ export function botLabel(bots: string[], players: number): string {
   return new Set(used).size === 1 ? used[0] : used.join('+');
 }
 
-export function fromMatch(m: MatchResult): RunRecord {
+export function fromMatch(m: MatchResult, meta?: string): RunRecord {
   let net = 0; // netto eingesetzte Münzen (Platzierung + Upgrade - Verkaufserlös), kumulativ
   const waves: WaveRec[] = m.waves.map((w, i) => {
     net += sum(w.spentPlace) + sum(w.spentUpgrade) - sum(w.sold);
@@ -50,7 +52,7 @@ export function fromMatch(m: MatchResult): RunRecord {
   }
   return {
     stage: m.stage,
-    botLabel: botLabel(m.bots, m.players),
+    botLabel: botLabel(m.bots, m.players) + (meta ? `[${meta}]` : ''),
     difficulty: m.difficulty,
     players: m.players,
     seed: m.seed,
@@ -63,6 +65,13 @@ export function fromMatch(m: MatchResult): RunRecord {
   };
 }
 
+let metaCache: { ids: string[]; prog: ReturnType<typeof loadProgression> } | null = null;
+function modsFor(spec: MatchSpec) {
+  if (!spec.meta) return undefined;
+  metaCache ??= { ids: loadGameData().units.units.map((u) => u.id), prog: loadProgression() };
+  return metaProfileMods(metaCache.prog, spec.meta, metaCache.ids, spec.players);
+}
+
 export function recordMatch(spec: MatchSpec): RunRecord {
   const bots = Array.from({ length: spec.players }, (_, i) => spec.bots[i % spec.bots.length]);
   return fromMatch(
@@ -73,7 +82,9 @@ export function recordMatch(spec: MatchSpec): RunRecord {
       seed: spec.seed,
       bots,
       maxWaves: spec.maxWaves,
+      unitMods: modsFor(spec),
       maxTicks: spec.maxTicks ?? (spec.maxWaves ? spec.maxWaves * 1000 + 2000 : undefined),
     }),
+    spec.meta,
   );
 }

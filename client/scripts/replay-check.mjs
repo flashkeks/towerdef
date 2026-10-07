@@ -163,7 +163,7 @@ try {
 }
 
 const rec = JSON.parse(readFileSync(file, 'utf8'));
-check(rec.format === 'towerdef-replay' && rec.formatVersion === 2 && rec.commands.length > 0, `Datei: ${rec.commands.length} Befehle, ${rec.waves.length} Wellen, complete=${rec.complete}`);
+check(rec.format === 'towerdef-replay' && rec.formatVersion === 3 && Array.isArray(rec.unitMods) && rec.commands.length > 0, `Datei: ${rec.commands.length} Befehle, ${rec.waves.length} Wellen, complete=${rec.complete}`);
 const places = rec.commands.filter((c) => c.cmd.type === 'place');
 check(places.length >= 3 && places.every((c) => Number.isInteger(c.cmd.x) && Number.isInteger(c.cmd.y) && c.cmd.slot === undefined), `Format v2: ${places.length} Platzierungen mit x/y (Milli-Tiles), ${places.filter((c) => c.ok).length} angenommen`);
 check(rec.controls.some((c) => c.type === 'speed') && rec.controls.some((c) => c.type === 'pause'), 'Tempo- und Pause-Wechsel aufgezeichnet');
