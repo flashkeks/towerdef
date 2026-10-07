@@ -51,11 +51,11 @@
       "aura": { "radiusMilli": 3000, "damageBpByLevel": [1500, 2300, 3100, 3900, 4700, 5500] }
     },
     {
-      "id": "farm", "name": "Farm", "ref": "§12 Farm-Tabelle: 400 M, Upgrades 300/450/700/1100, Ertrag 50/90/135/205/310 -> KALIBRIERT x1,3 (kalibrierung.md #6), Verkauf 40 % (Cap 2 entfaellt in Runde 6)",
+      "id": "farm", "name": "Farm", "ref": "§12 Farm-Tabelle: 400 M, Upgrades 300/450/700/1100, Ertrag 50/90/135/205/310 -> KALIBRIERT x1,3 (kalibrierung.md #6), Verkauf 40 % (Cap 2 entfaellt in Runde 6); Runde 6 P2: Ertrag auf 42/75/110/165/240 (x0,65 gegenueber der Kalibrierung, kalibrierung.md Runde 6 - P2)",
       "rarity": "epic", "placement": "ground", "role": "Farm", "footprint": 2,
       "placeCost": 400, "upgradeCosts": [300, 450, 700, 1100], "sellBp": 4000,
       "dpsShareBp": 0, "attack": null,
-      "farm": { "yieldByLevel": [65, 117, 176, 267, 403] }
+      "farm": { "yieldByLevel": [42, 75, 110, 165, 240] }
     },
     {
       "id": "lancer", "name": "Lancer", "ref": "Auftrag P2a; §6 Legendary, §10 Pen 30-60; Runde 4 P1: Anteil 60 -> 85 %, Platzierung ground -> hybrid (Luft-Linie)",

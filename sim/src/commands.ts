@@ -30,6 +30,19 @@ const fail = (reason: string): CommandResult => ({ ok: false, reason });
  * Alle Ablehnungsgründe einer Platzierung in fester Reihenfolge (`null` = erlaubt): `invalid-position`, Karte/Pfad/Zone/Überlappung
  * (`placement.ts`), `team-limit`, `team-slots`, `not-enough-coins`. Auch für `Sim.canPlace` (Geist im Client, Bots).
  */
+/**
+ * Platzierkosten für `playerId`: Basispreis x (1 + Zuwachs x Zahl der Exemplare über `economy.placeCostFreeCopies`), gezählt über die eigenen Units gleichen Typs, die gerade stehen (das neue Exemplar ist Nr. own+1).
+ * Zuwachs = `placeGrowthBp` der Unit, sonst `economy.placeCostGrowthBp` (Bp je Exemplar, linear, abgerundet). Verkauf senkt den Preis wieder.
+ */
+export function placeCostFor(w: World, playerId: number, def: UnitDef): number {
+  const bp = def.placeGrowthBp ?? w.ctx.data.economy.placeCostGrowthBp ?? 0;
+  if (bp <= 0) return def.placeCost;
+  const free = w.ctx.data.economy.placeCostFreeCopies ?? 0;
+  const own = w.state.units.filter((u) => u.owner === playerId && u.defId === def.id).length;
+  const n = Math.max(0, own + 1 - Math.max(1, free)); // das erste Exemplar kostet immer den Basispreis
+  return Math.floor((def.placeCost * (10000 + bp * n)) / 10000);
+}
+
 export function placeError(w: World, playerId: number, def: UnitDef, x: number, y: number): string | null {
   const { state, ctx } = w;
   const eco = ctx.data.economy;
@@ -40,7 +53,7 @@ export function placeError(w: World, playerId: number, def: UnitDef, x: number, 
   // DESIGN-OFFEN: Team-Slots = höchstens 6 verschiedene Unit-Typen gleichzeitig je Spieler.
   const own = state.units.filter((u) => u.owner === playerId);
   if (!own.some((u) => u.defId === def.id) && new Set(own.map((u) => u.defId)).size >= eco.caps.teamSlots) return 'team-slots';
-  if (state.players[playerId].coins < def.placeCost) return 'not-enough-coins';
+  if (state.players[playerId].coins < placeCostFor(w, playerId, def)) return 'not-enough-coins';
   return null;
 }
 
@@ -57,7 +70,8 @@ export function applyCommand(w: World, playerId: number, cmd: Command): CommandR
       if (!def) return fail('unknown-unit');
       const bad = placeError(w, playerId, def, cmd.x, cmd.y);
       if (bad) return fail(bad);
-      player.coins -= def.placeCost;
+      const cost = placeCostFor(w, playerId, def);
+      player.coins -= cost;
       const mod = w.unitMods.find((m) => m.player === playerId && m.unit === def.id);
       const id = state.nextId++;
       state.units.push({
@@ -67,7 +81,7 @@ export function applyCommand(w: World, playerId: number, cmd: Command): CommandR
         x: cmd.x,
         y: cmd.y,
         level: 0,
-        invested: def.placeCost,
+        invested: cost,
         targeting: def.defaultTargeting,
         cd: 0,
         // DESIGN-OFFEN: Fähigkeiten sind ab Platzierung bereit (Abklingzeit 0); es gibt keinen Auto-Ability-Schalter im Kern.
@@ -78,7 +92,7 @@ export function applyCommand(w: World, playerId: number, cmd: Command): CommandR
         damageDealt: 0,
         damageReported: 0,
       });
-      w.events.push({ type: 'place', tick: state.tick, player: playerId, unitId: id, unit: def.id, x: cmd.x, y: cmd.y, cost: def.placeCost });
+      w.events.push({ type: 'place', tick: state.tick, player: playerId, unitId: id, unit: def.id, x: cmd.x, y: cmd.y, cost });
       return { ok: true, entityId: id };
     }
     case 'upgrade': {
