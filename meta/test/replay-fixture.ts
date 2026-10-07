@@ -2,6 +2,7 @@
 import { runMatch } from '../../sim/src/bots/index';
 import { botTuning } from '../../sim/src/bots/util';
 import type { DifficultyId } from '../../sim/src/index';
+import { unitIds } from '../src/catalog';
 
 export interface FixtureOptions {
   bot?: string;
@@ -14,7 +15,8 @@ export interface FixtureOptions {
   extra?: Record<string, unknown>;
 }
 
-const ALL = ['striker', 'gunner', 'blaster', 'banner', 'farm', 'lancer', 'frost', 'titan'];
+// Runde 7 / P6: alle Units des Katalogs (14 statt 8), sonst liessen `only`-Laeufe die neuen Units durch.
+const ALL = unitIds();
 
 export function botReplay(o: FixtureOptions = {}): Record<string, any> {
   const bot = o.bot ?? 'wide@normal';

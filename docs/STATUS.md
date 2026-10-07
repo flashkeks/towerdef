@@ -6,7 +6,7 @@ Frühere Aufträge: [archiv/run-runde1.md](archiv/run-runde1.md), [archiv/run-ru
 
 ## Runde 7
 
-Letzte Aktualisierung: 2026-10-07 (Runde 7 gestartet, P0)
+Letzte Aktualisierung: 2026-10-07 (Runde 7 abgeschlossen, P7)
 
 | Paket | Inhalt | Status | Agent (Modell) | Notiz |
 |---|---|---|---|---|
@@ -16,10 +16,82 @@ Letzte Aktualisierung: 2026-10-07 (Runde 7 gestartet, P0)
 | P3 | Gacha und Mock-Shop | **erledigt** | 1 × Sonnet | Banner `standard` (rec 13: 50/450, 70/25/4/1, harte Pity 150 Mythic / 35 Legendary+), `starter` (einmalig, 10er 225, mind. Epic+), `featured-example` (nur Format, inaktiv); alles als Startwerte markiert, `ratesVersion` + `ratesHash` in jeder Ziehung. `bannerView(banner, profile)` liefert der UI Raten, Pity-Klartext, Pity-Stand, effektive Rate, Erwartungswerte; Anzeige und Wurf gehen über dasselbe `resolveBanner`. Exakte Quote per Markov-Kette: Mythic 1,28 % (77,9 Züge, = rec 13), Legendary+ 6,19 %. 1-Mio.-Test je Banner ≈ 0,5 s / 0,7 s. Mock-Shop 500/1200/2600, keine Preise, Ablauf 7.3 lokal mit Mock-Schalter ok/fail/pending/duplicate-event. +26 meta-Tests (65), +6 client-Tests (157). Details [meta/README.md § Gacha und Mock-Shop](../meta/README.md) |
 | P4 | Lobby und Meta-UI, Smoke Kreislauf | **erledigt** | 1 × Sonnet | Lobby als Start (Kontostände, Starter-Geschenk, Ladefehler mit Import/Reset, Speicher-Warnung), Summon (Ratentabelle immer sichtbar, Pity auf dem Knopf, Enthüllung per CSS, Verlauf), Units (Raster, Filter, Detail, Level-Up), Team aus der Sammlung, Stage-Auswahl mit Sperrgrund, Belohnung im Ergebnis, Mock-Shop, Settings mit Export/Import/Reset. Backend additiv: `playerView`, `collectionView`, `stageView`, `pullHistory`, `matchSetup` (Team + `unitMods`). **Lücke aus P5 geschlossen:** `rewardFromReplay(…, { bindToProfile })` prüft Team, Mods und platzierte Units gegen das Profil (`unit-mods-mismatch` u. a.). Smoke: ganzer Kreislauf mit echten Mausklicks bei allen 3 Auflösungen (1280×720 voll, die anderen kurzes Match), Neuladen behält den Stand, ca. 8 min, 297 Prüfungen grün. meta 104, client 195 Tests grün. Screenshots `client/docs/screenshot-r7-*.png`. **Offen/Befund:** Wellen ohne Verteidigung rufen zahlt 200 Gold/40 XP in 10 s (siehe Bericht). [client/README.md](../client/README.md), [meta/README.md](../meta/README.md) |
 | P5 | Belohnungen und Fortschritt | **erledigt** | 1 × Sonnet | `rewardFromReplay` rechnet das Replay mit der Sim nach (`meta/src/verify.ts`, v2/v3, ca. 70–100 ms), Hash-Abweichung = `replay-mismatch`, keine Buchung; Doppelmeldung = `already-reported`. Werte in `meta/data/rewards.json` (Niederlage gibt Gold + XP nach Welle). Gold-Kurve 40+10·(L−1), Spieler-XP 100+25·(L−1). Starter: 450 Crystals + alle Rare/Epic + Lancer (ohne Legendary schafft kein Bot Normal). Mythic-Erwartung Tag 18–30 bei 4 Siegen/Tag. +20 meta-Tests (59), +9 client-Tests. [balancing/meta.md](balancing/meta.md), [meta/README.md](../meta/README.md) |
-| P6 | Sechs neue Units | offen | 1 × Sonnet | nach P1 |
-| P7 | Abschluss | offen | Hauptsitzung | |
+| P6 | Sechs neue Units | **erledigt** | 1 × Sonnet | Pool 14: `warden` (Rare, Leak-Schild), `mortar` (Epic, zweite Boden-Fläche), `broker` (Epic, Kopfgeld), `stormcaller` (Legendary, Kette/Luft), `seer` (Legendary, Markierung + Boss-Fenster), `weaver` (Mythic, Tempo-Aura). Blaster-Verbot −7…−30 (vorher −50…−97), keine neue Unit Pflicht (schlechtester Wert Mortar −13), beste Strategie Normal 79 / Hard 58 / Nightmare 17. Seer/Weaver werden von den Bots kaum gekauft (Bot-Befund, Playtest nötig). Entwurf [units-r7.md](design/units-r7.md), Messung [kalibrierung.md](balancing/kalibrierung.md) „Runde 7 — P6“ |
+| P7 | Abschluss | **erledigt** | Hauptsitzung | Merges, Nacharbeit (Replay-Fixtures auf 14 Units, Team-Wahl-Altdatei weg, Tastenhinweise 1-6), **Lücke geschlossen**: Wellen-Belohnung nach *gehaltenen* statt gerufenen Wellen (Vorrufen ohne Verteidigung zahlte 200 Gold/40 XP in 10 s). Kurzbericht unten |
 
 Plan: P1 allein. Danach höchstens 4 parallel in Worktrees (P2, P3, P5, P6), danach P4 (braucht die Schnittstellen von P3/P5). `sim/` ändern nur P2 und P6. Die Hauptsitzung merged.
+
+## Kurzbericht Runde 7 (P7, 07.10.2026)
+
+```text
+STATUS — Runde 7
+Pakete erledigt / offen: P0–P7 erledigt, nichts offen
+Abnahmeziele:
+  Kreislauf geschlossen: erreicht — Smoke mit echten Mausklicks bei 1280×720 / 1920×1080 / 2560×1440:
+    neues Profil → Lobby → Starter-Geschenk → 10er-Zug → Team aus Sammlung → Stage → Belohnung →
+    Level-Up (mit dem ersten Gold) → zweites Match → Neuladen: Salden, Sammlung, Pity gleich.
+    Abweichung: Level-Up erst nach dem ersten Match (neues Profil hat 0 Gold; davor prüft der Smoke den
+    gesperrten Knopf samt Grund)
+  Gacha ehrlich: erreicht — 1 Mio. Würfe Standard (≈0,5 s) und 100 000 Starter-10er innerhalb 5σ der exakten
+    Quote (Markov-Kette), Abstand Mythic ≤ 150 / Legendary+ ≤ 35, Pity überlebt Neuladen und Export/Import
+  Anzeige = Wirklichkeit: erreicht — bannerView und Wurf gehen über dasselbe resolveBanner (Test), ratesVersion
+    + ratesHash in jeder Ziehung
+  Meta wirkt im Match: erreicht — Level/Sterne → unitMods (lvlBp), Replay v3 mit Mods im Kopf, bit-genau (Test),
+    Belohnung nur, wenn Team und Mods zum Profil passen
+  Meta-Abstand: erreicht — max/fresh ×2,175 auf den Schaden (Ziel ≤ ~2,5)
+  Erster Fortschritt: erreicht — Starter-Geschenk enthält 450 Crystals (= ein 10er), dazu der Starter-Banner (10er für 225)
+  Unit-Pool: erreicht — 14 Units, zweite Boden-Fläche Mortar (Blaster-Verbot jetzt −7…−30 statt −47…−97)
+  Speicherstand robust: erreicht — Export → Reset → Import identisch (Smoke + Tests), kaputte/zu neue Daten →
+    Meldung mit Import/Reset, Schema-Version + Migration, IndexedDB → localStorage → Speicher (mit Warnung)
+  Lizenz: erreicht — alles eigen (Sprites code-generiert)
+Währungen und Startwerte:
+  Crystals (Gacha, erspielbar + Mock-Shop; = shards in architecture.md §7), Gold (Unit-Level, nur erspielbar)
+  Standard-Banner 50 / 10er 450, Rare 70 / Epic 25 / Legendary 4 / Mythic 1 %, harte Pity Mythic 150, Legendary+ 35
+    → effektiv Mythic 1,28 % (77,9 Züge), Legendary+ 6,19 % (16,1 Züge)
+  Starter-Banner: einmal 10er für 225, mindestens Epic+
+  Mock-Shop: 500 / 1200 (+200) / 2600 (+600) Crystals, „Test purchase - no real money", keine Preise
+  Belohnungen: Erst-Clear 100/150/200 Crystals, Wiederholung 25 %; Gold/XP je gehaltener Welle + Siegbonus
+  Level-Kosten 40 + 10·(L−1) Gold (Team L20 = 14 820, L40 = 53 820); Spieler-XP 100 + 25·(L−1)
+  Freischaltung Hard ab Spieler-Level 5, Nightmare ab 25
+  Starter-Geschenk: 450 Crystals + alle Rare und Epic + Lancer (9 Units), Team gesetzt
+Neue Units:
+  warden (Rare, Leak-Schild: fängt je Welle 1–3 nicht-tödliche Leaks ab, nie Bosse)
+  mortar (Epic, zweite Boden-Fläche, halber Burn, Luft 50 %)
+  broker (Epic, Ökonomie: +20–60 % Kopfgeld im Radius)
+  stormcaller (Legendary, Hügel, Kettenblitz, trifft Luft)
+  seer (Legendary, Markierung +25 % und Boss-Fenster +10–40 % länger, K5)
+  weaver (Mythic, Tempo-Aura 20–48 % langsamer)
+Meta-Abstand fresh/max: ×2,175 rechnerisch. Siegquote beste Strategie (farm/wide/aoe, 30 Seeds, 14er-Pool,
+  Bots ohne Team-Grenze): fresh 100 / 87 / 23 %, mid 100 / 100 / 100 %, max 100 / 100 / 100 %
+  (Normal/Hard/Nightmare). Ab mid ist alles leicht, siehe offene Fragen
+Erster Fortschritt: ein 10er-Zug sofort (Geschenk) plus Starter-Banner; nach dem ersten Normal-Sieg 100 Crystals
+  dazu. Erstes Mythic (Erwartung) Tag 18–30 bei 4 Siegen/Tag (docs/balancing/meta.md)
+Was die Menschen als Nächstes testen sollen:
+  1. Neues Profil: Lobby → Geschenk → ziehen → Team → Stage. Ist der Weg ohne Erklärung klar?
+  2. Summon-Bildschirm: Sind Raten, Pity und Verlauf verständlich und ehrlich genug? Enthüllung zu lang/kurz?
+  3. Neue Units ausprobieren, vor allem Seer, Weaver, Broker, Warden (die Bots nutzen sie kaum, ihr Wert ist
+     nur im Playtest messbar)
+  4. Export/Import des Speicherstands einmal ausprobieren (Settings), z. B. Browser wechseln
+  5. Replays weiter schicken (jetzt v3 mit Level/Sternen)
+Vorschlag Runde 8: K4 Bindung (wählbare Perks durch Einsätze) als zweite Fortschrittsachse neben Level/Sternen,
+  dazu Tagesaufgaben ohne Streak (100 Crystals für 3 Clears), was das Mythic-Tempo von Tag 18–30 auf die
+  Zielspanne 2–4 Wochen zieht. Weil mid/max Hard und Nightmare fast sicher gewinnen, sollte Runde 8 die Stufen an
+  das Meta-Niveau koppeln (Empfehlung: Nightmare-Freischaltung an Unit-Level statt nur Spieler-Level, oder
+  Stufen-HP etwas höher; grob, Feinschliff nach Playtests). Eine zweite Map (M-B „Die Schleife") lohnt erst,
+  wenn die Menschen den Kreislauf gespielt haben; Infinite gehört mit in Runde 8.
+Agenten: 6 × Sonnet (P1 allein; dann P2, P3, P5, P6 parallel in Worktrees; dann P4). P6 nach Container-Neustart
+  fortgesetzt (Zwischenstand als WIP-Commit gesichert)
+Commits: 14 auf dev seit dem Auftrag (92ae0bb)
+```
+
+**Offene Fragen an die Menschen (Runde 7, mit Empfehlung):**
+- **Meta macht Hard/Nightmare zu leicht:** Mit mid (Level 20, ★3) gewinnen die Bots Hard und Nightmare fast immer. Empfehlung: erst mit echten Profilen und Playtests anfassen; Hebel wären Nightmare-HP, ein höheres Freischalt-Level oder Stufen, die mit dem Team-Level skalieren. Bis dahin so lassen.
+- **Lancer im Starter-Geschenk:** Ohne ein Legendary schaffen die Bots mit dem Starter-Team Normal nicht (Boss W18–20). Empfehlung: Lancer drin lassen; Alternative wäre ein wählbares Legendary zum Start.
+- **Mythic-Tempo:** Erwartung Tag 18–30 bei 4 Siegen/Tag (Ziel 2–4 Wochen nur am oberen Rand). Empfehlung: Tagesaufgabe (Runde 8) statt höherer Raten.
+- **Starter-Banner ohne Pity** (einmal 10er für 225, nur Epic+-Garantie). Empfehlung: so lassen.
+- **Normal mit fresh bei `farm` 77 %** (beste Strategie `wide` 100 %): Broker/Warden konkurrieren im Farm-Bot um Münzen. Empfehlung: lassen (Balance nur grob).
+- **„Quit to lobby"** bricht ohne Belohnung ab. Empfehlung: so lassen.
+- **Seer und Weaver** kaufen die Bots kaum (0–8 %). Das ist ein Bot-Befund, kein Balance-Befund. Empfehlung: Playtest, dann ggf. Bot-Logik.
 
 ## Runde 6 (abgeschlossen)
 

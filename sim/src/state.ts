@@ -75,6 +75,9 @@ export interface EnemyState {
   stunImmune: number;
   slowBp: number;
   slowTicks: number;
+  /** Markierung (Runde 7 / P6, `onHit.mark`): zusätzlicher Schaden in bp, solange `markTicks` > 0. */
+  markBp: number;
+  markTicks: number;
   bleed: DotState | null;
   burn: DotState | null;
   poison: DotState | null;
@@ -150,6 +153,8 @@ export interface SimState {
   skipPending: boolean;
   /** Für die nächste zu startende Wave gewählte Risikokarte (P4, K1); wird beim Wave-Start verbraucht. */
   nextCard: string | null;
+  /** Runde 7 / P6: in dieser Wave schon vom Leak-Schild (`guard`) abgefangene Leaks; wird beim Wave-Start auf 0 gesetzt. */
+  guardUsed: number;
   /** Verbleibende Leben (Team gemeinsam). Ersetzt Base-HP. */
   lives: number;
   /** Maximum (Startleben + Meta-Bonus); Regeneration deckelt hier. */
@@ -170,7 +175,7 @@ export type IncomeSource = 'waveBonus' | 'bounty' | 'farm' | 'sell' | 'donate';
 export type SimEvent =
   | { type: 'spawn'; tick: number; enemyId: number; enemy: string; wave: number; summon?: true }
   | { type: 'kill'; tick: number; enemyId: number; enemy: string; wave: number; bounty: number }
-  | { type: 'leak'; tick: number; enemyId: number; enemy: string; wave: number; damage: number; hp: number; maxHp: number; fatal: boolean }
+  | { type: 'leak'; tick: number; enemyId: number; enemy: string; wave: number; damage: number; hp: number; maxHp: number; fatal: boolean; /** Runde 7 / P6: vom Leak-Schild abgefangen (damage 0). */ guarded?: true }
   | { type: 'waveStart'; tick: number; wave: number }
   | { type: 'waveEnd'; tick: number; wave: number }
   | { type: 'income'; tick: number; player: number; amount: number; source: IncomeSource }

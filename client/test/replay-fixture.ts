@@ -6,7 +6,7 @@ import type { ReplayFile } from '../src/game/recorder';
 import type { UnitMod } from '../src/sim';
 import { claimStarterGift, newProfile, testEnv, unitModsFor } from '../src/backend/meta';
 
-const ALL = ['striker', 'gunner', 'blaster', 'banner', 'farm', 'lancer', 'frost', 'titan'];
+const ALL = loadBrowserData().units.units.map((u) => u.id);
 
 /** `team` und `unitMods` (Runde 7, P4): wie der Client sie aus `Backend.matchSetup` in die Session und den Recorder gibt; der Bot spielt mit genau diesen Mods. */
 export function botReplay(o: { bot?: string; seed?: number; difficulty?: 'normal' | 'hard' | 'nightmare'; only?: string[]; team?: string[] | null; unitMods?: UnitMod[] } = {}): ReplayFile {

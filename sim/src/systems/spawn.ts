@@ -103,6 +103,8 @@ export function createEnemy(
     stunImmune: 0,
     slowBp: 0,
     slowTicks: 0,
+    markBp: 0,
+    markTicks: 0,
     bleed: null,
     burn: null,
     poison: null,

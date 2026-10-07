@@ -1070,3 +1070,70 @@ Was **nicht** zum Verlust beitrug: Wellenstart (der Mensch ließ Wave 1 sofort s
 - **Infinite** (`--stage infinite --max-waves 60`, 12 Seeds, Normal): `fresh` und `mid` enden bei Welle 31 (Boss-Raster), `max` bei Welle 41 (`farm` wie `wide`). Grobes Maß, die Boss-Waves sind die Hürde.
 - **Befund:** Ein halb ausgebauter Spieler (`mid`: Level 20, ★3, x1,575) überrollt Hard und Nightmare (90–100 %). Die Stufen sind damit „Fortschritts-Tore“: Hard braucht Level ≈ 10–17 (rec: Level 17 = x1,4), Nightmare kaum mehr als `mid`. Passt zu den Freischaltungen (Hard ab Spieler-Level 5, Nightmare ab 25: bis dahin ist `mid` realistisch erreichbar), **keine Anpassung vorgenommen**. Offen: Nightmare ist ab `mid` zu leicht; Hebel wären Nightmare-HP (`difficulties.json`) oder ein späterer Freischaltwert, beides erst mit Menschen-Daten und den neuen Units (P6).
 - Grenzen: Bots kennen das Meta-Profil nicht (gleiche Strategie in allen Profilen), kein Koop, nur `standard20`, 40 bzw. 12 Seeds.
+
+# Runde 7 — P6: Sechs neue Units (Pool 8 → 14)
+
+Entwurf: [units-r7.md](../design/units-r7.md). Messung grob (Auftrag: ≤ ca. 30 min Bot-Zeit, kein Feintuning; Bot-Zeit am Ende grob 40 min, weil jede Zwischenmessung mitzählt). Werkzeug `sim/scripts/sanity/r7-p6.ts` (`--part rates|loo|force`, `R7_UNITS='{"mortar":{...}}'` für Unit-Überschreibungen ohne Dateiänderung, `--ban a,b`). Profil `normal`, `standard20`, solo, Seeds 1..n, Standardfehler bei n = 24–40 ±8–10 Punkte. Referenz „alter Pool“ = die sechs neuen Units verboten (dieselbe Messung im selben Stand): Runde-6-Zahlen (99/100 Normal) sind seither durch Elemente und Meta-Änderungen nicht mehr vergleichbar.
+
+## Was gebaut wurde
+
+Sechs Units (`warden`, `mortar`, `broker`, `stormcaller`, `seer`, `weaver`) und sechs generische Sim-Mechaniken (Kette, Markierung, Fenster-Verlängerung, Kopfgeld-Aura, Leak-Schild, Tempo-Aura), alles aus `units.json`. Sim: 290 Tests (neu: `test/units-r7.test.ts`, 12 Tests); Beispiel-Replays neu erzeugt (Daten geändert).
+
+**Bots:** Rollen aus den Daten (`roleOf` in `bots/util.ts`: farm, economy, guard, aura, titan, control, aoe, air, single, marker) statt Unit-IDs für `aoe` und `coop`; `auraOf` vereinheitlicht Schadens- und Tempo-Aura (Weaver wird wie das Banner platziert); `supportStep` kauft Broker (nur Bots mit Farm-Strategie, teilt sich das `farm.share`-Budget) und Warden (erst bei sichtbaren Leaks/Lebensverlust ab Wave 6 und nur bei höchstens 4 Typen); `dpsOf` kennt Kette und Kreis-Radius; Seer-Wert = Eigenschaden + Anteil am Team-Wert (nur das erste Exemplar). `wide` bekommt eine Obergrenze von 7 zusätzlichen Flächen-Exemplaren (sonst 9 Flächen-Körper, Luft und Einzelziele fehlten: Normal 55 statt 72 %). `botTuning.force` ist eine Messhilfe (Zwangskauf).
+
+## Befund 1: Blaster-Pflicht aufgelöst (Ziel „deutlich weniger als −50…−97“)
+
+Leave-one-out Blaster, n = 30 (Δ gegen Basis des jeweiligen Bots, nach dem Mortar):
+
+| Bot | Normal | Hard |
+|---|---|---|
+| farm | −27 (Runde 6: −97) | −30 (Runde 6: −64) |
+| aoe | −17 (Runde 6: −49) | −27 (Runde 6: −70) |
+| wide | −7 (Runde 6: −84) | +10 (Runde 6: −47) |
+
+Mortar-Varianten (alle n = 30, farm/aoe, Blaster-Verbot Hard): **reiner Splash** (Radius 1,7, kein Burn): Blaster-Verbot −60/−26, die Pflicht bleibt. **Blaster-Klon** (voller Burn + Slow, Luft 75 %): Blaster-Verbot ±0, aber **Mortar-Verbot −53**: die Pflicht wandert, der Mortar ist dann die dominante Unit. **Halber Burn, Luft 50 %, kein Slow (übernommen):** Blaster-Verbot −10…−30, Mortar-Verbot −13…−17 Normal/Hard bei aoe, ±0…+10 bei farm/wide. Der Burn ist also der Kern der Blaster-Pflicht (er umgeht Rüstung und Schild-Stacks); ein zweiter Flächenschaden **mit** Burn entlastet, ein reiner Splash nicht.
+
+## Befund 2: keine neue Unit ist Pflicht (Verbot ≤ −30), n = 30, finale Werte
+
+| Verbot | aoe Normal / Hard | farm Normal / Hard | wide Normal / Hard |
+|---|---|---|---|
+| (Basis) | 83 / 50 | 77 / 30 | 57 / 13 (vor dem `wide`-Fix, danach 72 / 30) |
+| mortar | 0 / −13 | +10 / +10 | +13 / +13 |
+| stormcaller | +3 / +10 | 0 / −3 | +13 / +3 |
+| seer | 0 / 0 | 0 / 0 | +3 / 0 |
+| weaver | 0 / 0 | 0 / 0 | 0 / 0 |
+| warden | +3 / +3 | +13 / 0 | 0 / 0 |
+| broker | 0 / 0 | 0 / 0 | 0 / 0 |
+
+Schlechtester Wert einer neuen Unit: Mortar −13 (aoe Hard). Nichts nahe −30. Nullen heißen bei Seer, Weaver, Broker, Warden meist „wird kaum gekauft“, nicht „nützlich“.
+
+## Befund 3: Kaufquoten (Anteil der Läufe mit mindestens einem Kauf, finale Bots, n = 24–40)
+
+Mortar 90–100 % (fast alle Bots, 3–4 Exemplare), Stormcaller 30–40 % bei `wide`/`greedy`/`aoe`, 92 % bei `upgrade`, Warden 3–45 % (nur bei Leaks), Broker 30–40 % bei `farm`/`coop` (0 bei den Bots ohne Farm-Strategie, wie die Farm selbst), Seer 0–8 %, Weaver 0–5 %. **Seer und Weaver sind nach der Messung „nie gewählt“ im Sinn der Bots**: Mythic/Legendary ohne Eigenschaden verlieren die Wert-je-Münze-Wahl gegen Titan, Frost, Lancer, und das 6-Typen-Limit lässt keinen Platz. Das ist ein Bot-Befund, kein Urteil über die Units.
+
+**Zwangskauf-Test** (`--part force`, ab Wave 6 sobald bezahlbar, ein Exemplar, n = 24): Δ „erzwungen − verboten“ Hard/Normal bei `wide` bzw. `farm`: Stormcaller 0/−42 bzw. +4/−8; Seer 0/−29 bzw. −8/−38; Weaver 0/0 bzw. −8/−8 (bei `wide` nie gekauft: nach den Pflichtkäufen fehlen die 1150 Münzen); Warden −13/−54 bzw. −25/−88; Broker −8/−38 bzw. −25/−67. **Lesart:** die Bots laufen auf der Kante: jede Münze vor Wave 10 gehört dem Titan-Boss-Plan, ein zusätzlicher Kauf (auch der billige Warden, 250) lässt den Titan ausfallen und der Boss leakt (Sofortverlust, den der Warden nicht abfängt). Das sagt, dass Support-Units auf dieser Kante **nicht gratis** sind, nicht dass sie schwach wären; Menschen sparen anders. Zahlen n = 24, ±10.
+
+## Befund 4: Stufen der besten Strategie (Siegquote %, n = 24 außer `wide` n = 40, Pool 14)
+
+| Bot | Normal | Hard | Nightmare |
+|---|---|---|---|
+| aoe | 79 | **58** | 17 |
+| greedy | 79 | 33 | 17 |
+| farm / coop | 75 | 25 | 13 |
+| wide | 72 | 30 | 5 |
+| upgrade | 46 | 13 | 4 |
+
+Beste Strategie: **Normal 79, Hard 58, Nightmare 17** (Ziele ≥ 80 / 35–70 / 10–40: Normal knapp darunter, Hard und Nightmare im Korridor). Der alte Pool in derselben Messung (n = 40): `farm` 95 / 47, `aoe` 80 / 50, `wide` 72 / 25. Die Stufen explodieren nicht; `farm` verliert wegen Broker/Warden-Konkurrenz um Typ-Plätze und Münzen (Normal 95 → 75, Hard 47 → 25), `aoe` Hard steigt (50 → 58).
+
+## Nebenbefunde und Anpassungen anderer Pakete
+
+- `meta/test/replay-fixture.ts` (P5): die Verbotsliste `ALL` war hart auf die 8 alten Units codiert, `only`-Läufe ließen die neuen durch; jetzt `unitIds()` aus dem Katalog. Danach grün.
+- Das Starter-Geschenk (P5) enthält automatisch alle Rare und Epic: also auch `warden`, `mortar`, `broker` (9 statt 6 Units plus Lancer). Test „Bots mit nur diesen Units siegen“ bleibt grün (75 %).
+- Client: Team-Wahl mit 14 Karten war höher als ein 720p-Fenster, der Start-Knopf lag außerhalb (Smoke rot); jetzt scrollt nur das Raster (`.team-scroll`).
+- Die Hint-Texte „press 1-8“ sind veraltet (Team bleibt 6 aus 14, Tasten 1–6), Smoke prüft den Text noch: nicht angefasst.
+
+## Offene Punkte
+
+1. Seer, Weaver, Broker, Warden sind mit den Bots nur indirekt messbar. Der Wert zeigt sich im Spiel von Menschen: bitte Playtest mit Teams, die sie enthalten (Weaver neben Lancer-Linie, Seer vor dem Boss, Warden auf Hard).
+2. Normal liegt bei 79 % knapp unter dem Ziel 80 (Messfehler ±8).
+3. Broker-Werte (+20…60 %, Radius 4 Tiles) und Warden-Ladungen sind Startwerte.

@@ -33,7 +33,7 @@ export class UnitPanel {
     }
     this.el.append(h('h3', undefined, t(`unit.${def.id}.name`)), h('p', 'lvl', t('unit.level', { n: u.level + 1, max: def.maxLevel + 1 })));
     const reach = reachMilli(def, u.level);
-    if (reach > 0) this.el.append(h('p', 'reach', t(def.aura ? 'panel.aura' : 'panel.range', { n: (reach / 1000).toFixed(1) })));
+    if (reach > 0) this.el.append(h('p', 'reach', t(def.aura || def.slowAura || def.bountyAura ? 'panel.aura' : 'panel.range', { n: (reach / 1000).toFixed(1) })));
     // Upgrade: Kosten, Wirkung alt -> neu
     const upBtn = h('button', 'btn upgrade', up === null ? t('unit.maxed') : t('unit.upgrade', { cost: up }));
     upBtn.disabled = up === null;

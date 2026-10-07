@@ -9,15 +9,15 @@ export type UnitTag = 'air' | 'area' | 'boss' | 'support' | 'income';
 /** Reihenfolge = Reihenfolge der Symbole im Shop. */
 export const UNIT_TAGS: readonly UnitTag[] = ['air', 'area', 'boss', 'support', 'income'];
 
-/** Symbole einer Unit aus ihren Daten: trifft Luft, Flaeche (Kreis/Linie/Kegel), Boss (Nuke oder Stun-Faehigkeit), Support (Aura), Geld (Farm). */
+/** Symbole einer Unit aus ihren Daten: trifft Luft, Flaeche (Kreis/Linie/Kegel/Kette), Boss (Nuke, Stun oder Fenster-Verlaengerung), Support (Aura, Tempo-Aura, Leak-Schild, Fenster), Geld (Farm, Kopfgeld). */
 export function unitTags(def: UnitDef): UnitTag[] {
   const tags: UnitTag[] = [];
   if (def.canHitAir && def.attack) tags.push('air'); // Banner steht auf dem Huegel, schiesst aber nicht
   const kind = def.attack?.kind;
-  if (kind === 'circle' || kind === 'line' || kind === 'cone') tags.push('area');
-  if (def.ability && (def.ability.kind === 'nuke' || def.ability.kind === 'stunAoe')) tags.push('boss');
-  if (def.aura) tags.push('support');
-  if (def.farm) tags.push('income');
+  if (kind === 'circle' || kind === 'line' || kind === 'cone' || kind === 'chain') tags.push('area');
+  if ((def.ability && (def.ability.kind === 'nuke' || def.ability.kind === 'stunAoe')) || def.windowExtend) tags.push('boss');
+  if (def.aura || def.slowAura || def.guard || def.windowExtend) tags.push('support');
+  if (def.farm || def.bountyAura) tags.push('income');
   return tags;
 }
 

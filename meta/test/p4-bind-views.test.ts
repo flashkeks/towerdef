@@ -22,7 +22,7 @@ import {
   type Profile,
 } from '../src';
 
-const ALL = ['striker', 'gunner', 'blaster', 'banner', 'farm', 'lancer', 'frost', 'titan'];
+const ALL = UNIT_CATALOG.map((u) => u.id);
 const env = () => testEnv(5);
 
 /** Echtes Replay eines Bot-Laufs, der `only` kauft und mit genau diesen Mods gespielt hat (der Hash gilt also fuer die Mods im Kopf). */

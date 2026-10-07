@@ -199,6 +199,8 @@ Alle Figuren sind eigene Entwürfe. Namen sind Platzhalter ohne Bezug auf besteh
 - **Gefühl:** großer Moment je Boss; teuer, selten, Cap 2 (`rec §7`).
 - **Wichtig gegen:** **Boss** (Wave 10, 20) und Elite; Armored-Brutes über die True-Damage-Fähigkeit.
 
+**Runde 7 (P6): sechs weitere Units** (`warden`, `mortar`, `broker`, `stormcaller`, `seer`, `weaver`, Pool 14) stehen in [units-r7.md](units-r7.md).
+
 ---
 
 ## 7. Map-Konzepte (drei)

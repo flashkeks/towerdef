@@ -1,4 +1,4 @@
-/** Unit-Leiste unten (Tasten 1-8 liegen in `input.ts`). Besitzer: P1 (Bedienbarkeit); Team-Auswahl 6 aus 8 (P6) bestimmt, welche Units sie zeigt. */
+/** Unit-Leiste unten (Tasten 1-6 liegen in `input.ts`). Besitzer: P1 (Bedienbarkeit); Team-Auswahl 6 aus der Sammlung (Runde 7, P4) bestimmt, welche Units sie zeigt. */
 import { t } from '../i18n/t';
 import type { Session } from '../game/session';
 import type { UnitDef } from '../sim';

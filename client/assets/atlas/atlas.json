@@ -42,7 +42,7 @@
   },
   "enemies/brute_0": {
    "frame": {
-    "x": 34,
+    "x": 232,
     "y": 132,
     "w": 30,
     "h": 28
@@ -62,7 +62,7 @@
   },
   "enemies/brute_1": {
    "frame": {
-    "x": 65,
+    "x": 263,
     "y": 132,
     "w": 30,
     "h": 28
@@ -122,7 +122,7 @@
   },
   "enemies/flyer_0": {
    "frame": {
-    "x": 96,
+    "x": 294,
     "y": 132,
     "w": 34,
     "h": 24
@@ -142,7 +142,7 @@
   },
   "enemies/flyer_1": {
    "frame": {
-    "x": 131,
+    "x": 329,
     "y": 132,
     "w": 34,
     "h": 24
@@ -162,7 +162,7 @@
   },
   "enemies/grunt_0": {
    "frame": {
-    "x": 166,
+    "x": 364,
     "y": 132,
     "w": 24,
     "h": 24
@@ -182,7 +182,7 @@
   },
   "enemies/grunt_1": {
    "frame": {
-    "x": 191,
+    "x": 389,
     "y": 132,
     "w": 24,
     "h": 24
@@ -202,7 +202,7 @@
   },
   "enemies/runner_0": {
    "frame": {
-    "x": 216,
+    "x": 414,
     "y": 132,
     "w": 30,
     "h": 24
@@ -222,7 +222,7 @@
   },
   "enemies/runner_1": {
    "frame": {
-    "x": 247,
+    "x": 445,
     "y": 132,
     "w": 30,
     "h": 24
@@ -242,8 +242,8 @@
   },
   "enemies/shadow": {
    "frame": {
-    "x": 370,
-    "y": 132,
+    "x": 64,
+    "y": 165,
     "w": 24,
     "h": 8
    },
@@ -262,7 +262,7 @@
   },
   "enemies/splitter_0": {
    "frame": {
-    "x": 278,
+    "x": 476,
     "y": 132,
     "w": 28,
     "h": 24
@@ -282,8 +282,8 @@
   },
   "enemies/splitter_1": {
    "frame": {
-    "x": 307,
-    "y": 132,
+    "x": 1,
+    "y": 165,
     "w": 28,
     "h": 24
    },
@@ -302,8 +302,8 @@
   },
   "enemies/splitter_child_0": {
    "frame": {
-    "x": 336,
-    "y": 132,
+    "x": 30,
+    "y": 165,
     "w": 16,
     "h": 14
    },
@@ -322,8 +322,8 @@
   },
   "enemies/splitter_child_1": {
    "frame": {
-    "x": 353,
-    "y": 132,
+    "x": 47,
+    "y": 165,
     "w": 16,
     "h": 14
    },
@@ -960,6 +960,26 @@
     "h": 32
    }
   },
+  "units/broker": {
+   "frame": {
+    "x": 364,
+    "y": 99,
+    "w": 32,
+    "h": 32
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 32,
+    "h": 32
+   },
+   "sourceSize": {
+    "w": 32,
+    "h": 32
+   }
+  },
   "units/farm": {
    "frame": {
     "x": 196,
@@ -982,7 +1002,7 @@
   },
   "units/frost": {
    "frame": {
-    "x": 364,
+    "x": 397,
     "y": 99,
     "w": 32,
     "h": 32
@@ -1002,7 +1022,7 @@
   },
   "units/gunner": {
    "frame": {
-    "x": 397,
+    "x": 430,
     "y": 99,
     "w": 32,
     "h": 32
@@ -1022,26 +1042,6 @@
   },
   "units/lancer": {
    "frame": {
-    "x": 430,
-    "y": 99,
-    "w": 32,
-    "h": 32
-   },
-   "rotated": false,
-   "trimmed": false,
-   "spriteSourceSize": {
-    "x": 0,
-    "y": 0,
-    "w": 32,
-    "h": 32
-   },
-   "sourceSize": {
-    "w": 32,
-    "h": 32
-   }
-  },
-  "units/striker": {
-   "frame": {
     "x": 463,
     "y": 99,
     "w": 32,
@@ -1060,9 +1060,129 @@
     "h": 32
    }
   },
-  "units/titan": {
+  "units/mortar": {
    "frame": {
     "x": 1,
+    "y": 132,
+    "w": 32,
+    "h": 32
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 32,
+    "h": 32
+   },
+   "sourceSize": {
+    "w": 32,
+    "h": 32
+   }
+  },
+  "units/seer": {
+   "frame": {
+    "x": 34,
+    "y": 132,
+    "w": 32,
+    "h": 32
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 32,
+    "h": 32
+   },
+   "sourceSize": {
+    "w": 32,
+    "h": 32
+   }
+  },
+  "units/stormcaller": {
+   "frame": {
+    "x": 67,
+    "y": 132,
+    "w": 32,
+    "h": 32
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 32,
+    "h": 32
+   },
+   "sourceSize": {
+    "w": 32,
+    "h": 32
+   }
+  },
+  "units/striker": {
+   "frame": {
+    "x": 100,
+    "y": 132,
+    "w": 32,
+    "h": 32
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 32,
+    "h": 32
+   },
+   "sourceSize": {
+    "w": 32,
+    "h": 32
+   }
+  },
+  "units/titan": {
+   "frame": {
+    "x": 133,
+    "y": 132,
+    "w": 32,
+    "h": 32
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 32,
+    "h": 32
+   },
+   "sourceSize": {
+    "w": 32,
+    "h": 32
+   }
+  },
+  "units/warden": {
+   "frame": {
+    "x": 166,
+    "y": 132,
+    "w": 32,
+    "h": 32
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 32,
+    "h": 32
+   },
+   "sourceSize": {
+    "w": 32,
+    "h": 32
+   }
+  },
+  "units/weaver": {
+   "frame": {
+    "x": 199,
     "y": 132,
     "w": 32,
     "h": 32

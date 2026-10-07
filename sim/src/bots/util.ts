@@ -176,6 +176,8 @@ export const botTuning = {
   bossFinalHorizon: 0,
   /** Nur Messungen (Leave-one-out): diese Unit-IDs kennt der Bot nicht, Pläne eingeschlossen (ein Proxy, der `place` ablehnt, lässt Pläne ewig sparen). */
   banned: [] as string[],
+  /** Nur Messungen (Runde 7 / P6): diese Unit-IDs kauft der Bot ab Wave 6 sicher (ein Exemplar ab Wave 6, sobald Kosten + 150 Münzen da sind, ohne Sparen; Support-Units baut er bis Stufe 3 aus), egal was seine Bewertung sagt. Misst den Wert einer Unit, die die Bots sonst nie wählen. */
+  force: [] as string[],
   /** Boss-Plan: ohne freie Position die schwächste Unit auf passender Position verkaufen (P6b). Aus: `P6B_NOROOM=1`. */
   makeRoom: true,
   /** Runde 5 / P3: Gegen einen Boss mit Kit zielen alle Angreifer auf den stärksten Gegner (Dauerschaden gegen zerstörbare Wirkungen). Aus: `P3_NOFOCUS=1`. */
@@ -321,7 +323,11 @@ export function dpsOf(def: UnitDef, level: number, armor: number): number {
   let d = (ls.damageCenti * 20) / ls.spaTicks / 100;
   switch (def.attack.kind) {
     case 'circle':
-      d *= 1.8;
+      // Größerer Radius trifft mehr (Radius-Verhältnis^0,8 gegenüber 1,2 Tiles, Runde 7 / P6); Blaster bleibt 1,8.
+      d *= Math.min(2.8, 1.8 * ((def.attack.radiusMilli ?? 1200) / 1200) ** 0.8);
+      break;
+    case 'chain':
+      d *= 3;
       break;
     case 'line':
       d *= 1.6;
@@ -352,6 +358,35 @@ function dist(a: { x: number; y: number }, b: { x: number; y: number }): number 
  * Bot bei freier Platzierung mehrere Banner auf denselben Pulk (Runde 6 / P1: greedy 65 -> 8 % Normal); mit festen Slots lagen sie
  * zufällig verteilt.
  */
+/**
+ * Aura-Sicht einer Unit (Runde 7 / P6, datengetrieben): Schadens-Aura (Banner) oder Tempo-Aura (Weaver). Die Tempo-Aura wird in ein
+ * Schadens-Äquivalent umgerechnet (x/(1-x) mehr Zeit im Feuer, grob 85 % davon liegen im Feuerbereich der Nachbarn), damit beide
+ * dieselbe Platzier- und Kauflogik nutzen (je Typ zählt nur der höchste Wert, `other`).
+ */
+/**
+ * Rolle einer Unit aus ihren Daten (Runde 7 / P6; die Bots erkennen Units nicht mehr an der ID):
+ * `farm`, `economy` (Kopfgeld-Aura), `guard` (Leak-Schild), `aura` (Schadens- oder Tempo-Aura), `titan` (Nuke), `control` (Stun),
+ * `aoe` (Kreis, Linie, Kegel, Kette), `air` (einzelnes Ziel vom Hügel), `single`, `marker` (Markierung / Boss-Fenster).
+ */
+export type Role = 'farm' | 'economy' | 'guard' | 'aura' | 'titan' | 'control' | 'aoe' | 'air' | 'single' | 'marker' | 'none';
+export function roleOf(d: UnitDef): Role {
+  if (d.farm) return 'farm';
+  if (d.bountyAura) return 'economy';
+  if (d.guard) return 'guard';
+  if (d.aura || d.slowAura) return 'aura';
+  if (d.ability?.kind === 'nuke') return 'titan';
+  if (d.ability?.kind === 'stunAoe') return 'control';
+  if (!d.attack) return 'none';
+  if (d.onHit.some((o) => o.kind === 'mark') || d.windowExtend) return 'marker';
+  if (d.attack.kind !== 'single') return 'aoe';
+  return d.placement === 'hill' ? 'air' : 'single';
+}
+
+export function auraOf(def: UnitDef): { radiusMilli: number; bpByLevel: number[] } | null {
+  if (def.aura) return { radiusMilli: def.aura.radiusMilli, bpByLevel: def.aura.damageBpByLevel };
+  if (def.slowAura) return { radiusMilli: def.slowAura.radiusMilli, bpByLevel: def.slowAura.slowBpByLevel.map((s) => Math.round((s * 8500) / (10000 - s))) };
+  return null;
+}
 interface AuraNeighbour {
   x: number;
   y: number;
@@ -362,7 +397,7 @@ interface AuraNeighbour {
 }
 /** Nachbarn mit Wert und bereits vorhandener Aura-Stärke (ohne die Unit `selfId`). Einmal je Bewertung, nicht je Kandidat. */
 function auraNeighbours(env: Env, def: UnitDef, selfId: number): AuraNeighbour[] {
-  const aura = def.aura as NonNullable<UnitDef['aura']>;
+  const aura = auraOf(def) as NonNullable<ReturnType<typeof auraOf>>;
   const r2 = aura.radiusMilli ** 2;
   const banners = env.team.filter((b) => b.defId === def.id && b.id !== selfId);
   const out: AuraNeighbour[] = [];
@@ -371,7 +406,7 @@ function auraNeighbours(env: Env, def: UnitDef, selfId: number): AuraNeighbour[]
     const v = env.values.get(u.id);
     if (!v) continue;
     let other = 0;
-    for (const b of banners) if (dist2(b.x, b.y, u.x, u.y) <= r2) other = Math.max(other, aura.damageBpByLevel[b.level]);
+    for (const b of banners) if (dist2(b.x, b.y, u.x, u.y) <= r2) other = Math.max(other, aura.bpByLevel[b.level]);
     out.push({ x: u.x, y: u.y, v, other });
   }
   return out;
@@ -383,14 +418,21 @@ function auraGainAt(nb: AuraNeighbour[], radiusMilli: number, bp: number, x: num
   return sum;
 }
 function auraGain(env: Env, def: UnitDef, level: number, pos: Point, selfId: number): number {
-  const aura = def.aura as NonNullable<UnitDef['aura']>;
-  return auraGainAt(auraNeighbours(env, def, selfId), aura.radiusMilli, aura.damageBpByLevel[level], pos.x, pos.y);
+  const aura = auraOf(def) as NonNullable<ReturnType<typeof auraOf>>;
+  return auraGainAt(auraNeighbours(env, def, selfId), aura.radiusMilli, aura.bpByLevel[level], pos.x, pos.y);
 }
 
 export function valueAt(env: Env, def: UnitDef, level: number, pos: Point, selfId = -1): number {
-  if (def.aura) return auraGain(env, def, level, pos, selfId);
+  if (auraOf(def)) return auraGain(env, def, level, pos, selfId);
   if (!def.attack) return 0;
-  const v = dpsOf(def, level, env.armor) * (weightedCoverage(env.sim, pos.x, pos.y, def.levels[level].rangeMilli) / 1000);
+  let v = dpsOf(def, level, env.armor) * (weightedCoverage(env.sim, pos.x, pos.y, def.levels[level].rangeMilli) / 1000);
+  // Markierung (Seer, Runde 7 / P6): der Zuwachs auf das markierte Ziel zählt als Anteil des übrigen Team-Werts (ein Ziel von mehreren, Boss voll).
+  const mark = def.onHit.find((o) => o.kind === 'mark');
+  if (mark?.kind === 'mark' && !env.own.some((o) => o.defId === def.id && o.id !== selfId)) {
+    let others = 0;
+    for (const [id, val] of env.values) if (env.team.find((t) => t.id === id)?.defId !== def.id) others += val;
+    v += (others * mark.vulnBp * 0.4) / 10000;
+  }
   // Fähigkeiten (Stun, Nuke) sind Boss-/Elite-Werkzeuge und zählen mit Nutzen-Aufschlag.
   return v * airFactor(env, def) * (def.ability ? ABILITY_BONUS : 1);
 }
@@ -406,7 +448,10 @@ export function pickTop<T extends { score: number }>(rng: RngState, sorted: T[],
 }
 
 const investedOf = (env: Env, farm: boolean): number =>
-  env.own.reduce((a, u) => a + ((env.defs.get(u.defId) as UnitDef).farm ? (farm ? u.invested : 0) : farm ? 0 : u.invested), 0);
+  env.own.reduce((a, u) => {
+    const d = env.defs.get(u.defId) as UnitDef;
+    return a + (d.farm || d.bountyAura ? (farm ? u.invested : 0) : farm ? 0 : u.invested);
+  }, 0);
 
 /** Statische Kandidaten der Unit (Raster, nach Abdeckung absteigend), einmal je Bot und Typ berechnet. Farm und andere ohne Angriff: Abdeckung der Stufe-0-Reichweite, nur zum Ordnen. */
 function spotsOf(env: Env, def: UnitDef): Spot[] {
@@ -459,10 +504,10 @@ const OPTION_SPACING = 1000;
 
 /** Bester Platz für einen Aura-Träger: Summe der Werte der Nachbarn im Radius; nur freie Raster-Positionen mit mindestens einem Nachbarn. */
 function auraSpots(env: Env, def: UnitDef): { x: number; y: number; v: number }[] {
-  const aura = def.aura as NonNullable<UnitDef['aura']>;
+  const aura = auraOf(def) as NonNullable<ReturnType<typeof auraOf>>;
   const nb = auraNeighbours(env, def, -1);
   if (nb.length === 0) return [];
-  const bp = aura.damageBpByLevel[0];
+  const bp = aura.bpByLevel[0];
   const cands: { x: number; y: number; v: number }[] = [];
   for (const sp of spotsOf(env, def)) {
     const v = auraGainAt(nb, aura.radiusMilli, bp, sp.x, sp.y);
@@ -521,7 +566,7 @@ export function buildOptions(env: Env, pol: Policy): Option[] {
   const nonFarm = investedOf(env, false);
   const cap = pol.maxNonFarmInvest ?? Infinity;
   for (const def of env.defs.values()) {
-    if (def.farm || !def.attack && !def.aura) continue;
+    if (def.farm || !def.attack && !auraOf(def)) continue;
     if (!canPlaceBase(env, def)) continue;
     const cost = env.sim.placeCost(env.playerId, def.id);
     if (cost > budget || nonFarm + cost > cap) continue;
@@ -532,7 +577,7 @@ export function buildOptions(env: Env, pol: Policy): Option[] {
     if (pol.canPlace && !pol.canPlace(def, env)) continue;
     const w = pol.weight ? pol.weight(def, 'place') : 1;
     if (w <= 0) continue;
-    if (def.aura) {
+    if (auraOf(def)) {
       for (const s of auraSpots(env, def)) out.push({ kind: 'place', def, pos: { x: s.x, y: s.y }, cost, score: (s.v / cost) * w });
       continue;
     }
@@ -808,6 +853,112 @@ export function farmStep(ctx: BotContext, memo: Memo, pol: Policy): void {
   }
 }
 
+/**
+ * Support-Units ohne Angriff und ohne Aura (Runde 7 / P6), erkannt über Daten statt IDs:
+ *  - `bountyAura` (Broker, nur Bots mit Farm-Strategie, wie die Farm selbst): Kauf und Ausbau nach Payback wie die Farm (erwarteter Zusatz-Ertrag je Wave aus dem bisherigen Bounty-Fluss und
+ *    dem Anteil des Pfads im Radius, ein Exemplar (mehr stapeln nicht, nur die beste Aura zählt), nicht in den Boss-Waves 9/10);
+ *  - `guard` (Warden): erst wenn es Leaks gab oder die Leben sinken (ein Mensch kauft den Schutz, wenn es brennt), ein Exemplar abseits
+ *    des Pfads, Ausbau nur bei deutlichem Lebensverlust.
+ * Beide erst mit mindestens drei Angreifern, damit die Verteidigung zuerst steht.
+ */
+export function supportStep(ctx: BotContext, memo: Memo, pol: Policy): void {
+  for (let i = 0; i < 4; i++) {
+    const env = makeEnv(ctx, memo);
+    const st = env.sim.state;
+    if (env.wave < 3 || env.own.filter((u) => (env.defs.get(u.defId) as UnitDef).attack).length < 3) return;
+    const budget = env.coins - (pol.reserve ?? 0);
+    const rest = TOTAL_WAVES - env.wave;
+    let did = false;
+    for (const def of env.defs.values()) {
+      if (def.bountyAura && pol.farm && !(env.wave >= 9 && env.wave <= 10) && rest >= 4) did = brokerStep(env, def, def.bountyAura, budget, rest, pol.farm.share) || did;
+      else if (def.guard) did = guardStep(env, def, budget) || did;
+      if (did) break;
+    }
+    if (!did) return;
+  }
+}
+
+function brokerStep(env: Env, def: UnitDef, ba: NonNullable<UnitDef['bountyAura']>, budget: number, rest: number, share: number): boolean {
+  const st = env.sim.state;
+  // Kill-Bounty wächst stark mit der Wave (Wave 5: ~210/Wave im Mittel bisher, Wave 6-20: ~600): Mittelwert bis jetzt x 2,5 als Erwartung der Restwaves.
+  const avg = (2.5 * st.stats.coinsBounty) / Math.max(1, env.wave - 1) / st.players.length;
+  const pathLen = Math.max(1, env.sim.pathSamples().length * 100);
+  const frac = (x: number, y: number): number => Math.min(1, (1.2 * env.sim.coverage(x, y, ba.radiusMilli)) / pathLen);
+  const mine = env.own.filter((u) => u.defId === def.id);
+  const best: { payback: number; cost: number; unit?: UnitState; pos?: Point } = { payback: Infinity, cost: 0 };
+  if (mine.length < 1 && canPlaceBase(env, def)) {
+    const cost = env.sim.placeCost(env.playerId, def.id);
+    for (const s of freeSpots(env, def, 3, OPTION_SPACING)) {
+      const gain = (avg * ba.bonusBpByLevel[0] * frac(s.x, s.y)) / 10000;
+      if (gain > 0 && cost / gain < best.payback) Object.assign(best, { payback: cost / gain, cost, pos: { x: s.x, y: s.y }, unit: undefined });
+    }
+  }
+  for (const u of mine) {
+    if (u.level >= def.maxLevel) continue;
+    const cost = def.upgradeCosts[u.level];
+    const gain = (avg * (ba.bonusBpByLevel[u.level + 1] - ba.bonusBpByLevel[u.level]) * frac(u.x, u.y)) / 10000;
+    if (gain > 0 && cost / gain < best.payback) Object.assign(best, { payback: cost / gain, cost, unit: u, pos: undefined });
+  }
+  if (best.payback > rest * 0.7 || best.cost + 100 > budget) return false;
+  // Anteil der Wirtschaft an den Gesamtinvestitionen wie bei der Farm (`farm.share`): Broker und Farm teilen sich das Budget.
+  if (investedOf(env, true) + best.cost > share * (investedOf(env, true) + investedOf(env, false) + best.cost)) return false;
+  const r = best.unit
+    ? env.sim.apply(env.playerId, { type: 'upgrade', entityId: best.unit.id })
+    : env.sim.apply(env.playerId, { type: 'place', unitId: def.id, x: (best.pos as Point).x, y: (best.pos as Point).y });
+  return r.ok;
+}
+
+function guardStep(env: Env, def: UnitDef, budget: number): boolean {
+  const st = env.sim.state;
+  const mine = env.own.filter((u) => u.defId === def.id);
+  const hurt = st.stats.leaks >= 6 || st.lives * 100 < st.maxLives * 70;
+  if (mine.length === 0) {
+    // Der Schutz belegt einen der 6 Typ-Plätze: nur, solange mindestens zwei frei sind (sonst stiehlt er der Verteidigung den Platz).
+    if (!hurt || env.wave < 6 || new Set(env.own.map((u) => u.defId)).size > 4 || !canPlaceBase(env, def)) return false;
+    const cost = env.sim.placeCost(env.playerId, def.id);
+    if (cost > budget) return false;
+    // abseits des Pfads (geringste Abdeckung zuerst), wie die Farm
+    const back = freeSpots(env, def, 6, 2 * def.radiusMilli, true);
+    if (back.length === 0) return false;
+    const s = back[nextInt(env.rng, back.length)];
+    return env.sim.apply(env.playerId, { type: 'place', unitId: def.id, x: s.x, y: s.y }).ok;
+  }
+  const u = mine[0];
+  if (u.level >= def.maxLevel || st.lives * 100 >= st.maxLives * 70) return false;
+  if (def.upgradeCosts[u.level] > budget) return false;
+  return env.sim.apply(env.playerId, { type: 'upgrade', entityId: u.id }).ok;
+}
+
+/** Messhilfe `botTuning.force`: kauft erzwungene Units, sobald bezahlbar (Rückgabe immer false: die normalen Käufe laufen danach weiter). */
+export function forceStep(ctx: BotContext, memo: Memo, pol: Policy): boolean {
+  if (botTuning.force.length === 0) return false;
+  for (let i = 0; i < 4; i++) {
+    const env = makeEnv(ctx, memo);
+    if (env.wave < 6) return false;
+    let did = false;
+    for (const id of botTuning.force) {
+      const def = env.defs.get(id);
+      if (!def) continue;
+      const mine = env.own.filter((u) => u.defId === id);
+      if (mine.length === 0) {
+        if (!canPlaceBase(env, def)) continue;
+        const cost = env.sim.placeCost(env.playerId, id);
+        if (env.coins < cost + 150) continue;
+        let pos: Point | undefined;
+        if (def.bountyAura) pos = freeSpots(env, def, 1)[0];
+        else if (def.guard) pos = freeSpots(env, def, 6, 2 * def.radiusMilli, true)[0];
+        else pos = buildOptions(env, { reserve: pol.reserve }).find((o) => o.kind === 'place' && o.def.id === id)?.pos;
+        if (!pos) continue;
+        did = env.sim.apply(env.playerId, { type: 'place', unitId: id, x: pos.x, y: pos.y }).ok || did;
+      } else if ((def.bountyAura || def.guard) && mine[0].level < Math.min(3, def.maxLevel) && env.coins >= def.upgradeCosts[mine[0].level] + 300) {
+        did = env.sim.apply(env.playerId, { type: 'upgrade', entityId: mine[0].id }).ok || did;
+      }
+    }
+    if (!did) return false;
+  }
+  return false;
+}
+
 /** Verkauft Farms, deren restlicher Ertrag unter dem Verkaufswert (40 %) liegt. */
 export function sellLateFarms(ctx: BotContext): void {
   const { sim, playerId } = ctx;
@@ -840,7 +991,7 @@ export function manageTargeting(ctx: BotContext): void {
     const d = defs.get(u.defId) as UnitDef;
     if (!d.attack) continue;
     let want = d.defaultTargeting;
-    if (d.id === 'titan' || focus) want = 'strongest';
+    if (d.ability?.kind === 'nuke' || focus) want = 'strongest';
     else if (big && d.attack.kind === 'single') want = 'strongest';
     else if (d.attack.kind === 'single') want = 'first';
     if (u.targeting !== want) sim.apply(playerId, { type: 'setTargeting', entityId: u.id, mode: want });
@@ -978,6 +1129,8 @@ export function playTurn(ctx: BotContext, memo: Memo, pol: Policy): void {
     farmStep(ctx, memo, pol);
   }
   rotateEarly(ctx, memo);
+  if (forceStep(ctx, memo, pol)) return;
+  if (!memo.mono) supportStep(ctx, memo, pol);
   spend(ctx, memo, pol);
 }
 
@@ -997,7 +1150,7 @@ export function rotateEarly(ctx: BotContext, memo: Memo): void {
   if (early.length === 0) return;
   const refund = early.reduce((a, u) => a + Math.floor((u.invested * (env.defs.get(u.defId) as UnitDef).sellBp) / 10000), 0);
   const missing = [...env.defs.values()].filter(
-    (d) => (d.attack || d.aura) && RARITY_RANK[d.rarity] >= RARITY_RANK[botTuning.rotateMinRarity] && !EARLY_UNITS.includes(d.id) && !env.own.some((u) => u.defId === d.id) && env.own.filter((u) => u.defId === d.id).length < limitOf(d),
+    (d) => (d.attack || auraOf(d)) && RARITY_RANK[d.rarity] >= RARITY_RANK[botTuning.rotateMinRarity] && !EARLY_UNITS.includes(d.id) && !env.own.some((u) => u.defId === d.id) && env.own.filter((u) => u.defId === d.id).length < limitOf(d),
   );
   if (!missing.some((d) => env.coins + refund >= d.placeCost)) return;
   for (const u of early) ctx.sim.apply(ctx.playerId, { type: 'sell', entityId: u.id });

@@ -49,6 +49,10 @@ export interface UnitDef {
   onHit: OnHitEffect[];
   aura?: UnitData['aura'];
   farm?: UnitData['farm'];
+  guard?: UnitData['guard'];
+  bountyAura?: UnitData['bountyAura'];
+  windowExtend?: UnitData['windowExtend'];
+  slowAura?: UnitData['slowAura'];
   ability?: UnitData['ability'];
   canHitAir: boolean;
   /** Schadensanteil gegen Flieger in Bp (nur gesetzt, wenn die Unit Luft abweichend vom vollen Schaden trifft). */
@@ -154,6 +158,10 @@ function build(u: UnitData, d: GameData): UnitDef {
     onHit: u.onHit,
     aura: u.aura,
     farm: u.farm,
+    guard: u.guard,
+    bountyAura: u.bountyAura,
+    windowExtend: u.windowExtend,
+    slowAura: u.slowAura,
     ability: u.ability,
     canHitAir: u.placement !== 'ground' || u.airDamageBp !== undefined,
     airDamageBp: u.airDamageBp,
