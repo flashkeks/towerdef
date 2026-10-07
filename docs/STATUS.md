@@ -3,9 +3,22 @@
 Arbeitsauftrag: [`/run.md`](../run.md) (**Runde 6**: freie Platzierung, kein Typ-Limit, Lesbarkeit, Balance nur grob). **Verbindlich zuerst:** [design/ENTSCHEIDUNGEN.md](design/ENTSCHEIDUNGEN.md). **Jede Sitzung liest danach diese Datei** und macht beim „Nächsten Schritt“ weiter.
 Frühere Aufträge: [archiv/run-runde1.md](archiv/run-runde1.md), [archiv/run-runde2.md](archiv/run-runde2.md), [archiv/run-runde3.md](archiv/run-runde3.md), [archiv/run-runde4.md](archiv/run-runde4.md), [archiv/run-runde5.md](archiv/run-runde5.md).
 
-Letzte Aktualisierung: 2026-10-06 (Runde 4, P6b Balance-Reste; Arbeit ab jetzt über Max' Claude-Account in `flashkeks/towerdef`, Branch `dev`)
 
-## Runde 5
+## Runde 6
+
+Letzte Aktualisierung: 2026-10-07 (Runde 6 gestartet)
+
+| Paket | Inhalt | Status | Agent (Modell) | Notiz |
+|---|---|---|---|---|
+| P0 | Status | **erledigt** | Hauptsitzung | Runde 5 abgeschlossen (Kurzbericht unten). Balance ab jetzt nur grob, ca. 30 min Bot-Messung je Paket |
+| P1 | Freie Platzierung im Simulator, kein Typ-Limit, Replay v2 | offen | 1 × Sonnet, allein | zuerst |
+| P2 | Balance grob (Farm, Spam, Stufen, Max-Replay) | offen | 1 × Sonnet | nach P1 |
+| P3 | Client: freie Platzierung, Smoke | offen | 1 × Sonnet | nach P1 |
+| P4 | Lesbarkeit und Hilfe im Match | offen | 1 × Sonnet | nach P1 |
+| P5 | Grafik-Austausch Kenney (optional) | offen | – | nur wenn `client/assets/vendor/` liegt |
+| P6 | Abschluss | offen | Hauptsitzung | |
+
+## Runde 5 (abgeschlossen)
 
 Letzte Aktualisierung: 2026-10-07 (Runde 5 abgeschlossen, P7)
 
