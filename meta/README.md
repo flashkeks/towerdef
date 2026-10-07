@@ -41,8 +41,8 @@ Jedes Paket aendert nur seine Dateien. Fremde Dateien nur minimal (Import, eine 
 | `src/leveling.ts` | `levelUp`, Kostenkurve, Level 1-40 | **P5** (Kurve), P2 (Wirkung) |
 | `src/progression.ts` | Spieler-Level aus XP, Freischaltung Hard ab 5, Nightmare ab 25 | **P5** (XP-Kurve), P2 (Freischaltung) |
 | `src/starter.ts` | Starter-Geschenk | **P5** |
-| `src/stars.ts` | Kopien -> Sterne (`STAR_THRESHOLDS`) | **P2** |
-| `src/unit-mods.ts` | `unitModsFor(profile, team)` -> `UnitMod[]` fuer `createSim({ unitMods })` | **P2** |
+| `src/stars.ts` | Kopien -> Sterne (Schwellen aus `sim/data/progression.json`, `STAR_THRESHOLDS`) | **P2** |
+| `src/unit-mods.ts` | `unitModsFor(profile, team)` -> `UnitMod[]` (Level/Sterne -> `lvlBp`, Kurven in `sim/src/progression.ts`) fuer `createSim({ unitMods })`; Mods gehoeren ins Replay v3 | **P2** |
 | `test/` | je Modul eine Datei; neue Pakete legen eigene Dateien an (`test/gacha-p3.test.ts` usw.) | jeder fuer seine |
 
 Platzhalter (`gacha`, `shop`, `rewards`, `leveling`, `progression`, `starter`, `stars`, `unit-mods`) laufen schon: der Kreislauf

@@ -6,7 +6,7 @@
  *  - Gegner-bezogene Größen (poolHp, leaks, baseHpLost, kills) gehören zur Spawn-Wave des Gegners.
  *  - Alle Spielerarrays sind nach Spieler-ID indiziert. HP in ganzen HP (Sim: Centi-HP / 100).
  */
-import { createSim, type Command, type DifficultyId, type SimEvent, type Sim, type GameData, type StageData } from '../index.js';
+import { createSim, type Command, type DifficultyId, type SimEvent, type Sim, type GameData, type StageData, type UnitMod } from '../index.js';
 import { seedRng } from '../prng.js';
 import { getBot } from './index.js';
 import type { Bot } from './types.js';
@@ -24,6 +24,8 @@ export interface MatchOptions {
   maxWaves?: number;
   /** Optional (Runde 6 / P2, Messungen): Daten-Override statt der JSON-Dateien. */
   data?: GameData;
+  /** Optional (Runde 7 / P2): Level-/Sterne-Mods je Spieler und Unit (`metaProfileMods`), Standard keine = neutral. */
+  unitMods?: UnitMod[];
   /** Optional: jeden Befehl der Bots mit Tick, Spieler, Ergebnis melden (Replay-Export, `scripts/export-replay.ts`). */
   onCommand?: (c: { tick: number; player: number; cmd: Command; ok: boolean; reason?: string }) => void;
 }
@@ -85,7 +87,7 @@ export function runMatch(opts: MatchOptions): MatchResult {
   const n = opts.players;
   if (opts.bots.length !== n && opts.bots.length !== 1) throw new Error('bots: ein Name je Spieler oder genau einer');
   const names = Array.from({ length: n }, (_, i) => opts.bots[opts.bots.length === 1 ? 0 : i]);
-  const core = createSim({ stage: opts.stage, difficulty: opts.difficulty, players: n, seed: opts.seed, maxWaves: opts.maxWaves, data: opts.data });
+  const core = createSim({ stage: opts.stage, difficulty: opts.difficulty, players: n, seed: opts.seed, maxWaves: opts.maxWaves, data: opts.data, unitMods: opts.unitMods });
   // Mit `onCommand` sehen die Bots eine Sicht, die jeden `apply` mitschreibt; Zustand und Ergebnis bleiben die der echten Sim.
   const sim: Sim = opts.onCommand
     ? {

@@ -1048,3 +1048,25 @@ Mensch: 41 Befehle in 11 278 Ticks (9:24 min), 18 Waves, 26 Leaks (**14 davon Fl
 
 Was **nicht** zum Verlust beitrug: Wellenstart (der Mensch ließ Wave 1 sofort starten, `skipWave` bei Tick 244; Verluste kamen erst ab W8), und die Zahl der Strikers (9 Käufe, aber 4 davon Wiederkauf).
 
+
+## Runde 7 — P2 (Unit-Level und Sterne im Simulator)
+
+**Kurven** (`sim/data/progression.json`, Startwerte, rec §13/§15): Schadens-Faktor = 1 + 0,025·(Level−1) + Sternbonus, Level 1–40, Sterne 1–5 aus Kopien 1/2/4/8/16, Sternbonus 0/+5/+10/+15/+20 %. Stern 1 ist **neutral** (sonst wäre `fresh` nicht gleich dem Spiel ohne Mods). Wirkung nur über `UnitMod.lvlBp` (kein neues Feld im Zustand, alte Hashes bleiben gültig). Meta-Profile der Bots: `fresh` = Level 1/★1 (x1,000), `mid` = Level 20/★3 (x1,575), `max` = Level 40/★5 (x2,175).
+
+**Faktor max/fresh = 2,175** (rechnerisch, Ziel rec §19 Nr. 16: ≤ ca. 2,5, erfüllt; rec nennt ×1,975 für Level 40 und ×2,125 mit ★3). Der Gesamtschaden einer Partie ist wegen der begrenzten Gegner-HP kein sauberer Maßstab (Sättigung): bis Tick 2400 auf Normal (6 Seeds, `wide`) machen `max` nur ×1,44 und `mid` ×1,09 des `fresh`-Schadens; die Wirkung zeigt sich in den Siegquoten und der Infinite-Welle.
+
+**Siegquote** (`npm run sim -- --bot farm,wide --difficulty normal,hard,nightmare --meta fresh,mid,max --runs 40`, Seeds 1–40, 1 Spieler, `standard20`, 24 s Laufzeit):
+
+| Bot | Stufe | fresh | mid | max |
+|---|---|---:|---:|---:|
+| farm | Normal | 100 % | 100 % | 100 % |
+| farm | Hard | 65 % | 100 % | 100 % |
+| farm | Nightmare | 22,5 % | 90 % | 97,5 % |
+| wide | Normal | 100 % | 100 % | 100 % |
+| wide | Hard | 57,5 % | 100 % | 100 % |
+| wide | Nightmare | 25 % | 100 % | 100 % |
+
+- **Normal mit `fresh` bleibt schaffbar** (100 % für `farm` und `wide`) und ist **bit-genau gleich dem Spiel ohne Mods** (Test: gleicher Hash). `fresh` Hard/Nightmare entspricht den Werten von Runde 6 (farm 64/26, wide 55/24).
+- **Infinite** (`--stage infinite --max-waves 60`, 12 Seeds, Normal): `fresh` und `mid` enden bei Welle 31 (Boss-Raster), `max` bei Welle 41 (`farm` wie `wide`). Grobes Maß, die Boss-Waves sind die Hürde.
+- **Befund:** Ein halb ausgebauter Spieler (`mid`: Level 20, ★3, x1,575) überrollt Hard und Nightmare (90–100 %). Die Stufen sind damit „Fortschritts-Tore“: Hard braucht Level ≈ 10–17 (rec: Level 17 = x1,4), Nightmare kaum mehr als `mid`. Passt zu den Freischaltungen (Hard ab Spieler-Level 5, Nightmare ab 25: bis dahin ist `mid` realistisch erreichbar), **keine Anpassung vorgenommen**. Offen: Nightmare ist ab `mid` zu leicht; Hebel wären Nightmare-HP (`difficulties.json`) oder ein späterer Freischaltwert, beides erst mit Menschen-Daten und den neuen Units (P6).
+- Grenzen: Bots kennen das Meta-Profil nicht (gleiche Strategie in allen Profilen), kein Koop, nur `standard20`, 40 bzw. 12 Seeds.

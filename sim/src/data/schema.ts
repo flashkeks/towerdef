@@ -452,3 +452,33 @@ export const BotProfilesSchema = z.object({
   _comment: z.string().optional(),
   profiles: z.record(z.string(), BotProfileSchema),
 });
+
+/**
+ * Meta-Fortschritt je Unit (Runde 7 / P2, `data/progression.json`): Level 1-40 und Sterne 1-5 -> Schadens-Faktor.
+ * Gehört nicht zu `GameData` (wie die Bot-Profile; `loadProgression` in `load.ts`, im Client/Meta als JSON-Import).
+ * Wirkung nur über `UnitMod.lvlBp`: Faktor = 10000 + levelDamageBpPerLevel * (Level - 1) + starDamageBp[Sterne - 1] (additiv, rec §15).
+ * Gilt für jede Unit gleich, keine Unit-Liste.
+ */
+export const ProgressionSchema = z
+  .object({
+    ref,
+    _comment: comment,
+    maxLevel: pos,
+    /** Schadens-Zuwachs je Level über Level 1 in Basispunkten (rec §15: 250 = +2,5 %). */
+    levelDamageBpPerLevel: nat,
+    /** Kopien, ab denen Stern i+1 erreicht ist (streng steigend, Eintrag 0 = 1: die erste Kopie ist Stern 1). */
+    starCopies: z.array(pos).min(1),
+    /** Zusatzschaden je Stern in Basispunkten, Länge = starCopies, Stern 1 = 0 (neutral). */
+    starDamageBp: z.array(nat).min(1),
+  })
+  .superRefine((p, ctx) => {
+    const bad = (m: string): void => void ctx.addIssue({ code: 'custom', message: m });
+    if (p.starCopies.length !== p.starDamageBp.length) bad('starCopies und starDamageBp müssen gleich lang sein');
+    if (p.starCopies[0] !== 1) bad('starCopies[0] muss 1 sein');
+    if (p.starDamageBp[0] !== 0) bad('starDamageBp[0] muss 0 sein (Stern 1 = neutral)');
+    for (let i = 1; i < p.starCopies.length; i++) {
+      if (p.starCopies[i] <= p.starCopies[i - 1]) bad('starCopies muss streng steigen');
+      if (p.starDamageBp[i] < p.starDamageBp[i - 1]) bad('starDamageBp darf nicht fallen');
+    }
+  });
+export type ProgressionData = z.infer<typeof ProgressionSchema>;
