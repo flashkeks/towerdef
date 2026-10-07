@@ -11,7 +11,7 @@ Verbindlich für alle weiteren Runden. Die beantwortete Fragenliste liegt in
 | MVP-Map | „Terrassenweg" (S-Kurve, eine Spur) |
 | Flyer | folgen dem normalen Pfad. Treffen können sie Hill/Hybrid-Units **und der Blaster mit 75 % Schaden** (`airDamageBp`, zweite Flächen-Antwort auf Flieger-Pulks; Max, 06.10.2026) |
 | Engine | PixiJS v8 (Rückfall Phaser), Simulation strikt getrennt (`sim/`) |
-| Reihenfolge | M1 Solo-Prototyp → M2 Koop → M3 Sammeln/Gacha/Meta → M4 Inhalte |
+| Reihenfolge | M1 Solo-Prototyp → **M3 Sammeln/Gacha/Meta** (zuerst lokal im Browser) → **M2 Koop** (Server, Kek-Game-Konto, Speicherstand wandert auf den Server) → M4 Inhalte. Geändert von M1→M2→M3 durch Max, 07.10.2026 |
 | Welt | **Grenzgilde im Nebelriss**: Fantasy-Abenteuer, warmherzig, eine Gilde hält die Linie gegen Schattenwesen |
 | Plattform | **nur Desktop-Browser.** Handy und Touch werden aktiv gesperrt (freundlicher Hinweis-Bildschirm), keine Mobile-Optimierung |
 | Sprache | **Englisch** (UI, Texte, Namen). Doku im Repo bleibt Deutsch |
@@ -52,6 +52,10 @@ Verbindlich für alle weiteren Runden. Die beantwortete Fragenliste liegt in
 
 ## Schwierigkeit und Fail-State
 
+- **Balance-Tiefe bis nach M3: nur grob** (Max, 07.10.2026). Mit Gacha, vielen Units und Perks
+  verschieben sich die Zahlen ohnehin. Der Simulator dient bis dahin als Sicherheitsnetz gegen
+  grobe Fehler (dominante Strategie, Pflicht-/Fallen-Unit, kaputte Regel), nicht zum
+  Feinkalibrieren. Feinschliff erst, wenn der Unit-Pool und die Progression stehen.
 - **Messlatte für die Ziel-Siegquoten** (Normal 85–95, Hard 45–65, Nightmare 15–35 %) ist die
   **beste echte Strategie**, nicht ein ausgewählter Bot (Max, 07.10.2026). Zählt ein Bot als
   Strategie, die ein Mensch genauso spielen würde (z. B. `farm`: früh Farmen, spät verkaufen),
