@@ -2,9 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { en } from '../src/i18n/en';
 import { parseMarkdown } from '../src/ui/markdown';
 import { formatDuration, MvpTracker } from '../src/ui/mvp';
-import { DEFAULT_SETTINGS, getSettings, HINTS_KEY, resetHints, resetSettingsCache, sanitize, setSetting, SETTINGS_KEY, TEAM_KEY } from '../src/ui/settings';
-import { DEFAULT_TEAM, isComplete, loadTeam, normalizeTeam, saveTeam, TEAM_SIZE, toggleUnit } from '../src/ui/team';
-import { loadBrowserData } from '../src/sim';
+import { DEFAULT_SETTINGS, getSettings, HINTS_KEY, resetHints, resetSettingsCache, sanitize, setSetting, SETTINGS_KEY } from '../src/ui/settings';
 
 const IDS = ['striker', 'gunner', 'blaster', 'banner', 'farm', 'lancer', 'frost', 'titan'];
 
@@ -71,41 +69,6 @@ describe('Einstellungen', () => {
     vi.stubGlobal('localStorage', st);
     resetHints();
     expect(st.getItem(HINTS_KEY)).toBeNull();
-  });
-});
-
-describe('Team-Auswahl', () => {
-  it('Standardteam hat genau 6 gueltige Units', () => {
-    expect(DEFAULT_TEAM).toHaveLength(TEAM_SIZE);
-    expect(DEFAULT_TEAM.every((id) => IDS.includes(id))).toBe(true);
-    expect(normalizeTeam(undefined, IDS)).toEqual([...DEFAULT_TEAM]);
-  });
-  it('Standardteam passt zu den Sim-Daten', () => {
-    const ids = loadBrowserData().units.units.map((u) => u.id);
-    expect(ids).toHaveLength(8);
-    expect(normalizeTeam(null, ids)).toHaveLength(6);
-  });
-  it('toggle: hinzufuegen bis 6, dann ignoriert, abwaehlen geht immer', () => {
-    let team: string[] = [];
-    for (const id of IDS) team = toggleUnit(team, id);
-    expect(team).toEqual(IDS.slice(0, 6));
-    expect(isComplete(team)).toBe(true);
-    expect(toggleUnit(team, 'titan')).toEqual(team);
-    expect(toggleUnit(team, 'striker')).toHaveLength(5);
-    expect(isComplete(toggleUnit(team, 'striker'))).toBe(false);
-  });
-  it('normalize verwirft Unbekannte, Doppelte und falsche Groessen', () => {
-    expect(normalizeTeam(['striker', 'striker', 'x', 'gunner', 'blaster', 'banner', 'farm', 'lancer'], IDS)).toEqual(['striker', 'gunner', 'blaster', 'banner', 'farm', 'lancer']);
-    expect(normalizeTeam(['striker', 'gunner'], IDS)).toEqual([...DEFAULT_TEAM]);
-    expect(normalizeTeam('kaputt', IDS)).toEqual([...DEFAULT_TEAM]);
-  });
-  it('letzte Wahl wird gemerkt', () => {
-    vi.stubGlobal('localStorage', fakeStorage());
-    const pick = ['farm', 'lancer', 'frost', 'titan', 'striker', 'gunner'];
-    saveTeam(pick);
-    expect(loadTeam(IDS)).toEqual(pick);
-    vi.stubGlobal('localStorage', fakeStorage({ [TEAM_KEY]: '[1,2' }));
-    expect(loadTeam(IDS)).toEqual([...DEFAULT_TEAM]);
   });
 });
 

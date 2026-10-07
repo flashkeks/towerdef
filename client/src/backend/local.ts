@@ -16,16 +16,22 @@ import {
   bannerView,
   buy,
   claimStarterGift,
+  collectionView,
   exportProfile,
   importProfile,
   levelUp,
   listBanners,
   migrate,
   newProfile,
+  playerView,
   pull,
+  pullHistoryView,
   refreshOrder,
   rewardFromReplay,
   setTeam,
+  stageView,
+  unitModsFor,
+  isDifficultyUnlocked,
   withIdempotency,
   withIdempotencyAsync,
   type MetaEnv,
@@ -33,7 +39,7 @@ import {
   type PaymentProvider,
   type Profile,
 } from './meta';
-import { loadBrowserData } from '../sim';
+import { loadBrowserData, type DifficultyId } from '../sim';
 import { cryptoRandomInt, cryptoUuid } from './random';
 import { defaultStorage, type Persistence, type ProfileStorage } from './storage';
 
@@ -188,7 +194,45 @@ export class LocalBackend implements Backend {
    */
   reportMatch(replay: ReplayFile, idemKey: string): ReturnType<Backend['reportMatch']> {
     const head = { stage: replay?.stage, difficulty: replay?.difficulty, seed: replay?.seed, endTick: replay?.endTick, endHash: replay?.endHash };
-    return this.mutate('reportMatch', head, idemKey, 'reward', (p) => rewardFromReplay(p, replay, this.env, { data: loadBrowserData() }));
+    // bindToProfile: Team und unitMods im Replay muessen zum gespeicherten Profil passen (sonst gaebe sich ein Replay selbst Level)
+    return this.mutate('reportMatch', head, idemKey, 'reward', (p) => rewardFromReplay(p, replay, this.env, { data: loadBrowserData(), bindToProfile: true }));
+  }
+
+  /** Ablauf der reinen Leseaufrufe: Profil sicherstellen, dann `fn` mit dem Profil. */
+  private read<T extends { ok: true }>(fn: (p: Profile) => T | BFail): Promise<T | BFail> {
+    return this.serial<T>(async () => {
+      const cur = await this.ensure();
+      if ('ok' in cur) return cur;
+      return fn(cur.profile);
+    });
+  }
+
+  playerView(): ReturnType<Backend['playerView']> {
+    return this.read((p) => ({ ok: true as const, player: playerView(p), persistence: this.persistence }));
+  }
+
+  collectionView(): ReturnType<Backend['collectionView']> {
+    return this.read((p) => ({ ok: true as const, ...collectionView(p) }));
+  }
+
+  stageView(stageId: string): ReturnType<Backend['stageView']> {
+    return this.read((p) => ({ ok: true as const, ...stageView(p, stageId) }));
+  }
+
+  pullHistory(limit = 30): ReturnType<Backend['pullHistory']> {
+    return this.read((p) => ({ ok: true as const, history: pullHistoryView(p, limit) }));
+  }
+
+  matchSetup(difficulty: DifficultyId): ReturnType<Backend['matchSetup']> {
+    return this.read((p) => {
+      if (!isDifficultyUnlocked(p, difficulty)) return fail('difficulty-locked', 'This difficulty is not unlocked yet.');
+      const owned = Object.keys(p.units).length;
+      if (owned === 0 || p.team.length === 0) return fail('team-empty', 'Pick a team first.');
+      const missing = p.team.find((u) => !p.units[u]);
+      if (missing) return fail('unit-not-owned', `You do not own ${missing}.`);
+      if (p.team.length < Math.min(6, owned)) return fail('team-incomplete', 'Pick a full team first.');
+      return { ok: true as const, team: [...p.team], unitMods: unitModsFor(p, p.team) };
+    });
   }
 
   async shopCatalog(): ReturnType<Backend['shopCatalog']> {

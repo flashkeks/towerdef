@@ -4,11 +4,18 @@
 // Runde 6 (freie Platzierung): geklickt wird auf FREIE POSITIONEN im Feld. Die Stellen kommen lesend aus `placementGrid`/`canPlace`
 // der Sim (`scripts/lib/mouse.mjs`), umgerechnet ueber das Kartenmass (Canvas-Breite / 17 Kacheln). `evaluate` liest nur Zustand
 // (zum Planen und Pruefen, auch den Geist `session.ghost()`), loest nie eine Spielaktion aus.
+// Runde 7 (P4): VOR dem Match der ganze Meta-Kreislauf mit echten Mausklicks: neues Profil -> Lobby -> Starter-Geschenk -> 10er-Zug (Enthuellung,
+// Ratentabelle, Pity) -> Team aus der Sammlung -> Stage Normal (gesperrte Stufen mit Grund) -> Match -> Belohnung -> Lobby -> Unit leveln ->
+// zweites Match mit den Level-Mods (Replay wird ans Profil gebunden) -> SEITE NEU LADEN -> Salden, Sammlung, Pity noch da. Nur bei 1280x720
+// zusaetzlich Export (Download) -> Reset (mit Bestaetigung) -> Import (Dateiwahl) -> derselbe Stand; Ladefehler und Speicher-Warnung in eigenen Seiten.
+// Voll gespielt wird nur 1280x720 (SMOKE_FULL=1920x1080,... fuer mehr); die anderen Aufloesungen spielen nach dem Meta-Kreislauf ein kurzes Match
+// (Ruf aller Wellen ohne Verteidigung = schnelle Niederlage, zahlt trotzdem Gold und XP), damit die Laufzeit im Rahmen bleibt.
 // Dazu: Klick auf den Pfad zeigt Toast mit Grund, falsche Zone, Rand, Ueberlappung, Shift+Klick, Rechtsklick/Esc, Mobil-Sperre.
 // Umgebung: SMOKE_PORT (Standard 4173), SMOKE_RES=1280x720,... (Auswahl), SMOKE_MAX_S (Zeitlimit je Stage, Standard 900).
 // Aufruf: npm run build && npm run smoke   (Chromium-Pfad: PLAYWRIGHT_BROWSERS_PATH bzw. SMOKE_CHROMIUM)
 import { spawn } from 'node:child_process';
 import { existsSync, mkdirSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
@@ -71,6 +78,8 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const RESOLUTIONS = (process.env.SMOKE_RES ?? '1280x720,1920x1080,2560x1440').split(',').map((r) => r.split('x').map(Number));
 const MAX_STAGE_S = Number(process.env.SMOKE_MAX_S ?? 900);
+const FULL = (process.env.SMOKE_FULL ?? '1280x720').split(',');
+const shotDir = docs;
 
 /** Spielplan: Reihenfolge der Units (Katalog-Tasten 1-8: striker, gunner, blaster, banner, farm, lancer, frost, titan). */
 const PLAN = ['striker', 'gunner', 'striker', 'blaster', 'gunner', 'frost', 'blaster', 'lancer', 'striker', 'gunner', 'titan', 'blaster', 'lancer', 'gunner', 'banner'];
@@ -112,6 +121,7 @@ async function playStage(browser, [W, H]) {
 
   // ---- Handeln (nur Maus und Tastatur) ----------------------------------------------------------------------------
   const center = async (selector) => {
+    await page.locator(selector).first().scrollIntoViewIfNeeded().catch(() => {}); // nur Layout: Elemente in Scroll-Bereichen sichtbar machen
     const b = await page.locator(selector).first().boundingBox();
     if (!b) throw new Error(`kein Layout fuer ${selector}`);
     return { x: b.x + b.width / 2, y: b.y + b.height / 2 };
@@ -127,19 +137,150 @@ async function playStage(browser, [W, H]) {
   const press = (k) => page.keyboard.press(k);
   const pickKey = async (def, s) => press(String(s.order.indexOf(def) + 1));
 
+  const full = FULL.includes(tag);
+  const shot = (name) => (W === 1280 ? page.screenshot({ path: resolve(shotDir, `screenshot-r7-${name}.png`) }) : Promise.resolve());
+  const text = async (selector) => ((await page.locator(selector).first().textContent().catch(() => '')) ?? '').trim();
+  const wallet = () =>
+    page.evaluate(() => {
+      const w = document.querySelector('.wallet');
+      return w ? { crystals: Number(w.dataset.crystals), gold: Number(w.dataset.gold), level: Number(w.dataset.level) } : null;
+    });
+  const waitWallet = async (pred, what) => {
+    try {
+      await page.waitForFunction((src) => {
+        const w = document.querySelector('.wallet');
+        return !!w && new Function('w', `return ${src}`)({ crystals: Number(w.dataset.crystals), gold: Number(w.dataset.gold), level: Number(w.dataset.level) });
+      }, pred, { timeout: 5000 });
+    } catch {
+      /* die Pruefung danach meldet den Ist-Wert */
+    }
+    return wallet();
+  };
+  /** Navigation innerhalb der Meta-Bildschirme, immer mit der Maus. */
+  const toLobby = async () => {
+    if (!(await page.locator('.lobby:not(.loading)').count())) await clickSel('.meta-head .menu-back');
+    await page.waitForSelector('.lobby:not(.loading)');
+  };
+  const go = async (what) => {
+    await toLobby();
+    await clickSel(`.lobby-${what}`);
+  };
+  /** Rushmatch: gar nichts bauen (oder nur eine Unit) und alle Wellen rufen = schnelle Niederlage. */
+  const rush = async (placeFirst) => {
+    await clickSel('.btn.speed[data-speed="3"]');
+    if (placeFirst) {
+      const s0 = await snap();
+      const unit = ['striker', 'blaster'].find((u) => s0.order.includes(u));
+      const spots = await readSpots(page, unit, 2);
+      await pickKey(unit, s0);
+      await clickAt(...spots[0]);
+      await sleep(120);
+    }
+    const t1 = Date.now();
+    while (!(await snap()).over && Date.now() - t1 < 120000) {
+      await press('n');
+      await sleep(120);
+    }
+  };
+  const readCollection = () =>
+    page.evaluate(() => [...document.querySelectorAll('.unit-tile')].map((e) => `${e.dataset.unit}:${e.dataset.owned}:${e.querySelector('.ut-sub')?.textContent}`));
+
   await page.goto(URL_);
-  // ab P6: Hauptmenue vor der Stufenwahl
-  await page.waitForSelector('.menu-play, .diff[data-difficulty="normal"]');
-  if (await page.locator('.menu-play').isVisible().catch(() => false)) await clickSel('.menu-play');
-  await page.waitForSelector('.diff[data-difficulty="normal"]');
+  await page.waitForSelector('.lobby:not(.loading)');
   ok((await page.title()) === 'Duskwardens', `Titel = Duskwardens (ist: ${await page.title()})`);
+
+  // ---- Lobby (neues Profil) -------------------------------------------------------------------------------------------
+  ok((await page.locator('.lobby-btn').count()) === 6, 'Lobby: Play, Summon, Units, Team, Shop, Settings');
+  ok(await page.locator('.testbuild').isVisible(), `Hinweis "Test build, progress is stored in this browser only" sichtbar: "${await text('.testbuild')}"`);
+  ok((await page.locator('.memory-warning').count()) === 0, 'kein Warnhinweis, solange der Browser speichert');
+  ok(await page.locator('.starter-claim').isVisible(), 'Starter-Geschenk als sichtbarer Knopf');
+  let w = await wallet();
+  ok(w && w.crystals === 0 && w.gold === 0 && w.level === 1, `neues Profil: 0 Crystals, 0 Gold, Level 1 (${JSON.stringify(w)})`);
+  ok(await page.locator('.lobby-play').isDisabled(), 'Play gesperrt, solange es keine Units gibt');
+  await clickSel('.starter-claim');
+  await page.waitForSelector('.starter-card.done');
+  w = await waitWallet('w.crystals === 450');
+  ok(w.crystals === 450, `Starter-Geschenk: 450 Crystals (${w.crystals})`);
+  ok((await page.locator('.starter-units .strip-unit').count()) >= 6 && (await page.locator('.team-strip .strip-unit').count()) === 6, 'Starter-Units und Team (6) in der Lobby sichtbar');
+  ok(!(await page.locator('.lobby-play').isDisabled()), 'Play frei nach dem Geschenk');
+  await shot('lobby');
+
+  // ---- Summon: Raten sichtbar, Pity auf dem Knopf, 10er-Zug mit Enthuellung ------------------------------------------------
+  await go('summon');
+  await page.waitForSelector('.pull-btn[data-count="10"]');
+  ok(await page.locator('.rates-table').isVisible(), 'Ratentabelle direkt auf dem Bildschirm sichtbar (nichts aufzuklappen)');
+  const rates = await page.locator('.rates-table tr.tier .base').allTextContents();
+  ok(rates.join(',') === '70%,25%,4%,1%', `Raten 70/25/4/1 % (${rates.join(',')})`);
+  ok(/Starting values/.test(await text('.start-values')) && /Rates version/.test(await text('.rates-version')), 'Hinweis "Startwerte" und Ratenversion sichtbar');
+  ok(/Pull x10 · Mythic pity 0\/150/.test(await text('.pull-btn[data-count="10"] strong')), `Pity-Zaehler auf dem Knopf: "${await text('.pull-btn[data-count="10"] strong')}"`);
+  ok((await page.locator('.pity-row').count()) === 2 && /Mythic: 0 \/ 150/.test(await text('.pity-top')), 'Pity-Zeilen (Mythic, Legendary oder besser) sichtbar');
+  ok((await page.locator('.banner-tab').count()) === 2, 'Banner: Standard und Starter (solange verfuegbar)');
+  await clickSel('.pull-btn[data-count="10"]');
+  await page.waitForSelector('.reveal');
+  ok(await page.evaluate(() => document.querySelector('.pull-btn[data-count="10"]').disabled), 'Knopf waehrend des Zugs gesperrt');
+  ok((await page.locator('.reveal-card').count()) === 10, 'Enthuellung: 10 Karten');
+  await sleep(500);
+  await page.mouse.click(W / 2, 60); // Klick irgendwo ueberspringt
+  await page.waitForSelector('.reveal.finished');
+  ok((await page.locator('.reveal.skipped').count()) === 1, 'Klick ueberspringt die Animation');
+  await shot('reveal');
+  await sleep(350);
+  await clickSel('.reveal-done');
+  await page.waitForSelector('.reveal', { state: 'detached' });
+  ok((await page.locator('.hist-item').count()) === 10, `Ziehungsverlauf zeigt 10 Zuege (${await page.locator('.hist-item').count()})`);
+  w = await waitWallet('w.crystals === 0');
+  ok(w.crystals === 0, `450 Crystals ausgegeben (${w.crystals})`);
+  const pityBtn = await text('.pull-btn[data-count="10"] strong');
+  ok(/Mythic pity (\d+)\/150/.test(pityBtn), `Pity nach dem Zug: "${pityBtn}"`);
+  await shot('summon');
+  await clickSel('.pull-btn[data-count="1"]');
+  await page.waitForSelector('.flash.error');
+  ok(/Not enough crystals/.test(await text('.flash.error')) && (await page.locator('.reveal').count()) === 0, `Fehlercode als Toast: "${await text('.flash.error')}"`);
+
+  // ---- Units: Raster, Filter, Level-Up gesperrt ohne Gold ----------------------------------------------------------------
+  await go('units');
+  await page.waitForSelector('.unit-tile');
+  const countTxt = await text('.unit-count');
+  const [, ownedN, totalN] = /(\d+) \/ (\d+) owned/.exec(countTxt) ?? [];
+  ok(Number(totalN) > 0 && (await page.locator('.unit-tile').count()) === Number(totalN), `alle ${totalN} Units im Raster, ${ownedN} besessen`);
+  ok((await page.locator('.unit-tile[data-owned="false"]').count()) === Number(totalN) - Number(ownedN), 'nicht besessene Units grau markiert ("not owned")');
+  await clickSel('.filter-btn[data-group="rarity"][data-value="epic"]');
+  ok((await page.locator('.unit-tile').count()) > 0 && (await page.locator('.unit-tile:not(.r-epic)').count()) === 0, 'Filter Seltenheit = Epic');
+  await clickSel('.filter-btn[data-group="rarity"][data-value=""]');
+  await clickSel('.unit-tile[data-owned="true"]');
+  ok((await page.locator('.levelup').isDisabled()) && /40 gold/.test(await text('.ud-why')), `Level-Up ohne Gold gesperrt, mit Grund: "${await text('.ud-why')}"`);
+  ok((await page.locator('.ud-stats dd').count()) >= 4 && (await page.locator('.ud-tags .utag, .ud-role').count()) >= 1, 'Detailansicht: Werte, Rolle, Symbole');
+
+  // ---- Team aus der Sammlung -----------------------------------------------------------------------------------------------
+  await go('team');
+  await page.waitForSelector('.team-slot.filled');
+  ok((await page.locator('.team-slot.filled').count()) === 6, 'Team: 6 Slots belegt');
+  const firstSlot = await page.locator('.team-slot.filled').first().getAttribute('data-unit');
+  await clickSel('.team-slot.filled');
+  ok((await page.locator('.team-slot.filled').count()) === 5 && (await page.locator('.team-save').isDisabled()), 'Slot leeren: 5 von 6, Speichern gesperrt');
+  await clickSel(`.team-pick .unit-tile[data-unit="${firstSlot}"]`);
+  ok((await page.locator('.team-slot.filled').count()) === 6 && !(await page.locator('.team-save').isDisabled()), 'Unit aus der Sammlung gewaehlt: 6 von 6');
+  await shot('team');
+  await clickSel('.team-save');
+  await page.waitForSelector('.flash.good');
+  ok(/Team saved/.test(await text('.flash.good')), 'Team gespeichert');
+
+  // ---- Stage-Auswahl -----------------------------------------------------------------------------------------------------------
+  await go('play');
+  await page.waitForSelector('.stage-card');
   ok((await page.locator('.diff').count()) === 3, 'Stufenwahl Normal/Hard/Nightmare sichtbar');
-  await clickSel('.diff[data-difficulty="normal"]');
-  // ab P6: Team-Wahl vor dem Spiel (6 aus 8 vorbelegt)
-  await page.waitForSelector('.team-go, canvas.board', { state: 'attached' });
-  if (await page.locator('.team-go').isVisible().catch(() => false)) await clickSel('.team-go');
+  ok((await page.locator('.stage-card[data-difficulty="hard"]').isDisabled()) && /Player level 5/.test(await text('.stage-card[data-difficulty="hard"] .lock-reason')), 'Hard gesperrt: "Player level 5"');
+  ok((await page.locator('.stage-card[data-difficulty="nightmare"]').isDisabled()) && /Player level 25/.test(await text('.stage-card[data-difficulty="nightmare"] .lock-reason')), 'Nightmare gesperrt: "Player level 25"');
+  ok(/First clear: 100 crystals/.test(await text('.stage-card[data-difficulty="normal"] .stage-reward')) && /Not played yet/.test(await text('.stage-card[data-difficulty="normal"] .stage-best')), 'Normal: Erst-Clear-Belohnung und Bestwelle sichtbar');
+  await shot('stage');
+  await clickSel('.stage-card[data-difficulty="normal"]');
   await page.waitForSelector('canvas.board');
-  ok((await page.locator('.overlay.hidden').count()) >= 1 && !(await page.locator('.dialog.start').isVisible()), 'Start-Overlay verschwindet nach Stufenwahl');
+  ok((await page.locator('.overlay.hidden').count()) >= 1 && !(await page.locator('.dialog.wide').isVisible().catch(() => false)), 'Overlay verschwindet nach Stufenwahl');
+  const sess = await page.evaluate(() => {
+    const x = window.__duskwardens.session();
+    return { team: x.team, mods: x.unitMods.length, defs: x.teamCatalog().length };
+  });
+  ok(sess.team?.length === 6 && sess.mods === 6 && sess.defs === 6, `Session mit Team (${sess.team?.length}) und Unit-Mods (${sess.mods}) aus dem Profil`);
 
   // ---- Layout: alles im Fenster, keine Slot-Knoepfe mehr --------------------------------------------------------------
   const lay = await page.evaluate(() => {
@@ -273,7 +414,8 @@ async function playStage(browser, [W, H]) {
   let toldPoor = false;
   const t0 = Date.now();
   let stuck = 0;
-  while (true) {
+  // nur die vollen Aufloesungen spielen die ganze Stage; die anderen rufen alle Wellen ohne Verteidigung (schnelle Niederlage, zahlt trotzdem)
+  while (full) {
     s = await snap();
     if (!s) throw new Error('keine Session');
     if (s.over) break;
@@ -350,24 +492,173 @@ async function playStage(browser, [W, H]) {
       await sleep(30);
     }
   }
+  if (!full) await rush(false);
   const fin = await snap();
-  log(`Ende: ${fin.result ?? 'Zeitlimit'} bei Welle ${fin.wave}, Leben ${fin.lives}, Platzieren ${stats.place} (abgelehnt ${stats.rejected}), Upgrades ${stats.upgrade}, Wellenrufe ${stats.wave}, ${Math.round((Date.now() - t0) / 1000)}s`);
+  log(`Ende: ${fin.result ?? 'Zeitlimit'} bei Welle ${fin.wave}, Leben ${fin.lives}, Platzieren ${stats.place} (abgelehnt ${stats.rejected}), Upgrades ${stats.upgrade}, Wellenrufe ${stats.wave}, ${Math.round((Date.now() - t0) / 1000)}s${full ? '' : ' (kurzes Match)'}`);
   ok(fin.over, `Stage laeuft bis Sieg oder Niederlage durch (Ergebnis: ${fin.result}, Welle ${fin.wave})`);
-  ok(stats.place >= 4 && stats.upgrade >= 3, `echte Maus-Aktionen: ${stats.place} Platzierungen, ${stats.upgrade} Upgrades`);
-  ok(stats.rejected <= 2, `Klicks auf gelesene freie Stellen werden angenommen (abgelehnt: ${stats.rejected})`);
-  ok(fin.units.length > 0 || fin.result === 'loss', `Units auf dem Feld oder Niederlage (${fin.units.length})`);
-  ok(fin.kills > 20, `Units haben Gegner besiegt (${fin.kills})`);
-  if (fin.over) {
-    await page.waitForSelector('.dialog.end', { timeout: 5000 }).catch(() => {});
-    ok(await page.locator('.dialog.end').isVisible(), 'Ergebnis-Bildschirm erscheint');
-    log(`Ergebnis: ${await page.locator('.dialog.end .title').textContent()} - ${await page.locator('.dialog.end .result-stats').textContent()}`);
+  if (full) {
+    ok(stats.place >= 4 && stats.upgrade >= 3, `echte Maus-Aktionen: ${stats.place} Platzierungen, ${stats.upgrade} Upgrades`);
+    ok(stats.rejected <= 2, `Klicks auf gelesene freie Stellen werden angenommen (abgelehnt: ${stats.rejected})`);
+    ok(fin.units.length > 0 || fin.result === 'loss', `Units auf dem Feld oder Niederlage (${fin.units.length})`);
+    ok(fin.kills > 20, `Units haben Gegner besiegt (${fin.kills})`);
   }
+  await page.waitForSelector('.dialog.end', { timeout: 5000 }).catch(() => {});
+  ok(await page.locator('.dialog.end').isVisible(), 'Ergebnis-Bildschirm erscheint');
+  log(`Ergebnis: ${await page.locator('.dialog.end .title').textContent()} - ${await page.locator('.dialog.end .result-stats').textContent()}`);
+
+  // ---- Belohnung (aus dem nachgerechneten Replay) ---------------------------------------------------------------------------
+  await page.waitForSelector('.reward-box[data-state="ok"], .reward-box[data-state="error"]', { timeout: 30000 });
+  ok((await page.locator('.reward-box').getAttribute('data-state')) === 'ok', `Belohnung gemeldet und verbucht (Zustand: ${await page.locator('.reward-box').getAttribute('data-state')} ${await text('.reward-error')})`);
+  const rewardOf = () =>
+    page.evaluate(() => Object.fromEntries([...document.querySelectorAll('.reward-line')].map((e) => [e.classList[1], Number(e.dataset.value)])));
+  const r1 = await rewardOf();
+  const won = fin.result === 'win';
+  ok(r1.gold > 0 && r1.xp > 0, `Gold und XP sichtbar (${JSON.stringify(r1)})`);
+  ok(won ? r1.crystals === 100 && (await page.locator('.reward-firstclear').count()) === 1 : r1.crystals === undefined && /gold and XP count/.test(await text('.reward-consolation')), won ? 'Sieg: 100 Crystals und Erst-Clear-Hinweis' : 'Niederlage: Gold und XP, keine Crystals, freundlicher Hinweis');
+  await shot('result');
+  await clickSel('.dialog.end .btn.menu');
+  await page.waitForSelector('.lobby:not(.loading)');
+  w = await waitWallet(`w.gold === ${r1.gold}`);
+  ok(w.gold === r1.gold && w.crystals === (r1.crystals ?? 0), `zurueck in der Lobby, Salden = Belohnung (${JSON.stringify(w)})`);
+
+  // ---- Unit leveln (Gold aus dem Match), zweites Match mit den Level-Mods --------------------------------------------------
+  await go('units');
+  await page.waitForSelector('.unit-tile');
+  await clickSel('.unit-tile[data-unit="striker"]');
+  const goldBefore = (await wallet()).gold;
+  ok(!(await page.locator('.levelup').isDisabled()), `Level-Up frei mit ${goldBefore} Gold`);
+  await clickSel('.levelup');
+  w = await waitWallet(`w.gold === ${goldBefore - 40}`);
+  ok(w.gold === goldBefore - 40 && /Level 2 \/ 40/.test(await text('.ud-level')), `Striker Level 2 fuer 40 Gold (Gold ${w.gold}, ${await text('.ud-level')})`);
+  ok(/Collection bonus: \+\d+(\.\d+)?% damage/.test(await text('.ud-power')), `Sammlungs-Bonus sichtbar: "${await text('.ud-power')}"`);
+  await shot('units');
+  await go('play');
+  await page.waitForSelector('.stage-card[data-difficulty="normal"]:not([disabled])');
+  ok(/Each clear: 25 crystals|First clear: 100 crystals/.test(await text('.stage-card[data-difficulty="normal"] .stage-reward')) && /Best wave \d+ \/ 20/.test(await text('.stage-card[data-difficulty="normal"] .stage-best')), `Stage zeigt Belohnung und Bestwelle: "${await text('.stage-card[data-difficulty="normal"] .stage-reward')}", "${await text('.stage-card[data-difficulty="normal"] .stage-best')}"`);
+  await clickSel('.stage-card[data-difficulty="normal"]');
+  await page.waitForSelector('canvas.board');
+  const mods2 = await page.evaluate(() => window.__duskwardens.session().unitMods.find((m) => m.unit === 'striker')?.lvlBp);
+  ok(mods2 > 10000, `zweites Match: Striker-Mod aus dem Level (lvlBp ${mods2})`);
+  await rush(true);
+  await page.waitForSelector('.reward-box[data-state="ok"], .reward-box[data-state="error"]', { timeout: 30000 });
+  ok((await page.locator('.reward-box').getAttribute('data-state')) === 'ok', `zweites Match mit Level-Mods wird belohnt (Replay passt zum Profil; ${await text('.reward-error')})`);
+  await clickSel('.dialog.end .btn.menu');
+  await page.waitForSelector('.lobby:not(.loading)');
+
+  // ---- Seite neu laden: Stand bleibt --------------------------------------------------------------------------------------------
+  const readState = async () => {
+    const st = { wallet: await wallet() };
+    await go('summon');
+    await page.waitForSelector('.pull-btn[data-count="10"]');
+    await page.waitForSelector('.hist-item');
+    st.pity = await text('.pull-btn[data-count="10"] strong');
+    st.history = await page.locator('.hist-item').count();
+    await go('units');
+    await page.waitForSelector('.unit-tile');
+    st.units = await readCollection();
+    await toLobby();
+    return st;
+  };
+  const before = await readState();
+  await page.reload();
+  await page.waitForSelector('.lobby:not(.loading)');
+  await waitWallet(`w.gold === ${before.wallet.gold}`);
+  ok((await page.locator('.starter-claim').count()) === 0, 'nach dem Neuladen: Starter-Geschenk bleibt abgeholt');
+  const after = await readState();
+  ok(JSON.stringify(after.wallet) === JSON.stringify(before.wallet), `Neuladen: Salden gleich (${JSON.stringify(before.wallet)} -> ${JSON.stringify(after.wallet)})`);
+  ok(after.pity === before.pity && after.history === before.history && after.history === 10, `Neuladen: Pity und Verlauf gleich ("${before.pity}", ${after.history} Zuege)`);
+  ok(JSON.stringify(after.units) === JSON.stringify(before.units) && after.units.some((u) => u.startsWith('striker:true:Lv 2')), 'Neuladen: Sammlung und Level gleich (Striker Lv 2)');
+
+  // ---- Export -> Reset -> Import (nur 1280x720) ------------------------------------------------------------------------------
+  if (W === 1280) {
+    await go('settings');
+    await page.waitForSelector('.save-section');
+    const [dl] = await Promise.all([page.waitForEvent('download'), clickSel('.save-export')]);
+    const file = resolve(tmpdir(), `dw-smoke-save-${process.pid}.json`);
+    await dl.saveAs(file);
+    ok(/^duskwardens-save-\d{8}\.json$/.test(dl.suggestedFilename()), `Export: Datei-Download ${dl.suggestedFilename()}`);
+    await clickSel('.save-reset');
+    await page.waitForSelector('.confirm-layer');
+    await clickSel('.confirm-no');
+    ok((await page.locator('.confirm-layer').count()) === 0 && (await page.locator('.save-section').count()) === 1, 'Reset: Abbrechen im Bestaetigungsdialog aendert nichts');
+    await clickSel('.save-reset');
+    await page.waitForSelector('.confirm-layer');
+    await clickSel('.confirm-yes');
+    await page.waitForSelector('.lobby:not(.loading)');
+    w = await waitWallet('w.crystals === 0 && w.gold === 0');
+    ok(w.crystals === 0 && w.gold === 0 && (await page.locator('.starter-claim').count()) === 1, 'Reset: leeres Profil, Starter-Geschenk wieder da');
+    await clickSel('.lobby-settings');
+    await page.waitForSelector('.save-section');
+    const [fc] = await Promise.all([page.waitForEvent('filechooser'), clickSel('.save-import')]);
+    await fc.setFiles(file);
+    await page.waitForSelector('.confirm-layer');
+    await clickSel('.confirm-yes');
+    await page.waitForSelector('.lobby:not(.loading)');
+    await waitWallet(`w.gold === ${before.wallet.gold}`);
+    const restored = await readState();
+    ok(JSON.stringify(restored) === JSON.stringify(before), 'Import: derselbe Stand wie vor dem Export (Salden, Sammlung, Pity, Verlauf)');
+  }
+
   ok(errors.length === 0, `keine Konsolenfehler${errors.length ? ': ' + errors.slice(0, 3).join(' | ') : ''}`);
+  await ctx.close();
+}
+
+/** Randfaelle der Lobby in eigenen Seiten: kaputter oder zu neuer Stand (Meldung, Import/Reset, nichts wird ungefragt ueberschrieben) und gesperrter Speicher. */
+async function edgeCases(browser) {
+  const open = async (init) => {
+    const ctx = await browser.newContext({ viewport: { width: 1280, height: 720 } });
+    const page = await ctx.newPage();
+    const errors = [];
+    page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`));
+    await page.addInitScript(init);
+    await page.goto(URL_);
+    return { ctx, page, errors };
+  };
+  const cases = [
+    ['kaputter Stand', `localStorage.setItem('dw.meta.profile.a', 'kein json')`, 'profile-corrupt'],
+    ['Stand aus neuerer Version', `localStorage.setItem('dw.meta.profile.a', JSON.stringify({ app: 'dw-meta', rev: 3, profile: { schemaVersion: 99 } }))`, 'profile-too-new'],
+  ];
+  for (const [label, init, code] of cases) {
+    const { ctx, page, errors } = await open(init);
+    await page.waitForSelector('.load-error');
+    check((await page.locator('.load-error').getAttribute('data-code')) === code, `${label}: Meldung statt Absturz (${code})`);
+    check((await page.locator('.load-import').isVisible()) && (await page.locator('.load-reset').isVisible()), `${label}: Optionen Import und Reset sichtbar`);
+    const raw = await page.evaluate(() => localStorage.getItem('dw.meta.profile.a'));
+    check(raw !== null && raw.length > 0 && (await page.locator('.lobby').count()) === 0, `${label}: Stand bleibt unangetastet, keine Lobby`);
+    const b = await page.locator('.load-reset').boundingBox();
+    await page.mouse.click(b.x + b.width / 2, b.y + b.height / 2);
+    await page.waitForSelector('.confirm-layer');
+    const yes = await page.locator('.confirm-yes').boundingBox();
+    check((await page.locator('.load-error').count()) === 1, `${label}: Reset fragt erst nach`);
+    await page.mouse.click(yes.x + yes.width / 2, yes.y + yes.height / 2);
+    await page.waitForSelector('.lobby:not(.loading)');
+    check((await page.locator('.starter-claim').count()) === 1, `${label}: nach Reset frische Lobby`);
+    check(errors.length === 0, `${label}: keine Seitenfehler${errors.length ? ': ' + errors[0] : ''}`);
+    await ctx.close();
+  }
+  // Speicher gesperrt (privates Fenster o. a.): Spiel laeuft, Warnung sichtbar
+  const blocked = `Object.defineProperty(window, 'indexedDB', { value: undefined, configurable: true }); Object.defineProperty(window, 'localStorage', { get() { throw new Error('blocked'); }, configurable: true });`;
+  const { ctx, page, errors } = await open(blocked);
+  await page.waitForSelector('.lobby:not(.loading)');
+  check(await page.locator('.memory-warning').isVisible(), `Speicher gesperrt: Warnung "${((await page.locator('.memory-warning').textContent()) ?? '').trim()}"`);
+  check(/lost on reload/.test((await page.locator('.memory-warning').textContent()) ?? '') && (await page.locator('.testbuild').isVisible()), 'Warnung nennt "progress will be lost on reload", Testhinweis bleibt');
+  check(errors.length === 0, `Speicher gesperrt: keine Seitenfehler${errors.length ? ': ' + errors[0] : ''}`);
   await ctx.close();
 }
 
 try {
   await waitForServer();
+  {
+    const browser = await launch();
+    try {
+      await edgeCases(browser);
+    } catch (e) {
+      console.error(e);
+      failures.push(`Randfaelle: ${e}`);
+    } finally {
+      await browser.close();
+    }
+  }
   // Eigener Browser je Aufloesung (nach laengerem WebGL-Betrieb haengt in dieser Sandbox sonst die GPU).
   // Standard nacheinander (parallel verlangsamt die Sim im Software-Renderer); SMOKE_PARALLEL=1 spielt alle zugleich.
   const one = async (res) => {
@@ -426,4 +717,4 @@ if (failures.length) {
   console.error(`\n${failures.length} Pruefung(en) fehlgeschlagen`);
   process.exit(1);
 }
-console.log('\nSmoke gruen. Screenshots: client/docs/screenshot-r6-ghost-*.png');
+console.log('\nSmoke gruen. Screenshots: client/docs/screenshot-r6-ghost-*.png, client/docs/screenshot-r7-*.png');

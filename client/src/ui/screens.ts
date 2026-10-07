@@ -1,24 +1,30 @@
 /**
- * Vollbild-Dialoge ueber dem Spiel: Start (Stufenwahl), Ende (Sieg/Niederlage), Pause-Hinweis.
- * Besitzer: P6 (Hauptmenue, Team-Auswahl, Einstellungen, Ergebnis-Bildschirm, Pause-Menue). Neue Bildschirme als weitere
- * `show…`-Methoden hier oder in eigenen Dateien, `app.ts` schaltet nur um.
+ * Vollbild-Dialoge ueber dem Spiel. Besitzer: P6 (Runde 5), Runde 7 umgebaut von P4: Startbildschirm ist die Lobby (`lobby.ts`),
+ * dazu Summon, Units, Team, Stage-Auswahl, Shop (je eine Datei). Hier nur das Umschalten (`Nav`) plus Ergebnis- und Pause-Dialog.
  */
-import { t } from '../i18n/t';
+import { getBackend } from '../backend';
+import { getRecorder } from '../game/recorder';
 import type { Session } from '../game/session';
 import type { DifficultyId } from '../sim';
-import { clear, h, setClass } from './dom';
-import { buildCredits, buildMenu } from './menu';
+import { clear } from './dom';
+import { buildShop } from './crystal-shop';
+import { buildLobby, buildLobbyLoading, buildLoadError } from './lobby';
+import { buildCredits } from './menu';
 import type { Mvp } from './mvp';
+import type { Nav } from './nav';
 import { buildPause, buildResult, replaySlot, type ReplayButtonFactory } from './result';
+import { buildRewardBox } from './reward-box';
 import { buildSettings } from './settings-screen';
-import { buildTeamSelect } from './team-select';
-
-const DIFFICULTIES: readonly DifficultyId[] = ['normal', 'hard', 'nightmare'];
+import { buildStageSelect } from './stage-select';
+import { buildSummon } from './summon';
+import { buildTeam } from './team-screen';
+import { buildUnits } from './units';
+import { h } from './dom';
 
 export interface ScreenHandlers {
-  /** Neue Runde mit dieser Stufe (das Team steht dann schon im Speicher, `Ui.bind` liest es). */
+  /** Neue Runde mit dieser Stufe (Team und Mods holt `main.ts` ueber `Backend.matchSetup`). */
   onStart(d: DifficultyId): void;
-  /** Zurueck zum Hauptmenue: die laufende Runde wird verworfen. */
+  /** Zurueck zur Lobby: die laufende Runde wird verworfen. */
   onMenu(): void;
   /** Replay-Knopf fuer Ergebnis und Pause (P2, `ui/download.ts`); die Hauptsitzung verbindet ihn in `main.ts`. */
   replayButton?: ReplayButtonFactory;
@@ -31,6 +37,19 @@ export class Screens {
   readonly pausedEl = h('div', 'paused menu hidden');
   private session: Session | null = null;
   private pauseShown = false;
+
+  /** Wohin die Bildschirme einander schicken. */
+  readonly nav: Nav = {
+    lobby: () => void this.showLobby(),
+    summon: () => this.open(buildSummon(this.nav)),
+    units: (id) => this.open(buildUnits(this.nav, id)),
+    team: () => this.open(buildTeam(this.nav)),
+    shop: () => this.open(buildShop(this.nav)),
+    settings: () => this.open(buildSettings(() => void this.showLobby())),
+    credits: () => this.open(buildCredits(() => void this.showLobby())),
+    stage: () => this.open(buildStageSelect(this.nav)),
+    play: (d) => this.handlers.onStart(d),
+  };
 
   constructor(private readonly handlers: ScreenHandlers) {}
 
@@ -64,55 +83,42 @@ export class Screens {
         ),
       );
     }
-    setClass(this.pausedEl, 'hidden', !show);
+    this.pausedEl.classList.toggle('hidden', !show);
   }
 
   private open(box: HTMLElement): void {
+    // ohne laufende Runde (Lobby und Meta-Bildschirme) deckt der Dialog das Spielfeld voll ab, sonst scheint der letzte Frame durch
+    this.el.classList.toggle('solid', this.session === null);
     clear(this.el);
     this.el.append(box);
     this.el.classList.remove('hidden');
   }
 
-  /** Hauptmenue (Titel, Spielen, Einstellungen, Credits). */
+  /** Startbildschirm = Lobby. */
   showStart(): void {
     this.session = null;
     this.pauseShown = false;
     this.pausedEl.classList.add('hidden');
-    this.open(buildMenu({ onPlay: () => this.showDifficulty(), onSettings: () => this.showSettings(), onCredits: () => this.showCredits() }));
+    void this.showLobby();
   }
 
-  showSettings(): void {
-    this.open(buildSettings(() => this.showStart()));
-  }
-
-  showCredits(): void {
-    this.open(buildCredits(() => this.showStart()));
-  }
-
-  /** Stufenwahl, danach die Team-Auswahl. */
-  showDifficulty(): void {
-    const box = h('div', 'dialog start');
-    box.append(h('h1', 'title small', t('game.title')), h('h2', undefined, t('start.pick')));
-    const row = h('div', 'diff-row');
-    for (const d of DIFFICULTIES) {
-      const b = h('button', `btn diff ${d}`);
-      b.dataset.difficulty = d;
-      b.append(h('strong', undefined, t(`difficulty.${d}`)), h('span', undefined, t(`difficulty.${d}.desc`)));
-      b.addEventListener('click', () => this.showTeam(d));
-      row.append(b);
+  /** Lobby aus dem Profil bauen; Ladefehler zeigen Import/Reset statt eines Absturzes. */
+  async showLobby(): Promise<void> {
+    const loading = buildLobbyLoading();
+    this.open(loading);
+    const r = await getBackend().playerView();
+    if (this.el.firstElementChild !== loading) return; // inzwischen woanders
+    if (!r.ok) {
+      this.open(buildLoadError(r, () => void this.showLobby()));
+      return;
     }
-    const back = h('button', 'btn menu-back', t('menu.back'));
-    back.addEventListener('click', () => this.showStart());
-    box.append(row, h('div', 'diff-row'));
-    box.lastElementChild?.append(back);
-    this.open(box);
-  }
-
-  showTeam(d: DifficultyId): void {
-    this.open(buildTeamSelect(() => this.handlers.onStart(d), () => this.showDifficulty()));
+    this.open(buildLobby(r.player, r.persistence, this.nav));
   }
 
   showEnd(s: Session, mvp: Mvp | null): void {
+    const win = s.sim.state.result === 'win';
+    // Der Recorder hat die Runde beim Ende abgeschlossen; die Meldung rechnet das Backend nach (Belohnung nur aus dem Replay).
+    const rewards = buildRewardBox(getRecorder()?.snapshot() ?? null, win);
     this.open(
       buildResult(
         s,
@@ -121,11 +127,12 @@ export class Screens {
           onAgain: () => this.handlers.onStart(s.difficulty),
           onOther: () => {
             this.handlers.onMenu();
-            this.showDifficulty();
+            this.nav.stage();
           },
           onMenu: () => this.handlers.onMenu(),
         },
         this.handlers.replayButton,
+        rewards,
       ),
     );
   }

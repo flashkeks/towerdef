@@ -4,7 +4,7 @@ import { LocalStorageTier, MemoryTier, ProfileStorage, makeEnvelope, type KeyVal
 import { cryptoRandomInt, cryptoUuid } from '../src/backend/random';
 import { testEnv, SCHEMA_VERSION, newProfile } from '../src/backend/meta';
 import type { ReplayFile } from '../src/game/recorder';
-import { botReplay } from './replay-fixture';
+import { starterReplay } from './replay-fixture';
 
 class FakeLs implements KeyValueStore {
   data = new Map<string, string>();
@@ -27,7 +27,7 @@ class BrokenLs implements KeyValueStore {
 const key = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
 const mk = (ls: KeyValueStore = new FakeLs(), seed = 1) => new LocalBackend({ storage: new ProfileStorage([new LocalStorageTier(ls), new MemoryTier()]), env: testEnv(seed) });
 // echtes Replay aus einem Sim-Bot-Lauf (die Belohnung wird nachgerechnet, ein ausgedachter Hash zaehlt nicht mehr)
-const realWin = botReplay({ bot: 'wide', seed: 7 });
+const realWin = starterReplay({ bot: 'wide', seed: 1 });
 const fakeReplay = (over: Partial<ReplayFile> = {}): ReplayFile => ({ ...realWin, ...over });
 
 describe('LocalBackend', () => {
@@ -49,7 +49,12 @@ describe('LocalBackend', () => {
     if (!p.ok) throw new Error(p.message);
     expect(p.pull.pulls).toHaveLength(10);
     expect(p.profile.wallet.crystals).toBe(0);
-    const m = await be.reportMatch(fakeReplay(), key(3));
+    // Duplikate aus dem Zug aendern Sterne und damit die Mods: das Replay entsteht mit dem, was `matchSetup` jetzt liefert
+    const setup = await be.matchSetup('normal');
+    if (!setup.ok) throw new Error(setup.message);
+    const played = starterReplay({ bot: 'wide', seed: 1, only: setup.team, team: setup.team, unitMods: setup.unitMods });
+    expect(played.result).toBe('win');
+    const m = await be.reportMatch(played, key(3));
     if (!m.ok) throw new Error(m.message);
     expect(m.reward.crystals).toBe(100);
     const unit = Object.keys(m.profile.units)[0]!;

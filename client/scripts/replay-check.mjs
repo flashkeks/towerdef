@@ -66,9 +66,14 @@ try {
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
   await page.goto(URL_);
-  await page.click('.menu-play'); // P6: Hauptmenue -> Stufe -> Team
+  // Runde 7: Lobby -> Starter-Geschenk -> Play -> Stufe
+  await page.waitForSelector('.lobby');
+  if (await page.locator('.starter-claim').isVisible().catch(() => false)) {
+    await page.click('.starter-claim');
+    await page.waitForSelector('.starter-card.done');
+  }
+  await page.click('.lobby-play');
   await page.click('.diff[data-difficulty="normal"]');
-  await page.click('.team-go');
   await page.waitForSelector('canvas.board');
   await page.click('.btn.speed[data-speed="3"]');
 

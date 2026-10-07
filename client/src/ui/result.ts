@@ -53,7 +53,7 @@ export interface ResultHandlers {
   onMenu(): void;
 }
 
-export function buildResult(s: Session, mvp: Mvp | null, handlers: ResultHandlers, replay?: ReplayButtonFactory): HTMLElement {
+export function buildResult(s: Session, mvp: Mvp | null, handlers: ResultHandlers, replay?: ReplayButtonFactory, rewards?: HTMLElement): HTMLElement {
   const st = s.sim.state;
   const win = st.result === 'win';
   const box = h('div', `dialog end ${win ? 'win' : 'loss'}`);
@@ -70,6 +70,7 @@ export function buildResult(s: Session, mvp: Mvp | null, handlers: ResultHandler
   row('result.stats.time', formatDuration(st.tick), 'r-time');
   row('result.stats.mvp', mvp ? t('result.mvp.value', { name: t(`unit.${mvp.unit}.name`), damage: Math.round(mvp.damage) }) : t('result.mvp.none'), 'r-mvp');
   box.append(stats);
+  if (rewards) box.append(rewards);
   if (!win) box.append(tipsBox(s));
   const btns = h('div', 'diff-row');
   const again = h('button', 'btn primary restart', t('result.again'));

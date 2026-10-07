@@ -8,7 +8,8 @@
  *   die Antwortformen sind absichtlich reines JSON.
  */
 import type { ReplayFile } from '../game/recorder';
-import type { BannerRates, BannerView, MatchReward, Profile, PullBatchResult, ShopProduct, PurchaseResult, StarterResult } from './meta';
+import type { DifficultyId, UnitMod } from '../sim';
+import type { BannerRates, BannerView, CollectionUnitView, HistoryEntry, MatchReward, PlayerView, Profile, PullBatchResult, ShopProduct, PurchaseResult, StageDifficultyView, StarterResult } from './meta';
 import type { Persistence } from './storage';
 
 export interface BFail {
@@ -47,13 +48,33 @@ export interface Backend {
   pull(bannerId: string, count: 1 | 10, idemKey: string): Promise<BResult<Saved & { pull: PullBatchResult }>>;
   levelUp(unitId: string, idemKey: string): Promise<BResult<Saved & { level: { unitId: string; level: number; cost: number } }>>;
   setTeam(unitIds: string[], idemKey: string): Promise<BResult<Saved & { team: string[] }>>;
-  /** Meldet ein beendetes Match. `replay` = Objekt des Recorders (`game/recorder.ts`); Belohnung aus dem Replay: P5. */
+  /**
+   * Meldet ein beendetes Match. `replay` = Objekt des Recorders (`game/recorder.ts`); Belohnung aus dem Replay: P5.
+   * P4: das Replay wird ans Profil gebunden: `team-required`, `team-mismatch`, `unit-not-owned`, `unit-mods-mismatch`, `team-invalid` (Unit ausserhalb des Teams platziert).
+   */
   reportMatch(replay: ReplayFile, idemKey: string): Promise<BResult<Saved & { reward: MatchReward }>>;
   shopCatalog(): Promise<BResult<{ products: ShopProduct[] }>>;
   /** Mock-Kauf (`order.status`: `paid` oder `pending`). Fehlercodes: `unknown-sku`, `payment-failed`. Immer "Test purchase - no real money". */
   buy(sku: string, idemKey: string): Promise<BResult<Saved & { order: PurchaseResult }>>;
   /** Offene (`pending`) Bestellung beim Anbieter nachfragen und ggf. gutschreiben. Fehlercodes: `unknown-order`, `payment-failed`. */
   refreshOrder(orderId: string, idemKey: string): Promise<BResult<Saved & { order: PurchaseResult }>>;
+  /**
+   * P4, Sichtmodelle (`meta/src/views.ts`): Kontostaende, Spieler-Level samt XP-Balken, Starter-Geschenk offen?, Team. Die UI rechnet nichts selbst.
+   * Fehlercodes wie `loadProfile`.
+   */
+  playerView(): Promise<BResult<{ player: PlayerView; persistence: Persistence }>>;
+  /** P4: alle Units des Katalogs (auch nicht besessene) mit Level, Sternen, Kopien, Kosten fuer den naechsten Level. */
+  collectionView(): Promise<BResult<{ units: CollectionUnitView[]; ownedCount: number; total: number }>>;
+  /** P4: Stufen einer Stage: freigeschaltet (und ab welchem Spieler-Level), Erst-Clear-Crystals, Bestwelle. */
+  stageView(stageId: string): Promise<BResult<{ stageId: string; playerLevel: number; difficulties: StageDifficultyView[] }>>;
+  /** P4: die letzten Ziehungen aus dem Profil, neueste zuerst. */
+  pullHistory(limit?: number): Promise<BResult<{ history: HistoryEntry[] }>>;
+  /**
+   * P4: alles, was ein Match braucht: das gespeicherte Team und die Mods dazu (`unitModsFor(profile, team)`). Die UI baut damit
+   * `new Session(difficulty, seed, bus, unitMods)` und traegt `team` in den Recorder ein; `reportMatch` prueft spaeter, dass das Replay genau dazu passt.
+   * Fehlercodes: `difficulty-locked`, `team-empty` (keine Units), `team-incomplete` (weniger als `min(6, Besitz)` Units gewaehlt), `unit-not-owned`.
+   */
+  matchSetup(difficulty: DifficultyId): Promise<BResult<{ team: string[]; unitMods: UnitMod[] }>>;
   /** Speicherstand als JSON-Text (mit Pruefsumme) zum Herunterladen. */
   exportSave(): Promise<BResult<{ json: string; filename: string }>>;
   /** Ersetzt das Profil durch den Inhalt einer Sicherungsdatei. Fehler: `import-invalid-json`, `import-wrong-format`, `import-bad-checksum`, `profile-corrupt`, `profile-too-new`. */

@@ -8,7 +8,6 @@ import { BossBanner } from './boss-banner';
 import { clear, h } from './dom';
 import { MvpTracker } from './mvp';
 import { getSettings } from './settings';
-import { loadTeam } from './team';
 import type { ReplayButtonFactory } from './result';
 import { BoardInput } from './board-input';
 import { Help } from './help';
@@ -63,7 +62,6 @@ export class Ui {
   /** Neue Runde: Brett-Eingabe, Shop und Panels aufbauen. */
   bind(session: Session): void {
     this.session = session;
-    session.team = loadTeam(session.sim.catalog().map((d) => d.id));
     session.speed = getSettings().defaultSpeed;
     this.unsubMvp?.();
     this.mvp = new MvpTracker();

@@ -1,6 +1,7 @@
 /** Einstellungs-Bildschirm. Werte gehen ueber `settings.ts` in den Speicher. Besitzer: P6. */
 import { t } from '../i18n/t';
 import { h } from './dom';
+import { exportSaveFile, importSaveFlow, resetFlow } from './meta-ui';
 import { getSettings, resetHints, setSetting, type Settings } from './settings';
 
 type VolumeKey = 'master' | 'sfx' | 'music';
@@ -26,6 +27,25 @@ function slider(key: VolumeKey): HTMLElement {
   });
   row.append(h('span', 'set-lbl', t(`settings.${key}`)), input, out);
   return row;
+}
+
+/** Speicherstand (Runde 7, P4): Export als Datei, Import aus Datei, Zuruecksetzen mit Bestaetigung. Nach Import/Reset geht es zurueck in die Lobby (`onChanged`). */
+function saveSection(onChanged: () => void): HTMLElement {
+  const sec = h('div', 'save-section');
+  sec.append(h('h2', undefined, t('save.title')), h('p', 'set-note', t('save.note')));
+  const row = h('div', 'diff-row save-row');
+  const exp = h('button', 'btn save-export', t('save.export'));
+  exp.type = 'button';
+  exp.addEventListener('click', () => void exportSaveFile());
+  const imp = h('button', 'btn save-import', t('save.import'));
+  imp.type = 'button';
+  imp.addEventListener('click', () => void importSaveFlow(true).then((ok) => ok && onChanged()));
+  const reset = h('button', 'btn danger save-reset', t('save.reset'));
+  reset.type = 'button';
+  reset.addEventListener('click', () => void resetFlow().then((ok) => ok && onChanged()));
+  row.append(exp, imp, reset);
+  sec.append(row);
+  return sec;
 }
 
 export function buildSettings(onBack: () => void): HTMLElement {
@@ -69,6 +89,6 @@ export function buildSettings(onBack: () => void): HTMLElement {
 
   const back = h('button', 'btn menu-back', t('menu.back'));
   back.addEventListener('click', onBack);
-  box.append(dmg, speed, hints, back);
+  box.append(dmg, speed, hints, saveSection(onBack), back);
   return box;
 }

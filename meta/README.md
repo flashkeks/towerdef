@@ -44,6 +44,7 @@ Jedes Paket aendert nur seine Dateien. Fremde Dateien nur minimal (Import, eine 
 | `src/starter.ts` | Starter-Geschenk | **P5** |
 | `src/stars.ts` | Kopien -> Sterne (Schwellen aus `sim/data/progression.json`, `STAR_THRESHOLDS`) | **P2** |
 | `src/unit-mods.ts` | `unitModsFor(profile, team)` -> `UnitMod[]` (Level/Sterne -> `lvlBp`, Kurven in `sim/src/progression.ts`) fuer `createSim({ unitMods })`; Mods gehoeren ins Replay v3 | **P2** |
+| `src/views.ts` | Sichtmodelle fuer die UI: `playerView` (Salden, XP-Balken, Team-Ziel), `collectionView` (alle Katalog-Units, besessen/nicht, Level, Sterne, Kosten), `stageView` (Sperre mit Level, Erst-Clear, Bestwelle), `pullHistoryView` | **P4** |
 | `test/` | je Modul eine Datei; neue Pakete legen eigene Dateien an (`test/gacha-p3.test.ts` usw.) | jeder fuer seine |
 
 Platzhalter (`rewards`, `leveling`, `progression`, `starter`, `stars`, `unit-mods`) laufen schon: der Kreislauf
@@ -156,3 +157,11 @@ Unit-XP gibt es nicht (Units steigen mit Gold).
 **Leveling** (`leveling.ts`): `levelUpCost(L) = 40 + 10(L-1)`, Level 1-40, `levelUpTotalCost(von, bis)`; Codes `unit-not-owned`, `max-level`, `not-enough-gold`. Wirkung auf den Schaden: P2.
 **Spieler-XP** (`progression.ts`): `xpToReach(L) = 100(L-1) + 25(L-1)(L-2)/2` (L5 = 550, L25 = 9 300, L50 = 34 300); Freischaltung Hard/Nightmare unveraendert (P2).
 **Starter** (`starter.ts`): einmalig (`starter-already-claimed`), 450 Crystals (10er-Preis aus dem Banner), alle Rare und Epic plus `STARTER_EXTRA` (Lancer), Team auf diese Units.
+
+## Replay ans Profil binden (P4, schliesst die Luecke aus P5)
+
+`rewardFromReplay(profile, replay, env, { bindToProfile: true })` (der `LocalBackend` setzt es immer, der Server (M2) muss es ebenso) prueft ZUSAETZLICH zum Nachrechnen, dass sich ein Replay keine Level geben kann:
+`team-required` (kein Team im Kopf), `team-mismatch` (Team im Kopf != `profile.team`, als Menge), `unit-not-owned` / `team-invalid` (Duplikate, mehr als 6, nicht besessen), `unit-mods-mismatch`
+(`unitMods` im Kopf != `unitModsFor(profile, team)`, kanonisch verglichen, Reihenfolge egal). Die Platzierung einer Unit ausserhalb des Teams ergibt `team-invalid` (galt schon vorher, sobald ein Team im Kopf steht).
+Dafuer liefert `verifyReplay` jetzt auch `match.unitMods` (die Mods, mit denen nachgerechnet wurde). Ohne `bindToProfile` bleibt das alte Verhalten (Tests mit Bot-Replays ohne Team).
+Folge fuer den Client: Team und Mods kommen aus `Backend.matchSetup()` (Profil), nicht mehr aus der UI; wer zwischen Matchstart und -ende Level aendert (anderer Tab), bekommt `unit-mods-mismatch`.
