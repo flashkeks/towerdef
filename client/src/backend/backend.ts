@@ -8,7 +8,7 @@
  *   die Antwortformen sind absichtlich reines JSON.
  */
 import type { ReplayFile } from '../game/recorder';
-import type { BannerRates, MatchReward, Profile, PullBatchResult, ShopProduct, PurchaseResult, StarterResult } from './meta';
+import type { BannerRates, BannerView, MatchReward, Profile, PullBatchResult, ShopProduct, PurchaseResult, StarterResult } from './meta';
 import type { Persistence } from './storage';
 
 export interface BFail {
@@ -38,13 +38,22 @@ export interface Backend {
   claimStarterGift(idemKey: string): Promise<BResult<Saved & { gift: StarterResult }>>;
   /** Banner-Daten, aus denen die Anzeige liest (dieselben, aus denen gewuerfelt wird). */
   listBanners(): Promise<BResult<{ banners: BannerRates[] }>>;
+  /**
+   * Anzeige-Daten je aktivem Banner (P3): Ratentabelle, Einzelraten, Pity-Regeln im Klartext, Pity-Stand des Profils, effektive Rate, Erwartungswerte,
+   * Ratenversion + Hash. Dieselben Daten, aus denen gewuerfelt wird; die UI zeigt sie nur an. Fehlercodes wie `loadProfile`.
+   */
+  bannerViews(): Promise<BResult<{ views: BannerView[] }>>;
+  /** Fehlercodes: `unknown-banner`, `banner-inactive`, `invalid-count`, `banner-limit-reached` (Starter schon benutzt), `not-enough-crystals`, `banner-pool-empty`. */
   pull(bannerId: string, count: 1 | 10, idemKey: string): Promise<BResult<Saved & { pull: PullBatchResult }>>;
   levelUp(unitId: string, idemKey: string): Promise<BResult<Saved & { level: { unitId: string; level: number; cost: number } }>>;
   setTeam(unitIds: string[], idemKey: string): Promise<BResult<Saved & { team: string[] }>>;
   /** Meldet ein beendetes Match. `replay` = Objekt des Recorders (`game/recorder.ts`); Belohnung aus dem Replay: P5. */
   reportMatch(replay: ReplayFile, idemKey: string): Promise<BResult<Saved & { reward: MatchReward }>>;
   shopCatalog(): Promise<BResult<{ products: ShopProduct[] }>>;
+  /** Mock-Kauf (`order.status`: `paid` oder `pending`). Fehlercodes: `unknown-sku`, `payment-failed`. Immer "Test purchase - no real money". */
   buy(sku: string, idemKey: string): Promise<BResult<Saved & { order: PurchaseResult }>>;
+  /** Offene (`pending`) Bestellung beim Anbieter nachfragen und ggf. gutschreiben. Fehlercodes: `unknown-order`, `payment-failed`. */
+  refreshOrder(orderId: string, idemKey: string): Promise<BResult<Saved & { order: PurchaseResult }>>;
   /** Speicherstand als JSON-Text (mit Pruefsumme) zum Herunterladen. */
   exportSave(): Promise<BResult<{ json: string; filename: string }>>;
   /** Ersetzt das Profil durch den Inhalt einer Sicherungsdatei. Fehler: `import-invalid-json`, `import-wrong-format`, `import-bad-checksum`, `profile-corrupt`, `profile-too-new`. */

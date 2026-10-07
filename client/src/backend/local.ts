@@ -13,6 +13,7 @@ import {
   MockPaymentProvider,
   SAVE_FORMAT,
   SHOP_CATALOG,
+  bannerView,
   buy,
   claimStarterGift,
   exportProfile,
@@ -22,6 +23,7 @@ import {
   migrate,
   newProfile,
   pull,
+  refreshOrder,
   rewardFromReplay,
   setTeam,
   withIdempotency,
@@ -157,6 +159,14 @@ export class LocalBackend implements Backend {
     return { ok: true, banners: listBanners() };
   }
 
+  bannerViews(): ReturnType<Backend['bannerViews']> {
+    return this.serial(async () => {
+      const cur = await this.ensure();
+      if ('ok' in cur) return cur;
+      return { ok: true as const, views: listBanners().map((b) => bannerView(b, cur.profile)) };
+    });
+  }
+
   pull(bannerId: string, count: 1 | 10, idemKey: string): ReturnType<Backend['pull']> {
     return this.mutate('pull', { bannerId, count }, idemKey, 'pull', (p) => pull(p, bannerId, count, this.env));
   }
@@ -187,6 +197,10 @@ export class LocalBackend implements Backend {
 
   buy(sku: string, idemKey: string): ReturnType<Backend['buy']> {
     return this.mutate('buy', { sku }, idemKey, 'order', (p) => buy(p, sku, this.env, this.provider));
+  }
+
+  refreshOrder(orderId: string, idemKey: string): ReturnType<Backend['refreshOrder']> {
+    return this.mutate('refreshOrder', { orderId }, idemKey, 'order', (p) => refreshOrder(p, orderId, this.env, this.provider));
   }
 
   exportSave(): ReturnType<Backend['exportSave']> {

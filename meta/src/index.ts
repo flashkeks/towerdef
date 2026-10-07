@@ -12,6 +12,8 @@ export * from './team';
 export * from './stars';
 export * from './progression';
 export * from './gacha';
+export * from './banner-math';
+export * from './banner-view';
 export * from './shop';
 export * from './rewards';
 export * from './leveling';

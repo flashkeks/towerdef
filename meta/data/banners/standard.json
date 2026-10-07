@@ -1,8 +1,11 @@
 {
   "bannerId": "standard",
   "name": "Standard Summon",
+  "kind": "standard",
+  "active": true,
   "ratesVersion": "2026-10-a",
-  "note": "Startwerte nach recommendations.md 13, kein endgueltiges Balancing. Diese Datei ist die EINZIGE Quelle fuer Anzeige UND Wurf.",
+  "calibrated": false,
+  "note": "Startwerte (Runde 7), nicht kalibriert. Nach recommendations.md 13. Diese Datei ist die EINZIGE Quelle fuer Anzeige UND Wurf.",
   "costPerPull": 50,
   "costTen": 450,
   "tiers": [
