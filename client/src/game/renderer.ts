@@ -1,6 +1,6 @@
 /**
  * Pixi-Renderer: nur Setup, Ebenen-Reihenfolge und Frame-Schleife. Kein Spielwissen, nur Darstellung.
- * Welt: 17 x 11 Tiles (Pfad und Slots liegen in Tile-Koordinaten, +0,5 Rand). Tile-Groesse folgt dem Platz (ganzzahlig).
+ * Welt: 17 x 11 Tiles (Pfad und Karte liegen in Tile-Koordinaten, Units in Milli-Tiles, +0,5 Rand). Tile-Groesse folgt dem Platz (ganzzahlig).
  * Die Zeichnung selbst liegt in den Ebenen: `map-layer`, `entities-layer` (+ `sprites`), `overlay-layer`, `fx`.
  */
 import { Application } from 'pixi.js';

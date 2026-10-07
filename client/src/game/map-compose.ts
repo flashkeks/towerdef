@@ -1,5 +1,6 @@
 /**
- * Karte als Liste von Atlas-Bildern (rein, ohne Pixi/Canvas, getestet): Gras, Pfad mit Kantenmaske, Deko, Slot-Untergruende, Spawn, Basis.
+ * Karte als Liste von Atlas-Bildern (rein, ohne Pixi/Canvas, getestet): Gras, Pfad mit Kantenmaske, Deko, Spawn, Basis; dazu die Huegel-Flaechen
+ * als Rechtecke (Runde 6: keine Slot-Platten mehr, Zonen aus `stage.zones`).
  * Koordinaten in Quellpixeln (32 je Kachel). `map-layer.ts` setzt die Liste auf eine Zeichenflaeche und skaliert sie auf die Fenstergroesse.
  */
 import type { StageData } from '../sim';
@@ -41,17 +42,51 @@ const hash = (x: number, y: number): number => {
   return (h ^ (h >>> 16)) >>> 0;
 };
 
+/** Zonenzeichen der Kachel (x, y) aus `stage.zones.rows`: `.` Boden, `h` Huegel, `#` blockiert, `p` Pfad; ausserhalb `.`. */
+export const zoneChar = (stage: StageData, x: number, y: number): string => stage.zones.rows[y]?.[x] ?? '.';
+
+export interface MapRect {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  /** CSS-Farbe */
+  color: string;
+}
+
+/** Farben der Huegel (Runde 6): helle Kuppe, Felswand an der Suedkante, Lichtkante oben. */
+export const HILL = { top: '#6f9a4c', topLight: '#8cb35e', wall: '#8a5a3a', wallDark: '#5a3a2a' } as const;
+
+/**
+ * Huegel als Flaeche: jede `h`-Kachel bekommt eine helle Kuppe, eine Felswand unten, wenn darunter kein Huegel liegt,
+ * und eine Lichtkante oben, wenn darueber keiner liegt. Zusammenhaengende Huegel-Kacheln wirken als eine Terrasse.
+ */
+export function hillRects(stage: StageData): MapRect[] {
+  const out: MapRect[] = [];
+  const isHill = (x: number, y: number): boolean => zoneChar(stage, x, y) === 'h';
+  for (let y = 0; y < WORLD_H; y++) {
+    for (let x = 0; x < WORLD_W; x++) {
+      if (!isHill(x, y)) continue;
+      const px = x * ART;
+      const py = y * ART;
+      const wall = isHill(x, y + 1) ? 0 : 8;
+      out.push({ x: px, y: py, w: ART, h: ART - wall, color: HILL.top });
+      if (!isHill(x, y - 1)) out.push({ x: px, y: py, w: ART, h: 2, color: HILL.topLight });
+      if (wall > 0) {
+        out.push({ x: px, y: py + ART - wall, w: ART, h: wall, color: HILL.wall });
+        out.push({ x: px, y: py + ART - 2, w: ART, h: 2, color: HILL.wallDark });
+      }
+      if (!isHill(x - 1, y)) out.push({ x: px, y: py, w: 2, h: ART - wall, color: HILL.topLight });
+      if (!isHill(x + 1, y)) out.push({ x: px + ART - 2, y: py, w: 2, h: ART - wall, color: HILL.wallDark });
+    }
+  }
+  return out;
+}
+
 export function buildMapOps(stage: StageData): MapOp[] {
   const ops: MapOp[] = [];
   const cells = pathCells(stage.path);
   const isPath = (x: number, y: number): boolean => cells.has(`${x},${y}`);
-  // Belegte Zellen der Slots (grosse Slots liegen auf halben Koordinaten)
-  const blocked = new Set<string>();
-  for (const s of stage.slots) {
-    const left = s.x + 0.5 - s.size / 2;
-    const top = s.y + 0.5 - s.size / 2;
-    for (let x = Math.floor(left); x < Math.ceil(left + s.size); x++) for (let y = Math.floor(top); y < Math.ceil(top + s.size); y++) blocked.add(`${x},${y}`);
-  }
   for (let y = 0; y < WORLD_H; y++) {
     for (let x = 0; x < WORLD_W; x++) {
       const h = hash(x, y);
@@ -63,20 +98,16 @@ export function buildMapOps(stage: StageData): MapOp[] {
       ops.push({ frame: `tiles/grass_${h % 4}`, x: x * ART, y: y * ART });
     }
   }
-  // Deko nur auf freien Wiesenzellen; Baeume am Rand, Buesche/Steine/Blumen verstreut. Nie auf oder direkt neben Slots (Platzier-Lesbarkeit).
+  // Deko: Baeume und Felsen nur auf blockierten Kacheln (`#`: dort wird wirklich nicht gebaut), Blumen sparsam auf Boden
+  // (flach, ohne Hindernis-Optik). Auf Huegeln und am Pfad keine Deko, damit Platz und Hindernis auf einen Blick lesbar sind.
   for (let y = 0; y < WORLD_H; y++) {
     for (let x = 0; x < WORLD_W; x++) {
       if (isPath(x, y)) continue;
-      let near = false;
-      for (let dy = -1; dy <= 1 && !near; dy++) for (let dx = -1; dx <= 1; dx++) if (blocked.has(`${x + dx},${y + dy}`)) near = true;
-      if (near) continue;
+      const z = zoneChar(stage, x, y);
       const h = hash(x * 3 + 1, y * 5 + 2);
-      const edge = x === 0 || y === 0 || x === WORLD_W - 1 || y === WORLD_H - 1;
       let frame: string | null = null;
-      if (edge && h % 3 === 0) frame = 'tiles/deco_tree';
-      else if (h % 9 === 0) frame = 'tiles/deco_bush';
-      else if (h % 11 === 1) frame = 'tiles/deco_rock';
-      else if (h % 5 === 2) frame = 'tiles/deco_flowers';
+      if (z === '#') frame = h % 3 === 0 ? 'tiles/deco_rock' : 'tiles/deco_tree';
+      else if (z === '.' && h % 6 === 2) frame = 'tiles/deco_flowers';
       if (frame) ops.push({ frame, x: x * ART, y: y * ART });
     }
   }
@@ -84,9 +115,5 @@ export function buildMapOps(stage: StageData): MapOp[] {
   const [bx, by] = stage.path[stage.path.length - 1];
   ops.push({ frame: 'tiles/spawn', x: sx * ART, y: sy * ART });
   ops.push({ frame: 'tiles/base', x: bx * ART, y: by * ART });
-  for (const s of stage.slots) {
-    const frame = s.size === 2 ? 'tiles/slot_big' : s.kind === 'hill' ? 'tiles/slot_hill' : 'tiles/slot_ground';
-    ops.push({ frame, x: Math.round((s.x + 0.5 - s.size / 2) * ART), y: Math.round((s.y + 0.5 - s.size / 2) * ART) });
-  }
   return ops;
 }

@@ -3,13 +3,16 @@
 //   npm run build && SMOKE_PORT=4302 node scripts/replay-check.mjs [--full] [--out DATEI]
 // Standard: bis Welle 3 spielen, pausieren, ueber den Pause-Knopf herunterladen (Zwischenstand, `complete: false`).
 // --full: bis zum Ende spielen (Sieg oder Niederlage), Text in "What felt bad?" tippen, ueber den End-Bildschirm laden.
-// Spielaktionen laufen ueber die Session-Methoden (wie die UI), Download und Textfeld ueber echte Klicks.
+// Runde 6: Replay-Format v2, platziert wird mit ECHTEN Mausklicks auf freie Positionen (Stellen lesend aus `placementGrid`/`canPlace`,
+// `scripts/lib/mouse.mjs`), Upgrades per Klick auf die Unit + Taste U, Wellenruf per Taste N, Tempo per Knopf, Pause per Leertaste.
+// `evaluate` liest nur Zustand. Download und Textfeld ebenfalls ueber echte Klicks. Hash des Browser-Laufs == Hash des Nachspielens.
 import { spawn, spawnSync } from 'node:child_process';
 import { existsSync, mkdtempSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
+import { clickWorld, readSpots } from './lib/mouse.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const simDir = resolve(root, '../sim');
@@ -67,40 +70,57 @@ try {
   await page.click('.diff[data-difficulty="normal"]');
   await page.click('.team-go');
   await page.waitForSelector('canvas.board');
-  await page.evaluate(() => window.__duskwardens.session().setSpeed(3));
+  await page.click('.btn.speed[data-speed="3"]');
 
-  // Ein "Mensch": kauft nach Plan, baut aus, ruft Wellen frueh, wechselt Tempo und pausiert kurz. Nur Session-Methoden.
+  // Ein "Mensch": kauft nach Plan, baut aus, ruft Wellen frueh, wechselt Tempo und pausiert kurz. Nur Maus und Tastatur.
   const PLAN = ['striker', 'gunner', 'striker', 'blaster', 'gunner', 'banner', 'striker', 'frost'];
-  const tickPlay = () =>
-    page.evaluate((plan) => {
+  const read = () =>
+    page.evaluate(() => {
       const s = window.__duskwardens.session();
-      const sim = s.sim;
-      const st = sim.state;
-      if (s.over) return { over: true, wave: st.wave };
-      const slots = sim.slots();
-      const defs = Object.fromEntries(sim.catalog().map((d) => [d.id, d]));
-      for (const id of plan) {
-        const d = defs[id];
-        if (!d || st.players[0].coins < d.placeCost) continue;
-        const slot = slots.find((x) => x.free && (d.placement === 'hybrid' || d.placement === x.kind) && x.size >= d.footprint && !st.units.some((u) => u.slot === x.id));
-        if (!slot) continue;
-        s.choosePlacing(id);
-        s.clickSlot(slot.id);
+      const st = s.sim.state;
+      return {
+        over: s.over,
+        wave: st.wave,
+        phase: st.phase,
+        coins: st.players[0].coins,
+        enemies: st.enemies.length,
+        units: st.units.map((u) => ({ id: u.id, x: u.x, y: u.y, up: s.sim.upgradeCost(u.id) })),
+        cost: Object.fromEntries(s.sim.catalog().map((d) => [d.id, d.placeCost])),
+        order: [...document.querySelectorAll('.unit-btn')].map((b) => b.dataset.unit),
+      };
+    });
+  let planIdx = 0;
+  const tickPlay = async () => {
+    const st = await read();
+    if (st.over) return { over: true, wave: st.wave };
+    // naechste Unit des Plans: gelesene freie Stelle, echter Klick
+    const want = PLAN[planIdx % PLAN.length];
+    if (!st.order.includes(want)) planIdx++;
+    else if (st.coins >= st.cost[want]) {
+      const spots = await readSpots(page, want, 3);
+      if (spots.length === 0) planIdx++;
+      else {
+        await page.keyboard.press(String(st.order.indexOf(want) + 1));
+        for (const sp of spots) {
+          await clickWorld(page, sp[0], sp[1]);
+          await sleep(50);
+          if ((await read()).units.length > st.units.length) break;
+        }
+        await page.keyboard.press('Escape');
+        planIdx++;
+      }
+    }
+    for (const u of st.units) {
+      if (u.up !== null && st.coins >= u.up + 40) {
+        await clickWorld(page, u.x, u.y); // Unit anklicken, dann U
+        await page.keyboard.press('u');
+        await page.keyboard.press('Escape');
         break;
       }
-      s.cancel();
-      for (const u of st.units) {
-        const c = sim.upgradeCost(u.id);
-        if (c !== null && st.players[0].coins >= c + 40) {
-          s.selectedUnit = u.id;
-          s.upgrade();
-          break;
-        }
-      }
-      s.cancel();
-      if (st.enemies.length === 0 && st.phase !== 'over') s.startNextWave();
-      return { over: false, wave: st.wave };
-    }, PLAN);
+    }
+    if (st.enemies === 0 && st.phase !== 'over') await page.keyboard.press('n');
+    return { over: false, wave: st.wave };
+  };
 
   const limit = Date.now() + (full ? 8 * 60_000 : 120_000);
   let info = { over: false, wave: 0 };
@@ -114,8 +134,8 @@ try {
       await page.keyboard.press('Space');
       await sleep(300);
       await page.keyboard.press('Space');
-      await page.evaluate(() => window.__duskwardens.session().setSpeed(2));
-      await page.evaluate(() => window.__duskwardens.session().setSpeed(3));
+      await page.click('.btn.speed[data-speed="2"]');
+      await page.click('.btn.speed[data-speed="3"]');
       toggled = true;
     }
     await sleep(400);
@@ -143,7 +163,9 @@ try {
 }
 
 const rec = JSON.parse(readFileSync(file, 'utf8'));
-check(rec.format === 'towerdef-replay' && rec.commands.length > 0, `Datei: ${rec.commands.length} Befehle, ${rec.waves.length} Wellen, complete=${rec.complete}`);
+check(rec.format === 'towerdef-replay' && rec.formatVersion === 2 && rec.commands.length > 0, `Datei: ${rec.commands.length} Befehle, ${rec.waves.length} Wellen, complete=${rec.complete}`);
+const places = rec.commands.filter((c) => c.cmd.type === 'place');
+check(places.length >= 3 && places.every((c) => Number.isInteger(c.cmd.x) && Number.isInteger(c.cmd.y) && c.cmd.slot === undefined), `Format v2: ${places.length} Platzierungen mit x/y (Milli-Tiles), ${places.filter((c) => c.ok).length} angenommen`);
 check(rec.controls.some((c) => c.type === 'speed') && rec.controls.some((c) => c.type === 'pause'), 'Tempo- und Pause-Wechsel aufgezeichnet');
 if (full) check(rec.complete && rec.result && rec.feedback.includes('unfair'), `Ergebnis ${rec.result}, Freitext in der Datei`);
 

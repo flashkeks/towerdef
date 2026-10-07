@@ -1,56 +1,97 @@
 /**
- * Platzieren: welcher Slot passt zu welcher Unit, und warum ein Versuch scheitert. Reine Darstellungslogik (kein DOM, kein Pixi).
- * Die Sim entscheidet verbindlich (`apply` -> `{ok:false, reason}`); hier steht nur, was der Spieler vorab sehen und im
- * Fehlerfall lesen soll. Ein Test haelt `slotFit` gegen die Sim-Gruende (`slot-kind`, `slot-size`, `slot-occupied`).
+ * Platzieren (Runde 6, freie Platzierung): Bildschirm <-> Welt, Geist-Status, Treffer auf gesetzte Units, Fehlertexte.
+ * Reine Darstellungslogik (kein DOM, kein Pixi). Die Sim entscheidet verbindlich (`apply` -> `{ok:false, reason}`,
+ * `canPlace` liefert denselben Grund vorab); hier steht nur, was der Spieler vorab sehen und im Fehlerfall lesen soll.
  */
-import { t } from '../i18n/t';
 import type { Command } from '../sim';
 
-export type SlotType = 'ground' | 'hill' | 'large';
+/** Welt: 1000 Milli-Tiles = eine Kachel. Die Kachel (x, y) ist um die Sim-Koordinate (x, y) zentriert, daher der Versatz um 0,5. */
+export function pxToMilli(px: number, tile: number): number {
+  return Math.round((px / tile - 0.5) * 1000);
+}
 
-export interface SlotLike {
-  kind: 'ground' | 'hill';
-  size: 1 | 2;
+export function milliToPx(milli: number, tile: number): number {
+  return (milli / 1000 + 0.5) * tile;
+}
+
+/** Mausposition (Canvas-Pixel) -> Sim-Koordinate (ganze Milli-Tiles). */
+export function pointerToWorld(p: { x: number; y: number }, tile: number): { x: number; y: number } {
+  return { x: pxToMilli(p.x, tile), y: pxToMilli(p.y, tile) };
 }
 
 export interface PlaceDef {
   id: string;
   placement: 'ground' | 'hill' | 'hybrid';
   footprint: 1 | 2;
+  radiusMilli?: number;
 }
 
-/** Darstellungs-Typ eines Slots: grosse (2x2) Slots haben eine eigene Optik, egal ob Boden oder Huegel. */
-export const slotType = (s: SlotLike): SlotType => (s.size === 2 ? 'large' : s.kind);
+/** Darstellungs-Typ der Flaeche, die eine Unit verlangt (Shop-Marke): Farm = gross, sonst Boden/Huegel; Hybride siehe Shop. */
+export type NeedType = 'ground' | 'hill' | 'large';
 
-export type SlotFit = { ok: true } | { ok: false; reason: 'occupied' | 'kind' | 'size'; need: SlotType };
-
-/** Spiegelt die Reihenfolge der Sim: belegt, Typ, Groesse. `need` = was die Unit braucht (fuer den Hinweistext). */
-export function slotFit(def: PlaceDef, slot: SlotLike, free: boolean): SlotFit {
-  if (!free) return { ok: false, reason: 'occupied', need: needOf(def) };
-  if (def.placement !== 'hybrid' && def.placement !== slot.kind) return { ok: false, reason: 'kind', need: needOf(def) };
-  if (def.footprint > slot.size) return { ok: false, reason: 'size', need: 'large' };
-  return { ok: true };
-}
-
-/** Slot-Typ, den die Unit verlangt (hybride Units passen auf kleine Slots beider Arten, Anzeige: Boden). */
-export function needOf(def: PlaceDef): SlotType {
+export function needOf(def: PlaceDef): NeedType {
   if (def.footprint === 2) return 'large';
   return def.placement === 'hill' ? 'hill' : 'ground';
 }
 
-/** Grund-Text (i18n) fuer einen nicht passenden Slot, z. B. "Gunner needs a hill slot." */
-export function mismatchText(unitName: string, fit: Exclude<SlotFit, { ok: true }>): string {
-  if (fit.reason === 'occupied') return t('toast.occupied');
-  return t(`toast.need.${fit.need}`, { name: unitName });
+/** Passt eine Zone (`sim.zoneAt`/`map().cells`) zur Platzierungsart der Unit? Grundlage der Hervorhebung. */
+export function zoneFits(placement: PlaceDef['placement'], zone: string | null): boolean {
+  if (zone === 'ground') return placement === 'ground' || placement === 'hybrid';
+  if (zone === 'hill') return placement === 'hill' || placement === 'hybrid';
+  return false;
 }
 
-/** Slot unter einem Punkt (Tiles) oder null. Slot-Mitte x/y in Tiles, Kantenlaenge = size Tiles. */
-export function slotAt(slots: readonly { id: number; x: number; y: number; size: number }[], tx: number, ty: number): number | null {
-  for (const s of slots) {
-    const half = s.size / 2;
-    if (Math.abs(tx - s.x) <= half && Math.abs(ty - s.y) <= half) return s.id;
+export interface GhostStatus {
+  ok: boolean;
+  /** Ablehnungsgrund der Sim (`canPlace`), `null` = erlaubt. */
+  reason: string | null;
+}
+
+/** Geist-Status aus dem Ergebnis von `sim.canPlace`: gruen bei `null`, sonst rot mit Grund. */
+export function ghostStatus(reason: string | null): GhostStatus {
+  return { ok: reason === null, reason };
+}
+
+/** i18n-Schluessel der kurzen Beschriftung am Geist. */
+export function ghostLabelKey(reason: string): string {
+  switch (reason) {
+    case 'out-of-bounds':
+    case 'on-path':
+    case 'blocked':
+    case 'wrong-zone':
+    case 'overlap':
+    case 'not-enough-coins':
+    case 'team-limit':
+    case 'team-slots':
+      return `ghost.${reason}`;
+    default:
+      return 'ghost.invalid';
   }
-  return null;
+}
+
+/** Gesetzte Unit unter einem Punkt (Milli-Tiles): die naechste, deren Kreis (mindestens eine halbe Kachel) den Punkt enthaelt. */
+export function unitAt(
+  units: readonly { id: number; defId: string; x: number; y: number }[],
+  radiusOf: (defId: string) => number,
+  x: number,
+  y: number,
+): number | null {
+  let best: number | null = null;
+  let bestD = Infinity;
+  for (const u of units) {
+    const r = Math.max(radiusOf(u.defId), 500);
+    const d = Math.hypot(u.x - x, u.y - y);
+    if (d <= r && d < bestD) {
+      best = u.id;
+      bestD = d;
+    }
+  }
+  return best;
+}
+
+/** Bleibt die Unit nach einem Klick gewaehlt? Nur nach erfolgreichem Setzen mit Shift (dieselbe Unit nochmal); Fehlversuch behaelt die Wahl. */
+export function placingAfterClick(current: string | null, ok: boolean, shift: boolean): string | null {
+  return ok && !shift ? null : current;
 }
 
 export interface FailureContext {
@@ -59,7 +100,6 @@ export interface FailureContext {
   def?: PlaceDef;
   cost?: number;
   coins: number;
-  cap?: number;
   teamUnits: number;
   teamSlots: number;
 }
@@ -79,14 +119,13 @@ export function failureToast(cmd: Command, reason: string, c: FailureContext): T
     switch (reason) {
       case 'not-enough-coins':
         return { key: 'toast.poor', params: { name, cost: c.cost ?? 0, coins: c.coins } };
-      case 'slot-kind':
-        return { key: `toast.need.${c.def ? needOf(c.def) : 'ground'}`, params: { name } };
-      case 'slot-size':
-        return { key: 'toast.need.large', params: { name } };
-      case 'slot-occupied':
-        return { key: 'toast.occupied' };
-      case 'cap-reached':
-        return { key: 'toast.cap', params: { name, cap: c.cap ?? 0 } };
+      case 'wrong-zone':
+        return { key: c.def?.placement === 'hill' ? 'toast.place.wrong-zone.hill' : 'toast.place.wrong-zone.ground', params: { name } };
+      case 'on-path':
+      case 'out-of-bounds':
+      case 'blocked':
+      case 'overlap':
+        return { key: `toast.place.${reason}`, params: { name } };
       case 'team-limit':
         return { key: 'toast.team', params: { n: c.teamUnits } };
       case 'team-slots':

@@ -27,10 +27,10 @@ try {
   // Klang ausloesen: platzieren ueber die Session (Ereignis `place` -> Klang)
   await page.evaluate(() => {
     const s = window.__duskwardens.session();
-    const slot = s.sim.slots().find((x) => x.free && x.kind === 'ground');
+    const spot = s.sim.placementGrid('striker')[0];
     s.sim.state.players[0].coins = 100000;
     s.choosePlacing('striker');
-    s.clickSlot(slot.id);
+    s.clickBoard(spot.x, spot.y);
     s.advance(100);
   });
   await sleep(30);

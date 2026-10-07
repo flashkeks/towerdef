@@ -16,11 +16,11 @@ describe('Recorder (nur am GameBus)', () => {
   it('zeichnet Befehle (auch abgelehnte), Steuerung und Wellen auf', () => {
     const { rec, s } = setup();
     s.choosePlacing('striker');
-    s.clickSlot(8);
+    s.clickBoard(3000, 3000);
     s.choosePlacing('striker');
-    s.clickSlot(8); // belegt -> waehlt nur aus, kein Befehl
+    s.clickBoard(3000, 3000); // Unit darunter -> waehlt nur aus, kein Befehl
     s.choosePlacing('gunner');
-    s.clickSlot(0); // Gunner braucht einen Huegel: abgelehnt
+    s.clickBoard(5000, 3000); // Gunner braucht einen Huegel: abgelehnt
     s.setSpeed(2);
     s.togglePause();
     s.togglePause();
@@ -28,6 +28,8 @@ describe('Recorder (nur am GameBus)', () => {
     for (let i = 0; i < 40; i++) s.advance(TICK_MS * 2);
     const snap = rec.snapshot()!;
     expect(snap.format).toBe(REPLAY_FORMAT);
+    expect(snap.formatVersion).toBe(2);
+    expect(snap.commands[0].cmd).toMatchObject({ type: 'place', x: 3000, y: 3000 });
     expect(snap.seed).toBe(7);
     expect(snap.difficulty).toBe('normal');
     expect(snap.complete).toBe(false);

@@ -1,7 +1,10 @@
 // Smoke-Test: baut nichts, startet `vite preview` auf dem vorhandenen dist/ und treibt es mit Playwright (Chromium).
-// Runde 5 P1: Je Aufloesung (1280x720, 1920x1080, 2560x1440) wird eine ganze Stage (W1-W20, Normal) nur mit echten
-// Mausklicks (`page.mouse.click` auf aus dem Layout berechnete Koordinaten) und Tastatur gespielt, bis Sieg oder Niederlage.
-// `evaluate` liest nur Zustand (zum Planen und Pruefen), loest nie eine Spielaktion aus.
+// Je Aufloesung (1280x720, 1920x1080, 2560x1440) wird eine ganze Stage (W1-W20, Normal) nur mit echten Mausklicks
+// (`page.mouse.click` auf aus dem Layout berechnete Koordinaten) und Tastatur gespielt, bis Sieg oder Niederlage.
+// Runde 6 (freie Platzierung): geklickt wird auf FREIE POSITIONEN im Feld. Die Stellen kommen lesend aus `placementGrid`/`canPlace`
+// der Sim (`scripts/lib/mouse.mjs`), umgerechnet ueber das Kartenmass (Canvas-Breite / 17 Kacheln). `evaluate` liest nur Zustand
+// (zum Planen und Pruefen, auch den Geist `session.ghost()`), loest nie eine Spielaktion aus.
+// Dazu: Klick auf den Pfad zeigt Toast mit Grund, falsche Zone, Rand, Ueberlappung, Shift+Klick, Rechtsklick/Esc, Mobil-Sperre.
 // Umgebung: SMOKE_PORT (Standard 4173), SMOKE_RES=1280x720,... (Auswahl), SMOKE_MAX_S (Zeitlimit je Stage, Standard 900).
 // Aufruf: npm run build && npm run smoke   (Chromium-Pfad: PLAYWRIGHT_BROWSERS_PATH bzw. SMOKE_CHROMIUM)
 import { spawn } from 'node:child_process';
@@ -9,6 +12,7 @@ import { existsSync, mkdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
+import { clickWorld, readGhost, readPathPoint, readSpots, worldToScreen } from './lib/mouse.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const docs = resolve(root, 'docs');
@@ -96,9 +100,8 @@ async function playStage(browser, [W, H]) {
       return {
         tick: st.tick, wave: st.wave, phase: st.phase, over: s.over, result: st.result, lives: st.lives, maxLives: st.maxLives,
         coins: st.players[0].coins, enemies: st.enemies.length, kills: st.stats.kills, placing: s.placing, selected: s.selectedUnit, paused: s.paused, speed: s.speed,
-        units: st.units.map((u) => ({ id: u.id, def: u.defId, level: u.level, slot: u.slot, up: s.sim.upgradeCost(u.id) })),
-        slots: s.sim.slots().map((x) => ({ id: x.id, kind: x.kind, size: x.size, free: x.free, cov: x.coverageByRange(3500) })),
-        defs: Object.fromEntries(cat.map((d) => [d.id, { cost: d.placeCost, cap: d.cap, placement: d.placement, footprint: d.footprint, maxLevel: d.maxLevel }])),
+        units: st.units.map((u) => ({ id: u.id, def: u.defId, level: u.level, x: u.x, y: u.y, up: s.sim.upgradeCost(u.id) })),
+        defs: Object.fromEntries(cat.map((d) => [d.id, { cost: d.placeCost, placement: d.placement, footprint: d.footprint, maxLevel: d.maxLevel }])),
         order: [...document.querySelectorAll('.unit-btn')].map((b) => b.dataset.unit),
       };
     });
@@ -118,18 +121,9 @@ async function playStage(browser, [W, H]) {
     await page.mouse.move(c.x, c.y);
     await page.mouse.click(c.x, c.y, opts);
   };
-  const clickSlot = (id, opts) => clickSel(`.slot[data-slot="${id}"]`, opts);
-  /** Spielfeld-Koordinate (Kacheln) in Bildschirmpixel, berechnet aus dem Layout des Canvas. */
-  const boardPoint = async (tx, ty) => {
-    const b = await page.locator('canvas.board').boundingBox();
-    const tile = b.width / 17;
-    return { x: b.x + (tx + 0.5) * tile, y: b.y + (ty + 0.5) * tile };
-  };
-  const clickBoard = async (tx, ty, opts) => {
-    const p = await boardPoint(tx, ty);
-    await page.mouse.move(p.x, p.y);
-    await page.mouse.click(p.x, p.y, opts);
-  };
+  const clickAt = (x, y, opts) => clickWorld(page, x, y, opts);
+  /** Klick auf eine gesetzte Unit (Mitte). */
+  const clickUnit = (u, opts) => clickWorld(page, u.x, u.y, opts);
   const press = (k) => page.keyboard.press(k);
   const pickKey = async (def, s) => press(String(s.order.indexOf(def) + 1));
 
@@ -147,27 +141,16 @@ async function playStage(browser, [W, H]) {
   await page.waitForSelector('canvas.board');
   ok((await page.locator('.overlay.hidden').count()) >= 1 && !(await page.locator('.dialog.start').isVisible()), 'Start-Overlay verschwindet nach Stufenwahl');
 
-  // ---- Layout: alles im Fenster, Slots ueber dem Canvas -----------------------------------------------------------
+  // ---- Layout: alles im Fenster, keine Slot-Knoepfe mehr --------------------------------------------------------------
   const lay = await page.evaluate(() => {
     const c = document.querySelector('canvas.board').getBoundingClientRect();
-    const outside = [...document.querySelectorAll('.slot')].filter((e) => {
-      const r = e.getBoundingClientRect();
-      return r.left < c.left - 1 || r.top < c.top - 1 || r.right > c.right + 1 || r.bottom > c.bottom + 1;
-    }).length;
     const shop = document.querySelector('.shop').getBoundingClientRect();
     const hud = document.querySelector('.hud').getBoundingClientRect();
-    return { outside, board: [c.left, c.top, c.right, c.bottom], shopBottom: shop.bottom, hudTop: hud.top, vw: innerWidth, vh: innerHeight, n: document.querySelectorAll('.slot').length, scrollH: document.documentElement.scrollHeight };
+    return { board: [c.left, c.top, c.right, c.bottom], shopBottom: shop.bottom, hudTop: hud.top, vw: innerWidth, vh: innerHeight, slots: document.querySelectorAll('.slot, .slots').length, scrollH: document.documentElement.scrollHeight };
   });
-  ok(lay.outside === 0, `alle Slot-Knoepfe liegen ueber dem Spielfeld (ausserhalb: ${lay.outside})`);
-  ok(lay.n === 26, `26 Slot-Knoepfe (ist: ${lay.n})`);
+  ok(lay.slots === 0, `keine Slot-Knoepfe im DOM (ist: ${lay.slots})`);
   ok(lay.board[0] >= 0 && lay.board[2] <= lay.vw && lay.board[1] >= lay.hudTop && lay.board[3] <= lay.vh, `Spielfeld liegt im Fenster ${JSON.stringify(lay.board.map(Math.round))}`);
   ok(lay.shopBottom <= lay.vh + 1 && lay.scrollH <= lay.vh + 1, `Unit-Leiste sichtbar, keine Seiten-Scrollleiste (Shop-Ende ${Math.round(lay.shopBottom)} von ${lay.vh})`);
-  const types = await page.evaluate(() => {
-    const n = { ground: 0, hill: 0, large: 0 };
-    document.querySelectorAll('.slot').forEach((e) => n[e.dataset.type]++);
-    return n;
-  });
-  ok(types.ground === 13 && types.hill === 10 && types.large === 3, `Slot-Typen sichtbar markiert: ${JSON.stringify(types)}`);
   const ver = (await page.locator('.version').textContent()) ?? '';
   ok(/build \S+ - \d{4}-\d\d-\d\d/.test(ver), `Version unten rechts: "${ver}"`);
   const vb = await page.locator('.version').boundingBox();
@@ -184,7 +167,7 @@ async function playStage(browser, [W, H]) {
   await clickSel('.help-close');
   ok(!(await page.locator('.help:not(.hidden)').count()), 'H oeffnet, Knopf schliesst');
 
-  // ---- Keine toten Klicks: jede Reaktion sichtbar ------------------------------------------------------------------
+  // ---- Freie Platzierung: Geist, Gruende, keine toten Klicks --------------------------------------------------------------
   let s = await snap();
   const toastAfter = async (fn, re, what) => {
     await fn();
@@ -192,39 +175,96 @@ async function playStage(browser, [W, H]) {
     const t = await toastText();
     ok(re.test(t), `${what}: Toast "${t}"`);
   };
-  await toastAfter(() => clickSlot(0), /Pick a unit/, 'Klick auf freien Slot ohne Unit-Wahl');
-  await toastAfter(() => clickBoard(0.2, 10.3), /Nothing here/, 'Klick ins Leere (nichts gewaehlt)');
   const hillUnit = ['gunner', 'titan'].find((u) => s.order.includes(u));
   const groundUnit = ['striker', 'blaster'].find((u) => s.order.includes(u));
+  const hybridUnit = ['banner', 'frost', 'lancer'].find((u) => s.order.includes(u));
+  await toastAfter(() => clickAt(3000, 3000), /Nothing here/, 'Klick ins Leere ohne Unit-Wahl');
   await pickKey(hillUnit, s);
   await sleep(100);
   ok((await snap()).placing === hillUnit, 'Zifferntaste waehlt die Huegel-Unit');
-  ok((await page.locator('.slot.free').count()) === 10 && (await page.locator('.slot.nofit').count()) === 16, 'Platzier-Modus: 10 Huegel leuchten, 16 andere grau');
   ok(/Tip 2 of 3/.test((await page.locator('.hints').textContent()) ?? ''), 'Ersthinweis 2 von 3');
-  const nofitSlot = await center('.slot[data-slot="0"]');
-  await page.mouse.move(nofitSlot.x, nofitSlot.y);
-  await sleep(150);
-  ok(/needs a hill slot/.test((await page.locator('.slot[data-slot="0"] .why').textContent()) ?? ''), 'unpassender Slot nennt den Grund beim Darueberfahren');
-  await page.screenshot({ path: resolve(docs, `screenshot-p1-placing-${tag}.png`) });
-  await toastAfter(() => clickSlot(0), /needs a hill slot/, 'falscher Slot-Typ');
-  ok((await snap()).units.length === 0, 'falscher Slot-Typ platziert nichts');
-  await toastAfter(() => clickBoard(0.2, 10.3), /Not a slot/, 'Klick ins Leere im Platzier-Modus');
-  await clickSel('.slot[data-slot="23"]', { button: 'right' });
+  const hillSpots = await readSpots(page, hillUnit, 4);
+  const groundSpots = await readSpots(page, groundUnit, 6);
+  ok(hillSpots.length >= 2 && groundSpots.length >= 4, `freie Stellen gelesen (Huegel ${hillSpots.length}, Boden ${groundSpots.length})`);
+  const pathPt = await readPathPoint(page);
+  // Geist: gruen auf passender Flaeche, rot mit Grund sonst (Maus hinfahren, Zustand lesen, Screenshot)
+  const hover = async (x, y) => {
+    const p = await worldToScreen(page, x, y);
+    await page.mouse.move(p.x, p.y);
+    await sleep(120);
+    return readGhost(page);
+  };
+  let g = await hover(...hillSpots[0]);
+  ok(g && g.ok && g.reason === null, `Geist gruen auf freiem Huegel (${JSON.stringify(g)})`);
+  await page.screenshot({ path: resolve(docs, `screenshot-r6-ghost-green-${tag}.png`) });
+  g = await hover(...groundSpots[0]);
+  ok(g && !g.ok && g.reason === 'wrong-zone', `Geist rot auf Boden mit Huegel-Unit: ${g?.reason}`);
+  g = await hover(pathPt[0], pathPt[1]);
+  ok(g && !g.ok && g.reason === 'on-path', `Geist rot auf dem Pfad: ${g?.reason}`);
+  await page.screenshot({ path: resolve(docs, `screenshot-r6-ghost-red-${tag}.png`) });
+  g = await hover(-450, 5500);
+  ok(g && !g.ok && g.reason === 'out-of-bounds', `Geist rot am Kartenrand: ${g?.reason}`);
+  // Klicks an roten Stellen: Toast mit Grund, nichts wird gesetzt, keine toten Klicks
+  await toastAfter(() => clickAt(pathPt[0], pathPt[1]), /enemy path/, 'Klick auf den Pfad');
+  ok((await snap()).units.length === 0 && (await snap()).placing === hillUnit, 'Pfad-Klick setzt nichts, Wahl bleibt');
+  await toastAfter(() => clickAt(...groundSpots[0]), /needs a hill/, 'Huegel-Unit auf Boden');
+  await toastAfter(() => clickAt(-450, 5500), /edge of the map/, 'Klick am Kartenrand');
+  await toastAfter(() => clickAt(6500, 0), /Trees and rocks/, 'Klick auf Baum/Fels');
+  await clickAt(3000, 3000, { button: 'right' });
   await sleep(100);
   ok((await snap()).placing === null, 'Rechtsklick bricht das Platzieren ab');
   await pickKey(groundUnit, s);
   await press('Escape');
   await sleep(100);
   ok((await snap()).placing === null, 'Esc bricht das Platzieren ab');
+  // Hybrid und Farm, solange die Startmuenzen reichen (Geist liest auch `not-enough-coins`)
+  if (hybridUnit) {
+    await pickKey(hybridUnit, s);
+    const hy = (await readSpots(page, hybridUnit, 1))[0];
+    g = await hover(...hy);
+    ok(g && g.ok, `Hybrid-Unit ${hybridUnit}: Geist gruen auf freier Stelle`);
+    await press('Escape');
+  }
   if (s.order.includes('farm')) {
     await pickKey('farm', s);
-    await toastAfter(() => clickSlot(8), /Farm needs a large/, 'Farm auf kleinem Slot');
-    await clickSlot(23);
-    await sleep(150);
-    ok((await snap()).units.some((u) => u.def === 'farm' && u.slot === 23), 'Farm auf grossem Slot wird platziert');
+    const fs = await readSpots(page, 'farm', 2);
+    ok(fs.length > 0, `Farm findet Platz (${fs.length} Stellen)`);
+    await toastAfter(() => clickAt(...groundSpots[1]), /Too close|Trees|path|edge/, 'Farm (2x2) an enger Stelle');
     await press('Escape');
   }
 
+  // Setzen per Klick auf freie Stelle: Unit steht dort, Wahl ist verbraucht
+  await pickKey(groundUnit, s);
+  const first = groundSpots[0];
+  await clickAt(...first);
+  await sleep(150);
+  s = await snap();
+  const placedU = s.units.find((u) => u.def === groundUnit);
+  ok(!!placedU && Math.hypot(placedU.x - first[0], placedU.y - first[1]) < 60, `Klick setzt ${groundUnit} an die Mausposition (${placedU?.x},${placedU?.y} fuer ${first})`);
+  ok(s.placing === null, 'ohne Shift ist die Wahl nach dem Setzen verbraucht');
+  // Ueberlappung: knapp neben der gesetzten Unit (ausserhalb ihres Auswahlkreises, innerhalb der Mindestabstands)
+  await pickKey(groundUnit, s);
+  await toastAfter(() => clickAt(first[0] + 650, first[1]), /Too close to another unit/, 'Klick knapp neben einer Unit');
+  const hoverOv = await hover(first[0] + 650, first[1]);
+  ok(hoverOv && !hoverOv.ok && hoverOv.reason === 'overlap', `Geist rot bei Ueberlappung: ${hoverOv?.reason}`);
+  // Klick auf die gesetzte Unit waehlt sie (auch im Platzier-Modus)
+  await clickUnit(placedU);
+  await sleep(100);
+  s = await snap();
+  ok(s.selected === placedU.id && s.placing === null, 'Klick auf eine gesetzte Unit waehlt sie');
+  await press('Escape');
+  // Shift+Klick: dieselbe Unit nochmal, ohne neu zu waehlen
+  await pickKey(groundUnit, s);
+  const more = [];
+  for (let i = 0; i < 2; i++) {
+    const sp = (await readSpots(page, groundUnit, 1))[0]; // je Klick frisch lesen: eine alte Stelle koennte inzwischen belegt sein
+    more.push(sp);
+    await clickAt(...sp, { shift: true });
+    await sleep(100);
+  }
+  s = await snap();
+  ok(s.units.filter((u) => u.def === groundUnit).length === 1 + more.length && s.placing === groundUnit, `Shift+Klick setzt weitere ${groundUnit} ohne neue Wahl (${s.units.length} Units, Wahl ${s.placing})`);
+  await press('Escape');
   // ---- Die Stage: nur Mausklicks und Tasten -----------------------------------------------------------------------
   await clickSel('.btn.speed[data-speed="3"]');
   const stats = { place: 0, upgrade: 0, wave: 0, rejected: 0, sell: 0 };
@@ -246,27 +286,41 @@ async function playStage(browser, [W, H]) {
       log(`Welle ${s.wave}/20, Leben ${s.lives}/${s.maxLives}, Muenzen ${s.coins}, Units ${s.units.length}, ${Math.round((Date.now() - t0) / 1000)}s`);
     }
     let acted = false;
-    // 1) naechste Unit des Plans platzieren
+    // 1) naechste Unit des Plans platzieren: freie Stelle lesen, echter Mausklick dorthin
     const want = PLAN[planIdx];
     if (want && !s.order.includes(want)) planIdx++; // nicht im Team
     else if (want) {
       const d = s.defs[want];
-      const count = s.units.filter((u) => u.def === want).length;
-      if (count >= d.cap) planIdx++;
-      else {
-        const fits = s.slots.filter((x) => x.free && (d.placement === 'hybrid' || d.placement === x.kind) && d.footprint <= x.size).sort((a, b) => b.cov - a.cov);
-        if (fits.length === 0) planIdx++;
-        else if (s.coins >= d.cost) {
+      const spots = s.coins >= d.cost ? await readSpots(page, want, 4) : [];
+      if (s.coins >= d.cost && spots.length === 0) planIdx++; // kein Platz mehr fuer diese Sorte
+      else if (s.coins >= d.cost) {
+        await pickKey(want, s);
+        let done = false;
+        for (const sp of spots) {
+          await clickAt(...sp);
+          await sleep(60);
+          if ((await snap()).units.length > s.units.length) {
+            done = true;
+            break;
+          }
+          stats.rejected++;
+          log(`Klick abgelehnt bei ${sp}: ${await toastText()}`);
+        }
+        if (!done) await press('Escape');
+        stats.place += done ? 1 : 0;
+        planIdx++;
+        acted = true;
+      } else if (!toldPoor && s.units.length >= 3) {
+        // Muenzen reichen nicht: der Versuch muss den Grund nennen (Stellen ohne Muenzpruefung lesen)
+        toldPoor = true;
+        const poorSpots = await readSpots(page, want, 1, { ignoreCoins: true });
+        if (poorSpots.length > 0) {
           await pickKey(want, s);
-          await clickSlot(fits[0].id);
-          stats.place++;
-          planIdx++;
-          acted = true;
-        } else if (!toldPoor && s.units.length >= 3) {
-          // Muenzen reichen nicht: der Versuch muss den Grund nennen
-          toldPoor = true;
-          await pickKey(want, s);
-          await toastAfter(() => clickSlot(fits[0].id), /Not enough coins: \w+ costs \d+, you have \d+/, 'zu wenig Muenzen');
+          await clickAt(...poorSpots[0]);
+          await sleep(120);
+          const raced = (await snap()).units.length > s.units.length; // Muenzen kamen zwischen Lesen und Klick herein: dann wurde eben gesetzt
+          const tt = await toastText();
+          ok(raced || /Not enough coins: \w+ costs \d+, you have \d+/.test(tt), `zu wenig Muenzen: Toast "${tt}"${raced ? ' (Muenzen kamen dazwischen, gesetzt)' : ''}`);
           await press('Escape');
         }
       }
@@ -275,7 +329,7 @@ async function playStage(browser, [W, H]) {
     if (!acted && (planIdx >= 4 || s.units.length >= 4)) {
       const ups = s.units.filter((u) => u.up !== null && s.coins >= u.up && (planIdx >= PLAN.length || s.coins >= u.up + (s.defs[PLAN[planIdx]]?.cost ?? 0) * 0.3)).sort((a, b) => a.level - b.level || a.up - b.up);
       if (ups[0]) {
-        await clickSlot(ups[0].slot);
+        await clickUnit(ups[0]);
         await page.waitForSelector('.btn.upgrade:not([disabled])', { timeout: 3000 }).catch(() => {});
         await clickSel('.btn.upgrade');
         stats.upgrade++;
@@ -297,9 +351,10 @@ async function playStage(browser, [W, H]) {
     }
   }
   const fin = await snap();
-  log(`Ende: ${fin.result ?? 'Zeitlimit'} bei Welle ${fin.wave}, Leben ${fin.lives}, Platzieren ${stats.place}, Upgrades ${stats.upgrade}, Wellenrufe ${stats.wave}, ${Math.round((Date.now() - t0) / 1000)}s`);
+  log(`Ende: ${fin.result ?? 'Zeitlimit'} bei Welle ${fin.wave}, Leben ${fin.lives}, Platzieren ${stats.place} (abgelehnt ${stats.rejected}), Upgrades ${stats.upgrade}, Wellenrufe ${stats.wave}, ${Math.round((Date.now() - t0) / 1000)}s`);
   ok(fin.over, `Stage laeuft bis Sieg oder Niederlage durch (Ergebnis: ${fin.result}, Welle ${fin.wave})`);
   ok(stats.place >= 4 && stats.upgrade >= 3, `echte Maus-Aktionen: ${stats.place} Platzierungen, ${stats.upgrade} Upgrades`);
+  ok(stats.rejected <= 2, `Klicks auf gelesene freie Stellen werden angenommen (abgelehnt: ${stats.rejected})`);
   ok(fin.units.length > 0 || fin.result === 'loss', `Units auf dem Feld oder Niederlage (${fin.units.length})`);
   ok(fin.kills > 20, `Units haben Gegner besiegt (${fin.kills})`);
   if (fin.over) {
@@ -371,4 +426,4 @@ if (failures.length) {
   console.error(`\n${failures.length} Pruefung(en) fehlgeschlagen`);
   process.exit(1);
 }
-console.log('\nSmoke gruen. Screenshots: client/docs/screenshot-p1-placing-*.png');
+console.log('\nSmoke gruen. Screenshots: client/docs/screenshot-r6-ghost-*.png');

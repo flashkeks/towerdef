@@ -33,7 +33,7 @@ export function setHintsOff(off: boolean, store: KeyValueStore | null = defaultS
 
 export type HintStep = 1 | 2 | 3 | 'done';
 
-/** Schritt 1: Unit waehlen, 2: Slot klicken, 3: Welle starten. Fertig, sobald die erste Welle laeuft. */
+/** Schritt 1: Unit waehlen, 2: Feld klicken, 3: Welle starten. Fertig, sobald die erste Welle laeuft. */
 export function hintStep(p: { phase: string; placing: boolean; units: number }): HintStep {
   if (p.phase !== 'prep') return 'done';
   if (p.units > 0) return 3;

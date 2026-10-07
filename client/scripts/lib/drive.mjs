@@ -69,11 +69,10 @@ export function buildTeam(page, { units, level = 0 }) {
       st.players[0].coins = 10_000_000;
       let placed = 0;
       for (const id of units) {
-        const slots = s.sim.slots().filter((x) => x.free);
-        // Reihenfolge: nach Abdeckung des Pfads (beste zuerst)
-        slots.sort((a, b) => b.coverageByRange(3500) - a.coverageByRange(3500));
-        for (const sl of slots) {
-          const r = s.sim.apply(0, { type: 'place', unitId: id, slot: sl.id });
+        // Freie Platzierung: Raster-Kandidaten der Sim, beste Pfadabdeckung zuerst
+        const spots = [...s.sim.placementGrid(id)].sort((a, b) => s.sim.coverage(b.x, b.y, 3500) - s.sim.coverage(a.x, a.y, 3500));
+        for (const sp of spots) {
+          const r = s.sim.apply(0, { type: 'place', unitId: id, x: sp.x, y: sp.y });
           if (r.ok) {
             placed++;
             for (let i = 0; i < level; i++) s.sim.apply(0, { type: 'upgrade', entityId: r.entityId });

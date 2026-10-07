@@ -27,12 +27,6 @@ button:disabled { cursor: default; opacity: 0.5; }
 .main { display: flex; gap: 12px; padding: 12px; min-height: 0; overflow: hidden; justify-content: center; align-items: flex-start; }
 .boardwrap { position: relative; flex: none; border: 3px solid var(--ink); border-radius: 6px; overflow: hidden; background: #2f5a3a; }
 canvas.board { display: block; }
-.slots { position: absolute; inset: 0; pointer-events: none; }
-.slot { position: absolute; pointer-events: auto; background: transparent; border: 0; border-radius: 6px; padding: 0; }
-.slot.free { outline: 3px dashed var(--teal); outline-offset: -3px; background: #3fd8c022; }
-.slot.free:hover { background: #3fd8c055; }
-.slot.taken { cursor: pointer; }
-.slot:hover { background: #ffffff18; }
 
 .boss-banner { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); min-width: 360px; max-width: 80%; padding: 8px 14px; background: #1b2036ee; border: 2px solid var(--red); border-radius: 8px; text-align: center; pointer-events: none; }
 .boss-banner[data-mode='chance'] { border-color: var(--teal); }
@@ -137,35 +131,8 @@ canvas.board { display: block; }
 .replay-slot { margin-top: 10px; min-height: 0; }
 /* ---- Runde 5, P1: Bedienbarkeit ------------------------------------------------------------------------------ */
 /* Slots: Typ auf einen Blick. Freie Slots tragen eine eigene Platte; besetzte sind unsichtbar (Unit liegt darunter im Canvas). */
-.slot { display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: visible; }
-.slot .plate { position: absolute; inset: 0; border-radius: 6px; pointer-events: none; }
-.slot .cap { position: absolute; left: 0; right: 0; bottom: 4%; text-align: center; font: 800 calc(var(--tile, 48px) * 0.17) / 1 system-ui, sans-serif; letter-spacing: 0.08em; text-transform: uppercase; pointer-events: none; text-shadow: 0 1px 0 #000a; }
-.slot.taken .plate, .slot.taken .cap { display: none; }
-.slot.type-ground .plate { border-radius: 50%; background: radial-gradient(circle at 50% 40%, #a9aec2 0 38%, #7a809a 39% 100%); border: 3px solid #3a3f5c; box-shadow: inset 0 0 0 4px #59607a; }
-.slot.type-ground .cap { color: #1b2036; text-shadow: none; bottom: 22%; }
-.slot.type-hill .plate { border-radius: 14%; background: linear-gradient(#a8693f, #6b4024); border: 3px solid #3a2216; clip-path: polygon(50% 4%, 96% 96%, 4% 96%); border-radius: 0; }
-.slot.type-hill .cap { color: #f3e3c0; bottom: 8%; }
-.slot.type-large .plate { background: repeating-linear-gradient(45deg, #5b6585 0 8px, #4a5272 8px 16px); border: 4px double var(--gold); }
-.slot.type-large .cap { color: var(--gold); font-size: calc(var(--tile, 48px) * 0.24); bottom: 8%; }
-.slot.type-large::before { content: '2x2'; position: absolute; top: 8%; left: 0; right: 0; text-align: center; font: 800 calc(var(--tile, 48px) * 0.3) / 1 system-ui, sans-serif; color: #f1f2f7aa; pointer-events: none; }
-.slot:hover { background: transparent; }
-.slot.taken:hover { background: #ffffff18; }
 /* Platzier-Modus: passend leuchtet, unpassend wird grau */
-.slot.free { outline: none; background: transparent; animation: slotpulse 1s ease-in-out infinite; }
-.slot.free .plate { box-shadow: 0 0 0 3px var(--teal), 0 0 14px 4px #3fd8c0aa; }
-.slot.type-hill.free .plate { box-shadow: none; filter: drop-shadow(0 0 6px var(--teal)) drop-shadow(0 0 2px var(--teal)); }
-.slot.free::after { content: ''; position: absolute; inset: -5px; border: 3px solid var(--teal); border-radius: 10px; box-shadow: 0 0 12px 3px #3fd8c0cc, inset 0 0 10px #3fd8c066; pointer-events: none; }
-.slot.type-large.free::after { inset: -4px; }
-.slot.free:hover .plate { filter: brightness(1.3); }
-.slot.free:hover::after { border-color: #fff; }
-.slot.nofit { opacity: 0.75; cursor: not-allowed; }
-.slot.nofit .plate { filter: grayscale(1) brightness(0.55); }
-.slot.nofit .cap { color: #cfd2de; }
-.slot .why { display: none; position: absolute; left: 50%; top: 100%; transform: translateX(-50%); margin-top: 4px; z-index: 5; width: max-content; max-width: calc(var(--tile, 48px) * 4); padding: 4px 8px; background: var(--ink); color: var(--parch); border: 2px solid var(--red); border-radius: 6px; font: 600 0.8rem system-ui, sans-serif; text-align: center; pointer-events: none; }
-.slot.nofit:hover .why { display: block; }
 .boardwrap.placing { cursor: crosshair; }
-@keyframes slotpulse { 50% { transform: scale(1.04); } }
-@media (prefers-reduced-motion: reduce) { .slot.free { animation: none; } }
 
 /* Toast am Zeiger */
 .toast.atpointer { bottom: auto; transform: translate(-50%, -100%); max-width: 22rem; text-align: center; z-index: 6; border: 2px solid var(--red); }
@@ -202,9 +169,9 @@ canvas.board { display: block; }
 .slotlegend { list-style: none; margin: 0 0 6px; padding: 0; display: grid; gap: 6px; }
 .slotlegend li { display: flex; align-items: center; gap: 10px; }
 .swatch { width: 28px; height: 28px; display: inline-block; flex: none; }
-.swatch.type-ground { border-radius: 50%; background: #7a809a; border: 3px solid #3a3f5c; }
-.swatch.type-hill { background: #8a5a3a; clip-path: polygon(50% 4%, 96% 96%, 4% 96%); }
-.swatch.type-large { background: #4a5272; border: 3px double var(--gold); }
+.swatch.type-ground { background: #4e8a45; border: 3px solid #2f5a3a; }
+.swatch.type-hill { background: linear-gradient(#6f9a4c 70%, #8a5a3a 70%); border: 2px solid #5a3a2a; }
+.swatch.type-large { background: #4e8a45; border: 3px double var(--gold); }
 .version { position: fixed; right: 8px; bottom: 4px; z-index: 40; font-size: 0.68rem; color: var(--stone); opacity: 0.8; pointer-events: none; }
 
 /* ---- P5: Spielgefuehl (Boss-Banner, Leak-Wackeln) ---- */
@@ -232,3 +199,4 @@ canvas.board { display: block; }
 @keyframes lives-flash { 0%, 50% { filter: brightness(2.2) saturate(2); background-color: #ff5a6e; } 100% { filter: none; } }
 @media (prefers-reduced-motion: reduce) { .hud .stat.lives.leak-hit, .boss-banner.enter, .boss-banner.phase, .boss-banner[data-mode='danger'] { animation: none; } }
 .boss-banner[data-pos='bottom'] { top: auto; bottom: 8px; }
+.boardwrap.placing { cursor: crosshair; }
