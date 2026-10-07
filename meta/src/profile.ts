@@ -43,7 +43,12 @@ export const OwnedUnitSchema = z.object({
 });
 export type OwnedUnit = z.infer<typeof OwnedUnitSchema>;
 
-export const PitySchema = z.object({ sinceTop: nat, sinceMid: nat });
+export const PitySchema = z.object({
+  sinceTop: nat,
+  sinceMid: nat,
+  /** Featured-Banner (P3): letzte Treffer der Featured-Stufe war nicht die Featured-Unit -> der naechste ist sie garantiert. Fehlt = false. */
+  guaranteeFeatured: z.boolean().optional(),
+});
 export type Pity = z.infer<typeof PitySchema>;
 
 /** Eintrag im Ziehungsverlauf, angelehnt an `gacha_pull` (architecture 7.5). */
@@ -62,8 +67,15 @@ export const PullRecordSchema = z.object({
   /** Zaehler `sinceTop` vor/nach dem Zug */
   pityBefore: nat,
   pityAfter: nat,
-  /** durch welche Pity erzwungen (`top` = Hoechststufe, `mid` = Mittelstufe), sonst `null` */
-  pityForced: z.enum(['top', 'mid']).nullable(),
+  /** durch welche Regel erzwungen (`top` = Hoechststufe, `mid` = Mittelstufe, `batch` = Garantie im 10er), sonst `null` */
+  pityForced: z.enum(['top', 'mid', 'batch']).nullable(),
+  /** P3, additiv: Zaehler `sinceMid` vor/nach dem Zug */
+  pityMidBefore: nat.optional(),
+  pityMidAfter: nat.optional(),
+  /** P3, additiv: Hash der Banner-Datei (kanonisches JSON), mit der gewuerfelt wurde; zusammen mit `ratesVersion` das Protokoll der Raten */
+  ratesHash: z.string().optional(),
+  /** P3, additiv (Featured-Banner): `won` = 50-%-Wurf, `lost` = andere Unit der Stufe, `guaranteed` = Garantie nach Fehlschlag */
+  featured: z.enum(['won', 'lost', 'guaranteed']).optional(),
   costCrystals: nat,
   createdAt: iso,
 });
@@ -84,6 +96,20 @@ export const IdemEntrySchema = z.object({
   createdAt: iso,
 });
 export type IdemEntry = z.infer<typeof IdemEntrySchema>;
+
+/** Mock-Shop-Bestellung (P3, additiv). Zustandsautomat `created -> pending -> paid -> refunded` bzw. `-> failed`, nie rueckwaerts. */
+export const OrderSchema = z.object({
+  orderId: z.string().min(1),
+  sku: z.string().min(1),
+  crystals: nat,
+  status: z.enum(['created', 'pending', 'paid', 'failed', 'refunded']),
+  providerRef: z.string(),
+  createdAt: iso,
+  updatedAt: iso,
+  /** bereits verarbeitete Anbieter-Ereignis-IDs (Deduplikation) */
+  eventIds: z.array(z.string()),
+});
+export type Order = z.infer<typeof OrderSchema>;
 
 export const ProfileSchema = z.object({
   schemaVersion: z.literal(SCHEMA_VERSION),
@@ -109,6 +135,8 @@ export const ProfileSchema = z.object({
   counters: z.record(z.string(), nat),
   /** Idempotenz-Tabelle, gekappt auf `IDEM_MAX` */
   idem: z.record(z.string(), IdemEntrySchema),
+  /** Mock-Shop-Bestellungen (P3, additiv, optional; fehlt = keine) */
+  orders: z.record(z.string(), OrderSchema).optional(),
 });
 export type Profile = z.infer<typeof ProfileSchema>;
 

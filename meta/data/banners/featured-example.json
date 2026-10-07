@@ -1,0 +1,22 @@
+{
+  "bannerId": "featured-example",
+  "name": "Featured Summon (example)",
+  "kind": "featured",
+  "active": false,
+  "ratesVersion": "2026-10-a",
+  "calibrated": false,
+  "note": "Startwerte (Runde 7), nicht kalibriert. Nur Datenformat-Beispiel, im Spiel NICHT aktiv (active=false). Featured-Unit bekommt 50 % der Treffer der Featured-Stufe; faellt eine andere Unit der Stufe, ist die naechste garantiert die Featured (recommendations.md 13).",
+  "costPerPull": 50,
+  "costTen": 450,
+  "tiers": [
+    { "rarity": "rare", "baseRateBp": 7000 },
+    { "rarity": "epic", "baseRateBp": 2500 },
+    { "rarity": "legendary", "baseRateBp": 400 },
+    { "rarity": "mythic", "baseRateBp": 100 }
+  ],
+  "pity": {
+    "top": { "rarity": "mythic", "hardAt": 150 },
+    "mid": { "rarity": "legendary", "hardAt": 35 }
+  },
+  "featured": { "unitId": "titan", "rarity": "mythic", "shareBp": 5000, "guaranteeAfterMiss": true }
+}

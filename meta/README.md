@@ -35,7 +35,8 @@ Jedes Paket aendert nur seine Dateien. Fremde Dateien nur minimal (Import, eine 
 | `src/idempotency.ts` | `withIdempotency(Async)`, Kappung | P1 |
 | `src/team.ts` | `setTeam` (nur Besessene, max. 6, keine Duplikate) | P1 |
 | `src/result.ts`, `env.ts`, `util.ts`, `catalog.ts`, `index.ts` | Ergebnis-Typen, injizierte Umgebung (+ `testEnv`), kanonisches JSON/Pruefsumme, Unit-Katalog, Exporte | P1 (index: jeder fuer seine Zeile) |
-| `src/gacha.ts`, `data/banners/*.json` | Banner-Schema, `rollOne`, `pull`, Pity | **P3** |
+| `src/gacha.ts`, `data/banners/*.json` | Banner-Schema, `resolveBanner`, `rollOne`/`rollBatch`/`pull`, Pity | **P3** |
+| `src/banner-math.ts`, `src/banner-view.ts` | exakte Quoten/Erwartungswerte (Markov), `bannerView` (Anzeige-Daten fuer die UI) | **P3** |
 | `src/shop.ts` | Produktkatalog, `PaymentProvider`, `MockPaymentProvider`, `buy` | **P3** |
 | `src/rewards.ts` | `rewardForMatch`, `matchSummaryFromReplayHead` | **P5** |
 | `src/leveling.ts` | `levelUp`, Kostenkurve, Level 1-40 | **P5** (Kurve), P2 (Wirkung) |
@@ -45,8 +46,39 @@ Jedes Paket aendert nur seine Dateien. Fremde Dateien nur minimal (Import, eine 
 | `src/unit-mods.ts` | `unitModsFor(profile, team)` -> `UnitMod[]` fuer `createSim({ unitMods })` | **P2** |
 | `test/` | je Modul eine Datei; neue Pakete legen eigene Dateien an (`test/gacha-p3.test.ts` usw.) | jeder fuer seine |
 
-Platzhalter (`gacha`, `shop`, `rewards`, `leveling`, `progression`, `starter`, `stars`, `unit-mods`) laufen schon: der Kreislauf
+Platzhalter (`rewards`, `leveling`, `progression`, `starter`, `stars`, `unit-mods`) laufen schon: der Kreislauf
 Starter -> Ziehen -> Level -> Team -> Match-Belohnung funktioniert mit Startwerten. Die TODO-Kommentare am Dateikopf nennen, was das jeweilige Paket fuellt.
+
+## Gacha und Mock-Shop (P3)
+
+**Alle Zahlen sind Startwerte (Runde 7), nicht kalibriert** (`calibrated: false` und `note` in jeder Banner-Datei, die Anzeige sagt es auch).
+Die Banner-Dateien `data/banners/*.json` sind die **einzige Quelle fuer Anzeige und Wurf**: `rollOne`/`pull` und `bannerView` gehen beide ueber
+`resolveBanner(banner)`. Jede Ziehung traegt `ratesVersion` und `ratesHash` (FNV-1a ueber das kanonische JSON der Datei) im `pullHistory`.
+
+| Banner | Preis | Raten (Basis) | Regeln |
+|---|---|---|---|
+| `standard` (dauerhaft) | 50 / 10er 450 | Rare 70, Epic 25, Legendary 4, Mythic 1 % | harte Pity: Mythic beim 150. Zug, Legendary oder besser beim 35.; Zaehler je Banner im Profil, ueber Ziehungen und Sitzungen. **Keine weiche Pity** |
+| `starter` (einmalig) | nur 10er, 225 (halber Preis) | Rare 65, Epic 28, Legendary 6, Mythic 1 % | ein Block je Profil (`limits.maxBatches: 1`, Zaehler `counters['batches:starter']`), mindestens ein Epic oder besser (der 10. Zug wird angehoben) |
+| `featured-example` (**inaktiv**) | 50 / 450 | wie Standard | nur Datenformat: Featured-Unit 50 % der Mythic-Treffer, nach Fehlschlag garantiert (`featured`-Block); `active: false`, nicht ziehbar |
+
+**Erwartungswerte** (exakt per Markov-Kette ueber (sinceTop, sinceMid), `banner-math.ts`; der 1-Mio.-Test haelt die Sim dagegen):
+Standard: Gesamtquote Mythic **1,28 %** (Basis 1 %) = im Mittel **77,9 Zuege** (rec 13: 77,9), ca. 3 500 Crystals mit 10er-Preis (3 890 einzeln); Legendary oder besser
+6,19 % = 16,1 Zuege; Rare 69,12 / Epic 24,69 / Legendary 4,91 %. Starter: 1,35 % der Bloecke brauchen die Garantie, Rare effektiv 64,86 % statt 65 %.
+Der Abstand zwischen zwei Mythics ist nie groesser als 150 (Test mit 1 Mio. Wuerfen).
+
+**Duplikat** = `copies + 1` (Sterne rechnet `stars.ts` aus den Kopien), kein Extra-Material, keine zweite Waehrung. Ledger: **ein** `gacha_spend` je Block (`gacha_pull/batch-N`).
+Leere Seltenheit (keine Unit in `sim/data/units.json`): ihre Rate geht an die naechstniedrigere besetzte Stufe, eine Pity-Regel ohne besetzte Stufe ist aus, die Anzeige zeigt dieselbe Tabelle samt Hinweis.
+Fehlercodes: `unknown-banner`, `banner-inactive`, `invalid-count`, `banner-limit-reached`, `not-enough-crystals`, `banner-pool-empty`.
+
+**`bannerView(banner, profile)`** (`banner-view.ts`) liefert der UI alles zum Anzeigen: Ratentabelle je Stufe (`baseText`, `effectiveText`, `nextPullText`), Einzelraten je Unit,
+`rules` (Klartext-Saetze, Englisch), `pity` (`"Pulls since last Mythic: 37 / 150"`), `expected` (Zuege/Crystals je Treffer, `lines`), `ratesVersion`, `ratesHash`, `status`
+(`ok|inactive|limit-reached`), Hinweis `startValuesNotice`. Die UI rechnet nichts selbst. Zufall im Client: `crypto.getRandomValues` mit Rejection Sampling (`client/src/backend/random.ts`).
+
+**Mock-Shop** (`shop.ts`): `SHOP_CATALOG` = 500 / 1200 (+200, +20 %) / 2600 (+600, +30 %) Crystals. **Keine Preise**: `price: null`, `priceNote: "Test purchase - no real money"`.
+`PaymentProvider` nach architecture 7.2 ohne `Money` (`createCheckout`, `confirm`, `refund`, `parseWebhook`, lokal `pollEvents`). `MockPaymentProvider(env, outcome)` mit Schalter
+`ok | fail | pending | duplicate-event`. Ablauf 7.3 lokal: Bestellung (`profile.orders`, Zustandsautomat `created -> pending -> paid -> refunded | failed`) -> Ereignis -> `applyPaymentEvent`
+(Deduplikation per Ereignis-ID, genau **eine** Ledger-Buchung `purchase` mit `order/<orderId>`). `pending` bleibt offen (`refreshOrder` fragt nach), `fail` -> `payment-failed` (kein Profil gespeichert),
+`refundOrder` -> Ledger `refund` (Saldo darf negativ werden). Idempotenz je Aktion ueber `withIdempotency*` (Doppelklick = eine Buchung).
 
 ## Profil-Schema (Version 1)
 
@@ -60,11 +92,12 @@ Starter -> Ziehen -> Level -> Team -> Match-Belohnung funktioniert mit Startwert
 | `ledger` | Buchungen (siehe unten) |
 | `units` | `Record<unitId, { level, xp, copies, stars, firstObtainedAt }>` |
 | `team` | Unit-IDs, hoechstens 6, alle besessen |
-| `pity` | `Record<bannerId, { sinceTop, sinceMid }>` |
-| `pullHistory` | letzte 500 Zuege (`gacha_pull`-Form aus architecture 7.5), neueste zuletzt |
+| `pity` | `Record<bannerId, { sinceTop, sinceMid, guaranteeFeatured? }>` |
+| `pullHistory` | letzte 500 Zuege (`gacha_pull`-Form aus architecture 7.5), neueste zuletzt; P3 additiv: `ratesHash`, `pityMidBefore/After`, `featured`, `pityForced: 'batch'` |
 | `stages` | `stages[stageId][difficulty] = { clears, firstClearAt, bestWave }` |
 | `settings`, `flags`, `counters` | freie Einstellungen, Schalter (`starterGiftClaimed`), Zaehler (`pullBatches`) |
 | `idem` | Idempotenz-Tabelle, gekappt auf 200 |
+| `orders` | (P3, optional) Mock-Shop-Bestellungen `{ orderId, sku, crystals, status, providerRef, eventIds }`, gekappt auf 100 |
 
 **Zwei Meta-Waehrungen:** `crystals` (Gacha; erspielbar und im Mock-Shop; entspricht `shards` in architecture 7) und `gold` (Unit-Level, nur erspielbar).
 Muenzen im Match sind davon getrennt und tauchen hier nie auf.
