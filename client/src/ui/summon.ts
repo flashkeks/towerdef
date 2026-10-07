@@ -4,14 +4,16 @@
  * die UI rechnet nichts. Besitzer: P4.
  */
 import { getBackend } from '../backend';
-import type { BannerView, HistoryEntry, PullBatchResult } from '../backend/meta';
+import type { BannerView, HistoryEntry } from '../backend/meta';
 import { t } from '../i18n/t';
 import { clear, h } from './dom';
 import { notify } from './flash';
 import { metaFrame, newKey, type MetaFrame } from './meta-ui';
-import { errorText, pullOptions, rarityName, revealDuration, revealStyle, selectableBanners, unitName } from './meta-model';
+import { errorText, pullOptions, rarityName, selectableBanners, unitName } from './meta-model';
 import type { Nav } from './nav';
-import { portrait } from './portrait';
+import { openReveal } from './reveal';
+import { backdrop, icon, panel, portraitCard, sigil } from './kit';
+import { unitMeta } from './unit-card';
 
 const HISTORY_SHOWN = 20;
 
@@ -29,21 +31,25 @@ class SummonScreen {
   private readonly tabs = h('div', 'banner-tabs');
   private readonly pullRow = h('div', 'pull-row');
   private readonly info = h('div', 'banner-info');
+  private readonly art = h('div', 'banner-art');
+  private readonly pityBox = h('div', 'pity-box');
   private readonly history = h('div', 'history');
 
   constructor(
     private readonly f: MetaFrame,
     private readonly nav: Nav,
   ) {
-    const left = h('div', 'summon-main');
-    left.append(this.info);
+    const left = h('section', 'summon-main kp corners violet');
+    left.append(backdrop('summon'), this.tabs, this.art, this.pityBox, this.pullRow);
     const right = h('div', 'summon-side');
-    right.append(h('h2', undefined, t('summon.history')), this.history);
-    const top = h('div', 'summon-top');
-    top.append(this.tabs, this.pullRow);
+    const rates = panel({ tone: 'gold', cls: 'rates-panel', tag: 'div' });
+    rates.body.append(this.info);
+    const hist = panel({ title: t('summon.history'), tone: 'aether', cls: 'history-panel', tag: 'div' });
+    hist.body.append(this.history);
+    right.append(rates, hist);
     const cols = h('div', 'summon-cols');
     cols.append(left, right);
-    f.body.append(top, cols);
+    f.body.append(cols);
   }
 
   /** Banner und Verlauf holen und alles neu zeichnen. */
@@ -77,6 +83,8 @@ class SummonScreen {
     clear(this.tabs);
     clear(this.pullRow);
     clear(this.info);
+    clear(this.art);
+    clear(this.pityBox);
     if (this.views.length === 0) {
       this.info.append(h('p', 'muted', t('summon.none')));
       return;
@@ -100,11 +108,15 @@ class SummonScreen {
       b.type = 'button';
       b.dataset.count = String(opt.count);
       b.disabled = this.busy;
-      b.append(h('strong', undefined, opt.text), h('span', 'pull-cost', t('summon.cost', { n: opt.cost })));
+      const cost = h('span', 'pull-cost');
+      cost.append(icon('crystal'), t('summon.cost', { n: opt.cost }));
+      b.append(h('strong', undefined, opt.text), cost);
       b.addEventListener('click', () => void this.pull(v, opt.count));
       this.pullRow.append(b);
     }
     if (v.limits) this.pullRow.append(h('span', 'muted pull-limit', t('summon.limit', { left: v.limits.remaining })));
+    this.art.append(...bannerArt(v));
+    this.pityBox.append(...pityRows(v));
     this.info.append(...bannerInfo(v));
   }
 
@@ -142,10 +154,9 @@ function historyChip(e: HistoryEntry): HTMLElement {
   return c;
 }
 
-/** Linke Spalte: Hinweise, Pity-Zaehler, Ratentabelle, Regeln, Erwartungswerte. Alles aus dem `BannerView`. */
-function bannerInfo(v: BannerView): HTMLElement[] {
+/** Pity-Zaehler mit Balken (Stand und harte Grenze); Pflicht aus Runde 7: immer sichtbar. */
+function pityRows(v: BannerView): HTMLElement[] {
   const out: HTMLElement[] = [];
-  if (v.startValuesNotice) out.push(h('p', 'notice start-values', v.startValuesNotice));
   for (const p of v.pity) {
     const row = h('div', `pity-row pity-${p.kind}`);
     const bar = h('div', 'bar pitybar');
@@ -156,6 +167,36 @@ function bannerInfo(v: BannerView): HTMLElement[] {
     out.push(row);
   }
 
+  return out;
+}
+
+/** Banner-Bild: Name in Display-Schrift, Art des Banners, Featured-Units als grosse Karten (Featured zuerst, dann die staerksten der obersten Stufe). */
+function bannerArt(v: BannerView): HTMLElement[] {
+  const ring = h('div', 'banner-sigil');
+  ring.append(sigil());
+  const title = h('div', 'banner-title');
+  title.append(h('span', 'eyebrow', t(`summon.kind.${v.kind === 'standard' ? 'standard' : 'special'}`)), h('h2', 'banner-name', v.name));
+  const ids: { id: string; rarity: string; featured: boolean }[] = [];
+  if (v.featured) ids.push({ id: v.featured.unitId, rarity: v.featured.rarity, featured: true });
+  for (const tier of [...v.tiers].reverse()) {
+    if (!tier.populated) continue;
+    for (const u of tier.units) if (!ids.some((x) => x.id === u.unitId)) ids.push({ id: u.unitId, rarity: tier.rarity, featured: u.featured });
+    if (ids.length >= 3) break;
+  }
+  const row = h('div', 'banner-feature');
+  ids.slice(0, 3).forEach((x, i) => {
+    const m = unitMeta(x.id, x.rarity);
+    const c = portraitCard({ unitId: x.id, name: m.name, rarity: x.rarity, elements: m.elements, live: i === 0, tag: 'div', cls: `feat f${i}`, trait: x.featured ? t('summon.featured') : undefined });
+    c.querySelector('.pc-sub')?.remove();
+    row.append(c);
+  });
+  return [ring, title, row];
+}
+
+/** Rechte Spalte: Hinweise, Pity-Zaehler, Ratentabelle, Regeln, Erwartungswerte. Alles aus dem `BannerView`. */
+function bannerInfo(v: BannerView): HTMLElement[] {
+  const out: HTMLElement[] = [];
+  if (v.startValuesNotice) out.push(h('p', 'notice start-values', v.startValuesNotice));
   const table = h('table', 'rates-table');
   const head = h('tr');
   for (const k of ['rarity', 'rate', 'long', 'next']) head.append(h('th', undefined, t(`summon.rates.${k}`)));
@@ -170,7 +211,13 @@ function bannerInfo(v: BannerView): HTMLElement[] {
     body.append(tr);
     if (tier.units.length > 0) {
       const ur = h('tr', 'tier-units');
-      const td = h('td', undefined, tier.units.map((u) => `${unitName(u.unitId)} ${u.baseText}${u.featured ? ` (${t('summon.featured')})` : ''}`).join(' · '));
+      const td = h('td');
+      const pool = h('div', 'pool-list');
+      for (const u of tier.units) {
+        const c = h('span', `pool-chip${u.featured ? ' featured' : ''}`, `${unitName(u.unitId)} ${u.baseText}`);
+        pool.append(c);
+      }
+      td.append(pool);
       td.colSpan = 4;
       ur.append(td);
       body.append(ur);
@@ -191,72 +238,4 @@ function bannerInfo(v: BannerView): HTMLElement[] {
   return out;
 }
 
-// ---- Enthuellung -----------------------------------------------------------------------------------------------------
-
-/**
- * Enthuellung der Karten, kurz (CSS-Animation, ca. 1-2 s). Ein Klick oder Esc ueberspringt zum Ende, danach schliesst "Continue", Klick oder Esc.
- * Ergebnis steht beim Zeigen schon fest; die Animation aendert nichts mehr.
- */
-export function openReveal(batch: Pick<PullBatchResult, 'pulls'>): Promise<void> {
-  return new Promise((resolve) => {
-    const pulls = batch.pulls;
-    const layer = h('div', `reveal${pulls.length === 1 ? ' single' : ''}`);
-    layer.setAttribute('role', 'dialog');
-    layer.dataset.count = String(pulls.length);
-    const cards = h('div', 'reveal-cards');
-    let at = 0;
-    for (const p of pulls) {
-      const st = revealStyle(p.rarity);
-      const card = h('div', `reveal-card ${st.cls}`);
-      card.dataset.rarity = p.rarity;
-      card.dataset.unit = p.unitId;
-      card.style.animationDelay = `${at}ms`;
-      card.append(portrait(p.unitId, pulls.length === 1 ? 128 : 64), h('strong', 'rc-name', unitName(p.unitId)), h('span', 'rc-rarity', rarityName(p.rarity)), h('span', `rc-tag${p.isNew ? ' new' : ''}`, p.isNew ? t('summon.new') : t('summon.duplicate')));
-      if (st.flashMs > 0) {
-        const fl = h('div', `reveal-flash ${st.cls}`);
-        fl.style.animationDelay = `${at}ms`;
-        layer.append(fl);
-      }
-      cards.append(card);
-      at += st.stepMs;
-    }
-    const done = h('button', 'btn primary reveal-done', t('summon.reveal.skip'));
-    done.type = 'button';
-    layer.append(cards, done);
-
-    let finished = false;
-    let closableAt = 0;
-    const timer = setTimeout(() => finish(false), revealDuration(pulls.map((p) => p.rarity)));
-    const finish = (skipped: boolean): void => {
-      if (finished) return;
-      finished = true;
-      clearTimeout(timer);
-      layer.classList.add('finished');
-      if (skipped) {
-        layer.classList.add('skipped');
-        closableAt = Date.now() + 300; // Doppelklick soll nicht gleich zumachen
-      }
-      done.textContent = t('summon.reveal.done');
-    };
-    const close = (): void => {
-      document.removeEventListener('keydown', onKey, true);
-      clearTimeout(timer);
-      layer.remove();
-      resolve();
-    };
-    const step = (): void => {
-      if (!finished) finish(true);
-      else if (Date.now() >= closableAt) close();
-    };
-    const onKey = (e: KeyboardEvent): void => {
-      if (e.key !== 'Escape') return;
-      e.preventDefault();
-      e.stopPropagation();
-      step();
-    };
-    document.addEventListener('keydown', onKey, true);
-    layer.addEventListener('click', step);
-    document.body.append(layer);
-    done.focus();
-  });
-}
+export { openReveal } from './reveal';

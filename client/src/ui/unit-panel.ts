@@ -7,7 +7,9 @@ import type { Session } from '../game/session';
 import { sellPreview } from '../view/model';
 import { attackEffects, attackForm, reachMilli, upgradeEffect } from '../view/unit-info';
 import { clear, h, setClass } from './dom';
-import { unitName } from './meta-model';
+import { elementIcon, icon } from './kit';
+import { rarityName, unitName } from './meta-model';
+import { miniOf } from './unit-card';
 
 export class UnitPanel {
   readonly el = h('section', 'panel unitpanel');
@@ -32,7 +34,16 @@ export class UnitPanel {
       this.el.append(h('p', 'muted', t('unit.none')));
       return;
     }
-    this.el.append(h('h3', undefined, unitName(def.id)), h('p', 'lvl', t('unit.level', { n: u.level + 1, max: def.maxLevel + 1 })));
+    const head = h('div', 'up-head');
+    const who = h('div', 'up-who');
+    const meta = h('div', 'up-meta');
+    meta.append(h('span', `up-rarity r-${def.rarity.toLowerCase()}`, rarityName(def.rarity.toLowerCase())), ...def.elements.slice(0, 3).map((e) => elementIcon(e, 'up-el')));
+    who.append(h('h3', undefined, unitName(def.id)), meta);
+    head.append(miniOf(def.id, 46), who);
+    const pips = h('div', 'lvlpips');
+    pips.setAttribute('aria-hidden', 'true');
+    for (let i = 0; i <= def.maxLevel; i++) pips.append(h('span', `pip${i <= u.level ? ' on' : ''}`));
+    this.el.append(head, h('p', 'lvl', t('unit.level', { n: u.level + 1, max: def.maxLevel + 1 })), pips);
     const reach = reachMilli(def, u.level);
     if (reach > 0) this.el.append(h('p', 'reach', t('panel.range', { n: (reach / 1000).toFixed(1) })));
     const lv = def.levels[u.level];
@@ -42,7 +53,9 @@ export class UnitPanel {
       this.el.append(h('p', 'muted attack', bits.join(' · ')));
     }
     // Upgrade: Kosten, Wirkung alt -> neu
-    const upBtn = h('button', 'btn upgrade', up === null ? t('unit.maxed') : t('unit.upgrade', { cost: up }));
+    const upBtn = h('button', 'btn primary upgrade');
+    if (up === null) upBtn.textContent = t('unit.maxed');
+    else upBtn.append(icon('up'), t('unit.upgrade', { cost: up }));
     upBtn.disabled = up === null;
     setClass(upBtn, 'poor', up !== null && coins < up);
     upBtn.addEventListener('click', () => s.upgrade());
@@ -51,7 +64,9 @@ export class UnitPanel {
       const eff = h('ul', 'effect');
       for (const r of upgradeEffect(def, u.level)) {
         const li = h('li');
-        li.append(h('span', 'k', t(r.key)), h('span', 'v', `${r.from} → ${r.to}`));
+        const v = h('span', 'v');
+        v.append(h('span', 'from', r.from), icon('arrow'), h('span', 'to', r.to));
+        li.append(h('span', 'k', t(r.key)), v);
         eff.append(li);
       }
       this.el.append(eff);

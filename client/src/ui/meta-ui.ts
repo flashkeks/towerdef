@@ -7,6 +7,7 @@ import type { PlayerView } from '../backend/meta';
 import { cryptoUuid } from '../backend/random';
 import { t } from '../i18n/t';
 import { h } from './dom';
+import { backdrop, icon } from './kit';
 import { walletView } from './meta-model';
 import { notify } from './flash';
 import type { Nav } from './nav';
@@ -24,17 +25,19 @@ export class WalletBar {
   private readonly fill = h('div', 'bar-fill xp');
 
   constructor() {
-    const mk = (cls: string, icon: string, tip: string, val: HTMLElement): HTMLElement => {
+    const mk = (cls: string, ic: string, tip: string, val: HTMLElement): HTMLElement => {
       const e = h('span', `w-item ${cls}`);
       e.title = tip;
-      e.append(h('span', `w-icon ${cls}`, icon), val);
+      const bubble = h('span', `w-icon ${cls}`);
+      bubble.append(icon(ic, 'fill'));
+      e.append(bubble, val);
       return e;
     };
     const xpBar = h('div', 'bar xpbar');
     xpBar.append(this.fill);
     const lv = h('span', 'w-item w-player');
     lv.append(this.level, xpBar, this.xp);
-    this.el.append(mk('crystals', '◆', t('wallet.crystals'), this.crystals), mk('gold', '●', t('wallet.gold'), this.gold), lv);
+    this.el.append(mk('crystals', 'crystal', t('wallet.crystals'), this.crystals), mk('gold', 'coin', t('wallet.gold'), this.gold), lv);
   }
 
   update(p: PlayerView): void {
@@ -60,15 +63,18 @@ export interface MetaFrame {
 
 /** Rahmen eines Meta-Bildschirms: Zurueck-Knopf, Titel, Kontostaende, darunter `body`. */
 export function metaFrame(cls: string, titleKey: string, nav: Nav): MetaFrame {
-  const box = h('div', `dialog wide meta ${cls}`);
+  const box = h('div', `screen meta ${cls}`);
   const head = h('header', 'meta-head');
-  const back = h('button', 'btn menu-back', t('meta.toLobby'));
+  const back = h('button', 'btn menu-back');
   back.type = 'button';
+  back.append(icon('back'), t('meta.toLobby'));
   back.addEventListener('click', () => nav.lobby());
   const wallet = new WalletBar();
-  head.append(back, h('h1', 'title small', t(titleKey)), wallet.el);
+  const title = h('div', 'meta-title');
+  title.append(h('h1', 'title small', t(titleKey)));
+  head.append(back, title, wallet.el);
   const body = h('div', 'meta-body');
-  box.append(head, body);
+  box.append(backdrop('plain'), head, body);
   const refreshWallet = async (): Promise<PlayerView | null> => {
     const r = await getBackend().playerView();
     if (!r.ok) return null;

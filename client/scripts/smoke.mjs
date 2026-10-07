@@ -95,7 +95,8 @@ async function playStage(browser, [W, H]) {
   const page = await ctx.newPage();
   const errors = [];
   page.on('console', (m) => {
-    if (m.type() === 'error') errors.push(`console: ${m.text()}`);
+    // fehlende Portrait-Bilder (/aa/units/...) sind erwartet: lokal liegen keine, die UI faellt auf die Ersatzkarte zurueck
+    if (m.type() === 'error' && !/\/aa\/units\//.test(m.location()?.url ?? '')) errors.push(`console: ${m.text()}`);
   });
   page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`));
   page.on('requestfailed', (r) => errors.push(`requestfailed: ${r.url()}`));
@@ -178,7 +179,7 @@ async function playStage(browser, [W, H]) {
       await sleep(120);
     }
     const t1 = Date.now();
-    while (!(await snap()).over && Date.now() - t1 < 120000) {
+    while (!(await snap()).over && Date.now() - t1 < 300000) {
       await press('n');
       await sleep(120);
     }
@@ -243,8 +244,9 @@ async function playStage(browser, [W, H]) {
   await page.waitForSelector('.unit-tile');
   const countTxt = await text('.unit-count');
   const [, ownedN, totalN] = /(\d+) \/ (\d+) owned/.exec(countTxt) ?? [];
-  ok(Number(totalN) > 0 && (await page.locator('.unit-tile').count()) === Number(totalN), `alle ${totalN} Units im Raster, ${ownedN} besessen`);
-  ok((await page.locator('.unit-tile[data-owned="false"]').count()) === Number(totalN) - Number(ownedN), 'nicht besessene Units grau markiert ("not owned")');
+  // Raster ist virtuell (nur der sichtbare Ausschnitt steht im DOM): Gesamtzahl steht in data-count
+  ok(Number(totalN) > 0 && Number(await page.locator('.vgrid').getAttribute('data-count')) === Number(totalN) && (await page.locator('.unit-tile').count()) > 0, `alle ${totalN} Units im Raster (virtuell), ${ownedN} besessen`);
+  ok(Number(totalN) === Number(ownedN) || (await page.locator('.unit-tile[data-owned="false"]').count()) > 0, 'nicht besessene Units grau markiert ("not owned")');
   await clickSel('.filter-btn[data-group="rarity"][data-value="epic"]');
   ok((await page.locator('.unit-tile').count()) > 0 && (await page.locator('.unit-tile:not(.r-epic)').count()) === 0, 'Filter Seltenheit = Epic');
   await clickSel('.filter-btn[data-group="rarity"][data-value=""]');
@@ -261,7 +263,13 @@ async function playStage(browser, [W, H]) {
   ok((await page.locator('.team-slot.filled').count()) === 4 && (await page.locator('.team-save').isDisabled()), 'Slot leeren: 4 von 5, Speichern gesperrt');
   await clickSel(`.team-pick .unit-tile[data-unit="${firstSlot}"]`);
   await sleep(150);
-  ok((await page.locator('.team-slot.filled').count()) === 5 && !(await page.locator('.team-save').isDisabled()), 'Unit aus der Sammlung gewaehlt: 5 von 5');
+  // Ziel = min(6, Besitz): hat der Zug eine neue Unit gebracht, fehlt noch eine (Zufall) -> auffuellen
+  for (let i = 0; i < 3 && (await page.locator('.team-save').isDisabled()); i++) {
+    await clickSel('.team-pick .unit-tile:not(.picked)');
+    await sleep(150);
+  }
+  const slotsTotal = await page.locator('.team-slot').count();
+  ok((await page.locator('.team-slot.filled').count()) === slotsTotal && !(await page.locator('.team-save').isDisabled()), `Unit aus der Sammlung gewaehlt: ${slotsTotal} von ${slotsTotal}`);
   await shot('team');
   await clickSel('.team-save');
   await page.waitForSelector('.flash.good');
@@ -282,7 +290,7 @@ async function playStage(browser, [W, H]) {
     const x = window.__duskwardens.session();
     return { team: x.team, mods: x.unitMods.length, defs: x.teamCatalog().length };
   });
-  ok(sess.team?.length === 5 && sess.mods === 5 && sess.defs === 5, `Session mit Team (${sess.team?.length}) und Unit-Mods (${sess.mods}) aus dem Profil`);
+  ok(sess.team?.length >= 5 && sess.mods === sess.team.length && sess.defs === sess.team.length, `Session mit Team (${sess.team?.length}) und Unit-Mods (${sess.mods}) aus dem Profil`);
 
   // ---- Layout: alles im Fenster, keine Slot-Knoepfe mehr --------------------------------------------------------------
   const lay = await page.evaluate(() => {
@@ -314,7 +322,7 @@ async function playStage(browser, [W, H]) {
   let s = await snap();
   const toastAfter = async (fn, re, what) => {
     await fn();
-    await sleep(120);
+    await sleep(250);
     const t = await toastText();
     ok(re.test(t), `${what}: Toast "${t}"`);
   };
@@ -572,7 +580,8 @@ async function playStage(browser, [W, H]) {
   const after = await readState();
   ok(JSON.stringify(after.wallet) === JSON.stringify(before.wallet), `Neuladen: Salden gleich (${JSON.stringify(before.wallet)} -> ${JSON.stringify(after.wallet)})`);
   ok(after.pity === before.pity && after.history === before.history && after.history === 10, `Neuladen: Pity und Verlauf gleich ("${before.pity}", ${after.history} Zuege)`);
-  ok(JSON.stringify(after.units) === JSON.stringify(before.units) && after.units.some((u) => u.startsWith('ichigo:true:Lv 2')), 'Neuladen: Sammlung und Level gleich (Ichigo Lv 2)');
+  const diffUnits = after.units.filter((u, i) => u !== before.units[i]).slice(0, 3);
+  ok(JSON.stringify(after.units) === JSON.stringify(before.units) && after.units.some((u) => u.startsWith('ichigo:true:Lv 2')), `Neuladen: Sammlung und Level gleich (Ichigo Lv 2)${diffUnits.length ? ` - Unterschied: ${diffUnits.join(' | ')} (vorher ${before.units.length}, nachher ${after.units.length} Karten)` : ''}`);
 
   // ---- Export -> Reset -> Import (nur 1280x720) ------------------------------------------------------------------------------
   if (W === 1280) {

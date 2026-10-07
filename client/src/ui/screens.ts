@@ -59,6 +59,7 @@ export class Screens {
 
   hide(): void {
     this.el.classList.add('hidden');
+    clear(this.el); // Lobby und Meta-Bildschirme nicht im Hintergrund weiterlaufen lassen (Hintergrund-Animation)
   }
 
   /** Neue Runde: Pause-Menue zuruecksetzen. */
@@ -106,13 +107,13 @@ export class Screens {
   async showLobby(): Promise<void> {
     const loading = buildLobbyLoading();
     this.open(loading);
-    const r = await getBackend().playerView();
+    const [r, c] = await Promise.all([getBackend().playerView(), getBackend().collectionView()]);
     if (this.el.firstElementChild !== loading) return; // inzwischen woanders
     if (!r.ok) {
       this.open(buildLoadError(r, () => void this.showLobby()));
       return;
     }
-    this.open(buildLobby(r.player, r.persistence, this.nav));
+    this.open(buildLobby(r.player, r.persistence, this.nav, c.ok ? c.units : []));
   }
 
   showEnd(s: Session, mvp: Mvp | null): void {

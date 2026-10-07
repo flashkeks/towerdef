@@ -1,20 +1,27 @@
 /**
- * Units: Sammlung als Raster mit Seltenheits-Rahmen und Portrait, Filter (Seltenheit, Rolle, Platzierung), Detailansicht mit Werten aus den
- * Sim-Daten (`view/unit-info.ts`), Level, Sterne und Kopien, Level-Up mit Gold. Nicht besessene Units sind grau ("not owned").
- * Kein Unit-Verzeichnis ist hart verdrahtet: alles kommt aus `collectionView()` (Katalog) und der Sim (`UnitDef`). Besitzer: P4.
+ * Sammlung (Runde 8, P4): Raster mit Portraet-Karten (virtuell, 561+ Units fluessig), Suche, Filter (Seltenheit, Element, Platzierung, Rolle, Besitz),
+ * Sortierung (Seltenheit, Element, Platzierung, DPS, Level, Name) und Detailseite mit grossem Portraet, Werten je Upgrade-Stufe aus `UnitDef.levels`,
+ * Angriffsform-Vorschau, Platz fuer Trait-Reroll und Evolution (noch gesperrt: kommt mit dem Backend von P2), Level-Up mit Gold.
+ * Sichtlogik ohne DOM: `collection-model.ts`. Nicht besessene Units sind grau ("not owned"). Besitzer: P4.
  */
 import { getBackend } from '../backend';
 import type { CollectionUnitView } from '../backend/meta';
-import { hasKey, t } from '../i18n/t';
+import { t } from '../i18n/t';
+import type { UnitDef } from '../sim';
 import { statValues } from '../view/unit-info';
 import { unitTags } from '../view/readability';
+import { attackPreview } from './attack-preview';
+import { attackShape, DEFAULT_QUERY, levelDps, primaryElement, queryCollection, SORT_KEYS, unitDps, type CollectionQuery, type SortKey } from './collection-model';
 import { clear, h } from './dom';
 import { notify } from './flash';
+import { artLayer, chip, elementIcon, elementVar, icon, panel, rarityFrame, rarityId, stars } from './kit';
+import { ELEMENT_IDS } from './kit/icons';
 import { metaFrame, newKey, type MetaFrame } from './meta-ui';
-import { copiesLine, errorText, filterUnits, NO_FILTER, PLACEMENT_CATS, rarityName, RARITY_ORDER, roleCat, ROLE_CATS, sortUnits, starsText, unitName, type UnitFilter } from './meta-model';
+import { copiesLine, errorText, PLACEMENT_CATS, rarityName, RARITY_ORDER, ROLE_CATS, roleCat, unitName } from './meta-model';
 import type { Nav } from './nav';
-import { portrait } from './portrait';
-import { unitDefMap } from './unit-defs';
+import { unitMeta, cardOf } from './unit-card';
+import { unitDefs } from './unit-defs';
+import { VirtualGrid } from './virtual-grid';
 
 export function buildUnits(nav: Nav, initial?: string): HTMLElement {
   const f = metaFrame('units', 'units.title', nav);
@@ -22,30 +29,38 @@ export function buildUnits(nav: Nav, initial?: string): HTMLElement {
   return f.box;
 }
 
-type Group = 'rarity' | 'role' | 'placement';
+type Group = 'rarity' | 'element' | 'role' | 'placement';
+const RARITY_DOT: Record<string, string> = { rare: 'var(--rare-b)', epic: 'var(--epic-b)', legendary: 'var(--legendary-b)', mythic: 'var(--mythic-b)', secret: 'var(--secret-b)', exclusive: 'var(--exclusive-b)' };
+const cap = (s: string): string => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
 
 class UnitsScreen {
   private units: CollectionUnitView[] = [];
-  private filter: UnitFilter = { ...NO_FILTER };
+  private view: CollectionUnitView[] = [];
+  private query: CollectionQuery = { ...DEFAULT_QUERY };
   private selected: string | null;
   private busy = false;
-  private readonly defs = unitDefMap();
+  private previewStep: number | null = null;
+  private readonly defs = unitDefs();
   private readonly filters = h('div', 'unit-filters');
-  private readonly grid = h('div', 'unit-grid');
   private readonly detail = h('aside', 'unit-detail');
-  private readonly count = h('span', 'muted unit-count');
+  private readonly count = h('span', 'unit-count');
+  private readonly grid = new VirtualGrid<CollectionUnitView>({ minW: 118, gap: 12, aspect: 4 / 3, make: (u) => this.card(u) });
 
   constructor(
     private readonly f: MetaFrame,
     initial?: string,
   ) {
     this.selected = initial ?? null;
+    this.grid.el.classList.add('unit-grid');
     const main = h('div', 'unit-main');
-    main.append(this.filters, this.grid);
+    main.append(this.filters, this.grid.el);
     const cols = h('div', 'units-cols');
     cols.append(main, this.detail);
     f.body.append(cols);
+    f.body.classList.add('no-scroll');
   }
+
+  private readonly nameOf = (id: string): string => unitName(id);
 
   async load(): Promise<void> {
     const r = await getBackend().collectionView();
@@ -54,70 +69,89 @@ class UnitsScreen {
       return;
     }
     this.units = r.units;
-    if (!this.selected || !this.units.some((u) => u.unitId === this.selected)) this.selected = sortUnits(this.units)[0]?.unitId ?? null;
-    this.renderFilters(r.ownedCount, r.total);
-    this.renderGrid();
+    this.count.textContent = t('units.count', { n: r.ownedCount, total: r.total });
+    this.renderFilters();
+    this.applyQuery(this.view.length === 0);
+    if (!this.selected || !this.units.some((u) => u.unitId === this.selected)) this.selected = this.view[0]?.unitId ?? null;
     this.renderDetail();
   }
 
-  private renderFilters(owned: number, total: number): void {
+  private set(patch: Partial<CollectionQuery>): void {
+    this.query = { ...this.query, ...patch };
+    this.renderFilters();
+    this.applyQuery(true);
+  }
+
+  private applyQuery(reset: boolean): void {
+    this.view = queryCollection(this.units, this.defs, this.nameOf, this.query);
+    this.grid.setItems(this.view, reset);
+    this.f.box.querySelector('.unit-empty')?.remove();
+    if (this.view.length === 0) this.grid.el.after(h('p', 'muted unit-empty', t('units.none')));
+  }
+
+  private renderFilters(): void {
     clear(this.filters);
+    const top = h('div', 'filter-top');
+    const search = h('input', 'unit-search');
+    search.type = 'search';
+    search.placeholder = t('units.search');
+    search.value = this.query.search;
+    search.setAttribute('aria-label', t('units.search'));
+    search.addEventListener('input', () => {
+      this.query = { ...this.query, search: search.value };
+      this.applyQuery(true);
+    });
+    const sortWrap = h('label', 'unit-sortwrap');
+    const sort = h('select', 'unit-sort');
+    for (const k of SORT_KEYS) {
+      const o = h('option', undefined, t(`units.sort.${k}`));
+      o.value = k;
+      sort.append(o);
+    }
+    sort.value = this.query.sort;
+    sort.addEventListener('change', () => this.set({ sort: sort.value as SortKey }));
+    sortWrap.append(icon('sort'), h('span', undefined, t('units.sort')), sort);
+    const own = chip({ text: t('units.filter.owned'), active: this.query.ownedOnly, cls: 'filter-btn owned-only' });
+    own.addEventListener('click', () => this.set({ ownedOnly: !this.query.ownedOnly }));
+    const wrap = h('span', 'search-wrap');
+    wrap.append(icon('search'), search);
+    top.append(wrap, sortWrap, own, this.count);
+    this.filters.append(top);
+
     const rows: [Group, string, readonly string[]][] = [
       ['rarity', 'units.filter.rarity', RARITY_ORDER],
-      ['role', 'units.filter.role', ROLE_CATS],
+      ['element', 'units.filter.element', ELEMENT_IDS],
       ['placement', 'units.filter.placement', PLACEMENT_CATS],
+      ['role', 'units.filter.role', ROLE_CATS],
     ];
     for (const [group, label, values] of rows) {
       const row = h('div', 'filter-row');
       row.append(h('span', 'filter-label', t(label)));
-      const opts: [string | null, string][] = [[null, t('units.filter.all')], ...values.map((v): [string, string] => [v, group === 'rarity' ? rarityName(v) : t(group === 'role' ? `role.cat.${v}` : `placement.${v}`)])];
+      const opts: [string | null, string][] = [[null, t('units.filter.all')], ...values.map((v): [string, string] => [v, group === 'rarity' ? rarityName(v) : group === 'element' ? cap(v) : t(group === 'role' ? `role.cat.${v}` : `placement.${v}`)])];
       for (const [value, text] of opts) {
-        const on = (this.filter[group] ?? null) === value;
-        const b = h('button', `btn filter-btn${on ? ' active' : ''}`, text);
-        b.type = 'button';
+        const on = (this.query[group] ?? null) === value;
+        const b = chip({
+          text,
+          active: on,
+          cls: 'filter-btn',
+          dot: group === 'rarity' && value ? RARITY_DOT[value] : undefined,
+          icon: group === 'element' && value ? elementIcon(value) : group === 'placement' && value ? icon(value) : undefined,
+        });
         b.dataset.group = group;
         b.dataset.value = value ?? '';
-        b.setAttribute('aria-pressed', String(on));
-        b.addEventListener('click', () => {
-          this.filter = { ...this.filter, [group]: value };
-          this.renderFilters(owned, total);
-          this.renderGrid();
-        });
+        b.addEventListener('click', () => this.set({ [group]: value } as Partial<CollectionQuery>));
         row.append(b);
       }
       this.filters.append(row);
     }
-    const own = h('button', `btn filter-btn owned-only${this.filter.ownedOnly ? ' active' : ''}`, t('units.filter.owned'));
-    own.type = 'button';
-    own.setAttribute('aria-pressed', String(!!this.filter.ownedOnly));
-    own.addEventListener('click', () => {
-      this.filter = { ...this.filter, ownedOnly: !this.filter.ownedOnly };
-      this.renderFilters(owned, total);
-      this.renderGrid();
-    });
-    this.count.textContent = t('units.count', { n: owned, total });
-    const last = h('div', 'filter-row');
-    last.append(own, this.count);
-    this.filters.append(last);
-  }
-
-  private renderGrid(): void {
-    clear(this.grid);
-    const list = sortUnits(filterUnits(this.units, this.defs, this.filter));
-    if (list.length === 0) this.grid.append(h('p', 'muted', t('units.none')));
-    for (const u of list) this.grid.append(this.card(u));
   }
 
   private card(u: CollectionUnitView): HTMLElement {
-    const c = h('button', `unit-tile r-${u.rarity}${u.owned ? '' : ' unowned'}${u.unitId === this.selected ? ' selected' : ''}${u.inTeam ? ' inteam' : ''}`);
-    c.type = 'button';
-    c.dataset.unit = u.unitId;
-    c.dataset.owned = String(u.owned);
-    c.append(portrait(u.unitId, 64), h('strong', 'ut-name', unitName(u.unitId)));
-    c.append(h('span', 'ut-sub', u.owned ? `${t('units.lv', { n: u.level })} ${starsText(u.stars, u.maxStars)}` : t('units.notOwned')));
+    const c = cardOf(u, { selected: u.unitId === this.selected });
     c.addEventListener('click', () => {
       this.selected = u.unitId;
-      this.grid.querySelectorAll('.unit-tile.selected').forEach((e) => e.classList.remove('selected'));
+      this.previewStep = null;
+      this.grid.el.querySelectorAll('.unit-tile.selected').forEach((e) => e.classList.remove('selected'));
       c.classList.add('selected');
       this.renderDetail();
     });
@@ -132,11 +166,26 @@ class UnitsScreen {
       return;
     }
     const def = this.defs.get(u.unitId);
-    this.detail.className = `unit-detail r-${u.rarity}${u.owned ? '' : ' unowned'}`;
-    const head = h('div', 'ud-head');
+    const m = unitMeta(u.unitId, u.rarity);
+    const rar = rarityId(u.rarity);
+    this.detail.className = `unit-detail r-${rar}${u.owned ? '' : ' unowned'}`;
+    this.detail.style.setProperty('--el', elementVar(primaryElement(def)));
+
+    // Kopf: grosses Portraet im Rahmen (laeuft), Name, Seltenheit, Elemente
+    const art = h('div', 'ud-art');
+    art.append(artLayer(u.unitId, m.elements, m.name.slice(0, 2).toUpperCase()), h('div', 'pc-shade'));
+    const frame = rarityFrame(rar, art, { live: true, cls: `ud-card${u.owned ? '' : ' unowned'}` });
     const titles = h('div', 'ud-titles');
-    titles.append(h('h2', 'ud-name', unitName(u.unitId)), h('span', `ud-rarity r-${u.rarity}`, rarityName(u.rarity)));
-    head.append(portrait(u.unitId, 96), titles);
+    titles.append(h('span', `ud-rarity r-${rar}`, rarityName(rar)), h('h2', 'ud-name', m.name));
+    const els = h('div', 'ud-elements');
+    for (const e of m.elements.length ? m.elements : ['none']) {
+      const pill = h('span', 'tag-pill ud-el');
+      pill.append(elementIcon(e), cap(e));
+      els.append(pill);
+    }
+    titles.append(els);
+    const head = h('div', 'ud-head');
+    head.append(frame, titles);
     this.detail.append(head);
 
     if (def) {
@@ -148,7 +197,6 @@ class UnitsScreen {
         tags.append(s);
       }
       this.detail.append(tags);
-      if (hasKey(`team.info.${u.unitId}`)) this.detail.append(h('p', 'ud-info', t(`team.info.${u.unitId}`)));
       const dl = h('dl', 'ud-stats');
       const add = (k: string, v: string): void => {
         dl.append(h('dt', undefined, k), h('dd', undefined, v));
@@ -156,15 +204,18 @@ class UnitsScreen {
       add(t('units.placement'), [t(`placement.${def.placement}`), def.footprint === 2 ? t('team.big') : ''].filter(Boolean).join(', '));
       add(t('units.placeCost'), String(def.placeCost));
       for (const r of statValues(def, 1)) add(t(r.key), r.value);
+      add(t('units.col.dps'), unitDps(def) > 0 ? unitDps(def).toFixed(1) : '-');
       this.detail.append(dl);
+      this.detail.append(this.stepsPanel(def));
     }
+    this.detail.append(this.slots(u));
 
     if (!u.owned) {
-      this.detail.append(h('p', 'ud-notowned', t('units.notOwned.long')));
+      this.detail.append(h('p', 'ud-notowned muted', t('units.notOwned.long')));
       return;
     }
     const prog = h('div', 'ud-progress');
-    prog.append(h('div', 'ud-level', t('units.level', { n: u.level, max: u.maxLevel })), h('div', 'ud-stars', starsText(u.stars, u.maxStars)), h('div', 'ud-copies muted', copiesLine(u)));
+    prog.append(h('div', 'ud-level', t('units.level', { n: u.level, max: u.maxLevel })), stars(u.stars, u.maxStars), h('div', 'ud-copies muted', copiesLine(u)));
     if (u.powerBonusPct > 0) prog.append(h('div', 'ud-power', t('units.power', { n: u.powerBonusPct })));
     this.detail.append(prog);
 
@@ -183,6 +234,67 @@ class UnitsScreen {
     if (u.levelUpCost !== null && !u.canLevelUp) this.detail.append(h('p', 'muted ud-why', t('units.needGold', { n: u.levelUpCost })));
   }
 
+  /** Werte je Upgrade-Stufe (Schaden, Tempo, Reichweite, DPS, Kosten) und die Form-Vorschau der gewaehlten Stufe. */
+  private stepsPanel(def: UnitDef): HTMLElement {
+    const p = panel({ title: t('units.steps'), tone: 'violet', cls: 'ud-steps', tag: 'div' });
+    const last = def.levels.length - 1;
+    const step = Math.min(this.previewStep ?? last, last);
+    const table = h('table', 'ud-levels');
+    const head = h('tr');
+    for (const k of ['step', 'damage', 'cooldown', 'range', 'dps', 'cost']) head.append(h('th', undefined, t(`units.col.${k}`)));
+    const thead = h('thead');
+    thead.append(head);
+    table.append(thead);
+    const body = h('tbody');
+    def.levels.forEach((lv, i) => {
+      const rows = new Map(statValues(def, i).map((r) => [r.key, r.value]));
+      const tr = h('tr', i === step ? 'on' : '');
+      const dps = levelDps(lv);
+      const cost = i === 0 ? def.placeCost : (def.upgradeCosts[i - 1] ?? 0);
+      for (const v of [String(i + 1), rows.get('stat.damage') ?? '-', rows.get('stat.cooldown') ?? '-', rows.get('stat.range') ?? '-', dps > 0 ? dps.toFixed(1) : '-', String(cost)]) tr.append(h('td', undefined, v));
+      tr.addEventListener('click', () => {
+        this.previewStep = i;
+        this.renderDetail();
+      });
+      body.append(tr);
+    });
+    table.append(body);
+    p.body.append(table);
+    const shape = attackShape(def.levels[step]);
+    if (shape) {
+      const rows = new Map(statValues(def, step).map((r) => [r.key, r.value]));
+      const box = h('div', 'ud-shape');
+      const cap2 = h('div', 'ud-shape-text');
+      cap2.append(h('strong', undefined, t('units.shape')), h('span', undefined, rows.get('stat.form') ?? ''), h('span', 'muted', t('units.step', { n: step + 1 })));
+      box.append(attackPreview(shape), cap2);
+      p.body.append(box);
+    }
+    return p;
+  }
+
+  /** Trait-Platz und Evolution: Oberflaeche steht, die Knoepfe sind gesperrt, bis das Backend (P2: `evolve`, `rerollTrait`) da ist. */
+  private slots(u: CollectionUnitView): HTMLElement {
+    const row = h('div', 'ud-slots');
+    const trait = panel({ title: t('units.trait'), tone: 'gold', cls: 'ud-slot', tag: 'div' });
+    const badge = h('span', 'tag-pill ud-trait-badge');
+    badge.append(icon('trait'), t('units.trait.none'));
+    const reroll = h('button', 'btn small ud-reroll');
+    reroll.type = 'button';
+    reroll.disabled = true;
+    reroll.title = t('units.soon');
+    reroll.append(icon('reroll'), t('units.reroll'));
+    trait.body.append(badge, reroll);
+    const evo = panel({ title: t('units.evolve'), tone: 'aether', cls: 'ud-slot', tag: 'div' });
+    const evoBtn = h('button', 'btn small ud-evolve');
+    evoBtn.type = 'button';
+    evoBtn.disabled = true;
+    evoBtn.title = t('units.soon');
+    evoBtn.append(icon('evolve'), t('units.evolve.btn'));
+    evo.body.append(h('span', 'muted ud-soon', u.owned ? t('units.soon') : t('units.notOwned')), evoBtn);
+    row.append(trait, evo);
+    return row;
+  }
+
   private async levelUp(u: CollectionUnitView): Promise<void> {
     if (this.busy) return;
     this.busy = true;
@@ -194,5 +306,6 @@ class UnitsScreen {
     if (!r.ok) notify(errorText(r), 'error');
     else notify(t('units.leveled', { name: unitName(u.unitId), n: r.level.level }), 'good', 2200);
     await Promise.all([this.load(), this.f.refreshWallet()]);
+    this.grid.refresh();
   }
 }

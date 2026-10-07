@@ -6,6 +6,7 @@ import { getBackend } from '../backend';
 import type { MatchReward } from '../backend/meta';
 import type { ReplayFile } from '../game/recorder';
 import { t } from '../i18n/t';
+import { icon } from './kit';
 import { h } from './dom';
 import { newKey } from './meta-ui';
 import { errorText, rewardView, walletView } from './meta-model';
@@ -55,7 +56,9 @@ function showReward(box: HTMLElement, reward: MatchReward, won: boolean, wallet:
   for (const l of v.lines) {
     const li = h('li', `reward-line ${l.kind}`);
     li.dataset.value = String(l.value);
-    li.append(h('span', `w-icon ${l.kind}`, l.kind === 'crystals' ? '◆' : l.kind === 'gold' ? '●' : '★'), h('span', undefined, l.text));
+    const bub = h('span', `w-icon ${l.kind}`);
+    bub.append(icon(l.kind === 'crystals' ? 'crystal' : l.kind === 'gold' ? 'coin' : 'star', 'fill'));
+    li.append(bub, h('span', undefined, l.text));
     list.append(li);
   }
   box.append(list);

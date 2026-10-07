@@ -19,6 +19,34 @@ npm run build && npm run smoke   # Playwright, je Aufloesung (1280x720, 1920x108
 
 `sim` bleibt eigenstaendig: `cd sim && npm test && npm run typecheck`.
 
+## Interface-Kit (Runde 8, P4)
+
+Neuer Look „Dusk Gilt“ (Entscheidungen und Moodboard: `docs/design/ui.md`). Alles Gestalterische liegt in `src/ui/kit/`:
+
+| Datei | Inhalt |
+|---|---|
+| `kit/tokens.css` | **Design-Tokens**: Flaechen, Text, Akzente, Seltenheits-Verlaeufe (`--rare-a/b/c`, `--*-glow`), Elementfarben (`--el-*`), Schriften, Radien, Schatten. Die alten Namen (`--ink`, `--gold` ...) zeigen darauf |
+| `kit/fonts.css`, `kit/fonts/` | gebuendelte Schriften (Cinzel, Manrope, Rajdhani; woff2) |
+| `kit/kit.css` | Komponenten-CSS: `.btn`, `.kp` (Panel), `.rf` (Seltenheits-Rahmen), `.pc` (Portraet-Karte), `.chip`, `.tile`, `.bar`, Brieftasche, Meldungen |
+| `kit/backdrop.css`, `kit/art.ts` | Hintergrund (Himmel, Berge, Funken-Canvas), Siegel, Wappen, Ersatzfigur (`bust`) |
+| `kit/icons.ts` | Inline-SVG-Icons (`icon(name)`), Elemente (`elementIcon(e)`, `ELEMENT_IDS`) |
+| `kit/index.ts` | **Bausteine**: `panel()`, `rarityFrame()`, `portraitCard()`, `miniCard()`, `tile()`, `chip()`, `stars()`, `backdrop()` |
+
+Faustregeln: Farben nur ueber Tokens; ein Baustein kennt keine Spieldaten (Name, Seltenheit, Elemente kommen als Parameter; `ui/unit-card.ts` loest sie aus den Sim-Daten auf:
+`cardOf(view)`, `miniOf(id, px)`, `unitMeta(id)`). Neue Bildschirme setzen sich aus diesen Teilen zusammen; die Weltkarte (P3) kann sie unveraendert nutzen.
+
+**Seltenheits-Rahmen:** `rarityFrame('mythic', inhalt, { live })`: Ring mit Verlauf und Leuchten, Mythic/Secret/Exclusive laufen (gedrehtes Pseudo-Element, kein Repaint).
+**Portraets:** `view/portrait.ts` (`portraitUrl(id)` = `/aa/units/<id>.webp`, `hasPortrait(id)`); fehlt das Bild, steht eine gestaltete Ersatzkarte (Initialen, Element-Farbe, Silhouette), Ladefehler werden gemerkt.
+
+Sichtlogik ohne DOM (Tests `test/collection-model.test.ts`):
+
+- `ui/collection-model.ts`: `filterCollection`/`sortCollection`/`queryCollection` (Seltenheit, Element, Platzierung, Rolle, Besitz, Suche; Sortierung nach Seltenheit, Element, Platzierung, DPS, Level, Name), `gridLayout`/`visibleRange`/`itemPos` (virtuelles Raster), `attackShape`/`shapeGeometry` (Angriffsform), `pickHero` (Lobby-Held).
+- `ui/virtual-grid.ts`: DOM-Huelle um die Rasterrechnung (561+ Units, nur sichtbare Zeilen im DOM; `data-count` am Raster = Gesamtzahl).
+- `ui/reveal-model.ts` + `ui/reveal.ts`: Ablaufplan und DOM der Zieh-Animation (Debug-Zugriff `window.__ui.openReveal({ pulls })` fuer Screenshots).
+
+Screenshots: `npm run build && node scripts/shots-r8-p4.mjs` (Port `SHOT_PORT`, Standard 4443) schreibt `docs/r8/p4-*.png`. Fuer eine Sammlung mit 561 Units braucht der Build
+waehrend der Aufnahme eine Datei mit vielen Units in `sim/data/units/` (`zz-*.json`, nicht einchecken); mit dem Stand von P1 sind es 26.
+
 ## Bildschirme (Runde 7)
 
 Start ist die **Lobby** (`ui/lobby.ts`): Kontostaende oben (Crystals, Gold, Spieler-Level mit XP-Balken), Starter-Geschenk als sichtbarer Knopf (solange offen), Play, Summon, Units, Team, Shop, Settings, Credits. Alle Bildschirme sprechen **nur mit `getBackend()`** (nie direkt mit `meta/`), Texte nur in `en.ts`, Zustand immer vom Backend (`playerView`, `collectionView`, `bannerViews`, `stageView`, `pullHistory`, `matchSetup`).

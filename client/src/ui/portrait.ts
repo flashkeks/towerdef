@@ -1,13 +1,10 @@
 /**
- * Portrait einer Unit fuer die DOM-Oberflaeche: ein Ausschnitt des Sprite-Atlas (`assets/atlas`), per CSS-Hintergrund, ganzzahlig skaliert
+ * (Runde 8: `portrait()` baut jetzt eine Karte, siehe unten.) Portrait einer Unit fuer die DOM-Oberflaeche: ein Ausschnitt des Sprite-Atlas (`assets/atlas`), per CSS-Hintergrund, ganzzahlig skaliert
  * (`image-rendering: pixelated`). Kennt der Atlas die Unit nicht (neue Unit ohne Sprite), erscheint ein farbiges Kuerzel-Abzeichen.
  * Besitzer: P4 (Runde 7).
  */
 import atlasData from '../../assets/atlas/atlas.json';
-import atlasUrl from '../../assets/atlas/atlas.png?url';
-import { unitColor } from '../view/model';
-import { h } from './dom';
-import { unitAbbr } from './meta-model';
+import { miniOf } from './unit-card';
 
 interface Frame {
   x: number;
@@ -44,24 +41,7 @@ export function portraitSpec(frame: Frame, box: number, atlas: { w: number; h: n
   };
 }
 
-const css = (n: number): string => `#${n.toString(16).padStart(6, '0')}`;
-
-/** Portrait-Element in einer quadratischen Box von `box` Pixeln. */
+/** Kleines Portrait (Karte mit Bild oder Ersatzfigur, Runde 8); `box` = Hoehe in px. Die Atlas-Rechnung oben bleibt fuer Pixel-Sprites. */
 export function portrait(unitId: string, box = 64): HTMLElement {
-  const wrap = h('span', 'portrait');
-  wrap.style.width = `${box}px`;
-  wrap.style.height = `${box}px`;
-  const f = frameOf(unitId);
-  if (f) {
-    const s = portraitSpec(f, box);
-    const img = h('span', 'portrait-img');
-    Object.assign(img.style, { width: `${s.width}px`, height: `${s.height}px`, backgroundImage: `url(${atlasUrl})`, backgroundSize: s.bgSize, backgroundPosition: s.bgPos });
-    wrap.append(img);
-  } else {
-    wrap.classList.add('fallback');
-    const badge = h('span', 'badge', unitAbbr(unitId));
-    badge.style.background = css(unitColor(unitId));
-    wrap.append(badge);
-  }
-  return wrap;
+  return miniOf(unitId, Math.round((box * 3) / 4));
 }

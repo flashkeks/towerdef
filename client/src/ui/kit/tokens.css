@@ -1,0 +1,87 @@
+/*
+ * Design-Tokens des Interface-Neubaus (Runde 8, P4). EINZIGE Stelle fuer Farben, Schriften, Radien, Schatten und Seltenheits-Verlaeufe.
+ * Komponenten (kit.css, styles.css, lobby.css ...) lesen nur Variablen von hier, nie Hex-Werte.
+ * Name der Farbwelt: "Dusk Gilt" = Nachtindigo-Flaechen, Warmgold als Hauptakzent, Aether-Tuerkis und Ember-Orange als Zweit- und Warnfarbe.
+ */
+:root {
+  /* ---- Flaechen (von hinten nach vorn) ---- */
+  --bg-0: #06070f;
+  --bg-1: #0b0d1b;
+  --bg-2: #11142a;
+  --bg-3: #1a1e3a;
+  --bg-4: #252a4d;
+  --glass: rgba(20, 24, 50, 0.62);
+  --glass-strong: rgba(14, 17, 38, 0.86);
+  --edge: rgba(255, 255, 255, 0.09);
+  --edge-hi: rgba(255, 255, 255, 0.22);
+  --scrim: rgba(4, 5, 12, 0.72);
+
+  /* ---- Text ---- */
+  --tx-0: #f4efe4;
+  --tx-1: #bdbad0;
+  --tx-2: #7f7d9b;
+  --tx-dark: #14121f;
+
+  /* ---- Akzente ---- */
+  --gold: #e9c56b;
+  --gold-hi: #fbe7a6;
+  --gold-lo: #a67c2c;
+  --ember: #ff8d4e;
+  --aether: #55e6d3;
+  --violet: #9a7bff;
+  --rose: #ff5d86;
+  --sky: #62b4ff;
+  --good: #6fe39a;
+  --bad: #ff5470;
+
+  /* ---- Seltenheit: drei Verlaufsstufen (a -> b -> c) und Leuchtfarbe ---- */
+  --rare-a: #7fc4ff;   --rare-b: #3b82e6;   --rare-c: #1e4fa8;   --rare-glow: rgba(80, 160, 255, 0.55);
+  --epic-a: #d6a6ff;   --epic-b: #9650ee;   --epic-c: #5a27b0;   --epic-glow: rgba(160, 100, 255, 0.6);
+  --legendary-a: #fff0b0; --legendary-b: #ffb938; --legendary-c: #c46a10; --legendary-glow: rgba(255, 185, 60, 0.65);
+  --mythic-a: #ff9a8a; --mythic-b: #ff3f6c; --mythic-c: #a8145e; --mythic-glow: rgba(255, 70, 110, 0.7);
+  --secret-a: #5ef0ff; --secret-b: #c06cff; --secret-c: #ffd35e; --secret-glow: rgba(190, 120, 255, 0.75);
+  --exclusive-a: #b8ffe6; --exclusive-b: #2fe3a8; --exclusive-c: #0e8f86; --exclusive-glow: rgba(60, 235, 175, 0.65);
+
+  /* ---- Elemente ---- */
+  --el-fire: #ff7a3c;
+  --el-water: #4a9bf0;
+  --el-ice: #9fe2ff;
+  --el-lightning: #ffe14a;
+  --el-air: #7fe8bd;
+  --el-light: #fff0a8;
+  --el-dark: #9a64e0;
+  --el-earth: #c49a5e;
+  --el-rose: #ff6fa3;
+  --el-none: #aab0c8;
+
+  /* ---- Schriften ---- */
+  --font-display: 'Cinzel', 'Trajan Pro', 'Palatino Linotype', Georgia, serif;
+  --font-ui: 'Manrope', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-num: 'Rajdhani', 'Manrope', system-ui, sans-serif;
+
+  /* ---- Form ---- */
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 16px;
+  --r-card: 14px;
+  --shadow-1: 0 2px 10px rgba(0, 0, 0, 0.35);
+  --shadow-2: 0 14px 40px rgba(0, 0, 0, 0.5);
+  --shadow-gold: 0 0 0 1px rgba(233, 197, 107, 0.4), 0 8px 28px -6px rgba(233, 197, 107, 0.5);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* ---- Alte Namen (Runden 1-7), damit Bildschirme, die noch nicht neu gebaut sind, die neue Farbwelt erben ---- */
+  --ink: var(--bg-2);
+  --night: var(--bg-0);
+  --slate: #2a2f55;
+  --stone: var(--tx-2);
+  --mist: var(--tx-0);
+  --orange: var(--ember);
+  --red: var(--bad);
+  --teal: var(--aether);
+  --parch: #e9dfc7;
+  --r-rare: var(--rare-a);
+  --r-epic: var(--epic-a);
+  --r-legendary: var(--legendary-b);
+  --r-mythic: var(--mythic-b);
+}
