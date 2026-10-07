@@ -4,7 +4,7 @@
  */
 import { Container, Graphics, Text } from 'pixi.js';
 import type { EnemyState, UnitState } from '../sim';
-import { enemyHpRatio, hpBarColor } from '../view/model';
+import { enemyHpRatio, hpBarColor, statusMarks, statusTint } from '../view/model';
 import { C } from './palette';
 import type { RenderContext } from './context';
 import type { Session } from './session';
@@ -72,7 +72,7 @@ export class EntitiesLayer {
       let v = this.unitViews.get(u.id);
       if (!v || v.version !== ctx.version) {
         v?.c.destroy({ children: true });
-        const node = makeUnitNode(ctx, u.defId);
+        const node = makeUnitNode(ctx, def);
         this.unitLayer.addChild(node.c);
         v = { ...node, version: ctx.version, sig: '' };
         this.unitViews.set(u.id, v);
@@ -80,13 +80,12 @@ export class EntitiesLayer {
       const pos = ctx.px(u.x / 1000, u.y / 1000);
       v.c.position.set(Math.round(pos.x), Math.round(pos.y));
       v.c.zIndex = pos.y;
-      const ready = def.ability !== undefined && u.abilityCd === 0;
       const selected = session.selectedUnit === u.id;
       const kind = session.sim.zoneAt(u.x, u.y) === 'hill' ? 'hill' : 'ground';
-      const sig = `${u.level}|${selected}|${ready}|${kind}`;
+      const sig = `${u.level}|${selected}|${kind}`;
       if (sig === v.sig) continue;
       v.sig = sig;
-      drawUnit(v, ctx, def, u, selected, ready, kind);
+      drawUnit(v, ctx, def, u, selected, kind);
     }
     for (const [id, v] of this.unitViews) {
       if (!seen.has(id)) {
@@ -119,13 +118,15 @@ export class EntitiesLayer {
       v.c.position.set(Math.round(p.x), Math.round(p.y + bob));
       v.c.zIndex = p.y;
       this.lastPos.set(e.id, { x: p.x, y: p.y });
-      v.c.alpha = e.stunTicks > 0 ? 0.6 : 1;
+      v.c.alpha = e.stunTicks > 0 || e.uncTicks > 0 ? 0.6 : 1;
+      const tint = statusTint(e);
+      if (v.body.spr.tint !== tint) v.body.spr.tint = tint;
       // Lebensbalken, Schild-Pips, Statuszeichen
       const w = Math.max(T * 0.6, Math.min(v.body.half * 1.6, T * 1.6));
       const top = -v.body.half - T * 0.12;
       const ratio = enemyHpRatio(e);
       const fillPx = Math.round(w * ratio);
-      const marks = `${e.armor > 0 ? 'A' : ''}${e.regen ? '+' : ''}${e.slowTicks > 0 ? '~' : ''}`;
+      const marks = statusMarks(e);
       const sig = `${fillPx}|${e.shield > 0}|${marks}`;
       if (sig !== v.sig) {
         v.sig = sig;

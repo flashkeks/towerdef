@@ -1,0 +1,240 @@
+{
+ "format": "towerdef-replay",
+ "formatVersion": 4,
+ "gameVersion": "sim-bot mono-goku_ssj3,rikka_evo",
+ "stage": "standard20",
+ "difficulty": "normal",
+ "players": 1,
+ "seed": 7,
+ "team": null,
+ "unitMods": [],
+ "cards": [],
+ "complete": true,
+ "result": "win",
+ "endTick": 10743,
+ "endHash": "5202be9f795785a6",
+ "endWave": 20,
+ "endLives": 30,
+ "endCoins": 24187,
+ "durationTicks": 10743,
+ "durationMs": 0,
+ "date": "2026-10-07",
+ "commands": [
+  {
+   "tick": 0,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "goku_ssj3",
+    "x": 6000,
+    "y": 5500
+   },
+   "ok": true
+  },
+  {
+   "tick": 0,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "rikka_evo",
+    "x": 9000,
+    "y": 3000
+   },
+   "ok": true
+  },
+  {
+   "tick": 1120,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 1
+   },
+   "ok": true
+  },
+  {
+   "tick": 1416,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 2
+   },
+   "ok": true
+  },
+  {
+   "tick": 1611,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 1
+   },
+   "ok": true
+  },
+  {
+   "tick": 1840,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 2
+   },
+   "ok": true
+  },
+  {
+   "tick": 2260,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 1
+   },
+   "ok": true
+  },
+  {
+   "tick": 2560,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 2
+   },
+   "ok": true
+  },
+  {
+   "tick": 3040,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 1
+   },
+   "ok": true
+  },
+  {
+   "tick": 3360,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 2
+   },
+   "ok": true
+  },
+  {
+   "tick": 3960,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 1
+   },
+   "ok": true
+  },
+  {
+   "tick": 4710,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 2
+   },
+   "ok": true
+  },
+  {
+   "tick": 5160,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 1
+   },
+   "ok": true
+  },
+  {
+   "tick": 6160,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 2
+   },
+   "ok": true
+  },
+  {
+   "tick": 7164,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 2
+   },
+   "ok": true
+  },
+  {
+   "tick": 8402,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 2
+   },
+   "ok": true
+  },
+  {
+   "tick": 8620,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "rikka_evo",
+    "x": 9500,
+    "y": 5000
+   },
+   "ok": true
+  },
+  {
+   "tick": 8640,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 325
+   },
+   "ok": true
+  },
+  {
+   "tick": 8800,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 325
+   },
+   "ok": true
+  },
+  {
+   "tick": 8980,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 325
+   },
+   "ok": true
+  },
+  {
+   "tick": 9100,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 325
+   },
+   "ok": true
+  },
+  {
+   "tick": 9520,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 325
+   },
+   "ok": true
+  },
+  {
+   "tick": 10240,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 325
+   },
+   "ok": true
+  }
+ ],
+ "controls": [],
+ "waves": [],
+ "feedback": "Vom Simulator erzeugt: Bot mono-goku_ssj3,rikka_evo, normal, Seed 7. Kein Mensch."
+}

@@ -4,10 +4,11 @@
  */
 import { createSim, loadBrowserData, STAGE_ID, type CommandResult, type DifficultyId, type Sim, type TargetMode, type UnitDef, type UnitMod, type WavePreview } from '../sim';
 import { keyOr, t } from '../i18n/t';
-import { TICK_MS } from '../view/model';
+import { registerUnitColors, TICK_MS } from '../view/model';
 import { failureToast, ghostStatus, placingAfterClick, unitAt, type GhostStatus, type ToastSpec } from '../view/placement';
 import { BossTracker } from '../view/telegraph';
 import { GameBus } from './events';
+import { unitName } from '../ui/meta-model';
 
 export type Speed = 1 | 2 | 3;
 export const SPEEDS: readonly Speed[] = [1, 2, 3];
@@ -65,6 +66,7 @@ export class Session {
     const data = loadBrowserData();
     this.difficulty = difficulty;
     this.sim = createSim({ stage: STAGE_ID, difficulty, players: 1, seed, data, unitMods });
+    registerUnitColors(this.sim.catalog());
     const stage = data.stages[STAGE_ID];
     this.totalWaves = stage.waves.length;
     this.waveTimerTicks = stage.waveTimerTicks ?? data.economy.waveTimerTicks;
@@ -122,7 +124,7 @@ export class Session {
     const def = unitId ? this.sim.catalog().find((d) => d.id === unitId) : undefined;
     const caps = loadBrowserData().economy.caps;
     const spec = failureToast(cmd, reason, {
-      name: def ? t(`unit.${def.id}.name`) : undefined,
+      name: def ? unitName(def.id) : undefined,
       def,
       cost: unit ? (this.sim.upgradeCost(unit.id) ?? 0) : def ? this.sim.placeCost(PLAYER, def.id) : undefined,
       coins: this.sim.state.players[PLAYER]?.coins ?? 0,
@@ -187,10 +189,6 @@ export class Session {
   sell(): void {
     if (this.selectedUnit === null) return;
     if (this.run({ type: 'sell', entityId: this.selectedUnit }).ok) this.selectedUnit = null;
-  }
-
-  useAbility(): void {
-    if (this.selectedUnit !== null) this.run({ type: 'useAbility', entityId: this.selectedUnit });
   }
 
   cycleTargeting(): void {

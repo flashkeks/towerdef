@@ -73,12 +73,12 @@ describe('Hilfen', () => {
   it('Verkaufsvorschau stimmt mit dem sell-Event der Sim ueberein (auch nach Upgrade)', () => {
     const sim = createSim({ stage: STAGE_ID, difficulty: 'normal', players: 1, seed: 3, data, godMode: true });
     sim.state.players[0].coins = 100000;
-    const placed = sim.apply(0, { type: 'place', unitId: 'striker', x: 3000, y: 3000 });
+    const placed = sim.apply(0, { type: 'place', unitId: 'ichigo', x: 3000, y: 3000 });
     expect(placed.ok).toBe(true);
     const id = (placed as { entityId: number }).entityId;
     expect(sim.apply(0, { type: 'upgrade', entityId: id }).ok).toBe(true);
     const u = sim.state.units.find((x) => x.id === id)!;
-    const def = sim.catalog().find((d) => d.id === 'striker')!;
+    const def = sim.catalog().find((d) => d.id === 'ichigo')!;
     const predicted = sellPreview(def, u);
     sim.drainEvents();
     expect(sim.apply(0, { type: 'sell', entityId: id }).ok).toBe(true);

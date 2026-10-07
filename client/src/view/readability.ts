@@ -1,23 +1,28 @@
 /**
  * Lesbarkeit im Match (Runde 6, P4): reine Funktionen, kein DOM, kein Pixi. Alles wird aus den Sim-Daten abgeleitet
- * (`UnitDef.canHitAir`, `attack.kind`, `aura`, `farm`, `ability`), nichts ist je Unit hart codiert.
+ * (`UnitDef.canHitAir`, `levels[].attack.kind/fx`, `farm`), nichts ist je Unit hart codiert.
  */
-import type { UnitDef, UnitState, WavePreview } from '../sim';
+import type { FxSpec, UnitDef, UnitState, WavePreview } from '../sim';
 
 export type UnitTag = 'air' | 'area' | 'boss' | 'support' | 'income';
 
 /** Reihenfolge = Reihenfolge der Symbole im Shop. */
 export const UNIT_TAGS: readonly UnitTag[] = ['air', 'area', 'boss', 'support', 'income'];
 
-/** Symbole einer Unit aus ihren Daten: trifft Luft, Flaeche (Kreis/Linie/Kegel/Kette), Boss (Nuke, Stun oder Fenster-Verlaengerung), Support (Aura, Tempo-Aura, Leak-Schild, Fenster), Geld (Farm, Kopfgeld). */
+const CC_STUN = new Set(['stun', 'freeze', 'timestop']);
+/** Alle Effekte, die irgendeine Stufe der Unit anwendet. */
+export const unitEffects = (def: UnitDef): FxSpec[] => def.levels.flatMap((l) => l.attack?.fx ?? []);
+
+/** Symbole einer Unit aus ihren Daten: trifft Luft, Flaeche (Kreis/Linie/Kegel/Voll), Boss (Stun/Freeze/Timestop), Support (Motivate), Geld (Farm). */
 export function unitTags(def: UnitDef): UnitTag[] {
   const tags: UnitTag[] = [];
-  if (def.canHitAir && def.attack) tags.push('air'); // Banner steht auf dem Huegel, schiesst aber nicht
-  const kind = def.attack?.kind;
-  if (kind === 'circle' || kind === 'line' || kind === 'cone' || kind === 'chain') tags.push('area');
-  if ((def.ability && (def.ability.kind === 'nuke' || def.ability.kind === 'stunAoe')) || def.windowExtend) tags.push('boss');
-  if (def.aura || def.slowAura || def.guard || def.windowExtend) tags.push('support');
-  if (def.farm || def.bountyAura) tags.push('income');
+  const attacks = def.levels.map((l) => l.attack).filter((a) => a !== null);
+  if (def.canHitAir && attacks.length > 0) tags.push('air');
+  if (attacks.some((a) => a.kind !== 'single')) tags.push('area');
+  const fx = unitEffects(def);
+  if (fx.some((f) => CC_STUN.has(f.kind))) tags.push('boss');
+  if (fx.some((f) => f.kind === 'motivate')) tags.push('support');
+  if (def.farm) tags.push('income');
   return tags;
 }
 
@@ -45,12 +50,9 @@ export function flyerWarning(p: WavePreview | null, units: readonly UnitState[],
   return { flyers, airUnits: airUnitCount(units, defs) };
 }
 
-/** Units im Team, die eine unterbrechbare Boss-Wirkung brechen (Stun) bzw. sie mit einem Schlag brechen (Nuke). */
+/** Units im Team, die einen Boss festsetzen koennen (Stun, Freeze, Timestop) und so unterbrechbare Wirkungen brechen. `nuke` bleibt fuer die Schnittstelle, ist aber leer (Runde 8: keine Fähigkeits-Knöpfe). */
 export function bossHelpers(team: readonly UnitDef[]): { stun: UnitDef[]; nuke: UnitDef[] } {
-  return {
-    stun: team.filter((d) => d.ability?.kind === 'stunAoe'),
-    nuke: team.filter((d) => d.ability?.kind === 'nuke'),
-  };
+  return { stun: team.filter((d) => unitEffects(d).some((f) => CC_STUN.has(f.kind))), nuke: [] };
 }
 
 /** Muenz-Hinweis: Leak in den letzten `windowTicks` Ticks und mehr als `factor` x die guenstigste Unit auf dem Konto. */
@@ -61,13 +63,6 @@ export function coinNudge(coins: number, cheapest: number, ticksSinceLeak: numbe
   if (ticksSinceLeak === null || ticksSinceLeak > COIN_NUDGE_WINDOW_TICKS) return false;
   if (cheapest <= 0) return false;
   return coins > COIN_NUDGE_FACTOR * cheapest;
-}
-
-/** Units mit bereiter Faehigkeit; nur sinnvoll, solange Gegner auf dem Feld sind. */
-export function readyAbilityUnits(units: readonly UnitState[], defs: readonly UnitDef[], enemyCount: number): UnitState[] {
-  if (enemyCount <= 0) return [];
-  const withAbility = new Set(defs.filter((d) => d.ability).map((d) => d.id));
-  return units.filter((u) => withAbility.has(u.defId) && u.abilityCd === 0);
 }
 
 /** "A", "A or B", "A, B or C". */

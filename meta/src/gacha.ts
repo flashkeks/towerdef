@@ -27,7 +27,7 @@ import { fail, opOk, type Fail, type Op } from './result';
 import { starsForCopies } from './stars';
 import { canonicalJson, checksum } from './util';
 
-const RarityEnum = z.enum(['rare', 'epic', 'legendary', 'mythic']);
+const RarityEnum = z.enum(['rare', 'epic', 'legendary', 'mythic', 'secret', 'exclusive']);
 const Rule = z.object({ rarity: RarityEnum, hardAt: z.number().int().min(1) });
 const rank = (r: string): number => RARITIES.indexOf(r as Rarity);
 

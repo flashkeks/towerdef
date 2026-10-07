@@ -1,0 +1,530 @@
+{
+ "format": "towerdef-replay",
+ "formatVersion": 4,
+ "gameVersion": "sim-bot mono-goku_ssj3",
+ "stage": "standard20",
+ "difficulty": "normal",
+ "players": 1,
+ "seed": 7,
+ "team": null,
+ "unitMods": [
+  {
+   "player": 0,
+   "unit": "ichigo",
+   "lvlBp": 15750
+  },
+  {
+   "player": 0,
+   "unit": "krillin",
+   "lvlBp": 15750
+  },
+  {
+   "player": 0,
+   "unit": "josuke",
+   "lvlBp": 15750
+  },
+  {
+   "player": 0,
+   "unit": "speedwagon",
+   "lvlBp": 15750
+  },
+  {
+   "player": 0,
+   "unit": "dio",
+   "lvlBp": 15750
+  },
+  {
+   "player": 0,
+   "unit": "stain",
+   "lvlBp": 15750
+  },
+  {
+   "player": 0,
+   "unit": "kimimaro",
+   "lvlBp": 15750
+  },
+  {
+   "player": 0,
+   "unit": "emilia",
+   "lvlBp": 15750
+  },
+  {
+   "player": 0,
+   "unit": "megumi_2",
+   "lvlBp": 15750
+  },
+  {
+   "player": 0,
+   "unit": "sukuna",
+   "lvlBp": 15750
+  },
+  {
+   "player": 0,
+   "unit": "fugo",
+   "lvlBp": 15750
+  },
+  {
+   "player": 0,
+   "unit": "goku_ssj3",
+   "lvlBp": 15750
+  },
+  {
+   "player": 0,
+   "unit": "monet",
+   "lvlBp": 15750
+  },
+  {
+   "player": 0,
+   "unit": "rikka_evo",
+   "lvlBp": 15750
+  },
+  {
+   "player": 0,
+   "unit": "rokuhira",
+   "lvlBp": 15750
+  },
+  {
+   "player": 0,
+   "unit": "tatsumaki_evolved",
+   "lvlBp": 15750
+  },
+  {
+   "player": 0,
+   "unit": "escanor_evolved",
+   "lvlBp": 15750
+  },
+  {
+   "player": 0,
+   "unit": "shigaraki_evolved",
+   "lvlBp": 15750
+  },
+  {
+   "player": 0,
+   "unit": "gyutaro_evolved",
+   "lvlBp": 15750
+  },
+  {
+   "player": 0,
+   "unit": "rohan_evolved",
+   "lvlBp": 15750
+  },
+  {
+   "player": 0,
+   "unit": "merlin_evolved",
+   "lvlBp": 15750
+  },
+  {
+   "player": 0,
+   "unit": "brook_evolved",
+   "lvlBp": 15750
+  },
+  {
+   "player": 0,
+   "unit": "ban_evolved",
+   "lvlBp": 15750
+  },
+  {
+   "player": 0,
+   "unit": "luck_evolved",
+   "lvlBp": 15750
+  },
+  {
+   "player": 0,
+   "unit": "gildarts_evolved",
+   "lvlBp": 15750
+  },
+  {
+   "player": 0,
+   "unit": "jotaro_p6_evolved",
+   "lvlBp": 15750
+  }
+ ],
+ "cards": [],
+ "complete": true,
+ "result": "win",
+ "endTick": 13422,
+ "endHash": "d27ce991ed9b3234",
+ "endWave": 20,
+ "endLives": 15,
+ "endCoins": 7635,
+ "durationTicks": 13422,
+ "durationMs": 0,
+ "date": "2026-10-07",
+ "commands": [
+  {
+   "tick": 0,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "goku_ssj3",
+    "x": 6000,
+    "y": 5500
+   },
+   "ok": true
+  },
+  {
+   "tick": 0,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 1
+   },
+   "ok": true
+  },
+  {
+   "tick": 1520,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 1
+   },
+   "ok": true
+  },
+  {
+   "tick": 2300,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 1
+   },
+   "ok": true
+  },
+  {
+   "tick": 3340,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 1
+   },
+   "ok": true
+  },
+  {
+   "tick": 4339,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 1
+   },
+   "ok": true
+  },
+  {
+   "tick": 5620,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 1
+   },
+   "ok": true
+  },
+  {
+   "tick": 5759,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "goku_ssj3",
+    "x": 9000,
+    "y": 2000
+   },
+   "ok": true
+  },
+  {
+   "tick": 5940,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 111
+   },
+   "ok": true
+  },
+  {
+   "tick": 6320,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 111
+   },
+   "ok": true
+  },
+  {
+   "tick": 6540,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 111
+   },
+   "ok": true
+  },
+  {
+   "tick": 6991,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 111
+   },
+   "ok": true
+  },
+  {
+   "tick": 7680,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 111
+   },
+   "ok": true
+  },
+  {
+   "tick": 8460,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 111
+   },
+   "ok": true
+  },
+  {
+   "tick": 8500,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "goku_ssj3",
+    "x": 9500,
+    "y": 5500
+   },
+   "ok": true
+  },
+  {
+   "tick": 8606,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 191
+   },
+   "ok": true
+  },
+  {
+   "tick": 8800,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 191
+   },
+   "ok": true
+  },
+  {
+   "tick": 9100,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 191
+   },
+   "ok": true
+  },
+  {
+   "tick": 9327,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 191
+   },
+   "ok": true
+  },
+  {
+   "tick": 9840,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 191
+   },
+   "ok": true
+  },
+  {
+   "tick": 10340,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 191
+   },
+   "ok": true
+  },
+  {
+   "tick": 10380,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "goku_ssj3",
+    "x": 5000,
+    "y": 5500
+   },
+   "ok": true
+  },
+  {
+   "tick": 10540,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 289
+   },
+   "ok": true
+  },
+  {
+   "tick": 10580,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 289
+   },
+   "ok": true
+  },
+  {
+   "tick": 10640,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 289
+   },
+   "ok": true
+  },
+  {
+   "tick": 10960,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 289
+   },
+   "ok": true
+  },
+  {
+   "tick": 11360,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 289
+   },
+   "ok": true
+  },
+  {
+   "tick": 11720,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 289
+   },
+   "ok": true
+  },
+  {
+   "tick": 11820,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "goku_ssj3",
+    "x": 10000,
+    "y": 2000
+   },
+   "ok": true
+  },
+  {
+   "tick": 11838,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 352
+   },
+   "ok": true
+  },
+  {
+   "tick": 11860,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 352
+   },
+   "ok": true
+  },
+  {
+   "tick": 12140,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 352
+   },
+   "ok": true
+  },
+  {
+   "tick": 12420,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 352
+   },
+   "ok": true
+  },
+  {
+   "tick": 12588,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 352
+   },
+   "ok": true
+  },
+  {
+   "tick": 13020,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 352
+   },
+   "ok": true
+  },
+  {
+   "tick": 13040,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "goku_ssj3",
+    "x": 5000,
+    "y": 2000
+   },
+   "ok": true
+  },
+  {
+   "tick": 13060,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 436
+   },
+   "ok": true
+  },
+  {
+   "tick": 13060,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 436
+   },
+   "ok": true
+  },
+  {
+   "tick": 13280,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 436
+   },
+   "ok": true
+  },
+  {
+   "tick": 13340,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 436
+   },
+   "ok": true
+  }
+ ],
+ "controls": [],
+ "waves": [],
+ "feedback": "Vom Simulator erzeugt: Bot mono-goku_ssj3, normal, Seed 7, Meta-Profil mid. Kein Mensch."
+}

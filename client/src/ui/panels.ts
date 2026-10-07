@@ -5,6 +5,7 @@ import type { WavePreview } from '../sim';
 import { compactNumber, previewModel } from '../view/model';
 import { airCapable, bossHelpers, flyerWarning, joinOr } from '../view/readability';
 import { clear, h, setClass } from './dom';
+import { unitName } from './meta-model';
 
 export class WavePanels {
   readonly previewEl = h('section', 'panel preview');
@@ -39,7 +40,7 @@ export class WavePanels {
     else if (m.elite) box.append(h('div', 'tag elite', t('preview.elite')));
     if (warn) {
       const none = warn.airUnits === 0;
-      const list = joinOr(airCapable(s.teamCatalog()).slice(0, 3).map((d) => t(`unit.${d.id}.name`)), t('tips.or'));
+      const list = joinOr(airCapable(s.teamCatalog()).slice(0, 3).map((d) => unitName(d.id)), t('tips.or'));
       const text = none ? (list ? t('preview.flyers.none', { list }) : t('preview.flyers.none.plain')) : t('preview.flyers.ok', { n: warn.airUnits });
       const box2 = h('div', `flyer-warning ${none ? 'none' : 'ok'}`);
       box2.dataset.air = String(warn.airUnits);
@@ -63,7 +64,7 @@ export class WavePanels {
     box.append(ul, h('p', 'total', t('preview.total', { count: m.enemyCount, hp: compactNumber(m.totalHp) })));
     if (m.boss) {
       const hp = bossHelpers(s.teamCatalog());
-      const list = joinOr([...hp.stun, ...hp.nuke].map((d) => t(`unit.${d.id}.name`)), t('tips.or'));
+      const list = joinOr([...hp.stun, ...hp.nuke].map((d) => unitName(d.id)), t('tips.or'));
       box.append(h('p', 'boss-help', list ? t('preview.boss.help.units', { list }) : t('preview.boss.help')));
     }
     if (m.bossKit) {

@@ -14,8 +14,8 @@ import { MAX_TEAM, type Profile } from './profile';
 import { starsForCopies } from './stars';
 import { fail, opOk, type Op } from './result';
 
-/** Zusaetzlich zu allen Rare/Epic: ein Legendary als Boss-Antwort (Lancer). Unbekannte IDs werden uebersprungen. */
-export const STARTER_EXTRA: readonly string[] = ['lancer'];
+/** Zusaetzlich zu allen Rare/Epic: eine starke Mythic-Hill-Unit (Goku SSJ3, AA), damit ein neues Profil Normal schafft. Unbekannte IDs werden uebersprungen. */
+export const STARTER_EXTRA: readonly string[] = ['goku_ssj3'];
 
 /** Die Units des Geschenks in Katalogreihenfolge. */
 export const starterUnits = (): string[] => UNIT_CATALOG.filter((u) => u.rarity === 'rare' || u.rarity === 'epic' || (STARTER_EXTRA.includes(u.id) && isKnownUnit(u.id))).map((u) => u.id);

@@ -18,5 +18,5 @@
     "top": { "rarity": "mythic", "hardAt": 150 },
     "mid": { "rarity": "legendary", "hardAt": 35 }
   },
-  "featured": { "unitId": "titan", "rarity": "mythic", "shareBp": 5000, "guaranteeAfterMiss": true }
+  "featured": { "unitId": "goku_ssj3", "rarity": "mythic", "shareBp": 5000, "guaranteeAfterMiss": true }
 }

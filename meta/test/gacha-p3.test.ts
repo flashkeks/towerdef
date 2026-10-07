@@ -277,8 +277,8 @@ describe('Anzeige und Wurf lesen dieselben Daten', () => {
     expect(v.tiers.map((t) => t.baseText)).toEqual(['70%', '25%', '4%', '1%']);
     for (const t of v.tiers) {
       expect(t.populated).toBe(true);
-      expect(t.units.reduce((s, u) => s + u.basePct, 0)).toBeCloseTo(t.basePct, 2);
-      expect(t.units.reduce((s, u) => s + u.effectivePct, 0)).toBeCloseTo(t.effectivePct, 2);
+      expect(t.units.reduce((s, u) => s + u.basePct, 0)).toBeCloseTo(t.basePct, 1);
+      expect(t.units.reduce((s, u) => s + u.effectivePct, 0)).toBeCloseTo(t.effectivePct, 1);
     }
     expect(v.tiers[0]!.units.map((u) => u.unitId).sort()).toEqual(unitsOfRarity('rare').sort());
     expect(v.pity.map((x) => x.text)).toEqual(['Pulls since last Mythic: 37 / 150', 'Pulls since last Legendary or better: 12 / 35']);

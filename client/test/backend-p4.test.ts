@@ -41,10 +41,10 @@ describe('Sichtmodelle ueber das Backend', () => {
     const pv = await be.playerView();
     const cv = await be.collectionView();
     if (!pv.ok || !cv.ok) throw new Error('x');
-    expect(pv.player).toMatchObject({ crystals: 450, starterGiftAvailable: false, teamTarget: 6 });
-    expect(pv.player.team).toHaveLength(6);
+    expect(pv.player).toMatchObject({ crystals: 450, starterGiftAvailable: false, teamTarget: 5 }); // Starter: alle Rare/Epic des Katalogs + Goku SSJ3
+    expect(pv.player.team).toHaveLength(5);
     expect(cv.ownedCount).toBe(pv.player.ownedCount);
-    expect(cv.units.filter((u) => u.inTeam)).toHaveLength(6);
+    expect(cv.units.filter((u) => u.inTeam)).toHaveLength(5);
     expect((await be.claimStarterGift(key(2))).ok).toBe(false);
   });
 
@@ -53,7 +53,7 @@ describe('Sichtmodelle ueber das Backend', () => {
     const sv = await be.stageView(STAGE_ID);
     if (!sv.ok) throw new Error('x');
     expect(sv.difficulties.map((d) => [d.difficulty, d.unlocked, d.unlockLevel])).toEqual([['normal', true, 1], ['hard', false, 5], ['nightmare', false, 25]]);
-    const m = await be.reportMatch(starterReplay({ bot: 'wide', seed: 1 }), key(3));
+    const m = await be.reportMatch(starterReplay({ seed: 1 }), key(3));
     if (!m.ok) throw new Error(m.message);
     const after = await be.stageView(STAGE_ID);
     expect(after.ok && after.difficulties[0]).toMatchObject({ cleared: true, clears: 1, bestWave: 20, firstClearCrystals: 100, repeatCrystals: 25 });
@@ -91,11 +91,11 @@ describe('matchSetup', () => {
     const be = await started();
     const a = await be.matchSetup('normal');
     if (!a.ok) throw new Error(a.message);
-    expect(a.team).toHaveLength(6);
-    expect(a.unitMods).toHaveLength(6);
+    expect(a.team).toHaveLength(5);
+    expect(a.unitMods).toHaveLength(5);
     expect(a.unitMods.every((m) => m.lvlBp === 10000)).toBe(true);
     // Gold per Sieg, dann Level-Up
-    const win = await be.reportMatch(starterReplay({ bot: 'wide', seed: 1 }), key(2));
+    const win = await be.reportMatch(starterReplay({ seed: 1 }), key(2));
     if (!win.ok) throw new Error(win.message);
     const unit = a.team[1]!;
     const up = await be.levelUp(unit, key(3));
@@ -121,7 +121,7 @@ describe('reportMatch ist ans Profil gebunden (P5-Luecke)', () => {
     const setup = await be.matchSetup('normal');
     if (!setup.ok) throw new Error('x');
     const cheat = setup.unitMods.map((m) => ({ ...m, lvlBp: 21750 }));
-    const replay = starterReplay({ bot: 'wide', seed: 1, unitMods: cheat });
+    const replay = starterReplay({ seed: 1, unitMods: cheat });
     const r = await be.reportMatch(replay, key(2));
     expect(r).toMatchObject({ ok: false, code: 'unit-mods-mismatch' });
     const p = await be.loadProfile();
@@ -130,7 +130,7 @@ describe('reportMatch ist ans Profil gebunden (P5-Luecke)', () => {
 
   it('Replay ohne Team oder mit fremdem Team -> Fehlercode', async () => {
     const be = await started();
-    const ok = starterReplay({ bot: 'wide', seed: 1 });
+    const ok = starterReplay({ seed: 1 });
     expect(await be.reportMatch({ ...ok, team: null }, key(2))).toMatchObject({ ok: false, code: 'team-required' });
     expect(await be.reportMatch({ ...ok, team: ok.team!.slice(1) }, key(3))).toMatchObject({ ok: false, code: 'team-mismatch' });
     expect(await be.reportMatch({ ...ok, team: [...ok.team!.slice(1), 'zzz'] }, key(4))).toMatchObject({ ok: false, code: 'unit-not-owned' });
@@ -141,10 +141,10 @@ describe('reportMatch ist ans Profil gebunden (P5-Luecke)', () => {
     const pv = await be.playerView();
     if (!pv.ok) throw new Error('x');
     // Team ohne Striker speichern, dann ein Replay, in dem der Bot Striker setzt
-    const without = pv.player.team.filter((u) => u !== 'striker');
+    const without = pv.player.team.filter((u) => u !== 'ichigo');
     const t = await be.setTeam(without, key(2));
     if (!t.ok) throw new Error(t.message);
-    const stray = starterReplay({ bot: 'greedy', seed: 3, only: ['striker'], team: without, unitMods: unitModsFor(t.profile, without) });
+    const stray = starterReplay({ seed: 3, only: ['ichigo'], team: without, unitMods: unitModsFor(t.profile, without) });
     expect(await be.reportMatch(stray, key(3))).toMatchObject({ ok: false, code: 'team-invalid' });
   });
 });
@@ -156,7 +156,7 @@ describe('Export, Reset, Import', () => {
     // Duplikate aus dem Zug aendern die Sterne: Replay mit den Mods, die `matchSetup` jetzt liefert
     const setup = await be.matchSetup('normal');
     if (!setup.ok) throw new Error(setup.message);
-    const m = await be.reportMatch(starterReplay({ bot: 'wide', seed: 1, only: setup.team, team: setup.team, unitMods: setup.unitMods }), key(3));
+    const m = await be.reportMatch(starterReplay({ seed: 1, only: setup.team, team: setup.team, unitMods: setup.unitMods }), key(3));
     if (!m.ok) throw new Error(m.message);
     const before = await be.loadProfile();
     const exp = await be.exportSave();

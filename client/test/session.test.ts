@@ -30,7 +30,7 @@ describe('Session', () => {
   it('Platzieren ueber Feld-Klick, Upgrade, Verkauf', () => {
     const s = new Session('normal', 1);
     const coins0 = s.sim.state.players[0].coins;
-    s.choosePlacing('striker');
+    s.choosePlacing('ichigo');
     s.clickBoard(3000, 3000);
     expect(s.placing).toBeNull(); // ohne Shift: Wahl verbraucht
     expect(s.sim.state.units).toHaveLength(1);
@@ -47,12 +47,12 @@ describe('Session', () => {
   it('Fehler der Sim werden zu Toast-Schluesseln, die es in en.ts gibt', () => {
     const s = new Session('normal', 1);
     (s.sim.state.players[0] as { coins: number }).coins = 0;
-    s.choosePlacing('striker');
+    s.choosePlacing('ichigo');
     s.clickBoard(3000, 3000);
     expect(s.sim.state.units).toHaveLength(0);
     expect(s.toast).not.toBeNull();
     expect(hasKey(s.toast!.key)).toBe(true);
-    s.choosePlacing('gunner'); // Hill-Unit auf Boden
+    s.choosePlacing('krillin'); // Hill-Unit auf Boden
     s.clickBoard(3000, 3000);
     expect(hasKey(s.toast!.key)).toBe(true);
   });

@@ -28,10 +28,10 @@ describe('GameBus', () => {
     bus.onControl((c) => controls.push(c.type));
     bus.onEvents(() => batches++);
 
-    s.choosePlacing('striker');
+    s.choosePlacing('ichigo');
     s.clickBoard(3000, 3000);
     expect(cmds).toHaveLength(1);
-    expect(cmds[0]).toMatchObject({ tick: 0, player: 0, cmd: { type: 'place', unitId: 'striker', x: 3000, y: 3000 } });
+    expect(cmds[0]).toMatchObject({ tick: 0, player: 0, cmd: { type: 'place', unitId: 'ichigo', x: 3000, y: 3000 } });
     expect(cmds[0].result.ok).toBe(true);
 
     s.startNextWave();

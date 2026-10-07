@@ -5,6 +5,7 @@ import { getRecorder } from '../game/recorder';
 import { defeatTips, type TipInput } from '../view/tips';
 import { h } from './dom';
 import { formatDuration, type Mvp } from './mvp';
+import { unitName } from './meta-model';
 
 /** Platz fuer den Replay-Knopf (P2, `ui/download.ts`): die Hauptsitzung liefert den Knopf per `replayButton`. */
 export type ReplayButtonFactory = (session: Session) => HTMLElement | null;
@@ -68,7 +69,7 @@ export function buildResult(s: Session, mvp: Mvp | null, handlers: ResultHandler
   row('hud.lives', String(st.lives), 'r-lives');
   row('result.stats.leaks', String(st.stats.leaks), 'r-leaks');
   row('result.stats.time', formatDuration(st.tick), 'r-time');
-  row('result.stats.mvp', mvp ? t('result.mvp.value', { name: t(`unit.${mvp.unit}.name`), damage: Math.round(mvp.damage) }) : t('result.mvp.none'), 'r-mvp');
+  row('result.stats.mvp', mvp ? t('result.mvp.value', { name: unitName(mvp.unit), damage: Math.round(mvp.damage) }) : t('result.mvp.none'), 'r-mvp');
   box.append(stats);
   if (rewards) box.append(rewards);
   if (!win) box.append(tipsBox(s));

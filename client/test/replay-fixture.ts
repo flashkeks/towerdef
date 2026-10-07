@@ -1,26 +1,20 @@
-/** Testhilfe: echtes Replay aus einem Bot-Lauf der Sim (Format v3 wie der Recorder, ohne Mods, ohne Tempo-Wechsel). */
+/** Testhilfe: echtes Replay aus einem Bot-Lauf der Sim (Format v4 wie der Recorder, ohne Mods, ohne Tempo-Wechsel). */
 import { runMatch } from '../../sim/src/bots/index';
 import { loadBrowserData } from '../src/sim';
-import { botTuning } from '../../sim/src/bots/util';
 import type { ReplayFile } from '../src/game/recorder';
 import type { UnitMod } from '../src/sim';
 import { claimStarterGift, newProfile, testEnv, unitModsFor } from '../src/backend/meta';
 
-const ALL = loadBrowserData().units.units.map((u) => u.id);
-
 /** `team` und `unitMods` (Runde 7, P4): wie der Client sie aus `Backend.matchSetup` in die Session und den Recorder gibt; der Bot spielt mit genau diesen Mods. */
 export function botReplay(o: { bot?: string; seed?: number; difficulty?: 'normal' | 'hard' | 'nightmare'; only?: string[]; team?: string[] | null; unitMods?: UnitMod[] } = {}): ReplayFile {
-  const bot = o.bot ?? 'wide';
+  const bot = o.only ? `mono-${o.only.join(',')}` : (o.bot ?? 'mono-goku_ssj3,rikka_evo');
   const seed = o.seed ?? 7;
   const difficulty = o.difficulty ?? 'normal';
   const commands: ReplayFile['commands'] = [];
-  const saved = botTuning.banned;
-  if (o.only) botTuning.banned = ALL.filter((u) => !o.only!.includes(u));
-  try {
     const r = runMatch({ stage: 'standard20', difficulty, players: 1, seed, bots: [bot], data: loadBrowserData(), unitMods: o.unitMods, onCommand: (c) => commands.push({ tick: c.tick, player: c.player, cmd: c.cmd, ok: c.ok, ...(c.reason ? { reason: c.reason } : {}) }) });
     return {
       format: 'towerdef-replay',
-      formatVersion: 3,
+      formatVersion: 4,
       gameVersion: 'test',
       stage: 'standard20',
       difficulty,
@@ -44,9 +38,6 @@ export function botReplay(o: { bot?: string; seed?: number; difficulty?: 'normal
       waves: [],
       feedback: '',
     } as ReplayFile;
-  } finally {
-    botTuning.banned = saved;
-  }
 }
 
 /** Das Team und die Mods eines frisch abgeholten Starter-Geschenks (deterministisch: Katalogreihenfolge). */

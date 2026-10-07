@@ -69,7 +69,8 @@ describe('Texte', () => {
     for (const k of ['rarity', 'rate', 'long', 'next']) expect(hasKey(`summon.rates.${k}`)).toBe(true);
   });
   it('unbekannte Unit (neue Unit ohne Text): lesbarer Name statt Schluessel', () => {
-    expect(unitName('striker')).toBe('Striker');
+    expect(unitName('rokuhira')).toBe('Vengeful Swordsman'); // Name aus den Unit-Daten
+    expect(unitAbbr('rokuhira')).toBe('VS');
     expect(unitName('wyrm_hunter')).toBe('Wyrm_hunter');
     expect(unitAbbr('wyrm_hunter')).toBe('WYR');
   });
@@ -80,22 +81,20 @@ describe('Rolle und Filter (aus den Sim-Daten, keine Unit-Liste)', () => {
     for (const d of defs.values()) expect(ROLE_CATS, d.id).toContain(roleCat(d));
   });
   it('Rollen der bekannten Units', () => {
-    expect(roleCat(defs.get('farm')!)).toBe('economy');
-    expect(roleCat(defs.get('banner')!)).toBe('support');
-    expect(roleCat(defs.get('frost')!)).toBe('control');
-    expect(roleCat(defs.get('titan')!)).toBe('boss');
-    expect(roleCat(defs.get('blaster')!)).toBe('area');
-    expect(roleCat(defs.get('striker')!)).toBe('single');
+    expect(roleCat(defs.get('speedwagon')!)).toBe('economy');
+    expect(roleCat(defs.get('tatsumaki_evolved')!)).toBe('control'); // Knockback
+    expect(roleCat(defs.get('stain')!)).toBe('area');
+    expect(roleCat(defs.get('ichigo')!)).toBe('single');
   });
   const units = (): CollectionUnitView[] => collectionView(starter()).units;
   it('Filter nach Seltenheit, Rolle, Platzierung und Besitz', () => {
     const u = units();
     expect(filterUnits(u, defs, NO_FILTER)).toHaveLength(u.length);
     expect(filterUnits(u, defs, { ...NO_FILTER, rarity: 'epic' }).every((x) => x.rarity === 'epic')).toBe(true);
-    expect(filterUnits(u, defs, { ...NO_FILTER, role: 'economy' }).map((x) => x.unitId)).toEqual(['farm']);
+    expect(filterUnits(u, defs, { ...NO_FILTER, role: 'economy' }).map((x) => x.unitId)).toEqual(['speedwagon']);
     expect(filterUnits(u, defs, { ...NO_FILTER, placement: 'hill' }).every((x) => defs.get(x.unitId)!.placement === 'hill')).toBe(true);
     expect(filterUnits(u, defs, { ...NO_FILTER, ownedOnly: true }).every((x) => x.owned)).toBe(true);
-    expect(filterUnits(u, defs, { ...NO_FILTER, rarity: 'mythic', ownedOnly: true })).toEqual([]);
+    expect(filterUnits(u, defs, { ...NO_FILTER, rarity: 'secret', ownedOnly: true })).toEqual([]);
   });
   it('Unit ohne Sim-Definition faellt nur durch Rolle/Platzierung, nicht durch Seltenheit und stuerzt nicht ab', () => {
     const ghost: CollectionUnitView = { ...units()[0]!, unitId: 'ghost_unit', rarity: 'epic' };
@@ -211,7 +210,8 @@ describe('Portrait', () => {
     expect(portraitSpec({ x: 0, y: 0, w: 32, h: 32 }, 32, { w: 512, h: 256 }).scale).toBe(1);
   });
   it('bekannte Units haben einen Rahmen im Atlas, unbekannte nicht (Fallback-Abzeichen)', () => {
-    for (const id of defs.keys()) if (['striker', 'gunner', 'blaster', 'banner', 'farm', 'lancer', 'frost', 'titan'].includes(id)) expect(frameOf(id), id).not.toBeNull();
+    // Runde 8: AA-Units haben (noch) kein Atlas-Sprite -> Fallback-Abzeichen (Initialen auf Element-Farbe)
+    expect(frameOf('rokuhira')).toBeNull();
     expect(frameOf('ghost_unit')).toBeNull();
   });
 });

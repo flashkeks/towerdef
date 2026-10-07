@@ -27,7 +27,7 @@ class BrokenLs implements KeyValueStore {
 const key = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
 const mk = (ls: KeyValueStore = new FakeLs(), seed = 1) => new LocalBackend({ storage: new ProfileStorage([new LocalStorageTier(ls), new MemoryTier()]), env: testEnv(seed) });
 // echtes Replay aus einem Sim-Bot-Lauf (die Belohnung wird nachgerechnet, ein ausgedachter Hash zaehlt nicht mehr)
-const realWin = starterReplay({ bot: 'wide', seed: 1 });
+const realWin = starterReplay({ seed: 1 });
 const fakeReplay = (over: Partial<ReplayFile> = {}): ReplayFile => ({ ...realWin, ...over });
 
 describe('LocalBackend', () => {
@@ -52,7 +52,7 @@ describe('LocalBackend', () => {
     // Duplikate aus dem Zug aendern Sterne und damit die Mods: das Replay entsteht mit dem, was `matchSetup` jetzt liefert
     const setup = await be.matchSetup('normal');
     if (!setup.ok) throw new Error(setup.message);
-    const played = starterReplay({ bot: 'wide', seed: 1, only: setup.team, team: setup.team, unitMods: setup.unitMods });
+    const played = starterReplay({ seed: 1, only: setup.team, team: setup.team, unitMods: setup.unitMods });
     expect(played.result).toBe('win');
     const m = await be.reportMatch(played, key(3));
     if (!m.ok) throw new Error(m.message);
@@ -89,7 +89,7 @@ describe('LocalBackend', () => {
     const be = mk();
     expect(await be.pull('standard', 1, key(1))).toMatchObject({ ok: false, code: 'not-enough-crystals' });
     expect(await be.pull('standard', 1, 'x')).toMatchObject({ ok: false, code: 'invalid-idempotency-key' });
-    expect(await be.setTeam(['striker'], key(2))).toMatchObject({ ok: false, code: 'unit-not-owned' });
+    expect(await be.setTeam(['ichigo'], key(2))).toMatchObject({ ok: false, code: 'unit-not-owned' });
     expect(await be.reportMatch(fakeReplay({ complete: false, result: null }), key(3))).toMatchObject({ ok: false, code: 'replay-incomplete' });
     expect(await be.buy('nope', key(4))).toMatchObject({ ok: false, code: 'unknown-sku' });
   });

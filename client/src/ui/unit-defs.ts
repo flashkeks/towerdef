@@ -1,10 +1,14 @@
-/** Sim-Definitionen aller Units (Werte, Platzierung, Faehigkeiten) fuer die Meta-UI. Einmal gebaut; neue Units aus `units.json` erscheinen von selbst. Besitzer: P4. */
+/** Sim-Definitionen aller Units (Werte, Platzierung, Faehigkeiten) fuer die Meta-UI. Einmal gebaut; neue Units aus `sim/data/units/*.json` erscheinen von selbst. Besitzer: P4. */
 import { createSim, loadBrowserData, STAGE_ID, type UnitDef } from '../sim';
+import { registerUnitColors } from '../view/model';
 
 let cache: UnitDef[] | null = null;
 
 export function unitCatalog(): UnitDef[] {
-  if (!cache) cache = createSim({ stage: STAGE_ID, difficulty: 'normal', players: 1, seed: 1, data: loadBrowserData() }).catalog();
+  if (!cache) {
+    cache = createSim({ stage: STAGE_ID, difficulty: 'normal', players: 1, seed: 1, data: loadBrowserData() }).catalog();
+    registerUnitColors(cache);
+  }
   return cache;
 }
 

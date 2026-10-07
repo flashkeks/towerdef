@@ -76,29 +76,75 @@ export const enemyStyle = (type: string): EnemyStyle => ENEMY_STYLES[type] ?? { 
 
 // ---- Units -------------------------------------------------------------------------------------------------------
 
-const UNIT_COLORS: Record<string, number> = {
-  striker: 0xf07a2a,
-  gunner: 0x4a86d8,
-  blaster: 0xff9a3c,
-  banner: 0xf5c542,
-  farm: 0x8ab85a,
-  lancer: 0x2c4a8a,
-  frost: 0x9ad8f0,
-  titan: 0x59607a,
-  warden: 0x4e8a45,
-  mortar: 0x8a5a3a,
-  broker: 0xd8344a,
-  stormcaller: 0xf0e86a,
-  seer: 0xa67ae0,
-  weaver: 0x3fd8c0,
+/** Farbe je AA-Element (Fallback-Figur, Portrait-Abzeichen, Schussfarbe). */
+export const ELEMENT_COLORS: Record<string, number> = {
+  dark: 0x8a5ac8,
+  fire: 0xff7a3c,
+  lightning: 0xf5d742,
+  ice: 0x9ad8f0,
+  air: 0x7fe0b8,
+  light: 0xffeea0,
+  water: 0x4a90e0,
+  rose: 0xe86a9a,
 };
-export const unitColor = (id: string): number => UNIT_COLORS[id] ?? 0xc3c7d6;
+const TYPE_COLORS: Record<string, number> = { physical: 0xc3c7d6, magic: 0xa67ae0, true: 0xf1f2f7 };
+
+/** Initialen aus dem Namen ("Vengeful Swordsman" -> "VS"; ein Wort: die ersten beiden Buchstaben). */
+export function initials(name: string): string {
+  const w = name.split(/[\s\-_:()]+/).filter((x) => /[A-Za-z0-9]/.test(x));
+  if (w.length === 0) return '?';
+  return (w.length === 1 ? w[0].slice(0, 2) : w[0][0] + w[1][0]).toUpperCase();
+}
+
+const colorCache = new Map<string, number>();
+const nameCache = new Map<string, string>();
+
+/** Anzeigename aus den Unit-Daten (`UnitDef.name`); unbekannte ID: `null`. */
+export const registeredUnitName = (id: string): string | null => nameCache.get(id) ?? null;
+
+/** Farbe einer Unit aus ihren Daten (erstes Element, sonst Damage-Typ). Wird beim Aufbau der Kataloge registriert; unbekannte IDs bekommen eine stabile Farbe aus der ID. */
+export function registerUnitColors(defs: readonly Pick<UnitDef, 'id' | 'name' | 'elements' | 'damageType'>[]): void {
+  for (const d of defs) {
+    colorCache.set(d.id, ELEMENT_COLORS[d.elements[0]] ?? TYPE_COLORS[d.damageType] ?? 0xc3c7d6);
+    nameCache.set(d.id, d.name);
+  }
+}
+
+export function unitColor(id: string): number {
+  const hit = colorCache.get(id);
+  if (hit !== undefined) return hit;
+  let x = 0;
+  for (let i = 0; i < id.length; i++) x = (Math.imul(x, 31) + id.charCodeAt(i)) >>> 0;
+  const h = (x % 360) / 60;
+  const c = 0.55;
+  const m = 0.35;
+  const f = (k: number): number => Math.round((m + c * Math.max(0, Math.min(1, Math.abs(((h + k) % 6) - 3) - 1))) * 255);
+  return (f(0) << 16) | (f(4) << 8) | f(2);
+}
 
 /** Verkaufserloes zur Anzeige. Maßgeblich ist die Sim: das `sell`-Event meldet den tatsaechlichen Betrag (Test vergleicht beide). */
 export const sellPreview = (def: UnitDef, u: UnitState): number => Math.floor((u.invested * def.sellBp) / 10000);
 
-/** Verbleibende Abklingzeit einer Fertigkeit in Sekunden (0 = bereit). */
-export const abilitySeconds = (u: UnitState): number => ticksToSeconds(u.abilityCd);
+// ---- Statuszeichen (Runde 8: Effekte sichtbar machen) --------------------------------------------------------------
+
+type StatusView = Pick<EnemyState, 'armor' | 'regen' | 'slowTicks' | 'stunTicks' | 'uncTicks' | 'backTicks' | 'dots' | 'physTakenBp' | 'magicTakenBp'>;
+
+/** Kurzzeichen am Lebensbalken: A Rüstung, + Regen, ~ Slow, ! Stun/Freeze/bewusstlos, < läuft rückwärts, F Burn, B Bleed, P Poison, W Wither, C verwundbar (Curse/Hex/Dismember). */
+export function statusMarks(e: StatusView): string {
+  const has = (k: string): boolean => e.dots.some((d) => d.kind === k);
+  return `${e.armor > 0 ? 'A' : ''}${e.regen ? '+' : ''}${e.slowTicks > 0 ? '~' : ''}${e.stunTicks > 0 || e.uncTicks > 0 ? '!' : ''}${e.backTicks > 0 ? '<' : ''}${has('burn') ? 'F' : ''}${has('bleed') ? 'B' : ''}${has('poison') ? 'P' : ''}${has('wither') ? 'W' : ''}${e.physTakenBp > 0 || e.magicTakenBp > 0 ? 'C' : ''}`;
+}
+
+/** Tönung der Figur nach dem wichtigsten Zustand (Burn orange, Gift grün, Blutung rot, Slow/Freeze blau, verwundbar violett). */
+export function statusTint(e: StatusView): number {
+  if (e.stunTicks > 0) return 0xbfe6ff;
+  if (e.dots.some((d) => d.kind === 'burn')) return 0xff9a6a;
+  if (e.dots.some((d) => d.kind === 'poison')) return 0x9aff8a;
+  if (e.dots.some((d) => d.kind === 'bleed')) return 0xff7a8a;
+  if (e.slowTicks > 0) return 0x9ac8ff;
+  if (e.physTakenBp > 0 || e.magicTakenBp > 0) return 0xd0a8ff;
+  return 0xffffff;
+}
 
 // ---- Modifier, Vorschau ------------------------------------------------------------------------------------------
 

@@ -39,7 +39,6 @@ export class Input {
     } else if (k === 'n' || k === 'N') s.startNextWave();
     else if (k === 'u' || k === 'U') s.upgrade();
     else if (k === 't' || k === 'T') s.cycleTargeting();
-    else if (k === 'a' || k === 'A') s.useAbility();
     else if (k === 's' || k === 'S') s.setSpeed(SPEEDS[(SPEEDS.indexOf(s.speed) + 1) % SPEEDS.length]);
     else if (/^[1-9]$/.test(k)) {
       const d = s.teamCatalog()[Number(k) - 1]; // P6: Tasten folgen dem Team

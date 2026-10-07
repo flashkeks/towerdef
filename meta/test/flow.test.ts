@@ -65,10 +65,10 @@ describe('Kreislauf (Platzhalter der Pakete laufen)', () => {
     expect(await buy(p, 'gibts-nicht', env, new MockPaymentProvider(env))).toMatchObject({ ok: false, code: 'unknown-sku' });
   });
   it('unitModsFor ist neutral und passt zu UnitMod', () => {
-    const mods = unitModsFor(newProfile(testEnv()), ['striker', 'gunner']);
+    const mods = unitModsFor(newProfile(testEnv()), ['ichigo', 'krillin']);
     expect(mods).toEqual([
-      { player: 0, unit: 'striker', lvlBp: 10000 },
-      { player: 0, unit: 'gunner', lvlBp: 10000 },
+      { player: 0, unit: 'ichigo', lvlBp: 10000 },
+      { player: 0, unit: 'krillin', lvlBp: 10000 },
     ]);
   });
   it('Replay-Kopf -> Match-Zusammenfassung', () => {

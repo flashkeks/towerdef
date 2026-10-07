@@ -39,8 +39,7 @@ describe('Karte aus Atlas-Kacheln', () => {
 });
 
 describe('Atlas', () => {
-  it('hat alle Units und Gegner-Archetypen mit zwei Geh-Frames', () => {
-    for (const u of ['striker', 'gunner', 'blaster', 'banner', 'farm', 'lancer', 'frost', 'titan']) expect(atlas.frames).toHaveProperty([`units/${u}`]);
+  it('hat alle Gegner-Archetypen mit zwei Geh-Frames (Units ohne Sprite zeigen die Fallback-Figur)', () => {
     for (const e of ['grunt', 'runner', 'brute', 'flyer', 'splitter', 'splitter_child', 'elite', 'boss']) for (const f of [0, 1]) expect(atlas.frames).toHaveProperty([`enemies/${e}_${f}`]);
     expect(atlas.meta.scaleMode).toBe('nearest');
   });

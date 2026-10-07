@@ -9,8 +9,8 @@ const env = () => testEnv(3);
 const fresh = (): Profile => newProfile(env());
 
 beforeAll(() => {
-  win = botReplay({ bot: 'wide@normal', seed: 7 });
-  loss = botReplay({ bot: 'greedy@normal', seed: 3, only: ['striker'] });
+  win = botReplay({ seed: 7 });
+  loss = botReplay({ seed: 3, only: ['gyutaro_evolved'] });
 }, 60_000);
 
 describe('Belohnung aus dem Replay (nachgerechnet)', () => {
@@ -56,7 +56,7 @@ describe('Belohnung aus dem Replay (nachgerechnet)', () => {
     expect(b).toMatchObject({ ok: false, code: 'already-reported' });
     expect(balanceOf(a.profile, 'crystals')).toBe(100);
     // anderes Replay desselben Spielers: Wiederholung 25 %
-    const c = rewardFromReplay(a.profile, botReplay({ bot: 'aoe@normal', seed: 1 }), env());
+    const c = rewardFromReplay(a.profile, botReplay({ seed: 1 }), env());
     expect(c.ok && c.result).toMatchObject({ crystals: 25, firstClear: false });
   });
 
@@ -90,21 +90,21 @@ describe('Belohnung aus dem Replay (nachgerechnet)', () => {
     expect(rewardFromReplay(p, { ...win, players: 2 }, env())).toMatchObject({ ok: false, code: 'replay-unsupported' });
     expect(rewardFromReplay(p, { ...win, endTick: 10_000_000 }, env())).toMatchObject({ ok: false, code: 'invalid-replay' });
     expect(rewardFromReplay(p, { ...win, commands: 'x' }, env())).toMatchObject({ ok: false, code: 'invalid-replay' });
-    expect(rewardFromReplay(p, { ...win, unitMods: 'x', formatVersion: 3 }, env())).toMatchObject({ ok: false, code: 'invalid-replay' });
+    expect(rewardFromReplay(p, { ...win, unitMods: 'x', formatVersion: 4 }, env())).toMatchObject({ ok: false, code: 'invalid-replay' });
   });
 
-  it('v3 ohne/mit leeren unitMods wird wie v2 nachgerechnet; Mods aus dem Kopf gehen in die Sim', () => {
-    const v3 = { ...win, formatVersion: 3, unitMods: [] };
-    expect(rewardFromReplay(fresh(), v3, env())).toMatchObject({ ok: true });
+  it('v4 mit leeren unitMods wird nachgerechnet; Mods aus dem Kopf gehen in die Sim', () => {
+    const v4 = { ...win, formatVersion: 4, unitMods: [] };
+    expect(rewardFromReplay(fresh(), v4, env())).toMatchObject({ ok: true });
     // Mods veraendern den Lauf: derselbe Hash passt dann nicht mehr (Beweis, dass sie durchgereicht werden)
-    const modded = { ...win, formatVersion: 3, unitMods: [{ player: 0, unit: 'striker', lvlBp: 20000 }] };
+    const modded = { ...win, formatVersion: 4, unitMods: [{ player: 0, unit: 'goku_ssj3', lvlBp: 20000 }] };
     expect(verifyReplay(modded)).toMatchObject({ ok: false, code: 'replay-mismatch' });
     // Override durch den Aufrufer hat Vorrang vor dem Kopf
     expect(verifyReplay(modded, { unitMods: [] })).toMatchObject({ ok: true });
   });
 
   it('gesperrte Stufe: Hard ohne Spieler-Level 5 gibt nichts', () => {
-    const h = botReplay({ bot: 'wide@normal', seed: 7, difficulty: 'hard' });
+    const h = botReplay({ seed: 7, difficulty: 'hard' });
     expect(rewardFromReplay(fresh(), h, env())).toMatchObject({ ok: false, code: 'difficulty-locked' });
     const lvl5 = addPlayerXp(fresh(), xpToReach(5)).profile;
     expect(rewardFromReplay(lvl5, h, env()).ok).toBe(true);
@@ -112,13 +112,13 @@ describe('Belohnung aus dem Replay (nachgerechnet)', () => {
 
   it('gewaehltes Team: nur Besessene, nur Teamlisten-Units platziert', () => {
     const placed = [...new Set(verifyReplayPlaced())];
-    const team = ['striker', 'gunner', 'blaster', 'banner', 'farm', 'lancer'];
+    const team = ['ichigo', 'krillin', 'josuke', 'speedwagon', 'goku_ssj3'];
     const owned = (ids: string[]): Profile => ({ ...fresh(), units: Object.fromEntries(ids.map((u) => [u, { level: 1, xp: 0, copies: 1, stars: 1, firstObtainedAt: 'x' }])) });
     const withTeam = { ...win, team };
     if (placed.every((u) => team.includes(u))) expect(rewardFromReplay(owned(team), withTeam, env()).ok).toBe(true);
-    expect(rewardFromReplay(owned(['striker']), withTeam, env())).toMatchObject({ ok: false, code: 'unit-not-owned' });
-    expect(rewardFromReplay(owned(team), { ...win, team: ['striker'] }, env())).toMatchObject({ ok: false, code: 'team-invalid' });
-    expect(rewardFromReplay(owned(team), { ...win, team: ['striker', 'striker'] }, env())).toMatchObject({ ok: false, code: 'team-invalid' });
+    expect(rewardFromReplay(owned(['ichigo']), withTeam, env())).toMatchObject({ ok: false, code: 'unit-not-owned' });
+    expect(rewardFromReplay(owned(team), { ...win, team: ['ichigo'] }, env())).toMatchObject({ ok: false, code: 'team-invalid' });
+    expect(rewardFromReplay(owned(team), { ...win, team: ['ichigo', 'ichigo'] }, env())).toMatchObject({ ok: false, code: 'team-invalid' });
   });
 });
 
@@ -151,7 +151,7 @@ describe('Wellen vorrufen ohne Verteidigung (Befund P4)', () => {
       }
       sim.step(1);
     }
-    const replay = { format: 'towerdef-replay', formatVersion: 3, stage: 'standard20', difficulty: 'normal', players: 1, seed: 11, team: null, unitMods: [], complete: true, result: sim.result(), endTick: sim.state.tick, endHash: sim.hash(), commands };
+    const replay = { format: 'towerdef-replay', formatVersion: 4, stage: 'standard20', difficulty: 'normal', players: 1, seed: 11, team: null, unitMods: [], complete: true, result: sim.result(), endTick: sim.state.tick, endHash: sim.hash(), commands };
     const v = verifyReplay(replay);
     if (!v.ok) throw new Error(v.message);
     expect(v.match.outcome).toBe('loss');

@@ -1,15 +1,18 @@
-/** Anzeige-Werte einer Unit je Stufe und die Wirkung eines Upgrades (alt -> neu). Nur Darstellung, Zahlen aus den Sim-Daten. */
-import type { UnitDef } from '../sim';
+/**
+ * Anzeige-Werte einer Unit je Stufe und die Wirkung eines Upgrades (alt -> neu). Nur Darstellung, Zahlen aus den Sim-Daten
+ * (`UnitDef.levels[]`: Schaden, SPA, Reichweite, Angriff mit Form, Treffern, DoT und Effekten). Runde 8: ein einziger Pfad fuer alle Units.
+ */
+import { t } from '../i18n/t';
+import type { LevelStat, UnitDef } from '../sim';
 
 const TICKS_PER_SECOND = 20;
 
-/** Reichweite in Milli-Tiles, die der Spieler sehen soll: Aura-Radius bei Support, sonst Angriffsreichweite, 0 ohne Reichweite (Farm). */
+const levelOf = (def: UnitDef, level: number): LevelStat | undefined => def.levels[Math.min(level, def.levels.length - 1)];
+
+/** Reichweite in Milli-Tiles, die der Spieler sehen soll: Angriffsreichweite der Stufe, 0 ohne Angriff (Farm). */
 export function reachMilli(def: UnitDef, level: number): number {
-  if (def.aura) return def.aura.radiusMilli;
-  if (def.slowAura) return def.slowAura.radiusMilli;
-  if (def.bountyAura) return def.bountyAura.radiusMilli;
-  if (!def.attack) return 0;
-  return def.levels[Math.min(level, def.levels.length - 1)]?.rangeMilli ?? 0;
+  const lv = levelOf(def, level);
+  return lv?.attack ? lv.rangeMilli : 0;
 }
 
 export interface StatRow {
@@ -26,37 +29,60 @@ const dmg = (centi: number): string => {
   return v >= 100 ? String(Math.round(v)) : v.toFixed(1);
 };
 
+/** Form des Angriffs als Text ("Circle 1.8", "Cone 60°", "Line 0.8", "Whole range", "Single target"). */
+export function attackForm(lv: LevelStat | undefined): string {
+  const a = lv?.attack;
+  if (!a) return '';
+  switch (a.kind) {
+    case 'circle':
+      return t('form.circle', { r: tiles(a.radiusMilli) });
+    case 'cone':
+      return t('form.cone', { deg: a.coneDeg });
+    case 'line':
+      return t('form.line', { w: tiles(a.widthMilli) });
+    case 'full':
+      return t('form.full');
+    default:
+      return t('form.single');
+  }
+}
+
+/** Namen der Effekte eines Angriffs (DoT-Art zuerst, dann die Spezialeffekte aus dem Katalog), z. B. ["Bleed", "Slow"]. */
+export function attackEffects(lv: LevelStat | undefined): string[] {
+  const a = lv?.attack;
+  if (!a) return [];
+  const out: string[] = [];
+  if (a.dot) out.push(a.dot.kind.charAt(0).toUpperCase() + a.dot.kind.slice(1));
+  for (const f of a.fx) out.push(f.name);
+  return out;
+}
+
 /** Werte der Stufe `level` als Zeilen (key, Wert). */
 export function statValues(def: UnitDef, level: number): { key: string; value: string }[] {
-  const lv = def.levels[Math.min(level, def.levels.length - 1)];
+  const lv = levelOf(def, level);
   const rows: { key: string; value: string }[] = [];
-  if (def.attack && lv) {
+  if (lv?.attack) {
     rows.push({ key: 'stat.damage', value: dmg(lv.damageCenti) }, { key: 'stat.cooldown', value: `${secs(lv.spaTicks)}s` }, { key: 'stat.range', value: tiles(lv.rangeMilli) });
+    if (lv.attack.hits > 1) rows.push({ key: 'stat.hits', value: String(lv.attack.hits) });
+    rows.push({ key: 'stat.form', value: attackForm(lv) });
+    const fx = attackEffects(lv);
+    if (fx.length > 0) rows.push({ key: 'stat.effects', value: fx.join(', ') });
   }
-  if (def.aura) {
-    const bp = def.aura.damageBpByLevel[Math.min(level, def.aura.damageBpByLevel.length - 1)] ?? 0;
-    rows.push({ key: 'stat.aura', value: `+${Math.round(bp / 100)}%` }, { key: 'stat.range', value: tiles(def.aura.radiusMilli) });
-  }
-  const at = <T,>(a: readonly T[]): T => a[Math.min(level, a.length - 1)];
-  if (def.slowAura) rows.push({ key: 'stat.slow', value: `-${Math.round(at(def.slowAura.slowBpByLevel) / 100)}%` }, { key: 'stat.range', value: tiles(def.slowAura.radiusMilli) });
-  if (def.bountyAura) rows.push({ key: 'stat.bounty', value: `+${Math.round(at(def.bountyAura.bonusBpByLevel) / 100)}%` }, { key: 'stat.range', value: tiles(def.bountyAura.radiusMilli) });
-  if (def.guard) rows.push({ key: 'stat.guard', value: String(at(def.guard.chargesByLevel)) });
-  if (def.windowExtend) rows.push({ key: 'stat.window', value: `+${Math.round(at(def.windowExtend.bpByLevel) / 100)}%` });
-  const mark = def.onHit.find((o) => o.kind === 'mark');
-  if (mark && mark.kind === 'mark') rows.push({ key: 'stat.mark', value: `+${Math.round(mark.vulnBp / 100)}%` });
   if (def.farm) rows.push({ key: 'stat.yield', value: String(def.farm.yieldByLevel[Math.min(level, def.farm.yieldByLevel.length - 1)] ?? 0) });
   return rows;
 }
 
-/** Was ein Upgrade von `level` auf `level + 1` aendert; nur Werte, die sich wirklich aendern. Leer auf Max-Stufe. */
+/** Was ein Upgrade von `level` auf `level + 1` aendert; nur Werte, die sich wirklich aendern (nach Schluessel verglichen). Leer auf Max-Stufe. */
 export function upgradeEffect(def: UnitDef, level: number): StatRow[] {
   if (level >= def.maxLevel) return [];
   const a = statValues(def, level);
-  const b = statValues(def, level + 1);
+  const b = new Map(statValues(def, level + 1).map((r) => [r.key, r.value]));
   const rows: StatRow[] = [];
-  a.forEach((r, i) => {
-    const to = b[i]?.value;
+  for (const r of a) {
+    const to = b.get(r.key);
     if (to !== undefined && to !== r.value) rows.push({ key: r.key, from: r.value, to });
-  });
+  }
+  // neu hinzugekommene Zeilen (z. B. ein Angriff mit Treffern oder Effekten ab dieser Stufe)
+  for (const [key, to] of b) if (!a.some((r) => r.key === key)) rows.push({ key, from: '-', to });
   return rows;
 }

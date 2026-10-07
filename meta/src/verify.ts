@@ -15,7 +15,7 @@ import { fail, type Fail } from './result';
 /** Obergrenzen gegen Muell-Replays (eine echte Partie hat ~19 000 Ticks und wenige hundert Befehle). */
 export const MAX_REPLAY_TICKS = 60_000;
 export const MAX_REPLAY_COMMANDS = 20_000;
-const SUPPORTED_VERSIONS = [2, 3];
+const SUPPORTED_VERSIONS = [4];
 const DIFFICULTIES: readonly string[] = ['normal', 'hard', 'nightmare'];
 
 export interface VerifiedMatch {
@@ -86,7 +86,7 @@ export function verifyReplay(replay: unknown, opts: VerifyOptions = {}): { ok: t
   if (!replay || typeof replay !== 'object') return fail('invalid-replay', 'Replay is missing.');
   const r = replay as Head;
   if (r.format !== 'towerdef-replay') return fail('invalid-replay', 'This is not a replay file.');
-  if (r.formatVersion === 1) return fail('replay-old-rules', 'This replay is from older rules and cannot be checked.');
+  if (isInt(r.formatVersion) && r.formatVersion >= 1 && r.formatVersion <= 3) return fail('replay-old-rules', 'This replay is from older rules and cannot be checked.');
   if (!isInt(r.formatVersion) || !SUPPORTED_VERSIONS.includes(r.formatVersion)) return fail('replay-unsupported', 'This replay format is not supported.');
   if (r.complete !== true || (r.result !== 'win' && r.result !== 'loss')) return fail('replay-incomplete', 'The match is not finished.');
   if (typeof r.stage !== 'string' || !r.stage) return fail('invalid-replay', 'Replay has no stage.');

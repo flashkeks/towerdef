@@ -5,7 +5,7 @@ import { BossTracker } from '../src/view/telegraph';
 import { castMessageKey } from '../src/ui/boss-banner';
 import { blinkAlpha, cueFor, DamageNumbers, deathParticles, formatDamage, hitStyle, leakBlink, pickTarget, ShotDetector } from '../src/view/feel';
 import { hasKey } from '../src/i18n/t';
-import { loadBrowserData } from '../src/sim';
+import { createSim, loadBrowserData, STAGE_ID } from '../src/sim';
 import type { SimEvent } from '../src/sim';
 
 const ev = (e: Record<string, unknown>): SimEvent => e as unknown as SimEvent;
@@ -85,8 +85,6 @@ describe('Ereignis -> Klang und Effekt', () => {
     expect(soundsFor(ev({ type: 'bossWindow', enemyId: 9, open: false }))).toEqual(['windowClose']);
     expect(soundsFor(ev({ type: 'bossWard', enemyId: 9, state: 'broken' }))).toEqual(['wardBreak']);
     expect(soundsFor(ev({ type: 'bossWard', enemyId: 9, state: 'up' }))).toEqual([]);
-    expect(soundsFor(ev({ type: 'ability', unitId: 1, kind: 'nuke' }))).toEqual(['nuke']);
-    expect(soundsFor(ev({ type: 'ability', unitId: 1, kind: 'stunAoe' }))).toEqual(['frost']);
   });
   it('Fenster-Cue traegt die Ruestung (P3), fehlend = -1', () => {
     expect(cueFor(ev({ type: 'bossWindow', enemyId: 1, open: true, armor: 0 }))).toMatchObject({ kind: 'windowOpen', armor: 0 });
@@ -104,25 +102,27 @@ describe('Ereignis -> Klang und Effekt', () => {
         expect(v.f1, id).toBeGreaterThan(20);
       }
     }
-    for (const style of ['slash', 'tracer', 'shell', 'bolt', 'blast', 'cone', 'line'] as const) expect(RECIPES[shotSound(style)]).toBeDefined();
+    for (const style of ['slash', 'tracer', 'shell', 'bolt', 'blast', 'cone', 'line', 'full'] as const) expect(RECIPES[shotSound(style)]).toBeDefined();
     expect(SOUND_IDS.length).toBeGreaterThanOrEqual(20);
   });
 });
 
 describe('Trefferstil je Unit', () => {
   const data = loadBrowserData();
-  const style = (id: string) => hitStyle(data.units.units.find((u) => u.id === id) as never);
-  it('Kegel fuer Frost, Linie fuer Lancer, Flaeche fuer Blaster', () => {
-    expect(style('frost')).toBe('cone');
-    expect(style('lancer')).toBe('line');
-    expect(style('blaster')).toBe('blast');
-    expect(style('striker')).toBe('slash');
-    expect(style('gunner')).toBe('tracer');
-    expect(style('titan')).toBe('shell');
+  const defs = createSim({ stage: STAGE_ID, difficulty: 'normal', players: 1, seed: 1, data }).catalog();
+  const style = (id: string, level = 0) => hitStyle(defs.find((u) => u.id === id)!, level);
+  it('Stil aus den Daten der Stufe: Kreis = blast, Kegel = cone, Linie = line, Nahkampf-Einzelziel = slash, weites = tracer, sonst bolt', () => {
+    expect(style('stain')).toBe('blast');
+    expect(style('monet')).toBe('cone');
+    expect(style('kimimaro')).toBe('line');
+    expect(style('ichigo')).toBe('slash'); // 6 Studs = 1,2 Kacheln
+    const single = (rangeMilli: number) => hitStyle({ levels: [{ attack: { kind: 'single' }, rangeMilli }] } as never);
+    expect(single(1500)).toBe('slash');
+    expect(single(3000)).toBe('bolt');
+    expect(single(5000)).toBe('tracer');
   });
-  it('Banner und Farm greifen nicht an', () => {
-    expect(style('banner')).toBeNull();
-    expect(style('farm')).toBeNull();
+  it('Farm greift nicht an', () => {
+    expect(style('speedwagon')).toBeNull();
   });
 });
 

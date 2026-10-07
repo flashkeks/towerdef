@@ -6,6 +6,7 @@ import { unitColor } from '../view/model';
 import { needOf } from '../view/placement';
 import { unitTags } from '../view/readability';
 import { clear, h, setClass, setText } from './dom';
+import { unitAbbr, unitName } from './meta-model';
 
 const css = (n: number): string => `#${n.toString(16).padStart(6, '0')}`;
 
@@ -28,8 +29,8 @@ export class Shop {
     const b = h('button', 'unit-btn');
     b.type = 'button';
     b.dataset.unit = d.id;
-    b.title = `${t(`rarity.${d.rarity}`)} - ${t(`placement.${d.placement}`)}`;
-    const badge = h('span', 'badge', t(`unit.${d.id}.abbr`));
+    b.title = `${t(`rarity.${d.rarity.toLowerCase()}`)} - ${t(`placement.${d.placement}`)}`;
+    const badge = h('span', 'badge', unitAbbr(d.id));
     badge.style.background = css(unitColor(d.id));
     const need = d.placement === 'hybrid' && d.footprint === 1 ? 'any' : needOf(d);
     const chip = h('span', `ptype ${need}`, t(`ptype.${need}`));
@@ -43,7 +44,7 @@ export class Shop {
     const cost = h('span', 'ucost', String(d.placeCost));
     cost.title = t('shop.cost.tip');
     this.costs.set(d.id, cost);
-    b.append(h('span', 'key', String(index + 1)), badge, h('span', 'uname', t(`unit.${d.id}.name`)), chip, tags, cost);
+    b.append(h('span', 'key', String(index + 1)), badge, h('span', 'uname', unitName(d.id)), chip, tags, cost);
     b.addEventListener('click', () => session.choosePlacing(d.id));
     this.btns.set(d.id, b);
     return b;
@@ -65,6 +66,6 @@ export class Shop {
         if (cost.title !== tip) cost.title = tip;
       }
     }
-    setText(this.hint, s.placing ? t('shop.hint.place2', { name: t(`unit.${s.placing}.name`) }) : t('shop.hint.idle'));
+    setText(this.hint, s.placing ? t('shop.hint.place2', { name: unitName(s.placing) }) : t('shop.hint.idle'));
   }
 }

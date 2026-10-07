@@ -44,27 +44,27 @@ describe('Geist-Status gegen die Sim', () => {
   it('gruen auf Boden/Huegel passend zur Unit, rot mit dem Grund der Sim sonst', () => {
     const sim = rich();
     const g = (unit: string, p: { x: number; y: number }) => ghostStatus(sim.canPlace(0, unit, p.x, p.y));
-    expect(g('striker', PLACE.ground)).toEqual({ ok: true, reason: null });
-    expect(g('gunner', PLACE.hill)).toEqual({ ok: true, reason: null });
-    expect(g('striker', PLACE.hill)).toEqual({ ok: false, reason: 'wrong-zone' });
-    expect(g('gunner', PLACE.ground)).toEqual({ ok: false, reason: 'wrong-zone' });
-    expect(g('banner', PLACE.hill).ok).toBe(true); // Hybrid: beides
-    expect(g('banner', PLACE.ground).ok).toBe(true);
-    expect(g('striker', PLACE.path)).toEqual({ ok: false, reason: 'on-path' });
-    expect(g('striker', { x: -450, y: 3000 })).toEqual({ ok: false, reason: 'out-of-bounds' });
-    expect(g('striker', { x: 7000, y: 0 }).reason).toBe('blocked');
+    expect(g('ichigo', PLACE.ground)).toEqual({ ok: true, reason: null });
+    expect(g('krillin', PLACE.hill)).toEqual({ ok: true, reason: null });
+    expect(g('ichigo', PLACE.hill)).toEqual({ ok: false, reason: 'wrong-zone' });
+    expect(g('krillin', PLACE.ground)).toEqual({ ok: false, reason: 'wrong-zone' });
+    expect(g('rikka_evo', PLACE.hill).ok).toBe(true); // Hybrid: beides
+    expect(g('rikka_evo', PLACE.ground).ok).toBe(true);
+    expect(g('ichigo', PLACE.path)).toEqual({ ok: false, reason: 'on-path' });
+    expect(g('ichigo', { x: -450, y: 3000 })).toEqual({ ok: false, reason: 'out-of-bounds' });
+    expect(g('ichigo', { x: 7000, y: 0 }).reason).toBe('blocked');
   });
   it('Ueberlappung nach dem Setzen; Berechnung stimmt mit apply ueberein', () => {
     const sim = rich();
-    expect(sim.apply(0, { type: 'place', unitId: 'striker', ...PLACE.ground }).ok).toBe(true);
-    expect(ghostStatus(sim.canPlace(0, 'striker', 3300, 3000))).toEqual({ ok: false, reason: 'overlap' });
-    expect(sim.apply(0, { type: 'place', unitId: 'striker', x: 3300, y: 3000 })).toEqual({ ok: false, reason: 'overlap' });
-    expect(ghostStatus(sim.canPlace(0, 'striker', 3800, 3000)).ok).toBe(true);
+    expect(sim.apply(0, { type: 'place', unitId: 'ichigo', ...PLACE.ground }).ok).toBe(true);
+    expect(ghostStatus(sim.canPlace(0, 'ichigo', 3300, 3000))).toEqual({ ok: false, reason: 'overlap' });
+    expect(sim.apply(0, { type: 'place', unitId: 'ichigo', x: 3300, y: 3000 })).toEqual({ ok: false, reason: 'overlap' });
+    expect(ghostStatus(sim.canPlace(0, 'ichigo', 3800, 3000)).ok).toBe(true);
   });
   it('zu wenig Muenzen ist rot mit eigenem Grund', () => {
     const sim = rich();
     (sim.state.players[0] as { coins: number }).coins = 0;
-    expect(ghostStatus(sim.canPlace(0, 'striker', PLACE.ground.x, PLACE.ground.y)).reason).toBe('not-enough-coins');
+    expect(ghostStatus(sim.canPlace(0, 'ichigo', PLACE.ground.x, PLACE.ground.y)).reason).toBe('not-enough-coins');
   });
   it('jeder Grund hat Beschriftung und Toast-Schluessel', () => {
     for (const r of ['out-of-bounds', 'on-path', 'blocked', 'wrong-zone', 'overlap', 'not-enough-coins', 'team-limit', 'team-slots', 'invalid-position', 'whatever']) {
@@ -85,29 +85,29 @@ describe('Geist-Status gegen die Sim', () => {
 
 describe('Treffer auf gesetzte Units und Shift-Klick', () => {
   const units = [
-    { id: 1, defId: 'striker', x: 3000, y: 3000 },
-    { id: 2, defId: 'striker', x: 3800, y: 3000 },
-    { id: 3, defId: 'farm', x: 14000, y: 6000 },
+    { id: 1, defId: 'ichigo', x: 3000, y: 3000 },
+    { id: 2, defId: 'ichigo', x: 3800, y: 3000 },
+    { id: 3, defId: 'speedwagon', x: 14000, y: 6000 },
   ];
   const radius = (id: string): number => by[id].radiusMilli;
   it('trifft die naechste Unit im Kreis, sonst nichts', () => {
     expect(unitAt(units, radius, 3050, 3000)).toBe(1);
     expect(unitAt(units, radius, 3600, 3000)).toBe(2); // naeher an 2
     expect(unitAt(units, radius, 3400, 3450)).toBeNull();
-    expect(unitAt(units, radius, 14800, 6000)).toBe(3); // Farm: Radius 900
+    expect(unitAt(units, radius, 14350, 6000)).toBe(3); // Radius 400 (alle AA-Units 1x1)
   });
   it('Shift: nur nach erfolgreichem Setzen bleibt die Wahl; ohne Shift ist sie verbraucht; Fehlversuch behaelt sie', () => {
-    expect(placingAfterClick('striker', true, false)).toBeNull();
-    expect(placingAfterClick('striker', true, true)).toBe('striker');
-    expect(placingAfterClick('striker', false, false)).toBe('striker');
-    expect(placingAfterClick('striker', false, true)).toBe('striker');
+    expect(placingAfterClick('ichigo', true, false)).toBeNull();
+    expect(placingAfterClick('ichigo', true, true)).toBe('ichigo');
+    expect(placingAfterClick('ichigo', false, false)).toBe('ichigo');
+    expect(placingAfterClick('ichigo', false, true)).toBe('ichigo');
   });
   it('Session: Klick setzt, Shift+Klick setzt dieselbe Unit nochmal, Klick auf Unit waehlt sie', () => {
     const s = new Session('normal', 1);
     (s.sim.state.players[0] as { coins: number }).coins = 100000;
-    s.choosePlacing('striker');
+    s.choosePlacing('ichigo');
     s.clickBoard(3000, 3000, true);
-    expect(s.placing).toBe('striker');
+    expect(s.placing).toBe('ichigo');
     s.clickBoard(5000, 3000, true);
     expect(s.sim.state.units).toHaveLength(2);
     expect(s.sim.state.units.map((u) => [u.x, u.y])).toEqual([[3000, 3000], [5000, 3000]]);
@@ -119,20 +119,20 @@ describe('Treffer auf gesetzte Units und Shift-Klick', () => {
   });
   it('Session: Geist folgt dem Cursor; Klick an roter Stelle zeigt Toast mit Grund und setzt nichts', () => {
     const s = new Session('normal', 1);
-    s.choosePlacing('striker');
+    s.choosePlacing('ichigo');
     expect(s.ghost()).toBeNull(); // ohne Cursor
     s.cursor = PLACE.ground;
-    expect(s.ghost()).toMatchObject({ ok: true, reason: null, unitId: 'striker' });
+    expect(s.ghost()).toMatchObject({ ok: true, reason: null, unitId: 'ichigo' });
     s.cursor = PLACE.path;
     expect(s.ghost()).toMatchObject({ ok: false, reason: 'on-path' });
     s.pointer = { x: 10, y: 10 };
     s.clickBoard(PLACE.path.x, PLACE.path.y);
     expect(s.toast?.key).toBe('toast.place.on-path');
     expect(s.sim.state.units).toHaveLength(0);
-    expect(s.placing).toBe('striker'); // Wahl bleibt zum Nachbessern
+    expect(s.placing).toBe('ichigo'); // Wahl bleibt zum Nachbessern
     s.clickBoard(PLACE.hill.x, PLACE.hill.y);
     expect(s.toast?.key).toBe('toast.place.wrong-zone.ground');
-    s.choosePlacing('striker');
+    s.choosePlacing('ichigo');
     expect(s.ghost()).toBeNull(); // abgewaehlt
   });
   it('Klicks ins Leere reagieren immer', () => {
@@ -143,8 +143,8 @@ describe('Treffer auf gesetzte Units und Shift-Klick', () => {
 });
 
 describe('Fehler-Toasts', () => {
-  const ctx = { name: 'Gunner', def: by.gunner, cost: 300, coins: 120, teamUnits: 60, teamSlots: 6 };
-  const place: Command = { type: 'place', unitId: 'gunner', x: 3000, y: 3000 };
+  const ctx = { name: 'Gunner', def: by.krillin, cost: 300, coins: 120, teamUnits: 60, teamSlots: 6 };
+  const place: Command = { type: 'place', unitId: 'krillin', x: 3000, y: 3000 };
   it('jeder Platzier-Grund hat einen vorhandenen Schluessel und nennt Zahlen/Namen', () => {
     for (const reason of ['not-enough-coins', 'wrong-zone', 'on-path', 'out-of-bounds', 'blocked', 'overlap', 'invalid-position', 'team-limit', 'team-slots']) {
       const spec = failureToast(place, reason, ctx);
@@ -152,7 +152,7 @@ describe('Fehler-Toasts', () => {
     }
     expect(t(failureToast(place, 'not-enough-coins', ctx).key, failureToast(place, 'not-enough-coins', ctx).params)).toBe('Not enough coins: Gunner costs 300, you have 120.');
     expect(failureToast(place, 'wrong-zone', ctx).key).toBe('toast.place.wrong-zone.hill');
-    expect(failureToast(place, 'wrong-zone', { ...ctx, def: by.striker }).key).toBe('toast.place.wrong-zone.ground');
+    expect(failureToast(place, 'wrong-zone', { ...ctx, def: by.ichigo }).key).toBe('toast.place.wrong-zone.ground');
     expect(t('toast.place.on-path', { name: 'Gunner' })).toContain('path');
   });
   it('Upgrade ohne Muenzen nennt Kosten', () => {
@@ -166,7 +166,7 @@ describe('Fehler-Toasts', () => {
     const s = new Session('normal', 1);
     s.pointer = { x: 100, y: 80 };
     (s.sim.state.players[0] as { coins: number }).coins = 10;
-    s.choosePlacing('striker');
+    s.choosePlacing('ichigo');
     s.clickBoard(PLACE.ground.x, PLACE.ground.y);
     expect(s.toast?.key).toBe('toast.poor');
     expect(s.toast?.at).toEqual({ x: 100, y: 80 });
@@ -217,19 +217,18 @@ describe('Ersthinweise', () => {
 
 describe('Unit-Anzeige', () => {
   it('Upgrade-Wirkung alt -> neu, leer auf Max', () => {
-    const striker = catalog.find((d) => d.id === 'striker')!;
+    const striker = catalog.find((d) => d.id === 'ichigo')!;
     const rows = upgradeEffect(striker, 0);
     expect(rows.length).toBeGreaterThan(0);
     for (const r of rows) expect(r.from).not.toBe(r.to);
     expect(rows.map((r) => r.key)).toContain('stat.damage');
     expect(upgradeEffect(striker, striker.maxLevel)).toEqual([]);
   });
-  it('Reichweite: Angreifer Level-Wert, Banner Aura, Farm keine', () => {
-    const by = Object.fromEntries(catalog.map((d) => [d.id, d]));
-    expect(reachMilli(by.striker, 0)).toBe(by.striker.levels[0].rangeMilli);
-    expect(reachMilli(by.banner, 0)).toBe(by.banner.aura!.radiusMilli);
-    expect(reachMilli(by.farm, 0)).toBe(0);
-    expect(statValues(by.farm, 0)[0].key).toBe('stat.yield');
+  it('Reichweite: Angreifer Level-Wert (waechst mit der Stufe), Farm keine', () => {
+    expect(reachMilli(by.ichigo, 0)).toBe(by.ichigo.levels[0].rangeMilli);
+    expect(reachMilli(by.ichigo, by.ichigo.maxLevel)).toBe(by.ichigo.levels[by.ichigo.maxLevel].rangeMilli);
+    expect(reachMilli(by.speedwagon, 0)).toBe(0);
+    expect(statValues(by.speedwagon, 0)[0].key).toBe('stat.yield');
   });
   it('alle Units haben anzeigbare Werte auf jeder Stufe', () => {
     for (const d of defs) {

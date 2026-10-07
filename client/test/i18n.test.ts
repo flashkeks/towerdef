@@ -10,12 +10,12 @@ const data = loadBrowserData();
 describe('Strings vollstaendig', () => {
   it('Spieltitel ist Duskwardens', () => expect(t('game.title')).toBe('Duskwardens'));
 
-  it('jede Unit hat Namen und Kuerzel', () => {
+  it('jede Unit hat Seltenheit und Platzierung als Text; Name und Kuerzel kommen aus den Unit-Daten (keine Text-Eintraege je Unit)', () => {
     for (const u of data.units.units) {
-      expect(hasKey(`unit.${u.id}.name`), u.id).toBe(true);
-      expect(hasKey(`unit.${u.id}.abbr`), u.id).toBe(true);
-      expect(hasKey(`rarity.${u.rarity}`), u.id).toBe(true);
+      expect(hasKey(`rarity.${u.rarity.toLowerCase()}`), u.id).toBe(true);
       expect(hasKey(`placement.${u.placement}`), u.id).toBe(true);
+      expect(u.name.length, u.id).toBeGreaterThan(0);
+      expect(hasKey(`unit.${u.id}.name`), `${u.id}: kein Eintrag je Unit in en.ts`).toBe(false);
     }
   });
   it('jeder Gegnertyp hat einen Namen', () => {

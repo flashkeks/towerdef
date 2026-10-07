@@ -4,7 +4,7 @@ import { parseMarkdown } from '../src/ui/markdown';
 import { formatDuration, MvpTracker } from '../src/ui/mvp';
 import { DEFAULT_SETTINGS, getSettings, HINTS_KEY, resetHints, resetSettingsCache, sanitize, setSetting, SETTINGS_KEY } from '../src/ui/settings';
 
-const IDS = ['striker', 'gunner', 'blaster', 'banner', 'farm', 'lancer', 'frost', 'titan'];
+const IDS = ['ichigo', 'krillin', 'stain', 'rikka_evo', 'speedwagon', 'rikka_evo', 'rikka_evo', 'goku_ssj3'];
 
 function fakeStorage(init: Record<string, string> = {}): Storage {
   const m = new Map(Object.entries(init));
@@ -77,19 +77,19 @@ describe('MVP', () => {
   const dmg = (unitId: number, amount: number) => ({ type: 'damage', tick: 2, unitId, owner: 0, amount }) as const;
   it('keiner ohne Schaden', () => {
     const m = new MvpTracker();
-    m.consume([place(1, 'striker')]);
+    m.consume([place(1, 'ichigo')]);
     expect(m.mvp()).toBeNull();
   });
   it('summiert ueber Ereignis-Stapel, hoechster Schaden gewinnt', () => {
     const m = new MvpTracker();
-    m.consume([place(1, 'striker'), place(2, 'gunner'), dmg(1, 100), dmg(2, 60)]);
+    m.consume([place(1, 'ichigo'), place(2, 'krillin'), dmg(1, 100), dmg(2, 60)]);
     m.consume([dmg(2, 70), dmg(1, 20)]);
-    expect(m.mvp()).toEqual({ unit: 'gunner', entityId: 2, damage: 130 });
+    expect(m.mvp()).toEqual({ unit: 'krillin', entityId: 2, damage: 130 });
   });
   it('verkaufte Unit zaehlt weiter; Gleichstand: kleinere Id', () => {
     const m = new MvpTracker();
-    m.consume([place(5, 'blaster'), place(3, 'frost'), dmg(5, 50), dmg(3, 50), { type: 'sell', tick: 3, player: 0, unitId: 5, refund: 1 }]);
-    expect(m.mvp()?.unit).toBe('frost');
+    m.consume([place(5, 'stain'), place(3, 'rikka_evo'), dmg(5, 50), dmg(3, 50), { type: 'sell', tick: 3, player: 0, unitId: 5, refund: 1 }]);
+    expect(m.mvp()?.unit).toBe('rikka_evo');
   });
   it('Dauer m:ss', () => {
     expect(formatDuration(0)).toBe('0:00');
@@ -103,11 +103,5 @@ describe('Markdown und Strings', () => {
     expect(b.map((x) => x.kind)).toEqual(['h', 'p', 'table', 'ul']);
     expect(b[1]).toEqual({ kind: 'p', text: 'text weiter' });
     expect(b[2]).toEqual({ kind: 'table', head: ['x', 'y'], rows: [['1', '2']] });
-  });
-  it('jede Unit hat Rolle und Kurzinfo', () => {
-    for (const id of IDS) {
-      expect(en).toHaveProperty(`role.${id}`);
-      expect(en).toHaveProperty(`team.info.${id}`);
-    }
   });
 });

@@ -254,33 +254,8 @@ export class Fx {
         this.shake(2.5, 0.25);
         break;
       }
-      case 'ability':
-        this.ability(cue.unitId, cue.ability);
-        break;
       default:
         break;
-    }
-  }
-
-  private ability(unitId: number, kind: string): void {
-    const s = this.session;
-    const u = s?.sim.state.units.find((x) => x.id === unitId);
-    const def = u ? this.ctx.defs[u.defId] : undefined;
-    if (!s || !u || !def) return;
-    const T = this.ctx.tile;
-    const o = this.ctx.px(u.x / 1000, u.y / 1000);
-    if (kind === 'stunAoe') {
-      const radius = ((def.ability as { radiusMilli?: number } | undefined)?.radiusMilli ?? 2500) / 1000;
-      this.ring(o.x, o.y, T * 0.3, T * radius, C.ice, 0.95, 0.55, 6);
-      this.ring(o.x, o.y, T * 0.2, T * radius * 0.7, C.white, 0.7, 0.4, 3, 0.05);
-      this.add({ k: K.Glow, dur: 0.35, x: o.x, y: o.y, r: T * radius * 0.9, color: C.ice, w: 0.18 });
-      this.burst(o.x, o.y, 18, C.ice, T * radius * 1.4, 0.7, 3);
-    } else if (kind === 'nuke') {
-      const list: TargetCandidate[] = this.snap.length > 0 ? this.snap : s.sim.state.enemies;
-      const t = pickTarget({ x: 0, y: 0 }, 1e9, true, 'strongest', list);
-      const tp = t ? this.ctx.px(t.x / 1000, t.y / 1000) : o;
-      this.add({ k: K.Bolt, dur: 0.18, x: o.x, y: o.y, x2: tp.x, y2: tp.y, r: T * 0.16, w: T * 0.1, color: C.ember, color2: C.white, after: After.Blast, r2: T * 1.7 });
-      this.shake(6, 0.5);
     }
   }
 
@@ -405,7 +380,7 @@ export class Fx {
     for (const id of fired) {
       const u = st.units.find((x) => x.id === id);
       const def = u ? this.ctx.defs[u.defId] : undefined;
-      const style = def ? hitStyle(def) : null;
+      const style = def && u ? hitStyle(def, u.level) : null;
       if (!u || !def || !style) continue;
       const range = reachMilli(def, u.level);
       const origin = { x: u.x, y: u.y };
@@ -413,8 +388,7 @@ export class Fx {
       if (!target) continue;
       const o = this.ctx.px(u.x / 1000, u.y / 1000);
       const tp = this.ctx.px(target.x / 1000, target.y / 1000);
-      this.shoot(style, def.attack, unitColor(def.id), o.x, o.y, tp.x, tp.y, range, T);
-      if (def.attack?.kind === 'chain') this.chainLinks(def, target, pool, unitColor(def.id), T);
+      this.shoot(style, def.levels[Math.min(u.level, def.levels.length - 1)].attack, unitColor(def.id), o.x, o.y, tp.x, tp.y, range, T);
       for (const fn of this.shotListeners) fn(style);
     }
     // Schadenszahlen aus der HP-Differenz
@@ -462,6 +436,14 @@ export class Fx {
         this.burst(ox + Math.cos(ang) * T * 0.6, oy + Math.sin(ang) * T * 0.6, 5, C.ice, T * 2.2, 0.4, 2);
         break;
       }
+      case 'full': {
+        // Alles in Reichweite: ein Ring aus der Unit bis zum Rand der Reichweite
+        const R = (rangeMilli / 1000) * T;
+        this.ring(ox, oy, T * 0.3, R, color, 0.95, 0.4, 5);
+        this.add({ k: K.Glow, dur: 0.3, x: ox, y: oy, r: R * 0.9, color, w: 0.14 });
+        this.burst(tx, ty, 5, C.white, T * 1.4, 0.3, 2);
+        break;
+      }
       case 'line':
         this.add({ k: K.Line, dur: 0.22, x: ox, y: oy, r: (rangeMilli / 1000) * T, w: ((attack?.widthMilli ?? 600) / 1000) * T, color, color2: C.white, ang });
         this.burst(tx, ty, 4, C.ice, T * 1.3, 0.3, 2);
@@ -469,34 +451,6 @@ export class Fx {
       default:
         this.add({ k: K.Bolt, dur: 0.1, x: ox, y: oy, x2: tx, y2: ty, r: T * 0.08, w: T * 0.04, color, color2: C.white, after: After.Impact });
         break;
-    }
-  }
-
-  /** Kettenblitz (Runde 7 / P6): Linien vom Ziel zu den naechsten Gegnern (wie die Sim: naechster ungetroffener, Sprungweite aus den Daten). Nur Darstellung. */
-  private chainLinks(def: UnitDef, first: TargetCandidate, pool: readonly TargetCandidate[], color: number, T: number): void {
-    const a = def.attack;
-    if (!a || a.kind !== 'chain') return;
-    const jr = (a.jumpRadiusMilli ?? 1800) ** 2;
-    const hit = new Set<number>([first.id]);
-    let cur = first;
-    for (let j = 0; j < (a.jumps ?? 4); j++) {
-      let next: TargetCandidate | null = null;
-      let nd = Infinity;
-      for (const e of pool) {
-        if (hit.has(e.id) || (e.flying && !def.canHitAir)) continue;
-        const d2 = (e.x - cur.x) ** 2 + (e.y - cur.y) ** 2;
-        if (d2 <= jr && d2 < nd) {
-          next = e;
-          nd = d2;
-        }
-      }
-      if (!next) break;
-      hit.add(next.id);
-      const p = this.ctx.px(cur.x / 1000, cur.y / 1000);
-      const q = this.ctx.px(next.x / 1000, next.y / 1000);
-      this.add({ k: K.Tracer, dur: 0.14 + 0.03 * j, x: p.x, y: p.y, x2: q.x, y2: q.y, color, color2: C.white, w: Math.max(2, T * 0.05) });
-      this.burst(q.x, q.y, 2, color, T * 1.0, 0.22, 2);
-      cur = next;
     }
   }
 

@@ -16,10 +16,10 @@ describe('Recorder v3: Unit-Mods im Kopf', () => {
   it('Session reicht unitMods an die Sim durch, der Recorder schreibt sie mit', () => {
     const bus = new GameBus();
     const rec = new Recorder(bus);
-    const mods = [{ player: 0, unit: 'striker', lvlBp: 21750 }];
+    const mods = [{ player: 0, unit: 'ichigo', lvlBp: 21750 }];
     const s = new Session('normal', 5, bus, mods);
     bus.emitRunStart(s);
-    s.choosePlacing('striker');
+    s.choosePlacing('ichigo');
     s.clickBoard(3000, 3000);
     expect(s.sim.state.units[0].lvlBp).toBe(21750);
     const snap = rec.snapshot()!;
@@ -31,11 +31,11 @@ describe('Recorder v3: Unit-Mods im Kopf', () => {
 describe('Recorder (nur am GameBus)', () => {
   it('zeichnet Befehle (auch abgelehnte), Steuerung und Wellen auf', () => {
     const { rec, s } = setup();
-    s.choosePlacing('striker');
+    s.choosePlacing('ichigo');
     s.clickBoard(3000, 3000);
-    s.choosePlacing('striker');
+    s.choosePlacing('ichigo');
     s.clickBoard(3000, 3000); // Unit darunter -> waehlt nur aus, kein Befehl
-    s.choosePlacing('gunner');
+    s.choosePlacing('krillin');
     s.clickBoard(5000, 3000); // Gunner braucht einen Huegel: abgelehnt
     s.setSpeed(2);
     s.togglePause();
@@ -44,7 +44,7 @@ describe('Recorder (nur am GameBus)', () => {
     for (let i = 0; i < 40; i++) s.advance(TICK_MS * 2);
     const snap = rec.snapshot()!;
     expect(snap.format).toBe(REPLAY_FORMAT);
-    expect(snap.formatVersion).toBe(3);
+    expect(snap.formatVersion).toBe(4);
     expect(snap.unitMods).toEqual([]); // Standard: neutral
     expect(snap.commands[0].cmd).toMatchObject({ type: 'place', x: 3000, y: 3000 });
     expect(snap.seed).toBe(7);

@@ -4,9 +4,10 @@
  */
 import { t } from '../i18n/t';
 import type { Session } from '../game/session';
-import { abilitySeconds, sellPreview } from '../view/model';
-import { reachMilli, upgradeEffect } from '../view/unit-info';
+import { sellPreview } from '../view/model';
+import { attackEffects, attackForm, reachMilli, upgradeEffect } from '../view/unit-info';
 import { clear, h, setClass } from './dom';
+import { unitName } from './meta-model';
 
 export class UnitPanel {
   readonly el = h('section', 'panel unitpanel');
@@ -23,7 +24,7 @@ export class UnitPanel {
     const coins = st.players[0]?.coins ?? 0;
     const up = u ? s.sim.upgradeCost(u.id) : null;
     const def = u ? s.sim.catalog().find((d) => d.id === u.defId) : undefined;
-    const sig = u && def ? `${u.id}|${u.level}|${u.targeting}|${up}|${coins >= (up ?? 0)}|${abilitySeconds(u)}|${u.invested}` : 'none';
+    const sig = u && def ? `${u.id}|${u.level}|${u.targeting}|${up}|${coins >= (up ?? 0)}|${u.invested}` : 'none';
     if (sig === this.sig) return;
     this.sig = sig;
     clear(this.el);
@@ -31,9 +32,15 @@ export class UnitPanel {
       this.el.append(h('p', 'muted', t('unit.none')));
       return;
     }
-    this.el.append(h('h3', undefined, t(`unit.${def.id}.name`)), h('p', 'lvl', t('unit.level', { n: u.level + 1, max: def.maxLevel + 1 })));
+    this.el.append(h('h3', undefined, unitName(def.id)), h('p', 'lvl', t('unit.level', { n: u.level + 1, max: def.maxLevel + 1 })));
     const reach = reachMilli(def, u.level);
-    if (reach > 0) this.el.append(h('p', 'reach', t(def.aura || def.slowAura || def.bountyAura ? 'panel.aura' : 'panel.range', { n: (reach / 1000).toFixed(1) })));
+    if (reach > 0) this.el.append(h('p', 'reach', t('panel.range', { n: (reach / 1000).toFixed(1) })));
+    const lv = def.levels[u.level];
+    if (lv?.attack) {
+      // Runde 8: Form, Treffer und Effekte des aktuellen Angriffs (alles aus den Unit-Daten)
+      const bits = [attackForm(lv), ...(lv.attack.hits > 1 ? [t('stat.hits') + ' ' + lv.attack.hits] : []), ...attackEffects(lv)];
+      this.el.append(h('p', 'muted attack', bits.join(' · ')));
+    }
     // Upgrade: Kosten, Wirkung alt -> neu
     const upBtn = h('button', 'btn upgrade', up === null ? t('unit.maxed') : t('unit.upgrade', { cost: up }));
     upBtn.disabled = up === null;
@@ -53,14 +60,7 @@ export class UnitPanel {
     const sellBtn = h('button', 'btn sell', t('unit.sell', { value: sellPreview(def, u) }));
     sellBtn.addEventListener('click', () => s.sell());
     this.el.append(sellBtn);
-    if (def.ability) {
-      const cd = abilitySeconds(u);
-      const ab = h('button', 'btn ability', cd > 0 ? t('unit.ability.cooldown', { s: cd }) : t('unit.ability'));
-      ab.disabled = cd > 0;
-      ab.addEventListener('click', () => s.useAbility());
-      this.el.append(ab);
-    }
-    if (def.attack) {
+    if (def.levels[u.level]?.attack) {
       const tg = h('button', 'btn targeting', t('unit.targeting', { mode: t(`targeting.${u.targeting}`) }));
       tg.addEventListener('click', () => s.cycleTargeting());
       this.el.append(tg);

@@ -12,35 +12,39 @@ Jede Runde im Spiel wird mitgeschrieben (Seed, Stufe, alle Befehle mit Tick, Leb
 
 ## Für die Auswertung
 
-Datei in diesen Ordner legen (Name beibehalten, bei Duplikaten Namen ergänzen). Dateien, die als Beispiel für Tests dienen, heißen `beispiel-*.json`; der Sim-Test spielt alle v2- und v3-`beispiel-*.json` nach und prüft v1-Dateien als „altes Regelwerk“.
+Datei in diesen Ordner legen (Name beibehalten, bei Duplikaten Namen ergänzen). Dateien, die als Beispiel für Tests dienen, heißen `beispiel-*.json`; der Sim-Test spielt alle v4-`beispiel-*.json` nach und prüft v1- bis v3-Dateien als „altes Regelwerk“.
 
 ```bash
 cd sim
 npm run replay -- ../docs/balancing/playtests/DATEI.json            # nachspielen, Hash prüfen, Bericht
-npm run replay -- ../docs/balancing/playtests/DATEI.json --compare  # plus Bot-Lauf (gleiche Stufe, gleicher Seed, wide@normal)
-npm run replay -- DATEI.json --compare --bot upgrade@normal         # anderer Bot
+npm run replay -- ../docs/balancing/playtests/DATEI.json --compare  # plus Bot-Lauf (gleiche Stufe, gleicher Seed, mono-goku_ssj3)
+npm run replay -- DATEI.json --compare --bot mono-rikka_evo         # anderer Bot (auto, auto-N, mono-ID[,ID])
 ```
 
 Der Bericht zeigt je Welle Start-Tick, Münzen, Leben, Kills und Leaks (nach Gegnertyp), die Münzkurve, gekaufte Units, Upgrades, verkaufte Units und abgelehnte Befehle, dazu den Freitext. Mit `--compare` steht der Bot-Verlauf daneben: Wo der Mensch bei Münzen oder Leaks vom Bot abweicht, liegt meist die Stelle, an der sich das Spiel anders anfühlt.
 
-**Exit-Code:** 0 = Hash und Ergebnis stimmen, 1 = Abweichung (Datei und Replay laufen auseinander), 2 = Datei unbrauchbar, 3 = altes Regelwerk (v1).
+**Exit-Code:** 0 = Hash und Ergebnis stimmen, 1 = Abweichung (Datei und Replay laufen auseinander), 2 = Datei unbrauchbar, 3 = altes Regelwerk (v1 bis v3).
 
 ### Abweichung heißt
 
 - Die Sim hat sich seit der Aufnahme geändert (Balance, Daten). Dann stimmt die Datei zur Spielversion `gameVersion`, nicht zu `dev`. Zum Nachspielen den Stand dieser Version auschecken.
 - Die Datei wurde von Hand verändert, oder der Client hat einen Befehl nicht protokolliert (Bug im Recorder).
 
+## Format v4 (Runde 8 / P1): AA-Baukasten
+
+`formatVersion: 4` = v3 mit den Units aus dem AA-Datenformat (`sim/data/units/*.json`, Maßstab in `economy.json`). **v1 bis v3 sind „altes Regelwerk“**: andere Unit-Daten, kein Hash stimmt mehr; `npm run replay` meldet Exit 3, `meta` den Fehlercode `replay-old-rules`, die Dateien bleiben lesbar. Beispiele (vom Simulator erzeugt): `beispiel-v4-bot-normal.json` (Bot `mono-goku_ssj3,rikka_evo`, Normal, Seed 7, Sieg), `beispiel-v4-bot-normal-mid.json` (Bot `mono-goku_ssj3`, Meta-Profil `mid`):
+
+```bash
+cd sim && npx tsx scripts/export-replay.ts --bot mono-goku_ssj3 --difficulty normal --seed 7 --meta mid --out ../docs/balancing/playtests/beispiel-v4-bot-normal-mid.json
+```
+
+Nach jeder Regel- oder Datenänderung die Beispiele neu erzeugen (`test/replay.test.ts` prüft den End-Hash).
+
 ## Format v3 (Runde 7): Unit-Mods im Kopf
 
 `formatVersion: 3` = v2 plus **`unitMods`**: Liste `{ player, unit, lvlBp, traitBp?, yieldBp? }` der Level-/Sterne-Mods, mit denen die Runde gespielt wurde (`lvlBp` = Schadens-Faktor in Basispunkten, 10000 = x1; Kurven in `sim/data/progression.json`). Leer = neutral (heutiger Client ohne Lobby). `npm run replay` rechnet die Mods mit; ohne sie wäre der Hash ein anderer. **v2 bleibt lesbar** (ohne Mods = neutral), v1 bleibt „altes Regelwerk“, Exit 3. Der Bericht zeigt bei v3 eine Zeile „Mods: …“. Der Client schreibt seit Runde 7 / P2 v3 (`REPLAY_FORMAT_VERSION` in `client/src/game/recorder.ts`; `Session` nimmt optional `unitMods`, Standard keine).
 
-Beispiel `beispiel-v3-bot-hard-mid.json` (Bot `wide`, Hard, Seed 7, Meta-Profil `mid` = Level 20/★3, Sieg), vom Simulator erzeugt:
-
-```bash
-cd sim && npx tsx scripts/export-replay.ts --bot wide --difficulty hard --seed 7 --meta mid --out ../docs/balancing/playtests/beispiel-v3-bot-hard-mid.json
-```
-
-`--format 2` schreibt das alte v2 (ohne Mods). Test: `sim/test/progression.test.ts` (v3 mit Mods bit-genau, ohne Mods anderer Hash).
+*(Historie: v2/v3-Beispiele und `--format 2` gibt es seit Runde 8 nicht mehr; sie sind „altes Regelwerk“.)*
 
 ## Format v1 und v2 (Runde 6)
 
@@ -49,11 +53,7 @@ cd sim && npx tsx scripts/export-replay.ts --bot wide --difficulty hard --seed 7
 | **1** | `slot` (Slot-ID) | feste Slots, Limit je Unit-Typ (bis Runde 5, `dev` vor P1 der Runde 6) | meldet **„altes Regelwerk (v1, Slots)“**, Exit-Code **3**, kein Hash-Fehler und kein Stacktrace. Die Wellen-Zahlen im Bericht stammen aus der Datei (Aufnahme des Clients), `--compare` läuft weiter |
 | **2** | `x`, `y` (Milli-Tiles, Mitte der Unit) | freie Platzierung, kein Typ-Limit | spielt nach, prüft Hash und Ergebnis (Exit 0/1) |
 
-Der Client schreibt seit Runde 6 / P1 `formatVersion: 2` (`REPLAY_FORMAT_VERSION` in `client/src/game/recorder.ts`); der Befehl wird 1:1 mitgeschrieben, trägt also `x`/`y`, sobald der Client Positionen schickt (P3). Die v1-Dateien `beispiel-normal.json` und `2026-10-07-max-normal-loss.json` bleiben als Dokument liegen (Max' Playtest lässt sich über den Bericht und `--compare` weiter lesen, nur nicht mehr per Hash prüfen). Das v2-Beispiel `beispiel-v2-bot-normal.json` hat der Simulator selbst erzeugt (Bot `wide@normal`, Normal, Seed 7, Sieg), nicht der Browser:
-
-```bash
-cd sim && npx tsx scripts/export-replay.ts --bot wide@normal --difficulty normal --seed 7 --out ../docs/balancing/playtests/beispiel-v2-bot-normal.json
-```
+Der Client schreibt seit Runde 6 / P1 `formatVersion: 2` (`REPLAY_FORMAT_VERSION` in `client/src/game/recorder.ts`); der Befehl wird 1:1 mitgeschrieben, trägt also `x`/`y`, sobald der Client Positionen schickt (P3). Die v1-Dateien `beispiel-normal.json` und `2026-10-07-max-normal-loss.json` bleiben als Dokument liegen (Max' Playtest lässt sich über den Bericht und `--compare` weiter lesen, nur nicht mehr per Hash prüfen). Die v2- und v3-Beispieldateien wurden mit Runde 8 entfernt (nicht mehr nachspielbar).
 
 `test/replay.test.ts` prüft v2 per Hash und v1 als „altes Regelwerk“. Exit-Codes: 0 Hash und Ergebnis stimmen, 1 Abweichung, 2 Datei unbrauchbar, **3 altes Regelwerk**.
 

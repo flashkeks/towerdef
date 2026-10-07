@@ -8,18 +8,22 @@ import { compactNumber } from './model';
 
 // ---- Trefferstil je Unit --------------------------------------------------------------------------------------------
 
-export type HitStyle = 'slash' | 'tracer' | 'shell' | 'bolt' | 'blast' | 'cone' | 'line';
+export type HitStyle = 'slash' | 'tracer' | 'shell' | 'bolt' | 'blast' | 'cone' | 'line' | 'full';
 
-/** Wie eine Unit angreift (Aussehen), nach Id fuer die Einzelziel-Units, sonst nach Angriffsart. `null` = greift nicht an (Banner, Farm). */
-export function hitStyle(def: Pick<UnitDef, 'id' | 'attack'>): HitStyle | null {
-  const a = def.attack;
+/**
+ * Wie eine Unit angreift (Aussehen), nur aus den Daten der Stufe: Flaechenform des Angriffs, bei Einzelzielen die Reichweite
+ * (Nahkampf = Hieb, weit = Leuchtspur, sonst Blitz). `null` = greift auf dieser Stufe nicht an (Farm).
+ */
+export function hitStyle(def: Pick<UnitDef, 'levels'>, level = 0): HitStyle | null {
+  const lv = def.levels[Math.min(level, def.levels.length - 1)];
+  const a = lv?.attack;
   if (!a) return null;
   if (a.kind === 'circle') return 'blast';
   if (a.kind === 'cone') return 'cone';
   if (a.kind === 'line') return 'line';
-  if (def.id === 'striker') return 'slash';
-  if (def.id === 'gunner') return 'tracer';
-  if (def.id === 'titan') return 'shell';
+  if (a.kind === 'full') return 'full';
+  if (lv.rangeMilli <= 2000) return 'slash';
+  if (lv.rangeMilli >= 4500) return 'tracer';
   return 'bolt';
 }
 
@@ -167,7 +171,6 @@ export type FeelCue =
   | { kind: 'windowOpen'; enemyId: number; armor: number }
   | { kind: 'windowClose'; enemyId: number }
   | { kind: 'wardBreak'; enemyId: number }
-  | { kind: 'ability'; unitId: number; ability: string }
   | { kind: 'waveStart'; wave: number };
 
 /** Welcher Effekt zu einem Sim-Ereignis gehoert (oder keiner). Rein, damit Ton und Bild dasselbe lesen. */
@@ -189,8 +192,6 @@ export function cueFor(e: SimEvent): FeelCue | null {
       return e.open ? { kind: 'windowOpen', enemyId: e.enemyId, armor: e.armor ?? -1 } : { kind: 'windowClose', enemyId: e.enemyId };
     case 'bossWard':
       return e.state === 'broken' ? { kind: 'wardBreak', enemyId: e.enemyId } : null;
-    case 'ability':
-      return { kind: 'ability', unitId: e.unitId, ability: e.kind };
     case 'waveStart':
       return { kind: 'waveStart', wave: e.wave };
     default:

@@ -6,14 +6,21 @@
 import { hasKey, t } from '../i18n/t';
 import type { BannerView, CollectionUnitView, MatchReward, PlayerView, StageDifficultyView } from '../backend/meta';
 import type { UnitDef } from '../sim';
+import { initials, registeredUnitName } from '../view/model';
+import { unitCatalog } from './unit-defs';
 
 // ---- Namen und Fehler ------------------------------------------------------------------------------------------------
 
 const capitalize = (s: string): string => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
 
 /** Anzeigename einer Unit; unbekannte IDs (neue Units ohne Text) erscheinen mit grossem Anfangsbuchstaben statt als Schluessel. */
-export const unitName = (id: string): string => (hasKey(`unit.${id}.name`) ? t(`unit.${id}.name`) : capitalize(id));
-export const unitAbbr = (id: string): string => (hasKey(`unit.${id}.abbr`) ? t(`unit.${id}.abbr`) : id.slice(0, 3).toUpperCase());
+/** Name aus den Unit-Daten; der Katalog (`unit-defs.ts`) wird beim ersten Zugriff gebaut und registriert alle Namen und Farben. */
+const dataName = (id: string): string | null => registeredUnitName(id) ?? (unitCatalog(), registeredUnitName(id));
+export const unitName = (id: string): string => (hasKey(`unit.${id}.name`) ? t(`unit.${id}.name`) : (dataName(id) ?? capitalize(id)));
+export const unitAbbr = (id: string): string => {
+  const n = dataName(id);
+  return n ? initials(n) : id.slice(0, 3).toUpperCase();
+};
 export const rarityName = (r: string): string => (hasKey(`rarity.${r}`) ? t(`rarity.${r}`) : capitalize(r));
 
 /** Fehlertext fuer einen Backend-Fehler: eigener Text zu `err.CODE`, sonst die englische `message` des Backends, sonst ein allgemeiner Satz. */
@@ -25,21 +32,19 @@ export function errorText(f: { code: string; message?: string }): string {
 
 // ---- Seltenheit, Rolle, Filter ---------------------------------------------------------------------------------------
 
-export const RARITY_ORDER = ['rare', 'epic', 'legendary', 'mythic'] as const;
+export const RARITY_ORDER = ['rare', 'epic', 'legendary', 'mythic', 'secret', 'exclusive'] as const;
 /** Rang fuer Sortierung und Animation; unbekannte Seltenheit zaehlt wie die niedrigste. */
 export const rarityRank = (r: string): number => Math.max(0, RARITY_ORDER.indexOf(r as (typeof RARITY_ORDER)[number]));
 
 export type RoleCat = 'single' | 'area' | 'support' | 'economy' | 'control' | 'boss';
 export const ROLE_CATS: readonly RoleCat[] = ['single', 'area', 'control', 'boss', 'support', 'economy'];
 
-/** Rolle aus den Sim-Daten (nicht je Unit hart codiert): Farm = Wirtschaft, Aura = Support, Stun = Kontrolle, Nuke = Boss, Flaechenangriff = Flaeche, sonst Einzelziel. */
+/** Rolle aus den Sim-Daten (nicht je Unit hart codiert; `UnitDef.role`): Farm = Wirtschaft, Kontroll-Effekt (Stun, Slow, Knockback ...) = Kontrolle, Flaechenangriff = Flaeche, sonst Einzelziel. */
 export function roleCat(def: UnitDef): RoleCat {
   if (def.farm) return 'economy';
-  if (def.aura) return 'support';
-  if (def.ability?.kind === 'stunAoe') return 'control';
-  if (def.ability?.kind === 'nuke') return 'boss';
-  const k = def.attack?.kind;
-  if (k === 'circle' || k === 'line' || k === 'cone') return 'area';
+  if (def.role === 'control') return 'control';
+  const k = def.levels[def.levels.length - 1]?.attack?.kind;
+  if (k === 'circle' || k === 'line' || k === 'cone' || k === 'full') return 'area';
   return 'single';
 }
 

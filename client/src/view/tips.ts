@@ -6,6 +6,7 @@
 import { t } from '../i18n/t';
 import type { UnitDef } from '../sim';
 import { airCapable, bossHelpers, COIN_NUDGE_FACTOR, joinOr } from './readability';
+import { unitName } from '../ui/meta-model';
 
 export interface TipWave {
   wave: number;
@@ -36,8 +37,8 @@ export const TIP_COUNT = 3;
 const AIR_LEAK_MIN = 2;
 const SWARM_LEAK_MIN = 4;
 
-const names = (defs: readonly UnitDef[]): string => joinOr(defs.slice(0, 3).map((d) => t(`unit.${d.id}.name`)), t('tips.or'));
-const isArea = (d: UnitDef): boolean => d.attack !== null && (d.attack.kind === 'circle' || d.attack.kind === 'line' || d.attack.kind === 'cone');
+const names = (defs: readonly UnitDef[]): string => joinOr(defs.slice(0, 3).map((d) => unitName(d.id)), t('tips.or'));
+const isArea = (d: UnitDef): boolean => d.levels.some((l) => l.attack !== null && l.attack.kind !== 'single');
 
 /** Welle mit den meisten Leaks eines Typs (kleinste Wellennummer bei Gleichstand). */
 function worst(waves: readonly TipWave[], pick: (w: TipWave) => number): { wave: number; n: number } | null {
@@ -57,7 +58,6 @@ export function defeatTips(input: TipInput): Tip[] {
   for (const c of ok) if (c.cmd.type === 'place' && c.cmd.unitId) placedBy.set(c.cmd.unitId, (placedBy.get(c.cmd.unitId) ?? 0) + 1);
   const placed = [...placedBy.values()].reduce((a, b) => a + b, 0);
   const upgrades = ok.filter((c) => c.cmd.type === 'upgrade').length;
-  const abilities = ok.filter((c) => c.cmd.type === 'useAbility').length;
   const air = airCapable(input.team);
   const area = input.team.filter(isArea);
   const cheapest = input.team.reduce((m, d) => Math.min(m, d.placeCost), Infinity);
@@ -90,7 +90,7 @@ export function defeatTips(input: TipInput): Tip[] {
 
   // 4) Teuerste Team-Unit nie gesetzt (z. B. Titan)
   const unplaced = input.team.filter((d) => !placedBy.has(d.id)).sort((a, b) => b.placeCost - a.placeCost)[0];
-  if (unplaced) out.push({ id: 'unplaced', text: t('tips.unplaced', { name: t(`unit.${unplaced.id}.name`), cost: unplaced.placeCost }) });
+  if (unplaced) out.push({ id: 'unplaced', text: t('tips.unplaced', { name: unitName(unplaced.id), cost: unplaced.placeCost }) });
 
   // 5) Grosse Pulks anderer Typen: Flaechenschaden
   let swarm: { type: string; wave: number; n: number } | null = null;
@@ -101,10 +101,6 @@ export function defeatTips(input: TipInput): Tip[] {
     }
   }
   if (swarm && area.length > 0) out.push({ id: 'swarm', text: t('tips.swarm', { n: swarm.n, name: t(`enemy.${swarm.type}.name`), wave: swarm.wave, list: names(area) }) });
-
-  // 6) Faehigkeit nie benutzt
-  const abilityUnits = input.team.filter((d) => d.ability && placedBy.has(d.id));
-  if (abilityUnits.length > 0 && abilities === 0) out.push({ id: 'ability', text: t('tips.ability', { list: names(abilityUnits) }) });
 
   // 7) Kaum Upgrades
   if (placed >= 3 && upgrades * 2 < placed) out.push({ id: 'upgrades', text: t('tips.upgrades', { n: upgrades, m: placed }) });

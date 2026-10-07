@@ -22,7 +22,7 @@ import { chromium } from 'playwright';
 import { clickWorld, readGhost, readPathPoint, readSpots, worldToScreen } from './lib/mouse.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const docs = resolve(root, 'docs');
+const docs = resolve(root, 'docs', 'r8');
 mkdirSync(docs, { recursive: true });
 const PORT = Number(process.env.SMOKE_PORT ?? 4173);
 const URL_ = `http://127.0.0.1:${PORT}/`;
@@ -81,10 +81,11 @@ const MAX_STAGE_S = Number(process.env.SMOKE_MAX_S ?? 900);
 const FULL = (process.env.SMOKE_FULL ?? '1280x720').split(',');
 const shotDir = docs;
 
-/** Spielplan: Reihenfolge der Units (Katalog-Tasten 1-8: striker, gunner, blaster, banner, farm, lancer, frost, titan). */
-const PLAN = ['striker', 'gunner', 'striker', 'blaster', 'gunner', 'frost', 'blaster', 'lancer', 'striker', 'gunner', 'titan', 'blaster', 'lancer', 'gunner', 'banner'];
-// danach reihum weiter, bis keine Unit mehr passt oder das Limit greift
-for (let i = 0; i < 3; i++) PLAN.push('striker', 'blaster', 'gunner', 'lancer', 'frost', 'titan', 'banner');
+/**
+ * Spielplan: Reihenfolge der Units. Runde 8: das Starter-Team besteht aus allen Rare/Epic des Katalogs plus Goku SSJ3 (Mythic, Huegel);
+ * nur Goku haelt in AA-Werten die Stage, die Rares sind fuer Tooltips, Toasts und Tests da. Plan: Goku, so oft es passt.
+ */
+const PLAN = ['goku_ssj3', 'goku_ssj3', 'goku_ssj3', 'goku_ssj3', 'goku_ssj3', 'goku_ssj3', 'goku_ssj3', 'goku_ssj3'];
 
 async function playStage(browser, [W, H]) {
   const tag = `${W}x${H}`;
@@ -138,7 +139,7 @@ async function playStage(browser, [W, H]) {
   const pickKey = async (def, s) => press(String(s.order.indexOf(def) + 1));
 
   const full = FULL.includes(tag);
-  const shot = (name) => (W === 1280 ? page.screenshot({ path: resolve(shotDir, `screenshot-r7-${name}.png`) }) : Promise.resolve());
+  const shot = (name) => (W === 1280 ? page.screenshot({ path: resolve(shotDir, `p1-smoke-${name}.png`) }) : Promise.resolve());
   const text = async (selector) => ((await page.locator(selector).first().textContent().catch(() => '')) ?? '').trim();
   const wallet = () =>
     page.evaluate(() => {
@@ -170,7 +171,7 @@ async function playStage(browser, [W, H]) {
     await clickSel('.btn.speed[data-speed="3"]');
     if (placeFirst) {
       const s0 = await snap();
-      const unit = ['striker', 'blaster'].find((u) => s0.order.includes(u));
+      const unit = ['ichigo', 'josuke'].find((u) => s0.order.includes(u));
       const spots = await readSpots(page, unit, 2);
       await pickKey(unit, s0);
       await clickAt(...spots[0]);
@@ -201,7 +202,7 @@ async function playStage(browser, [W, H]) {
   await page.waitForSelector('.starter-card.done');
   w = await waitWallet('w.crystals === 450');
   ok(w.crystals === 450, `Starter-Geschenk: 450 Crystals (${w.crystals})`);
-  ok((await page.locator('.starter-units .strip-unit').count()) >= 6 && (await page.locator('.team-strip .strip-unit').count()) === 6, 'Starter-Units und Team (6) in der Lobby sichtbar');
+  ok((await page.locator('.starter-units .strip-unit').count()) >= 5 && (await page.locator('.team-strip .strip-unit').count()) === 5, 'Starter-Units und Team (5) in der Lobby sichtbar');
   ok(!(await page.locator('.lobby-play').isDisabled()), 'Play frei nach dem Geschenk');
   await shot('lobby');
 
@@ -254,12 +255,13 @@ async function playStage(browser, [W, H]) {
   // ---- Team aus der Sammlung -----------------------------------------------------------------------------------------------
   await go('team');
   await page.waitForSelector('.team-slot.filled');
-  ok((await page.locator('.team-slot.filled').count()) === 6, 'Team: 6 Slots belegt');
+  ok((await page.locator('.team-slot.filled').count()) === 5, 'Team: 5 Slots belegt (Starter: alle Rare/Epic plus Goku)');
   const firstSlot = await page.locator('.team-slot.filled').first().getAttribute('data-unit');
   await clickSel('.team-slot.filled');
-  ok((await page.locator('.team-slot.filled').count()) === 5 && (await page.locator('.team-save').isDisabled()), 'Slot leeren: 5 von 6, Speichern gesperrt');
+  ok((await page.locator('.team-slot.filled').count()) === 4 && (await page.locator('.team-save').isDisabled()), 'Slot leeren: 4 von 5, Speichern gesperrt');
   await clickSel(`.team-pick .unit-tile[data-unit="${firstSlot}"]`);
-  ok((await page.locator('.team-slot.filled').count()) === 6 && !(await page.locator('.team-save').isDisabled()), 'Unit aus der Sammlung gewaehlt: 6 von 6');
+  await sleep(150);
+  ok((await page.locator('.team-slot.filled').count()) === 5 && !(await page.locator('.team-save').isDisabled()), 'Unit aus der Sammlung gewaehlt: 5 von 5');
   await shot('team');
   await clickSel('.team-save');
   await page.waitForSelector('.flash.good');
@@ -280,7 +282,7 @@ async function playStage(browser, [W, H]) {
     const x = window.__duskwardens.session();
     return { team: x.team, mods: x.unitMods.length, defs: x.teamCatalog().length };
   });
-  ok(sess.team?.length === 6 && sess.mods === 6 && sess.defs === 6, `Session mit Team (${sess.team?.length}) und Unit-Mods (${sess.mods}) aus dem Profil`);
+  ok(sess.team?.length === 5 && sess.mods === 5 && sess.defs === 5, `Session mit Team (${sess.team?.length}) und Unit-Mods (${sess.mods}) aus dem Profil`);
 
   // ---- Layout: alles im Fenster, keine Slot-Knoepfe mehr --------------------------------------------------------------
   const lay = await page.evaluate(() => {
@@ -301,7 +303,7 @@ async function playStage(browser, [W, H]) {
   ok((await page.locator('.hints:not(.hidden)').count()) === 1 && /Tip 1 of 3/.test((await page.locator('.hints').textContent()) ?? ''), 'Ersthinweis 1 von 3 sichtbar');
   await press('?');
   ok(await page.locator('.help:not(.hidden)').isVisible(), 'Hilfe oeffnet mit ?');
-  ok(/1-8/.test((await page.locator('.help').textContent()) ?? '') && /Esc/.test((await page.locator('.help').textContent()) ?? ''), 'Hilfe listet Tastenkuerzel');
+  ok(/1-\d/.test((await page.locator('.help').textContent()) ?? '') && /Esc/.test((await page.locator('.help').textContent()) ?? ''), 'Hilfe listet Tastenkuerzel');
   await press('Escape');
   ok(!(await page.locator('.help:not(.hidden)').count()), 'Esc schliesst die Hilfe');
   await press('h');
@@ -316,9 +318,9 @@ async function playStage(browser, [W, H]) {
     const t = await toastText();
     ok(re.test(t), `${what}: Toast "${t}"`);
   };
-  const hillUnit = ['gunner', 'titan'].find((u) => s.order.includes(u));
-  const groundUnit = ['striker', 'blaster'].find((u) => s.order.includes(u));
-  const hybridUnit = ['banner', 'frost', 'lancer'].find((u) => s.order.includes(u));
+  const hillUnit = ['krillin', 'goku_ssj3'].find((u) => s.order.includes(u));
+  const groundUnit = ['ichigo', 'josuke'].find((u) => s.order.includes(u));
+  const hybridUnit = ['rikka_evo', 'monet'].find((u) => s.order.includes(u)); // im Starter-Team keiner: Block entfaellt
   await toastAfter(() => clickAt(3000, 3000), /Nothing here/, 'Klick ins Leere ohne Unit-Wahl');
   await pickKey(hillUnit, s);
   await sleep(100);
@@ -337,12 +339,12 @@ async function playStage(browser, [W, H]) {
   };
   let g = await hover(...hillSpots[0]);
   ok(g && g.ok && g.reason === null, `Geist gruen auf freiem Huegel (${JSON.stringify(g)})`);
-  await page.screenshot({ path: resolve(docs, `screenshot-r6-ghost-green-${tag}.png`) });
+  await page.screenshot({ path: resolve(docs, `p1-smoke-ghost-green-${tag}.png`) });
   g = await hover(...groundSpots[0]);
   ok(g && !g.ok && g.reason === 'wrong-zone', `Geist rot auf Boden mit Huegel-Unit: ${g?.reason}`);
   g = await hover(pathPt[0], pathPt[1]);
   ok(g && !g.ok && g.reason === 'on-path', `Geist rot auf dem Pfad: ${g?.reason}`);
-  await page.screenshot({ path: resolve(docs, `screenshot-r6-ghost-red-${tag}.png`) });
+  await page.screenshot({ path: resolve(docs, `p1-smoke-ghost-red-${tag}.png`) });
   g = await hover(-450, 5500);
   ok(g && !g.ok && g.reason === 'out-of-bounds', `Geist rot am Kartenrand: ${g?.reason}`);
   // Klicks an roten Stellen: Toast mit Grund, nichts wird gesetzt, keine toten Klicks
@@ -366,11 +368,12 @@ async function playStage(browser, [W, H]) {
     ok(g && g.ok, `Hybrid-Unit ${hybridUnit}: Geist gruen auf freier Stelle`);
     await press('Escape');
   }
-  if (s.order.includes('farm')) {
-    await pickKey('farm', s);
-    const fs = await readSpots(page, 'farm', 2);
+  if (s.order.includes('speedwagon')) {
+    await pickKey('speedwagon', s);
+    const fs = await readSpots(page, 'speedwagon', 2);
     ok(fs.length > 0, `Farm findet Platz (${fs.length} Stellen)`);
-    await toastAfter(() => clickAt(...groundSpots[1]), /Too close|Trees|path|edge/, 'Farm (2x2) an enger Stelle');
+    g = await hover(...fs[0]);
+    ok(g && g.ok, `Farm (AA: 1x1): Geist gruen auf freier Stelle (${JSON.stringify(g)})`);
     await press('Escape');
   }
 
@@ -464,14 +467,14 @@ async function playStage(browser, [W, H]) {
           await sleep(120);
           const raced = (await snap()).units.length > s.units.length; // Muenzen kamen zwischen Lesen und Klick herein: dann wurde eben gesetzt
           const tt = await toastText();
-          ok(raced || /Not enough coins: \w+ costs \d+, you have \d+/.test(tt), `zu wenig Muenzen: Toast "${tt}"${raced ? ' (Muenzen kamen dazwischen, gesetzt)' : ''}`);
+          ok(raced || /Not enough coins: .+ costs \d+, you have \d+/.test(tt), `zu wenig Muenzen: Toast "${tt}"${raced ? ' (Muenzen kamen dazwischen, gesetzt)' : ''}`);
           await press('Escape');
         }
       }
     }
     // 2) sonst upgraden (niedrigste Stufe zuerst), nachdem der Plan bis zur Haelfte steht oder Geld uebrig ist
     if (!acted && (planIdx >= 4 || s.units.length >= 4)) {
-      const ups = s.units.filter((u) => u.up !== null && s.coins >= u.up && (planIdx >= PLAN.length || s.coins >= u.up + (s.defs[PLAN[planIdx]]?.cost ?? 0) * 0.3)).sort((a, b) => a.level - b.level || a.up - b.up);
+      const ups = s.units.filter((u) => u.up !== null && s.coins >= u.up && (planIdx >= PLAN.length || s.coins >= u.up + (s.defs[PLAN[planIdx]]?.cost ?? 0) * 0.3)).sort((a, b) => s.defs[b.def].cost - s.defs[a.def].cost || a.level - b.level || a.up - b.up);
       if (ups[0]) {
         await clickUnit(ups[0]);
         await page.waitForSelector('.btn.upgrade:not([disabled])', { timeout: 3000 }).catch(() => {});
@@ -526,12 +529,12 @@ async function playStage(browser, [W, H]) {
   // ---- Unit leveln (Gold aus dem Match), zweites Match mit den Level-Mods --------------------------------------------------
   await go('units');
   await page.waitForSelector('.unit-tile');
-  await clickSel('.unit-tile[data-unit="striker"]');
+  await clickSel('.unit-tile[data-unit="ichigo"]');
   const goldBefore = (await wallet()).gold;
   ok(!(await page.locator('.levelup').isDisabled()), `Level-Up frei mit ${goldBefore} Gold`);
   await clickSel('.levelup');
   w = await waitWallet(`w.gold === ${goldBefore - 40}`);
-  ok(w.gold === goldBefore - 40 && /Level 2 \/ 40/.test(await text('.ud-level')), `Striker Level 2 fuer 40 Gold (Gold ${w.gold}, ${await text('.ud-level')})`);
+  ok(w.gold === goldBefore - 40 && /Level 2 \/ 40/.test(await text('.ud-level')), `Ichigo Level 2 fuer 40 Gold (Gold ${w.gold}, ${await text('.ud-level')})`);
   ok(/Collection bonus: \+\d+(\.\d+)?% damage/.test(await text('.ud-power')), `Sammlungs-Bonus sichtbar: "${await text('.ud-power')}"`);
   await shot('units');
   await go('play');
@@ -539,8 +542,8 @@ async function playStage(browser, [W, H]) {
   ok(/Each clear: 25 crystals|First clear: 100 crystals/.test(await text('.stage-card[data-difficulty="normal"] .stage-reward')) && /Best wave \d+ \/ 20/.test(await text('.stage-card[data-difficulty="normal"] .stage-best')), `Stage zeigt Belohnung und Bestwelle: "${await text('.stage-card[data-difficulty="normal"] .stage-reward')}", "${await text('.stage-card[data-difficulty="normal"] .stage-best')}"`);
   await clickSel('.stage-card[data-difficulty="normal"]');
   await page.waitForSelector('canvas.board');
-  const mods2 = await page.evaluate(() => window.__duskwardens.session().unitMods.find((m) => m.unit === 'striker')?.lvlBp);
-  ok(mods2 > 10000, `zweites Match: Striker-Mod aus dem Level (lvlBp ${mods2})`);
+  const mods2 = await page.evaluate(() => window.__duskwardens.session().unitMods.find((m) => m.unit === 'ichigo')?.lvlBp);
+  ok(mods2 > 10000, `zweites Match: Ichigo-Mod aus dem Level (lvlBp ${mods2})`);
   await rush(true);
   await page.waitForSelector('.reward-box[data-state="ok"], .reward-box[data-state="error"]', { timeout: 30000 });
   ok((await page.locator('.reward-box').getAttribute('data-state')) === 'ok', `zweites Match mit Level-Mods wird belohnt (Replay passt zum Profil; ${await text('.reward-error')})`);
@@ -569,7 +572,7 @@ async function playStage(browser, [W, H]) {
   const after = await readState();
   ok(JSON.stringify(after.wallet) === JSON.stringify(before.wallet), `Neuladen: Salden gleich (${JSON.stringify(before.wallet)} -> ${JSON.stringify(after.wallet)})`);
   ok(after.pity === before.pity && after.history === before.history && after.history === 10, `Neuladen: Pity und Verlauf gleich ("${before.pity}", ${after.history} Zuege)`);
-  ok(JSON.stringify(after.units) === JSON.stringify(before.units) && after.units.some((u) => u.startsWith('striker:true:Lv 2')), 'Neuladen: Sammlung und Level gleich (Striker Lv 2)');
+  ok(JSON.stringify(after.units) === JSON.stringify(before.units) && after.units.some((u) => u.startsWith('ichigo:true:Lv 2')), 'Neuladen: Sammlung und Level gleich (Ichigo Lv 2)');
 
   // ---- Export -> Reset -> Import (nur 1280x720) ------------------------------------------------------------------------------
   if (W === 1280) {
@@ -719,4 +722,4 @@ if (failures.length) {
   console.error(`\n${failures.length} Pruefung(en) fehlgeschlagen`);
   process.exit(1);
 }
-console.log('\nSmoke gruen. Screenshots: client/docs/screenshot-r6-ghost-*.png, client/docs/screenshot-r7-*.png');
+console.log('\nSmoke gruen. Screenshots: client/docs/r8/p1-smoke-*.png');

@@ -154,11 +154,10 @@ export function soundsFor(e: SimEvent): SoundId[] {
       return ['windowClose'];
     case 'wardBreak':
       return ['wardBreak'];
-    case 'ability':
-      return c.ability === 'stunAoe' ? ['frost'] : c.ability === 'nuke' ? ['nuke'] : [];
     default:
       return [];
   }
 }
 
-export const shotSound = (style: HitStyle): SoundId => `hit.${style}`;
+/** Flaechen-Voll-Angriffe (`full`) klingen wie die Explosion; alle anderen Stile haben einen eigenen Klang. */
+export const shotSound = (style: HitStyle): SoundId => (style === 'full' ? 'hit.blast' : (`hit.${style}` as SoundId));
