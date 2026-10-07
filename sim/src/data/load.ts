@@ -127,6 +127,10 @@ export function validateStage(d: GameData, s: StageData, label = s.id): void {
   s.slots.forEach((sl, i) => {
     if (sl.id !== i) throw new Error(`Stage ${label}: Slot-ID ${sl.id} an Index ${i}`);
   });
+  const cols = s.zones.rows[0].length;
+  s.zones.rows.forEach((row, j) => {
+    if (row.length !== cols) throw new Error(`Stage ${label}: Zonenzeile ${j} hat ${row.length} Zeichen, erwartet ${cols}`);
+  });
   s.waves.forEach((w, i) => {
     if (w.n !== i + 1) throw new Error(`Stage ${label}: Wave-Nummer ${w.n} an Index ${i}`);
     for (const g of w.groups) {

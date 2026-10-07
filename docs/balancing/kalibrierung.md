@@ -930,3 +930,33 @@ Vorher (P3b): Hard Gunner −51, Blaster −53, Frost −45; NM Blaster −25, F
 2. Hard-Kennlinie 13: Hebel liegt im Team/Bot (Kante), nicht in Elementen oder Bounty.
 3. `farm`-Bot: LOO-Artefakt prüfen, Messlatte klären.
 4. `replay.test.ts` war nach der Änderung grün (Beispiel-Replay offenbar von Hard-Elementen unabhängig); die Hauptsitzung soll trotzdem prüfen, ob das Replay neu aufgenommen werden muss.
+
+## Runde 6 — P1 (freie Platzierung, kein Typ-Limit): Sicherheitsnetz
+
+Kein Balance-Paket: `sim/data/` hat sich nur in der Mechanik geändert (kein Zahlenwert der Balance), gemessen wurde nur, ob die Bots nach dem Umbau grob dort liegen wie vorher (ENTSCHEIDUNGEN.md: „Balance-Tiefe bis nach M3: nur grob“). Feintuning macht P2.
+
+**Datenänderungen (alt → neu → Grund):** `units.json` Rarity-`cap` 5/4/3/2 und Farm-`cap` 2 → entfernt → Entscheidung Platzierung („kein Limit je Unit-Typ“). `economy.json` neu `placement` (Radius 1x1 = 400, 2x2 = 900 Milli-Tiles, Pfadrand 0) → Kollisionsmodell. `standard20.json` neu `pathWidth` 1 und `zones` (Kachelmaske, aus den alten Slots abgeleitet); `slots` bleiben als Altbestand. Preis, Kosten, Schaden, Wellen: unverändert.
+
+**Messung:** `sim/scripts/sanity/r6-p1.ts`, alle Registry-Bots solo auf `standard20`, n = 100 (Seeds 1–100), fehlerfreie Bots (kein Profil). „Vorher“ = Stand `dev` vor P1 (feste Slots, Typ-Limit als Regel), „nachher“ = freie Platzierung, Bots mit eigenem Stückzahl-Limit (`botTuning.typeLimit`, gleiche Zahlen wie das frühere Regel-Limit).
+
+| Bot | Normal vorher → nachher | Hard vorher → nachher | Nightmare vorher → nachher |
+|---|---|---|---|
+| greedy | 68 → 100 | 53 → 63 | 12 → 21 |
+| farm | 100 → 100 | 87 → 88 | 52 → 44 |
+| aoe | 99 → 99 | 51 → 70 | 8 → 26 |
+| upgrade | 56 → 14 | 2 → 1 | 1 → 1 |
+| wide | 97 → 99 | 75 → 55 | 37 → 24 |
+| coop (solo = farm) | 100 → 100 | 87 → 88 | 52 → 44 |
+
+**Lesart:** Die Stufen liegen für `farm`/`wide`/`aoe` im Rahmen der Messstreuung (n = 100: ±5 bis ±10 Punkte) wie vorher, nur `upgrade` (wenige, voll ausgebaute Units) fällt deutlich (Normal 56 → 14), `wide` auf Hard 75 → 55 und `aoe` steigt auf Hard/Nightmare. Beste echte Strategie (`farm`): Normal 100, Hard 88, Nightmare 44 — wie P3c (98/86/48). **Kein Fehler im Regelwerk gefunden, nur Verschiebungen innerhalb der Bots.** Die Korridore (Normal ≥ 80, Hard 35–70, Nightmare 10–40) bleiben für P2.
+
+**Was beim Umbau der Bots gelernt wurde (für P2):**
+1. **Mehrere Banner auf denselben Pulk waren der größte Fehler.** Je Buff-ID zählt nur der höchste Wert; mit festen Slots lagen die Banner zufällig verteilt, mit freier Wahl stapelt der Wert-je-Münze-Bot alle vier auf die beste Stelle. `greedy` Normal fiel dadurch von ~65 auf ~8 %. Behoben in der Bot-Bewertung (Zuwachs über die beste andere Aura statt Summe), keine Sim-Regel.
+2. **Rohe Pfadabdeckung allein ist eine schlechte Bewertung.** Ohne Gewicht stapeln die Bots alles auf die Innenkurven in der Mitte der S-Kurve (Reihen 5/6), die erste Pfadhälfte bleibt leer und Läufer-/Flieger-Wellen (W6, W13, W16, W18) leaken. Ein Gewicht, das das Pfadende mehr zählt (`endBias` 0,5), brachte `aoe`/`farm`/`wide` auf Normal/Hard wieder auf die alten Werte. Ein Verteil-Abstand (1,5–2,6 Kacheln) oder ein „Neuheits“-Abschlag für doppelt gedeckte Pfadstellen machten die Bots deutlich schwächer (greedy Normal 100 → 0–48, farm Hard 85 → 30–60), **Stapeln auf den besten Punkten gewinnt in diesem Modell.** Das ist ein Balance-Befund: Platzierung entscheidet auf der Karte wenig über „Breite“, viel über die Innenkurven.
+3. **Ohne Bot-Limit (`R6_NOLIMIT=1`, n = 40)** erreicht **kein Bot die technische Grenze `teamUnits` = 60**: größter Spitzenwert `wide` mit 38 Units (Normal), 35 (Hard), 37 (Nightmare); `greedy`/`aoe`/`farm` 21–24. Frage an die Menschen (STATUS): Grenze 60 so lassen? Sie bindet nach dieser Messung nichts.
+4. **Spam ohne Limit lohnt nicht von selbst:** `wide` ohne Limit fällt auf Normal von 99 auf 30 %, Hard 55 → 5, Nightmare 24 → 10 (viele Billig-Units statt Ausbau). `aoe` Normal 99 → 78. `farm`/`greedy` Normal bleiben 100, auf Hard sinkt `farm` 88 → 50, `greedy` steigt 63 → 75. Grundlage für die `mono-X`-Messung in P2.
+5. Wirkung auf die Karte: Boden- und Hügelreihen neben dem Pfad sind nur ca. 0,6 Tiles breit nutzbar, die Farm (Radius 900) passt auf der Standard-Karte nur in die breiten Bodenflächen rechts (x ≥ 14,4) und links außen. Die Karte (17 x 11 Kacheln) ist eng für freie Platzierung.
+
+**Performance (Bot-Matrix, gleiche Rechner, nacheinander gemessen):** Hard, alle sechs Bots, n = 60 (360 Matches, inkl. Start): **32,5 s → 38,6 s (×1,19)**, Ziel höchstens ×2. `scripts/bench.ts` (ohne Bot): 258 000 → 230 000 Ticks/s. Gründe, warum es schnell bleibt: Abdeckung wird je (x, y, Reichweite) gecacht und von allen Sims mit gleichem Pfad geteilt, die Stichpunkte des Pfads liegen einmal im `Path`, die Bots durchsuchen nur das Halbkachel-Raster (statisch gültige Punkte mit Pfadabdeckung, je Typ einmal sortiert) und nehmen je Typ vier Stellen als Optionen.
+
+**Abnahme P1:** `cd sim && npm test && npm run typecheck` grün (259 Tests, davon 21 neu in `test/placement.test.ts`: Pfad, Rand, Blockiert, Zone, Überlappung, Farm-Radius, 15 gleiche Units ohne `cap-reached`, Teamgrenzen, Determinismus, Bots).

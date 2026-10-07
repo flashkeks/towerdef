@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createEnemy } from '../src/systems/spawn.js';
 import { resolveDeaths } from '../src/systems/economy.js';
 import type { EnemyState, World } from '../src/state.js';
-import { ctxFor, createSim, data, mutable, richData } from './helpers.js';
+import { at, ctxFor, createSim, data, mutable, richData } from './helpers.js';
 
 /** Sim mit viel Geld; Gegner werden eingefroren auf Lane 1 (y = 1000, x = Fortschritt) platziert. */
 function mk(difficulty: 'normal' | 'hard' = 'normal', players = 1) {
@@ -16,7 +16,7 @@ function mk(difficulty: 'normal' | 'hard' = 'normal', players = 1) {
     return e;
   };
   const place = (unit: string, slot: number): number => {
-    const r = sim.apply(0, { type: 'place', unitId: unit, slot });
+    const r = sim.apply(0, { type: 'place', unitId: unit, ...at(sim, slot) });
     if (!r.ok) throw new Error(r.reason);
     return r.entityId as number;
   };
@@ -68,7 +68,7 @@ describe('Trefferflächen', () => {
   });
   it('Frost (cone 60 Grad): trifft im Kegel, nicht dahinter oder seitlich; Slow aus den Daten', () => {
     const { sim, put, place } = mk();
-    const hill = sim.slots().find((s) => s.kind === 'hill')!; // (2000, 2000)
+    const hill = sim.slotCenters().find((s) => s.kind === 'hill')!; // (2000, 2000)
     place('frost', hill.id);
     const t = put('grunt', 4000); // Ziel (First)
     const inCone = put('grunt', 3500);
@@ -117,7 +117,7 @@ describe('Aura (§11)', () => {
 describe('Fähigkeiten', () => {
   it('Titan-Nuke: True Damage auf den stärksten Gegner (ignoriert Rüstung/Reichweite), Cooldown 45 s', () => {
     const { sim, put, place, ctx } = mk();
-    const hill = sim.slots().find((s) => s.kind === 'hill')!;
+    const hill = sim.slotCenters().find((s) => s.kind === 'hill')!;
     const id = place('titan', hill.id);
     const grunt = put('grunt', 9000);
     const boss = put('boss', 500, {}, 10);
@@ -136,7 +136,7 @@ describe('Fähigkeiten', () => {
   });
   it('Frost-Stun: Radius, 1,5 s, Boss halb, Sperre 6 s, Abklingzeit 30 s', () => {
     const { sim, put, place } = mk();
-    const hill = sim.slots().find((s) => s.kind === 'hill')!; // (2000, 2000)
+    const hill = sim.slotCenters().find((s) => s.kind === 'hill')!; // (2000, 2000)
     const id = place('frost', hill.id);
     const tough = { stunTicks: 0, hp: 10_000_000, maxHp: 10_000_000 };
     const g = put('grunt', 2500, tough);
@@ -162,7 +162,7 @@ describe('Fähigkeiten', () => {
     expect(sim.apply(1, { type: 'upgrade', entityId: id })).toEqual({ ok: false, reason: 'not-owner' });
     expect(sim.apply(1, { type: 'sell', entityId: id })).toEqual({ ok: false, reason: 'not-owner' });
     expect(sim.apply(0, { type: 'setTargeting', entityId: id, mode: 'last' }).ok).toBe(true);
-    const banner = sim.apply(0, { type: 'place', unitId: 'banner', slot: 1 });
+    const banner = sim.apply(0, { type: 'place', unitId: 'banner', ...at(sim, 1) });
     expect(sim.apply(0, { type: 'setTargeting', entityId: (banner as { entityId: number }).entityId, mode: 'last' })).toEqual({ ok: false, reason: 'no-targeting' });
   });
 });
@@ -190,7 +190,7 @@ describe('Elemente ab Hard, Crit, Splitter', () => {
     a.sim.step(5);
     expect(a.st.rng).toEqual(r0);
     const b = mk();
-    b.place('gunner', b.sim.slots().find((s) => s.kind === 'hill')!.id);
+    b.place('gunner', b.sim.slotCenters().find((s) => s.kind === 'hill')!.id);
     b.put('grunt', 3000);
     const r1 = [...b.st.rng];
     b.sim.step(5);
@@ -226,15 +226,15 @@ describe('Elemente ab Hard, Crit, Splitter', () => {
   });
 });
 
-describe('Slots', () => {
+describe('Abdeckung (freie Positionen)', () => {
   it('Abdeckung: Pfadlänge in Reichweite wächst mit der Reichweite und ist durch die Pfadlänge begrenzt', () => {
     const { sim } = mk();
-    const s = sim.slots()[0];
-    const c3 = s.coverageByRange(3000);
-    const c5 = s.coverageByRange(5000);
+    const s = sim.slotCenters()[0];
+    const c3 = sim.coverage(s.x, s.y, 3000);
+    const c5 = sim.coverage(s.x, s.y, 5000);
     expect(c3).toBeGreaterThan(0);
     expect(c5).toBeGreaterThan(c3);
-    expect(s.coverageByRange(100000)).toBe(42000);
-    expect(sim.slots()).toHaveLength(26);
+    expect(sim.coverage(s.x, s.y, 100000)).toBe(42000);
+    expect(sim.slotCenters()).toHaveLength(26);
   });
 });

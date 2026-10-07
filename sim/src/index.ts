@@ -1,5 +1,5 @@
 /** Öffentliche API des Simulationskerns. */
-export { createSim, type Sim, type SimOptions, type SlotInfo } from './sim.js';
+export { createSim, type Sim, type SimOptions, type SlotCenter } from './sim.js';
 export type { Command, CommandResult } from './commands.js';
 export type { SimState, SimEvent, EnemyState, UnitState, PlayerState, TargetMode, UnitMod, IncomeSource, BossRun } from './state.js';
 export type { BossKit, RiskCard } from './data/schema.js';

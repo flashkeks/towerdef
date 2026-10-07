@@ -178,11 +178,11 @@ describe('Rüstung des Bosses (Phase, Fenster)', () => {
       const m = mk(kitData());
       m.boss.bossRun!.armor = armor;
       m.boss.hp = m.boss.maxHp = m.boss.maxHp * 100;
-      const slot = m.sim.slots().find((s) => s.kind === 'hill')!;
-      const r = m.sim.apply(0, { type: 'place', unitId: unit, slot: slot.id });
+      const slot = m.sim.slotCenters().find((s) => s.kind === 'hill')!;
+      const r = m.sim.apply(0, { type: 'place', unitId: unit, x: slot.x, y: slot.y });
       if (!r.ok) throw new Error(r.reason);
-      m.boss.x = m.sim.slots()[slot.id].x + 500;
-      m.boss.y = m.sim.slots()[slot.id].y;
+      m.boss.x = slot.x + 500;
+      m.boss.y = slot.y;
       const hp0 = m.boss.hp;
       for (let i = 0; i < 80 && m.boss.hp === hp0; i++) m.sim.step(1);
       return hp0 - m.boss.hp;

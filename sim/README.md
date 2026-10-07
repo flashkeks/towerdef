@@ -40,7 +40,8 @@ sim/
   src/
     fixed.ts prng.ts hash.ts   Festkomma, PRNG, Hash
     data/schema.ts (zod)  load.ts (lesen + Querprüfungen)  compile.ts (abgeleitete Tabellen, Level-Stats)
-    path.ts            Polylinie, Position aus Distanz, Abdeckung je Slot
+    path.ts            Polylinie, Position aus Distanz, Abdeckung je Position (gecacht), Abstand zum Pfad
+    placement.ts       Freie Platzierung (Runde 6): Zonenmaske, Kollision, Fehlergründe, Raster-Kandidaten
     damage.ts          Schadensformel §10, Element-Zyklus
     state.ts           Zustands- und Event-Typen
     systems/           waves, spawn, effects (Stun/Slow/DoT/Regen), move (+Leaks), attack (+Targeting), target, abilities, economy, boss (Kits), cards (Karten + Vorschau)
@@ -55,7 +56,7 @@ Tick-Reihenfolge: Waves (Wave-Ende: Lebens-Regeneration) -> Spawns -> Boss-Kits 
 ```ts
 import { createSim } from './src/index.js';
 const sim = createSim({ stage: 'standard20', difficulty: 'normal', players: 1, seed: 1 });
-sim.apply(0, { type: 'place', unitId: 'striker', slot: 0 });   // {ok:true, entityId} | {ok:false, reason}
+sim.apply(0, { type: 'place', unitId: 'striker', x: 3000, y: 3000 });   // Position in Milli-Tiles -> {ok:true, entityId} | {ok:false, reason}
 sim.runWave();            // Prep -> Wave 1 bis zu deren Ende (dann läuft Wave 2 schon); letzte Wave bis Matchende
 sim.step(20);             // 1 s
 sim.hash(); sim.result(); sim.drainEvents();
@@ -63,9 +64,9 @@ sim.hash(); sim.result(); sim.drainEvents();
 
 `createSim`-Optionen: `stage` (ID oder `StageData`), `difficulty` (`normal|hard|nightmare`), `players` (1-4), `seed`, `data` (Override, z. B. mehr Startgeld), `godMode` (Leben sinken nicht, Leaks werden gezählt), `metaLives` (Meta-Ausbau der Leben, überschreibt `economy.lives.metaBonus`; Default 0), `unitMods` (Hooks je Spieler/Unit: `lvlBp`, `traitBp`, `yieldBp`, Standard x1/+0).
 
-`Sim`: `state` (live, readonly), `apply`, `step`, `runWave`, `isOver`, `result`, `hash`, `drainEvents`, `slots()` (mit `coverageByRange(range)`), `catalog()`, `upgradeCost(entityId)`, `placeCost(unitId)`, `previewWave(n, cardId?)`, `cards()`, `bossKits()` (P4).
+`Sim`: `state` (live, readonly), `apply`, `step`, `runWave`, `isOver`, `result`, `hash`, `drainEvents`, `slotCenters()` (Altbestand, nur Daten), `coverage(x, y, range)`, `canPlace(player, unit, x, y)` (Grund oder `null`), `placementGrid(unit)`, `zoneAt(x, y)`, `map()`, `pathSamples()` (alle Runde 6), `catalog()`, `upgradeCost(entityId)`, `placeCost(unitId)`, `previewWave(n, cardId?)`, `cards()`, `bossKits()` (P4).
 
-Befehle: `place`, `upgrade`, `sell`, `setTargeting`, `useAbility`, `skipWave`, `chooseCard` (P4) sowie (Erweiterung §16) `donate`. Ablehnungsgründe u. a.: `not-enough-coins`, `cap-reached`, `slot-occupied`, `slot-kind`, `slot-size`, `team-limit`, `team-slots`, `max-level`, `not-owner`, `ability-cooldown`, `no-next-wave`, `unknown-card`, `boss-wave`, `game-over`.
+Befehle: `place`, `upgrade`, `sell`, `setTargeting`, `useAbility`, `skipWave`, `chooseCard` (P4) sowie (Erweiterung §16) `donate`. Ablehnungsgründe u. a.: `not-enough-coins`, bei `place` `invalid-position`, `out-of-bounds`, `on-path`, `blocked`, `wrong-zone`, `overlap` (Abschnitt „Freie Platzierung“), `team-limit`, `team-slots`, `max-level`, `not-owner`, `ability-cooldown`, `no-next-wave`, `unknown-card`, `boss-wave`, `game-over`.
 Befehle wirken zu Tick-Beginn: `apply` verändert den Zustand zwischen zwei Ticks, `skipWave` greift im nächsten Tick (Koop: mehr als die Hälfte der Spieler).
 
 Events (`drainEvents`): `spawn`, `kill`, `leak`, `waveStart`, `waveEnd`, `income{source: waveBonus|bounty|farm|sell|donate}`, `damage` (je Unit aggregiert, bei Wave-Ende/Verkauf), `place`, `upgrade`, `sell`, `ability`, `over` sowie (P4) `bossPhase`, `bossTelegraph`, `bossCast`, `bossWindow`, `bossWard`, `cardChosen` und (Runde 5 / P3) `bossArmor` (Felder `staggerNeed`, `cause`, `armor` an den Boss-Ereignissen, siehe `docs/design/boss-telegraphs.md`); `spawn` trägt bei Beschwörungen des Bosses `summon: true`.
@@ -79,6 +80,37 @@ Ersetzt die Base-HP (`state.lives`, `state.maxLives`; Daten `economy.lives`: `st
 - **Regeneration:** `regenPerWave` Leben beim Ende jeder Wave, höchstens bis `maxLives`.
 - Das Leak-Event trägt `damage` (= Lebenskosten, bei Sofort-Verlust die verlorenen Restleben), `hp`, `maxHp`, `fatal`. Report-Felder `baseHpLost`/`baseHpEnd`/`baseHp` heißen aus Kompatibilität weiter so und meinen Leben.
 - Die Bots lesen die Leben nicht: ein Lauf mit riesigem Startwert liefert alle Leaks, die Siegquote für beliebige Regeln lässt sich danach nachrechnen (`scripts/sanity/q9-p2.ts`, `--part raw|eval|check`).
+
+## Freie Platzierung (Runde 6 / P1)
+
+Seit Runde 6 gibt es **keine festen Slots** mehr (Entscheidung Max, 07.10.2026, `docs/design/ENTSCHEIDUNGEN.md` „Platzierung“) und **kein Limit je Unit-Typ** (`cap` ist aus Daten, Schema und Code entfernt; Rarity-`cap` und Farm-`cap` 2 entfallen). Bleibende technische Grenzen: `economy.caps.teamSlots` (6 Sorten je Spieler, `team-slots`) und `teamUnits` (60 Units im Team, `team-limit`).
+
+**Befehl:** `{ type: 'place', unitId, x, y }`, `x`/`y` ganze Zahlen in Milli-Tiles = Mitte der Unit. Nicht ganzzahlig: `invalid-position`. `Sim.canPlace(player, unit, x, y)` liefert denselben Grund (oder `null`) ohne Nebenwirkung, für Geist und Hinweise im Client.
+
+**Karte** (`data/stages/*.json`): `path` (Polylinie in Tiles) mit `pathWidth` (Gesamtbreite in Tiles, Standard 1) und `zones.rows`, eine **Kachelmaske** im Raster des Clients: Zeile = y, Spalte = x, Kachel (x, y) ist um die Sim-Koordinate (x, y) zentriert (deckt `x*1000 ± 500`). Zeichen: `.` Boden, `h` Hügel, `#` blockiert (Bäume, Felsen, Deko), `p` Pfadkachel (nur Anzeige; der Pfad wird über Abstand und `pathWidth` geprüft). Das Raster ist zugleich der Kartenrand (Standard-Stage 17 x 11 Kacheln = -500..16500 x -500..10500). Die Zonen der Standard-Stage sind aus den alten Slots abgeleitet: Reihen 0/3/5/8 Boden, 2/6/9 Hügel (die erhöhten Bereiche), rechts x >= 14 Boden (Platz für Farms), dazu zwölf blockierte Randkacheln. `slots` blieb als **Altbestand** in den Stage-Daten (26 Positionen, `Sim.slotCenters()`): keine Regel, nur Hilfe für den Client bis P3 und Test, dass jede alte Position weiter gültig ist.
+
+**Radien** (`economy.placement`): `unitRadiusMilli` je `footprint`: 1x1 = **400** (0,8 Tiles Durchmesser), 2x2 (Farm) = **900** (Kreis statt Quadrat, 1,8 Tiles); `pathMarginMilli` = 0 (Zusatzabstand zum Pfadrand).
+
+**Prüfreihenfolge und Fehlergründe** (`placement.ts`, `checkPlacement`; Berühren zählt nie als Treffer, nur echtes Eindringen):
+
+| Grund | Bedingung |
+|---|---|
+| `out-of-bounds` | Kreis ragt über den Kartenrand |
+| `on-path` | Abstand der Mitte zur Polylinie < halbe Pfadbreite (500) + Radius + Rand. Strecken per Kreuzprodukt, Ecken und Enden per Abstand zum Eckpunkt, alles ganzzahlig und exakt |
+| `blocked` | Kreis überlappt eine `#`-Kachel (oder die Mitte liegt auf einer Pfad-/Blockkachel) |
+| `wrong-zone` | die Kachel unter der **Mitte** passt nicht: Boden-Unit `.`, Hügel-Unit `h`, Hybrid (Banner, Lancer, Frost) beides. Die Zone ist eine Fläche, die Kante zählt über die Mitte |
+| `overlap` | Abstand zu einer anderen Unit < Summe der Radien (alle Spieler) |
+| dann | `team-limit`, `team-slots`, `not-enough-coins` |
+
+Konsequenz auf der Standard-Karte: Bodenreihen und Hügelreihen neben dem Pfad sind nur ca. 0,6 Tiles breit nutzbar (Pfadabstand 900 bis zur Zonenkante), entlang des Pfads ist der Platz dagegen frei (Mindestabstand 800 zwischen 1x1-Units). Die Farm (Radius 900, Pfadabstand 1400) passt nur in den breiten Bodenflächen, vor allem rechts (x >= 14,4).
+
+**Abdeckung** (`coverage(x, y, range)`): Pfadlänge in Reichweite, Stichprobe alle 100 Milli-Tiles (die Stichpunkte stehen einmal im `Path`), je (x, y, Reichweite) gecacht und von allen Sims mit gleichem Pfad geteilt.
+
+**Bots** (`src/bots/util.ts`): **Positionssuche statt Slot-Wahl.** Kandidaten sind die statisch gültigen Punkte des Halbkachel-Rasters (`Sim.placementGrid(unit)`, Boden/Hügel/Radius je Unit, ohne Punkte ohne Pfadabdeckung), je Typ nach gewichteter Pfadabdeckung der Stufe-0-Reichweite sortiert. Je Unit-Typ gehen die vier besten freien Stellen (mindestens eine Kachel auseinander) als Optionen in die Kaufwahl. Die Bewertung `weightedCoverage` zählt das Ende des Pfads mehr als den Anfang (`botTuning.endBias` 0,5: Gewicht 0,5 am Start bis 1,5 am Ende): ohne Gewicht stapeln die Bots alles auf die Innenkurven in der Mitte der S-Kurve. Farms stehen abseits des Pfads (geringste Abdeckung zuerst, zufällig unter den ersten sechs). Aura-Träger (Banner) werden nach dem **Zuwachs** über bereits wirkende Banner bewertet (je Buff-ID zählt nur der höchste Wert); ohne das kauft ein Bot bei freier Platzierung mehrere Banner auf denselben Pulk. Verworfen (machte alle Bots deutlich schwächer): Mindestabstand zu eigenen Units und ein Abschlag für doppelt gedeckte Pfadstellen, Verteilen schlägt hier Stapeln nicht. Fehlermodell `worsePositionBp` (vorher `worseSlotBp`): zufällige freie Stelle aus der schlechteren Hälfte der Positionen mit Abdeckung.
+
+**Bot-Limit statt Regel-Limit:** Die Bots behalten ihre früheren Stückzahlen als eigene Strategie (`botTuning.typeLimit`: Rare 5, Epic 4, Legendary 3, Mythic 2, Farm 2, `limitOf`), damit die Matrix vor und nach dem Umbau vergleichbar bleibt. `botTuning.unlimited = true` hebt es auf (Messung, P2 baut darauf `mono-X`). Gemessen (`MatchResult.peakUnits`): mit und ohne Bot-Limit erreicht kein Registry-Bot auf Normal die 60 (Zahlen: `docs/balancing/kalibrierung.md`, Runde 6 - P1).
+
+**Skripte:** `scripts/sanity/r6-p1.ts` (Siegquote, Laufzeit und Units am Ende je Bot, `--difficulty`, `--n`, `R6_NOLIMIT=1`), `scripts/sanity/pos.ts` (Positionshilfen), `scripts/export-replay.ts` (Bot-Lauf als Replay v2). Tests: `test/placement.test.ts`.
 
 ## Stufen-Regeln (Runde 4 / P3)
 
@@ -136,16 +168,16 @@ Zeitwerte: Vorwarnzeit (`telegraphTicks`) 40-80 Ticks = 2-4 s, Fenster 60-160 Ti
 
 ## Bot-Profile und Boss-Plan (Runde 4 / P6)
 
-`data/botProfiles.json` (zod `BotProfileSchema`, `loadBotProfiles`; nicht Teil von `GameData`): drei Profile **casual / normal / expert** mit Fehlermodell: `buyDelaySec` (Pause zwischen Kaufrunden), `worseSlotBp` (Slot aus der schlechteren Hälfte), `forgetUpgradeBp` (je Unit und Wave), `abilityDelaySec` (verspätetes Zünden), `lookahead` (Wellenwissen in Waves, 0 = keines). Zufall nur über einen eigenen PRNG des Bots (aus dem seeded Bot-PRNG abgeleitet, nie der Sim-PRNG): deterministisch je Seed und Profil, der Sim-Hash ohne Bots bleibt unberührt.
+`data/botProfiles.json` (zod `BotProfileSchema`, `loadBotProfiles`; nicht Teil von `GameData`): drei Profile **casual / normal / expert** mit Fehlermodell: `buyDelaySec` (Pause zwischen Kaufrunden), `worsePositionBp` (Slot aus der schlechteren Hälfte), `forgetUpgradeBp` (je Unit und Wave), `abilityDelaySec` (verspätetes Zünden), `lookahead` (Wellenwissen in Waves, 0 = keines). Zufall nur über einen eigenen PRNG des Bots (aus dem seeded Bot-PRNG abgeleitet, nie der Sim-PRNG): deterministisch je Seed und Profil, der Sim-Hash ohne Bots bleibt unberührt.
 
-- Auswahl: `getBot('aoe@normal')`, `'upgrade+cards@casual'`, `'x@none'` (fehlerfrei); ohne `@` gilt `botTuning.profile` (Standard `null` = fehlerfrei wie Runden 1-5, in den Sanity-Skripten `BOT_PROFILE=normal`). `P6_PROFILES='{"normal":{"worseSlotBp":0}}'` überschreibt Profil-Felder.
+- Auswahl: `getBot('aoe@normal')`, `'upgrade+cards@casual'`, `'x@none'` (fehlerfrei); ohne `@` gilt `botTuning.profile` (Standard `null` = fehlerfrei wie Runden 1-5, in den Sanity-Skripten `BOT_PROFILE=normal`). `P6_PROFILES='{"normal":{"worsePositionBp":0}}'` überschreibt Profil-Felder.
 - **Boss-Plan** (alle Bots, `botTuning.bossPlan`, aus mit `P6_NOBOSSPLAN=1`): aus `previewWave(n).boss` und den Kit-Daten schafft der Bot vor dem Boss die Nuke-Unit (Titan) und bei unterbrechbaren Kit-Zügen die Stun-Unit (Frost) an und spart darauf; Horizont `min(lookahead, botTuning.bossPlanWaves = 3)`. Weitere Schalter: `P6_PLANWAVES`, `P6_NOSAVE`, `P6_EARLYCAP`.
 - **Koop-HP-Tabelle je Stufe:** `difficulties.json` `coopHpTableBp` / `coopBossHpTableBp` (Index 0 = 1 Spieler = 10000), Fallback `economy.coop`.
 - Zahlen und Befunde: `docs/balancing/kalibrierung.md`, „Runde 4 — P6".
 
 ## Daten ändern
 
-Alle Zahlen stehen in `data/*.json` (zod-validiert beim Laden, Querverweise in `load.ts`, z. B. Leak-Werte in `economy.json` = `enemies.json`). Neue Stage = neue Datei in `data/stages/` (Waves, Slots, Pfad). Die Wave-Tabelle der Standard-Stage wurde mit `scripts/gen-stage.ts` erzeugt (Ausgabe danach von Hand kompakt formatiert).
+Alle Zahlen stehen in `data/*.json` (zod-validiert beim Laden, Querverweise in `load.ts`, z. B. Leak-Werte in `economy.json` = `enemies.json`). Neue Stage = neue Datei in `data/stages/` (Waves, Pfad samt `pathWidth`, `zones`; `slots` nur noch Altbestand). Die Wave-Tabelle der Standard-Stage wurde mit `scripts/gen-stage.ts` erzeugt (Ausgabe danach von Hand kompakt formatiert).
 
 ## Infinite-Modus
 
@@ -178,7 +210,7 @@ Weitere Optionen: `--jobs N` (worker_threads, Ergebnis unabhängig von N), `--na
 | `q11-boss` | (P4) Boss-Diagnose: Leak-Wave/Rest-HP, Fenster je Lauf, Fähigkeiten im Fenster, Telegraphs, Unterbrechungen, Schild; Experiment-Bot `aoe-notitan` |
 
 **Verdrahtung P3 × P4 (Merge):** `ctx.difficultyRank` = `bossAbilityTier` der Stufe (Fallback: Rang der Stufe). Eine Challenge kann damit über `overrides.bossAbilityTier` Boss-Fähigkeiten einer höheren Stufe zuschalten.
-| `p5-coop.ts`, `p5-coop.sh N TAG`, `p5-scan.sh` | (P5) Koop-Matrix Bot x 1P/2P/4P je Stufe; Raster der Koop-HP-Tabelle (`P5_COOP='{"hpTableBp":[10000,15000,17500,20000]}'`, `P5_SLOTS=8` für das Slot-Experiment) |
+| `p5-coop.ts`, `p5-coop.sh N TAG`, `p5-scan.sh` | (P5) Koop-Matrix Bot x 1P/2P/4P je Stufe; Raster der Koop-HP-Tabelle (`P5_COOP='{"hpTableBp":[10000,15000,17500,20000]}'`, `P5_SLOTS` (seit Runde 6 ohne Wirkung)) |
 | `p1-quick.sh N TAG`, `p1-sweep.sh N TAG` | Schnellläufe (je Stufe ein Prozess) |
 
 Experimente ohne Dateiänderung über Umgebungsvariablen (nur Sanity-Skripte, nie der Kern): `P1_PATCH='{"titan":{"dpsShareBp":5000}}'` (Unit-Felder je ID überschreiben), `P1_HP=1.4` (globaler HP-Faktor), `P1_DIFF='{"normal":15200}'` (HP-Basispunkte je Stufe), `P1_COOPH=9000` (Koop-HP je Zusatzspieler), `P1_NOSAVE=1` (Bots wie in Runde 3), `P2_BOSSHP=100000` / `P2_ELITEHP=80000` (HP-Faktor von Boss/Elite).
@@ -197,4 +229,7 @@ Bot-Regeln aus P1 (`src/bots/util.ts`, Details und Begründung in `kalibrierung.
 
 ## Replay-Prüfer (Runde 5 / P2)
 
-`npm run replay -- DATEI [--compare] [--bot NAME]` spielt eine im Client exportierte Runde (Seed + Befehle mit Tick) nach, prüft End-Hash und Ergebnis und druckt einen Bericht; Abweichung = Exit 1. Format und Weg: [`docs/balancing/playtests/README.md`](../docs/balancing/playtests/README.md). Falle: Der letzte Schritt einer Niederlage zählt `state.tick` nicht hoch; das Replay läuft deshalb bei beendeten Runden bis `phase === 'over'`.
+`npm run replay -- DATEI [--compare] [--bot NAME]` spielt eine im Client exportierte Runde (Seed + Befehle mit Tick) nach, prüft End-Hash und Ergebnis und druckt einen Bericht; Abweichung = Exit 1, Datei unbrauchbar = Exit 2, **altes Regelwerk (Format v1, Slots) = Exit 3** (Meldung „altes Regelwerk (v1, Slots)“, kein Hash-Fehler, kein Stacktrace; der Bericht stammt dann aus den Wellen-Daten der Datei, `--compare` läuft weiter). Format und Weg: [`docs/balancing/playtests/README.md`](../docs/balancing/playtests/README.md). Falle: Der letzte Schritt einer Niederlage zählt `state.tick` nicht hoch; das Replay läuft deshalb bei beendeten Runden bis `phase === 'over'`.
+
+
+**Format v2 (Runde 6 / P1):** `place` trägt `x`, `y` (Milli-Tiles) statt `slot`; `formatVersion: 2`. v1-Dateien (`beispiel-normal.json`, `2026-10-07-max-normal-loss.json`) bleiben als Dokument liegen. Das v2-Beispiel `beispiel-v2-bot-normal.json` erzeugt der Simulator selbst: `npx tsx scripts/export-replay.ts --bot wide@normal --difficulty normal --seed 7 --out ../docs/balancing/playtests/beispiel-v2-bot-normal.json` (nach jeder Regel- oder Datenänderung neu erzeugen, sonst schlägt `test/replay.test.ts` an).

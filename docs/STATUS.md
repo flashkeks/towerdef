@@ -11,12 +11,17 @@ Letzte Aktualisierung: 2026-10-07 (Runde 6 gestartet)
 | Paket | Inhalt | Status | Agent (Modell) | Notiz |
 |---|---|---|---|---|
 | P0 | Status | **erledigt** | Hauptsitzung | Runde 5 abgeschlossen (Kurzbericht unten). Balance ab jetzt nur grob, ca. 30 min Bot-Messung je Paket |
-| P1 | Freie Platzierung im Simulator, kein Typ-Limit, Replay v2 | offen | 1 × Sonnet, allein | zuerst |
+| P1 | Freie Platzierung im Simulator, kein Typ-Limit, Replay v2 | **erledigt** (nicht committet) | 1 × Sonnet, allein | `place` nimmt `x`,`y` (Milli-Tiles). Karte: `pathWidth` + `zones` (Kachelmaske `.` Boden / `h` Hügel / `#` blockiert / `p` Pfad, aus den alten Slots abgeleitet; Altbestand `slots` + `Sim.slotCenters()` bleiben als Daten). Radius 400 (1x1) / 900 (Farm 2x2), Pfadabstand = halbe Breite 500 + Radius. Fehler: `out-of-bounds`, `on-path`, `blocked`, `wrong-zone`, `overlap`, `invalid-position`. `cap` raus (Daten, Schema, Code); `teamSlots` 6 und `teamUnits` 60 bleiben. Bots: Positionssuche auf dem Halbkachel-Raster (Abdeckung gewichtet, Banner nach Zuwachs), eigenes Stückzahl-Limit als Strategie (`botTuning.typeLimit`), `worsePositionBp`. Replay **v2** (`x`,`y`); v1 = „altes Regelwerk (v1, Slots)“, Exit 3; v2-Beispiel vom Simulator erzeugt (`scripts/export-replay.ts`). Bot-Matrix ×1,19 Laufzeit (32,5 → 38,6 s), Stufen wie vorher (farm 100/88/44, wide 99/55/24). 259 sim-Tests + tsc grün. **Client kompiliert bis P3 nicht** (24 tsc-Fehler: `u.slot`, `sim.slots()`, `place`-Befehl, `def.cap`). [kalibrierung.md § Runde 6 — P1](balancing/kalibrierung.md), [sim/README.md § Freie Platzierung](../sim/README.md) |
 | P2 | Balance grob (Farm, Spam, Stufen, Max-Replay) | offen | 1 × Sonnet | nach P1 |
 | P3 | Client: freie Platzierung, Smoke | offen | 1 × Sonnet | nach P1 |
 | P4 | Lesbarkeit und Hilfe im Match | offen | 1 × Sonnet | nach P1 |
 | P5 | Grafik-Austausch Kenney (optional) | offen | – | nur wenn `client/assets/vendor/` liegt |
 | P6 | Abschluss | offen | Hauptsitzung | |
+
+**Offene Fragen Runde 6 (mit Empfehlung):**
+- `teamUnits` = 60 (technische Obergrenze): Misst P1 mit Bots **ohne** Bot-Limit, erreicht keiner sie (größter Spitzenwert `wide` 38 Units, `greedy`/`aoe`/`farm` 21–24). Empfehlung: 60 als Sicherung stehen lassen, nach Playtests mit Menschen neu bewerten. Ein Mensch kann sie erreichen (Platz für 60 Striker ist auf der Karte da).
+- Die Karte (17 x 11) ist eng für freie Platzierung: Bodenreihen neben dem Pfad nur ca. 0,6 Tiles breit nutzbar, Farms nur rechts außen. Empfehlung: P3 baut die Platzier-Hervorhebung auf den Zonen auf; eine zweite, größere Karte ist ein Thema für M4, nicht jetzt.
+- Bot-Befund für P2: Stapeln auf den Innenkurven schlägt Verteilen (Verteil-Abstand/Neuheits-Abschlag machten alle Bots deutlich schwächer); ohne Limit verliert `wide` auf Normal von 99 auf 30 %. Details in `kalibrierung.md` Runde 6 — P1.
 
 ## Runde 5 (abgeschlossen)
 

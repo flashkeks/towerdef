@@ -1,6 +1,7 @@
 import { createSim } from '../src/index.js';
+import { legacyFree } from './sanity/pos.js';
 const sim = createSim({ stage: 'standard20', difficulty: 'normal', players: 1, seed: 3 });
-const buy = (u: string, kind: 'ground'|'hill', n=0) => { const f = sim.slots().filter(s=>s.free&&s.kind===kind&&s.size===1).map(s=>s.id); const r = sim.apply(0,{type:'place',unitId:u,slot:f[n]}); return r; };
+const buy = (u: string, kind: 'ground'|'hill', n=0) => { const f = legacyFree(sim, u, kind); const r = sim.apply(0,{type:'place',unitId:u,...f[n]}); return r; };
 buy('striker','ground'); buy('gunner','hill');
 let w=0;
 while(!sim.isOver()){

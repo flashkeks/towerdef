@@ -90,7 +90,9 @@ export interface UnitState {
   id: number;
   defId: string;
   owner: number;
-  slot: number;
+  /** Position (Milli-Tiles, Mitte der Unit). */
+  x: number;
+  y: number;
   level: number;
   /** Investierte Münzen (Platzierung + bezahlte Upgrades) für den Verkaufswert. */
   invested: number;
@@ -173,7 +175,7 @@ export type SimEvent =
   | { type: 'waveEnd'; tick: number; wave: number }
   | { type: 'income'; tick: number; player: number; amount: number; source: IncomeSource }
   | { type: 'damage'; tick: number; unitId: number; owner: number; amount: number }
-  | { type: 'place'; tick: number; player: number; unitId: number; unit: string; slot: number; cost: number }
+  | { type: 'place'; tick: number; player: number; unitId: number; unit: string; x: number; y: number; cost: number }
   | { type: 'upgrade'; tick: number; player: number; unitId: number; level: number; cost: number }
   | { type: 'sell'; tick: number; player: number; unitId: number; refund: number }
   | { type: 'ability'; tick: number; player: number; unitId: number; kind: string }

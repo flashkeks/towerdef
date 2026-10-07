@@ -5,8 +5,10 @@
 import type { UnitDef } from '../data/compile.js';
 import { loadBotProfiles } from '../data/load.js';
 import { BotProfileSchema, type BotProfile } from '../data/schema.js';
+import { dist2 } from '../fixed.js';
 import { nextInt, nextU32, seedRng, type RngState } from '../prng.js';
-import type { Sim, SlotInfo } from '../sim.js';
+import { GRID_STEP, type Point } from '../placement.js';
+import type { Sim } from '../sim.js';
 import type { EnemyState, UnitState } from '../state.js';
 import type { BotContext } from './types.js';
 
@@ -38,7 +40,43 @@ export interface Memo {
   abilityAt: Map<number, number>;
   /** Boss-Vorschau je Wave (Boss-Plan): Boss ja/nein und welche Antworten das Kit verlangt. */
   bossInfo: Map<number, { boss: boolean; stun: boolean; need?: boolean }>;
+  /** Kandidaten je Unit-Typ (Runde 6 / P1): statische Raster-Positionen, nach Abdeckung der Stufe-0-Reichweite absteigend (einmal je Bot und Typ). */
+  spots: Map<string, Spot[]>;
+  /** Je Unit-Typ: Menge der gültigen Raster-Positionen (Schlüssel `spotKey`) für die Opferwahl beim Platzmachen. */
+  spotSet: Map<string, Set<number>>;
 }
+
+/** Kandidatenposition (Milli-Tiles) samt gewichteter Pfadabdeckung (`weightedCoverage`) der Stufe-0-Reichweite der Unit, für die sie berechnet wurde. */
+export interface Spot extends Point {
+  cov: number;
+}
+/**
+ * Pfadabdeckung, wie ein Spieler sie schätzt: Länge des Pfads in Reichweite, aber das Ende des Pfads zählt mehr (`botTuning.endBias`):
+ * Die letzte Linie vor der Basis und das Rennen gegen den Boss entscheiden die Runde. Gewicht an Pfadstelle k von n:
+ * 1 + endBias * (2k/n - 1), also von 1 - endBias (Start) bis 1 + endBias (Ende). Ein Ergebnis je (x, y, Reichweite) und Sim.
+ */
+const wcovCache = new WeakMap<object, Map<number, number>>();
+export function weightedCoverage(sim: Sim, x: number, y: number, range: number): number {
+  const pts = sim.pathSamples();
+  let cache = wcovCache.get(pts);
+  if (!cache) wcovCache.set(pts, (cache = new Map()));
+  const key = ((x + 4096) * 16384 + (y + 4096)) * 16384 + range;
+  const hit = cache.get(key);
+  if (hit !== undefined) return hit;
+  const b = botTuning.endBias;
+  const r2 = range * range;
+  const n = pts.length;
+  let sum = 0;
+  for (let k = 0; k < n; k++) {
+    const dx = x - pts[k].x;
+    const dy = y - pts[k].y;
+    if (dx * dx + dy * dy <= r2) sum += 1 + b * ((2 * k) / n - 1);
+  }
+  const v = sum * 100;
+  cache.set(key, v);
+  return v;
+}
+const spotKey = (x: number, y: number): number => (x + 2000) * 100_000 + (y + 2000);
 /** Profil, das `newMemo` benutzt, solange `withProfile` läuft (Bot-Fabriken haben keine Parameter). */
 let building: BotProfile | null | undefined;
 let profileTable: Record<string, BotProfile> | null = null;
@@ -78,6 +116,8 @@ export const newMemo = (): Memo => ({
   forget: new Map(),
   abilityAt: new Map(),
   bossInfo: new Map(),
+  spots: new Map(),
+  spotSet: new Map(),
 });
 
 /** Eigener Fehler-PRNG des Bots, beim ersten Gebrauch aus dem Bot-PRNG abgeleitet (der Sim-PRNG bleibt unberührt). */
@@ -133,7 +173,7 @@ export const botTuning = {
   bossFinalHorizon: 0,
   /** Nur Messungen (Leave-one-out): diese Unit-IDs kennt der Bot nicht, Pläne eingeschlossen (ein Proxy, der `place` ablehnt, lässt Pläne ewig sparen). */
   banned: [] as string[],
-  /** Boss-Plan: ohne freien Slot die schwächste Unit auf passendem Slot verkaufen (P6b). Aus: `P6B_NOROOM=1`. */
+  /** Boss-Plan: ohne freie Position die schwächste Unit auf passender Position verkaufen (P6b). Aus: `P6B_NOROOM=1`. */
   makeRoom: true,
   /** Runde 5 / P3: Gegen einen Boss mit Kit zielen alle Angreifer auf den stärksten Gegner (Dauerschaden gegen zerstörbare Wirkungen). Aus: `P3_NOFOCUS=1`. */
   bossFocus: true,
@@ -145,10 +185,27 @@ export const botTuning = {
   bossNeedFinal: 0,
   /** Early-Units (Striker): so viele davon kauft ein Bot höchstens (ein Mensch pivotiert früh weg von der Starter-Unit). Standard: Cap der Unit. */
   earlyCap: 2,
+  /**
+   * Runde 6 / P1: Das Regel-Limit je Unit-Typ ist entfallen (ENTSCHEIDUNGEN.md, Platzierung). Die Bots behalten ihre früheren Stückzahlen
+   * als eigene **Strategie** (Rare 5, Epic 4, Legendary 3, Mythic 2, Farm 2), damit die Matrix vor und nach dem Umbau vergleichbar bleibt.
+   * `unlimited` = ohne Bot-Limit (Messung: erreicht ein Bot `economy.caps.teamUnits`? Sanity-Skript `r6-p1.ts`, `R6_NOLIMIT=1`). P2 baut `mono-X`.
+   */
+  typeLimit: { rare: 5, epic: 4, legendary: 3, mythic: 2 } as Record<'rare' | 'epic' | 'legendary' | 'mythic', number>,
+  farmLimit: 2,
+  unlimited: false,
+  /**
+   * Positionssuche (Runde 6 / P1): Gewicht der Pfadabdeckung steigt vom Start (1 - endBias) bis zum Ende des Pfads (1 + endBias).
+   * Ohne Gewicht (0) stapelten die Bots alles auf die Innenkurven in der Mitte der S-Kurve und ließen den Schluss (Boss-Rennen,
+   * Leaks) schlecht gedeckt; 0,5 hielt aoe/farm/wide auf Normal/Hard nahe an den Werten mit festen Slots (kalibrierung.md, Runde 6 - P1).
+   * Kein Feintuning: ein Wert, nicht je Bot. Nur die Bewertung der Bots, keine Regel der Sim.
+   */
+  endBias: 0.5,
   /** Early-Unit abgeben (P6b): frühestens ab dieser Wave (Standard `ROTATE_FROM_WAVE`) und wenn ein Typ dieser Seltenheit oder höher fehlt. */
   rotateFromWave: 8,
   rotateMinRarity: 'legendary' as 'rare' | 'epic' | 'legendary' | 'mythic',
 };
+/** Bot-eigene Obergrenze je Unit-Typ (Strategie, keine Regel; siehe `botTuning.typeLimit`). */
+export const limitOf = (d: UnitDef): number => (botTuning.unlimited ? Infinity : d.farm ? botTuning.farmLimit : botTuning.typeLimit[d.rarity]);
 const RARITY_RANK = { rare: 0, epic: 1, legendary: 2, mythic: 3 } as const;
 
 export interface Policy {
@@ -185,7 +242,8 @@ export interface Env {
   wave: number;
   coins: number;
   defs: Map<string, UnitDef>;
-  slots: SlotInfo[];
+  /** Radius je Unit-Typ (alle Typen, auch verbotene; für Kollisionen). */
+  radii: Map<string, number>;
   own: UnitState[];
   team: UnitState[];
   armor: number;
@@ -198,7 +256,8 @@ export interface Env {
 export interface Option {
   kind: 'place' | 'upgrade';
   def: UnitDef;
-  slot?: number;
+  /** Platzierung: Position (Milli-Tiles). */
+  pos?: Point;
   unit?: UnitState;
   cost: number;
   score: number;
@@ -209,6 +268,7 @@ export function makeEnv(ctx: BotContext, memo: Memo): Env {
   const st = sim.state;
   // Verbotene Units (Leave-one-out) gibt es für den Bot nicht: auch nicht als "fehlender Typ" der Rotation oder als Plan-Ziel.
   const defs = new Map(sim.catalog().filter((d) => !botTuning.banned.includes(d.id)).map((d) => [d.id, d]));
+  const radii = new Map(sim.catalog().map((d) => [d.id, d.radiusMilli]));
   const live = st.enemies.filter((e) => e.hp > 0);
   if (live.some((e) => e.flying)) memo.airSeen = true;
   let hp = 0;
@@ -218,7 +278,6 @@ export function makeEnv(ctx: BotContext, memo: Memo): Env {
     ar += e.armor * e.maxHp;
   }
   if (hp > 0) memo.armor = Math.max(memo.armor, Math.min(40, Math.round(ar / hp)));
-  const slots = sim.slots();
   const team = st.units;
   const env: Env = {
     sim,
@@ -228,7 +287,7 @@ export function makeEnv(ctx: BotContext, memo: Memo): Env {
     wave: st.wave,
     coins: st.players[playerId].coins,
     defs,
-    slots,
+    radii,
     own: team.filter((u) => u.owner === playerId),
     team,
     armor: memo.armor,
@@ -241,8 +300,7 @@ export function makeEnv(ctx: BotContext, memo: Memo): Env {
   for (const u of team) {
     const d = defs.get(u.defId) as UnitDef;
     if (!d.attack) continue;
-    const s = slots[u.slot];
-    const v = dpsOf(d, u.level, env.armor) * (s.coverageByRange(d.levels[u.level].rangeMilli) / 1000);
+    const v = dpsOf(d, u.level, env.armor) * (weightedCoverage(sim, u.x, u.y, d.levels[u.level].rangeMilli) / 1000);
     env.values.set(u.id, v);
     total += v;
     if (d.canHitAir) air += v;
@@ -282,21 +340,52 @@ function dist(a: { x: number; y: number }, b: { x: number; y: number }): number 
   return Math.hypot(a.x - b.x, a.y - b.y);
 }
 
-/** Wert (DPS-Äquivalent x Pfadabdeckung in Tiles) einer Unit auf Stufe `level` am Slot. */
-export function valueAt(env: Env, def: UnitDef, level: number, slot: SlotInfo, selfId = -1): number {
-  if (def.aura) {
-    const bp = def.aura.damageBpByLevel[level];
-    let sum = 0;
-    for (const u of env.team) {
-      if (u.id === selfId) continue;
-      const v = env.values.get(u.id);
-      if (!v) continue;
-      if (dist(env.slots[u.slot], slot) <= def.aura.radiusMilli) sum += v;
-    }
-    return (sum * bp) / 10000;
+/** Wert (DPS-Äquivalent x Pfadabdeckung in Tiles) einer Unit auf Stufe `level` an der Position `pos`. */
+/**
+ * Gewinn eines Aura-Trägers (DPS-Äquivalent): Summe der Werte der Nachbarn im Radius, jeweils mit dem Zuwachs über die beste andere
+ * Aura derselben Art, die den Nachbarn schon erreicht (je Buff-ID zählt nur der höchste Wert, `computeBuffs`). Ohne das kauft ein
+ * Bot bei freier Platzierung mehrere Banner auf denselben Pulk (Runde 6 / P1: greedy 65 -> 8 % Normal); mit festen Slots lagen sie
+ * zufällig verteilt.
+ */
+interface AuraNeighbour {
+  x: number;
+  y: number;
+  /** Wert des Nachbarn (DPS x Abdeckung). */
+  v: number;
+  /** Beste andere Aura derselben Art, die ihn schon erreicht (Bp). */
+  other: number;
+}
+/** Nachbarn mit Wert und bereits vorhandener Aura-Stärke (ohne die Unit `selfId`). Einmal je Bewertung, nicht je Kandidat. */
+function auraNeighbours(env: Env, def: UnitDef, selfId: number): AuraNeighbour[] {
+  const aura = def.aura as NonNullable<UnitDef['aura']>;
+  const r2 = aura.radiusMilli ** 2;
+  const banners = env.team.filter((b) => b.defId === def.id && b.id !== selfId);
+  const out: AuraNeighbour[] = [];
+  for (const u of env.team) {
+    if (u.id === selfId) continue;
+    const v = env.values.get(u.id);
+    if (!v) continue;
+    let other = 0;
+    for (const b of banners) if (dist2(b.x, b.y, u.x, u.y) <= r2) other = Math.max(other, aura.damageBpByLevel[b.level]);
+    out.push({ x: u.x, y: u.y, v, other });
   }
+  return out;
+}
+function auraGainAt(nb: AuraNeighbour[], radiusMilli: number, bp: number, x: number, y: number): number {
+  const r2 = radiusMilli * radiusMilli;
+  let sum = 0;
+  for (const n of nb) if (bp > n.other && dist2(n.x, n.y, x, y) <= r2) sum += (n.v * (bp - n.other)) / 10000;
+  return sum;
+}
+function auraGain(env: Env, def: UnitDef, level: number, pos: Point, selfId: number): number {
+  const aura = def.aura as NonNullable<UnitDef['aura']>;
+  return auraGainAt(auraNeighbours(env, def, selfId), aura.radiusMilli, aura.damageBpByLevel[level], pos.x, pos.y);
+}
+
+export function valueAt(env: Env, def: UnitDef, level: number, pos: Point, selfId = -1): number {
+  if (def.aura) return auraGain(env, def, level, pos, selfId);
   if (!def.attack) return 0;
-  const v = dpsOf(def, level, env.armor) * (slot.coverageByRange(def.levels[level].rangeMilli) / 1000);
+  const v = dpsOf(def, level, env.armor) * (weightedCoverage(env.sim, pos.x, pos.y, def.levels[level].rangeMilli) / 1000);
   // Fähigkeiten (Stun, Nuke) sind Boss-/Elite-Werkzeuge und zählen mit Nutzen-Aufschlag.
   return v * airFactor(env, def) * (def.ability ? ABILITY_BONUS : 1);
 }
@@ -314,24 +403,94 @@ export function pickTop<T extends { score: number }>(rng: RngState, sorted: T[],
 const investedOf = (env: Env, farm: boolean): number =>
   env.own.reduce((a, u) => a + ((env.defs.get(u.defId) as UnitDef).farm ? (farm ? u.invested : 0) : farm ? 0 : u.invested), 0);
 
-/** Gibt es einen freien Kleinslot passender Art für die Unit? (Ohne ihn wäre Sparen auf die Unit sinnlos: P6b, 4P-`wide` hortete bis zu 2500 Münzen.) */
-function hasFreeSlot(env: Env, def: UnitDef): boolean {
-  return env.slots.some((s) => s.free && s.size === 1 && (def.placement === 'hybrid' || def.placement === s.kind));
+/** Statische Kandidaten der Unit (Raster, nach Abdeckung absteigend), einmal je Bot und Typ berechnet. Farm und andere ohne Angriff: Abdeckung der Stufe-0-Reichweite, nur zum Ordnen. */
+function spotsOf(env: Env, def: UnitDef): Spot[] {
+  let list = env.memo.spots.get(def.id);
+  if (!list) {
+    const range = def.levels[0].rangeMilli;
+    const grid = env.sim.placementGrid(def.id);
+    list = grid.map((p) => ({ x: p.x, y: p.y, cov: weightedCoverage(env.sim, p.x, p.y, range) }));
+    // Plätze ohne jede Pfadabdeckung kommen für Angreifer und Aura-Träger nie in Frage (Farms stehen bewusst abseits und behalten alle).
+    if (!def.farm) list = list.filter((p) => p.cov > 0);
+    // Stabil: gleiche Abdeckung -> Zeilenreihenfolge des Rasters (y, x).
+    list = list.map((sp, i) => ({ sp, i })).sort((a, b) => b.sp.cov - a.sp.cov || a.i - b.i).map((o) => o.sp);
+    env.memo.spots.set(def.id, list);
+    env.memo.spotSet.set(def.id, new Set(list.map((p) => spotKey(p.x, p.y))));
+  }
+  return list;
+}
+
+/** Ist ein Kreis (x, y, r) frei von allen Team-Units (außer `except`)? */
+function isFree(env: Env, r: number, x: number, y: number, except?: UnitState): boolean {
+  for (const u of env.team) {
+    if (u === except) continue;
+    const s = r + (env.radii.get(u.defId) as number);
+    if (dist2(x, y, u.x, u.y) < s * s) return false;
+  }
+  return true;
 }
 
 /**
- * Platz schaffen für eine geplante Unit (P6b): ist kein passender Slot frei, verkauft der Bot seine schwächste Unit auf einem
- * passenden Slot (nur Eigene, keine Nuke-/Stun-Unit, keine Farm). So macht es ein Mensch im vollen Koop-Feld; ohne das
- * flutet `wide` die 23 Slots mit Billig-Units und der Titan findet nie einen Platz.
+ * Freie, gültige Positionen für die Unit in Reihenfolge der Abdeckung (beste zuerst; `reverse`: schlechteste zuerst). Höchstens `limit`
+ * Treffer, jeder mindestens `spacing` Milli-Tiles von den vorigen entfernt (sonst wären die Kandidaten Nachbarn desselben Punkts).
+ */
+function freeSpots(env: Env, def: UnitDef, limit: number, spacing = 0, reverse = false): Spot[] {
+  const list = spotsOf(env, def);
+  const out: Spot[] = [];
+  const sp2 = spacing * spacing;
+  const n = list.length;
+  for (let k = 0; k < n && out.length < limit; k++) {
+    const s = list[reverse ? n - 1 - k : k];
+    if (!isFree(env, def.radiusMilli, s.x, s.y)) continue;
+    if (spacing > 0 && out.some((o) => dist2(o.x, o.y, s.x, s.y) < sp2)) continue;
+    out.push(s);
+  }
+  return out;
+}
+
+/** Positionen je Platzierungs-Option und Unit (verschiedene Stellen mit mindestens einer Kachel Abstand). */
+const OPTION_SPOTS = 4;
+const OPTION_SPACING = 1000;
+
+/** Bester Platz für einen Aura-Träger: Summe der Werte der Nachbarn im Radius; nur freie Raster-Positionen mit mindestens einem Nachbarn. */
+function auraSpots(env: Env, def: UnitDef): { x: number; y: number; v: number }[] {
+  const aura = def.aura as NonNullable<UnitDef['aura']>;
+  const nb = auraNeighbours(env, def, -1);
+  if (nb.length === 0) return [];
+  const bp = aura.damageBpByLevel[0];
+  const cands: { x: number; y: number; v: number }[] = [];
+  for (const sp of spotsOf(env, def)) {
+    const v = auraGainAt(nb, aura.radiusMilli, bp, sp.x, sp.y);
+    if (v > 0 && isFree(env, def.radiusMilli, sp.x, sp.y)) cands.push({ x: sp.x, y: sp.y, v });
+  }
+  cands.sort((a, b) => b.v - a.v);
+  const out: { x: number; y: number; v: number }[] = [];
+  for (const c of cands) {
+    if (out.length >= OPTION_SPOTS) break;
+    if (out.some((o) => dist2(o.x, o.y, c.x, c.y) < OPTION_SPACING ** 2)) continue;
+    out.push(c);
+  }
+  return out;
+}
+
+/** Gibt es eine freie Position für die Unit? (Ohne sie wäre Sparen auf die Unit sinnlos: P6b, 4P-`wide` hortete bis zu 2500 Münzen.) */
+function hasFreeSpot(env: Env, def: UnitDef): boolean {
+  return freeSpots(env, def, 1).length > 0;
+}
+
+/**
+ * Platz schaffen für eine geplante Unit (P6b): ist keine Position frei, verkauft der Bot seine schwächste Unit, an deren Stelle die
+ * geplante Unit passt (nur Eigene, keine Nuke-/Stun-Unit, keine Farm). So macht es ein Mensch im vollen Koop-Feld.
  */
 function sacrificeFor(env: Env, def: UnitDef): UnitState | null {
+  spotsOf(env, def);
+  const set = env.memo.spotSet.get(def.id) as Set<number>;
   let best: UnitState | null = null;
   let bestV = Infinity;
   for (const u of env.own) {
     const d = env.defs.get(u.defId) as UnitDef;
     if (d.farm || d.ability?.kind === 'nuke' || d.ability?.kind === 'stunAoe') continue;
-    const slot = env.slots[u.slot];
-    if (slot.size !== 1 || (def.placement !== 'hybrid' && def.placement !== slot.kind)) continue;
+    if (!set.has(spotKey(u.x, u.y)) || !isFree(env, def.radiusMilli, u.x, u.y, u)) continue;
     const v = env.values.get(u.id) ?? 0;
     if (v < bestV) {
       best = u;
@@ -343,7 +502,7 @@ function sacrificeFor(env: Env, def: UnitDef): UnitState | null {
 
 function canPlaceBase(env: Env, def: UnitDef): boolean {
   if (botTuning.banned.includes(def.id)) return false;
-  if (env.own.filter((u) => u.defId === def.id).length >= def.cap) return false;
+  if (env.own.filter((u) => u.defId === def.id).length >= limitOf(def)) return false;
   if (env.team.length >= 60) return false;
   if (!env.own.some((u) => u.defId === def.id) && new Set(env.own.map((u) => u.defId)).size >= 6) return false;
   return true;
@@ -355,7 +514,6 @@ export function buildOptions(env: Env, pol: Policy): Option[] {
   const budget = env.coins - (pol.reserve ?? 0);
   const nonFarm = investedOf(env, false);
   const cap = pol.maxNonFarmInvest ?? Infinity;
-  const small = env.slots.filter((s) => s.free && s.size === 1);
   for (const def of env.defs.values()) {
     if (def.farm || !def.attack && !def.aura) continue;
     if (!canPlaceBase(env, def)) continue;
@@ -368,11 +526,14 @@ export function buildOptions(env: Env, pol: Policy): Option[] {
     if (pol.canPlace && !pol.canPlace(def, env)) continue;
     const w = pol.weight ? pol.weight(def, 'place') : 1;
     if (w <= 0) continue;
-    for (const s of small) {
-      if (def.placement !== 'hybrid' && def.placement !== s.kind) continue;
+    if (def.aura) {
+      for (const s of auraSpots(env, def)) out.push({ kind: 'place', def, pos: { x: s.x, y: s.y }, cost, score: (s.v / cost) * w });
+      continue;
+    }
+    for (const s of freeSpots(env, def, OPTION_SPOTS, OPTION_SPACING)) {
       const v = valueAt(env, def, 0, s);
       if (v <= 0) continue;
-      out.push({ kind: 'place', def, slot: s.id, cost, score: (v / cost) * w });
+      out.push({ kind: 'place', def, pos: { x: s.x, y: s.y }, cost, score: (v / cost) * w });
     }
   }
   for (const u of env.own) {
@@ -383,8 +544,7 @@ export function buildOptions(env: Env, pol: Policy): Option[] {
     if (pol.canUpgrade && !pol.canUpgrade(u, def, env)) continue;
     const w = pol.weight ? pol.weight(def, 'upgrade') : 1;
     if (w <= 0) continue;
-    const s = env.slots[u.slot];
-    const gain = valueAt(env, def, u.level + 1, s, u.id) - valueAt(env, def, u.level, s, u.id);
+    const gain = valueAt(env, def, u.level + 1, u, u.id) - valueAt(env, def, u.level, u, u.id);
     if (gain <= 0) continue;
     out.push({ kind: 'upgrade', def, unit: u, cost, score: (gain / cost) * w });
   }
@@ -396,7 +556,7 @@ export function buildOptions(env: Env, pol: Policy): Option[] {
 function planStep(env: Env, plan: { unit: string; fromWave: number }, opts: Option[]): Option[] | 'wait' | null {
   const def = env.defs.get(plan.unit);
   if (!def || env.wave < plan.fromWave) return null;
-  if (env.own.some((u) => u.defId === def.id) || !canPlaceBase(env, def) || !hasFreeSlot(env, def)) return null;
+  if (env.own.some((u) => u.defId === def.id) || !canPlaceBase(env, def) || !hasFreeSpot(env, def)) return null;
   if (env.coins < def.placeCost) return env.coins >= def.placeCost * 0.4 ? 'wait' : null;
   const mine = opts.filter((o) => o.kind === 'place' && o.def.id === def.id);
   return mine.length > 0 ? mine : null;
@@ -447,7 +607,7 @@ export function bossCapacityRatio(env: Env, w: number): number | null {
     }
     dps = (dps * 100) / (100 + Math.max(0, 40 - d.penetration));
     // Aura-Units tragen über ihre Nachbarn bei (hier nicht gerechnet), Luft-Einheiten treffen den Boden-Boss genauso.
-    dmg += (dps * env.slots[u.slot].coverageByRange(ls.rangeMilli)) / 1000 / BOSS_TILES_PER_S;
+    dmg += (dps * env.sim.coverage(u.x, u.y, ls.rangeMilli)) / 1000 / BOSS_TILES_PER_S;
   }
   return dmg / hp;
 }
@@ -481,7 +641,7 @@ function bossNeeds(env: Env, memo: Memo): string[] {
   const stuns = stun ? [...env.defs.values()].filter((d) => d.ability?.kind === 'stunAoe').map((d) => d.id) : [];
   if (botTuning.bossAnswers === 'oneOf') {
     // Runde 5 / P3: Das Kit hat mehrere gleichwertige Antworten (Stun/Frost, Burst/Titan, Dauerschaden). Eine genügt: die billigere
-    // Kontrolle zuerst; wer eine besitzt, spart nicht auf die andere. Fehlt sie (verboten/kein Slot), kommt die nächste.
+    // Kontrolle zuerst; wer eine besitzt, spart nicht auf die andere. Fehlt sie (verboten/kein Platz), kommt die nächste.
     const all = [...stuns, ...nukes];
     return all.some((id) => env.own.some((u) => u.defId === id)) ? [] : all;
   }
@@ -492,10 +652,10 @@ function bossNeeds(env: Env, memo: Memo): string[] {
 function bossPlanStep(env: Env, memo: Memo, pol: Policy): Option[] | 'wait' | null {
   for (const id of bossNeeds(env, memo)) {
     const def = env.defs.get(id);
-    if (!def || env.own.some((u) => u.defId === id) || !canPlaceBase(env, def) || (!hasFreeSlot(env, def) && !(botTuning.makeRoom && sacrificeFor(env, def)))) continue;
+    if (!def || env.own.some((u) => u.defId === id) || !canPlaceBase(env, def) || (!hasFreeSpot(env, def) && !(botTuning.makeRoom && sacrificeFor(env, def)))) continue;
     const budget = env.coins - (pol.reserve ?? 0);
     if (budget < def.placeCost) return botTuning.bossPlanSave && budget >= def.placeCost * 0.4 ? 'wait' : null;
-    if (botTuning.makeRoom && !hasFreeSlot(env, def)) {
+    if (botTuning.makeRoom && !hasFreeSpot(env, def)) {
       const sac = sacrificeFor(env, def);
       if (sac && env.sim.apply(env.playerId, { type: 'sell', entityId: sac.id }).ok) return 'wait';
       continue;
@@ -562,7 +722,7 @@ export function buyGate(ctx: BotContext, memo: Memo): boolean {
 /** Kauf-Schleife: wählt unter den Top-3-Optionen (seeded) und kauft, bis nichts mehr geht. */
 export function spend(ctx: BotContext, memo: Memo, pol: Policy): void {
   const failed = new Set<string>();
-  const key = (o: Option): string => (o.kind === 'place' ? `p${o.def.id}@${o.slot}` : `u${o.unit?.id}`);
+  const key = (o: Option): string => (o.kind === 'place' ? `p${o.def.id}@${o.pos?.x},${o.pos?.y}` : `u${o.unit?.id}`);
   for (let i = 0; i < 80; i++) {
     const env = makeEnv(ctx, memo);
     let opts = buildOptions(env, pol).filter((o) => !failed.has(key(o)));
@@ -581,16 +741,18 @@ export function spend(ctx: BotContext, memo: Memo, pol: Policy): void {
     if (opts.length === 0) return;
     memo.saving = 0;
     let o = pickTop(ctx.rng, opts);
-    // Fehlermodell: schlechterer Slot (zufälliger anderer Slot für dieselbe Unit).
-    if (memo.profile && o.kind === 'place' && chance(ctx, memo, memo.profile.worseSlotBp)) {
-      // "Schlechter" = aus der schlechteren Hälfte der Slots (nach Bot-Bewertung) dieser Unit.
-      const same = opts.filter((x) => x.kind === 'place' && x.def.id === o.def.id);
-      const worse = same.slice(Math.ceil(same.length / 2));
-      if (worse.length > 0) o = worse[nextInt(frngOf(ctx, memo), worse.length)];
+    // Fehlermodell: schlechtere Position (zufällige freie Stelle aus der schlechteren Hälfte der Positionen mit Pfadabdeckung für dieselbe Unit).
+    if (memo.profile && o.kind === 'place' && chance(ctx, memo, memo.profile.worsePositionBp)) {
+      const all = freeSpots(env, o.def, Infinity).filter((sp) => sp.cov > 0);
+      const worse = all.slice(Math.ceil(all.length / 2));
+      if (worse.length > 0) {
+        const pick = worse[nextInt(frngOf(ctx, memo), worse.length)];
+        o = { ...o, pos: { x: pick.x, y: pick.y } };
+      }
     }
     const res =
       o.kind === 'place'
-        ? ctx.sim.apply(ctx.playerId, { type: 'place', unitId: o.def.id, slot: o.slot as number })
+        ? ctx.sim.apply(ctx.playerId, { type: 'place', unitId: o.def.id, x: (o.pos as Point).x, y: (o.pos as Point).y })
         : ctx.sim.apply(ctx.playerId, { type: 'upgrade', entityId: (o.unit as UnitState).id });
     if (!res.ok) failed.add(key(o));
   }
@@ -611,7 +773,7 @@ export function farmStep(ctx: BotContext, memo: Memo, pol: Policy): void {
     const ys = farmDef.farm.yieldByLevel;
     const cands: { payback: number; cost: number; place: boolean; unit?: UnitState }[] = [];
     const myFarms = env.own.filter((u) => u.defId === farmDef.id);
-    if (myFarms.length < farmDef.cap) cands.push({ payback: farmDef.placeCost / ys[0], cost: farmDef.placeCost, place: true });
+    if (myFarms.length < limitOf(farmDef)) cands.push({ payback: farmDef.placeCost / ys[0], cost: farmDef.placeCost, place: true });
     for (const u of myFarms) {
       if (u.level >= farmDef.maxLevel) continue;
       const c = farmDef.upgradeCosts[u.level];
@@ -628,10 +790,11 @@ export function farmStep(ctx: BotContext, memo: Memo, pol: Policy): void {
     if (ok.length === 0) return;
     const c = ok[0];
     if (c.place) {
-      const big = env.slots.filter((s) => s.free && s.size === 2 && s.kind === 'ground');
-      if (big.length === 0) return;
-      const s = big[nextInt(ctx.rng, big.length)];
-      if (!ctx.sim.apply(ctx.playerId, { type: 'place', unitId: farmDef.id, slot: s.id }).ok) return;
+      // Farms stehen abseits des Pfads (geringste Abdeckung zuerst), damit sie keine guten Turmplätze belegen; unter den ersten Plätzen entscheidet der Zufall.
+      const back = freeSpots(env, farmDef, 6, 2 * farmDef.radiusMilli, true);
+      if (back.length === 0) return;
+      const s = back[nextInt(ctx.rng, back.length)];
+      if (!ctx.sim.apply(ctx.playerId, { type: 'place', unitId: farmDef.id, x: s.x, y: s.y }).ok) return;
     } else if (!ctx.sim.apply(ctx.playerId, { type: 'upgrade', entityId: (c.unit as UnitState).id }).ok) return;
   }
 }
@@ -719,7 +882,6 @@ export function useAbilities(ctx: BotContext, frostMin = 4, memo?: Memo): void {
   const { sim, playerId } = ctx;
   const st = sim.state;
   const defs = new Map(sim.catalog().map((d) => [d.id, d]));
-  const slots = sim.slots();
   const live = st.enemies.filter((e) => e.hp > 0);
   if (live.length === 0) return;
   const bs = botTuning.windowAware ? bossStatus(sim, live) : null;
@@ -730,8 +892,7 @@ export function useAbilities(ctx: BotContext, frostMin = 4, memo?: Memo): void {
     if (!ab) continue;
     let fire = false;
     if (ab.kind === 'stunAoe') {
-      const s = slots[u.slot];
-      const inR = live.filter((e) => (!e.flying || d.canHitAir) && e.stunTicks <= 0 && dist(e, s) <= ab.radiusMilli);
+      const inR = live.filter((e) => (!e.flying || d.canHitAir) && e.stunTicks <= 0 && dist(e, u) <= ab.radiusMilli);
       if (bs) {
         // Boss mit Kit lebt: Frost wartet auf das Fenster bzw. auf einen unterbrechbaren Telegraph (Notfall: kurz vor dem Ziel, Sturm).
         const bossIn = inR.some((e) => e === bs.boss);
@@ -826,7 +987,7 @@ export function rotateEarly(ctx: BotContext, memo: Memo): void {
   if (early.length === 0) return;
   const refund = early.reduce((a, u) => a + Math.floor((u.invested * (env.defs.get(u.defId) as UnitDef).sellBp) / 10000), 0);
   const missing = [...env.defs.values()].filter(
-    (d) => (d.attack || d.aura) && RARITY_RANK[d.rarity] >= RARITY_RANK[botTuning.rotateMinRarity] && !EARLY_UNITS.includes(d.id) && !env.own.some((u) => u.defId === d.id) && env.own.filter((u) => u.defId === d.id).length < d.cap,
+    (d) => (d.attack || d.aura) && RARITY_RANK[d.rarity] >= RARITY_RANK[botTuning.rotateMinRarity] && !EARLY_UNITS.includes(d.id) && !env.own.some((u) => u.defId === d.id) && env.own.filter((u) => u.defId === d.id).length < limitOf(d),
   );
   if (!missing.some((d) => env.coins + refund >= d.placeCost)) return;
   for (const u of early) ctx.sim.apply(ctx.playerId, { type: 'sell', entityId: u.id });

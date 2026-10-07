@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { resolveDeaths, sellValue, splitBounty } from '../src/systems/economy.js';
 import { createEnemy } from '../src/systems/spawn.js';
 import type { SimState, UnitState } from '../src/state.js';
-import { ctxFor, createSim, data, richData, slotsOf } from './helpers.js';
+import { at, ctxFor, createSim, data, richData, slotsOf } from './helpers.js';
 
 describe('Upgrade-Kosten (§6)', () => {
   const total = { rare: 2735, epic: 4780, legendary: 8945, mythic: 18050 } as const;
@@ -34,7 +34,7 @@ describe('Upgrade-Kosten (§6)', () => {
   it('Sim: upgradeCost / placeCost / Level-Stats', () => {
     const sim = createSim({ stage: 'standard20', difficulty: 'normal', players: 1, seed: 1, data: richData() });
     expect(sim.placeCost('titan')).toBe(1000);
-    const r = sim.apply(0, { type: 'place', unitId: 'titan', slot: slotsOf(sim, 'hill')[0] });
+    const r = sim.apply(0, { type: 'place', unitId: 'titan', ...at(sim, slotsOf(sim, 'hill')[0]) });
     if (!r.ok) throw new Error(r.reason);
     const id = r.entityId as number;
     const seen: number[] = [];
@@ -56,7 +56,7 @@ describe('Upgrade-Kosten (§6)', () => {
 
 describe('Verkauf (§8)', () => {
   const fake = (defId: string, invested: number): UnitState => ({
-    id: 1, defId, owner: 0, slot: 0, level: 0, invested, targeting: 'first', cd: 0, abilityCd: 0,
+    id: 1, defId, owner: 0, x: 0, y: 0, level: 0, invested, targeting: 'first', cd: 0, abilityCd: 0,
     lvlBp: 10000, traitBp: 0, yieldBp: 10000, damageDealt: 0, damageReported: 0,
   });
   const ctx = ctxFor();
@@ -67,10 +67,10 @@ describe('Verkauf (§8)', () => {
     expect(sellValue(ctx.units['farm'], fake('farm', 1150))).toBe(460);
     expect(sellValue(ctx.units['farm'], fake('farm', 1153))).toBe(461);
   });
-  it('Sim: Verkaufen erstattet, gibt Slot und Cap frei', () => {
+  it('Sim: Verkaufen erstattet und gibt die Position frei', () => {
     const sim = createSim({ stage: 'standard20', difficulty: 'normal', players: 1, seed: 1 });
     const slot = slotsOf(sim, 'ground')[0];
-    const id = (sim.apply(0, { type: 'place', unitId: 'striker', slot }) as { entityId: number }).entityId;
+    const id = (sim.apply(0, { type: 'place', unitId: 'striker', ...at(sim, slot) }) as { entityId: number }).entityId;
     const def = ctxFor().units['striker']; // Runde 4 P1: Striker-Platzierung 200 statt 300
     const afterPlace = 1000 - def.placeCost;
     expect(sim.state.players[0].coins).toBe(afterPlace);
@@ -79,20 +79,20 @@ describe('Verkauf (§8)', () => {
     expect(sim.state.players[0].coins).toBe(afterUp);
     expect(sim.apply(0, { type: 'sell', entityId: id })).toEqual({ ok: true, entityId: id });
     expect(sim.state.players[0].coins).toBe(afterUp + Math.floor(((def.placeCost + def.upgradeCosts[0]) * 6000) / 10000));
-    expect(sim.slots()[slot].free).toBe(true);
+    expect(sim.canPlace(0, 'striker', at(sim, slot).x, at(sim, slot).y)).toBeNull();
     expect(sim.state.units).toHaveLength(0);
   });
 });
 
-describe('Farm (§12) und Caps (§7)', () => {
-  it('Ertrag je Stufe (units.json) am Wave-Ende, Cap 2, 2x2-Slot', () => {
+describe('Farm (§12) und Team-Grenzen (§7)', () => {
+  it('Ertrag je Stufe (units.json) am Wave-Ende, zwei Farms auf 2x2-Flächen', () => {
     const sim = createSim({ stage: 'standard20', difficulty: 'normal', players: 1, seed: 1, data: richData(), godMode: true });
     const big = slotsOf(sim, 'ground', 2);
-    const small = slotsOf(sim, 'ground', 1)[0];
-    expect(sim.apply(0, { type: 'place', unitId: 'farm', slot: small })).toEqual({ ok: false, reason: 'slot-size' });
-    const f1 = (sim.apply(0, { type: 'place', unitId: 'farm', slot: big[0] }) as { entityId: number }).entityId;
-    expect(sim.apply(0, { type: 'place', unitId: 'farm', slot: big[1] }).ok).toBe(true);
-    expect(sim.apply(0, { type: 'place', unitId: 'farm', slot: big[2] })).toEqual({ ok: false, reason: 'cap-reached' });
+    const small = slotsOf(sim, 'ground', 1).find((id) => at(sim, id).y === 3000)!;
+    // Die Farm hat den großen Radius (2x2): auf der schmalen Bodenreihe neben dem Pfad passt sie nicht.
+    expect(sim.apply(0, { type: 'place', unitId: 'farm', ...at(sim, small) })).toEqual({ ok: false, reason: 'on-path' });
+    const f1 = (sim.apply(0, { type: 'place', unitId: 'farm', ...at(sim, big[0]) }) as { entityId: number }).entityId;
+    expect(sim.apply(0, { type: 'place', unitId: 'farm', ...at(sim, big[1]) }).ok).toBe(true);
     const farmYield = data.units.units.find((u) => u.id === "farm")!.farm!.yieldByLevel;
     const yields: number[] = [];
     for (let lvl = 0; lvl <= 4; lvl++) {
@@ -106,22 +106,20 @@ describe('Farm (§12) und Caps (§7)', () => {
     expect(yields).toEqual(farmYield); // Ertrag je Stufe laut units.json (kalibriert: docs/balancing/kalibrierung.md)
     expect(sim.state.stats.coinsFarm).toBeGreaterThan(0);
   });
-  it('Caps je Typ und Spieler: Rare 5, Epic 4, Legendary 3, Mythic 2', () => {
+  it('Kein Limit je Unit-Typ (Runde 6): mehr als 5 Striker und mehr als 2 Titans, Zone und Überlappung bleiben Regeln', () => {
     const sim = createSim({ stage: 'standard20', difficulty: 'normal', players: 1, seed: 1, data: richData() });
     const ground = slotsOf(sim, 'ground');
     const hill = slotsOf(sim, 'hill');
-    for (let i = 0; i < 5; i++) expect(sim.apply(0, { type: 'place', unitId: 'striker', slot: ground[i] }).ok).toBe(true);
-    expect(sim.apply(0, { type: 'place', unitId: 'striker', slot: ground[5] })).toEqual({ ok: false, reason: 'cap-reached' });
-    expect(sim.apply(0, { type: 'place', unitId: 'titan', slot: hill[0] }).ok).toBe(true);
-    expect(sim.apply(0, { type: 'place', unitId: 'titan', slot: hill[1] }).ok).toBe(true);
-    expect(sim.apply(0, { type: 'place', unitId: 'titan', slot: hill[2] })).toEqual({ ok: false, reason: 'cap-reached' });
-    expect(sim.apply(0, { type: 'place', unitId: 'gunner', slot: ground[6] })).toEqual({ ok: false, reason: 'slot-kind' });
-    expect(sim.apply(0, { type: 'place', unitId: 'striker', slot: hill[0] })).toEqual({ ok: false, reason: 'slot-occupied' });
+    for (let i = 0; i < 7; i++) expect(sim.apply(0, { type: 'place', unitId: 'striker', ...at(sim, ground[i]) }).ok).toBe(true);
+    for (let i = 0; i < 4; i++) expect(sim.apply(0, { type: 'place', unitId: 'titan', ...at(sim, hill[i]) }).ok).toBe(true);
+    expect(sim.apply(0, { type: 'place', unitId: 'gunner', ...at(sim, ground[8]) })).toEqual({ ok: false, reason: 'wrong-zone' });
+    expect(sim.apply(0, { type: 'place', unitId: 'striker', ...at(sim, hill[0]) })).toEqual({ ok: false, reason: 'wrong-zone' });
+    expect(sim.apply(0, { type: 'place', unitId: 'titan', ...at(sim, hill[0]) })).toEqual({ ok: false, reason: 'overlap' });
   });
   it('zu wenig Geld wird abgelehnt', () => {
     const sim = createSim({ stage: 'standard20', difficulty: 'normal', players: 1, seed: 1 });
-    expect(sim.apply(0, { type: 'place', unitId: 'titan', slot: slotsOf(sim, 'hill')[0] }).ok).toBe(true); // 1000 = Start
-    expect(sim.apply(0, { type: 'place', unitId: 'striker', slot: slotsOf(sim, 'ground')[0] })).toEqual({ ok: false, reason: 'not-enough-coins' });
+    expect(sim.apply(0, { type: 'place', unitId: 'titan', ...at(sim, slotsOf(sim, 'hill')[0]) }).ok).toBe(true); // 1000 = Start
+    expect(sim.apply(0, { type: 'place', unitId: 'striker', ...at(sim, slotsOf(sim, 'ground')[0]) })).toEqual({ ok: false, reason: 'not-enough-coins' });
   });
 });
 

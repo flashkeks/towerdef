@@ -4,7 +4,11 @@
  *
  *   npm run replay -- DATEI [--compare] [--bot wide@normal] [--quiet]
  *
- * Exit-Code 0 = Hash und Ergebnis stimmen, 1 = Abweichung, 2 = Datei/Aufruf unbrauchbar.
+ * Exit-Code 0 = Hash und Ergebnis stimmen, 1 = Abweichung, 2 = Datei/Aufruf unbrauchbar, 3 = altes Regelwerk (Format v1, Slots).
+ *
+ * Formatversionen: v1 = Befehl `place` mit Slot-ID (Regelwerk bis Runde 5), v2 = `place` mit Position `x`, `y` in Milli-Tiles
+ * (freie Platzierung, Runde 6). v1-Dateien lassen sich nicht mehr nachspielen: Slots gibt es nicht mehr, ohne `cap` und mit anderem
+ * Zustand stimmt kein Hash. Sie bleiben als Dokument lesbar (Bericht aus den Wellen-Daten der Datei, `--compare` geht weiter).
  * `--compare`: legt den Bot-Lauf (gleiche Stufe, gleicher Seed, Standard `wide@normal`) daneben.
  * Befehle gelten zu Tick-Beginn: Der Client protokolliert `sim.state.tick` unmittelbar VOR `apply`, hier wird genau so
  * lange gesteppt, bis dieser Tick erreicht ist, und dann angewendet (auch abgelehnte Befehle, ihr Ergebnis wird verglichen).
@@ -18,10 +22,15 @@ import { createSim, type Command, type DifficultyId, type SimEvent } from '../sr
 export interface ReplayCommand {
   tick: number;
   player: number;
-  cmd: Command;
+  /** v2: `place` mit `x`/`y`; v1: `place` mit `slot` (Altbestand, wird nicht abgespielt). */
+  cmd: Command | { type: 'place'; unitId: string; slot: number };
   ok: boolean;
   reason?: string;
 }
+
+/** Aktuelles Format (Positionen statt Slot-IDs). Der Client schreibt es in `client/src/game/recorder.ts`. */
+export const REPLAY_FORMAT_VERSION = 2;
+export const OLD_RULES_MESSAGE = 'altes Regelwerk (v1, Slots)';
 
 export interface ReplayFile {
   format: string;
@@ -57,6 +66,8 @@ export interface WaveRow {
 
 export interface ReplayReport {
   ok: boolean;
+  /** Datei im alten Format (v1, Slots): nicht nachgespielt, `problems` nennt es. */
+  oldRules?: boolean;
   problems: string[];
   hash: string;
   expectedHash: string;
@@ -74,7 +85,9 @@ export interface ReplayReport {
 export function parseReplay(text: string): ReplayFile {
   const r = JSON.parse(text) as Partial<ReplayFile>;
   if (r.format !== 'towerdef-replay') throw new Error('Keine Duskwardens-Replay-Datei (format fehlt/falsch)');
-  if (r.formatVersion !== 1) throw new Error(`Replay-Format ${String(r.formatVersion)} wird nicht unterstützt (bekannt: 1)`);
+  if (r.formatVersion !== 1 && r.formatVersion !== REPLAY_FORMAT_VERSION) {
+    throw new Error(`Replay-Format ${String(r.formatVersion)} wird nicht unterstützt (bekannt: 1 = ${OLD_RULES_MESSAGE}, ${REPLAY_FORMAT_VERSION})`);
+  }
   for (const k of ['stage', 'difficulty', 'players', 'seed', 'endTick', 'endHash', 'commands'] as const) {
     if (r[k] === undefined) throw new Error(`Feld "${k}" fehlt`);
   }
@@ -84,6 +97,7 @@ export function parseReplay(text: string): ReplayFile {
 
 /** Spielt die Datei nach. Wirft nur bei kaputten Eingaben, Abweichungen stehen in `problems`. */
 export function replay(file: ReplayFile): ReplayReport {
+  if (file.formatVersion === 1) return oldRulesReport(file);
   const sim = createSim({ stage: file.stage, difficulty: file.difficulty, players: file.players, seed: file.seed });
   const st = sim.state;
   const problems: string[] = [];
@@ -133,12 +147,12 @@ export function replay(file: ReplayFile): ReplayReport {
     }
     if (c.cmd.type === 'upgrade') {
       const name = unitName(c.cmd.entityId);
-      const r = sim.apply(c.player, c.cmd);
+      const r = sim.apply(c.player, c.cmd as Command);
       if (r.ok) upgrades[name] = (upgrades[name] ?? 0) + 1;
       check(c, r, problems);
       if (!r.ok) rejected++;
     } else {
-      const r = sim.apply(c.player, c.cmd);
+      const r = sim.apply(c.player, c.cmd as Command);
       check(c, r, problems);
       if (!r.ok) rejected++;
     }
@@ -181,6 +195,54 @@ export function replay(file: ReplayFile): ReplayReport {
   };
 }
 
+/** v1-Datei: nichts nachspielen, Wellen und Käufe aus den Daten der Datei selbst lesen. */
+function oldRulesReport(file: ReplayFile): ReplayReport {
+  const bought: Record<string, number> = {};
+  const upgrades: Record<string, number> = {};
+  let sold = 0;
+  let rejected = 0;
+  const owner = new Map<number, string>();
+  let nextId = 1;
+  for (const c of file.commands) {
+    if (!c.ok) {
+      rejected++;
+      continue;
+    }
+    if (c.cmd.type === 'place') {
+      bought[c.cmd.unitId] = (bought[c.cmd.unitId] ?? 0) + 1;
+      owner.set(nextId++, c.cmd.unitId);
+    } else if (c.cmd.type === 'upgrade') {
+      const n = owner.get(c.cmd.entityId) ?? `#${c.cmd.entityId}`;
+      upgrades[n] = (upgrades[n] ?? 0) + 1;
+    } else if (c.cmd.type === 'sell') sold++;
+  }
+  const waves: WaveRow[] = ((file.waves ?? []) as Record<string, unknown>[]).map((w) => ({
+    wave: Number(w.wave),
+    startTick: Number(w.startTick),
+    coins: Number(w.coinsStart),
+    lives: Number(w.livesStart),
+    leaks: Number(w.leaks),
+    leaksByEnemy: (w.leaksByEnemy ?? {}) as Record<string, number>,
+    kills: Number(w.kills),
+  }));
+  return {
+    ok: false,
+    oldRules: true,
+    problems: [OLD_RULES_MESSAGE],
+    hash: '',
+    expectedHash: file.endHash,
+    tick: file.endTick,
+    result: file.result,
+    lives: file.endLives ?? 0,
+    waves,
+    bought,
+    upgrades,
+    sold,
+    rejected,
+    coinCurve: waves.map((w) => ({ wave: w.wave, coins: w.coins })),
+  };
+}
+
 function check(c: ReplayCommand, r: { ok: boolean; reason?: string }, problems: string[]): void {
   if (r.ok !== c.ok) problems.push(`Befehl ${c.cmd.type} bei Tick ${c.tick}: Datei ${c.ok ? 'ok' : `abgelehnt (${c.reason ?? '?'})`}, Replay ${r.ok ? 'ok' : `abgelehnt (${r.reason ?? '?'})`}`);
 }
@@ -192,8 +254,9 @@ export function formatReport(file: ReplayFile, rep: ReplayReport, cmp?: MatchRes
   out.push(`Replay ${file.difficulty}, Seed ${file.seed}, Spiel ${file.gameVersion ?? '?'}, ${file.date ?? ''}`);
   const secs = Math.round(rep.tick / 20);
   out.push(`Ergebnis: ${rep.result ?? 'läuft noch (Zwischenstand)'}, Tick ${rep.tick} (${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')} Spielzeit), Leben ${rep.lives}`);
-  out.push(`Hash: ${rep.ok ? 'OK' : 'ABWEICHUNG'} (${rep.hash})`);
-  for (const p of rep.problems) out.push(`  ! ${p}`);
+  if (rep.oldRules) out.push(`Hash: nicht geprüft, ${OLD_RULES_MESSAGE}. Die Zahlen unten stammen aus der Datei (Aufnahme des Clients), nicht aus dem Simulator.`);
+  else out.push(`Hash: ${rep.ok ? 'OK' : 'ABWEICHUNG'} (${rep.hash})`);
+  if (!rep.oldRules) for (const p of rep.problems) out.push(`  ! ${p}`);
   out.push('', 'Welle | Tick  | Münzen | Leben | Kills | Leaks');
   for (const w of rep.waves) {
     out.push(`${String(w.wave).padStart(5)} | ${String(w.startTick).padStart(5)} | ${String(w.coins).padStart(6)} | ${String(w.lives).padStart(5)} | ${String(w.kills).padStart(5)} | ${w.leaks}${w.leaks ? ` (${fmtMap(w.leaksByEnemy)})` : ''}`);
@@ -246,6 +309,10 @@ function main(argv: string[]): number {
   const rep = replay(file);
   const cmp = compare ? runMatch({ stage: file.stage, difficulty: file.difficulty, players: file.players, seed: file.seed, bots: [bot] }) : undefined;
   console.log(formatReport(file, rep, cmp));
+  if (rep.oldRules) {
+    console.error(`Replay: ${OLD_RULES_MESSAGE} - Format v${file.formatVersion}, nicht nachspielbar (Exit 3). Aktuelles Format: v${REPLAY_FORMAT_VERSION}.`);
+    return 3;
+  }
   return rep.ok ? 0 : 1;
 }
 

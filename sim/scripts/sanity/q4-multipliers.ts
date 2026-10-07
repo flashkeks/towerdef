@@ -66,9 +66,9 @@ if (part === 'A') {
     d.economy.startCoins = 200_000;
   })): number => {
     const sim = createSim({ stage: 'standard20', difficulty: 'normal', players, seed: 1, data, godMode: true });
-    const hills = sim.slots().filter((s) => s.kind === 'hill' && s.size === 1).sort((a, b) => b.coverageByRange(4500) - a.coverageByRange(4500));
+    const hills = sim.slotCenters().filter((s) => s.kind === 'hill' && s.size === 1).sort((a, b) => sim.coverage(b.x, b.y, 4500) - sim.coverage(a.x, a.y, 4500));
     const ts = hills[0];
-    const tid = (sim.apply(0, { type: 'place', unitId: 'titan', slot: ts.id }) as { entityId: number }).entityId;
+    const tid = (sim.apply(0, { type: 'place', unitId: 'titan', x: ts.x, y: ts.y }) as { entityId: number }).entityId;
     setup(sim, ts.id);
     sim.step(1);
     for (let p = 0; p < players; p++) sim.apply(p, { type: 'skipWave' });
@@ -76,15 +76,15 @@ if (part === 'A') {
     return sim.state.units.find((u) => u.id === tid)?.damageDealt ?? 0;
   };
   const near = (sim: ReturnType<typeof createSim>, slot: number): number[] => {
-    const s = sim.slots()[slot];
-    return sim.slots().filter((x) => x.free && x.size === 1 && x.id !== slot && Math.hypot(x.x - s.x, x.y - s.y) <= 3000).map((x) => x.id);
+    const s = sim.slotCenters()[slot];
+    return sim.slotCenters().filter((x) => x.size === 1 && x.id !== slot && sim.canPlace(0, 'banner', x.x, x.y) !== 'overlap' && Math.hypot(x.x - s.x, x.y - s.y) <= 3000).map((x) => x.id);
   };
   const base = measure(() => {}, 1);
   const rows: (string | number)[][] = [['kein Banner', 1, f1(1), '-']];
   const addBanners = (owner: (i: number) => number, id: (i: number) => string, k: number, lvl = 5) => (sim: ReturnType<typeof createSim>, slot: number): void => {
     const sl = near(sim, slot);
     for (let i = 0; i < k; i++) {
-      const r = sim.apply(owner(i), { type: 'place', unitId: id(i), slot: sl[i] });
+      const r = sim.apply(owner(i), { type: 'place', unitId: id(i), x: sim.slotCenters()[sl[i]].x, y: sim.slotCenters()[sl[i]].y });
       if (!r.ok) throw new Error(`${id(i)}: ${r.reason}`);
       for (let l = 0; l < lvl; l++) sim.apply(owner(i), { type: 'upgrade', entityId: (r as { entityId: number }).entityId });
     }

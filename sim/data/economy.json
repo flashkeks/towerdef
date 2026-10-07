@@ -31,8 +31,13 @@
     "ref": "recommendations §3: Pool ca. 32 Grunt-Äquivalente (Boss-Wave 45), Speed +1 %/Wave bis x1,5, max. 60 Gegner; KALIBRIERT poolMilli 14000, bossPoolMilli 38000 = Boss + Elite ohne Füller (kalibrierung.md #7)",
     "poolMilli": 14000, "bossPoolMilli": 38000, "speedPerWaveBp": 100, "speedMaxBp": 15000, "enemyCap": 60
   },
+  "placement": {
+    "ref": "Runde 6 / P1: freie Platzierung (ENTSCHEIDUNGEN.md, Platzierung). Radius je footprint in Milli-Tiles (1x1 = 0,8 Tiles Durchmesser, 2x2 = 1,8), Zusatzabstand zum Pfadrand",
+    "unitRadiusMilli": { "1": 400, "2": 900 },
+    "pathMarginMilli": 0
+  },
   "caps": {
-    "ref": "recommendations §7: 6 Team-Slots je Spieler, 60 Units, 80 Gegner",
+    "ref": "recommendations §7: 6 Team-Slots je Spieler, 60 Units, 80 Gegner. Runde 6: kein Limit je Unit-Typ mehr (Rarity/Unit-Feld `cap` entfernt); teamUnits bleibt technische Obergrenze",
     "teamUnits": 60,
     "teamSlots": 6,
     "enemies": 80

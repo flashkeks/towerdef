@@ -6,7 +6,7 @@
  *  - Gegner-bezogene Größen (poolHp, leaks, baseHpLost, kills) gehören zur Spawn-Wave des Gegners.
  *  - Alle Spielerarrays sind nach Spieler-ID indiziert. HP in ganzen HP (Sim: Centi-HP / 100).
  */
-import { createSim, type DifficultyId, type SimEvent, type StageData } from '../index.js';
+import { createSim, type Command, type DifficultyId, type SimEvent, type Sim, type StageData } from '../index.js';
 import { seedRng } from '../prng.js';
 import { getBot } from './index.js';
 import type { Bot } from './types.js';
@@ -22,6 +22,8 @@ export interface MatchOptions {
   maxTicks?: number;
   /** Nur Stage `infinite`: Abbruch, sobald diese Wave endet (Ergebnis `timeout`). */
   maxWaves?: number;
+  /** Optional: jeden Befehl der Bots mit Tick, Spieler, Ergebnis melden (Replay-Export, `scripts/export-replay.ts`). */
+  onCommand?: (c: { tick: number; player: number; cmd: Command; ok: boolean; reason?: string }) => void;
 }
 
 export interface WaveStat {
@@ -68,7 +70,9 @@ export interface MatchResult {
   waves: WaveStat[];
   finalCoins: number[];
   /** Units am Ende (Zusammensetzung/Ausbau). */
-  finalUnits: { unit: string; owner: number; level: number; slot: number }[];
+  finalUnits: { unit: string; owner: number; level: number; x: number; y: number }[];
+  /** Größte Zahl gleichzeitig stehender Units im Lauf (Messung gegen `economy.caps.teamUnits`). */
+  peakUnits: number;
   damageByPlayer: number[];
   totals: { kills: number; leaks: number; spawned: number };
 }
@@ -79,7 +83,19 @@ export function runMatch(opts: MatchOptions): MatchResult {
   const n = opts.players;
   if (opts.bots.length !== n && opts.bots.length !== 1) throw new Error('bots: ein Name je Spieler oder genau einer');
   const names = Array.from({ length: n }, (_, i) => opts.bots[opts.bots.length === 1 ? 0 : i]);
-  const sim = createSim({ stage: opts.stage, difficulty: opts.difficulty, players: n, seed: opts.seed, maxWaves: opts.maxWaves });
+  const core = createSim({ stage: opts.stage, difficulty: opts.difficulty, players: n, seed: opts.seed, maxWaves: opts.maxWaves });
+  // Mit `onCommand` sehen die Bots eine Sicht, die jeden `apply` mitschreibt; Zustand und Ergebnis bleiben die der echten Sim.
+  const sim: Sim = opts.onCommand
+    ? {
+        ...core,
+        apply(player, cmd) {
+          const tick = core.state.tick;
+          const r = core.apply(player, cmd);
+          opts.onCommand?.({ tick, player, cmd, ok: r.ok, ...(r.ok ? {} : { reason: r.reason }) });
+          return r;
+        },
+      }
+    : core;
   const bots: Bot[] = names.map((nm) => getBot(nm)());
   const rngs = names.map((_, i) => seedRng((Math.imul(opts.seed | 0, 0x9e3779b1) ^ Math.imul(i + 1, 0x85ebca6b) ^ 0xb07b07) >>> 0));
   const maxTicks = opts.maxTicks ?? 40000;
@@ -113,6 +129,7 @@ export function runMatch(opts: MatchOptions): MatchResult {
   row(0);
   row(0).coins = st.players.map((p) => p.coins);
   let cur = 0;
+  let peak = 0;
   const unitDef = new Map<number, string>();
   const spawnedIds = new Set<number>();
 
@@ -185,6 +202,7 @@ export function runMatch(opts: MatchOptions): MatchResult {
         if ((e.type === 'place' || e.type === 'upgrade') && e.player === p) spent += e.cost;
         if (e.type === 'income' && e.player === p) gained += e.amount;
       }
+      peak = Math.max(peak, st.units.length);
       const don = before + gained - spent - st.players[p].coins;
       if (don > 0) row(cur).donated[p] += don;
     }
@@ -212,7 +230,8 @@ export function runMatch(opts: MatchOptions): MatchResult {
     bots: names,
     waves,
     finalCoins: st.players.map((p) => p.coins),
-    finalUnits: st.units.map((u) => ({ unit: u.defId, owner: u.owner, level: u.level, slot: u.slot })),
+    finalUnits: st.units.map((u) => ({ unit: u.defId, owner: u.owner, level: u.level, x: u.x, y: u.y })),
+    peakUnits: peak,
     damageByPlayer: [...st.stats.damageByPlayer],
     totals: { kills: st.stats.kills, leaks: st.stats.leaks, spawned: st.stats.spawned },
   };

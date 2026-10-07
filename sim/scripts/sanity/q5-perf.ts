@@ -7,6 +7,7 @@
  * Aufruf: npx tsx scripts/sanity/q5-perf.ts [--runs 5]
  */
 import os from 'node:os';
+import { freePositions } from './pos.js';
 import { createSim, type Sim, type StageData } from '../../src/index.js';
 import { reg, patched, argNum, median, f1, table } from './lib.js';
 import { seedRng } from '../../src/prng.js';
@@ -99,13 +100,13 @@ function s2(seed: number): Stat {
   const stage: StageData = { ...base, slots };
   const sim = createSim({ stage, difficulty: 'normal', players: 4, seed, data, godMode: true, maxWaves: 25 });
   const plan: [string, number][] = [['striker', 5], ['gunner', 5], ['blaster', 4], ['frost', 1]];
-  const free = (kind: string): number[] => sim.slots().filter((s) => s.free && s.size === 1 && s.kind === kind).map((s) => s.id);
+  const free = (kind: string, u: string): { x: number; y: number }[] => freePositions(sim, u, 4000).filter((p) => sim.zoneAt(p.x, p.y) === kind);
   let placed = 0;
   for (let p = 0; p < 4 && placed < 60; p++) {
     for (const [u, c] of plan) {
       for (let i = 0; i < c; i++) {
         const kind = u === 'gunner' ? 'hill' : 'ground';
-        const r = sim.apply(p, { type: 'place', unitId: u, slot: free(kind)[0] });
+        const r = sim.apply(p, { type: 'place', unitId: u, ...free(kind, u)[0] });
         if (!r.ok) throw new Error(`${u}: ${r.reason}`);
         while (sim.apply(p, { type: 'upgrade', entityId: (r as { entityId: number }).entityId }).ok);
         placed++;
