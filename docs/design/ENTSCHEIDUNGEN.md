@@ -56,6 +56,10 @@ Verbindlich für alle weiteren Runden. Die beantwortete Fragenliste liegt in
   verschieben sich die Zahlen ohnehin. Der Simulator dient bis dahin als Sicherheitsnetz gegen
   grobe Fehler (dominante Strategie, Pflicht-/Fallen-Unit, kaputte Regel), nicht zum
   Feinkalibrieren. Feinschliff erst, wenn der Unit-Pool und die Progression stehen.
+- **Meta und Schwierigkeit** (Max, 07.10.2026): Die Stufen bleiben **fest**, Gegner wachsen
+  **nicht** mit dem Team-Level mit. Wer levelt, soll alte Stufen spürbar leichter schaffen, das
+  ist die Belohnung. Die Herausforderung für starke Teams kommt aus **Inhalt oben drauf**:
+  Infinite, Challenges und Stufen mit **empfohlener Team-Stärke**.
 - **Messlatte für die Ziel-Siegquoten** (Normal 85–95, Hard 45–65, Nightmare 15–35 %) ist die
   **beste echte Strategie**, nicht ein ausgewählter Bot (Max, 07.10.2026). Zählt ein Bot als
   Strategie, die ein Mensch genauso spielen würde (z. B. `farm`: früh Farmen, spät verkaufen),

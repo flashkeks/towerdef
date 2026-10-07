@@ -1,7 +1,7 @@
 # Status (global)
 
-Arbeitsauftrag: [`/run.md`](../run.md) (**Runde 7**: M3-Start, lokaler Speicherstand, Gacha mit sichtbaren Raten/Pity, Unit-Level/Sterne, Lobby, 6 neue Units). **Verbindlich zuerst:** [design/ENTSCHEIDUNGEN.md](design/ENTSCHEIDUNGEN.md). **Jede Sitzung liest danach diese Datei** und macht beim „Nächsten Schritt“ weiter.
-Frühere Aufträge: [archiv/run-runde1.md](archiv/run-runde1.md), [archiv/run-runde2.md](archiv/run-runde2.md), [archiv/run-runde3.md](archiv/run-runde3.md), [archiv/run-runde4.md](archiv/run-runde4.md), [archiv/run-runde5.md](archiv/run-runde5.md), [archiv/run-runde6.md](archiv/run-runde6.md).
+Arbeitsauftrag: [`/run.md`](../run.md) (**Runde 8**: K4 Bindung, Tagesaufgaben ohne Streak, Infinite, Challenges, höhere Stufe mit empfohlener Team-Stärke). **Verbindlich zuerst:** [design/ENTSCHEIDUNGEN.md](design/ENTSCHEIDUNGEN.md). **Jede Sitzung liest danach diese Datei** und macht beim „Nächsten Schritt“ weiter.
+Frühere Aufträge: [archiv/run-runde1.md](archiv/run-runde1.md), [archiv/run-runde2.md](archiv/run-runde2.md), [archiv/run-runde3.md](archiv/run-runde3.md), [archiv/run-runde4.md](archiv/run-runde4.md), [archiv/run-runde5.md](archiv/run-runde5.md), [archiv/run-runde6.md](archiv/run-runde6.md), [archiv/run-runde7.md](archiv/run-runde7.md).
 
 
 ## Runde 7
@@ -86,6 +86,9 @@ Commits: 14 auf dev seit dem Auftrag (92ae0bb)
 ```
 
 **Offene Fragen an die Menschen (Runde 7, mit Empfehlung):**
+
+**Alle entschieden (Max, 07.10.2026):** „Meta macht Hard/Nightmare zu leicht“ **anders als empfohlen**: keine Kopplung an das Team-Level, sondern Inhalt oben drauf (ENTSCHEIDUNGEN.md § Schwierigkeit). Die übrigen sechs Empfehlungen sind übernommen.
+
 - **Meta macht Hard/Nightmare zu leicht:** Mit mid (Level 20, ★3) gewinnen die Bots Hard und Nightmare fast immer. Empfehlung: erst mit echten Profilen und Playtests anfassen; Hebel wären Nightmare-HP, ein höheres Freischalt-Level oder Stufen, die mit dem Team-Level skalieren. Bis dahin so lassen.
 - **Lancer im Starter-Geschenk:** Ohne ein Legendary schaffen die Bots mit dem Starter-Team Normal nicht (Boss W18–20). Empfehlung: Lancer drin lassen; Alternative wäre ein wählbares Legendary zum Start.
 - **Mythic-Tempo:** Erwartung Tag 18–30 bei 4 Siegen/Tag (Ziel 2–4 Wochen nur am oberen Rand). Empfehlung: Tagesaufgabe (Runde 8) statt höherer Raten.

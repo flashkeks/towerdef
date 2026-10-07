@@ -1,181 +1,144 @@
-# run.md — Runde 7: M3-Start, aus dem Match wird ein Spiel (Sammeln, Gacha, Fortschritt)
+# run.md — Runde 8: Gründe zum Wiederkommen (Bindung, Aufgaben, Infinite, Challenges, Stufe 4)
 
 Du arbeitest in diesem Repository auf dem Branch `dev`. Commit und Push nach jedem
 Paket. Pull Requests nach `main` nur, wenn der Mensch es sagt.
 
 Reihenfolge beim Einstieg: **`docs/design/ENTSCHEIDUNGEN.md`** (verbindlich), dann
-**`docs/STATUS.md`**, dann diese Datei. Runde 6 liegt in
-[`docs/archiv/run-runde6.md`](docs/archiv/run-runde6.md).
+**`docs/STATUS.md`**, dann diese Datei. Runde 7 liegt in
+[`docs/archiv/run-runde7.md`](docs/archiv/run-runde7.md).
 
 ---
 
 ## 1. Lage und Ziel
 
-Das Match steht: freie Platzierung, kein Typ-Limit, 8 Units, 20 Wellen, 2 Boss-Kits, Menü,
-Team-Wahl, Grafik, Ton, Replays. Preview mit Runde 6 läuft seit 07.10.2026.
+Runde 7 hat den Kreislauf geschlossen: Lobby, Gacha mit sichtbaren Raten/Pity, Sammlung,
+Level/Sterne, Team aus der Sammlung, Belohnung aus nachgerechneten Replays, 14 Units, lokaler
+Speicherstand. Preview mit Runde 7 läuft seit 07.10.2026.
 
-**Laut ENTSCHEIDUNGEN.md kommt jetzt M3 vor M2:** Sammeln, Gacha und Fortschritt, **zuerst lokal
-im Browser**. Der Server (M2, Koop, Kek-Game-Konto) folgt danach. Der Speicherstand wandert
-dann auf den Server.
+**Neue Entscheidung (Max, 07.10.2026), steht in ENTSCHEIDUNGEN.md § Schwierigkeit:** Mit
+gelevelten Units werden Hard und Nightmare leicht. Das bleibt so: **keine Kopplung der
+Gegner an das Team-Level.** Herausforderung für starke Teams kommt aus **Inhalt oben drauf**.
 
-**Ziel dieser Runde:** Wer das Spiel öffnet, landet in einer Lobby, zieht Units mit sichtbaren
-Raten, levelt sie mit Erspieltem, stellt ein Team aus seiner Sammlung zusammen, spielt eine
-Stage und bekommt Belohnungen. **Der Kreislauf schließt sich**, auch wenn die Zahlen noch roh sind.
+**Ziel dieser Runde:** Ein Spieler mit fertigem Team hat noch etwas vor. Ein Spieler mit
+frischem Team weiß, was er als Nächstes anstreben kann. Und es gibt einen Grund, morgen wieder
+reinzuschauen, **ohne** Druck (keine Streaks, keine Countdowns).
 
-**Balance bleibt grob** (ENTSCHEIDUNGEN.md § Schwierigkeit). Höchstens ca. 30 Minuten
-Bot-Messungen je Paket. Die Meta-Zahlen (Raten, Preise, Kurven) sind Startwerte, kein Feinschliff.
-
----
-
-## 2. Vorgaben für diese Runde (Homelab-Planer; Max hat Runde 7 freigegeben und kann einzelne Punkte noch kippen)
-
-1. **Zwei Meta-Währungen, nicht drei:**
-   - **Crystals** für Gacha, erspielbar und im Mock-Shop „kaufbar". Sie entsprechen den `shards`
-     aus `architecture.md` § 7 (dort umbenennen bzw. vermerken).
-   - **Gold** für Unit-Level, nur erspielbar.
-   - Die Münzen im Match bleiben davon getrennt.
-2. **Backend-Schnittstelle von Anfang an.** Der Client spricht nur mit einer Schnittstelle
-   `Backend` (Profil laden, Ziehen, Leveln, Team speichern, Match-Ergebnis melden, Shop). In
-   dieser Runde gibt es nur `LocalBackend` (IndexedDB, Fallback `localStorage`, alles mit
-   try/catch). In M2 kommt `ServerBackend` mit denselben Methoden, **der Client ändert sich dann
-   nicht**. Logik, die später auf den Server gehört (Gacha-Wurf, Pity, Belohnungen aus dem
-   Replay), liegt in einem eigenen Modul `meta/`, das ohne DOM läuft und später auf dem Server
-   wiederverwendet wird.
-3. **Lokal heißt manipulierbar.** Das ist für die Testphase in Ordnung. Im Spiel steht dauerhaft
-   klein „Test build, progress is stored in this browser only". Export und Import des
-   Speicherstands als JSON (Backup, Gerätewechsel).
-4. **Gacha nach `architecture.md` § 7.6:** Raten und Pity vor jedem Zug sichtbar, Pity-Zähler
-   auf dem Knopf, Ziehungsverlauf, eine Datei je Banner als einzige Quelle für Anzeige **und**
-   Wurf. Zufall per `crypto.getRandomValues`, **nicht** die Sim-PRNG. Test mit 1 Mio. Würfen gegen
-   die angezeigte Rate.
-5. **Mock-Shop:** Crystals-Pakete, Kauf über `MockPaymentProvider`, dauerhaft „Test purchase - no
-   real money". Kein echter Anbieter, kein Preis in Euro.
-6. **K4 Bindung, Tagesaufgaben und Infinite** kommen **nicht** in diese Runde (Runde 8).
+**Balance bleibt grob** (höchstens ca. 30 Minuten Bot-Messungen je Paket). **Bots ab jetzt mit
+6er-Team** messen (`teamSlots`), wie ein Mensch. In Runde 7 waren sie unbeschränkt.
 
 ---
 
-## 3. Agenten und Token-Budget
+## 2. Agenten und Token-Budget
 
 - Subagenten **immer `model: "sonnet"`**, nie Opus. Mechanisches darf `"haiku"` sein.
 - Höchstens **4 Agenten gleichzeitig**, Rückmeldung höchstens 10 Zeilen.
-- **P1 zuerst und allein** (Datenmodell, Backend-Schnittstelle, Speicherstand). Danach laufen
-  P2–P6 parallel an getrennten Dateien. `sim/` ändert nur P2 und P6.
-- Vor jedem Commit: Tests + Typecheck in `sim/` und `client/`, `npm run build`, ab P4 `npm run smoke`.
+- **P1 zuerst und allein** (Team-Stärke als gemeinsame Kennzahl, Profil-Schema-Erweiterung).
+  Danach P2–P5 parallel, an getrennten Dateien. Wer `sim/` ändert, steht in der Pakettabelle;
+  nicht zwei Agenten gleichzeitig an `sim/src/`.
+- Profil-Schema-Änderungen nur mit **Migration** (Schema-Version hoch, alte Stände laden weiter).
+- Vor jedem Commit: Tests + Typecheck in `sim/` und `client/`, `npm run build`, `npm run smoke`.
 
 ---
 
-## 4. Abnahmeziele
+## 3. Abnahmeziele
 
 | Ziel | Prüfung |
 |---|---|
-| Kreislauf geschlossen | Smoke (echte Mausklicks): neues Profil → Lobby → 10er-Zug → Unit leveln → Team aus Sammlung → Stage → Belohnung → zurück in der Lobby, Speicherstand nach Neuladen noch da |
-| Gacha ehrlich | 1 Mio. Würfe je Banner: Häufigkeit je Stufe innerhalb Toleranz der Anzeige, harte Pity nie überschritten, Pity-Zähler überlebt Neuladen |
-| Anzeige = Wirklichkeit | Anzeige und Wurf lesen nachweislich dieselbe Banner-Datei (Test) |
-| Meta wirkt im Match | Unit-Level und Sterne ändern Werte im Simulator (`unitMods`), Replays tragen die Mods mit und bleiben bit-genau nachspielbar |
-| Meta-Abstand | Neuling gegen „alles maximal" höchstens Faktor ca. 2,5 auf den Schaden (`rec §19` Nr. 16), grob per Bot gemessen |
-| Erster Fortschritt schnell | Ein neues Profil hat nach der ersten gewonnenen Normal-Stage genug für mindestens einen 10er-Zug oder hat ihn als Starter-Geschenk schon bekommen |
-| Unit-Pool | mindestens **14 Units** (8 alte + 6 neue), darunter eine zweite Boden-Flächen-Unit (löst die Blaster-Pflicht) |
-| Speicherstand robust | Export → Profil löschen → Import ergibt denselben Stand. Kaputte oder alte Daten führen zu einer Meldung, nicht zum Absturz (Schema-Version, Migration) |
-| Lizenz | weiterhin nur eigene oder geprüfte Assets |
+| Team-Stärke sichtbar | eine Zahl je Unit und je Team (aus Level, Sternen, Seltenheit, Bindung), überall gleich berechnet (`meta/`), in Team-Auswahl und Stage-Auswahl sichtbar |
+| Empfohlene Stärke | jede Stufe/Challenge zeigt „Recommended power"; grob kalibriert: mit empfohlener Stärke gewinnt der beste Bot (6er-Team) 60–90 % |
+| Stufe 4 | neue Stufe über Nightmare, mit eigenen Regeln (nicht nur HP), für Teams mit `max`-Profil schaffbar, aber nicht sicher (Bot 30–60 %) |
+| Infinite | spielbar, endet erst mit Niederlage, persönliche Bestwerte je Team gespeichert, Belohnung mit abnehmendem Ertrag (kein Endlos-Farmen von Crystals) |
+| Challenges | mindestens 6 feste Challenges mit eigener Regel (z. B. „nur Boden-Units", „Flieger-Sturm", „kein Verkauf"), einmalige Belohnung je Challenge |
+| K4 Bindung | jede Unit sammelt Bindungs-XP durch Einsätze; 5 Bindungsstufen, je Stufe Wahl aus 2 Perks; Perks wirken im Simulator; Umwählen kostet Gold |
+| Tagesaufgaben | 3 Aufgaben je Tag, 1 × kostenlos neu würfeln, Belohnung Crystals; **kein Streak-Bonus, keine Strafe** für verpasste Tage, kein Countdown in der UI außer „new tasks tomorrow" |
+| Mythic-Tempo | erstes Mythic im Mittel nach 14–28 Tagen (4 Siege/Tag + Aufgaben), Rechnung in `docs/balancing/meta.md` |
+| Replays | Format v4 trägt Modus, Challenge, Perks; alte Replays werden erkannt, nicht falsch gewertet |
+| Smoke | neuer Pfad: Lobby → Aufgabe ansehen → Challenge starten → Infinite starten → Perk wählen, mit echten Mausklicks |
 
 ---
 
-## 5. Arbeitspakete
+## 4. Arbeitspakete
 
 ### P0 — Status (Hauptsitzung)
-`docs/STATUS.md`: Runde-7-Tabelle; Runde 6 als abgeschlossen zusammenfassen.
+`docs/STATUS.md`: Runde-8-Tabelle; Runde 7 abgeschlossen zusammenfassen.
 
-### P1 — Datenmodell, Backend-Schnittstelle, Speicherstand (ein Agent, allein, zuerst)
-- Profil-Schema angelehnt an `architecture.md` § 6.7 (lokal ohne `kekgame_sub`): Spieler-Level und
-  -XP, Crystals, Gold, Sammlung (Unit, Level, XP, Sterne/Kopien), Team, Pity je Banner,
-  Ziehungsverlauf, Stage-Fortschritt (Stufe, Erst-Clear), Einstellungen. **Schema-Version** +
-  Migrationen.
-- Ledger statt Zähler auch lokal: Buchungen (Grund, Betrag, Zeit), Salden sind Summe bzw. Cache.
-- `meta/` (ohne DOM): reine Funktionen für Ziehen, Leveln, Sterne, Belohnungen. `client/` nutzt
-  sie über `LocalBackend`.
-- Export/Import (JSON, mit Prüfsumme gegen versehentliche Beschädigung, nicht als Schutz).
+### P1 — Team-Stärke und Schema (ein Agent, allein, zuerst)
+- `meta/power.ts`: Stärke je Unit und Team als **eine** Formel (Level, Sterne, Seltenheit, Bindung).
+  Grob an der Bot-Siegquote ausgerichtet, nicht feinkalibriert.
+- Profil-Schema v-next: Bindung je Unit (XP, Stufe, gewählte Perks), Aufgaben-Zustand, Infinite-
+  Bestwerte, Challenge-Fortschritt. Migration von Runde-7-Ständen mit Test.
+- Bots: Meta-Profile `fresh`/`mid`/`max` bekommen ihre Team-Stärke ausgewiesen; Messungen ab
+  jetzt mit 6er-Team.
 
-### P2 — Unit-Level und Sterne im Simulator (ein Agent, nach P1)
-- Level 1–40 und Sterne 1–5 (aus Duplikaten) werden zu `unitMods` (`lvlBp` gibt es schon).
-  Kurven als Daten (`sim/data/progression.json`), nicht im Code.
-- Bots bekommen Meta-Profile: `fresh` (alles Level 1), `mid`, `max`. Grob messen:
-  Normal mit `fresh` schaffbar? Faktor `max`/`fresh` ≤ ca. 2,5?
-- Replay-Format v3: Mods je Unit im Kopf, `npm run replay` rechnet sie mit.
-- Stufen-Freischaltung nach Spieler-Level (`gdd` § 4: Hard ab 5, Nightmare ab 25; Startwerte,
-  dürfen grob angepasst werden).
+### P2 — Stufe 4, Challenges, empfohlene Stärke (ein Agent, nach P1, ändert `sim/data`)
+- **Stufe 4** (Name englisch, passend zur Welt; Arbeitsname „Abyss"): neue Regeln, z. B. Elite in
+  jeder Welle, zweite Boss-Phase, Element-Pflichtwellen. Freischaltung über Spieler-Level und
+  Nightmare-Sieg.
+- **Challenges** als Daten (`sim/data/challenges.json` gibt es als Konzept seit Runde 4):
+  mindestens 6, je eine klare Regel, Empfehlung, einmalige Belohnung.
+- „Recommended power" je Stufe und Challenge aus Bot-Messung (grob, 6er-Team).
 
-### P3 — Gacha und Mock-Shop (ein Agent, nach P1)
-- Banner-Dateien: **Standard** (dauerhaft) und **Starter** (einmalig günstiger, garantiert eine
-  Epic+). Featured-Banner nur als Datenformat vorbereiten.
-- Raten-/Pity-Startwerte nach `recommendations.md` § 13 bzw. `architecture.md` § 7.6, klar als
-  Startwerte markiert.
-- Duplikate → Sterne (Kopien), kein Extra-Material.
-- Mock-Shop: drei Crystals-Pakete, `MockPaymentProvider` nach § 7.2, Idempotenz auch lokal.
-- Tests: 1-Mio.-Würfe, Pity-Grenzen, Idempotenz (Doppelklick zieht nicht doppelt).
+### P3 — Infinite (ein Agent, nach P1, Client + `meta/`; `sim/` nur wenn nötig)
+- Der Simulator kann Infinite seit Runde 3. Client-Modus, Anzeige der aktuellen Welle und des
+  Bestwerts, Ergebnis-Bildschirm mit „New best!".
+- Bestwert je Team-Zusammenstellung und gesamt, lokal. **Globale Rangliste kommt mit M2**
+  (Server), nicht jetzt; Datenformat schon so, dass der Server es später prüfen kann (Replay).
+- Belohnung: Gold und XP je Welle mit abnehmendem Ertrag, Crystals nur für neue Bestwerte
+  (Meilensteine, einmalig).
 
-### P4 — Lobby und Meta-UI (ein Agent, nach P1)
-- **Lobby** als Startbildschirm: Play, Summon, Units, Team, Shop, Settings. Kontostände oben.
-- **Summon:** Banner-Auswahl, Ratentabelle (immer sichtbar oder ein Klick entfernt, nie versteckt),
-  Pity-Zähler, 1er/10er-Zug, Enthüllungs-Animation je Seltenheit (kurz, überspringbar), Verlauf.
-- **Units:** Sammlung als Raster mit Seltenheits-Rahmen, Filter, Detailansicht mit Werten,
-  Level-Up (Gold), Sternen, Rolle und Symbolen aus Runde 6.
-- **Team:** 6 aus der Sammlung, ersetzt die feste Auswahl 6 aus 8.
-- **Stage-Auswahl:** Terrassenweg mit Stufen, gesperrte Stufen mit Grund („Player level 5").
-- **Ergebnis-Bildschirm** um Belohnungen erweitern (Crystals, Gold, XP, Level-Up-Anzeige).
-- Smoke-Test für den ganzen Kreislauf (Abnahmeziele).
+### P4 — K4 Bindung (ein Agent, nach P1, ändert `sim/src` für Perk-Wirkungen)
+- Bindungs-XP je Einsatz (Teilnahme, Schaden, Sieg), 5 Stufen, je Stufe Wahl aus 2 Perks.
+  Perks als Daten (`sim/data/perks.json`), Wirkung über `unitMods` bzw. kleine, klar benannte
+  Regel-Hooks. **Kein Zufall**, beide Optionen sichtbar.
+- Je Unit ein kurzer Satz Charakter-Text pro Bindungsstufe (Englisch, Welt „Grenzgilde im
+  Nebelriss", warmherzig). Kurz halten, Platzhalter-Qualität ist ok.
+- Perk-Umwahl kostet Gold. Bindung zählt in die Team-Stärke (P1).
+- Grob prüfen: Kein einzelner Perk ist Pflicht oder macht eine Unit allein übermächtig.
 
-### P5 — Belohnungen und Fortschritt (ein Agent, nach P1, parallel zu P3/P4)
-- Belohnung aus dem **Replay** berechnen (Stufe, Ergebnis, erreichte Welle, Erst-Clear-Bonus),
-  nicht aus Client-Angaben. So bleibt die Logik serverfähig.
-- Startwerte aus `gdd` § 4 (Crystals 100/150/200 je Erst-Clear) als Ausgang. Ziel grob: erstes
-  Mythic nach 2–4 Wochen aktivem Spiel. Kleine Rechnung in `docs/balancing/meta.md`
-  (Zuflüsse/Tag, Pity, Erwartungswert), kein Feinschliff.
-- Starter-Geschenk für neue Profile (z. B. Crystals für einen 10er-Zug plus die 4 Rare-Units).
-- Niederlage gibt etwas (Gold, XP), damit Verlieren nicht leer ausgeht.
+### P5 — Tagesaufgaben (ein Agent, nach P1, nur `meta/` + Client)
+- Aufgaben-Pool als Daten (z. B. „Win a stage with Frost", „Clear wave 15 in Infinite", „Pull
+  once"). 3 je Tag, deterministisch aus Datum + Profil-ID, 1 × gratis neu würfeln.
+- Tageswechsel nach lokaler Mitternacht. Belohnung Crystals, Summe so, dass das Mythic-Tempo
+  ins Ziel kommt (Abschnitt 3), Rechnung in `meta.md`.
+- **Verboten:** Streak-Zähler, „Komm morgen wieder sonst ..."-Texte, Push-artige Hinweise,
+  Countdown-Uhren.
+- Lobby zeigt die Aufgaben dezent, mit Fortschritt.
 
-### P6 — Sechs neue Units (ein Agent, nach P1, Recherche in `docs/` erlaubt)
-- Entwurf im Stil von `gdd` § 6 (Name, Seltenheit, Platzierung, Rolle, Fähigkeit, Kurztext),
-  Werte in `sim/data/units.json`.
-- Pflicht: **eine zweite Boden-Flächen-Unit** (Blaster-Pflicht auflösen), **ein Heiler oder
-  Schild-Support** (`rec §2`), **eine zweite Farm-Variante oder Ökonomie-Unit** mit anderem Profil
-  als `farm`. Der Rest frei, gern mit eigenem Kniff passend zu K5 (Boss-Fenster).
-- Seltenheiten verteilt: mindestens 1 Rare, 2 Epic, 2 Legendary, 1 Mythic.
-- Sprites im bestehenden Stil (wie Runde 5, selbst erzeugt), Silhouetten unterscheidbar.
-- Grober Check: Keine neue Unit ist allein Pflicht oder nutzlos (Leave-one-out grob, 30-min-Regel).
-
-### P7 — Abschluss (Hauptsitzung)
-Alle Abnahmeziele messen, Screenshots (Lobby, Summon mit Raten, Sammlung, Team, Ergebnis mit
-Belohnung), `docs/STATUS.md` Kurzbericht:
+### P6 — Abschluss (Hauptsitzung)
+Alle Abnahmeziele messen, Screenshots (Team-Stärke, Stufe 4, Challenges, Infinite-Ergebnis,
+Bindung mit Perk-Wahl, Aufgaben), `docs/STATUS.md` Kurzbericht:
 
 ```text
-STATUS — Runde 7
+STATUS — Runde 8
 Pakete erledigt / offen:
 Abnahmeziele: je Ziel erreicht / verfehlt (Wert):
-Währungen und Startwerte (Raten, Pity, Preise, Belohnungen):
-Neue Units (Name, Rolle, Seltenheit):
-Meta-Abstand fresh/max:
-Erster Fortschritt (wie viele Züge nach Stage 1):
+Team-Stärke-Formel (kurz):
+Stufe 4: Regeln, empfohlene Stärke, Bot-Quote:
+Challenges (Liste):
+Perks (Anzahl, Beispiele):
+Mythic-Tempo (alt → neu):
 Was die Menschen als Nächstes testen sollen (max. 5 Punkte):
-Vorschlag Runde 8 (K4 Bindung, Tagesaufgaben, ggf. zweite Map): 3–5 Sätze
+Vorschlag Runde 9 (Kandidaten: M2-Start mit Server/Konto, zweite Map, eigene Portraits): 3–5 Sätze
 Agenten (Anzahl, Modell):
 Commits:
 ```
 
 ---
 
-## 6. Was du nicht tust
+## 5. Was du nicht tust
 
 - **Nichts deployen.** Die Preview baut die Homelab-Seite aus `dev`, auf Ansage von Max.
-- Kein Server, kein Konto, kein echter Zahlungsanbieter, keine Euro-Preise.
-- Keine Login-Streaks, kein Countdown-Druck, keine versteckten Raten, keine Währungsketten.
+- Kein Server, kein Konto, keine globale Rangliste, kein echter Zahlungsanbieter.
+- Keine Streaks, keine Countdown-Banner, keine versteckten Raten, keine Währungsketten.
+- Gegner **nicht** mit dem Team-Level skalieren (Entscheidung Max).
 - Keine Assets ohne geprüfte Lizenz. `ENTSCHEIDUNGEN.md` nicht ändern; Fragen an die Menschen
   kommen in STATUS unter „Offene Fragen", mit Empfehlung.
 
 ---
 
-## 7. Ende einer Sitzung
+## 6. Ende einer Sitzung
 
 Vor Kontextende: `docs/STATUS.md` aktualisieren, Tests laufen lassen, committen, pushen.
 
-> Ziel dieser Runde: Man will nach einer Stage zurück in die Lobby, um zu ziehen, und nach dem
-> Ziehen zurück in die Stage, um die neue Unit auszuprobieren.
+> Ziel dieser Runde: Ein volles Team hat ein Ziel, ein frisches Team einen Weg dorthin, und
+> morgen gibt es einen kleinen Grund, wieder reinzuschauen, ohne schlechtes Gewissen, wenn nicht.
