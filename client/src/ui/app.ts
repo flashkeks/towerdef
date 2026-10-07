@@ -21,7 +21,7 @@ import { Screens } from './screens';
 import { Shop } from './shop';
 import { Toast } from './toast';
 import { UnitPanel } from './unit-panel';
-import { versionEl } from './version';
+import { testBuildEl, versionEl } from './version';
 
 export interface UiHandlers {
   onStart(d: DifficultyId): void;
@@ -56,7 +56,7 @@ export class Ui {
     this.boardWrap.append(this.banner.el, this.nudges.el, this.toast.el, this.screens.pausedEl);
     const main = h('main', 'main');
     main.append(this.boardWrap, side);
-    root.append(this.hud.el, main, this.shop.el, this.screens.el, this.help.el, versionEl());
+    root.append(this.hud.el, main, this.shop.el, this.screens.el, this.help.el, versionEl(), testBuildEl());
     new Input(() => this.session, this.help);
   }
 

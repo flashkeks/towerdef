@@ -16,3 +16,10 @@ export function versionEl(): HTMLElement {
   e.title = e.textContent ?? '';
   return e;
 }
+
+/** Dauerhafter Hinweis neben der Versionsanzeige (Runde 7: Speicherstand liegt nur im Browser). Besitzer: P1. */
+export function testBuildEl(): HTMLElement {
+  const e = h('div', 'testbuild', t('backend.testBuild'));
+  e.title = e.textContent ?? '';
+  return e;
+}

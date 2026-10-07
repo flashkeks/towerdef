@@ -322,7 +322,7 @@ Ziel laut ENTSCHEIDUNGEN: komplett durchspielbarer Shop-Flow **ohne echten Zahlu
 
 ### 7.1 Grundsätze
 
-- **Eine** Premium-Währung (Arbeitsname `shards`), keine Währungsketten. Gacha-Ziehungen kosten direkt Shards; Spielgeld aus der Sim (Münzen im Match) ist davon getrennt und nie kaufbar.
+- **Eine** Premium-Währung (Arbeitsname `shards`; **in Runde 7 heißt sie im Code und in der UI `crystals`**, daneben gibt es `gold` nur für Unit-Level, siehe `meta/README.md`), keine Währungsketten. Gacha-Ziehungen kosten direkt Shards; Spielgeld aus der Sim (Münzen im Match) ist davon getrennt und nie kaufbar.
 - **Alle Mutationen serverseitig**, jede in **einer Datenbanktransaktion**, jede mit **Idempotenzschlüssel** (7.4). Der Client kennt Zustände nur aus Antworten.
 - **Ledger statt Zähler.** Der Kontostand ist die Summe unveränderlicher Buchungen; ein gespeicherter Saldo (`wallet.balance`) ist nur Cache und wird in derselben Transaktion fortgeschrieben.
 - **Schalter gegen versehentliches Echtgeld:** `PAYMENT_PROVIDER=mock` ist der einzige zulässige Wert, solange kein echter Anbieter implementiert ist. Ein später implementierter Anbieter startet nur mit

@@ -11,7 +11,7 @@ Letzte Aktualisierung: 2026-10-07 (Runde 7 gestartet, P0)
 | Paket | Inhalt | Status | Agent (Modell) | Notiz |
 |---|---|---|---|---|
 | P0 | Status | **erledigt** | Hauptsitzung | Runde 6 abgeschlossen (Kurzbericht unten): freie Platzierung, kein Typ-Limit, Stufen 100/70/26, offen Blaster-Pflicht (wird in P6 über eine zweite Boden-AoE gelöst). Stand vor Runde 7: sim 265 Tests, client 139 Tests, smoke grün |
-| P1 | Datenmodell, Backend-Schnittstelle, Speicherstand | offen | 1 × Sonnet, allein | zuerst. Neuer Workspace `meta/` (ohne DOM, später serverseitig), `client/src/backend/` mit `Backend` + `LocalBackend` |
+| P1 | Datenmodell, Backend-Schnittstelle, Speicherstand | **erledigt** | 1 × Opus, allein | Neuer Workspace `meta/` (Profil-Schema v1 mit Ledger/Idempotenz/Migration/Export, Platzhalter für P2/P3/P5 laufen schon; Dateigrenzen und Besitzer in `meta/README.md`) und `client/src/backend/` (`Backend`, `LocalBackend`, `storage.ts` IndexedDB → localStorage → Speicher, `getBackend()`); Hinweis „Test build …“ unten links. 39 meta-Tests, +12 client-Tests (151), sim unverändert (265). TODO-Kommentare am Kopf der Platzhalterdateien nennen, was P2/P3/P5 füllen |
 | P2 | Unit-Level und Sterne im Simulator, Replay v3 | offen | 1 × Sonnet | nach P1 |
 | P3 | Gacha und Mock-Shop | offen | 1 × Sonnet | nach P1 |
 | P4 | Lobby und Meta-UI, Smoke Kreislauf | offen | 1 × Sonnet | nach P1 |

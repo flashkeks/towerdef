@@ -172,6 +172,7 @@ canvas.board { display: block; }
 .swatch.type-ground { background: #4e8a45; border: 3px solid #2f5a3a; }
 .swatch.type-hill { background: linear-gradient(#6f9a4c 70%, #8a5a3a 70%); border: 2px solid #5a3a2a; }
 .swatch.type-large { background: #4e8a45; border: 3px double var(--gold); }
+.testbuild { position: fixed; left: 8px; bottom: 4px; z-index: 40; font-size: 0.68rem; color: var(--stone); opacity: 0.8; pointer-events: none; }
 .version { position: fixed; right: 8px; bottom: 4px; z-index: 40; font-size: 0.68rem; color: var(--stone); opacity: 0.8; pointer-events: none; }
 
 /* ---- P5: Spielgefuehl (Boss-Banner, Leak-Wackeln) ---- */

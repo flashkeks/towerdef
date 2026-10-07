@@ -352,6 +352,7 @@ export const en = {
   'tips.fallback.pause': 'Press Space to pause and plan calmly.',
   'tips.fallback.shift': 'Shift + click places the same unit again.',
   'version.label': 'build {id} - {date}',
+  'backend.testBuild': 'Test build, progress is stored in this browser only',
 } as const;
 
 export type StringKey = keyof typeof en;
