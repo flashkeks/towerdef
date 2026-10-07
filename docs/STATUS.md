@@ -4,7 +4,24 @@ Arbeitsauftrag: [`/run.md`](../run.md) (**Runde 7**: M3-Start, lokaler Speichers
 Frühere Aufträge: [archiv/run-runde1.md](archiv/run-runde1.md), [archiv/run-runde2.md](archiv/run-runde2.md), [archiv/run-runde3.md](archiv/run-runde3.md), [archiv/run-runde4.md](archiv/run-runde4.md), [archiv/run-runde5.md](archiv/run-runde5.md), [archiv/run-runde6.md](archiv/run-runde6.md).
 
 
-## Runde 6
+## Runde 7
+
+Letzte Aktualisierung: 2026-10-07 (Runde 7 gestartet, P0)
+
+| Paket | Inhalt | Status | Agent (Modell) | Notiz |
+|---|---|---|---|---|
+| P0 | Status | **erledigt** | Hauptsitzung | Runde 6 abgeschlossen (Kurzbericht unten): freie Platzierung, kein Typ-Limit, Stufen 100/70/26, offen Blaster-Pflicht (wird in P6 über eine zweite Boden-AoE gelöst). Stand vor Runde 7: sim 265 Tests, client 139 Tests, smoke grün |
+| P1 | Datenmodell, Backend-Schnittstelle, Speicherstand | offen | 1 × Sonnet, allein | zuerst. Neuer Workspace `meta/` (ohne DOM, später serverseitig), `client/src/backend/` mit `Backend` + `LocalBackend` |
+| P2 | Unit-Level und Sterne im Simulator, Replay v3 | offen | 1 × Sonnet | nach P1 |
+| P3 | Gacha und Mock-Shop | offen | 1 × Sonnet | nach P1 |
+| P4 | Lobby und Meta-UI, Smoke Kreislauf | offen | 1 × Sonnet | nach P1 |
+| P5 | Belohnungen und Fortschritt | offen | 1 × Sonnet | nach P1 |
+| P6 | Sechs neue Units | offen | 1 × Sonnet | nach P1 |
+| P7 | Abschluss | offen | Hauptsitzung | |
+
+Plan: P1 allein. Danach höchstens 4 parallel in Worktrees (P2, P3, P5, P6), danach P4 (braucht die Schnittstellen von P3/P5). `sim/` ändern nur P2 und P6. Die Hauptsitzung merged.
+
+## Runde 6 (abgeschlossen)
 
 Letzte Aktualisierung: 2026-10-07 (Runde 6 abgeschlossen, P6)
 
