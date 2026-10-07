@@ -1,0 +1,217 @@
+{
+  "ref": "docs/anime-adventures/data/maps.json (snowy_town; 'short path, one curve around the center', Walk-Time 11 s), enemies.json (Bosse Yahobu bis Muzo), waves.json (erste Regen-Gegner Act 4 Welle 10).",
+  "_comment": "Welt 3. Pfad: kurz (31 Kacheln), eine einzige grosse Kurve um den Stadtkern (blockierte Haeuser in der Mitte, Huegel-Ring darum). Regen-Gegner ab Act 4 Welle 10 wie in AA belegt. Fussvolk-Namen angelehnt.",
+  "id": "snowy-town",
+  "order": 3,
+  "name": "Snowy Town",
+  "legacyName": "Snowy Town",
+  "aaId": "snowy_town",
+  "blurb": "A frozen village with one road bending around the square. Short walk, hard hitters.",
+  "unlock": {
+    "afterWorld": "walled-city",
+    "afterAct": 3
+  },
+  "map": {
+    "path": [
+      [0, 8],
+      [2, 8],
+      [2, 2],
+      [14, 2],
+      [14, 8],
+      [9, 8]
+    ],
+    "pathWidth": 1,
+    "zones": {
+      "ref": "Kachelmaske 17x11: . Boden, h Huegel, # blockiert (Haeuser in der Dorfmitte), p Pfad (nur Anzeige). Hufeisen: Spawn links unten, Basis unten Mitte.",
+      "rows": [
+        "##.............##",
+        "#...............#",
+        "..ppppppppppppp..",
+        "..phhhhhhhhhhhp..",
+        "#.phh..###..hhp..",
+        "#.phh..###..hhp##",
+        "..phh..###..hhp.#",
+        "..phhhhhh.hhhhp..",
+        "ppp......pppppp..",
+        ".................",
+        "###.......###..##"
+      ]
+    }
+  },
+  "theme": {
+    "id": "snowy-town",
+    "grass": {
+      "color": "#cfe3f4",
+      "alpha": 0.78,
+      "lift": 0.28
+    },
+    "path": {
+      "color": "#7f9db8",
+      "alpha": 0.7,
+      "lift": 0.12
+    },
+    "hill": {
+      "top": "#e6f1fa",
+      "topLight": "#ffffff",
+      "wall": "#9bb4cb",
+      "wallDark": "#6b8aa6"
+    },
+    "blocked": [
+      "tiles/deco_tree",
+      "tiles/deco_rock"
+    ],
+    "deco": {
+      "color": "#b9d0e4",
+      "alpha": 0.4
+    },
+    "flowers": false,
+    "background": "#15202c"
+  },
+  "hpBp": 12000,
+  "elementOffset": 1,
+  "roster": {
+    "grunt": "Lesser Demon",
+    "runner": "Fleet Demon",
+    "brute": "Hulking Demon",
+    "flyer": "Winged Demon",
+    "splitter": "Splitting Demon",
+    "splitter_child": "Demon Shard",
+    "elite": "Lower Moon Demon",
+    "boss": "Boss"
+  },
+  "acts": [
+    {
+      "act": 1,
+      "name": "Yahobu",
+      "boss": {
+        "name": "Yahobu",
+        "kit": "charger"
+      },
+      "waves": 15,
+      "hpBp": 10000,
+      "modifiers": []
+    },
+    {
+      "act": 2,
+      "name": "Zui",
+      "boss": {
+        "name": "Zui",
+        "kit": "summoner"
+      },
+      "waves": 15,
+      "hpBp": 13000,
+      "modifiers": []
+    },
+    {
+      "act": 3,
+      "name": "Daka",
+      "boss": {
+        "name": "Daka",
+        "kit": "mender"
+      },
+      "waves": 15,
+      "hpBp": 17000,
+      "modifiers": []
+    },
+    {
+      "act": 4,
+      "name": "Akoku",
+      "boss": {
+        "name": "Akoku",
+        "kit": "warden"
+      },
+      "waves": 20,
+      "hpBp": 23000,
+      "modifiers": [
+        {
+          "fromWave": 10,
+          "types": [
+            "grunt",
+            "brute"
+          ],
+          "modifier": "regen"
+        },
+        {
+          "fromWave": 12,
+          "types": [
+            "brute"
+          ],
+          "modifier": "armored"
+        }
+      ]
+    },
+    {
+      "act": 5,
+      "name": "Kokoshibon",
+      "boss": {
+        "name": "Kokoshibon",
+        "kit": "shielder"
+      },
+      "waves": 20,
+      "hpBp": 30000,
+      "modifiers": [
+        {
+          "fromWave": 8,
+          "types": [
+            "grunt",
+            "brute"
+          ],
+          "modifier": "regen"
+        },
+        {
+          "fromWave": 6,
+          "types": [
+            "runner"
+          ],
+          "modifier": "fast"
+        },
+        {
+          "fromWave": 8,
+          "types": [
+            "brute"
+          ],
+          "modifier": "armored"
+        }
+      ]
+    },
+    {
+      "act": 6,
+      "name": "Muzo",
+      "boss": {
+        "name": "Muzo",
+        "kit": "colossus"
+      },
+      "waves": 20,
+      "hpBp": 40000,
+      "modifiers": [
+        {
+          "fromWave": 6,
+          "types": [
+            "grunt",
+            "brute"
+          ],
+          "modifier": "regen"
+        },
+        {
+          "fromWave": 5,
+          "types": [
+            "runner"
+          ],
+          "modifier": "fast"
+        },
+        {
+          "fromWave": 12,
+          "types": [
+            "grunt"
+          ],
+          "modifier": "shield:2"
+        }
+      ]
+    }
+  ],
+  "infinite": {
+    "unlockAct": 3,
+    "hpBp": 17000,
+    "fixedWaves": 14
+  }
+}

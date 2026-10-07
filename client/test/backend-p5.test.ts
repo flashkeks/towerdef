@@ -32,10 +32,10 @@ describe('reportMatch: Belohnung aus dem Replay (P5)', () => {
     const r = await be.reportMatch(win, key(1));
     if (!r.ok) throw new Error(r.message);
     expect(win.result).toBe('win');
-    expect(r.reward).toMatchObject({ crystals: 100, gold: 350, xp: 100, firstClear: true });
+    expect(r.reward).toMatchObject({ crystals: 80, gold: 350, xp: 55, firstClear: true });
     expect(r.profile.stages['standard20']!['normal']).toMatchObject({ clears: 1, bestWave: 20 });
     const again = await mk(ls).loadProfile();
-    expect(again.ok && again.profile.wallet).toEqual({ crystals: 550, gold: 350 }); // 450 Starter + 100 Erst-Clear
+    expect(again.ok && again.profile.wallet).toEqual({ crystals: 530, gold: 350 }); // 450 Starter + 80 Erst-Clear
   });
 
   it('Niederlage gibt Gold und XP, keine Crystals', async () => {
@@ -66,7 +66,7 @@ describe('reportMatch: Belohnung aus dem Replay (P5)', () => {
     expect(same.replayed).toBe(true);
     expect(other).toMatchObject({ ok: false, code: 'already-reported' });
     const p = await be.loadProfile();
-    expect(p.ok && p.profile.wallet.crystals).toBe(550);
+    expect(p.ok && p.profile.wallet.crystals).toBe(530);
   });
 
   it('Nachrechnen im Client dauert weniger als eine Sekunde (grobe Messung)', async () => {

@@ -30,8 +30,10 @@ import {
   rewardFromReplay,
   setTeam,
   stageView,
+  worldView,
   unitModsFor,
   isDifficultyUnlocked,
+  isStageUnlocked,
   withIdempotency,
   withIdempotencyAsync,
   type MetaEnv,
@@ -219,12 +221,17 @@ export class LocalBackend implements Backend {
     return this.read((p) => ({ ok: true as const, ...stageView(p, stageId) }));
   }
 
+  worldView(): ReturnType<Backend['worldView']> {
+    return this.read((p) => ({ ok: true as const, world: worldView(p) }));
+  }
+
   pullHistory(limit = 30): ReturnType<Backend['pullHistory']> {
     return this.read((p) => ({ ok: true as const, history: pullHistoryView(p, limit) }));
   }
 
-  matchSetup(difficulty: DifficultyId): ReturnType<Backend['matchSetup']> {
+  matchSetup(difficulty: DifficultyId, stageId?: string): ReturnType<Backend['matchSetup']> {
     return this.read((p) => {
+      if (stageId && !isStageUnlocked(p, stageId)) return fail('stage-locked', 'This stage is not unlocked yet.');
       if (!isDifficultyUnlocked(p, difficulty)) return fail('difficulty-locked', 'This difficulty is not unlocked yet.');
       const owned = Object.keys(p.units).length;
       if (owned === 0 || p.team.length === 0) return fail('team-empty', 'Pick a team first.');

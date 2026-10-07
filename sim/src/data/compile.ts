@@ -182,6 +182,8 @@ export interface Ctx {
   difficultyRank: number;
   /** HP des Grunt (Normal, ohne Faktoren) in Centi-HP für Wave n. */
   hpGrunt(n: number): number;
+  /** Stage-Faktor auf die Gegner-HP in Basispunkten (`stage.hpBp`, Welten/Acts; Standard 10000). Wirkt auch auf die Bounty-Basis. */
+  stageHpBp: number;
   /** Kill-Bounty in Münzen für einen Gegner mit Bounty-Basis-HP (Centi) in Wave n. */
   bounty(n: number, hpBasisCenti: number): number;
 }
@@ -368,6 +370,22 @@ export interface CompileOpts {
   maxWaves?: number;
 }
 
+/**
+ * Boss-Kits der Stage nach Wave. Ohne `stage.bossKits` gilt der Altbestand (jedes Kit an seiner eigenen `wave`, solange sie in der Stage liegt);
+ * mit `stage.bossKits` (Welten, Runde 8 / P3) wählt die Stage Kits per ID und legt sie auf die gewünschte Wave (das Kit wird dafür kopiert).
+ */
+function stageBossKits(data: GameData, stage: StageData, fixedWaves: number): Record<number, BossKit> {
+  const kits = data.bosses?.kits ?? [];
+  if (!stage.bossKits) return Object.fromEntries(kits.filter((k) => k.wave !== undefined && k.wave <= fixedWaves).map((k) => [k.wave, k]));
+  const out: Record<number, BossKit> = {};
+  for (const [w, id] of Object.entries(stage.bossKits)) {
+    const kit = kits.find((k) => k.id === id);
+    if (!kit) throw new Error(`Stage ${stage.id}: Boss-Kit ${id} unbekannt`);
+    if (Number(w) <= fixedWaves) out[Number(w)] = { ...kit, wave: Number(w) };
+  }
+  return out;
+}
+
 export function compile(data: GameData, stage: StageData, difficultyId: DifficultyId, players: number, opts: CompileOpts = {}): Ctx {
   const infinite = stage.infinite === true;
   const fixedWaves = stage.waves.length;
@@ -465,7 +483,7 @@ export function compile(data: GameData, stage: StageData, difficultyId: Difficul
     waveTimerTicks: stage.waveTimerTicks ?? data.economy.waveTimerTicks,
     instantLoss: new Set(data.difficulties[difficultyId].lives.instantLoss ?? data.economy.lives.instantLoss),
     regenLives: data.difficulties[difficultyId].lives.regenPerWave ?? data.economy.lives.regenPerWave,
-    bossKits: Object.fromEntries((data.bosses?.kits ?? []).filter((k) => k.wave <= fixedWaves).map((k) => [k.wave, k])),
+    bossKits: stageBossKits(data, stage, fixedWaves),
     cards: Object.fromEntries((data.cards?.cards ?? []).map((c) => [c.id, c])),
     cardList: data.cards?.cards ?? [],
     // P3 x P4: das Boss-Fähigkeiten-Set der Stufe (difficulties.json bossAbilityTier) entscheidet über minDifficulty der Boss-Kits.
@@ -473,6 +491,7 @@ export function compile(data: GameData, stage: StageData, difficultyId: Difficul
     coopHpBp,
     coopBossHpBp: coopTable(data.difficulties[difficultyId].coopBossHpTableBp ?? data.economy.coop.bossHpTableBp, players) ?? coopHpBp,
     hpGrunt,
+    stageHpBp: stage.hpBp ?? 10000,
     bounty,
   };
 }

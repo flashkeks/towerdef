@@ -16,11 +16,11 @@ describe('Kreislauf (Platzhalter der Pakete laufen)', () => {
     const sum = (h: string, outcome: 'win' | 'loss' = 'win') => ({ stageId: 'standard20', difficulty: 'normal', outcome, waveReached: 20, replayHash: h });
     const a = rewardForMatch(p0, sum('h1'), env);
     if (!a.ok) throw new Error(a.message);
-    expect(a.result).toMatchObject({ crystals: 100, firstClear: true });
-    expect(balanceOf(a.profile, 'crystals')).toBe(100);
+    expect(a.result).toMatchObject({ crystals: 80, firstClear: true });
+    expect(balanceOf(a.profile, 'crystals')).toBe(80);
     expect(a.profile.stages['standard20']!['normal']).toMatchObject({ clears: 1, bestWave: 20 });
     const b = rewardForMatch(a.profile, sum('h2'), env);
-    expect(b.ok && b.result.crystals).toBe(25);
+    expect(b.ok && b.result.crystals).toBe(20);
     expect(b.ok && b.result.firstClear).toBe(false);
     const c = rewardForMatch(b.ok ? b.profile : p0, sum('h3', 'loss'), env);
     expect(c.ok && c.result).toMatchObject({ crystals: 0, firstClear: false });

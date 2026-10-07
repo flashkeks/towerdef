@@ -43,7 +43,7 @@ export async function launch() {
  * Lobby -> (Starter-Geschenk) -> Play -> Stufe -> Spielfeld (echte Klicks), danach Zugriff auf die Session.
  * Ab Runde 7 startet ein frisches Profil in der Lobby: erst das Starter-Geschenk abholen (gibt Units und Team), dann spielen.
  */
-export async function openRun(page, url, difficulty = 'normal') {
+export async function openRun(page, url, difficulty = 'normal', stage = 'greenie-1') {
   await page.goto(url);
   await page.waitForSelector('.lobby');
   if (await page.locator('.starter-claim').isVisible().catch(() => false)) {
@@ -51,6 +51,11 @@ export async function openRun(page, url, difficulty = 'normal') {
     await page.waitForSelector('.starter-card.done');
   }
   await page.locator('.lobby-play').click();
+  // Runde 8 / P3: Weltkarte -> Act waehlen -> Schwierigkeit
+  await page.waitForSelector('.act-card, .diff');
+  if (await page.locator('.act-card').first().isVisible().catch(() => false)) {
+    await page.locator(`.act-card[data-stage="${stage}"]`).click();
+  }
   await page.waitForSelector(`.diff[data-difficulty="${difficulty}"]:not([disabled])`);
   await page.locator(`.diff[data-difficulty="${difficulty}"]`).click();
   await page.waitForSelector('canvas.board');

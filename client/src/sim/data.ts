@@ -2,6 +2,9 @@
  * Spieldaten fuer den Browser: die JSON-Dateien aus `sim/data` werden von Vite eingebunden und mit denselben
  * zod-Schemas und Querpruefungen wie in Node geprueft (`loadGameData()` selbst liest Dateien und laeuft nur in Node).
  */
+import { expandWorld } from '../../../sim/src/data/worlds';
+import { WaveTemplateSchema, WorldFileSchema } from '../../../sim/src/data/schema';
+import waveTemplate from '../../../sim/data/wave-template.json';
 import { BossesSchema, CardsSchema, ChallengesSchema, DifficultiesSchema, EconomySchema, EffectsSchema, EnemiesSchema, ModifiersSchema, StageSchema, UnitFileSchema } from '../../../sim/src/data/schema';
 import type { GameData } from '../../../sim/src/data/schema';
 import { mergeUnitFiles, validateGameData } from '../../../sim/src/data/load';
@@ -20,11 +23,18 @@ export const STAGE_ID = 'standard20';
 /** Alle Unit-Dateien in `sim/data/units/` (Beispiele, AA-Import, Crossover ...): eine neue Datei dort genuegt, kein Code. */
 const unitFiles = import.meta.glob('../../../sim/data/units/*.json', { eager: true, import: 'default' }) as Record<string, unknown>;
 
+/** Alle Welt-Dateien in `sim/data/worlds/`: eine neue Datei dort genuegt (Karte, Farben, Acts), jede Welt ergibt Act-Stages und Infinite. */
+const worldFiles = import.meta.glob('../../../sim/data/worlds/*.json', { eager: true, import: 'default' }) as Record<string, unknown>;
+
 let cached: GameData | null = null;
 
 export function loadBrowserData(): GameData {
   if (cached) return cached;
   const stage = StageSchema.parse(standard20);
+  const tpl = WaveTemplateSchema.parse(waveTemplate);
+  const worlds = Object.keys(worldFiles).sort().map((f) => WorldFileSchema.parse(worldFiles[f]));
+  const stages = { [stage.id]: stage } as GameData['stages'];
+  for (const w of worlds) for (const st of expandWorld(w, tpl)) stages[st.id] = StageSchema.parse(st);
   const data: GameData = {
     economy: EconomySchema.parse(economy),
     enemies: EnemiesSchema.parse(enemies),
@@ -35,7 +45,9 @@ export function loadBrowserData(): GameData {
     effects: EffectsSchema.parse(effects),
     bosses: BossesSchema.parse(bosses),
     cards: CardsSchema.parse(cards),
-    stages: { [stage.id]: stage },
+    stages,
+    worlds,
+    waveTemplate: tpl,
   };
   validateGameData(data);
   cached = data;

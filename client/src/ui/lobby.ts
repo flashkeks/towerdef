@@ -44,7 +44,7 @@ export function buildLoadError(f: { code: string; message: string }, onRecovered
 }
 
 const MENU: { id: string; key: string; go: (n: Nav) => void; primary?: boolean }[] = [
-  { id: 'play', key: 'lobby.play', go: (n) => n.stage(), primary: true },
+  { id: 'play', key: 'lobby.play', go: (n) => n.world(), primary: true },
   { id: 'summon', key: 'lobby.summon', go: (n) => n.summon() },
   { id: 'units', key: 'lobby.units', go: (n) => n.units() },
   { id: 'team', key: 'lobby.team', go: (n) => n.team() },

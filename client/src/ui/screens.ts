@@ -16,6 +16,7 @@ import { buildPause, buildResult, replaySlot, type ReplayButtonFactory } from '.
 import { buildRewardBox } from './reward-box';
 import { buildSettings } from './settings-screen';
 import { buildStageSelect } from './stage-select';
+import { buildWorldMap } from './world-map';
 import { buildSummon } from './summon';
 import { buildTeam } from './team-screen';
 import { buildUnits } from './units';
@@ -23,7 +24,7 @@ import { h } from './dom';
 
 export interface ScreenHandlers {
   /** Neue Runde mit dieser Stufe (Team und Mods holt `main.ts` ueber `Backend.matchSetup`). */
-  onStart(d: DifficultyId): void;
+  onStart(d: DifficultyId, stageId?: string): void;
   /** Zurueck zur Lobby: die laufende Runde wird verworfen. */
   onMenu(): void;
   /** Replay-Knopf fuer Ergebnis und Pause (P2, `ui/download.ts`); die Hauptsitzung verbindet ihn in `main.ts`. */
@@ -47,8 +48,9 @@ export class Screens {
     shop: () => this.open(buildShop(this.nav)),
     settings: () => this.open(buildSettings(() => void this.showLobby())),
     credits: () => this.open(buildCredits(() => void this.showLobby())),
-    stage: () => this.open(buildStageSelect(this.nav)),
-    play: (d) => this.handlers.onStart(d),
+    world: () => this.open(buildWorldMap(this.nav)),
+    stage: (id) => this.open(buildStageSelect(this.nav, id)),
+    play: (d, stageId) => this.handlers.onStart(d, stageId),
   };
 
   constructor(private readonly handlers: ScreenHandlers) {}
@@ -78,7 +80,7 @@ export class Screens {
       const slot = replaySlot(s, this.handlers.replayButton);
       this.pausedEl.append(
         buildPause(
-          { onResume: () => s.togglePause(), onRestart: () => this.handlers.onStart(s.difficulty), onMenu: () => this.handlers.onMenu() },
+          { onResume: () => s.togglePause(), onRestart: () => this.handlers.onStart(s.difficulty, s.stageId), onMenu: () => this.handlers.onMenu() },
           slot,
         ),
       );
@@ -124,10 +126,10 @@ export class Screens {
         s,
         mvp,
         {
-          onAgain: () => this.handlers.onStart(s.difficulty),
+          onAgain: () => this.handlers.onStart(s.difficulty, s.stageId),
           onOther: () => {
             this.handlers.onMenu();
-            this.nav.stage();
+            this.nav.world();
           },
           onMenu: () => this.handlers.onMenu(),
         },

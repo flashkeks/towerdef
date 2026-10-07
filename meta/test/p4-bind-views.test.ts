@@ -146,11 +146,11 @@ describe('Sichtmodelle', () => {
     const p = starterProfile();
     const v = stageView(p, 'standard20');
     expect(v.difficulties.map((d) => [d.difficulty, d.unlocked, d.unlockLevel])).toEqual([['normal', true, 1], ['hard', false, 5], ['nightmare', false, 25]]);
-    expect(v.difficulties[0]).toMatchObject({ firstClearCrystals: 100, repeatCrystals: 25, cleared: false, bestWave: 0, maxWaves: 20 });
+    expect(v.difficulties[0]).toMatchObject({ firstClearCrystals: 80, repeatCrystals: 20, cleared: false, bestWave: 0, maxWaves: 20 });
     const cleared: Profile = { ...p, playerLevel: 5, stages: { standard20: { normal: { clears: 2, firstClearAt: 'x', bestWave: 20 }, hard: { clears: 0, firstClearAt: null, bestWave: 7 } } } };
     const w = stageView(cleared, 'standard20').difficulties;
     expect(w[0]).toMatchObject({ cleared: true, clears: 2, bestWave: 20 });
-    expect(w[1]).toMatchObject({ unlocked: true, cleared: false, bestWave: 7, firstClearCrystals: 150 });
+    expect(w[1]).toMatchObject({ unlocked: true, cleared: false, bestWave: 7, firstClearCrystals: 120 });
   });
 
   it('pullHistoryView: neueste zuerst, begrenzt', () => {

@@ -435,3 +435,23 @@ canvas.board { display: block; }
 .dialog.settings .menu-back { margin-top: 14px; }
 .dialog.wide.summon h2, .dialog.wide.units h2 { text-align: left; }
 .overlay.solid { background: var(--night); }
+
+/* Weltkarte (Runde 8 / P3, schlicht; P4 gestaltet beim Merge neu) */
+.world-tabs { display: flex; gap: 10px; margin: 12px 0; flex-wrap: wrap; }
+.btn.world-tab { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; border-left: 8px solid var(--world, var(--teal)); min-width: 190px; text-align: left; }
+.btn.world-tab.active { outline: 2px solid var(--teal); }
+.btn.world-tab.locked { opacity: 0.6; border-style: dashed; border-left-style: solid; }
+.world-panel { border-top: 4px solid var(--world, var(--teal)); padding-top: 8px; }
+.world-blurb { margin: 4px 0 10px; }
+.act-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-bottom: 10px; }
+.btn.act-card { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; text-align: left; padding: 10px 12px; border-left: 8px solid var(--world, var(--teal)); background: var(--ink); }
+.btn.act-card.locked { opacity: 0.6; border-style: dashed; border-left-style: solid; }
+.btn.act-card.next { outline: 2px solid var(--gold, #f5c542); }
+.btn.act-card.infinite { width: 100%; }
+.act-boss { color: #d8dcea; font-size: 0.85rem; }
+.act-waves { color: var(--stone); font-size: 0.8rem; }
+.world-soon { margin-top: 14px; opacity: 0.85; }
+.world-soon h3 { margin: 0 0 6px; font-size: 0.95rem; }
+.soon-list { display: flex; flex-wrap: wrap; gap: 6px 14px; }
+.soon-item { display: flex; flex-direction: column; font-size: 0.8rem; }
+.stage-world-btn { margin-bottom: 6px; }

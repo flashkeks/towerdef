@@ -42,7 +42,7 @@ export async function startGame(root: HTMLElement): Promise<GameHandle> {
   let blocked = false;
 
   const ui = new Ui(root, {
-    onStart: (d) => void begin(d),
+    onStart: (d, stageId) => void begin(d, stageId),
     onMenu: () => {
       session = null;
       ui.showStart();
@@ -63,29 +63,29 @@ export async function startGame(root: HTMLElement): Promise<GameHandle> {
   let starting = false;
 
   /** Match starten: Team und Mods (Level, Sterne) kommen aus dem Profil ueber `Backend.matchSetup`, nie aus der UI. */
-  async function begin(d: DifficultyId): Promise<void> {
+  async function begin(d: DifficultyId, stageId: string = STAGE_ID): Promise<void> {
     if (starting) return;
     starting = true;
     try {
-      const setup = await getBackend().matchSetup(d);
+      const setup = await getBackend().matchSetup(d, stageId);
       if (!setup.ok) {
         notify(errorText(setup), 'error');
         return;
       }
-      launch(d, setup.team, setup.unitMods);
+      launch(d, setup.team, setup.unitMods, stageId);
     } finally {
       starting = false;
     }
   }
 
-  function launch(d: DifficultyId, team: string[], unitMods: UnitMod[]): void {
-    session = new Session(d, undefined, bus, unitMods);
+  function launch(d: DifficultyId, team: string[], unitMods: UnitMod[], stageId: string): void {
+    session = new Session(d, undefined, bus, unitMods, stageId);
     // Team in die Session: Unit-Leiste, Besitzpruefung im Replay (Recorder liest `session.team` beim Start)
     session.team = team;
     endEmitted = false;
     session.blocked = blocked;
     const data = loadBrowserData();
-    renderer.setup(data.stages[STAGE_ID], session.sim.catalog());
+    renderer.setup(data.stages[stageId], session.sim.catalog());
     ui.bind(session);
     fit();
     bus.emitRunStart(session);

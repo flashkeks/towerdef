@@ -165,3 +165,9 @@ Unit-XP gibt es nicht (Units steigen mit Gold).
 (`unitMods` im Kopf != `unitModsFor(profile, team)`, kanonisch verglichen, Reihenfolge egal). Die Platzierung einer Unit ausserhalb des Teams ergibt `team-invalid` (galt schon vorher, sobald ein Team im Kopf steht).
 Dafuer liefert `verifyReplay` jetzt auch `match.unitMods` (die Mods, mit denen nachgerechnet wurde). Ohne `bindToProfile` bleibt das alte Verhalten (Tests mit Bot-Replays ohne Team).
 Folge fuer den Client: Team und Mods kommen aus `Backend.matchSetup()` (Profil), nicht mehr aus der UI; wer zwischen Matchstart und -ende Level aendert (anderer Tab), bekommt `unit-mods-mismatch`.
+
+## Welten und Fortschritt (Runde 8 / P3)
+
+- `src/worlds.ts`: liest `sim/data/worlds/*.json` (Katalog `WORLDS`), Freischaltung (`stageLock`, `isStageUnlocked`, `worldLock`: Acts nacheinander, Welt nach Act n der Vorgaengerwelt, Infinite nach Act n), `infiniteGemsUpTo` (AA-Gem-Tabelle). Kein neues Profilfeld: Fortschritt = `stages[stageId][difficulty]`.
+- `src/world-view.ts`: `worldView(profile)` (Weltkarte: Welten, Acts, Sperrgruende als `LockReason`, naechster Act, Legend/Raids als Geruest) und `stageInfoView`; `stageView` liefert zusaetzlich `info` und `maxWaves` je Stage.
+- `rewards.ts`: Fehlercode `stage-locked`; Gold/XP werden auf die Wellenzahl der Stage gekappt; Infinite zahlt Crystals nach Gem-Tabelle nur fuer neue Bestwellen. Werte in `data/rewards.json` (Act-Erst-Clear 80/120/160 Crystals).

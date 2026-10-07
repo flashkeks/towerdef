@@ -9,7 +9,7 @@
  */
 import type { ReplayFile } from '../game/recorder';
 import type { DifficultyId, UnitMod } from '../sim';
-import type { BannerRates, BannerView, CollectionUnitView, HistoryEntry, MatchReward, PlayerView, Profile, PullBatchResult, ShopProduct, PurchaseResult, StageDifficultyView, StarterResult } from './meta';
+import type { BannerRates, BannerView, CollectionUnitView, HistoryEntry, MatchReward, PlayerView, Profile, PullBatchResult, ShopProduct, PurchaseResult, StageViewData, StarterResult, WorldView } from './meta';
 import type { Persistence } from './storage';
 
 export interface BFail {
@@ -66,15 +66,17 @@ export interface Backend {
   /** P4: alle Units des Katalogs (auch nicht besessene) mit Level, Sternen, Kopien, Kosten fuer den naechsten Level. */
   collectionView(): Promise<BResult<{ units: CollectionUnitView[]; ownedCount: number; total: number }>>;
   /** P4: Stufen einer Stage: freigeschaltet (und ab welchem Spieler-Level), Erst-Clear-Crystals, Bestwelle. */
-  stageView(stageId: string): Promise<BResult<{ stageId: string; playerLevel: number; difficulties: StageDifficultyView[] }>>;
+  stageView(stageId: string): Promise<BResult<StageViewData>>;
+  /** Runde 8 / P3: Weltkarte (Welten, Acts mit Sperrgrund und Fortschritt, Infinite, Legend Stages/Raids als Geruest, naechster Act). Fehlercodes wie `loadProfile`. */
+  worldView(): Promise<BResult<{ world: WorldView }>>;
   /** P4: die letzten Ziehungen aus dem Profil, neueste zuerst. */
   pullHistory(limit?: number): Promise<BResult<{ history: HistoryEntry[] }>>;
   /**
    * P4: alles, was ein Match braucht: das gespeicherte Team und die Mods dazu (`unitModsFor(profile, team)`). Die UI baut damit
    * `new Session(difficulty, seed, bus, unitMods)` und traegt `team` in den Recorder ein; `reportMatch` prueft spaeter, dass das Replay genau dazu passt.
-   * Fehlercodes: `difficulty-locked`, `team-empty` (keine Units), `team-incomplete` (weniger als `min(6, Besitz)` Units gewaehlt), `unit-not-owned`.
+   * Fehlercodes: `difficulty-locked`, `stage-locked` (Runde 8 / P3, nur mit `stageId`), `team-empty` (keine Units), `team-incomplete` (weniger als `min(6, Besitz)` Units gewaehlt), `unit-not-owned`.
    */
-  matchSetup(difficulty: DifficultyId): Promise<BResult<{ team: string[]; unitMods: UnitMod[] }>>;
+  matchSetup(difficulty: DifficultyId, stageId?: string): Promise<BResult<{ team: string[]; unitMods: UnitMod[] }>>;
   /** Speicherstand als JSON-Text (mit Pruefsumme) zum Herunterladen. */
   exportSave(): Promise<BResult<{ json: string; filename: string }>>;
   /** Ersetzt das Profil durch den Inhalt einer Sicherungsdatei. Fehler: `import-invalid-json`, `import-wrong-format`, `import-bad-checksum`, `profile-corrupt`, `profile-too-new`. */

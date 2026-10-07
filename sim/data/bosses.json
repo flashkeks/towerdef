@@ -59,6 +59,54 @@
           "interruptWindow": { "ticks": 80, "bp": 14000 }, "interruptStunTicks": 40, "window": { "ticks": 60, "bp": 15000 }
         }
       ]
+    },
+    {
+      "id": "charger", "name": "Rampage",
+      "_comment": "Runde 8 / P3, Story-Act-Boss (Act 1, einfach): zwei Phasen, ab der zweiten ein unterbrechbarer Sturmlauf mit Schwachstellen-Fenster danach. Eine Stage legt es per `bossKits` auf ihre Boss-Welle.",
+      "phases": [ { "id": "awake", "name": "Awake", "fromHpBp": 10000 }, { "id": "rage", "name": "Fury", "fromHpBp": 5000, "onEnter": [] } ],
+      "abilities": [
+        { "id": "surge", "name": "Rampage", "kind": "charge", "speedBp": 18000, "durationTicks": 60, "fromPhase": 1,
+          "firstTicks": 100, "cooldownTicks": 340, "telegraphTicks": 40, "interruptible": true, "staggerBp": 600,
+          "interruptWindow": { "ticks": 80, "bp": 14000 }, "interruptStunTicks": 30, "window": { "ticks": 60, "bp": 15000 } }
+      ]
+    },
+    {
+      "id": "summoner", "name": "Reinforcements",
+      "_comment": "Runde 8 / P3, Story-Act-Boss (Act 2): ruft Gefolge (AA: frieza_boss:spawn_units), die Rufer-Welle ist unterbrechbar; bei 55 % kommen Runner dazu.",
+      "phases": [ { "id": "awake", "name": "Awake", "fromHpBp": 10000 }, { "id": "rage", "name": "Fury", "fromHpBp": 5500, "onEnter": [ { "kind": "summon", "type": "runner", "count": 4 } ] } ],
+      "abilities": [
+        { "id": "call", "name": "Reinforcements", "kind": "summon", "type": "grunt", "count": 4, "fromPhase": 0,
+          "firstTicks": 140, "cooldownTicks": 380, "telegraphTicks": 40, "interruptible": true, "staggerBp": 700,
+          "interruptWindow": { "ticks": 80, "bp": 15000 }, "interruptStunTicks": 30 }
+      ]
+    },
+    {
+      "id": "mender", "name": "Regeneration",
+      "_comment": "Runde 8 / P3, Story-Act-Boss (Act 3): heilt im Takt (AA: pitou_boss:heal); die Heilung bricht per Stun, Nuke oder Dauerschaden und oeffnet dann ein Fenster mit Ruestung 0.",
+      "phases": [ { "id": "awake", "name": "Awake", "fromHpBp": 10000 }, { "id": "mending", "name": "Mending", "fromHpBp": 6000, "onEnter": [] } ],
+      "abilities": [
+        { "id": "mend", "name": "Regeneration", "kind": "mend", "healBp": 500, "fromPhase": 0,
+          "firstTicks": 200, "cooldownTicks": 320, "telegraphTicks": 80, "interruptible": true, "staggerBp": 600,
+          "interruptWindow": { "ticks": 140, "bp": 18000, "armor": 0 }, "interruptStunTicks": 40 },
+        { "id": "call", "name": "Reinforcements", "kind": "summon", "type": "grunt", "count": 3, "fromPhase": 1,
+          "firstTicks": 120, "cooldownTicks": 420, "telegraphTicks": 40 }
+      ]
+    },
+    {
+      "id": "shielder", "name": "Barrier",
+      "_comment": "Runde 8 / P3, Story-Act-Boss (Act 5): zwei Schildphasen (AA: juvia_boss:shield) mit Fenster, danach Sturmlauf; ab Hard ein dritter Schild.",
+      "phases": [
+        { "id": "awake", "name": "Awake", "fromHpBp": 10000 },
+        { "id": "ward", "name": "Ward", "fromHpBp": 7000, "onEnter": [ { "kind": "ward", "hpBp": 1200, "expireTicks": 300, "window": { "ticks": 120, "bp": 18000, "armor": 0 } } ] },
+        { "id": "rage", "name": "Fury", "fromHpBp": 3500, "onEnter": [ { "kind": "ward", "hpBp": 1000, "expireTicks": 260, "window": { "ticks": 100, "bp": 18000, "armor": 0 } }, { "kind": "summon", "type": "brute", "count": 2, "minDifficulty": "hard" } ] }
+      ],
+      "abilities": [
+        { "id": "call", "name": "Reinforcements", "kind": "summon", "type": "grunt", "count": 4, "fromPhase": 0, "toPhase": 1,
+          "firstTicks": 160, "cooldownTicks": 400, "telegraphTicks": 40 },
+        { "id": "surge", "name": "Rampage", "kind": "charge", "speedBp": 20000, "durationTicks": 60, "fromPhase": 2,
+          "firstTicks": 100, "cooldownTicks": 300, "telegraphTicks": 40, "interruptible": true, "staggerBp": 600,
+          "interruptWindow": { "ticks": 80, "bp": 14000 }, "interruptStunTicks": 40, "window": { "ticks": 60, "bp": 15000 } }
+      ]
     }
   ]
 }

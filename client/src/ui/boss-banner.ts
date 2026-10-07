@@ -4,6 +4,7 @@
  */
 import { t } from '../i18n/t';
 import type { Session } from '../game/session';
+import { bossDisplayName } from '../view/model';
 import type { LastCast } from '../view/telegraph';
 import { telegraphSecondsLeft } from '../view/telegraph';
 import { h, setClass, setText } from './dom';
@@ -78,7 +79,7 @@ export class BossBanner {
       if (this.lastPhase !== '') this.pulse('phase');
       this.lastPhase = phase.id;
     }
-    const nameText = kit ? t(`boss.kit.${kit}`) : t('enemy.boss.name');
+    const nameText = bossDisplayName(kit ? t(`boss.kit.${kit}`) : t('enemy.boss.name'));
     setText(this.nameEl, phase ? `${nameText} - ${t('boss.phase', { name: t(`boss.phase.${phase.id}`) })}` : nameText);
     this.bar.style.width = `${Math.round((boss.hp / Math.max(1, boss.maxHp)) * 100)}%`;
     const tl = tr.telegraphs.get(boss.id);

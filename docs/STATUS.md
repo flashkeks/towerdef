@@ -6,14 +6,14 @@ Frühere Aufträge: [archiv/run-runde1.md](archiv/run-runde1.md), [archiv/run-ru
 
 ## Runde 8 (AA-Import)
 
-Letzte Aktualisierung: 2026-10-07 (Runde 8, P1 erledigt)
+Letzte Aktualisierung: 2026-10-07 (Runde 8, P1 und P3 erledigt)
 
 | Paket | Inhalt | Status | Agent (Modell) | Was man jetzt sehen kann |
 |---|---|---|---|---|
 | P0 | Status | **erledigt** | Hauptsitzung | Runde 7 abgeschlossen (Kurzbericht unten), Kurswechsel gelesen. Stand vor Runde 8: sim 290, meta 105, client 198 Tests, smoke 299 Prüfungen grün |
 | P1 | Baukasten im Simulator (Angriffsformen, Stufen-Angriffe, Damage-Typen, Elemente, Crit, 22 Effekte, Maßstab) | **erledigt** | 1 × Opus, allein | Eine Unit ist ein Datensatz (`sim/data/units/*.json`, AA-nahes Format, `docs/aa-import/format.md`): 5 Angriffsformen, Treffer-Teilung, Angriffswechsel je Stufe, physical/magic/true, Schwächen/Resistenzen, Crit, alle 22 AA-Effekte (0 No-op; Lücken in `unsupported.md`). **Alle 550 AA-Units und 1098 Angriffe parsen und laufen ohne Umbau** (Test), `sample.json` hat 26 echte AA-Units. Maßstab AA 1:1 (5 Studs = 1 Kachel, 1 Yen = 1 Münze, `massstab.md`), Standard20 Normal: Goku SSJ3 (Mythic) gewinnt allein. Nur noch ein Unit-Pfad (die 14 alten Units, Auren/Fähigkeits-Knöpfe, Bot-Messreihen und `sanity/` entfernt), Replay **v4** (v1–v3 = „altes Regelwerk“), Fallback-Figur im Match (Kreis, Element-Farbe, Initialen). Tests: sim 290, meta 105, client 199, Smoke grün. Screenshots `client/docs/r8/p1-match-*.png` |
 | P2 | Importer (561 Units, Evolutionen, Traits, Banner, Bild-Manifest) | offen | 1 × Sonnet | nach P1 |
-| P3 | Welten, Acts, Maps (≥ 3 spielbar) | offen | 1 × Sonnet | nach P1, parallel zu P2 |
+| P3 | Welten, Acts, Maps (≥ 3 spielbar) | **erledigt** | 1 × Sonnet | Weltkarte (Lobby → Play) mit 3 spielbaren Welten à 6 Acts + Infinite, je eigene Karte und Farbwelt: Planet Greenie (Spirale), Walled City (enge Schlangenlinie, Schild ab Act 4), Snowy Town (Hufeisen um den Dorfkern, Regen ab Act 4); AA-Bosse und Act-Titel aus `enemies.json`, 6 Boss-Kits (4 neue, Daten). Neue Welt = nur Datei in `sim/data/worlds/` ([welten.md](aa-import/welten.md)). Acts schalten nacheinander frei (Welt 2/3 nach Act 3 der Vorwelt, Infinite nach Act 3), Erst-Clear 80 Crystals + 50 XP, Wiederholung 20; Infinite zahlt AA-Gems; Legend Stages (8) und Raids (11) als Daten-Gerüst, in der Weltkarte als „Coming later“. Belohnung aus dem Replay (Stage kommt aus dem Replay, `stage-locked`). Tests: sim 314, meta 119, client 205, Smoke grün. Screenshots `client/docs/r8/p3-*.png` |
 | P4 | Interface-Neubau | offen | 1 × Sonnet | nach P1, parallel |
 | P6 | Crossover-Figuren (25) | offen | 1 × Sonnet | nach P2 |
 | P5 | Abschluss | offen | Hauptsitzung | |

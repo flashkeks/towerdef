@@ -99,12 +99,12 @@ export function wavePool(ctx: Ctx, n: number): number {
     const def = ctx.enemies[g.type];
     for (const m of g.modifiers) parseModifier(m); // validiert
     let hp = mulBp(ctx.hpGrunt(n), def.fHpBp);
-    hp = mulBp(mulBp(hp, coopHpFor(ctx, g.type)), ctx.difficulty.hpBp);
+    hp = mulBp(mulBp(mulBp(hp, coopHpFor(ctx, g.type)), ctx.stageHpBp), ctx.difficulty.hpBp);
     pool += hp * g.count;
     if (def.child) {
       const c = ctx.enemies[def.child.type];
       let ch = mulBp(ctx.hpGrunt(n), c.fHpBp);
-      ch = mulBp(mulBp(ch, coopHpFor(ctx, def.child.type)), ctx.difficulty.hpBp);
+      ch = mulBp(mulBp(mulBp(ch, coopHpFor(ctx, def.child.type)), ctx.stageHpBp), ctx.difficulty.hpBp);
       pool += ch * def.child.count * g.count;
     }
   }
