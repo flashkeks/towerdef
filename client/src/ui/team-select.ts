@@ -72,7 +72,10 @@ export function buildTeamSelect(onStart: (team: string[]) => void, onBack: () =>
   back.addEventListener('click', onBack);
   const row = h('div', 'diff-row');
   row.append(back, go);
-  box.append(grid, count, row);
+  // 14 Karten sind hoeher als ein 720p-Fenster: nur das Raster scrollt, Zaehler und Start-Knopf bleiben im Bild (Runde 7 / P6).
+  const scroll = h('div', 'team-scroll');
+  scroll.append(grid);
+  box.append(scroll, count, row);
   refresh();
   return box;
 }

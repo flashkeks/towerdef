@@ -5,7 +5,7 @@
  * (Zerstoeren/Neuanlegen pro Kill brachte SwiftShader zum Absturz).
  */
 import { Container, Graphics, Text } from 'pixi.js';
-import type { SimEvent } from '../sim';
+import type { SimEvent, UnitDef } from '../sim';
 import {
   blinkAlpha,
   cueFor,
@@ -21,6 +21,7 @@ import {
 } from '../view/feel';
 import { enemyStyle, unitColor } from '../view/model';
 import { reachMilli } from '../view/unit-info';
+import { t } from '../i18n/t';
 import { getSettings } from '../ui/settings';
 import { C } from './palette';
 import { WORLD_H, WORLD_W, type RenderContext } from './context';
@@ -193,6 +194,15 @@ export class Fx {
       }
       case 'leak': {
         this.gone.set(cue.enemyId, 'leak');
+        if (cue.damage === 0 && !cue.fatal) {
+          // Leak-Schild (Runde 7 / P6): abgefangen, kein Blinken, kein Wackeln, nur eine kleine Marke am Tor.
+          const q = this.entities.enemyPos(cue.enemyId);
+          if (q && this.pops.length < MAX_POPS) {
+            this.addPop(t('leak.guarded'), q.x, q.y - T * 0.5, C.teal, 0.95, 1);
+            this.ring(q.x, q.y, T * 0.2, T * 1.1, C.teal, 0.9, 0.4, 4);
+          }
+          break;
+        }
         const b = leakBlink(cue.damage, cue.fatal);
         if (b.strength >= this.blink.strength * (1 - this.blink.age / this.blink.seconds)) this.blink = { age: 0, seconds: b.seconds, strength: b.strength };
         this.shake(cue.fatal ? 7 : 2 + Math.min(3, cue.damage * 0.4), cue.fatal ? 0.6 : 0.3);
@@ -404,6 +414,7 @@ export class Fx {
       const o = this.ctx.px(u.x / 1000, u.y / 1000);
       const tp = this.ctx.px(target.x / 1000, target.y / 1000);
       this.shoot(style, def.attack, unitColor(def.id), o.x, o.y, tp.x, tp.y, range, T);
+      if (def.attack?.kind === 'chain') this.chainLinks(def, target, pool, unitColor(def.id), T);
       for (const fn of this.shotListeners) fn(style);
     }
     // Schadenszahlen aus der HP-Differenz
@@ -458,6 +469,34 @@ export class Fx {
       default:
         this.add({ k: K.Bolt, dur: 0.1, x: ox, y: oy, x2: tx, y2: ty, r: T * 0.08, w: T * 0.04, color, color2: C.white, after: After.Impact });
         break;
+    }
+  }
+
+  /** Kettenblitz (Runde 7 / P6): Linien vom Ziel zu den naechsten Gegnern (wie die Sim: naechster ungetroffener, Sprungweite aus den Daten). Nur Darstellung. */
+  private chainLinks(def: UnitDef, first: TargetCandidate, pool: readonly TargetCandidate[], color: number, T: number): void {
+    const a = def.attack;
+    if (!a || a.kind !== 'chain') return;
+    const jr = (a.jumpRadiusMilli ?? 1800) ** 2;
+    const hit = new Set<number>([first.id]);
+    let cur = first;
+    for (let j = 0; j < (a.jumps ?? 4); j++) {
+      let next: TargetCandidate | null = null;
+      let nd = Infinity;
+      for (const e of pool) {
+        if (hit.has(e.id) || (e.flying && !def.canHitAir)) continue;
+        const d2 = (e.x - cur.x) ** 2 + (e.y - cur.y) ** 2;
+        if (d2 <= jr && d2 < nd) {
+          next = e;
+          nd = d2;
+        }
+      }
+      if (!next) break;
+      hit.add(next.id);
+      const p = this.ctx.px(cur.x / 1000, cur.y / 1000);
+      const q = this.ctx.px(next.x / 1000, next.y / 1000);
+      this.add({ k: K.Tracer, dur: 0.14 + 0.03 * j, x: p.x, y: p.y, x2: q.x, y2: q.y, color, color2: C.white, w: Math.max(2, T * 0.05) });
+      this.burst(q.x, q.y, 2, color, T * 1.0, 0.22, 2);
+      cur = next;
     }
   }
 

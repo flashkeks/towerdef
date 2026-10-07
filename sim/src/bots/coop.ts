@@ -1,9 +1,11 @@
 import type { Bot, BotContext } from './types.js';
-import { donateSurplus, makeEnv, newMemo, playTurn, type Policy } from './util.js';
+import type { UnitDef } from '../data/compile.js';
+import { donateSurplus, makeEnv, newMemo, playTurn, roleOf, type Policy } from './util.js';
 
-const SINGLE = new Set(['striker', 'gunner', 'titan', 'lancer']);
-const AOE = new Set(['blaster', 'lancer', 'frost']);
-const MIX = new Set(['gunner', 'frost', 'titan', 'banner']);
+// Rollen aus den Daten (Runde 7 / P6): Einzelziel = Single/Luft/Titan plus Lancer (Linie), AoE = Flächen-Units und Kontrolle, Mix = Luft, Kontrolle, Titan, Aura, Markierung.
+const SINGLE = (d: UnitDef): boolean => ['single', 'air', 'titan'].includes(roleOf(d)) || d.attack?.kind === 'line';
+const AOE = (d: UnitDef): boolean => ['aoe', 'control'].includes(roleOf(d));
+const MIX = (d: UnitDef): boolean => ['air', 'control', 'titan', 'aura', 'marker'].includes(roleOf(d));
 
 /**
  * Koop-Mix. Spieler 0 = Support/Farm (Farm, Banner, Frost, begrenzte eigene Verteidigung; Überschuss
@@ -21,12 +23,12 @@ export const coop = (): Bot => {
       p = {
         farm: { share: 1, sellLate: true },
         maxNonFarmInvest: 1800,
-        weight: (d) => (d.id === 'banner' || d.id === 'frost' ? 2 : d.id === 'gunner' ? 1 : 0.5),
+        weight: (d) => (['aura', 'control'].includes(roleOf(d)) ? 2 : roleOf(d) === 'air' ? 1 : 0.5),
       };
     else {
       const role = (playerId - 1) % 3;
       const set = role === 0 ? SINGLE : role === 1 ? AOE : MIX;
-      p = { weight: (d) => (set.has(d.id) ? 2 : 0.7) };
+      p = { weight: (d) => (set(d) ? 2 : 0.7) };
     }
     cache.set(k, p);
     return p;

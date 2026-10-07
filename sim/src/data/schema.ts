@@ -230,6 +230,8 @@ const Effect = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('burn'), totalBp: pos, ticks: pos }),
   z.object({ kind: z.literal('poison'), totalBp: pos, ticks: pos }),
   z.object({ kind: z.literal('slow'), pctBp: pos, ticks: pos }),
+  /** Runde 7 / P6: Markierung ("Verwundbar", `economy.buffCaps.vulnerableBp`): jeder Direktschaden auf das Ziel steigt um `vulnBp`, stärkste Markierung gewinnt, Dauer wird erneuert. */
+  z.object({ kind: z.literal('mark'), vulnBp: pos, ticks: pos }),
 ]);
 export type OnHitEffect = z.infer<typeof Effect>;
 
@@ -265,8 +267,12 @@ export const UnitSchema = z.object({
   dpsShareBp: nat,
   attack: z
     .object({
-      kind: z.enum(['single', 'circle', 'line', 'cone']),
+      kind: z.enum(['single', 'circle', 'line', 'cone', 'chain']),
       radiusMilli: pos.optional(),
+      /** Runde 7 / P6, `chain`: Sprünge nach dem ersten Treffer, Sprungweite (Milli-Tiles vom zuletzt getroffenen Gegner) und Restschaden je Sprung (Bp des vorigen Treffers). */
+      jumps: pos.optional(),
+      jumpRadiusMilli: pos.optional(),
+      falloffBp: pos.optional(),
       widthMilli: pos.optional(),
       coneDeg: pos.optional(),
     })
@@ -280,6 +286,17 @@ export const UnitSchema = z.object({
   onHit: z.array(Effect).default([]),
   aura: z.object({ radiusMilli: pos, damageBpByLevel: z.array(nat) }).optional(),
   farm: z.object({ yieldByLevel: z.array(pos) }).optional(),
+  /**
+   * Runde 7 / P6, Leak-Schild: je Wave fängt das Team so viele nicht-tödliche Leaks vollständig ab (Leben kosten sie nichts). Je Typ zählt nur
+   * der höchste Wert (wie Auren, §11), mehrere Exemplare stapeln nicht. Boss-Leaks (`economy.lives.instantLoss`) fängt es nie ab.
+   */
+  guard: z.object({ chargesByLevel: z.array(nat) }).optional(),
+  /** Runde 7 / P6, Kopfgeld-Aura: Kill-Bounty von Gegnern, die im Radius sterben, steigt um den Wert (Bp). Je Typ zählt nur der höchste Wert. */
+  bountyAura: z.object({ radiusMilli: pos, bonusBpByLevel: z.array(nat) }).optional(),
+  /** Runde 7 / P6, K5: verlängert jedes Schwachstellen-Fenster eines Bosses um diesen Anteil (Bp). Je Typ zählt nur der höchste Wert. */
+  windowExtend: z.object({ bpByLevel: z.array(nat) }).optional(),
+  /** Runde 7 / P6, Tempo-Aura: Gegner im Radius laufen um den Wert langsamer (wie Slow: stärkster gewinnt, Cap `cc.slowMaxBp`, Boss x`cc.bossCcBp`). */
+  slowAura: z.object({ radiusMilli: pos, slowBpByLevel: z.array(nat) }).optional(),
   ability: z
     .discriminatedUnion('kind', [
       z.object({ kind: z.literal('nuke'), cooldownTicks: pos, damageMulBp: pos }),

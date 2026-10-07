@@ -39,6 +39,16 @@ export function applySlow(e: EnemyState, pctBp: number, ticks: number, eco: CcEc
   return true;
 }
 
+/** Markierung (Runde 7 / P6): stärkste gewinnt, gleiche Stärke erneuert die Dauer; auf Bossen gilt die volle Dauer (kein CC). */
+export function applyMark(e: EnemyState, vulnBp: number, ticks: number): void {
+  if (e.markTicks > 0 && e.markBp > vulnBp) return;
+  if (e.markTicks > 0 && e.markBp === vulnBp) e.markTicks = Math.max(e.markTicks, ticks);
+  else {
+    e.markBp = vulnBp;
+    e.markTicks = ticks;
+  }
+}
+
 /**
  * DoT anwenden: totalCenti verteilt sich auf ticks/intervalTicks Intervalle.
  * Gleicher Typ: Dauer wird erneuert, Rate = Maximum (kein Stapeln). Boss/Elite nehmen x0,5.
@@ -135,6 +145,7 @@ export function tickEffects(w: World): void {
       e.slowTicks--;
       if (e.slowTicks === 0) e.slowBp = 0;
     }
+    if (e.markTicks > 0 && --e.markTicks === 0) e.markBp = 0;
     for (const kind of ['bleed', 'burn', 'poison'] as const) {
       const d = e[kind];
       if (!d) continue;

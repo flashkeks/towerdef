@@ -1,4 +1,4 @@
-// Die 8 Units (32x32, Fuss unten mittig, Farm 64x64). Code-generiert aus einfachen Formen, eigenes Werk.
+// Die 14 Units (32x32, Fuss unten mittig, Farm 64x64). Code-generiert aus einfachen Formen, eigenes Werk.
 // Gemeinsames Muster: Chibi-Proportion (Kopf gross), 1-px-Aussenlinie (kuehl `ink`, warm `inkW`), je ein Leitmerkmal (art-styleguide §5).
 import { Img } from './pix.mjs';
 
@@ -167,4 +167,107 @@ export function titan() {
   return g.outline('ink');
 }
 
-export const UNITS = { striker, gunner, blaster, banner, farm, lancer, frost, titan };
+
+// ---- Runde 7 / P6: sechs neue Units. Gleiche Chibi-Proportion, je ein Leitmerkmal mit eigener Silhouette ----
+
+/** Warden (Hedda Lorn): Torwaechterin, grosser runder Schild vor dem Koerper. */
+export function warden() {
+  const g = chibi({ coat: 'g1', coatD: 'night', pants: 'slate', boots: 'inkW', belt: 'gold' });
+  g.oval(16, 7.5, 6, 4.5, 'st2').rect(10, 8, 12, 4, 'st2').rect(10, 8, 12, 1, 'st3').rect(15, 3, 2, 3, 'g3'); // Helm mit Federbusch
+  g.rect(12, 11, 8, 3, 'sk3').px(13, 12, 'ink').px(14, 12, 'ink').px(18, 12, 'ink').px(19, 12, 'ink');
+  // grosser runder Schild links, ragt ueber die Figur hinaus
+  g.oval(9, 21, 8, 9, 'st1').oval(9, 21, 6.5, 7.5, 'st2').oval(9, 21, 2.5, 2.5, 'gold').px(9, 21, 'or2');
+  g.line(9, 14, 9, 28, 'st3').line(3, 21, 15, 21, 'st3');
+  g.rect(21, 18, 2, 6, 'night').rect(20, 24, 4, 2, 'sk3'); // Arm
+  g.line(26, 10, 26, 28, 'er2').px(26, 9, 'gold'); // Hellebarden-Schaft
+  return g.outline('ink');
+}
+
+/** Mortar (Brunna Stoll): stämmige Artilleristin, dickes Rohr schraeg ueber der Schulter. */
+export function mortar() {
+  const g = chibi({ coat: 'er2', coatD: 'er1', pants: 'st1', boots: 'inkW', belt: 'sand', blush: false });
+  g.oval(16, 7.5, 6.5, 4.5, 'st2').rect(10, 8, 12, 3, 'st2').rect(10, 8, 12, 1, 'st3'); // Stahlhelm
+  g.rect(9, 18, 14, 7, 'sand').rect(9, 18, 14, 1, 'er2'); // Schuerze
+  // dickes Mörserrohr, nach oben rechts gerichtet
+  for (let i = 0; i < 4; i++) g.line(17 + i, 22 - i, 27 + i, 6 - i, i < 2 ? 'st1' : 'st2');
+  g.line(17, 22, 27, 6, 'ink');
+  g.oval(29, 3.5, 3.2, 2.2, 'ink').oval(29, 3.5, 2, 1.2, 'ember').px(29, 2, 'gold'); // Muendung mit Glut
+  g.rect(14, 22, 8, 3, 'st1').rect(13, 24, 10, 1, 'slate'); // Rohrfuss auf der Hueft
+  g.rect(24, 24, 3, 3, 'st1').oval(25.5, 24.5, 1.5, 1.5, 'ink'); // Granate
+  return g.outline('inkW');
+}
+
+/** Broker (Quill Tavish): Kopfgeld-Maklerin mit hohem Zylinder und grosser Muenze. */
+export function broker() {
+  const g = chibi({ coat: 'night', coatD: 'ink', pants: 'slate', boots: 'ink', belt: 'gold', blush: false });
+  g.rect(9, 17, 14, 2, 'gold').rect(15, 17, 2, 8, 'gold'); // Weste mit Goldkante
+  // hoher Zylinder
+  g.rect(8, 6, 16, 2, 'ink').rect(11, -1, 10, 8, 'ink').rect(11, 3, 10, 2, 'red').rect(12, -1, 1, 8, 'slate');
+  // Kopf unter dem Hut, Monokel
+  g.oval(16, 11, 5, 4.5, 'sk3').rect(13, 11, 2, 3, 'ink').rect(18, 11, 2, 3, 'ink').px(13, 11, 'fog').px(18, 11, 'fog');
+  g.oval(19, 12.5, 2.4, 2.4, 'gold').oval(19, 12.5, 1.2, 1.2, 'fog');
+  // grosse Muenze in der Hand
+  g.oval(26, 20, 5, 5, 'gold').oval(26, 20, 3.5, 3.5, 'or2').rect(25, 18, 2, 5, 'gold').px(24, 17, 'fog');
+  g.rect(22, 22, 3, 2, 'sk3');
+  return g.outline('ink');
+}
+
+/** Stormcaller (Rann Veyl): Blitzrufer mit spitzer Kapuze, Stab und Zickzack-Blitz ueber dem Kopf. */
+export function stormcaller() {
+  const g = new Img(32, 32);
+  g.rect(8, 15, 16, 14, 'bl1').rect(8, 15, 2, 14, 'night').rect(22, 15, 2, 14, 'night').rect(8, 27, 16, 2, 'ice'); // Robe
+  g.rect(12, 26, 3, 3, 'ink').rect(17, 26, 3, 3, 'ink');
+  g.rect(11, 15, 10, 9, 'bl2').rect(19, 15, 2, 9, 'bl1').rect(11, 20, 10, 1, 'gold');
+  g.rect(9, 16, 2, 7, 'bl1').rect(21, 16, 2, 7, 'bl1').rect(9, 23, 2, 2, 'sk3');
+  // spitze Kapuze
+  g.oval(16, 10, 6.5, 6, 'bl1');
+  for (let i = 0; i < 7; i++) g.rect(15 - Math.floor(i / 3), 6 - i, 2 + Math.floor(i / 3) * 2, 1, 'bl1');
+  g.oval(16, 11.5, 4, 3.5, 'sk3').rect(13, 11, 2, 2, 'ink').rect(18, 11, 2, 2, 'ink').px(13, 11, 'fog').px(18, 11, 'fog');
+  g.rect(12, 8, 8, 1, 'ice');
+  // Stab rechts mit Kristall
+  g.line(26, 28, 26, 9, 'er2').line(27, 28, 27, 9, 'er1').oval(26.5, 7.5, 2.5, 3, 'ice').px(26, 6, 'fog');
+  // Blitz ueber der Figur (Zickzack, ragt hoch)
+  g.line(14, -1, 17, 2, 'gold').line(17, 2, 15, 4, 'gold').line(15, 4, 18, 7, 'fog');
+  g.line(26, 3, 23, 0, 'ice');
+  return g.outline('ink');
+}
+
+/** Seer (Ilsa Nenn): Nebelseherin, schwebendes Auge ueber dem Kopf, Nebelsaum statt Fuessen. */
+export function seer() {
+  const g = new Img(32, 32);
+  // Nebelsaum
+  g.oval(16, 28, 9, 3, 'sh3').oval(16, 28, 7, 2, 'fog').px(7, 29, 'sh3').px(25, 29, 'sh3').px(10, 30, 'fog').px(22, 30, 'fog');
+  g.rect(9, 15, 14, 13, 'sh2').rect(9, 15, 2, 13, 'sh1').rect(21, 15, 2, 13, 'sh1').rect(9, 25, 14, 2, 'sh1');
+  g.rect(11, 15, 10, 2, 'sh3').rect(15, 17, 2, 8, 'gold'); // Schaerpe
+  g.rect(7, 17, 3, 7, 'sh2').rect(22, 17, 3, 7, 'sh2').rect(7, 24, 3, 2, 'sk3').rect(22, 24, 3, 2, 'sk3');
+  // Kopf mit langem hellem Haar
+  g.oval(16, 11.5, 5.5, 5.5, 'sk3').oval(16, 8.5, 6.5, 4.5, 'fog').rect(9, 9, 3, 9, 'fog').rect(20, 9, 3, 9, 'fog');
+  g.rect(13, 12, 2, 2, 'ink').rect(18, 12, 2, 2, 'ink').px(13, 12, 'fog').px(18, 12, 'fog').px(12, 14, 'pink').px(20, 14, 'pink');
+  // schwebendes Auge ueber dem Kopf (breite Silhouette)
+  g.oval(16, 2.5, 7, 3.2, 'fog').oval(16, 2.5, 3, 3, 'sh3').oval(16, 2.5, 1.5, 1.8, 'ink').px(15, 1, 'fog');
+  g.px(8, 2, 'sh3').px(24, 2, 'sh3');
+  return g.outline('ink');
+}
+
+/** Weaver (Nessa Thorne): Nebelweberin, grosses Webrad aus leuchtenden Faeden hinter der Figur. */
+export function weaver() {
+  const g = new Img(32, 32);
+  // Webrad: Ring mit Speichen und Faeden
+  const cx = 16;
+  const cy = 14;
+  g.oval(cx, cy, 14.5, 13.5, 'sh3').oval(cx, cy, 12.5, 11.5, null);
+  g.line(cx, cy - 13, cx, cy + 13, 'sh3').line(cx - 14, cy, cx + 14, cy, 'sh3').line(cx - 10, cy - 9, cx + 10, cy + 9, 'teal').line(cx + 10, cy - 9, cx - 10, cy + 9, 'teal');
+  g.oval(cx, cy, 6, 5.5, null).oval(cx, cy, 6.5, 6, 'teal').oval(cx, cy, 5, 4.5, null);
+  g.px(cx - 14, cy, 'fog').px(cx + 14, cy, 'fog').px(cx, cy - 13, 'fog').px(cx, cy + 13, 'fog');
+  // Figur davor
+  g.rect(12, 26, 3, 4, 'night').rect(17, 26, 3, 4, 'night').rect(11, 29, 4, 2, 'ink').rect(17, 29, 4, 2, 'ink');
+  g.rect(10, 16, 12, 11, 'sh1').rect(20, 16, 2, 11, 'night').rect(10, 25, 12, 2, 'night').rect(10, 16, 12, 2, 'teal');
+  g.rect(8, 17, 2, 7, 'sh1').rect(22, 17, 2, 7, 'sh1').rect(8, 24, 2, 2, 'sk3').rect(22, 24, 2, 2, 'sk3');
+  g.oval(16, 11.5, 5, 5, 'sk3').oval(16, 8.5, 6, 4, 'teal').rect(10, 9, 2, 8, 'teal').rect(20, 9, 2, 8, 'teal').rect(13, 9, 7, 1, 'fog');
+  g.rect(13, 12, 2, 3, 'ink').rect(18, 12, 2, 3, 'ink').px(13, 12, 'fog').px(18, 12, 'fog');
+  // Faden zwischen den Haenden
+  g.line(9, 25, 23, 25, 'fog');
+  return g.outline('ink');
+}
+
+export const UNITS = { striker, gunner, blaster, banner, farm, lancer, frost, titan, warden, mortar, broker, stormcaller, seer, weaver };

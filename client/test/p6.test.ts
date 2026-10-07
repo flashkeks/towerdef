@@ -82,7 +82,7 @@ describe('Team-Auswahl', () => {
   });
   it('Standardteam passt zu den Sim-Daten', () => {
     const ids = loadBrowserData().units.units.map((u) => u.id);
-    expect(ids).toHaveLength(8);
+    expect(ids).toHaveLength(14);
     expect(normalizeTeam(null, ids)).toHaveLength(6);
   });
   it('toggle: hinzufuegen bis 6, dann ignoriert, abwaehlen geht immer', () => {

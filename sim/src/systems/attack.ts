@@ -8,7 +8,7 @@ import { computeHit, elementBp } from '../damage.js';
 import { BP, dist2, isqrt, mulBp } from '../fixed.js';
 import { nextInt } from '../prng.js';
 import type { EnemyState, UnitState, World } from '../state.js';
-import { applyDamage, applyDot, applySlow } from './effects.js';
+import { applyDamage, applyDot, applyMark, applySlow } from './effects.js';
 import { effectiveArmor } from './boss.js';
 import { selectTarget } from './target.js';
 
@@ -121,7 +121,7 @@ export function hitEnemy(w: World, u: UnitState, def: UnitDef, e: EnemyState, hc
       lvlBp: u.lvlBp,
       traitBp: u.traitBp,
       buffBp: hc.buffs.damageBp,
-      vulnBp: 0,
+      vulnBp: e.markTicks > 0 ? e.markBp : 0,
       elementBp: elementBp(def.element, e.element, eco),
       armor: effectiveArmor(e),
       pen: def.penetration,
@@ -135,6 +135,7 @@ export function hitEnemy(w: World, u: UnitState, def: UnitDef, e: EnemyState, hc
   // DESIGN-OFFEN: On-Hit-Effekte (Bleed/Burn/Slow) wirken auch, wenn ein Schild-Stack den Direktschaden absorbiert hat.
   for (const fx of def.onHit) {
     if (fx.kind === 'slow') applySlow(e, fx.pctBp, fx.ticks, eco);
+    else if (fx.kind === 'mark') applyMark(e, fx.vulnBp, fx.ticks);
     else applyDot(e, fx.kind, mulBp(r.dotBaseCenti, fx.totalBp), fx.ticks, u.owner, u.id, eco);
   }
   return dealt;
@@ -171,6 +172,31 @@ export function runUnits(w: World): void {
     const a = def.attack;
     if (a.kind === 'single') {
       hitEnemy(w, u, def, target, hc, lv.damageCenti, false);
+    } else if (a.kind === 'chain') {
+      // Kettenblitz (Runde 7 / P6): erster Treffer voll, dann je Sprung der nächste noch nicht getroffene Gegner (kleinster Abstand zum
+      // zuletzt getroffenen, Gleichstand: kleinere ID) in `jumpRadiusMilli`, Schaden je Sprung x falloffBp.
+      const hit = new Set<number>([target.id]);
+      let cur = target;
+      let dmg = lv.damageCenti;
+      hitEnemy(w, u, def, cur, hc, dmg, false);
+      const jr = (a.jumpRadiusMilli as number) + radius;
+      for (let j = 0; j < (a.jumps as number); j++) {
+        let next: EnemyState | null = null;
+        let nd = Infinity;
+        for (const e of state.enemies) {
+          if (e.hp <= 0 || hit.has(e.id) || (e.flying && !def.canHitAir)) continue;
+          const d2 = dist2(cur.x, cur.y, e.x, e.y);
+          if (d2 <= jr * jr && d2 < nd) {
+            next = e;
+            nd = d2;
+          }
+        }
+        if (!next) break;
+        hit.add(next.id);
+        dmg = mulBp(dmg, a.falloffBp as number);
+        hitEnemy(w, u, def, next, hc, dmg, false);
+        cur = next;
+      }
     } else {
       const tx = target.x;
       const ty = target.y;

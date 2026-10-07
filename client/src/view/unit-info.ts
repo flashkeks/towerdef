@@ -6,6 +6,8 @@ const TICKS_PER_SECOND = 20;
 /** Reichweite in Milli-Tiles, die der Spieler sehen soll: Aura-Radius bei Support, sonst Angriffsreichweite, 0 ohne Reichweite (Farm). */
 export function reachMilli(def: UnitDef, level: number): number {
   if (def.aura) return def.aura.radiusMilli;
+  if (def.slowAura) return def.slowAura.radiusMilli;
+  if (def.bountyAura) return def.bountyAura.radiusMilli;
   if (!def.attack) return 0;
   return def.levels[Math.min(level, def.levels.length - 1)]?.rangeMilli ?? 0;
 }
@@ -35,6 +37,13 @@ export function statValues(def: UnitDef, level: number): { key: string; value: s
     const bp = def.aura.damageBpByLevel[Math.min(level, def.aura.damageBpByLevel.length - 1)] ?? 0;
     rows.push({ key: 'stat.aura', value: `+${Math.round(bp / 100)}%` }, { key: 'stat.range', value: tiles(def.aura.radiusMilli) });
   }
+  const at = <T,>(a: readonly T[]): T => a[Math.min(level, a.length - 1)];
+  if (def.slowAura) rows.push({ key: 'stat.slow', value: `-${Math.round(at(def.slowAura.slowBpByLevel) / 100)}%` }, { key: 'stat.range', value: tiles(def.slowAura.radiusMilli) });
+  if (def.bountyAura) rows.push({ key: 'stat.bounty', value: `+${Math.round(at(def.bountyAura.bonusBpByLevel) / 100)}%` }, { key: 'stat.range', value: tiles(def.bountyAura.radiusMilli) });
+  if (def.guard) rows.push({ key: 'stat.guard', value: String(at(def.guard.chargesByLevel)) });
+  if (def.windowExtend) rows.push({ key: 'stat.window', value: `+${Math.round(at(def.windowExtend.bpByLevel) / 100)}%` });
+  const mark = def.onHit.find((o) => o.kind === 'mark');
+  if (mark && mark.kind === 'mark') rows.push({ key: 'stat.mark', value: `+${Math.round(mark.vulnBp / 100)}%` });
   if (def.farm) rows.push({ key: 'stat.yield', value: String(def.farm.yieldByLevel[Math.min(level, def.farm.yieldByLevel.length - 1)] ?? 0) });
   return rows;
 }

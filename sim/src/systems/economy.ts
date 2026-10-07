@@ -3,7 +3,7 @@
  * (Wave-Bonus + Farm), Verkaufswert, Aggregations-Events.
  */
 import type { UnitDef } from '../data/compile.js';
-import { mulBp } from '../fixed.js';
+import { dist2, mulBp } from '../fixed.js';
 import type { IncomeSource, UnitState, World } from '../state.js';
 import { createEnemy } from './spawn.js';
 
@@ -32,6 +32,32 @@ export function splitBounty(total: number, shares: readonly number[]): number[] 
   return out;
 }
 
+/** Kopfgeld-Aura (Runde 7 / P6): Aufschlag (Bp) auf die Bounty eines Gegners, der bei (x, y) stirbt. Je Typ zählt nur der höchste Wert im Radius, Typen addieren sich. */
+export function bountyAuraBp(w: World, x: number, y: number): number {
+  let best: Map<string, number> | null = null;
+  for (const u of w.state.units) {
+    const a = w.ctx.units[u.defId].bountyAura;
+    if (!a || dist2(u.x, u.y, x, y) > a.radiusMilli * a.radiusMilli) continue;
+    best ??= new Map();
+    best.set(u.defId, Math.max(best.get(u.defId) ?? 0, a.bonusBpByLevel[u.level]));
+  }
+  let sum = 0;
+  if (best) for (const v of best.values()) sum += v;
+  return sum;
+}
+
+/** Leak-Schild (Runde 7 / P6): wie viele nicht-tödliche Leaks das Team in dieser Wave noch vollständig abfängt (je Typ der höchste Wert, Typen addieren sich). */
+export function guardLeft(w: World): number {
+  const best = new Map<string, number>();
+  for (const u of w.state.units) {
+    const g = w.ctx.units[u.defId].guard;
+    if (g) best.set(u.defId, Math.max(best.get(u.defId) ?? 0, g.chargesByLevel[u.level]));
+  }
+  let sum = 0;
+  for (const v of best.values()) sum += v;
+  return Math.max(0, sum - w.state.guardUsed);
+}
+
 /** Entfernt tote Gegner (aufsteigende ID), zahlt Bounty, spawnt Splitter-Kinder. */
 export function resolveDeaths(w: World): void {
   const { state, ctx } = w;
@@ -44,14 +70,15 @@ export function resolveDeaths(w: World): void {
       continue;
     }
     state.stats.kills++;
-    const parts = splitBounty(e.bounty, e.dmgShare);
+    const bounty = e.bounty + mulBp(e.bounty, bountyAuraBp(w, e.x, e.y));
+    const parts = splitBounty(bounty, e.dmgShare);
     parts.forEach((amount, p) => {
       if (amount > 0) {
         state.stats.coinsBounty += amount;
         addCoins(w, p, amount, 'bounty');
       }
     });
-    w.events.push({ type: 'kill', tick: state.tick, enemyId: e.id, enemy: e.type, wave: e.wave, bounty: e.bounty });
+    w.events.push({ type: 'kill', tick: state.tick, enemyId: e.id, enemy: e.type, wave: e.wave, bounty });
     const def = ctx.enemies[e.type];
     if (def.child) {
       for (let k = 0; k < def.child.count; k++) {

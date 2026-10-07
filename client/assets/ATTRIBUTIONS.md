@@ -20,7 +20,7 @@ Erzeugte Quellbilder (`assets/src/`, PNG, 1:1) — alle **eigen**:
 | Slot-Untergründe | `tiles/slot_ground` (Steinplatte), `tiles/slot_hill` (Sockel mit Frontmauer), `tiles/slot_big` (Holzdeck 2×2, 64×64) |
 | Deko | `tiles/deco_bush`, `tiles/deco_rock`, `tiles/deco_flowers`, `tiles/deco_tree` |
 | Spawn, Basis | `tiles/spawn` (Nebelriss), `tiles/base` (Gildentor) |
-| Units (8) | `units/striker`, `units/gunner`, `units/blaster`, `units/banner`, `units/farm` (64×64), `units/lancer`, `units/frost`, `units/titan` |
+| Units (14) | `units/striker`, `units/gunner`, `units/blaster`, `units/banner`, `units/farm` (64×64), `units/lancer`, `units/frost`, `units/titan`; Runde 7: `units/warden`, `units/mortar`, `units/broker`, `units/stormcaller`, `units/seer`, `units/weaver` (alle code-generiert, eigenes Werk) |
 | Gegner (8 Typen × 2 Geh-Frames) | `enemies/TYP_0`, `enemies/TYP_1` mit TYP = `grunt`, `runner`, `brute`, `flyer`, `splitter`, `splitter_child`, `elite`, `boss` |
 | Boden-Schatten Flieger | `enemies/shadow` |
 

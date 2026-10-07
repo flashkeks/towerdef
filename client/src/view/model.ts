@@ -85,6 +85,12 @@ const UNIT_COLORS: Record<string, number> = {
   lancer: 0x2c4a8a,
   frost: 0x9ad8f0,
   titan: 0x59607a,
+  warden: 0x4e8a45,
+  mortar: 0x8a5a3a,
+  broker: 0xd8344a,
+  stormcaller: 0xf0e86a,
+  seer: 0xa67ae0,
+  weaver: 0x3fd8c0,
 };
 export const unitColor = (id: string): number => UNIT_COLORS[id] ?? 0xc3c7d6;
 

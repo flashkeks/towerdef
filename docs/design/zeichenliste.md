@@ -24,6 +24,12 @@ Pose-Hinweis: Figur schaut nach vorn/leicht seitlich; Zielrichtung wird gespiege
 | `farm` | Pomm Ellesby | **64×64** (2×2) | idle 4, collect 4, 3 Ausbau-Stufen je 4 idle = 12; kein attack/ability | Stufe 1 Stand, Stufe 2 Tisch+Laterne, Stufe 3 Anbau; Dampf der Teekanne; Münzbeutel | warm lächelnd, Schürze, Münzbeutel am Gürtel |
 | `lancer` | Dace Valorn | 32×32 | 17 | idle: reglos, Mantel; attack: Stoß; ability: Lanze stößt in den Boden (Lichtlinie als Effekt) | schwerer Helm, dunkelblauer Mantel, wortlos |
 | `frost` | Maren Vael | 32×32 | 17 | idle: Rauhreif glitzert; attack: Stab-Schwung; ability: Stab hoch, Frostkarte (Effekt separat) | Eisblau-Haare, blaues Cape, Kompass-Stab |
+| `warden` | Hedda Lorn | 32×32 | Runde 7: Standbild (Idle-Frames folgen mit der Animation) | runder Schild links, Federbusch, Hellebarde | Torwächterin, Schild ragt über die Figur |
+| `mortar` | Brunna Stoll | 32×32 | Runde 7: Standbild | Rohr schräg über der Schulter, Glut an der Mündung | stämmig, Stahlhelm, Schürze |
+| `broker` | Quill Tavish | 32×32 | Runde 7: Standbild | hoher Zylinder, Monokel, große Münze | Goldweste, dunkler Mantel |
+| `stormcaller` | Rann Veyl | 32×32 | Runde 7: Standbild | spitze Kapuze, Kristall-Stab, Zickzack-Blitz | blaue Robe |
+| `seer` | Ilsa Nenn | 32×32 | Runde 7: Standbild | schwebendes Auge über dem Kopf, Nebelsaum | langes helles Haar, violette Robe |
+| `weaver` | Nessa Thorne | 32×32 | Runde 7: Standbild | großes Webrad hinter der Figur | türkises Haar, dunkles Kleid |
 | `titan` | Koros Mahn | 32×32 (füllt Zelle voll) | 17 + 4 (Aufstehen-Szene: `wake`, 4 Frames, einmalig) | idle: sehr langsame Atmung (Moos wippt); attack: schwerer Hieb; ability: Aufladen mit leuchtenden Rissen (Türkis), dann Schlag | uralt, moosige Schultern, Risse mit Türkis-Glühen, tiefer Blick |
 
 Zusätzlich je Unit: **Icon 48×48** (Shop, Team-Slot). Je Figur 3–5 Kurzsprüche als Text sind Aufgabe des Designs, nicht der Grafik.
