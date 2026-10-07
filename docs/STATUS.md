@@ -6,7 +6,7 @@ Frühere Aufträge: [archiv/run-runde1.md](archiv/run-runde1.md), [archiv/run-ru
 
 ## Runde 6
 
-Letzte Aktualisierung: 2026-10-07 (Runde 6 gestartet)
+Letzte Aktualisierung: 2026-10-07 (Runde 6 abgeschlossen, P6)
 
 | Paket | Inhalt | Status | Agent (Modell) | Notiz |
 |---|---|---|---|---|
@@ -15,13 +15,60 @@ Letzte Aktualisierung: 2026-10-07 (Runde 6 gestartet)
 | P2 | Balance grob (Farm, Spam, Stufen, Max-Replay) | **erledigt** | 1 × Sonnet | Farm-Ertrag ×0,65 (42/75/110/165/240): Hard farm 90 → 64, wide 55 (Abstand 9). Spam: ab dem 6. Exemplar je Typ +10 % Platzierkosten (`economy.placeCostGrowthBp`/`placeCostFreeCopies`, API `sim.placeCost(player, unitId)`): `mono-frost` Normal 100 → 16. Neue Bots `mono-X`/`mono-X+up`. Beste Strategie N/H/NM 100/70/26 (wide 99/55/24). **Offen für Menschen:** Blaster ist Pflicht-Unit (Verbot −50 bis −97), ohne Titan siegen Bots auf Hard zu 95–98 (Titan = Falle). Max-Replay-Analyse (3 Punkte für P4) in `kalibrierung.md`. 265 sim-Tests + tsc grün. [kalibrierung.md § Runde 6 — P2](balancing/kalibrierung.md) |
 | P3 | Client: freie Platzierung, Smoke | **erledigt** | 1 × Sonnet | Platzieren per Mausposition (`Session.clickBoard` -> `place {x,y}`), Geist in Unit-Groesse gruen/rot mit Grund (`sim.canPlace`), Reichweitenkreis immer, Zonen-Hervorhebung (Boden tuerkis, Huegel gold) + Abdunkeln, Klick an roter Stelle = Toast mit Grund, Klick auf Unit waehlt, Shift+Klick = nochmal setzen. `ui/slots.ts` + DOM-Slots entfallen, Karte: Huegel als Flaeche, Deko nur auf `#`. Kein `cap`-Text mehr. Replay v2 geprueft, `replay-check` mit echter Maus (Hash OK). Smoke: ganze Partie mit echten Klicks auf freie Stellen, 3 Aufloesungen gruen (1280x720 / 1920x1080 / 2560x1440: Spielende per Niederlage in W10-11, 0 abgelehnte Klicks; der einfache Plan gewinnt nicht), Geist-Status, Pfad-Klick-Toast, Mobil-Gate. 115 vitest-Tests. Details [client/README.md](../client/README.md) |
 | P4 | Lesbarkeit und Hilfe im Match | **erledigt** | 1 × Sonnet | Flieger: `FLY`-Symbol in der Vorschau, Hinweis „Flyers incoming - X of your units can hit air“, bei 0 rote Warnung samt Start-Knopf „no anti-air!“ (Luft = `canHitAir` mit Angriff, Banner zählt nicht). Shop: Symbole AIR/AOE/BOSS/SUP/INC aus den Daten (Tooltip in en.ts) und aktueller Platzierpreis `sim.placeCost(0, id)` (orange bei Aufschlag; Fehler-Toast nutzt ihn auch). Hinweise unten links im Feld: „You have coins to spend“ (Leak in den letzten 20 s und Konto > 1,5 × günstigste Team-Unit), „Ability ready“ plus goldenes Plus an der Unit. Boss-Welle: Kurzinfo mit Frost/Titan aus den Daten. Niederlage: drei regelbasierte Tipps (`view/tips.ts`, Recorder-Wellenstatistik, Käufe, Münzen), feste Auffüller statt Zufall. 24 neue vitest-Tests (139 gesamt). Details [client/README.md](../client/README.md) |
-| P5 | Grafik-Austausch Kenney (optional) | offen | – | nur wenn `client/assets/vendor/` liegt |
-| P6 | Abschluss | offen | Hauptsitzung | |
+| P5 | Grafik-Austausch Kenney (optional) | **übersprungen** (`client/assets/vendor/` fehlt) | – | nur wenn `client/assets/vendor/` liegt |
+| P6 | Abschluss | **erledigt** | Hauptsitzung | Kurzbericht unten |
 
 **Offene Fragen Runde 6 (mit Empfehlung):**
 - `teamUnits` = 60 (technische Obergrenze): Misst P1 mit Bots **ohne** Bot-Limit, erreicht keiner sie (größter Spitzenwert `wide` 38 Units, `greedy`/`aoe`/`farm` 21–24). Empfehlung: 60 als Sicherung stehen lassen, nach Playtests mit Menschen neu bewerten. Ein Mensch kann sie erreichen (Platz für 60 Striker ist auf der Karte da).
 - Die Karte (17 x 11) ist eng für freie Platzierung: Bodenreihen neben dem Pfad nur ca. 0,6 Tiles breit nutzbar, Farms nur rechts außen. Empfehlung: P3 baut die Platzier-Hervorhebung auf den Zonen auf; eine zweite, größere Karte ist ein Thema für M4, nicht jetzt.
 - Bot-Befund für P2: Stapeln auf den Innenkurven schlägt Verteilen (Verteil-Abstand/Neuheits-Abschlag machten alle Bots deutlich schwächer); ohne Limit verliert `wide` auf Normal von 99 auf 30 %. Details in `kalibrierung.md` Runde 6 — P1.
+
+## Kurzbericht Runde 6 (P6, 07.10.2026)
+
+```text
+STATUS — Runde 6
+Pakete erledigt / offen: P0–P4, P6 erledigt; P5 übersprungen (Kenney-Packs nicht im Repo)
+Abnahmeziele:
+  Freie Platzierung: erreicht (Zonen ground/hill/blocked, nicht auf Pfad/überlappend/außerhalb)
+  Kein Typ-Limit: erreicht (cap entfernt, Test mit 15 gleichen Units)
+  Keine dominante Strategie (Hard, ≤ ~20): erreicht (farm 64 / wide 55, Abstand 9)
+  Stufen grob (beste Strategie / wide): Normal 100/99, Hard 70/55, Nightmare 26/24 → erreicht
+    (Hard am oberen Rand, Normal für Bots leicht)
+  Spam lohnt nicht allein (≤ ~60 % Normal): mono-X 0 % außer mono-frost 16 %; mit Upgrades
+    mono-frost+up 100/70/12 → verfehlt für Frost-Spam mit Upgrades
+  Keine Pflicht-Unit (≤ ~30): verfehlt — Blaster-Verbot −50 bis −97; Titan ist für Bots auf Hard
+    eher Falle (ohne Titan 90–98 %)
+  Lesbarkeit Flieger: erreicht (FLY-Symbol, Hinweis, rote Warnung + Start-Knopf bei 0 Luftabwehr)
+  Geld wird ausgegeben: erreicht (Hinweis bei Leak + Münzen > 1,5 × günstigste Unit)
+  Smoke: erreicht (echte Mausklicks auf freie Positionen, 1280×720 / 1920×1080 / 2560×1440 bis
+    Spielende, 0 abgelehnte Klicks; einfacher Plan verliert W11)
+Platzierungsmodell: Kachelmaske 17×11 (ground/hill/blocked/path), Unit-Kreis r 0,4 Tile (Farm 0,9),
+  Pfadabstand halbe Breite + r; Gründe out-of-bounds, on-path, blocked, wrong-zone, overlap
+Balance (alt → neu): Farm-Ertrag ×0,65 (65/117/176/267/403 → 42/75/110/165/240); Platzierkosten ab
+  6. Exemplar +10 % je weiterem; Stufen siehe oben
+Analyse Max-Replay: Luftabwehr kam erst W10 (14/26 Leaks Flieger); Ablehnungen (cap, Münzen) nicht
+  verstanden; 400–1100 Münzen ungenutzt, Fähigkeiten kaum, Titan nie → in P4 adressiert
+Performance Bot-Matrix (alt → neu): 32,5 s → 38,6 s (×1,19); Sim 258k → 230k Ticks/s
+Was die Menschen als Nächstes testen sollen:
+  1. Normal einmal durchspielen: Fühlt sich freie Platzierung gut an? Ist der Streifen neben dem Pfad zu eng?
+  2. Flieger-Warnung vor W8/W16: gesehen, verstanden, rechtzeitig reagiert?
+  3. Shop-Symbole (AIR/AOE/BOSS/SUP/INC) und Preisaufschlag ab dem 6. Exemplar: verständlich?
+  4. Niederlage-Tipps: passen die drei Tipps zu dem, was schiefging?
+  5. Replay nach jeder Runde schicken (jetzt Format v2)
+Vorschlag für Runde 7 (M3-Start): Lokaler Speicherstand (IndexedDB, versioniert, Export/Import) als
+  Fundament, dann Gacha mit sichtbaren Raten/Pity und Mock-Währung nach architecture.md §7, aber
+  clientseitig und klar als „lokal, wandert mit M2 auf den Server" markiert. Unit-Level und Sterne
+  als Datenmodell in sim/data, damit die Bots sie mitsimulieren können. Vorher klären: Blaster-Pflicht
+  und Titan-Falle (Boss-Design) — beides wird mit mehr Units ohnehin neu bewertet. Größere oder zweite
+  Karte erst M4.
+Agenten: 4 × Sonnet (P1 allein, dann P2+P3 parallel in Worktrees, dann P4)
+Commits: 8 auf dev seit dem Auftrag (c2d79e5)
+```
+
+**Offene Fragen an die Menschen (Runde 6, mit Empfehlung):**
+- **Blaster ist Pflicht** (Verbot −50 bis −97): Er ist die einzige Boden-Flächen-Unit, die Luft trifft. Empfehlung: nicht jetzt feintunen; mit dem M3-Unit-Pool eine zweite Boden-AoE einplanen.
+- **Titan ist für Bots auf Hard eher Falle** (ohne Titan 90–98 %): teuer, und die Boss-Wirkungen lassen sich auch per Frost/Dauerschaden brechen. Empfehlung: so lassen, bis Menschen-Replays zeigen, ob Spieler ihn brauchen.
+- **Frost-Spam mit Upgrades** schafft Normal 100 %: Empfehlung: akzeptieren (Upgrades kosten Münzen, das ist eine echte Strategie), mit M3-Units neu messen.
 
 ## Runde 5 (abgeschlossen)
 
