@@ -1,7 +1,7 @@
 # Status (global)
 
-Arbeitsauftrag: [`/run.md`](../run.md) (**Runde 6**: freie Platzierung, kein Typ-Limit, Lesbarkeit, Balance nur grob). **Verbindlich zuerst:** [design/ENTSCHEIDUNGEN.md](design/ENTSCHEIDUNGEN.md). **Jede Sitzung liest danach diese Datei** und macht beim „Nächsten Schritt“ weiter.
-Frühere Aufträge: [archiv/run-runde1.md](archiv/run-runde1.md), [archiv/run-runde2.md](archiv/run-runde2.md), [archiv/run-runde3.md](archiv/run-runde3.md), [archiv/run-runde4.md](archiv/run-runde4.md), [archiv/run-runde5.md](archiv/run-runde5.md).
+Arbeitsauftrag: [`/run.md`](../run.md) (**Runde 7**: M3-Start, lokaler Speicherstand, Gacha mit sichtbaren Raten/Pity, Unit-Level/Sterne, Lobby, 6 neue Units). **Verbindlich zuerst:** [design/ENTSCHEIDUNGEN.md](design/ENTSCHEIDUNGEN.md). **Jede Sitzung liest danach diese Datei** und macht beim „Nächsten Schritt“ weiter.
+Frühere Aufträge: [archiv/run-runde1.md](archiv/run-runde1.md), [archiv/run-runde2.md](archiv/run-runde2.md), [archiv/run-runde3.md](archiv/run-runde3.md), [archiv/run-runde4.md](archiv/run-runde4.md), [archiv/run-runde5.md](archiv/run-runde5.md), [archiv/run-runde6.md](archiv/run-runde6.md).
 
 
 ## Runde 6
@@ -66,9 +66,9 @@ Commits: 8 auf dev seit dem Auftrag (c2d79e5)
 ```
 
 **Offene Fragen an die Menschen (Runde 6, mit Empfehlung):**
-- **Blaster ist Pflicht** (Verbot −50 bis −97): Er ist die einzige Boden-Flächen-Unit, die Luft trifft. Empfehlung: nicht jetzt feintunen; mit dem M3-Unit-Pool eine zweite Boden-AoE einplanen.
-- **Titan ist für Bots auf Hard eher Falle** (ohne Titan 90–98 %): teuer, und die Boss-Wirkungen lassen sich auch per Frost/Dauerschaden brechen. Empfehlung: so lassen, bis Menschen-Replays zeigen, ob Spieler ihn brauchen.
-- **Frost-Spam mit Upgrades** schafft Normal 100 %: Empfehlung: akzeptieren (Upgrades kosten Münzen, das ist eine echte Strategie), mit M3-Units neu messen.
+- **ENTSCHIEDEN (Max, 07.10.2026): Empfehlung übernommen.** **Blaster ist Pflicht** (Verbot −50 bis −97): Er ist die einzige Boden-Flächen-Unit, die Luft trifft. Empfehlung: nicht jetzt feintunen; mit dem M3-Unit-Pool eine zweite Boden-AoE einplanen.
+- **ENTSCHIEDEN (Max, 07.10.2026): Empfehlung übernommen.** **Titan ist für Bots auf Hard eher Falle** (ohne Titan 90–98 %): teuer, und die Boss-Wirkungen lassen sich auch per Frost/Dauerschaden brechen. Empfehlung: so lassen, bis Menschen-Replays zeigen, ob Spieler ihn brauchen.
+- **ENTSCHIEDEN (Max, 07.10.2026): Empfehlung übernommen.** **Frost-Spam mit Upgrades** schafft Normal 100 %: Empfehlung: akzeptieren (Upgrades kosten Münzen, das ist eine echte Strategie), mit M3-Units neu messen.
 
 ## Runde 5 (abgeschlossen)
 

@@ -1,173 +1,181 @@
-# run.md — Runde 6: Freie Platzierung, kein Typ-Limit, ein Match, das sich gut anfühlt
+# run.md — Runde 7: M3-Start, aus dem Match wird ein Spiel (Sammeln, Gacha, Fortschritt)
 
 Du arbeitest in diesem Repository auf dem Branch `dev`. Commit und Push nach jedem
 Paket. Pull Requests nach `main` nur, wenn der Mensch es sagt.
 
-Reihenfolge beim Einstieg: **`docs/design/ENTSCHEIDUNGEN.md`** (verbindlich, seit 07.10.2026
-mit den Abschnitten „Platzierung", „Messlatte" und der neuen Meilenstein-Reihenfolge), dann
-**`docs/STATUS.md`**, dann diese Datei. Runde 5 liegt in
-[`docs/archiv/run-runde5.md`](docs/archiv/run-runde5.md).
+Reihenfolge beim Einstieg: **`docs/design/ENTSCHEIDUNGEN.md`** (verbindlich), dann
+**`docs/STATUS.md`**, dann diese Datei. Runde 6 liegt in
+[`docs/archiv/run-runde6.md`](docs/archiv/run-runde6.md).
 
 ---
 
 ## 1. Lage und Ziel
 
-Runde 5 hat das Match komplett gemacht: Menü, Team-Wahl, Pixel-Grafik, Effekte, Ton, Replays.
-Seit 07.10.2026 läuft der Stand auf der Preview (`duskwardens.flashkeks.com`).
+Das Match steht: freie Platzierung, kein Typ-Limit, 8 Units, 20 Wellen, 2 Boss-Kits, Menü,
+Team-Wahl, Grafik, Ton, Replays. Preview mit Runde 6 läuft seit 07.10.2026.
 
-**Erster echter Playtest (Max, Normal, verloren in Welle 18)**, Replay in
-`docs/balancing/playtests/2026-10-07-max-normal-loss.json` (Hash im Simulator OK):
-- Flieger-Leaks in W8 (4) und W16 (10): Luftabwehr fehlte, die Bedrohung war nicht lesbar.
-- 5 × `cap-reached` beim Striker.
-- Gestorben mit 1132 ungenutzten Münzen.
-- Titan im Team, aber nie gekauft.
-- Bot `wide` gewinnt Normal zu 92 %, ein Erstspieler verliert.
+**Laut ENTSCHEIDUNGEN.md kommt jetzt M3 vor M2:** Sammeln, Gacha und Fortschritt, **zuerst lokal
+im Browser**. Der Server (M2, Koop, Kek-Game-Konto) folgt danach. Der Speicherstand wandert
+dann auf den Server.
 
-**Neue Entscheidungen von Max (07.10.2026), Details in ENTSCHEIDUNGEN.md:**
-1. **Freie Platzierung statt fester Slots** (wie Anime Adventures).
-2. **Kein Limit je Unit-Typ.** Gegenmittel in der Ökonomie suchen, nicht durch harte Limits.
-3. **Messlatte für die Stufen ist die beste echte Strategie.** `farm` zählt, ist auf Hard
-   dominant (86 % gegen `wide` 49 %) und muss abgeschwächt werden.
-4. **Reihenfolge danach: erst M3 (Meta/Gacha, lokal im Browser), dann M2 (Koop/Server).**
+**Ziel dieser Runde:** Wer das Spiel öffnet, landet in einer Lobby, zieht Units mit sichtbaren
+Raten, levelt sie mit Erspieltem, stellt ein Team aus seiner Sammlung zusammen, spielt eine
+Stage und bekommt Belohnungen. **Der Kreislauf schließt sich**, auch wenn die Zahlen noch roh sind.
 
-**Neu ab dieser Runde: Balance nur noch grob (Max, 07.10.2026).** Mit M3 kommen Gacha, viele
-Units, Level und Perks. Damit verschieben sich alle Zahlen sowieso. Feinkalibrieren auf
-Prozentpunkte ist jetzt verschwendete Zeit. Der Simulator bleibt, aber als **Sicherheitsnetz**:
-Er soll grobe Fehler finden (eine Strategie gewinnt immer, eine Unit ist Pflicht oder nutzlos,
-eine Regel ist kaputt), nicht Kennlinien auf ±5 Punkte glätten. **Faustregel: höchstens ca.
-30 Minuten Bot-Messungen je Paket.** Wenn ein Ziel danach knapp verfehlt ist: notieren, weiter.
-
-Diese Runde ist die letzte am reinen Match, bevor M3 beginnt. Ziel: **Ein Mensch spielt Normal
-beim ersten Mal knapp durch und will danach Hard probieren.**
+**Balance bleibt grob** (ENTSCHEIDUNGEN.md § Schwierigkeit). Höchstens ca. 30 Minuten
+Bot-Messungen je Paket. Die Meta-Zahlen (Raten, Preise, Kurven) sind Startwerte, kein Feinschliff.
 
 ---
 
-## 2. Agenten und Token-Budget
+## 2. Vorgaben für diese Runde (Homelab-Planer; Max hat Runde 7 freigegeben und kann einzelne Punkte noch kippen)
 
-- Subagenten **immer `model: "sonnet"`**, nie Opus. Rein Mechanisches darf `"haiku"` sein.
+1. **Zwei Meta-Währungen, nicht drei:**
+   - **Crystals** für Gacha, erspielbar und im Mock-Shop „kaufbar". Sie entsprechen den `shards`
+     aus `architecture.md` § 7 (dort umbenennen bzw. vermerken).
+   - **Gold** für Unit-Level, nur erspielbar.
+   - Die Münzen im Match bleiben davon getrennt.
+2. **Backend-Schnittstelle von Anfang an.** Der Client spricht nur mit einer Schnittstelle
+   `Backend` (Profil laden, Ziehen, Leveln, Team speichern, Match-Ergebnis melden, Shop). In
+   dieser Runde gibt es nur `LocalBackend` (IndexedDB, Fallback `localStorage`, alles mit
+   try/catch). In M2 kommt `ServerBackend` mit denselben Methoden, **der Client ändert sich dann
+   nicht**. Logik, die später auf den Server gehört (Gacha-Wurf, Pity, Belohnungen aus dem
+   Replay), liegt in einem eigenen Modul `meta/`, das ohne DOM läuft und später auf dem Server
+   wiederverwendet wird.
+3. **Lokal heißt manipulierbar.** Das ist für die Testphase in Ordnung. Im Spiel steht dauerhaft
+   klein „Test build, progress is stored in this browser only". Export und Import des
+   Speicherstands als JSON (Backup, Gerätewechsel).
+4. **Gacha nach `architecture.md` § 7.6:** Raten und Pity vor jedem Zug sichtbar, Pity-Zähler
+   auf dem Knopf, Ziehungsverlauf, eine Datei je Banner als einzige Quelle für Anzeige **und**
+   Wurf. Zufall per `crypto.getRandomValues`, **nicht** die Sim-PRNG. Test mit 1 Mio. Würfen gegen
+   die angezeigte Rate.
+5. **Mock-Shop:** Crystals-Pakete, Kauf über `MockPaymentProvider`, dauerhaft „Test purchase - no
+   real money". Kein echter Anbieter, kein Preis in Euro.
+6. **K4 Bindung, Tagesaufgaben und Infinite** kommen **nicht** in diese Runde (Runde 8).
+
+---
+
+## 3. Agenten und Token-Budget
+
+- Subagenten **immer `model: "sonnet"`**, nie Opus. Mechanisches darf `"haiku"` sein.
 - Höchstens **4 Agenten gleichzeitig**, Rückmeldung höchstens 10 Zeilen.
-- **Engpass `sim/`:** P1 baut das Platzierungsmodell um und berührt Kern, Befehle, Bots und
-  Tests. **P1 läuft allein**, bis der Simulator mit freier Platzierung grün ist. Erst danach
-  P2 (Balance), P3 (Client) und P4 (Lesbarkeit) parallel, an getrennten Dateien.
-- Jede Änderung an `sim/data/` mit alt → neu → Grund in `docs/balancing/kalibrierung.md`,
-  Abschnitt „Runde 6".
-- Vor jedem Commit: `npm test` + `npm run typecheck` in `sim/`, `npm test` + `tsc` +
-  `npm run build` in `client/`, ab P3 auch `npm run smoke`.
-- **Replays brechen bei Regeländerungen.** Alte Replays (Format v1, Slot-IDs) bleiben als
-  Dokument liegen. Das Replay-Format bekommt eine neue Version, `npm run replay` erkennt v1 und
-  meldet „altes Regelwerk" statt Hash-Fehler.
+- **P1 zuerst und allein** (Datenmodell, Backend-Schnittstelle, Speicherstand). Danach laufen
+  P2–P6 parallel an getrennten Dateien. `sim/` ändert nur P2 und P6.
+- Vor jedem Commit: Tests + Typecheck in `sim/` und `client/`, `npm run build`, ab P4 `npm run smoke`.
 
 ---
 
-## 3. Abnahmeziele
+## 4. Abnahmeziele
 
 | Ziel | Prüfung |
 |---|---|
-| Freie Platzierung | Units lassen sich überall neben dem Pfad setzen, wo Platz ist. Nicht auf dem Pfad, nicht überlappend, nicht außerhalb der Karte. Hügel-/Boden-Zonen sind Flächen |
-| Kein Typ-Limit | kein `cap-reached` mehr, Test mit 15 gleichen Units |
-| Keine dominante Strategie (grob) | beste echte Strategie (inkl. `farm`) und `wide` liegen auf Hard höchstens ca. 20 Punkte auseinander |
-| Stufen grob im Ziel | beste echte Strategie: Normal ≥ 80, Hard 35–70, Nightmare 10–40 %. `wide` mitberichten |
-| Spam lohnt nicht allein | Bot „nur eine Unit-Sorte" schafft Normal höchstens zu ca. 60 % |
-| Keine Pflicht-Unit (grob) | Verbot keiner Unit kostet mehr als ca. 30 Punkte |
-| ~~Hard-Kennlinie~~ | **gestrichen** für diese Runde, kommt nach M3 wieder |
-| Lesbarkeit Flieger | Welle mit Fliegern kündigt sich in der Vorschau unübersehbar an; fehlt im Feld Luftabwehr, warnt das Spiel **vor** dem Wellenstart |
-| Geld wird ausgegeben | Hinweis, wenn der Spieler bei laufender Welle viele Münzen hortet und Leben verliert |
-| Smoke | eine Partie mit echten Mausklicks auf freie Positionen, drei Auflösungen, bis Spielende |
+| Kreislauf geschlossen | Smoke (echte Mausklicks): neues Profil → Lobby → 10er-Zug → Unit leveln → Team aus Sammlung → Stage → Belohnung → zurück in der Lobby, Speicherstand nach Neuladen noch da |
+| Gacha ehrlich | 1 Mio. Würfe je Banner: Häufigkeit je Stufe innerhalb Toleranz der Anzeige, harte Pity nie überschritten, Pity-Zähler überlebt Neuladen |
+| Anzeige = Wirklichkeit | Anzeige und Wurf lesen nachweislich dieselbe Banner-Datei (Test) |
+| Meta wirkt im Match | Unit-Level und Sterne ändern Werte im Simulator (`unitMods`), Replays tragen die Mods mit und bleiben bit-genau nachspielbar |
+| Meta-Abstand | Neuling gegen „alles maximal" höchstens Faktor ca. 2,5 auf den Schaden (`rec §19` Nr. 16), grob per Bot gemessen |
+| Erster Fortschritt schnell | Ein neues Profil hat nach der ersten gewonnenen Normal-Stage genug für mindestens einen 10er-Zug oder hat ihn als Starter-Geschenk schon bekommen |
+| Unit-Pool | mindestens **14 Units** (8 alte + 6 neue), darunter eine zweite Boden-Flächen-Unit (löst die Blaster-Pflicht) |
+| Speicherstand robust | Export → Profil löschen → Import ergibt denselben Stand. Kaputte oder alte Daten führen zu einer Meldung, nicht zum Absturz (Schema-Version, Migration) |
+| Lizenz | weiterhin nur eigene oder geprüfte Assets |
 
 ---
 
-## 4. Arbeitspakete
+## 5. Arbeitspakete
 
 ### P0 — Status (Hauptsitzung)
-`docs/STATUS.md`: Runde-6-Tabelle, Runde 5 als abgeschlossen zusammenfassen.
+`docs/STATUS.md`: Runde-7-Tabelle; Runde 6 als abgeschlossen zusammenfassen.
 
-### P1 — Freie Platzierung im Simulator (ein Agent, allein, zuerst)
-- `place` nimmt eine Position (Festkomma `x`, `y`) statt einer Slot-ID.
-- Map-Daten: Pfad als Polyline mit Breite (gibt es schon), dazu **Zonen** als Polygone oder
-  Kachelmasken: `ground`, `hill`, `blocked` (Bäume, Deko, Kartenrand). Aus den bisherigen
-  Slots die Zonen sinnvoll ableiten, Hügel bleiben die erhöhten Bereiche.
-- Kollision: Unit-Radius je Unit (`footprint` → Radius), Mindestabstand zum Pfadrand, keine
-  Überlappung mit anderen Units. Alles in Festkomma, deterministisch.
-- Fehlergründe sprechend: `on-path`, `blocked`, `overlap`, `wrong-zone`, `out-of-bounds`.
-- **`def.cap` entfernen** (Daten und Code). `teamSlots` (6 Sorten je Match) bleibt.
-  `teamUnits` (60) bleibt vorerst als technische Obergrenze, wird aber gemessen: Erreicht ein
-  Bot sie je, Frage an die Menschen.
-- Reichweite, Zielwahl, Abdeckung (`coverageByRange`) auf freie Positionen umstellen.
-  Abdeckung je Position vorberechnen bzw. cachen, die Sim muss schnell bleiben (Ziel: Matrix
-  mit allen Bots nicht mehr als doppelt so langsam wie heute).
-- **Bots:** Positionssuche statt Slot-Wahl. Kandidatenraster, z. B. alle halbe Kachel,
-  bewertet nach Pfadabdeckung je Reichweite. Mit Fehlermodell (`worseSlotBp` wird „schlechtere
-  Position").
-- Replay-Format v2 (Abschnitt 2).
-- Ergebnis: alle Tests grün, Determinismus-Test grün, Bot-Matrix läuft.
+### P1 — Datenmodell, Backend-Schnittstelle, Speicherstand (ein Agent, allein, zuerst)
+- Profil-Schema angelehnt an `architecture.md` § 6.7 (lokal ohne `kekgame_sub`): Spieler-Level und
+  -XP, Crystals, Gold, Sammlung (Unit, Level, XP, Sterne/Kopien), Team, Pity je Banner,
+  Ziehungsverlauf, Stage-Fortschritt (Stufe, Erst-Clear), Einstellungen. **Schema-Version** +
+  Migrationen.
+- Ledger statt Zähler auch lokal: Buchungen (Grund, Betrag, Zeit), Salden sind Summe bzw. Cache.
+- `meta/` (ohne DOM): reine Funktionen für Ziehen, Leveln, Sterne, Belohnungen. `client/` nutzt
+  sie über `LocalBackend`.
+- Export/Import (JSON, mit Prüfsumme gegen versehentliche Beschädigung, nicht als Schutz).
 
-### P2 — Balance auf dem neuen Modell (ein Agent, nach P1)
-- Neue Bots: `mono-X` (nur eine Sorte, so viele wie bezahlbar) für jede DPS-Unit.
-- **Farm abschwächen**, bis `farm` und `wide` ≤ 15 Punkte auseinander liegen. Hebel in dieser
-  Reihenfolge prüfen: Ertragskurve der hohen Stufen, Verkaufswert Farm, steigende Kosten je
-  weiterer Farm. Kein hartes Farm-Limit (Entscheidung Platzierung).
-- **Spam ohne Limit:** wenn `mono-X` zu stark ist, steigende Platzierkosten je weiterer gleicher
-  Unit (z. B. +10 % je Exemplar) prüfen. Wert und Kurve begründen.
-- Stufen grob auf die beste echte Strategie stellen (Korridore Abschnitt 3). Kein Feinschliff,
-  keine Kennlinie. Zeitbudget beachten (Abschnitt 1).
-- **Normal für Menschen:** Max' Replay im Simulator analysieren (`--compare` mit `wide`).
-  Wo weicht der Mensch ab, was hätte geholfen? Ergebnis als kurze Liste in `kalibrierung.md`
-  und als Eingabe für P4.
+### P2 — Unit-Level und Sterne im Simulator (ein Agent, nach P1)
+- Level 1–40 und Sterne 1–5 (aus Duplikaten) werden zu `unitMods` (`lvlBp` gibt es schon).
+  Kurven als Daten (`sim/data/progression.json`), nicht im Code.
+- Bots bekommen Meta-Profile: `fresh` (alles Level 1), `mid`, `max`. Grob messen:
+  Normal mit `fresh` schaffbar? Faktor `max`/`fresh` ≤ ca. 2,5?
+- Replay-Format v3: Mods je Unit im Kopf, `npm run replay` rechnet sie mit.
+- Stufen-Freischaltung nach Spieler-Level (`gdd` § 4: Hard ab 5, Nightmare ab 25; Startwerte,
+  dürfen grob angepasst werden).
 
-### P3 — Client: freie Platzierung (ein Agent, nach P1, parallel zu P2)
-- Unit gewählt → Geist-Sprite folgt der Maus, **grün** wo erlaubt, **rot** mit Grund wo nicht
-  (Pfad, Überlappung, falsche Zone). Reichweitenkreis immer sichtbar.
-- Hügel- und Boden-Zonen beim Platzieren hervorheben; der Rest der Karte dimmt leicht.
-- Die Slot-Platten aus Runde 5 (lagen doppelt über der Kartengrafik) entfallen.
-- Shift + Klick: dieselbe Unit nochmal setzen, ohne neu zu wählen.
-- Smoke auf freie Positionen umbauen (Abnahmeziele).
+### P3 — Gacha und Mock-Shop (ein Agent, nach P1)
+- Banner-Dateien: **Standard** (dauerhaft) und **Starter** (einmalig günstiger, garantiert eine
+  Epic+). Featured-Banner nur als Datenformat vorbereiten.
+- Raten-/Pity-Startwerte nach `recommendations.md` § 13 bzw. `architecture.md` § 7.6, klar als
+  Startwerte markiert.
+- Duplikate → Sterne (Kopien), kein Extra-Material.
+- Mock-Shop: drei Crystals-Pakete, `MockPaymentProvider` nach § 7.2, Idempotenz auch lokal.
+- Tests: 1-Mio.-Würfe, Pity-Grenzen, Idempotenz (Doppelklick zieht nicht doppelt).
 
-### P4 — Lesbarkeit und Hilfe im Match (ein Agent, nach P1, parallel zu P2/P3)
-- **Flieger:** eigenes Symbol in der Wellenvorschau, Hinweis „Flyers incoming, X of your units
-  can hit air" vor dem Wellenstart. Wenn 0: deutliche Warnung.
-- **Unit-Infos:** im Shop je Unit Symbole „trifft Luft", „Fläche", „Boss", „Support", „Geld".
-- **Münzen:** dezenter Hinweis, wenn bei Leaks mehr als ca. 1,5 × der günstigsten Unit auf dem
-  Konto liegen („You have coins to spend").
-- **Titan/Boss-Hinweis:** Vorschau auf Welle 10/20 zeigt „Boss" mit Kurzinfo, was gegen ihn hilft.
-- Nach einer Niederlage: drei kurze Tipps aus den Replay-Daten der Runde (z. B. „10 flyers
-  leaked in wave 16: try Gunner, Lancer or Blaster"). Regelbasiert, kein Zufallstext.
+### P4 — Lobby und Meta-UI (ein Agent, nach P1)
+- **Lobby** als Startbildschirm: Play, Summon, Units, Team, Shop, Settings. Kontostände oben.
+- **Summon:** Banner-Auswahl, Ratentabelle (immer sichtbar oder ein Klick entfernt, nie versteckt),
+  Pity-Zähler, 1er/10er-Zug, Enthüllungs-Animation je Seltenheit (kurz, überspringbar), Verlauf.
+- **Units:** Sammlung als Raster mit Seltenheits-Rahmen, Filter, Detailansicht mit Werten,
+  Level-Up (Gold), Sternen, Rolle und Symbolen aus Runde 6.
+- **Team:** 6 aus der Sammlung, ersetzt die feste Auswahl 6 aus 8.
+- **Stage-Auswahl:** Terrassenweg mit Stufen, gesperrte Stufen mit Grund („Player level 5").
+- **Ergebnis-Bildschirm** um Belohnungen erweitern (Crystals, Gold, XP, Level-Up-Anzeige).
+- Smoke-Test für den ganzen Kreislauf (Abnahmeziele).
 
-### P5 — Grafik-Austausch (optional, ein Agent, Recherche erlaubt)
-Wenn die Homelab-Seite die Kenney-Packs ins Repo gelegt hat (`assets/vendor/`, siehe STATUS):
-Tiles und Effekte gegen die Packs tauschen, wo sie besser aussehen. Lizenz in
-`ATTRIBUTIONS.md`. Sonst überspringen.
+### P5 — Belohnungen und Fortschritt (ein Agent, nach P1, parallel zu P3/P4)
+- Belohnung aus dem **Replay** berechnen (Stufe, Ergebnis, erreichte Welle, Erst-Clear-Bonus),
+  nicht aus Client-Angaben. So bleibt die Logik serverfähig.
+- Startwerte aus `gdd` § 4 (Crystals 100/150/200 je Erst-Clear) als Ausgang. Ziel grob: erstes
+  Mythic nach 2–4 Wochen aktivem Spiel. Kleine Rechnung in `docs/balancing/meta.md`
+  (Zuflüsse/Tag, Pity, Erwartungswert), kein Feinschliff.
+- Starter-Geschenk für neue Profile (z. B. Crystals für einen 10er-Zug plus die 4 Rare-Units).
+- Niederlage gibt etwas (Gold, XP), damit Verlieren nicht leer ausgeht.
 
-### P6 — Abschluss (Hauptsitzung)
-Alle Abnahmeziele messen, Screenshots erneuern, `docs/STATUS.md` Kurzbericht:
+### P6 — Sechs neue Units (ein Agent, nach P1, Recherche in `docs/` erlaubt)
+- Entwurf im Stil von `gdd` § 6 (Name, Seltenheit, Platzierung, Rolle, Fähigkeit, Kurztext),
+  Werte in `sim/data/units.json`.
+- Pflicht: **eine zweite Boden-Flächen-Unit** (Blaster-Pflicht auflösen), **ein Heiler oder
+  Schild-Support** (`rec §2`), **eine zweite Farm-Variante oder Ökonomie-Unit** mit anderem Profil
+  als `farm`. Der Rest frei, gern mit eigenem Kniff passend zu K5 (Boss-Fenster).
+- Seltenheiten verteilt: mindestens 1 Rare, 2 Epic, 2 Legendary, 1 Mythic.
+- Sprites im bestehenden Stil (wie Runde 5, selbst erzeugt), Silhouetten unterscheidbar.
+- Grober Check: Keine neue Unit ist allein Pflicht oder nutzlos (Leave-one-out grob, 30-min-Regel).
+
+### P7 — Abschluss (Hauptsitzung)
+Alle Abnahmeziele messen, Screenshots (Lobby, Summon mit Raten, Sammlung, Team, Ergebnis mit
+Belohnung), `docs/STATUS.md` Kurzbericht:
 
 ```text
-STATUS — Runde 6
+STATUS — Runde 7
 Pakete erledigt / offen:
 Abnahmeziele: je Ziel erreicht / verfehlt (Wert):
-Platzierungsmodell: Zonen, Radien, Fehlergründe:
-Balance (alt → neu): Farm, Spam-Gegenmittel, Stufen (beste Strategie / wide):
-Analyse Max-Replay: was hätte geholfen:
-Performance Bot-Matrix (alt → neu):
+Währungen und Startwerte (Raten, Pity, Preise, Belohnungen):
+Neue Units (Name, Rolle, Seltenheit):
+Meta-Abstand fresh/max:
+Erster Fortschritt (wie viele Züge nach Stage 1):
 Was die Menschen als Nächstes testen sollen (max. 5 Punkte):
-Vorschlag für Runde 7 (M3-Start): 3–5 Sätze:
+Vorschlag Runde 8 (K4 Bindung, Tagesaufgaben, ggf. zweite Map): 3–5 Sätze
 Agenten (Anzahl, Modell):
 Commits:
 ```
 
 ---
 
-## 5. Was du nicht tust
+## 6. Was du nicht tust
 
 - **Nichts deployen.** Die Preview baut die Homelab-Seite aus `dev`, auf Ansage von Max.
-- Noch kein Gacha, kein Inventar, kein Speicherstand: Das ist M3, Runde 7.
-- Keine Assets ohne geprüfte Lizenz. `docs/design/ENTSCHEIDUNGEN.md` nicht ändern; Fragen an
-  die Menschen gehören in STATUS unter „Offene Fragen", mit Empfehlung.
+- Kein Server, kein Konto, kein echter Zahlungsanbieter, keine Euro-Preise.
+- Keine Login-Streaks, kein Countdown-Druck, keine versteckten Raten, keine Währungsketten.
+- Keine Assets ohne geprüfte Lizenz. `ENTSCHEIDUNGEN.md` nicht ändern; Fragen an die Menschen
+  kommen in STATUS unter „Offene Fragen", mit Empfehlung.
 
 ---
 
-## 6. Ende einer Sitzung
+## 7. Ende einer Sitzung
 
 Vor Kontextende: `docs/STATUS.md` aktualisieren, Tests laufen lassen, committen, pushen.
 
-> Ziel dieser Runde: Ein Erstspieler schafft Normal knapp und will Hard probieren, und keine
-> einzelne Strategie (Farmen, Spam, eine Pflicht-Unit) macht das Spiel trivial.
+> Ziel dieser Runde: Man will nach einer Stage zurück in die Lobby, um zu ziehen, und nach dem
+> Ziehen zurück in die Stage, um die neue Unit auszuprobieren.
