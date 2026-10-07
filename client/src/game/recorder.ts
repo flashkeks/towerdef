@@ -11,7 +11,7 @@ import type { GameBus } from './events';
 import type { Session } from './session';
 
 export const REPLAY_FORMAT = 'towerdef-replay';
-export const REPLAY_FORMAT_VERSION = 1;
+export const REPLAY_FORMAT_VERSION = 2;
 
 declare const __APP_VERSION__: string | undefined;
 

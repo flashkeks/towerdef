@@ -1,10 +1,10 @@
-/** Hilfe-Overlay (`?` oder `H`): Tastenkuerzel, Slot-Typen, Ersthinweise wieder einschalten. Besitzer: P1. */
+/** Hilfe-Overlay (`?` oder `H`): Tastenkuerzel, Zonen, Ersthinweise wieder einschalten. Besitzer: P1. */
 import { t } from '../i18n/t';
 import type { Session } from '../game/session';
 import { h } from './dom';
 import { setHintsOff } from './hints-store';
 
-const KEYS = ['pick', 'place', 'cancel', 'select', 'upgrade', 'target', 'ability', 'wave', 'pause', 'speed', 'mute', 'help'] as const;
+const KEYS = ['pick', 'place', 'again', 'cancel', 'select', 'upgrade', 'target', 'ability', 'wave', 'pause', 'speed', 'mute', 'help'] as const;
 
 export class Help {
   readonly el = h('div', 'overlay help hidden');

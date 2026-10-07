@@ -53,6 +53,8 @@ export const EconomySchema = z.object({
       enemyCap: pos,
     })
     .optional(),
+  /** Runde 6 / P1: freie Platzierung. Unit-Radius je footprint (Milli-Tiles, Schlüssel "1"/"2") und Zusatzabstand zum Pfadrand. */
+  placement: z.object({ ref, unitRadiusMilli: z.object({ '1': pos, '2': pos }), pathMarginMilli: nat }),
   caps: z.object({ ref, teamUnits: pos, teamSlots: pos, enemies: pos }),
   cc: z.object({
     ref,
@@ -179,6 +181,14 @@ export const StageSchema = z.object({
   infinite: z.boolean().optional(),
   /** Waypoints in Tiles (Tile-Mitten, dürfen .5 haben); werden zu Milli-Tiles. */
   path: z.array(z.tuple([z.number(), z.number()])).min(2),
+  /** Breite des Pfadbands in Tiles (Gesamtbreite; die Hälfte links und rechts der Polylinie sperrt die Platzierung). */
+  pathWidth: z.number().positive().default(1),
+  /**
+   * Zonen (Runde 6 / P1) als Kachelmaske im Raster des Clients: Zeile = y, Spalte = x, Kachel (x, y) ist um die Sim-Koordinate (x, y)
+   * zentriert. `.` Boden, `h` Hügel, `#` blockiert, `p` Pfadkachel (nur Anzeige). Der Rasterrand ist der Kartenrand.
+   */
+  zones: z.object({ ref: z.string().optional(), rows: z.array(z.string().regex(/^[.hp#]+$/)).min(1) }),
+  /** Altbestand (Runden 1-5): Positionen der festen Slots. Keine Platzierregel mehr; Fallback für den Client bis P3 und Konsistenztest. */
   slots: z
     .array(
       z.object({
@@ -189,7 +199,7 @@ export const StageSchema = z.object({
         size: z.union([z.literal(1), z.literal(2)]),
       }),
     )
-    .min(1),
+    .default([]),
   waves: z
     .array(
       z.object({
@@ -226,7 +236,6 @@ const Rarity = z.object({
   /** Upgrade-Kosten je Stufe (§6: round5(P*g^(k-1)), Halbwerte abwärts). */
   upgradeCosts: z.array(pos),
   growthBp: pos,
-  cap: pos,
   spaTicks: z.tuple([pos, pos]),
   dpsCenti: z.tuple([nat, nat]),
   rangeMilli: z.tuple([pos, pos]),
@@ -245,7 +254,6 @@ export const UnitSchema = z.object({
   /** Überschreibungen der Rarity-Werte (Farm). */
   placeCost: pos.optional(),
   upgradeCosts: z.array(pos).optional(),
-  cap: pos.optional(),
   sellBp: nat.optional(),
   /** Anteil am Rarity-DPS (AoE ~60 %, Kontrolle ~50 %, Support/Farm 0). */
   dpsShareBp: nat,
@@ -424,7 +432,7 @@ export const BotProfileSchema = z.object({
   /** Zusätzliche Pause (Sekunden, gleichverteilt min..max) zwischen zwei Kaufrunden (Platzieren, Upgraden, Farm, Verkaufen). [0,0] = jede Sekunde. */
   buyDelaySec: secRange,
   /** Chance je Platzierung, statt des besten einen zufälligen anderen (bezahlbaren, nützlichen) Slot für dieselbe Unit zu nehmen. */
-  worseSlotBp: z.number().int().min(0).max(10000),
+  worsePositionBp: z.number().int().min(0).max(10000),
   /** Chance je Unit und Wave, dass der Bot Upgrades dieser Unit in dieser Wave vergisst. */
   forgetUpgradeBp: z.number().int().min(0).max(10000),
   /** Verspätung (Sekunden, gleichverteilt) zwischen "Fähigkeit wäre sinnvoll" und dem Zünden. */

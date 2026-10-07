@@ -5,10 +5,13 @@
 import type { TargetMode, World } from './state.js';
 import { triggerAbility } from './systems/abilities.js';
 import { nextWaveNumber, waveHasBoss } from './systems/cards.js';
+import type { UnitDef } from './data/compile.js';
 import { addCoins, flushDamage, sellValue } from './systems/economy.js';
+import { checkPlacement } from './placement.js';
 
 export type Command =
-  | { type: 'place'; unitId: string; slot: number }
+  /** Freie Platzierung (Runde 6 / P1): Mitte der Unit in Milli-Tiles (ganze Zahlen). */
+  | { type: 'place'; unitId: string; x: number; y: number }
   | { type: 'upgrade'; entityId: number }
   | { type: 'sell'; entityId: number }
   | { type: 'setTargeting'; entityId: number; mode: TargetMode }
@@ -23,6 +26,24 @@ export type CommandResult = { ok: true; entityId?: number } | { ok: false; reaso
 
 const fail = (reason: string): CommandResult => ({ ok: false, reason });
 
+/**
+ * Alle Ablehnungsgründe einer Platzierung in fester Reihenfolge (`null` = erlaubt): `invalid-position`, Karte/Pfad/Zone/Überlappung
+ * (`placement.ts`), `team-limit`, `team-slots`, `not-enough-coins`. Auch für `Sim.canPlace` (Geist im Client, Bots).
+ */
+export function placeError(w: World, playerId: number, def: UnitDef, x: number, y: number): string | null {
+  const { state, ctx } = w;
+  const eco = ctx.data.economy;
+  if (!Number.isInteger(x) || !Number.isInteger(y)) return 'invalid-position';
+  const bad = checkPlacement(ctx, state.units, def, x, y);
+  if (bad) return bad;
+  if (state.units.length >= eco.caps.teamUnits) return 'team-limit';
+  // DESIGN-OFFEN: Team-Slots = höchstens 6 verschiedene Unit-Typen gleichzeitig je Spieler.
+  const own = state.units.filter((u) => u.owner === playerId);
+  if (!own.some((u) => u.defId === def.id) && new Set(own.map((u) => u.defId)).size >= eco.caps.teamSlots) return 'team-slots';
+  if (state.players[playerId].coins < def.placeCost) return 'not-enough-coins';
+  return null;
+}
+
 export function applyCommand(w: World, playerId: number, cmd: Command): CommandResult {
   const { state, ctx } = w;
   const player = state.players[playerId];
@@ -34,19 +55,8 @@ export function applyCommand(w: World, playerId: number, cmd: Command): CommandR
     case 'place': {
       const def = ctx.units[cmd.unitId];
       if (!def) return fail('unknown-unit');
-      const slot = ctx.slots[cmd.slot];
-      if (!slot || !Number.isInteger(cmd.slot)) return fail('invalid-slot');
-      if (state.units.some((u) => u.slot === cmd.slot)) return fail('slot-occupied');
-      if (def.placement !== 'hybrid' && def.placement !== slot.kind) return fail('slot-kind');
-      if (def.footprint > slot.size) return fail('slot-size');
-      const own = state.units.filter((u) => u.owner === playerId);
-      if (own.filter((u) => u.defId === def.id).length >= def.cap) return fail('cap-reached');
-      if (state.units.length >= eco.caps.teamUnits) return fail('team-limit');
-      // DESIGN-OFFEN: Team-Slots = höchstens 6 verschiedene Unit-Typen gleichzeitig je Spieler.
-      if (!own.some((u) => u.defId === def.id) && new Set(own.map((u) => u.defId)).size >= eco.caps.teamSlots) {
-        return fail('team-slots');
-      }
-      if (player.coins < def.placeCost) return fail('not-enough-coins');
+      const bad = placeError(w, playerId, def, cmd.x, cmd.y);
+      if (bad) return fail(bad);
       player.coins -= def.placeCost;
       const mod = w.unitMods.find((m) => m.player === playerId && m.unit === def.id);
       const id = state.nextId++;
@@ -54,7 +64,8 @@ export function applyCommand(w: World, playerId: number, cmd: Command): CommandR
         id,
         defId: def.id,
         owner: playerId,
-        slot: cmd.slot,
+        x: cmd.x,
+        y: cmd.y,
         level: 0,
         invested: def.placeCost,
         targeting: def.defaultTargeting,
@@ -67,7 +78,7 @@ export function applyCommand(w: World, playerId: number, cmd: Command): CommandR
         damageDealt: 0,
         damageReported: 0,
       });
-      w.events.push({ type: 'place', tick: state.tick, player: playerId, unitId: id, unit: def.id, slot: cmd.slot, cost: def.placeCost });
+      w.events.push({ type: 'place', tick: state.tick, player: playerId, unitId: id, unit: def.id, x: cmd.x, y: cmd.y, cost: def.placeCost });
       return { ok: true, entityId: id };
     }
     case 'upgrade': {

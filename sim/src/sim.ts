@@ -7,12 +7,13 @@
  *  4. Bewegung + Leaks (Niederlage)                5. Units: Cooldowns, Angriffe + Tode
  *  6. Sieg-Prüfung                                 7. tick++
  */
-import { applyCommand, type Command, type CommandResult } from './commands.js';
+import { applyCommand, placeError, type Command, type CommandResult } from './commands.js';
 import { compile, type Ctx, type UnitDef } from './data/compile.js';
 import { loadGameData } from './data/load.js';
 import type { BossKit, DifficultyId, GameData, RiskCard, StageData } from './data/schema.js';
 import { hashState } from './hash.js';
 import { coverage } from './path.js';
+import { placementGrid, zoneAt, type MapDef, type Point, type ZoneKind } from './placement.js';
 import { seedRng } from './prng.js';
 import type { SimEvent, SimState, UnitMod, World } from './state.js';
 import { moveEnemies } from './systems/move.js';
@@ -40,17 +41,13 @@ export interface SimOptions {
   maxWaves?: number;
 }
 
-export interface SlotInfo {
+/** Altbestand (Runden 1-5): Mitte eines früheren festen Slots in Milli-Tiles. Keine Platzierregel, nur Hilfe für den Client bis P3 und für Tests. */
+export interface SlotCenter {
   id: number;
   x: number;
   y: number;
   kind: 'ground' | 'hill';
   size: 1 | 2;
-  free: boolean;
-  /** Besetzende Unit-Entity oder null. */
-  occupant: number | null;
-  /** Pfadlänge (Milli-Tiles) innerhalb der Reichweite (Milli-Tiles) um diesen Slot. */
-  coverageByRange(rangeMilli: number): number;
 }
 
 export interface Sim {
@@ -62,7 +59,20 @@ export interface Sim {
   result(): 'win' | 'loss' | null;
   hash(): string;
   drainEvents(): SimEvent[];
-  slots(): SlotInfo[];
+  /** Positionen der früheren Slots (Altbestand der Stage-Daten), Milli-Tiles. */
+  slotCenters(): SlotCenter[];
+  /** Pfadlänge (Milli-Tiles) in `rangeMilli` um (x, y) (Stichprobe, je Position gecacht). */
+  coverage(x: number, y: number, rangeMilli: number): number;
+  /** Stichproben des Pfads alle 100 Milli-Tiles Weglänge (Bots: Abdeckung bewerten). */
+  pathSamples(): readonly Point[];
+  /** Wäre diese Platzierung jetzt erlaubt? `null` = ja, sonst der Ablehnungsgrund wie bei `apply` (inklusive `not-enough-coins`). */
+  canPlace(playerId: number, unitId: string, x: number, y: number): string | null;
+  /** Statisch gültige Positionen (Halbkachel-Raster, ohne andere Units) für diese Unit: Kandidaten für Bots und Hilfen. */
+  placementGrid(unitId: string): readonly Point[];
+  /** Zone unter (x, y): `ground`, `hill`, `blocked`, `path` oder `null` außerhalb der Karte. */
+  zoneAt(x: number, y: number): ZoneKind | null;
+  /** Karte: Raster, Zonen je Kachel, Kartenrand, Pfadabstand. Nur lesen. */
+  map(): Readonly<MapDef>;
   catalog(): UnitDef[];
   upgradeCost(entityId: number): number | null;
   placeCost(unitId: string): number;
@@ -114,7 +124,6 @@ export function createSim(opts: SimOptions): Sim {
   };
   const w: World = { state, ctx, events: [], unitMods: opts.unitMods ?? [] };
   const isOver = (): boolean => state.phase === 'over';
-  const covCache = new Map<number, number>();
 
   function stepOnce(): void {
     if (state.phase === 'over') return;
@@ -164,29 +173,22 @@ export function createSim(opts: SimOptions): Sim {
       w.events = [];
       return e;
     },
-    slots() {
-      return ctx.slots.map((s) => {
-        const occ = state.units.find((u) => u.slot === s.id);
-        return {
-          id: s.id,
-          x: s.x,
-          y: s.y,
-          kind: s.kind,
-          size: s.size,
-          free: !occ,
-          occupant: occ ? occ.id : null,
-          coverageByRange: (range: number) => {
-            const key = s.id * 1_000_000 + range;
-            let v = covCache.get(key);
-            if (v === undefined) {
-              v = coverage(ctx.path, s.x, s.y, range);
-              covCache.set(key, v);
-            }
-            return v;
-          },
-        };
-      });
+    slotCenters: () => ctx.slots.map((s) => ({ ...s })),
+    coverage: (x, y, range) => coverage(ctx.path, x, y, range),
+    pathSamples: () => ctx.path.samples,
+    canPlace(playerId, unitId, x, y) {
+      const def = ctx.units[unitId];
+      if (!def) return 'unknown-unit';
+      if (!state.players[playerId]) return 'unknown-player';
+      return placeError(w, playerId, def, x, y);
     },
+    placementGrid(unitId) {
+      const def = ctx.units[unitId];
+      if (!def) throw new Error(`Unbekannte Unit ${unitId}`);
+      return placementGrid(ctx, def);
+    },
+    zoneAt: (x, y) => zoneAt(ctx.map, x, y),
+    map: () => ctx.map,
     catalog: () => ctx.unitList,
     upgradeCost(entityId) {
       const u = state.units.find((x) => x.id === entityId);

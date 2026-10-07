@@ -244,8 +244,8 @@ describe('Boss-Kits: Schwachstellen-Fenster und Schild', () => {
   it('Fenster in der echten Simulation: Titan-Nuke im Fenster richtet mehr Schaden an als außerhalb', () => {
     const run = (window: boolean): number => {
       const m = mk('normal', 10);
-      const hill = m.sim.slots().find((s) => s.kind === 'hill')!;
-      const r = m.sim.apply(0, { type: 'place', unitId: 'titan', slot: hill.id });
+      const hill = m.sim.slotCenters().find((s) => s.kind === 'hill')!;
+      const r = m.sim.apply(0, { type: 'place', unitId: 'titan', x: hill.x, y: hill.y });
       if (!r.ok) throw new Error(r.reason);
       if (window) {
         m.boss.bossRun!.vulnTicks = 100;

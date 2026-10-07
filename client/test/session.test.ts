@@ -27,14 +27,15 @@ describe('Session', () => {
     s.advance(200);
     expect(s.sim.state.tick).toBeGreaterThan(0);
   });
-  it('Platzieren ueber Slot-Klick, Upgrade, Verkauf', () => {
+  it('Platzieren ueber Feld-Klick, Upgrade, Verkauf', () => {
     const s = new Session('normal', 1);
     const coins0 = s.sim.state.players[0].coins;
     s.choosePlacing('striker');
-    s.clickSlot(0);
+    s.clickBoard(3000, 3000);
+    expect(s.placing).toBeNull(); // ohne Shift: Wahl verbraucht
     expect(s.sim.state.units).toHaveLength(1);
     expect(s.sim.state.players[0].coins).toBeLessThan(coins0);
-    s.clickSlot(0); // belegter Slot waehlt die Unit
+    s.clickBoard(3100, 3050); // Klick auf die Unit waehlt sie
     expect(s.selectedUnit).toBe(s.sim.state.units[0].id);
     expect(s.placing).toBeNull();
     s.upgrade();
@@ -47,12 +48,12 @@ describe('Session', () => {
     const s = new Session('normal', 1);
     (s.sim.state.players[0] as { coins: number }).coins = 0;
     s.choosePlacing('striker');
-    s.clickSlot(0);
+    s.clickBoard(3000, 3000);
     expect(s.sim.state.units).toHaveLength(0);
     expect(s.toast).not.toBeNull();
     expect(hasKey(s.toast!.key)).toBe(true);
-    s.choosePlacing('gunner'); // Hill-Unit auf Ground-Slot
-    s.clickSlot(0);
+    s.choosePlacing('gunner'); // Hill-Unit auf Boden
+    s.clickBoard(3000, 3000);
     expect(hasKey(s.toast!.key)).toBe(true);
   });
   it('Wellenstart und Risikokarte laufen ueber Sim-Befehle', () => {

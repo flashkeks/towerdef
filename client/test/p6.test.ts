@@ -110,7 +110,7 @@ describe('Team-Auswahl', () => {
 });
 
 describe('MVP', () => {
-  const place = (unitId: number, unit: string) => ({ type: 'place', tick: 1, player: 0, unitId, unit, slot: unitId, cost: 1 }) as const;
+  const place = (unitId: number, unit: string) => ({ type: 'place', tick: 1, player: 0, unitId, unit, x: unitId * 1000, y: 3000, cost: 1 }) as const;
   const dmg = (unitId: number, amount: number) => ({ type: 'damage', tick: 2, unitId, owner: 0, amount }) as const;
   it('keiner ohne Schaden', () => {
     const m = new MvpTracker();

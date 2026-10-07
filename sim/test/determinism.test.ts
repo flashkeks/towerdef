@@ -1,13 +1,19 @@
 import { describe, expect, it } from 'vitest';
 import type { Sim } from '../src/index.js';
-import { createSim } from './helpers.js';
+import { at, createSim } from './helpers.js';
+import { placementIds } from './placement-helpers.js';
 
 /** Einfacher skriptgesteuerter Spieler: baut Striker/Gunner/Blaster/Banner und upgradet reihum. */
 function script(sim: Sim, wave: number): void {
-  const free = (kind: 'ground' | 'hill') => sim.slots().filter((s) => s.free && s.kind === kind && s.size === 1).map((s) => s.id);
+  // Freie Altbestand-Position der Art: erste, an der `place` jetzt erlaubt wäre.
   const buy = (unit: string, kind: 'ground' | 'hill') => {
-    const f = free(kind);
-    if (f.length) sim.apply(0, { type: 'place', unitId: unit, slot: f[0] });
+    for (const id of placementIds(sim, kind)) {
+      const p = at(sim, id);
+      if (sim.canPlace(0, unit, p.x, p.y) === null) {
+        sim.apply(0, { type: 'place', unitId: unit, ...p });
+        return;
+      }
+    }
   };
   if (wave === 0) {
     buy('striker', 'ground');
@@ -54,7 +60,7 @@ describe('Determinismus', () => {
     const a = mk();
     const b = mk();
     for (const s of [a, b]) {
-      s.apply(0, { type: 'place', unitId: 'gunner', slot: 4 });
+      s.apply(0, { type: 'place', unitId: 'gunner', ...at(s, 4) });
     }
     a.step(900);
     for (let i = 0; i < 900; i++) b.step();
@@ -63,7 +69,7 @@ describe('Determinismus', () => {
   it('Befehle ändern den Hash', () => {
     const a = createSim({ stage: 'standard20', difficulty: 'normal', players: 1, seed: 5 });
     const h0 = a.hash();
-    a.apply(0, { type: 'place', unitId: 'striker', slot: 0 });
+    a.apply(0, { type: 'place', unitId: 'striker', ...at(a, 0) });
     expect(a.hash()).not.toBe(h0);
   });
 });

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { selectTarget, type TargetQuery } from '../src/systems/target.js';
 import type { EnemyState, TargetMode } from '../src/state.js';
-import { ctxFor, createSim, data, enemy, mutable, slotsOf } from './helpers.js';
+import { at as slotAt, ctxFor, createSim, data, enemy, mutable, slotsOf } from './helpers.js';
 
 const ctx = ctxFor();
 const q = (mode: TargetMode, over: Partial<TargetQuery> = {}): TargetQuery => ({
@@ -64,8 +64,8 @@ describe('Flyer im Sim: nur Hill/Hybrid treffen', () => {
     for (const [unit, kind, expectHit] of [['striker', 'ground', false], ['gunner', 'hill', true], ['frost', 'hill', true]] as const) {
       const { sim, st } = setup();
       const slot = slotsOf(sim, kind)[0];
-      const s = sim.slots()[slot];
-      expect(sim.apply(0, { type: 'place', unitId: unit, slot }).ok).toBe(true);
+      const s = sim.slotCenters()[slot];
+      expect(sim.apply(0, { type: 'place', unitId: unit, ...slotAt(sim, slot) }).ok).toBe(true);
       const f = enemy(ctxFor(), 'flyer', 1, { x: s.x + 500, y: s.y }, 500);
       st.enemies.push(f);
       sim.step();

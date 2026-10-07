@@ -27,7 +27,7 @@ describe('Bot-Profile: Daten', () => {
     for (let i = 1; i < order.length; i++) {
       const a = p[order[i - 1]];
       const b = p[order[i]];
-      expect(b.worseSlotBp).toBeGreaterThanOrEqual(a.worseSlotBp);
+      expect(b.worsePositionBp).toBeGreaterThanOrEqual(a.worsePositionBp);
       expect(b.forgetUpgradeBp).toBeGreaterThanOrEqual(a.forgetUpgradeBp);
       expect(b.abilityDelaySec[1]).toBeGreaterThanOrEqual(a.abilityDelaySec[1]);
       expect(b.buyDelaySec[1]).toBeGreaterThanOrEqual(a.buyDelaySec[1]);

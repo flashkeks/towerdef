@@ -29,9 +29,8 @@ export function computeBuffs(w: World, u: UnitState, ux: number, uy: number): Bu
   for (const b of state.units) {
     const bd = ctx.units[b.defId];
     if (!bd.aura) continue;
-    const bs = ctx.slots[b.slot];
     const r = bd.aura.radiusMilli;
-    if (dist2(bs.x, bs.y, ux, uy) > r * r) continue;
+    if (dist2(b.x, b.y, ux, uy) > r * r) continue;
     const bp = bd.aura.damageBpByLevel[b.level];
     const cur = best.find((x) => x.id === b.defId);
     if (!cur) best.push({ id: b.defId, bp });
@@ -151,13 +150,12 @@ export function runUnits(w: World): void {
     if (u.cd > 0) u.cd--;
     // DESIGN-OFFEN: kein Windup - der Treffer erfolgt im selben Tick wie die Zielwahl (§9 Regel 2 braucht damit keine Verfall-Sonderfälle).
     if (!def.attack || u.cd > 0) continue;
-    const slot = ctx.slots[u.slot];
     const lv = def.levels[u.level];
-    const buffs = computeBuffs(w, u, slot.x, slot.y);
+    const buffs = computeBuffs(w, u, u.x, u.y);
     const range = mulBp(lv.rangeMilli, BP + Math.min(buffs.rangeBp, eco.buffCaps.rangeBp));
     const target = selectTarget(state.enemies, {
-      ux: slot.x,
-      uy: slot.y,
+      ux: u.x,
+      uy: u.y,
       rangeMilli: range,
       canHitAir: def.canHitAir,
       mode: u.targeting,
@@ -176,15 +174,15 @@ export function runUnits(w: World): void {
     } else {
       const tx = target.x;
       const ty = target.y;
-      const dir = direction(slot.x, slot.y, tx, ty);
+      const dir = direction(u.x, u.y, tx, ty);
       const cos2 = a.kind === 'cone' ? coneCos2Bp(a.coneDeg ?? 60) : 0;
       const hits: EnemyState[] = [];
       for (const e of state.enemies) {
         if (e.hp <= 0 || (e.flying && !def.canHitAir)) continue;
         let inside: boolean;
         if (a.kind === 'circle') inside = dist2(tx, ty, e.x, e.y) <= (a.radiusMilli as number) ** 2;
-        else if (a.kind === 'line') inside = inLine(e, slot.x, slot.y, dir.nx, dir.ny, range, a.widthMilli as number, radius);
-        else inside = inCone(e, slot.x, slot.y, dir.nx, dir.ny, range, cos2, radius);
+        else if (a.kind === 'line') inside = inLine(e, u.x, u.y, dir.nx, dir.ny, range, a.widthMilli as number, radius);
+        else inside = inCone(e, u.x, u.y, dir.nx, dir.ny, range, cos2, radius);
         if (inside) hits.push(e);
       }
       for (const e of hits) hitEnemy(w, u, def, e, hc, lv.damageCenti, false);

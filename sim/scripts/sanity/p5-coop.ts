@@ -15,11 +15,9 @@ if (process.env.P5_COOP) Object.assign(baseData.economy.coop, JSON.parse(process
 const extraPerPlayer = Number(process.env.P5_SLOTS ?? 0);
 function stageFor(players: number): StageData {
   const st = structuredClone(baseData.stages['standard20']) as StageData;
-  const combat = st.slots.filter((x) => x.size === 1);
-  for (let i = 0; i < extraPerPlayer * (players - 1); i++) {
-    const b = combat[(i * 3) % combat.length];
-    st.slots.push({ ...b, id: st.slots.length, x: b.x + 0.5 + Math.floor(i / combat.length) * 0.25, y: b.y });
-  }
+  // Seit Runde 6 (freie Platzierung) gibt es keine festen Slots mehr: das Experiment ist gegenstandslos, die Karte bleibt unverändert.
+  void extraPerPlayer;
+  void players;
   return st;
 }
 const diffs = argStr('difficulty', 'normal,hard,nightmare').split(',') as DifficultyId[];

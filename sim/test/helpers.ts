@@ -48,9 +48,15 @@ export function mutable(sim: Sim): SimState {
   return sim.state as SimState;
 }
 
-/** Slot-IDs nach Art. */
+/** IDs der Altbestand-Slots (Runden 1-5) nach Art. Seit Runde 6 nur noch Positionsvorrat für Tests, keine Platzierregel. */
 export function slotsOf(sim: Sim, kind: 'ground' | 'hill', size: 1 | 2 = 1): number[] {
-  return sim.slots().filter((s) => s.kind === kind && s.size === size).map((s) => s.id);
+  return sim.slotCenters().filter((s) => s.kind === kind && s.size === size).map((s) => s.id);
+}
+
+/** Position (Milli-Tiles) eines Altbestand-Slots als `x`/`y` für `place`. */
+export function at(sim: Sim, slot: number): { x: number; y: number } {
+  const s = sim.slotCenters()[slot];
+  return { x: s.x, y: s.y };
 }
 
 /** `createSim` mit regelfreien Daten als Standard (siehe `plainData`); `data` überschreibt. */

@@ -61,16 +61,19 @@ describe('Bots', () => {
     const greedy = runMatch({ ...base, players: 1, seed: 1, bots: ['greedy'] });
     expect(idle.result()).toBe('loss');
     expect(greedy.endWave).toBeGreaterThanOrEqual(idleWave + 8);
-    // Runde 4 P1: Normal ist kalibriert (greedy gewinnt nicht mehr jeden Seed), der Gewinn gilt dem stärksten Bot (upgrade, ~95 %)
-    const wins = [1, 2, 3].filter((seed) => runMatch({ ...base, players: 1, seed, bots: ['upgrade'] }).result === 'win').length;
-    expect(wins).toBeGreaterThanOrEqual(1);
+    // Runde 4 P1: Normal ist kalibriert (greedy gewinnt nicht mehr jeden Seed), der Gewinn gilt einem starken Bot.
+    // Runde 6 P1: `upgrade` (wenige Units, voll ausgebaut) fiel mit freier Platzierung von ~56 auf ~10 % (kalibrierung.md, Runde 6 - P1);
+    // der Test misst deshalb mit `farm` (Normal ~100 %).
+    const wins = [1, 2, 3].filter((seed) => runMatch({ ...base, players: 1, seed, bots: ['farm'] }).result === 'win').length;
+    expect(wins).toBeGreaterThanOrEqual(2);
   });
 
   it('aoe: AoE-Kern plus Titan (Plan ab Wave 5), kein Striker (Runde 4 P1)', () => {
     const sim = createSim({ ...base, players: 1, seed: 7 });
     const bot = getBot('aoe')();
     const rng = seedRng(11);
-    while (!sim.isOver() && sim.state.wave < 9) {
+    // Runde 6 P1: mit freier Platzierung kauft `aoe` den zweiten AoE-Typ (Frost, Boss-Plan) etwas später: bis Wave 11 statt 9.
+    while (!sim.isOver() && sim.state.wave < 11) {
       bot.decide({ sim, playerId: 0, rng });
       sim.step(20);
     }
@@ -83,11 +86,11 @@ describe('Bots', () => {
   it('Early-Units: ein volles Team (6 Typen) gibt Striker ab, wenn ein Legendary-Typ fehlt (Runde 4 P1)', () => {
     const sim = createSim({ ...base, players: 1, seed: 3, data: { ...plainData(), economy: { ...plainData().economy, startCoins: 6000 } } });
     // Team mit 6 Typen: striker, blaster, banner, lancer, frost, gunner
-    const slots = sim.slots();
+    const slots = sim.slotCenters();
     const ground = slots.filter((x) => x.kind === 'ground' && x.size === 1).map((x) => x.id);
     const hill = slots.filter((x) => x.kind === 'hill').map((x) => x.id);
     for (const [unitId, slot] of [['striker', ground[0]], ['blaster', ground[1]], ['banner', ground[2]], ['lancer', ground[3]], ['frost', ground[4]], ['gunner', hill[0]]] as const) {
-      expect(sim.apply(0, { type: 'place', unitId, slot }).ok).toBe(true);
+      expect(sim.apply(0, { type: 'place', unitId, x: slots[slot].x, y: slots[slot].y }).ok).toBe(true);
     }
     while (sim.state.wave < 8) sim.runWave();
     // Titan (Mythic) fehlt; Münzen + Striker-Erlös reichen für ihn -> Verkaufsregel greift

@@ -51,7 +51,7 @@ for (let seed = 1; seed <= n; seed++) {
           s.cnt[u.defId] = (s.cnt[u.defId] ?? 0) + 1;
           s.inv[u.defId] = (s.inv[u.defId] ?? 0) + u.invested;
         }
-        s.free += sim.slots().filter((x) => x.free && x.size === 1).length;
+        s.free += sim.slotCenters().filter((x) => x.size === 1 && ['striker', 'gunner'].some((id) => { const r = sim.canPlace(0, id, x.x, x.y); return r === null || r === 'not-enough-coins'; })).length;
         s.coins += sim.state.players.reduce((a, p) => a + p.coins, 0);
         s.lives += sim.state.lives;
         s.k++;

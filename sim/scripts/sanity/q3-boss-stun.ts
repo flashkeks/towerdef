@@ -7,6 +7,7 @@
  * Aufruf: npx tsx scripts/sanity/q3-boss-stun.ts
  */
 import { createSim, type Sim } from '../../src/index.js';
+import { legacyFree } from './pos.js';
 import { patched, table, f1 } from './lib.js';
 
 interface Track {
@@ -29,12 +30,12 @@ function scenario(players: number, frostsPerPlayer: number, extra: 'none' | 'dps
     d.economy.startCoins = 400_000;
   });
   const sim: Sim = createSim({ stage: 'standard20', difficulty, players, seed: 7, data, godMode: true });
-  const slots = sim.slots().filter((s) => s.size === 1).sort((a, b) => b.coverageByRange(2500) - a.coverageByRange(2500) || a.id - b.id);
+  const slots = sim.slotCenters().filter((s) => s.size === 1).sort((a, b) => sim.coverage(b.x, b.y, 2500) - sim.coverage(a.x, a.y, 2500) || a.id - b.id);
   let si = 0;
   const frosts: number[] = [];
   for (let k = 0; k < frostsPerPlayer; k++) {
     for (let p = 0; p < players; p++) {
-      const r = sim.apply(p, { type: 'place', unitId: 'frost', slot: slots[si++].id });
+      const r = sim.apply(p, { type: 'place', unitId: 'frost', x: slots[si].x, y: slots[si++].y });
       if (!r.ok) throw new Error(`frost: ${r.reason}`);
       frosts.push((r as { entityId: number }).entityId);
     }
@@ -50,9 +51,9 @@ function scenario(players: number, frostsPerPlayer: number, extra: 'none' | 'dps
     // zusätzlich je Spieler Titan + Gunner/Striker, damit der Boss realistisch stirbt
     for (let p = 0; p < players; p++) {
       for (const u of ['titan', 'titan', 'striker', 'striker', 'striker', 'gunner', 'gunner', 'gunner']) {
-        const free = sim.slots().filter((s) => s.free && s.size === 1 && (u === 'titan' || u === 'gunner' ? s.kind === 'hill' : s.kind === 'ground'));
+        const free = legacyFree(sim, u, u === 'titan' || u === 'gunner' ? 'hill' : 'ground', p);
         if (!free.length) continue;
-        const r = sim.apply(p, { type: 'place', unitId: u, slot: free[0].id });
+        const r = sim.apply(p, { type: 'place', unitId: u, x: free[0].x, y: free[0].y });
         if (r.ok) while (sim.apply(p, { type: 'upgrade', entityId: (r as { entityId: number }).entityId }).ok);
       }
     }

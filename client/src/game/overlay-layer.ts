@@ -1,11 +1,12 @@
 /**
  * Overlays ueber der Karte: Reichweitenkreis der gewaehlten Unit (unter den Figuren) und Boss-Telegraph/-Fenster/-Schild (darueber).
- * Platzier-Geist und Platzier-Reichweite (P1) kommen hier hinein, Boss-Zeichnung gehoert P5.
+ * Platzier-Modus (Runde 6, freie Platzierung): passende Zonen hervorgehoben, Rest der Karte gedimmt, Geist in Unit-Groesse
+ * folgt der Maus (gruen/rot mit Grund), Reichweitenkreis immer sichtbar. Boss-Zeichnung gehoert P5.
  */
 import { Container, Graphics, Text } from 'pixi.js';
 import { t } from '../i18n/t';
 import { enemyStyle, unitColor } from '../view/model';
-import { slotAt, slotFit } from '../view/placement';
+import { ghostLabelKey, zoneFits } from '../view/placement';
 import { reachMilli } from '../view/unit-info';
 import { telegraphProgress, telegraphSecondsLeft } from '../view/telegraph';
 import { C } from './palette';
@@ -23,6 +24,10 @@ export class OverlayLayer {
   /** Platzier-Modus (P1): Reichweitenkreis unter den Figuren, Geist darueber. */
   private readonly ghostRangeG = new Graphics();
   private readonly ghostG = new Graphics();
+  /** Hervorhebung der passenden Zonen und Abdunkeln des Rests, liegt ganz unten (ueber der Karte). */
+  private readonly zonesG = new Graphics();
+  private zonesSig = '';
+  private ghostText: Text | null = null;
   private ghostSig = '';
   private rangeSig = '';
   private bossDrawn = false;
@@ -31,7 +36,7 @@ export class OverlayLayer {
   private readonly tagTexts = new Map<number, Text>();
 
   constructor(private readonly ctx: RenderContext, private readonly entities: EntitiesLayer) {
-    this.below.addChild(this.rangeG, this.ghostRangeG);
+    this.below.addChild(this.zonesG, this.rangeG, this.ghostRangeG);
     this.above.addChild(this.bossG, this.ghostG);
   }
 
@@ -45,6 +50,9 @@ export class OverlayLayer {
     this.ghostSig = '';
     this.ghostRangeG.clear();
     this.ghostG.clear();
+    this.zonesSig = '';
+    this.zonesG.clear();
+    if (this.ghostText) this.ghostText.visible = false;
   }
 
   /** Vor `entities.sync`: Ebene unter den Figuren. */
@@ -63,52 +71,100 @@ export class OverlayLayer {
     const g = this.rangeG;
     const u = session.selectedUnit === null ? undefined : session.sim.state.units.find((x) => x.id === session.selectedUnit);
     const def = u ? ctx.defs[u.defId] : undefined;
-    const slot = u && ctx.stage ? ctx.stage.slots[u.slot] : undefined;
     const range = u && def ? reachMilli(def, u.level) : 0;
-    const sig = u && slot && range > 0 ? `${u.id}|${u.level}|${ctx.tile}|${ctx.version}` : '';
+    const sig = u && range > 0 ? `${u.id}|${u.level}|${ctx.tile}|${ctx.version}` : '';
     if (sig === this.rangeSig) return;
     this.rangeSig = sig;
     g.clear();
-    if (!u || !slot || range <= 0) return;
-    const c = ctx.px(slot.x, slot.y);
+    if (!u || range <= 0) return;
+    const c = ctx.px(u.x / 1000, u.y / 1000);
     const r = (range / 1000) * ctx.tile;
     g.circle(c.x, c.y, r).fill({ color: C.white, alpha: 0.08 }).stroke({ width: 2, color: C.white, alpha: 0.6 });
   }
 
-  /** Platzier-Geist: Unit-Scheibe plus Reichweitenkreis am Zeiger; rastet auf den Slot unter dem Zeiger ein. Gruen = passt, rot = passt nicht. */
+  /** Platzier-Modus: Zonen hervorheben, Rest abdunkeln, Geist am Zeiger. Nur mit gewaehlter Unit aktiv. */
   private drawPlacing(session: Session): void {
     const { ctx } = this;
     const def = session.placing ? ctx.defs[session.placing] : undefined;
-    const p = session.pointer;
-    const stage = ctx.stage;
-    if (!def || !p || !stage) {
-      if (this.ghostSig !== '') {
-        this.ghostSig = '';
-        this.ghostRangeG.clear();
-        this.ghostG.clear();
+    if (!def) {
+      this.clearGhost();
+      if (this.zonesSig !== '') {
+        this.zonesSig = '';
+        this.zonesG.clear();
       }
       return;
     }
+    this.drawZones(session, def.id, def.placement);
+    const gh = session.ghost();
+    if (!gh) {
+      this.clearGhost();
+      return;
+    }
     const T = ctx.tile;
-    const slotId = slotAt(stage.slots, p.x / T - 0.5, p.y / T - 0.5);
-    const slot = slotId === null ? undefined : stage.slots[slotId];
-    const taken = slotId !== null && session.sim.state.units.some((u) => u.slot === slotId);
-    const fit = slot ? slotFit(def, slot, !taken) : null;
-    const ok = !!fit && fit.ok;
-    const c = slot ? ctx.px(slot.x, slot.y) : p;
-    const sig = `${def.id}|${Math.round(c.x)}|${Math.round(c.y)}|${ok}|${slotId === null}|${T}`;
+    const c = ctx.px(gh.x / 1000, gh.y / 1000);
+    const sig = `${def.id}|${gh.x}|${gh.y}|${gh.reason ?? ''}|${T}`;
     if (sig === this.ghostSig) return;
     this.ghostSig = sig;
-    const tint = slot ? (ok ? C.teal : C.red) : C.white;
+    const tint = gh.ok ? C.teal : C.red;
     const reach = reachMilli(def, 0);
     const gr = this.ghostRangeG.clear();
-    if (reach > 0) gr.circle(c.x, c.y, (reach / 1000) * T).fill({ color: tint, alpha: 0.1 }).stroke({ width: 2, color: tint, alpha: 0.65 });
+    // Reichweite immer sichtbar, auch an roter Stelle (gruen/rot nach Status)
+    if (reach > 0) gr.circle(c.x, c.y, (reach / 1000) * T).fill({ color: tint, alpha: gh.ok ? 0.1 : 0.06 }).stroke({ width: 2, color: tint, alpha: gh.ok ? 0.65 : 0.5 });
     const g = this.ghostG.clear();
-    const r = T * 0.3;
-    g.circle(c.x, c.y, r).fill({ color: unitColor(def.id), alpha: ok || !slot ? 0.8 : 0.4 }).stroke({ width: 3, color: tint, alpha: 0.95 });
-    if (slot && !ok) {
-      const d = r * 0.6;
-      g.moveTo(c.x - d, c.y - d).lineTo(c.x + d, c.y + d).moveTo(c.x + d, c.y - d).lineTo(c.x - d, c.y + d).stroke({ width: 4, color: C.red });
+    // Geist in echter Unit-Groesse (Kollisionskreis der Sim), so sieht man, wie viel Platz sie braucht
+    const r = (def.radiusMilli / 1000) * T;
+    g.circle(c.x, c.y, r).fill({ color: gh.ok ? unitColor(def.id) : C.red, alpha: gh.ok ? 0.75 : 0.4 }).stroke({ width: 3, color: tint, alpha: 0.95 });
+    if (!gh.ok) {
+      const d = Math.min(r * 0.6, T * 0.25);
+      g.moveTo(c.x - d, c.y - d).lineTo(c.x + d, c.y + d).moveTo(c.x + d, c.y - d).lineTo(c.x - d, c.y + d).stroke({ width: 4, color: C.white });
+    }
+    if (!this.ghostText) {
+      this.ghostText = new Text({ text: '', style: { fontFamily: 'monospace', fontSize: 16, fontWeight: 'bold', fill: C.white, stroke: { color: C.ink, width: 4 } } });
+      this.ghostText.anchor.set(0.5, 0);
+      this.above.addChild(this.ghostText);
+    }
+    const label = gh.reason ? t(ghostLabelKey(gh.reason)) : '';
+    this.ghostText.text = label;
+    this.ghostText.style.fill = C.white;
+    this.ghostText.scale.set(T / 48);
+    this.ghostText.position.set(Math.round(c.x), Math.round(c.y + r + 6));
+    this.ghostText.visible = label !== '';
+  }
+
+  private clearGhost(): void {
+    if (this.ghostSig === '') return;
+    this.ghostSig = '';
+    this.ghostRangeG.clear();
+    this.ghostG.clear();
+    if (this.ghostText) this.ghostText.visible = false;
+  }
+
+  /**
+   * Zonen beim Platzieren: passende Flaechen (Boden tuerkis, Huegel gold) leuchten, alles andere (Pfad, Blockiertes, falsche Zone)
+   * wird abgedunkelt. Punkte = statisch gueltige Stellen (`placementGrid`, ohne andere Units): der nutzbare Streifen neben dem
+   * Pfad ist schmaler als die Kachel, die Punkte zeigen, wo der Geist gruen werden kann.
+   */
+  private drawZones(session: Session, unitId: string, placement: 'ground' | 'hill' | 'hybrid'): void {
+    const { ctx } = this;
+    const T = ctx.tile;
+    const sig = `${unitId}|${T}|${ctx.version}`;
+    if (sig === this.zonesSig) return;
+    this.zonesSig = sig;
+    const g = this.zonesG.clear();
+    const map = session.sim.map();
+    for (let j = 0; j < map.rows; j++) {
+      for (let i = 0; i < map.cols; i++) {
+        const zone = map.cells[j * map.cols + i];
+        const x = i * T;
+        const y = j * T;
+        if (!zoneFits(placement, zone)) g.rect(x, y, T, T).fill({ color: C.ink, alpha: 0.42 });
+        else g.rect(x, y, T, T).fill({ color: zone === 'hill' ? C.gold : C.teal, alpha: zone === 'hill' ? 0.16 : 0.14 });
+      }
+    }
+    const dot = Math.max(2, T * 0.05);
+    for (const p of session.sim.placementGrid(unitId)) {
+      const c = ctx.px(p.x / 1000, p.y / 1000);
+      g.circle(c.x, c.y, dot).fill({ color: C.white, alpha: 0.5 });
     }
   }
 

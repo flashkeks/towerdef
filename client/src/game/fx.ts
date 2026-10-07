@@ -256,10 +256,9 @@ export class Fx {
     const s = this.session;
     const u = s?.sim.state.units.find((x) => x.id === unitId);
     const def = u ? this.ctx.defs[u.defId] : undefined;
-    const slot = u && this.ctx.stage ? this.ctx.stage.slots[u.slot] : undefined;
-    if (!s || !u || !def || !slot) return;
+    if (!s || !u || !def) return;
     const T = this.ctx.tile;
-    const o = this.ctx.px(slot.x, slot.y);
+    const o = this.ctx.px(u.x / 1000, u.y / 1000);
     if (kind === 'stunAoe') {
       const radius = ((def.ability as { radiusMilli?: number } | undefined)?.radiusMilli ?? 2500) / 1000;
       this.ring(o.x, o.y, T * 0.3, T * radius, C.ice, 0.95, 0.55, 6);
@@ -396,14 +395,13 @@ export class Fx {
     for (const id of fired) {
       const u = st.units.find((x) => x.id === id);
       const def = u ? this.ctx.defs[u.defId] : undefined;
-      const slot = u ? stage.slots[u.slot] : undefined;
       const style = def ? hitStyle(def) : null;
-      if (!u || !def || !slot || !style) continue;
+      if (!u || !def || !style) continue;
       const range = reachMilli(def, u.level);
-      const origin = { x: slot.x * 1000, y: slot.y * 1000 };
+      const origin = { x: u.x, y: u.y };
       const target = pickTarget(origin, range, def.canHitAir, u.targeting, pool) ?? pickTarget(origin, range, def.canHitAir, u.targeting, st.enemies);
       if (!target) continue;
-      const o = this.ctx.px(slot.x, slot.y);
+      const o = this.ctx.px(u.x / 1000, u.y / 1000);
       const tp = this.ctx.px(target.x / 1000, target.y / 1000);
       this.shoot(style, def.attack, unitColor(def.id), o.x, o.y, tp.x, tp.y, range, T);
       for (const fn of this.shotListeners) fn(style);

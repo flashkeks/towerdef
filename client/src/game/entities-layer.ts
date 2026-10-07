@@ -34,6 +34,7 @@ export class EntitiesLayer {
 
   constructor(private readonly ctx: RenderContext) {
     this.enemyLayer.sortableChildren = true; // hintere (obere) Gegner zuerst, Boss/Elite ueberdecken Kleine nicht falsch
+    this.unitLayer.sortableChildren = true; // freie Platzierung: untere Units ueber oberen
   }
 
   /** Alle Ansichten verwerfen (neue Runde). */
@@ -67,8 +68,7 @@ export class EntitiesLayer {
     for (const u of units) {
       seen.add(u.id);
       const def = ctx.defs[u.defId];
-      const slot = ctx.stage?.slots[u.slot];
-      if (!def || !slot) continue;
+      if (!def) continue;
       let v = this.unitViews.get(u.id);
       if (!v || v.version !== ctx.version) {
         v?.c.destroy({ children: true });
@@ -77,14 +77,16 @@ export class EntitiesLayer {
         v = { ...node, version: ctx.version, sig: '' };
         this.unitViews.set(u.id, v);
       }
-      const pos = ctx.px(slot.x, slot.y);
+      const pos = ctx.px(u.x / 1000, u.y / 1000);
       v.c.position.set(Math.round(pos.x), Math.round(pos.y));
+      v.c.zIndex = pos.y;
       const ready = def.ability !== undefined && u.abilityCd === 0;
       const selected = session.selectedUnit === u.id;
-      const sig = `${u.level}|${selected}|${ready}`;
+      const kind = session.sim.zoneAt(u.x, u.y) === 'hill' ? 'hill' : 'ground';
+      const sig = `${u.level}|${selected}|${ready}|${kind}`;
       if (sig === v.sig) continue;
       v.sig = sig;
-      drawUnit(v, ctx, def, u, selected, ready, slot.kind === 'hill' ? 'hill' : 'ground');
+      drawUnit(v, ctx, def, u, selected, ready, kind);
     }
     for (const [id, v] of this.unitViews) {
       if (!seen.has(id)) {

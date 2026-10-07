@@ -1,10 +1,27 @@
 {
  "ref": "recommendations §0, §5 (Beispiel-Stage Standard 20)",
- "_comment": "S-förmiger Pfad, Länge 42 Tiles: 13+3+11+3+11+1. Waves laut §5; Spawn-Abstände Grunt 0,8 s, Runner 0,5 s, Flyer 0,9 s, Brute 2,0 s, Splitter 1,5 s, Elite 3,0 s; Gruppen nacheinander (Delay = Summe Anzahl*Abstand der Vorgänger), Boss erscheint einzeln bei Delay 0. Element je Wave 1+((n-1) mod 5), wirkt erst ab Hard. Slots: ground/hill neben dem Pfad, 3 große (2x2) Ground-Slots für Farms.",
+ "_comment": "S-förmiger Pfad, Länge 42 Tiles: 13+3+11+3+11+1. Waves laut §5; Spawn-Abstände Grunt 0,8 s, Runner 0,5 s, Flyer 0,9 s, Brute 2,0 s, Splitter 1,5 s, Elite 3,0 s; Gruppen nacheinander (Delay = Summe Anzahl*Abstand der Vorgänger), Boss erscheint einzeln bei Delay 0. Element je Wave 1+((n-1) mod 5), wirkt erst ab Hard. Runde 6: freie Platzierung ueber `zones` (Kachelmaske) und `pathWidth`; `slots` sind nur noch Altbestand (Position der Runde-1-bis-5-Slots, Fallback fuer den Client bis P3, Pruefung im Test), keine Platzierregel.",
  "id": "standard20",
  "name": "Standard 20",
  "waveTimerTicks": 900,
  "path": [[0,1],[13,1],[13,4],[2,4],[2,7],[13,7],[13,8]],
+  "pathWidth": 1,
+  "zones": {
+   "ref": "Runde 6 / P1: Kachelmaske im Raster des Clients (Kachel x,y = Mitte bei Sim-Koordinate x,y; 1 Zeichen = 1 Kachel, Zeile = y, Spalte = x). . Boden, h Huegel, # blockiert (Baeume/Felsen), p Pfadkachel (nur Anzeige: der Pfad wird ueber Abstand zur Polylinie und pathWidth geprueft). Rasterrand = Kartenrand. Abgeleitet aus den alten Slots (Reihen 0/3/5/8 Boden, 2/6/9 Huegel, rechts x>=14 Boden fuer Farms).",
+   "rows": [
+    "......##.......##",
+    "pppppppppppppp..#",
+    "hhhhhhhhhhhhhp...",
+    ".............p...",
+    "..pppppppppppp...",
+    "#.p..............",
+    "##phhhhhhhhhhh...",
+    "..pppppppppppp...",
+    ".............p...",
+    "hhhhhhhhhhhhhh...",
+    "##.............##"
+   ]
+  },
  "slots": [
   {"id":0,"x":2,"y":0,"kind":"ground","size":1},
   {"id":1,"x":5,"y":0,"kind":"ground","size":1},

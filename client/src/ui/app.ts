@@ -1,6 +1,6 @@
 /**
  * DOM-Oberflaeche ueber dem Canvas: nur Verdrahtung und Szenenwechsel. Die Bausteine liegen in eigenen Dateien
- * (hud, shop, slots, panels, unit-panel, boss-banner, toast, screens, input), siehe client/README.md "Aufbau" und Besitzer.
+ * (hud, shop, board-input, panels, unit-panel, boss-banner, toast, screens, input), siehe client/README.md "Aufbau" und Besitzer.
  */
 import type { Session } from '../game/session';
 import type { DifficultyId } from '../sim';
@@ -10,6 +10,7 @@ import { MvpTracker } from './mvp';
 import { getSettings } from './settings';
 import { loadTeam } from './team';
 import type { ReplayButtonFactory } from './result';
+import { BoardInput } from './board-input';
 import { Help } from './help';
 import { Hints } from './hints';
 import { Hud } from './hud';
@@ -17,7 +18,6 @@ import { Input } from './input';
 import { WavePanels } from './panels';
 import { Screens } from './screens';
 import { Shop } from './shop';
-import { Slots } from './slots';
 import { Toast } from './toast';
 import { UnitPanel } from './unit-panel';
 import { versionEl } from './version';
@@ -35,7 +35,7 @@ export class Ui {
   private readonly hud = new Hud(() => this.help.toggle());
   private readonly hints = new Hints();
   private readonly shop = new Shop();
-  private readonly slots = new Slots(this.boardWrap);
+  private readonly board = new BoardInput(this.boardWrap);
   private readonly waves = new WavePanels();
   private readonly unitPanel = new UnitPanel();
   private readonly banner = new BossBanner();
@@ -51,14 +51,14 @@ export class Ui {
     root.classList.add('game');
     const side = h('aside', 'side');
     side.append(this.hints.el, this.waves.previewEl, this.waves.cardsEl, this.unitPanel.el);
-    this.boardWrap.append(this.slots.el, this.banner.el, this.toast.el, this.screens.pausedEl);
+    this.boardWrap.append(this.banner.el, this.toast.el, this.screens.pausedEl);
     const main = h('main', 'main');
     main.append(this.boardWrap, side);
     root.append(this.hud.el, main, this.shop.el, this.screens.el, this.help.el, versionEl());
     new Input(() => this.session, this.help);
   }
 
-  /** Neue Runde: Slots, Shop und Panels aufbauen. */
+  /** Neue Runde: Brett-Eingabe, Shop und Panels aufbauen. */
   bind(session: Session): void {
     this.session = session;
     session.team = loadTeam(session.sim.catalog().map((d) => d.id));
@@ -68,7 +68,7 @@ export class Ui {
     this.unsubMvp = session.bus.onEvents((events) => this.mvp.consume(events));
     this.screens.bind(session);
     this.screens.hide();
-    this.slots.bind(session);
+    this.board.bind(session);
     this.shop.bind(session);
     this.waves.bind();
     this.unitPanel.bind();
@@ -82,12 +82,12 @@ export class Ui {
     this.screens.showStart();
   }
 
-  /** `tile` = aktuelle Tile-Groesse des Renderers (fuer die Slot-Buttons). */
+  /** `tile` = aktuelle Tile-Groesse des Renderers (fuer die Mausumrechnung). */
   update(s: Session, tile: number): void {
     const nextWave = this.hud.update(s);
     this.screens.updatePaused(s);
     this.shop.update(s);
-    this.slots.update(s, tile);
+    this.board.update(tile, s.placing !== null);
     this.waves.update(s, nextWave);
     this.unitPanel.update(s);
     this.hints.update(s);

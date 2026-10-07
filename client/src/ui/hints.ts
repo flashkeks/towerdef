@@ -1,4 +1,4 @@
-/** Ersthinweise: drei Schritte in der Seitenleiste (Unit waehlen, Slot klicken, Welle starten). Abschaltbar, gemerkt in localStorage. Besitzer: P1. */
+/** Ersthinweise: drei Schritte in der Seitenleiste (Unit waehlen, Feld klicken, Welle starten). Abschaltbar, gemerkt in localStorage. Besitzer: P1. */
 import { t } from '../i18n/t';
 import type { Session } from '../game/session';
 import { h, setText } from './dom';

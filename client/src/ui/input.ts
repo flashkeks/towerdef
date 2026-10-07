@@ -1,5 +1,5 @@
 /**
- * Eingabe: Tastatur (Esc, Leertaste, N, 1-9, U, T, A, S, ?/H) und Rechtsklick. Klicks auf Slots liegen in `slots.ts`.
+ * Eingabe: Tastatur (Esc, Leertaste, N, 1-9, U, T, A, S, ?/H) und Rechtsklick. Mausklicks aufs Spielfeld liegen in `board-input.ts`.
  * Besitzer: P1 (Bedienbarkeit).
  */
 import { SPEEDS, type Session } from '../game/session';

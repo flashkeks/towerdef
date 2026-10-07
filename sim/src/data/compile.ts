@@ -4,6 +4,7 @@
  * (BigInt nur bei der einmaligen Vorberechnung der Potenzkurven).
  */
 import { buildPath, type Path } from '../path.js';
+import { buildMap, type MapDef } from '../placement.js';
 import { TILE } from '../fixed.js';
 import type {
   BossKit,
@@ -35,7 +36,8 @@ export interface UnitDef {
   /** Kosten je Upgrade (Stufe k -> k+1 kostet upgradeCosts[k]). */
   upgradeCosts: number[];
   maxLevel: number;
-  cap: number;
+  /** Kollisionsradius in Milli-Tiles (aus `footprint`, `economy.placement.unitRadiusMilli`). */
+  radiusMilli: number;
   sellBp: number;
   attack: UnitData['attack'];
   defaultTargeting: UnitData['defaultTargeting'];
@@ -52,6 +54,7 @@ export interface UnitDef {
   levels: LevelStat[];
 }
 
+/** Altbestand (Runden 1-5): Position eines festen Slots. Keine Platzierregel mehr (siehe `placement.ts`). */
 export interface SlotDef {
   id: number;
   x: number;
@@ -72,6 +75,9 @@ export interface Ctx {
   difficulty: DifficultyDef;
   players: number;
   path: Path;
+  /** Zonenmaske, Kartenrand und Pfadbreite für die freie Platzierung. */
+  map: MapDef;
+  /** Altbestand: Positionen der früheren Slots (Milli-Tiles). */
   slots: SlotDef[];
   units: Record<string, UnitDef>;
   unitList: UnitDef[];
@@ -135,7 +141,7 @@ function build(u: UnitData, d: GameData): UnitDef {
     placeCost: u.placeCost ?? r.placeCost,
     upgradeCosts,
     maxLevel: n,
-    cap: u.cap ?? r.cap,
+    radiusMilli: d.economy.placement.unitRadiusMilli[String(u.footprint) as '1' | '2'],
     sellBp: u.sellBp ?? d.economy.sell.combatBp,
     attack: u.attack,
     defaultTargeting: u.defaultTargeting,
@@ -237,6 +243,7 @@ export function compile(data: GameData, stage: StageData, difficultyId: Difficul
     difficulty: data.difficulties[difficultyId],
     players,
     path: buildPath(stage.path.map(([x, y]) => [Math.round(x * TILE), Math.round(y * TILE)] as [number, number])),
+    map: buildMap(stage, data.economy.placement.pathMarginMilli),
     slots: stage.slots.map((s) => ({ id: s.id, x: Math.round(s.x * TILE), y: Math.round(s.y * TILE), kind: s.kind, size: s.size })),
     units,
     unitList,

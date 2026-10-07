@@ -29,9 +29,9 @@ describe('GameBus', () => {
     bus.onEvents(() => batches++);
 
     s.choosePlacing('striker');
-    s.clickSlot(0);
+    s.clickBoard(3000, 3000);
     expect(cmds).toHaveLength(1);
-    expect(cmds[0]).toMatchObject({ tick: 0, player: 0, cmd: { type: 'place', unitId: 'striker', slot: 0 } });
+    expect(cmds[0]).toMatchObject({ tick: 0, player: 0, cmd: { type: 'place', unitId: 'striker', x: 3000, y: 3000 } });
     expect(cmds[0].result.ok).toBe(true);
 
     s.startNextWave();
