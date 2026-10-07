@@ -7,6 +7,7 @@ import type { UnitMod } from '../../sim/src/index';
 import { damageBpFor, unitModFor } from '../../sim/src/progression';
 import type { Profile } from './profile';
 import { PROGRESSION, starsForCopies } from './stars';
+import { traitMod } from './traits';
 
 export const NEUTRAL_BP = 10000;
 
@@ -19,6 +20,14 @@ export function damageBpOf(owned: { level: number; copies: number }): number {
 export function unitModsFor(profile: Profile, team: readonly string[], player = 0): UnitMod[] {
   return team.map((unit) => {
     const o = profile.units[unit];
-    return o ? unitModFor(PROGRESSION, player, unit, o.level, starsForCopies(o.copies)) : { player, unit, lvlBp: NEUTRAL_BP };
+    if (!o) return { player, unit, lvlBp: NEUTRAL_BP };
+    const mod = unitModFor(PROGRESSION, player, unit, o.level, starsForCopies(o.copies));
+    // Trait (Runde 8): nur gesetzte Felder, damit Mods ohne Trait unveraendert bleiben (Replay-Vergleich `unit-mods-mismatch`)
+    const t = traitMod(unit, o.trait);
+    if (t.damageBp) mod.traitBp = t.damageBp;
+    if (t.rangeBp) mod.rangeBp = t.rangeBp;
+    if (t.spaBp) mod.spaBp = t.spaBp;
+    if (t.yieldBp !== NEUTRAL_BP) mod.yieldBp = t.yieldBp;
+    return mod;
   });
 }

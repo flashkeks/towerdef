@@ -17,6 +17,7 @@ import {
   buy,
   claimStarterGift,
   collectionView,
+  evolve,
   exportProfile,
   importProfile,
   levelUp,
@@ -27,6 +28,7 @@ import {
   pull,
   pullHistoryView,
   refreshOrder,
+  rerollTrait,
   rewardFromReplay,
   setTeam,
   stageView,
@@ -179,6 +181,14 @@ export class LocalBackend implements Backend {
 
   levelUp(unitId: string, idemKey: string): ReturnType<Backend['levelUp']> {
     return this.mutate('levelUp', { unitId }, idemKey, 'level', (p) => levelUp(p, unitId, this.env));
+  }
+
+  evolve(unitId: string, idemKey: string): ReturnType<Backend['evolve']> {
+    return this.mutate('evolve', { unitId }, idemKey, 'evolution', (p) => evolve(p, unitId, this.env));
+  }
+
+  rerollTrait(unitId: string, idemKey: string): ReturnType<Backend['rerollTrait']> {
+    return this.mutate('rerollTrait', { unitId }, idemKey, 'reroll', (p) => rerollTrait(p, unitId, this.env));
   }
 
   setTeam(unitIds: string[], idemKey: string): ReturnType<Backend['setTeam']> {

@@ -74,7 +74,7 @@ function readMods(raw: unknown): UnitMod[] | Fail {
   const out: UnitMod[] = [];
   for (const m of raw as Record<string, unknown>[]) {
     if (!m || typeof m !== 'object' || !isInt(m.player) || typeof m.unit !== 'string') return fail('invalid-replay', 'Replay unit mods are malformed.');
-    for (const k of ['lvlBp', 'traitBp', 'yieldBp'] as const) if (m[k] !== undefined && !isInt(m[k])) return fail('invalid-replay', 'Replay unit mods are malformed.');
+    for (const k of ['lvlBp', 'traitBp', 'yieldBp', 'rangeBp', 'spaBp'] as const) if (m[k] !== undefined && !isInt(m[k])) return fail('invalid-replay', 'Replay unit mods are malformed.');
     out.push(m as unknown as UnitMod);
   }
   return out;

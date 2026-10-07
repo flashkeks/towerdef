@@ -8,7 +8,8 @@
 import { z } from 'zod';
 import type { MetaEnv } from './env';
 
-export const SCHEMA_VERSION = 1;
+/** Version 2 (Runde 8 / P2): AA-Units statt der 14 alten, `OwnedUnit.trait`. Migration 1 -> 2 in `migrate.ts`. */
+export const SCHEMA_VERSION = 2;
 export const MAX_TEAM = 6;
 export const PULL_HISTORY_MAX = 500;
 export const IDEM_MAX = 200;
@@ -40,6 +41,8 @@ export const OwnedUnitSchema = z.object({
   /** abgeleitet aus `copies` (`stars.ts`), hier als Cache fuer die Anzeige */
   stars: z.number().int().min(1),
   firstObtainedAt: iso,
+  /** Trait (Runde 8): `id` aus `data/aa/traits.json`, `tier` 1..3 bei gestaffelten Traits (sonst 1). Fehlt = kein Trait. */
+  trait: z.object({ id: z.string().min(1), tier: z.number().int().min(1).max(3) }).optional(),
 });
 export type OwnedUnit = z.infer<typeof OwnedUnitSchema>;
 

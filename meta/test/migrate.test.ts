@@ -10,12 +10,12 @@ describe('Migration', () => {
     expect(m).toMatchObject({ ok: true, migratedFrom: SCHEMA_VERSION });
     if (m.ok) expect(m.profile).toEqual(r.profile);
   });
-  it('v0 (alte Form mit Zaehlern) wird zu v1 mit Ledger', () => {
+  it('v0 (alte Form mit Zaehlern) wird ueber v1 zur aktuellen Version mit Ledger', () => {
     const m = migrate({ id: 'abc', name: 'Old', crystals: 120, gold: 40, units: ['ichigo', 'krillin'], createdAt: '2026-01-01T00:00:00.000Z' });
     expect(m.ok).toBe(true);
     if (!m.ok) return;
     expect(m.migratedFrom).toBe(0);
-    expect(m.profile.schemaVersion).toBe(1);
+    expect(m.profile.schemaVersion).toBe(SCHEMA_VERSION);
     expect(m.profile.wallet).toEqual({ crystals: 120, gold: 40 });
     expect(m.profile.ledger).toHaveLength(2);
     expect(Object.keys(m.profile.units)).toEqual(['ichigo', 'krillin']);

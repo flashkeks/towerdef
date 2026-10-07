@@ -165,3 +165,26 @@ Unit-XP gibt es nicht (Units steigen mit Gold).
 (`unitMods` im Kopf != `unitModsFor(profile, team)`, kanonisch verglichen, Reihenfolge egal). Die Platzierung einer Unit ausserhalb des Teams ergibt `team-invalid` (galt schon vorher, sobald ein Team im Kopf steht).
 Dafuer liefert `verifyReplay` jetzt auch `match.unitMods` (die Mods, mit denen nachgerechnet wurde). Ohne `bindToProfile` bleibt das alte Verhalten (Tests mit Bot-Replays ohne Team).
 Folge fuer den Client: Team und Mods kommen aus `Backend.matchSetup()` (Profil), nicht mehr aus der UI; wer zwischen Matchstart und -ende Level aendert (anderer Tab), bekommt `unit-mods-mismatch`.
+
+## Runde 8 / P2: AA-Katalog, Evolution, Traits, Migration
+
+**Katalog:** `catalog.ts` liest alle `sim/data/units/*.json` (heute `aa.json`, 550 Units). Je Unit: `name`, `rarity`, `hidden` (Importer `support: hidden`), `evolvedOnly` (Ziel eines Evolutionsrezepts), `special` (AA `limited`/`rateupBannerOnly`/`hideFromBanner`). Pools: `poolOfRarity('summonable'|'special'|'all', rarity)`; ausgeblendete und nur-evolvierbare Units sind nie ziehbar.
+
+**Seltenheiten** Rare/Epic/Legendary/Mythic/Secret/Exclusive laufen durch Banner (`tiers`, je Stufe optional `pool`), Pity (Regel gilt fuer "Seltenheit oder besser") und `bannerView` (Texte "Mythic or better").
+
+| Banner | Preis | Raten (bp) | Regeln |
+|---|---|---|---|
+| `standard` | 50 / 450 | Rare 6900, Epic 2400, Legendary 540, Mythic 130, Secret 25, Exclusive 5 | Pity Mythic oder besser 150, Legendary oder besser 35; Pool Standard (76 Mythic, 9 Secret, 6 Exclusive ...) |
+| `special` | 60 / 540 | Rare 6500, Epic 2500, Legendary 600, Mythic 330, Secret 70 | Mythic/Secret aus dem Special-Pool (begrenzt/Event/Rate-up), Featured `goku_ssj3` 50 % mit Garantie, Pity 120 |
+| `starter` | nur 10er, 225 | + Secret 20 | wie Runde 7, einmalig, mindestens Epic |
+| `featured-example` | inaktiv | | nur Datenformat |
+
+AA-Vorlage (`banners.json`): Standard Mythic 0,25 %, Pity 400, Secret 1/400 000, Banner-Tiers nach Spieler-Level. Uebernommen wurde nur die Struktur (Standard/Special, Center-Featured 50 %, Pity auf Seltenheit oder besser); Raten und Pity sind Startwerte fuer ein 10er-Spiel, **nicht kalibriert**. Secret ist von Anfang an ziehbar (kein Spieler-Level-Tor).
+
+**Evolution** (`evolution.ts`, Daten `data/aa/evolutions.json`): `evolve(profile, unitId, env)` ersetzt die Unit durch die entwickelte Form; Level, XP, Trait, Kopien (minus verbrauchte) und Team-Platz bleiben. Kosten **Gold + Crystals nach Seltenheit der Form** (`data/unit-costs.json`: Mythic 300 Crystals + 2500 Gold, Secret 600 + 5000 ...). Entscheidung: AA-Items (Star Fruits, Ringe, Takedowns) entfallen, der AA-Aufwand steht nur als Information im Rezept. Benoetigte weitere Units/Kopien (`needs`, z. B. Gon 10 Kopien, Rengoku + 4 Akaza) werden geprueft und verbraucht. Zufalls-Evolutionen (Elize, Chance) wuerfeln gleichverteilt. Ledger `evolve/<unit>:<n>` (Crystals und Gold), Zaehler `counters['evolve:<unit>']`. `evolutionView` liefert der UI Ziel, Kosten, Voraussetzungen, `ready`, `reason`. Codes: `unit-not-owned`, `no-evolution`, `evolution-unavailable` (Ziel nicht spielbar, 3 Rezepte), `evolution-needs-units`, `not-enough-crystals`, `not-enough-gold`.
+
+**Traits** (`traits.ts`, Daten `data/aa/traits.json`): `rerollTrait(profile, unitId, env)` kostet Crystals nach Seltenheit der Unit (Rare bis Legendary 20, Mythic aufwaerts 100), Wurf nach AA-Gewicht, Stufe 1-3 bei Superior/Nimble/Range. Ledger `trait_reroll/<unit>:<n>`. Der Trait liegt in `profile.units[id].trait = { id, tier }` und geht in `unitModsFor` ein (`traitBp`, `rangeBp`, `spaBp`, `yieldBp`; nur gesetzte Felder). Replay-Pruefung (`unit-mods-mismatch`) kennt die neuen Felder. Nicht modellierte Teile: `docs/aa-import/unsupported.md`. Beide Aktionen laufen im Backend (`evolve`, `rerollTrait`) ueber `withIdempotency`.
+
+**Starter** (`starter.ts`): 12 feste AA-Units (`STARTER_UNITS`), Team = die ersten sechs (Goku SSJ3, Genos, Krillin, Speedwagon, Jotaro, Law), 450 Crystals (Ledger `starter/v2`; wer `starter/v1` hat, bekommt sie nicht noch einmal).
+
+**Migration 1 -> 2** (`migrate.ts`, Schema-Version 2): Runde-7-Units (`LEGACY_R7_UNITS`, 14) und unbekannte IDs werden entfernt. Erstattung: Crystals je Kopie (Rare 25, Epic 60, Legendary 150, Mythic 450; `data/unit-costs.json`), Gold zu 100 % fuer gekaufte Level (`levelUpTotalCost`), je Waehrung eine Buchung `refund`, `migration/v2-units`. Team leer, Idempotenz-Tabelle leer, `starterGiftClaimed` zurueckgesetzt (neues Geschenk abholbar). **Pity je Banner bleibt** (Regeln gleich), Verlauf, Stages, Level, Zaehler bleiben. Bericht fuer die UI in `settings.migrationR8` (`removedUnits`, `refundCrystals`, `refundGold`). Test mit echtem Runde-7-Profil (`test/fixtures/profile-r7.json`, mit dem Code der Runde 7 erzeugt).

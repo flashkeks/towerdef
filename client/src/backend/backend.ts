@@ -9,7 +9,7 @@
  */
 import type { ReplayFile } from '../game/recorder';
 import type { DifficultyId, UnitMod } from '../sim';
-import type { BannerRates, BannerView, CollectionUnitView, HistoryEntry, MatchReward, PlayerView, Profile, PullBatchResult, ShopProduct, PurchaseResult, StageDifficultyView, StarterResult } from './meta';
+import type { EvolveResult, RerollResult, BannerRates, BannerView, CollectionUnitView, HistoryEntry, MatchReward, PlayerView, Profile, PullBatchResult, ShopProduct, PurchaseResult, StageDifficultyView, StarterResult } from './meta';
 import type { Persistence } from './storage';
 
 export interface BFail {
@@ -47,6 +47,10 @@ export interface Backend {
   /** Fehlercodes: `unknown-banner`, `banner-inactive`, `invalid-count`, `banner-limit-reached` (Starter schon benutzt), `not-enough-crystals`, `banner-pool-empty`. */
   pull(bannerId: string, count: 1 | 10, idemKey: string): Promise<BResult<Saved & { pull: PullBatchResult }>>;
   levelUp(unitId: string, idemKey: string): Promise<BResult<Saved & { level: { unitId: string; level: number; cost: number } }>>;
+  /** Runde 8: Unit zu ihrer entwickelten Form (Kosten Gold + Crystals). Fehlercodes: `unit-not-owned`, `no-evolution`, `evolution-unavailable`, `evolution-needs-units`, `not-enough-crystals`, `not-enough-gold`. */
+  evolve(unitId: string, idemKey: string): Promise<BResult<Saved & { evolution: EvolveResult }>>;
+  /** Runde 8: Trait neu wuerfeln (Crystals nach Seltenheit). Fehlercodes: `unit-not-owned`, `not-enough-crystals`. */
+  rerollTrait(unitId: string, idemKey: string): Promise<BResult<Saved & { reroll: RerollResult }>>;
   setTeam(unitIds: string[], idemKey: string): Promise<BResult<Saved & { team: string[] }>>;
   /**
    * Meldet ein beendetes Match. `replay` = Objekt des Recorders (`game/recorder.ts`); Belohnung aus dem Replay: P5.

@@ -202,7 +202,7 @@ export function runUnits(w: World): void {
     // DESIGN-OFFEN: kein Windup - der Treffer erfolgt im selben Tick wie die Zielwahl.
     if (!atk || u.cd > 0) continue;
     const buffs = computeBuffs(w, u, def);
-    const range = mulBp(lv.rangeMilli, BP + buffs.rangeBp);
+    const range = mulBp(lv.rangeMilli, BP + buffs.rangeBp + (u.traitRangeBp ?? 0));
     const target = selectTarget(state.enemies, {
       ux: u.x,
       uy: u.y,
@@ -231,7 +231,7 @@ export function runUnits(w: World): void {
       for (const e of area) if (e.hp > 0) applyFx(w, u, e, fx, dotBase.get(e.id) ?? 0);
     }
     selfBuffs(w, u, def, atk, lv, range);
-    u.cd = Math.max(1, Math.floor((lv.spaTicks * BP) / (BP + Math.min(buffs.tempoBp, eco.buffCaps.tempoBp))));
+    u.cd = Math.max(1, Math.floor((mulBp(lv.spaTicks, BP + (u.traitSpaBp ?? 0)) * BP) / (BP + Math.min(buffs.tempoBp, eco.buffCaps.tempoBp))));
   }
 }
 

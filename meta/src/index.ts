@@ -21,3 +21,5 @@ export * from './starter';
 export * from './unit-mods';
 export * from './verify';
 export * from './views';
+export * from './evolution';
+export * from './traits';

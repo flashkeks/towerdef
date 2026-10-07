@@ -10,16 +10,17 @@ import { data, ctxFor, richData } from './helpers.js';
 const aa = JSON.parse(readFileSync(new URL('../../docs/anime-adventures/data/units.json', import.meta.url), 'utf8')) as { units: Record<string, unknown>[]; attacks: Record<string, unknown> };
 
 describe('Unit-Dateien (sim/data/units/*.json)', () => {
-  it('der Lader führt alle Dateien zusammen; `sample.json` liegt dabei', () => {
+  it('der Lader führt alle Dateien zusammen; `aa.json` (Importer P2) liegt dabei, `sample-units.json` ist nur noch Fixture', () => {
     const u = loadUnits();
-    expect(u.units.length).toBeGreaterThanOrEqual(15);
+    expect(u.units.length).toBeGreaterThanOrEqual(550);
     expect(u.units.some((x) => x.id === 'rokuhira')).toBe(true);
   });
   it('jede Angriffs-ID der Units steht im Katalog, jede Stufe ist lückenlos, jede Unit hat Platzierkosten', () => {
     for (const u of data.units.units) {
       u.levels.forEach((l, k) => {
         expect(l.level, u.id).toBe(k);
-        if (l.attack) expect(data.units.attacks[l.attack], `${u.id}: ${l.attack}`).toBeDefined();
+        // `null` im Quell-Katalog = AA kennt den Angriff, hat aber keine Details (greift als single an)
+        if (l.attack && (aa.attacks as Record<string, unknown>)[l.attack] != null) expect(data.units.attacks[l.attack], `${u.id}: ${l.attack}`).toBeDefined();
       });
       expect(u.levels[0].cost, u.id).toBeGreaterThan(0);
       expect(UNIT_RARITIES).toContain(u.rarity);

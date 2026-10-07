@@ -3,9 +3,9 @@
   "name": "Starter Summon",
   "kind": "starter",
   "active": true,
-  "ratesVersion": "2026-10-a",
+  "ratesVersion": "2026-10-b",
   "calibrated": false,
-  "note": "Startwerte (Runde 7), nicht kalibriert. Einmalig je Profil: genau ein 10er-Zug zum halben Preis (225 statt 450), mindestens ein Epic oder besser garantiert. Kein Zeitlimit, keine Pity (ein Zug-Block).",
+  "note": "Startwerte (Runde 7, Runde 8 um Secret erweitert), nicht kalibriert. Einmalig je Profil: genau ein 10er-Zug zum halben Preis (225 statt 450), mindestens ein Epic oder besser garantiert. Kein Zeitlimit, keine Pity (ein Zug-Block).",
   "costPerPull": 25,
   "costTen": 225,
   "allowedCounts": [10],
@@ -13,8 +13,9 @@
   "tiers": [
     { "rarity": "rare", "baseRateBp": 6500 },
     { "rarity": "epic", "baseRateBp": 2800 },
-    { "rarity": "legendary", "baseRateBp": 600 },
-    { "rarity": "mythic", "baseRateBp": 100 }
+    { "rarity": "legendary", "baseRateBp": 580 },
+    { "rarity": "mythic", "baseRateBp": 100 },
+    { "rarity": "secret", "baseRateBp": 20 }
   ],
   "pity": {},
   "batchGuarantee": { "rarity": "epic", "count": 10 }

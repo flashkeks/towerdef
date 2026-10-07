@@ -26,8 +26,9 @@ describe('Units aus den Datendateien', () => {
     expect(unitColor('no_such_unit')).not.toBe(unitColor('another_unit'));
     expect(new Set(defs.map((d) => unitColor(d.id))).size).toBeGreaterThan(4);
   });
-  it('Werte-Anzeige jeder Unit auf jeder Stufe: Zeilen vorhanden, Upgrade-Wirkung nur mit echten Aenderungen', () => {
-    for (const d of defs) {
+  it('Werte-Anzeige jeder Unit auf jeder Stufe: Zeilen vorhanden, Upgrade-Wirkung nur mit echten Aenderungen (ausgeblendete Units ausgenommen)', () => {
+    const hidden = new Set(data.units.units.filter((u) => u.support === 'hidden' || u.supportNotes?.includes('partial-levels')).map((u) => u.id));
+    for (const d of defs.filter((x) => !hidden.has(x.id))) {
       for (let k = 0; k <= d.maxLevel; k++) {
         const rows = statValues(d, k);
         expect(rows.length, `${d.id} L${k}`).toBeGreaterThan(0);

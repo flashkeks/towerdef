@@ -4,6 +4,8 @@
  * Besitzer: P4.
  */
 import { UNIT_CATALOG, type Rarity } from './catalog';
+import { evolutionView, type EvolutionView } from './evolution';
+import { rerollCost, traitName, traitText } from './traits';
 import { levelUpCost, MAX_UNIT_LEVEL } from './leveling';
 import { MAX_PLAYER_LEVEL, unlockLevelFor, xpToReach } from './progression';
 import { MAX_TEAM, type Profile } from './profile';
@@ -55,7 +57,17 @@ export function playerView(p: Profile): PlayerView {
 
 export interface CollectionUnitView {
   unitId: string;
+  /** Anzeigename (AA `nameRR`) */
+  name: string;
   rarity: Rarity;
+  /** entwickelte Form: nur ueber Evolution zu bekommen (Vorstufe) */
+  evolvedFrom: string | null;
+  /** Trait der besessenen Unit (Name mit Stufe, Wirkungstext) oder `null` */
+  trait: { id: string; tier: number; name: string; text: string } | null;
+  /** Crystals fuer einen Trait-Reroll (nach Seltenheit) */
+  rerollCost: number | null;
+  /** Evolution dieser Unit (Ziel, Kosten, Voraussetzungen, `ready`) oder `null` ohne Rezept */
+  evolution: EvolutionView | null;
   owned: boolean;
   level: number;
   maxLevel: number;
@@ -74,18 +86,26 @@ export interface CollectionUnitView {
   inTeam: boolean;
 }
 
-/** Alle Units des Katalogs (auch nicht besessene), in Katalogreihenfolge. Neue Units aus `units.json` erscheinen von selbst. */
+/** Alle Units des Katalogs (auch nicht besessene), in Katalogreihenfolge; ausgeblendete (`support: hidden`) nur, wenn sie besessen werden. Neue Units erscheinen von selbst. */
 export function collectionView(p: Profile): { units: CollectionUnitView[]; ownedCount: number; total: number } {
-  const units = UNIT_CATALOG.map((c): CollectionUnitView => {
+  const units = UNIT_CATALOG.filter((c) => !c.hidden || p.units[c.id]).map((c): CollectionUnitView => {
     const o = p.units[c.id];
+    const common = {
+      name: c.name,
+      evolvedFrom: c.evolvedFrom,
+      trait: o?.trait ? { id: o.trait.id, tier: o.trait.tier, name: traitName(o.trait), text: traitText(o.trait) } : null,
+      rerollCost: rerollCost(c.id),
+      evolution: evolutionView(c.id, p),
+    };
     if (!o) {
-      return { unitId: c.id, rarity: c.rarity, owned: false, level: 0, maxLevel: MAX_UNIT_LEVEL, copies: 0, stars: 0, maxStars: MAX_STARS, copiesForNextStar: null, copiesToNextStar: null, levelUpCost: null, canLevelUp: false, powerBp: NEUTRAL_BP, powerBonusPct: 0, inTeam: false };
+      return { ...common, unitId: c.id, rarity: c.rarity, owned: false, level: 0, maxLevel: MAX_UNIT_LEVEL, copies: 0, stars: 0, maxStars: MAX_STARS, copiesForNextStar: null, copiesToNextStar: null, levelUpCost: null, canLevelUp: false, powerBp: NEUTRAL_BP, powerBonusPct: 0, inTeam: false };
     }
     const stars = starsForCopies(o.copies);
     const next = copiesForNextStar(stars);
     const cost = o.level >= MAX_UNIT_LEVEL ? null : levelUpCost(o.level);
     const powerBp = damageBpOf(o);
     return {
+      ...common,
       unitId: c.id,
       rarity: c.rarity,
       owned: true,

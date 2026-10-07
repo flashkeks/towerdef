@@ -4,6 +4,7 @@ import { runMatch } from '../../sim/src/bots/index';
 import {
   KIND,
   MAX_PLAYER_LEVEL,
+  MAX_TEAM,
   UNIT_CATALOG,
   balanceOf,
   book,
@@ -47,7 +48,7 @@ function leveledProfile(): Profile {
   if (!p.ok) throw new Error(p.message);
   let prof = p.profile;
   for (let i = 0; i < 4; i++) {
-    const r = levelUp(prof, 'ichigo', e);
+    const r = levelUp(prof, 'krillin', e);
     if (!r.ok) throw new Error(r.message);
     prof = r.profile;
   }
@@ -60,12 +61,12 @@ let leveled: Profile;
 
 beforeAll(() => {
   leveled = leveledProfile();
-  honest = replayWith({ unitMods: unitModsFor(leveled, leveled.team), team: leveled.team, only: ['ichigo'] });
+  honest = replayWith({ unitMods: unitModsFor(leveled, leveled.team), team: leveled.team, only: ['krillin'] });
 }, 120_000);
 
 describe('reportMatch-Luecke: Replay muss zum Profil passen (bindToProfile)', () => {
   it('ehrliches Replay (Mods und Team wie im Profil) wird belohnt', () => {
-    expect(leveled.units.ichigo!.level).toBe(5);
+    expect(leveled.units.krillin!.level).toBe(5);
     const r = rewardFromReplay(leveled, honest, env(), bind);
     expect(r.ok).toBe(true);
   });
@@ -73,7 +74,7 @@ describe('reportMatch-Luecke: Replay muss zum Profil passen (bindToProfile)', ()
   it('Mods im Kopf besser als das Profil (Selbstbedienung mit Level 40) -> unit-mods-mismatch, nichts gebucht', () => {
     const fresh = starterProfile();
     const boosted = leveled.team.map((unit) => ({ player: 0, unit, lvlBp: 21750 }));
-    const mine = replayWith({ unitMods: boosted, team: fresh.team, only: ['ichigo'] });
+    const mine = replayWith({ unitMods: boosted, team: fresh.team, only: ['krillin'] });
     // das Replay ist in sich stimmig (Hash gilt fuer die Mods im Kopf) ...
     expect(rewardFromReplay(fresh, mine, env()).ok).toBe(true);
     // ... aber gegen das Profil gebunden gibt es nichts
@@ -83,7 +84,7 @@ describe('reportMatch-Luecke: Replay muss zum Profil passen (bindToProfile)', ()
   });
 
   it('Mods fehlen (leere Liste) obwohl das Profil Mods verlangt -> unit-mods-mismatch', () => {
-    const neutral = replayWith({ unitMods: [], team: leveled.team, only: ['ichigo'] });
+    const neutral = replayWith({ unitMods: [], team: leveled.team, only: ['krillin'] });
     expect(rewardFromReplay(leveled, neutral, env(), bind)).toMatchObject({ ok: false, code: 'unit-mods-mismatch' });
   });
 
@@ -111,8 +112,8 @@ describe('reportMatch-Luecke: Replay muss zum Profil passen (bindToProfile)', ()
 
   it('Unit platziert, die nicht im Team steht -> team-invalid', () => {
     // Team = gespeichertes Team ohne Striker, der Bot setzt aber Striker
-    const p: Profile = { ...leveled, team: leveled.team.filter((u) => u !== 'ichigo') };
-    const stray = replayWith({ unitMods: unitModsFor(p, p.team), team: p.team, only: ['ichigo'] });
+    const p: Profile = { ...leveled, team: leveled.team.filter((u) => u !== 'krillin') };
+    const stray = replayWith({ unitMods: unitModsFor(p, p.team), team: p.team, only: ['krillin'] });
     expect(rewardFromReplay(p, stray, env(), bind)).toMatchObject({ ok: false, code: 'team-invalid' });
   });
 });
@@ -121,7 +122,7 @@ describe('Sichtmodelle', () => {
   it('playerView: XP-Balken, Salden, Team-Ziel', () => {
     const p = starterProfile();
     const v = playerView(p);
-    expect(v).toMatchObject({ level: 1, xpIntoLevel: 0, xpForNext: 100, xpPct: 0, crystals: 450, gold: 0, starterGiftAvailable: false, teamTarget: starterUnits().length });
+    expect(v).toMatchObject({ level: 1, xpIntoLevel: 0, xpForNext: 100, xpPct: 0, crystals: 450, gold: 0, starterGiftAvailable: false, teamTarget: Math.min(MAX_TEAM, starterUnits().length) });
     const mid = playerView({ ...p, playerLevel: 2, playerXp: xpToReach(2) + 62 });
     expect(mid).toMatchObject({ level: 2, xpIntoLevel: 62, xpForNext: 125, xpPct: 49 });
     expect(playerView({ ...p, playerLevel: MAX_PLAYER_LEVEL, playerXp: 99999 })).toMatchObject({ xpPct: 100, xpForNext: 0 });
@@ -131,15 +132,16 @@ describe('Sichtmodelle', () => {
 
   it('collectionView: alle Katalog-Units, nicht Besessene grau, Kosten und Sterne', () => {
     const v = collectionView(leveled);
-    expect(v.units.map((u) => u.unitId)).toEqual(UNIT_CATALOG.map((u) => u.id));
-    expect(v.total).toBe(UNIT_CATALOG.length);
-    const striker = v.units.find((u) => u.unitId === 'ichigo')!;
+    const visible = UNIT_CATALOG.filter((u) => !u.hidden);
+    expect(v.units.map((u) => u.unitId)).toEqual(visible.map((u) => u.id));
+    expect(v.total).toBe(visible.length);
+    const striker = v.units.find((u) => u.unitId === 'krillin')!;
     expect(striker).toMatchObject({ owned: true, level: 5, stars: 1, copiesToNextStar: 1, levelUpCost: 80, inTeam: true });
     expect(striker.powerBp).toBe(11000);
     expect(striker.powerBonusPct).toBe(10);
     const titan = v.units.find((u) => u.unitId === 'stain')!;
     expect(titan).toMatchObject({ owned: false, level: 0, levelUpCost: null, canLevelUp: false, stars: 0 });
-    expect(collectionView({ ...leveled, wallet: { ...leveled.wallet, gold: 0 } }).units.find((u) => u.unitId === 'ichigo')!.canLevelUp).toBe(false);
+    expect(collectionView({ ...leveled, wallet: { ...leveled.wallet, gold: 0 } }).units.find((u) => u.unitId === 'krillin')!.canLevelUp).toBe(false);
   });
 
   it('stageView: Sperrgruende, Erst-Clear, Bestwelle', () => {
@@ -155,7 +157,7 @@ describe('Sichtmodelle', () => {
 
   it('pullHistoryView: neueste zuerst, begrenzt', () => {
     const p = starterProfile();
-    const rec = (i: number) => ({ id: `p${i}`, bannerId: 'standard', ratesVersion: 'v', batchId: 'b', idx: i, rollBp: 1, rarity: 'rare', unitId: 'ichigo', isNew: false, pityBefore: 0, pityAfter: 0, pityForced: null, costCrystals: 50, createdAt: 't' });
+    const rec = (i: number) => ({ id: `p${i}`, bannerId: 'standard', ratesVersion: 'v', batchId: 'b', idx: i, rollBp: 1, rarity: 'rare', unitId: 'krillin', isNew: false, pityBefore: 0, pityAfter: 0, pityForced: null, costCrystals: 50, createdAt: 't' });
     const q: Profile = { ...p, pullHistory: [1, 2, 3, 4, 5].map(rec) };
     expect(pullHistoryView(q, 3).map((h) => h.id)).toEqual(['p5', 'p4', 'p3']);
     expect(pullHistoryView(q, 0)).toEqual([]);

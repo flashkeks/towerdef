@@ -1,0 +1,147 @@
+{
+ "ref": "Runde 8 / P2, erzeugt von tools/aa-import aus traits.json (Stand RR 2026). Stufen-Verteilung ist DESIGN (AA: unbekannt).",
+ "tierWeights": [
+  7000,
+  2500,
+  500
+ ],
+ "traits": [
+  {
+   "id": "superior",
+   "name": "Superior",
+   "rarity": "Rare",
+   "weight": 2997,
+   "tiers": [
+    {
+     "damageBp": 1000
+    },
+    {
+     "damageBp": 1250
+    },
+    {
+     "damageBp": 1500
+    }
+   ]
+  },
+  {
+   "id": "nimble",
+   "name": "Nimble",
+   "rarity": "Rare",
+   "weight": 2498,
+   "tiers": [
+    {
+     "spaBp": -500
+    },
+    {
+     "spaBp": -750
+    },
+    {
+     "spaBp": -1200
+    }
+   ]
+  },
+  {
+   "id": "range",
+   "name": "Range",
+   "rarity": "Rare",
+   "weight": 2498,
+   "tiers": [
+    {
+     "rangeBp": 1000
+    },
+    {
+     "rangeBp": 1250
+    },
+    {
+     "rangeBp": 1500
+    }
+   ]
+  },
+  {
+   "id": "adept",
+   "name": "Adept",
+   "rarity": "Legendary",
+   "weight": 999,
+   "noop": [
+    "Unit-XP (es gibt keine Unit-XP)"
+   ]
+  },
+  {
+   "id": "culling",
+   "name": "Culling",
+   "rarity": "Legendary",
+   "weight": 500,
+   "noop": [
+    "Zusatzschaden gegen Gegner mit wenig HP"
+   ]
+  },
+  {
+   "id": "sniper",
+   "name": "Sniper",
+   "rarity": "Legendary",
+   "weight": 250,
+   "rangeBp": 2500
+  },
+  {
+   "id": "godspeed",
+   "name": "Godspeed",
+   "rarity": "Legendary",
+   "weight": 100,
+   "spaBp": -2000
+  },
+  {
+   "id": "reaper",
+   "name": "Reaper",
+   "rarity": "Mythic",
+   "weight": 80,
+   "damageBp": 1500,
+   "noop": [
+    "Zusatzschaden gegen Bosse"
+   ]
+  },
+  {
+   "id": "celestial",
+   "name": "Celestial",
+   "rarity": "Mythic",
+   "weight": 36,
+   "damageBp": 1000,
+   "rangeBp": 1000,
+   "noop": [
+    "True-Damage-Anteil"
+   ]
+  },
+  {
+   "id": "divine",
+   "name": "Divine",
+   "rarity": "Mythic",
+   "weight": 20,
+   "damageBp": 2000,
+   "rangeBp": 2000,
+   "spaBp": -1000
+  },
+  {
+   "id": "golden",
+   "name": "Golden",
+   "rarity": "Mythic",
+   "weight": 15,
+   "damageBp": 3000,
+   "yieldBp": 2000,
+   "yieldUnits": [
+    "speedwagon",
+    "bulma"
+   ]
+  },
+  {
+   "id": "unique",
+   "name": "Unique",
+   "rarity": "Mythic",
+   "weight": 10,
+   "rangeBp": 1000,
+   "spaBp": -1000,
+   "damageMultBp": 40000,
+   "noop": [
+    "Platzierlimit 1 (Typ-Limit wird nicht durchgesetzt)"
+   ]
+  }
+ ]
+}
