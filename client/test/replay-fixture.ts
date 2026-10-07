@@ -1,4 +1,4 @@
-/** Testhilfe: echtes Replay aus einem Bot-Lauf der Sim (Format v2 wie der Recorder, ohne Tempo-Wechsel). */
+/** Testhilfe: echtes Replay aus einem Bot-Lauf der Sim (Format v3 wie der Recorder, ohne Mods, ohne Tempo-Wechsel). */
 import { runMatch } from '../../sim/src/bots/index';
 import { loadBrowserData } from '../src/sim';
 import { botTuning } from '../../sim/src/bots/util';
@@ -17,13 +17,14 @@ export function botReplay(o: { bot?: string; seed?: number; difficulty?: 'normal
     const r = runMatch({ stage: 'standard20', difficulty, players: 1, seed, bots: [bot], data: loadBrowserData(), onCommand: (c) => commands.push({ tick: c.tick, player: c.player, cmd: c.cmd, ok: c.ok, ...(c.reason ? { reason: c.reason } : {}) }) });
     return {
       format: 'towerdef-replay',
-      formatVersion: 2,
+      formatVersion: 3,
       gameVersion: 'test',
       stage: 'standard20',
       difficulty,
       players: 1,
       seed,
       team: null,
+      unitMods: [],
       cards: [],
       complete: true,
       result: r.result === 'timeout' ? null : r.result,
