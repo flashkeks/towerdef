@@ -163,6 +163,13 @@ Commits:
 
 ## 5. Was die Homelab-Seite parallel macht (nur zur Info)
 
+**Stand 07.10.2026: erledigt.** Auf der Preview liegen **473 von 561** Porträts unter
+`/aa/units/<unit-id>.webp` (256 × 256, transparent) und `.png` (Original), dazu `/aa/index.json`
+(`units.<id> = {name, file, rarity}`) und `/aa/missing.json` (88 ohne Treffer, meist LEGACY-Namen wie
+„Copy Ninja“, „Sand Ninja“). Die Unit-IDs sind die `id`-Felder aus `units.json`. Der Client nimmt das
+Bild, wenn es lädt, sonst die gestaltete Fallback-Karte. Lokal und in Screenshots ohne Access gibt es
+nur den Fallback, das ist so gewollt.
+
 - Lädt alle Bilder aus dem AA-Wiki über CT 113 (das Wiki ist aus deiner Umgebung gesperrt), legt sie
   auf `edge` unter `/srv/duskwardens/aa/` ab und liefert sie auf der Preview unter `/aa/` aus.
   Grundlage ist dein `client/public/aa/manifest.json` (P2) bzw. bis dahin die Unit-Namen aus
