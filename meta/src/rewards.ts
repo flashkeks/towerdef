@@ -11,7 +11,9 @@ import { bookAll, KIND, type BookingInput } from './ledger';
 import { addPlayerXp, isDifficultyUnlocked } from './progression';
 import { MAX_TEAM, type Profile } from './profile';
 import { fail, opOk, type Fail, type Op } from './result';
-import { verifyReplay, type VerifyOptions } from './verify';
+import { canonicalJson } from './util';
+import { unitModsFor } from './unit-mods';
+import { verifyReplay, type VerifiedMatch, type VerifyOptions } from './verify';
 import rewardsJson from '../data/rewards.json';
 
 export interface MatchSummary {
@@ -85,16 +87,51 @@ export function rewardForMatch(p: Profile, s: MatchSummary, env: Pick<MetaEnv, '
   return opOk(profile, { crystals, gold, xp, firstClear, levelsGained: xpr.levelsGained, playerLevel: profile.playerLevel });
 }
 
+export interface RewardOptions extends VerifyOptions {
+  /**
+   * P4 (Sicherheitsluecke aus P5): das Replay muss zum Profil passen. Client und Server setzen das IMMER (`LocalBackend`, spaeter M2).
+   * Ohne die Option gelten nur die Pruefungen bei gewaehltem Team (Tests mit Bot-Replays ohne Team).
+   */
+  bindToProfile?: boolean;
+}
+
+/**
+ * Bindung an das Profil (`bindToProfile`): ein Replay darf sich keine Level geben und keine Units benutzen, die der Spieler nicht hat.
+ * - `team-required`: kein Team im Replay-Kopf (ohne Team laesst sich nichts pruefen)
+ * - `team-mismatch`: Team im Kopf ist nicht das gespeicherte Team des Profils (als Menge; Reihenfolge ist egal)
+ * - `team-invalid` / `unit-not-owned`: Duplikate, mehr als 6, nicht besessene Unit
+ * - `unit-mods-mismatch`: `unitMods` im Kopf sind nicht genau `unitModsFor(profile, team)` (Level/Sterne im Profil sind massgeblich)
+ * - `team-invalid` bei einer platzierten Unit ausserhalb des Teams (gilt auch ohne `bindToProfile`)
+ */
+function checkBoundToProfile(p: Profile, m: VerifiedMatch): Fail | null {
+  if (!m.team || m.team.length === 0) return fail('team-required', 'This replay has no team, so it cannot be checked.');
+  if (m.team.length > MAX_TEAM || new Set(m.team).size !== m.team.length) return fail('team-invalid', 'The team in this replay is not valid.');
+  const missing = m.team.find((u) => !p.units[u]);
+  if (missing) return fail('unit-not-owned', `You do not own ${missing}.`);
+  const stored = [...p.team].sort().join('|');
+  if (stored !== [...m.team].sort().join('|')) return fail('team-mismatch', 'The team in this replay is not your saved team.');
+  const key = (mods: readonly unknown[]): string[] => mods.map((x) => canonicalJson(x)).sort();
+  const want = key(unitModsFor(p, m.team));
+  const have = key(m.unitMods);
+  if (want.length !== have.length || want.some((x, i) => x !== have[i])) return fail('unit-mods-mismatch', 'The unit levels in this replay do not match your collection.');
+  return null;
+}
+
 /**
  * Belohnung aus einem Replay. Rechnet nach (`verifyReplay`), prueft bei gewaehltem Team die Besitzverhaeltnisse und bucht dann.
  * Fehlercodes: `invalid-replay`, `replay-incomplete`, `replay-old-rules`, `replay-unsupported`, `replay-mismatch` (Hash/Ergebnis stimmt nicht),
- * `unknown-difficulty`, `difficulty-locked`, `unit-not-owned`, `team-invalid`, `already-reported`.
- * Ist im Replay kein Team angegeben (`team: null`, heutiger Client), entfaellt die Besitzpruefung (Hinweis in README).
+ * `unknown-difficulty`, `difficulty-locked`, `unit-not-owned`, `team-invalid`, `already-reported`;
+ * mit `opts.bindToProfile` zusaetzlich `team-required`, `team-mismatch`, `unit-mods-mismatch`.
+ * Ohne `bindToProfile` und ohne Team im Replay (`team: null`) entfaellt die Besitzpruefung. Der Client setzt `bindToProfile` immer (Runde 7, P4).
  */
-export function rewardFromReplay(p: Profile, replay: unknown, env: Pick<MetaEnv, 'now'>, opts: VerifyOptions = {}): Op<MatchReward> {
+export function rewardFromReplay(p: Profile, replay: unknown, env: Pick<MetaEnv, 'now'>, opts: RewardOptions = {}): Op<MatchReward> {
   const v = verifyReplay(replay, opts);
   if (!v.ok) return v;
   const m = v.match;
+  if (opts.bindToProfile) {
+    const bound = checkBoundToProfile(p, m);
+    if (bound) return bound;
+  }
   if (m.team) {
     if (m.team.length > MAX_TEAM || new Set(m.team).size !== m.team.length) return fail('team-invalid', 'The team in this replay is not valid.');
     const missing = m.team.find((u) => !p.units[u]);

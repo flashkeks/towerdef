@@ -39,15 +39,20 @@ export async function launch() {
   }
 }
 
-/** Menue -> Normal -> Team -> Spielfeld (echte Klicks), danach Zugriff auf die Session. */
+/**
+ * Lobby -> (Starter-Geschenk) -> Play -> Stufe -> Spielfeld (echte Klicks), danach Zugriff auf die Session.
+ * Ab Runde 7 startet ein frisches Profil in der Lobby: erst das Starter-Geschenk abholen (gibt Units und Team), dann spielen.
+ */
 export async function openRun(page, url, difficulty = 'normal') {
   await page.goto(url);
-  await page.waitForSelector('.menu-play, .diff[data-difficulty="normal"]');
-  if (await page.locator('.menu-play').isVisible().catch(() => false)) await page.locator('.menu-play').click();
-  await page.waitForSelector(`.diff[data-difficulty="${difficulty}"]`);
+  await page.waitForSelector('.lobby');
+  if (await page.locator('.starter-claim').isVisible().catch(() => false)) {
+    await page.locator('.starter-claim').click();
+    await page.waitForSelector('.starter-card.done');
+  }
+  await page.locator('.lobby-play').click();
+  await page.waitForSelector(`.diff[data-difficulty="${difficulty}"]:not([disabled])`);
   await page.locator(`.diff[data-difficulty="${difficulty}"]`).click();
-  await page.waitForSelector('.team-go, canvas.board', { state: 'attached' });
-  if (await page.locator('.team-go').isVisible().catch(() => false)) await page.locator('.team-go').click();
   await page.waitForSelector('canvas.board');
   // Ersthinweise stoeren auf Screenshots
   await page.evaluate(() => {

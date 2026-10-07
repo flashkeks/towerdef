@@ -33,6 +33,8 @@ export interface VerifiedMatch {
   team: string[] | null;
   /** alle platzierten Unit-IDs (aus den angenommenen Befehlen) */
   placedUnits: string[];
+  /** Mods, mit denen nachgerechnet wurde (Kopf der Datei bzw. `opts.unitMods`); P4: `rewardFromReplay` gleicht sie mit dem Profil ab */
+  unitMods: UnitMod[];
   /** Rechenzeit in Millisekunden (grob, nur zur Anzeige/Messung) */
   ms: number;
 }
@@ -130,6 +132,7 @@ export function verifyReplay(replay: unknown, opts: VerifyOptions = {}): { ok: t
         seed: r.seed,
         team,
         placedUnits: placed,
+        unitMods: mods,
         ms: Math.round(clock() - t0),
       },
     };

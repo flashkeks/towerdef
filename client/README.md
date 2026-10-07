@@ -14,10 +14,28 @@ npm run build          # typecheck + Produktions-Build nach dist/
 npm run typecheck
 npm test               # vitest (Gate, Strings, Anzeige-Mapping, Session, Boss-Tracker, Bildschirm<->Welt, Geist, Shift-Klick)
 npm run build && npm run perf   # P5: FPS bei W19/3x/1920x1080 (headless = SwiftShader, Untergrenze); npm run shots:p5, npm run audio-check
-npm run build && npm run smoke   # Playwright: je Aufloesung (1280x720, 1920x1080, 2560x1440) eine ganze Stage mit echten Mausklicks auf freie Positionen und Tasten, dazu Geist-/Fehlergrund-Pruefungen und Mobil-Sperre; Screenshots nach docs/screenshot-r6-*.png. Dauer ca. 20 min nacheinander, SMOKE_PARALLEL=1 zugleich (auf lahmer Maschine unzuverlaessig) (SMOKE_PORT, SMOKE_RES, SMOKE_MAX_S)
+npm run build && npm run smoke   # Playwright, je Aufloesung (1280x720, 1920x1080, 2560x1440) der ganze Kreislauf mit echten Mausklicks: neues Profil, Lobby, Starter-Geschenk, 10er-Zug, Units, Team, Stage, Match, Belohnung, Level-Up, zweites Match, Seite neu laden (Stand bleibt); dazu Geist-/Fehlergrund-Pruefungen, Ladefehler, gesperrter Speicher, Mobil-Sperre; nur 1280x720 spielt die Stage voll und prueft Export -> Reset -> Import, die anderen ein kurzes Match. Screenshots nach docs/screenshot-r6-*.png und docs/screenshot-r7-*.png. Dauer ca. 7 min (SMOKE_PORT, SMOKE_RES, SMOKE_MAX_S, SMOKE_FULL=Aufloesungen mit voller Stage, SMOKE_PARALLEL=1)
 ```
 
 `sim` bleibt eigenstaendig: `cd sim && npm test && npm run typecheck`.
+
+## Bildschirme (Runde 7)
+
+Start ist die **Lobby** (`ui/lobby.ts`): Kontostaende oben (Crystals, Gold, Spieler-Level mit XP-Balken), Starter-Geschenk als sichtbarer Knopf (solange offen), Play, Summon, Units, Team, Shop, Settings, Credits. Alle Bildschirme sprechen **nur mit `getBackend()`** (nie direkt mit `meta/`), Texte nur in `en.ts`, Zustand immer vom Backend (`playerView`, `collectionView`, `bannerViews`, `stageView`, `pullHistory`, `matchSetup`).
+
+| Bildschirm | Inhalt |
+|---|---|
+| Lobby | Ladefehler (`profile-corrupt`, `profile-too-new`) -> Meldung mit Import / Reset (mit Bestaetigung), der Stand wird nie ungefragt ueberschrieben; `persistence: 'memory'` -> Warnung "progress will be lost on reload"; der Hinweis "Test build, progress is stored in this browser only" steht immer (liegt ueber dem Overlay) |
+| Summon | Banner-Auswahl (Standard, Starter solange verfuegbar), **Ratentabelle immer sichtbar** (Basis, Langzeit mit Pity, naechster Zug, Einzelraten je Unit), Regeln, Erwartungswerte, Ratenversion + Hash, Pity-Zaehler auch auf dem Knopf ("Pull x10 · Mythic pity 37/150"), 1er-/10er-Zug (`idemKey` je Klick, Knopf waehrend des Zugs gesperrt), Enthuellung je Seltenheit (CSS, Klick/Esc ueberspringt), Verlauf (letzte 20), Fehler als Toast |
+| Units | Raster mit Seltenheits-Rahmen und Atlas-Portrait (unbekanntes Sprite -> Kuerzel-Abzeichen), Filter Seltenheit / Rolle / Platzierung / nur Besessene, Detail (Werte aus den Sim-Daten, Rolle, Symbole), Level, Sterne, Kopien bis zum naechsten Stern, Level-Up mit Gold; nicht besessen = grau |
+| Team | `setTeam`: `min(6, Besitz)` Units aus der Sammlung, nur Besessene waehlbar |
+| Stage | Terrassenweg, Normal / Hard / Nightmare; gesperrt mit Grund ("Player level 5"), Erst-Clear-Belohnung, Bestwelle |
+| Match | `main.ts` ruft `Backend.matchSetup(difficulty)` (Team + `unitMods` aus dem Profil), baut `new Session(d, undefined, bus, unitMods)` und setzt `session.team`; der Recorder schreibt beides ins Replay |
+| Ergebnis | `reportMatch(replay)` (nachgerechnet, ans Profil gebunden), Crystals / Gold / XP, Erst-Clear, Spieler-Level-Up, freundliche Fehler (`replay-mismatch` u. a.), Retry nur bei `save-failed`/`internal-error` |
+| Shop | drei Crystal-Pakete (Mock, "Test purchase - no real money", kein Preis), `buy`, `pending` -> `refreshOrder` |
+| Settings | Regler wie bisher, dazu Export (JSON-Download), Import (Datei, mit Bestaetigung), Profil zuruecksetzen (mit Bestaetigung; der alte Stand wird vorher gesichert) |
+
+Rolle (Filter) kommt aus den Sim-Daten (`roleCat`: Farm = Economy, Aura = Support, Stun = Control, Nuke = Boss killer, Flaeche = Area, sonst Single target); keine Unit-Liste ist hart verdrahtet, neue Units erscheinen aus `units.json` (Name/Kuerzel fallen auf die ID zurueck, wenn der Text fehlt, Portrait auf ein Abzeichen).
 
 ## Bedienung
 
@@ -65,7 +83,9 @@ Seit P0b (Runde 5) sind `ui/app.ts` und `game/renderer.ts` nur noch Verdrahtung.
 | `src/ui/input.ts` | Tastatur und Rechtsklick (Maus aufs Feld: `board-input.ts`) | P1 |
 | `src/ui/panels.ts` | Wellenvorschau und Risikokarten (Seitenleiste) | P1 (Layout), P3-Folgen am Rand |
 | `src/ui/boss-banner.ts` | Boss-Banner: Auftritt/Phase animiert, Brech-Fortschritt, "gebrochen durch Stun/Schaden", wandert nach unten, wenn der Boss unter ihm laeuft | P5 |
-| `src/ui/screens.ts` + `menu.ts`, `team-select.ts`, `team.ts`, `settings.ts`, `settings-screen.ts`, `result.ts`, `mvp.ts`, `markdown.ts` | Szenen: Hauptmenue, Stufe, Team-Wahl 6 aus 8 (Client-Filter), Einstellungen, Credits, Ergebnis, Pause | P6 |
+| `src/ui/screens.ts` + `menu.ts` (nur Credits), `settings.ts`, `settings-screen.ts`, `result.ts`, `mvp.ts`, `markdown.ts` | Szenen: Einstellungen, Credits, Ergebnis, Pause (P6, Runde 5); Runde 7: `screens.ts` schaltet ueber `Nav` zwischen Lobby und Meta-Bildschirmen, `settings-screen.ts` bekam Export/Import/Reset, `result.ts` den Belohnungsblock; `team-select.ts`/`team.ts` (6 aus 8, `localStorage`) sind entfallen | P6, Runde 7: P4 |
+| `src/ui/lobby.ts`, `summon.ts`, `units.ts`, `team-screen.ts`, `stage-select.ts`, `crystal-shop.ts`, `reward-box.ts` | Runde 7: Lobby (+ Ladefehler, Starter-Geschenk), Summon (+ Enthuellung), Units, Team (aus der Sammlung), Stage-Auswahl, Mock-Shop, Belohnungsblock im Ergebnis | P4 (Runde 7) |
+| `src/ui/meta-model.ts`, `meta-ui.ts`, `nav.ts`, `portrait.ts`, `unit-defs.ts`, `flash.ts` | Runde 7: Sichtmodelle ohne DOM (getestet: Filter, Rolle, Pity-Knopftext, Banner-Auswahl, Enthuellungs-Dauer, Team-Auswahl, Stage-Karten, Belohnung, Kopfzeile, Fehlertexte), gemeinsame Bausteine (Rahmen + Kontostaende, Bestaetigung, Datei speichern/waehlen), Navigation, Atlas-Portrait per CSS, Sim-Definitionen, Meldung (Toast) ausserhalb des Spiels | P4 (Runde 7) |
 | `src/ui/dom.ts` | kleine DOM-Helfer | gemeinsam |
 | `src/styles.css` | Stil; Abschnitte je Baustein ergaenzen, nichts umsortieren | alle, nur eigene Selektoren |
 | `src/game/recorder.ts`, `src/ui/download.ts` | Replay-Aufzeichnung (nur am `GameBus`) und JSON-Download (`replayDownloadBox()` fuer den End-Bildschirm, Pause-Knopf selbst eingehaengt); Nachspielen: `sim/scripts/replay.ts`, Abnahme `npm run replay-check` | P2 |
@@ -101,7 +121,8 @@ Figuren sind Sprites (Gegner mit zwei Geh-Frames, Blickrichtung per Spiegeln, Fl
 ## Grenzen
 
 - Grafik (P4): Pixel-Sprites im 32-px-Raster, **alle eigen und code-generiert**, keine Fremdpacks (Downloads waren gesperrt, `assets/ATTRIBUTIONS.md`). Figuren skalieren ganzzahlig (`RenderContext.art` = floor(Tile/32)), die Karte wird als ein nearest-Bild auf die Fenster-Kachel gezogen; die Tile-Groesse selbst folgt dem Fenster und ist daher nicht ganzzahlig zum Raster (ein Einrasten in `renderer.fit` auf Vielfache von 32 waere die saubere Loesung, aber nur 32 und 64 passen in den Bereich 24–72).
-- Ein Spieler, kein Koop, kein Speichern.
+- Ein Spieler, kein Koop. Speichern nur im Browser (Runde 7: `backend/`, Export/Import als Datei), kein Konto.
+- Pause -> "Quit to lobby" bricht ein laufendes Match ab, ohne Belohnung (es gibt kein Replay eines unfertigen Matches).
 - Treffer-Effekte (P5) lesen den Zustand, nicht die Sim-Ereignisse: die Sim meldet Treffer nicht. Ein Schuss ist erkannt, wenn die Abklingzeit `cd` einer Unit steigt, das Ziel wird nachgebildet (`pickTarget`) und kann vom echten Ziel abweichen (nur Darstellung). Schadenszahlen = HP-Differenz je Gegner, gebuendelt.
 - Ton (P5): alle Klaenge und die Musik werden zur Laufzeit synthetisiert (eigene Werke, keine Dateien, siehe `assets/ATTRIBUTIONS.md`). Regler und Stumm: `master x sfx`, `master x music`, Taste M (merkt sich `dw.muted`). Der Context startet erst nach der ersten Nutzeraktion.
 - Die Sim importiert `node:fs`/`node:url` (nur fuer `loadGameData`); im Browser ersetzen Vite-Alias-Platzhalter (`src/shims/`) sie. `sim/src` ist unveraendert.
