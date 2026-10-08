@@ -230,6 +230,14 @@ input[type='range']:focus-visible { outline: 2px solid var(--gold); outline-offs
 .product .buy-btn { width: 100%; padding: 11px 16px; font-size: 0.95rem; }
 .shop-status { text-align: center; }
 
+/* ---- Stufenwahl ---- */
+.stage-head { max-width: 1100px; margin: 4px auto 0; }
+.stage-head .kp-body { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 8px 22px; padding: 14px 20px; }
+.stage-head .tagline { margin: 0; text-align: left; font-size: 1rem; color: var(--tx-0); }
+.stage-head .stage-team { margin: 0; justify-content: flex-end; }
+.stage-head .stage-warn { grid-column: 1 / -1; margin: 0; }
+.stage-head .stage-world-btn { margin: 0; }
+
 /* ---- Team ---- */
 .team-panel { margin: 10px 0 0; }
 .team-panel .team-slots { margin: 6px 0 30px; gap: 16px; }

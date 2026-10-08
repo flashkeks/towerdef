@@ -7,8 +7,7 @@ Stand der Umsetzung und Aufbau des Codes: `client/README.md` (Abschnitt „Inter
 
 Nachtindigo-Flächen (`--bg-0` … `--bg-4`), **Warmgold** als Hauptakzent (Titel, primäre Knöpfe, Rahmenlicht), **Aether-Türkis** (Kristalle, Positives, Team),
 **Ember-Orange** (Warnung, Geschenk, Shop), **Violett** (Summon). Text warmweiß (`--tx-0`), gedämpft zweistufig. Alles zentral in `client/src/ui/kit/tokens.css`;
-keine Hex-Werte in Komponenten. Die alten Variablennamen (`--ink`, `--gold` …) zeigen auf die neuen Tokens, damit noch nicht umgebaute Bildschirme (Einstellungen,
-Credits, Ergebnis) die Farbwelt erben.
+keine Hex-Werte in Komponenten. Die alten Variablennamen (`--ink`, `--gold` …) zeigen auf die neuen Tokens (Altlast aus Runde 8; seit Runde 9 sind alle Bildschirme im Kit).
 
 ## Schrift
 
@@ -81,4 +80,19 @@ Name (Display) und Stufe/Sterne unten. **Ohne Bild** (lokal immer, auf der Previ
 ## Was bewusst nicht gemacht wurde
 
 - Keine Porträt-Bilder erzeugt oder simuliert: der Fallback ist das Gestaltungsmittel, solange die Bilder nicht ausgeliefert sind.
-- Einstellungen, Credits, Ergebnis, Pause und Hilfe erben nur die Farbwelt (Tokens, Panels, Knöpfe), sind aber nicht neu gebaut.
+
+## Runde 9 (P4): die übrigen Bildschirme
+
+- **Einstellungen:** Meta-Rahmen wie Summon/Sammlung, zwei Spalten aus Glas-Panels: Audio (Regler mit Goldfüllung, Symbol je Kanal), Spiel (Schalter für Schadenszahlen, Tempo als Segment), Speicherstand (Export/Import/Reset mit Symbolen, Bestätigungsdialog mit Symbol), Hilfe (Hinweise wieder an).
+- **Hilfe (`H`/`?`):** breites Overlay, links Tastenkappen (goldene Schrift, 3-px-Unterkante), rechts der Ablauf in drei Schritten (Aether-Zahlen), die drei Bodenarten mit gemalten Mustern, Seltenheits-Legende mit den echten Rahmen.
+- **Pause:** Dialog über dem Spielfeld mit rundem Pause-Symbol, Lauf-Chips (Welle, Leben, Münzen, Stufe) und drei Knöpfen mit Symbol.
+- **Ergebnis:** Siegel (drehender Runenkreis) mit Krone (Gold) bzw. Totenkopf (Rot), Überschrift mit Haarlinien, Kennzahl-Kacheln (Welle, Leben, Leaks, Zeit), wertvollste Unit als Karte mit Schaden, Belohnung als Kacheln mit Stagger-Einblendung (Crystals aether, Gold, XP ember), Erst-Clear-Marke, XP-Balken. Bei Niederlage links die Tipps. Hintergrund des Overlays tönt golden (Sieg) bzw. rot (Niederlage).
+- **Shop (Mock):** Hinweis-Panel „Test shop“ (kein echtes Geld), drei Pakete mit Kristall-Gruppe aus Code (`kit/gems.ts`: 1, 3, 5 Kristalle; Aether, Himmelblau, Gold), Band „Popular“/„Best value“, große Zahl in Rajdhani.
+- **Credits:** Panels (Spiel, Figuren und Welten, Technik) und eine aufklappbare Quellenliste; Texte kommen aus `en.ts`.
+- **Lobby:** Anführer als große Karte (`min(58vh, 600px)` hoch), mit Bild aus `/aa/units/<id>.webp`, sonst Ersatzkarte; Untertitel „Summon heroes from every anime world.“
+- **Texte:** die Welt „Grenzgilde im Nebelriss“ ist aus allen sichtbaren Strings entfernt (Lobby, Ergebnis, Hilfe, Boss-Kits, Risikokarten). Sim-interne Namen wie `bossWard` (Schild-Mechanik der Bosse) bleiben.
+
+## Was noch alt aussieht
+
+- Das Match-Spielfeld selbst (Kacheln, Sprites aus Runde 1–7, Welt 1–3 mit Platzhalter-Gras) ist Sache von Weltkarte/Kamera (P2) und dem Match-HUD (P1).
+- Die Porträts sind lokal immer die gestalteten Ersatzkarten; echte Bilder liefert die Preview.

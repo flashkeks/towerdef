@@ -55,7 +55,7 @@
 .lb-hero .hero-rays { position: absolute; left: 50%; top: 46%; width: min(120vh, 1100px); aspect-ratio: 1; translate: -50% -50%; opacity: 0.32; mix-blend-mode: screen;
   background: repeating-conic-gradient(from 0deg, var(--glow) 0deg 2.5deg, transparent 2.5deg 12deg); -webkit-mask: radial-gradient(circle, #000, transparent 62%); mask: radial-gradient(circle, #000, transparent 62%); animation: rot 200s linear infinite reverse; }
 @keyframes bd-spin2 { to { transform: rotate(360deg); } }
-.hero-fan { position: relative; z-index: 1; height: min(55vh, 540px); aspect-ratio: 3 / 4; animation: hero-float 7s ease-in-out infinite; }
+.hero-fan { position: relative; z-index: 1; height: min(58vh, 600px); aspect-ratio: 3 / 4; animation: hero-float 7s ease-in-out infinite; }
 .hero-fan .rf { position: absolute; inset: 0; --rf-r: 20px; }
 .hero-fan .hero-main { z-index: 3; box-shadow: 0 0 0 1px #000, 0 0 60px -8px var(--rf-glow), 0 30px 60px -20px #000; }
 .hero-fan .hero-side { z-index: 1; width: 82%; height: 82%; top: 9%; filter: brightness(0.62) saturate(0.85); }

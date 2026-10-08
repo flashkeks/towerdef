@@ -11,7 +11,7 @@ import { metaFrame } from './meta-ui';
 import { errorText, stageCardView, teamComplete, unitName } from './meta-model';
 import type { Nav } from './nav';
 import { miniOf } from './unit-card';
-import { icon } from './kit';
+import { icon, panel } from './kit';
 
 /** Stufen-Auswahl eines Acts (oder Infinite, oder der Standard-Stage). Ohne `stageId`: der naechste offene Act laut Weltkarte. */
 export function buildStageSelect(nav: Nav, stageId?: string): HTMLElement {
@@ -36,11 +36,12 @@ export function buildStageSelect(nav: Nav, stageId?: string): HTMLElement {
     const toWorld = h('button', 'btn stage-world-btn', t('stage.toWorld'));
     toWorld.type = 'button';
     toWorld.addEventListener('click', () => nav.world());
-    f.body.append(toWorld);
+    const head = panel({ corners: true, cls: 'stage-head', tag: 'section' });
+    head.body.append(toWorld);
     if (info) {
-      f.body.append(h('p', 'tagline', [info.kind === 'act' ? info.name : '', info.bossName ? t('stage.boss', { name: info.bossName }) : '', t('stage.waves', { n: info.waves })].filter(Boolean).join(' - ')));
-      if (!info.unlocked && info.lock) f.body.append(h('p', 'warn stage-warn', t('stage.locked.stage', { reason: lockText(info.lock) })));
-    } else f.body.append(h('p', 'tagline', t('stage.subtitle')));
+      head.body.append(h('p', 'tagline', [info.kind === 'act' ? info.name : '', info.bossName ? t('stage.boss', { name: info.bossName }) : '', t('stage.waves', { n: info.waves })].filter(Boolean).join(' - ')));
+      if (!info.unlocked && info.lock) head.body.append(h('p', 'warn stage-warn', t('stage.locked.stage', { reason: lockText(info.lock) })));
+    } else head.body.append(h('p', 'tagline', t('stage.subtitle')));
     const teamRow = h('div', 'stage-team');
     if (p.team.length > 0) {
       teamRow.append(h('span', 'muted', t('lobby.teamLabel', { n: p.team.length, max: p.teamTarget })));
@@ -55,8 +56,9 @@ export function buildStageSelect(nav: Nav, stageId?: string): HTMLElement {
     change.type = 'button';
     change.addEventListener('click', () => nav.team());
     teamRow.append(change);
-    f.body.append(teamRow);
-    if (!teamOk) f.body.append(h('p', 'warn stage-warn', t(p.ownedCount === 0 ? 'stage.noUnits' : 'stage.teamIncomplete')));
+    head.body.append(teamRow);
+    if (!teamOk) head.body.append(h('p', 'warn stage-warn', t(p.ownedCount === 0 ? 'stage.noUnits' : 'stage.teamIncomplete')));
+    f.body.append(head);
 
     const row = h('div', 'diff-row stage-row');
     for (const d of sv.difficulties) {

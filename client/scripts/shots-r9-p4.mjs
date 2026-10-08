@@ -171,6 +171,24 @@ try {
   await sleep(500);
   await shot(p2, 'load-error');
   await c2.close();
+  // Lobby mit echtem Portraet: lokal gibt es keine Bilder, deshalb liefert der Test ein Platzhalter-SVG unter /aa/units/ID.webp aus
+  // (nur zum Pruefen des Bildpfads: grosse Karte, Schnitt, Rahmen; die Datei heisst p4-lobby-portrait-test.png)
+  const c3 = await browser.newContext({ viewport: { width: 1920, height: 1080 } });
+  const p3 = await c3.newPage();
+  const fake = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffb347"/><stop offset="1" stop-color="#c0392b"/></linearGradient></defs><rect width="256" height="256" fill="none"/><path d="M40 256c0-70 40-96 88-96s88 26 88 96z" fill="#1c2a5a"/><circle cx="128" cy="96" r="52" fill="#f2c9a0"/><path d="M70 100c-10-70 40-96 60-96s72 24 60 96c-14-30-30-40-60-40s-46 10-60 40z" fill="url(#g)"/><circle cx="108" cy="102" r="6" fill="#222"/><circle cx="148" cy="102" r="6" fill="#222"/></svg>`;
+  await p3.route('**/aa/units/*.webp', (r) => r.fulfill({ status: 200, contentType: 'image/svg+xml', body: fake }));
+  await p3.route('**/aa/index.json', async (r) => {
+    const m = await (await fetch(new URL('/aa/manifest.json', url))).json();
+    await r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(Object.keys(m.units ?? {})) });
+  });
+  await p3.goto(url);
+  await p3.waitForSelector('.lobby:not(.loading)');
+  await p3.locator('.starter-claim').click();
+  await p3.waitForSelector('.starter-card.done');
+  await sleep(2200);
+  await shot(p3, 'lobby-portrait-test');
+  console.log('Held mit Bild:', await p3.locator('.hero-main .pc-img').count());
+  await c3.close();
   console.log('Seitenfehler:', errors.length ? errors.slice(0, 3) : 'keine');
 } finally {
   await browser.close();
