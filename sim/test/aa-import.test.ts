@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { unknownEffects } from '../src/data/compile.js';
 import { runMatch } from '../src/bots/index.js';
+import { checkFiguren, loadFiguren } from '../../tools/aa-import/figuren.js';
 import { data } from './helpers.js';
 
 const read = (rel: string): any => JSON.parse(readFileSync(new URL(rel, import.meta.url), 'utf8'));
@@ -31,10 +32,33 @@ describe('AA-Import (tools/aa-import, Runde 8 / P2)', () => {
     expect(by.hidden / 550).toBeLessThan(0.05);
     expect(by.full + by.limited + by.hidden).toBe(550);
   });
-  it('Bild-Manifest: je Unit Wiki-Datei und Pfad', () => {
+  it('Bild-Manifest: je Unit echter Name, Serie, anilistQuery, Wiki-Rueckfall und Pfad', () => {
     const m = read('../../client/public/aa/manifest.json');
     expect(Object.keys(m.units).length).toBe(575);
-    expect(m.units['rokuhira']).toMatchObject({ name: 'Vengeful Swordsman', wiki: 'Vengeful_Swordsman.png', path: '/aa/units/rokuhira.webp', wikiShiny: 'Vengeful_Swordsman_(Shiny).png' });
+    expect(m.units['rokuhira']).toMatchObject({ name: 'Gintoki Sakata', series: 'Gintama', anilistQuery: 'Gintoki Sakata', source: 'anilist', wiki: 'Vengeful_Swordsman.png', path: '/aa/units/rokuhira.webp', wikiShiny: 'Vengeful_Swordsman_(Shiny).png' });
+    expect(m.units['kakashi']).toMatchObject({ name: 'Kakashi Hatake', series: 'Naruto', anilistQuery: 'Kakashi Hatake', source: 'anilist' });
+    expect(m.units['goku_ssb']).toMatchObject({ name: 'Son Goku', form: 'Super Saiyan Blue', series: 'Dragon Ball' });
+    for (const [id, e] of Object.entries<any>(m.units)) {
+      expect(e.name && e.series, id).toBeTruthy();
+      if (e.source === 'anilist') expect(e.anilistQuery, id).toBeTruthy();
+      else expect(e.imageQuery, id).toBeTruthy();
+    }
+  });
+  it('figuren.json (Runde 10 / P1): genau ein Eintrag je Unit, keine doppelte (name, form), Manifest stimmt damit ueberein', () => {
+    const fig = loadFiguren(new URL('../../docs/aa-import/figuren.json', import.meta.url).pathname);
+    const cross = read('../data/units/crossover.json').units.map((u: any) => u.id);
+    expect(checkFiguren(fig, aa.units.map((u: any) => u.id), cross)).toEqual([]);
+    expect(fig.length).toBe(575);
+    const m = read('../../client/public/aa/manifest.json');
+    for (const f of fig) {
+      expect(m.units[f.id].name, f.id).toBe(f.name);
+      expect(m.units[f.id].series, f.id).toBe(f.series);
+      expect(m.units[f.id].form, f.id).toBe(f.form);
+    }
+    // Der Pruefer schlaegt wirklich an
+    const dup = [...fig, { ...fig[0], id: 'zz_dup' }];
+    expect(checkFiguren(dup, aa.units.map((u: any) => u.id), cross).length).toBeGreaterThan(0);
+    expect(checkFiguren(fig.slice(1), aa.units.map((u: any) => u.id), cross)).toEqual([`fehlt: ${fig[0].id}`]);
   });
   it('Rauchtest: Bot auto (zufaellige Units) laeuft eine Stage ohne Absturz, deterministisch', () => {
     for (const seed of [11, 12]) {
