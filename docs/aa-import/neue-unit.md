@@ -32,3 +32,15 @@ cd ../meta && npx vitest run
 ```
 
 `crossover.test.ts` zählt die Figuren fest (25): bei einer neuen Figur die Zahl dort, in `sim/test/aa-import.test.ts` (575) und `meta/test/aa-p2.test.ts` (575) anheben. Rauchprobe einzeln: Bot `mono-x_<id>` in `runMatch`.
+
+## Fähigkeit, Aura oder Beschwörung ergänzen (Runde 9 / P1)
+
+Auch das ist nur Daten. Eine Crossover-Figur trägt `abilities` / `aura` direkt im Datensatz (Felder: [format.md](format.md), Abschnitt „Fähigkeiten“): Knopf-Fähigkeit mit `cooldown`, Angriff aus dem Katalog (z. B. `{ "aoe": "full", "special": { "name": "Timestop", "duration": 4 } }`, `scope: "global"`), Buff auf Verbündete, Beschwörung aus dem Katalog `summons` (derselben Datei). Für AA-Units gilt die Kit-Tabelle `tools/aa-import/kits.ts` (ein Eintrag je Unit, dann `npm run aa-import`). Beispiel: Time Stop in vier Zeilen.
+
+```json
+"abilities": [{ "id": "timestop", "name": "Time Stop", "cooldown": 42, "attack": "x_wick:stop", "scope": "global", "damageMult": 0 }]
+"attacks": { "x_wick:stop": { "aoe": "full", "special": { "name": "Timestop", "duration": 4 } } }
+```
+
+Der Client zeigt den Knopf (Unit-Panel, Unit-Leiste mit Abklingzeit-Ring, Taste Q) und den Auto-Schalter von selbst.
+

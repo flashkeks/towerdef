@@ -25,16 +25,35 @@ Alles hier ist **No-op oder Näherung, nichts blockiert**: die Unit lädt, wird 
 
 | Was | Wo in den AA-Daten | Folge |
 |---|---|---|
-| **Aktive Fähigkeiten** (Knopf, Cooldown) | `extra.active_attack`, `active_attack_stats` (z. B. `dazai:active`, `yamamoto:skeletons`, `star_platinum_ts`) | die Unit greift nur mit ihren normalen Angriffen an; der Fähigkeits-Angriff fehlt. Der alte `useAbility`-Befehl ist entfernt |
-| **Beschwörungen mit eigenem Körper** | `kind: "summon"` (11 Einträge, `health`, `speed`) und Angriffe wie `attack_titan:spawn_titan`, `erwin:spawn_unit` | Summons werden nicht importiert/simuliert; spawnende Angriffe schaden als gewöhnliche Angriffe (oder gar nicht, wenn `damage` 0 ist) |
-| **Fallen und Platzier-Obergrenzen eines Angriffs** | Stufen-Notiz „Cap of 7 traps“, `extra.max_path_units` | keine Fallen-Entität |
+| **Fallen und Platzier-Obergrenzen eines Angriffs** (Usopp, 2 Units) | Stufen-Notiz „Cap of 7 traps“, `extra.max_path_units` | keine Fallen-Entität |
 | **Einheiten-Schild** (`extra.shield`), Segen/Shiny (`blessing`), `upgrade_script`, `_EFFECT_SCRIPTS`, `base_evolve`, `note2` | `extra` | ignoriert |
 | **Evolution, Traits, Limit Break, Potential, Curses, Relics** | `evolution`, `traits.json`, `items.json` | Meta-Schicht (P2), nicht Sim; die Sim kennt nur `UnitMod` (Level/Sterne/Trait-Schaden/Farm-Ertrag) |
-| **Verstärkende Buffs** (Commander +25 % Physical, Griffin +100 %, Idol …) und Heiler | AA-Active-Abilities, nicht im Angriffs-Katalog | fehlen; nur **Motivate** ist als Angriffs-Effekt vorhanden |
+| **Heilung und Kosten-Rabatt-Auren** (Sakura heilt, Idol senkt Kosten) | `base_heal_amount`, Aura-Notizen | fehlen (Einheiten haben keine HP, Platzierkosten kennen keine Auren); der Schadens-Anteil der Aura wirkt |
+| **Kill-Bonus** (`on_kill`, Eto One-Eye) | `extra.on_kill` | fehlt |
 | **Penetration** (senkt Resistenz) | keine AA-Daten | `pen` im Treffer ist 0 |
 | **Gegner-Fähigkeiten, Boss-Angriffe, CC-Immunitäten der Gegner** (`enemies.json`) | P3 | Boss-Kits der Sim sind eigene Daten; AA-Boss-Angriffe kommen mit P3 vereinfacht |
 | **Flying-Nullify, Armored (Full-AoE x0,5), Burst, Tank** als Gegner-Eigenschaften | `combat-system.md` § 10 | Armored/Shield/Regen/Fast gibt es als Modifier; `aoeTakenMult`, Burst, Tank-Reduktion fehlen (P3 kann sie als Gegner-Daten ergänzen, `weakBp`/`resist` sind da) |
 | **Bilder, Animationen, Sounds** | `extra`-Assets | bewusst entfernt; Sprite-Fallback im Client |
+
+## Fähigkeiten, Auren, Beschwörungen, Zweitangriffe (Runde 9 / P1): Annahmen
+
+Seit Runde 9 im Baukasten (`format.md`, `sim/README.md`). AA liefert nur Marken, Namen und Abklingzeiten; **alle Wirkungen sind DESIGN** (Tabelle `tools/aa-import/kits.ts`, Bericht `report.md` nennt je Unit, wie sie modelliert ist):
+
+| Annahme | Wert |
+|---|---|
+| Fähigkeit startet bereit | ja (nach dem Platzieren sofort nutzbar) |
+| Auto-Schalter | löst Knopf-Fähigkeiten bei Bereitschaft aus, braucht einen lebenden Gegner (kein Verschwenden zwischen den Wellen) |
+| Fähigkeits-Schaden | Vielfaches des Stufen-Schadens (Armin 0,5 x sechs Schläge, Femto-Ei 4 x, Dio Heaven 2 x ...); Units ohne eigenen Schaden (Eren Founder, Erwin) absolut |
+| Zeitstopp, Domain, Illusion | als `Timestop` / `Stun` / `Confused` des Effekt-Katalogs, Dauer wie in `kits.ts`; Bosse halbe Dauer, Sperren des Katalogs gelten |
+| Buff-Fähigkeiten (Wendy, Leafa, Erwin) | Schaden/Tempo für alle Verbündeten, 15-20 s; Cap `economy.buffCaps` |
+| Auren | Radius 30 Studs (Hoshino), 20-32 Studs (Sakura, wächst mit der Stufe), Griffin Reincarnation global (+100 %, AA: `_global`); stärkster Buff gewinnt, kein Stapeln |
+| Beschwörungen | Lebensdauer 25-60 s, Haltbarkeit 3-80 s gegen einen Standard-Gegner (Elite zehrt x3, Flieger und Bosse lassen sich nicht aufhalten), Schaden 0,8-3 x Stufen-Schaden des Beschwörers (Absolutwerte bei Eren und Erwin); die AA-Werte `health`/`speed` der 11 Wesen werden nicht 1:1 genutzt (AA-HP kennt kein Gegenstück: Gegner greifen nicht an) |
+| Lucy (Tore), Lelouch (Armee), Eren (Attack Titan), Starrk (Wölfe), Erwin (Soldaten) | periodische Beschwörer mit `trigger: auto` (Abklingzeit 8-30 s, Grenze `maxAlive`) |
+| Yuta ruft Rika | Annahme: AA nennt nur den Spawn-Angriff `yuta:summon`, das Wesen `rika` ist erfunden |
+| Kento "Overtime" | Annahme: Sunshine-Art, +50 % Schaden über 10 beendete Waves (AA: `end_of_wave: custom`) |
+| Zweitangriffe (`also`) | die bisher freigeschalteten Angriffe laufen mit dem der Stufe im Wechsel (nur Units mit `_attacks`/`secondary_attacks` und Rokuhira); ob AA rotiert, nennen die Daten nicht |
+| Reine Animations-Spawner | `spawn_attack`/`delayed_spawn`/`spawn_script` bei Femto, All Might, Sanji, Denji, Metal Knight, Zeke, Kite (6), Eto: nur Verwandlungs-/Lande-Animation ohne Zahlen, diese Units zählen als voll |
+| Ohne Daten bleiben ausgeblendet | Elyssia (2), Mahoraga: weder Angriff noch `extra` noch Werte in der Quelle |
 
 ## Bekannte Abweichungen im Kern
 

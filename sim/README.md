@@ -55,7 +55,7 @@ Tick-Reihenfolge: Waves (Wave-Ende: Lebens-Regeneration) -> Spawns -> Boss-Kits 
 
 ## Unit-Baukasten (Runde 8 / P1)
 
-Der Kern kann **generisch alles, was in `docs/anime-adventures/data/units.json` vorkommt**. Es gibt nur noch einen Unit-Pfad: Datei -> `UnitFileSchema` -> `compile.ts` (`UnitDef`) -> `attack.ts`. Die 14 alten Units der Runden 4-7 sind entfernt (kein zweites Format, keine Aura-/Fähigkeits-/Ketten-Sonderpfade; `useAbility` und das Ereignis `ability` gibt es nicht mehr).
+Der Kern kann **generisch alles, was in `docs/anime-adventures/data/units.json` vorkommt**. Es gibt nur noch einen Unit-Pfad: Datei -> `UnitFileSchema` -> `compile.ts` (`UnitDef`) -> `attack.ts`. Die 14 alten Units der Runden 4-7 sind entfernt (kein zweites Format, keine Aura-/Fähigkeits-/Ketten-Sonderpfade). **Runde 9 / P1:** Fähigkeiten, Auren, Beschwörungen und Zweitangriffe sind als Datenbausteine zurück (Abschnitt „Fähigkeiten und Beschwörungen“), ohne Sonderpfade je Unit.
 
 **Dateien.** `data/units/*.json` (alphabetisch geladen und zusammengeführt, `loadUnits()` / `mergeUnitFiles`): je Datei `{ ref?, units: [...], attacks: { "<id>": {...} } }`. Angriffs-IDs sind **global**; gleiche ID mit anderem Inhalt in zwei Dateien ist ein Fehler. `sample.json` (26 echte AA-Units, von Hand ausgewählt) liegt heute da; P2 legt `aa.json` daneben, P6 `crossover.json`. Der Effekt-Katalog steht in `data/effects.json`. Browser/Meta: `import.meta.glob('.../sim/data/units/*.json')` (`client/src/sim/data.ts`, `meta/src/catalog.ts`), also genügt eine neue Datei.
 
@@ -103,6 +103,20 @@ Der Kern kann **generisch alles, was in `docs/anime-adventures/data/units.json` 
 DoTs (`attacks.<id>.dot` = Burn/Bleed/Poison/Wither, `multiplierPerTick`, `ticks`, `totalMultiplier`): je Treffer `hitDamage x totalMultiplier` über `ticks` Sekunden (1 Tick je `economy.dot.intervalTicks` = 1 s, DESIGN), True-Damage, Boss/Elite x0,5. Dieselbe Unit erneuert ihre Instanz je Art, verschiedene Units stapeln bis `economy.dot.maxStacks` (12). Burn gegen einen Gegner mit Fire-Schwäche steigt mit.
 Was nicht modelliert ist, steht in `docs/aa-import/unsupported.md`; ein **unbekannter Effektname** ist ein No-op (kein Absturz) und wird von `unknownEffects(data)` gemeldet.
 
+## Fähigkeiten und Beschwörungen (Runde 9 / P1)
+
+Daten: `units[].abilities[]`, `units[].aura`, `levels[].also` und der Katalog `summons` je Unit-Datei (Felder: `docs/aa-import/format.md`); Code: `systems/ability.ts`, `systems/summon.ts`, `strike` in `systems/attack.ts` (der gemeinsame Schlag von Angriff, Fähigkeit und Beschwörung). Eine neue Fähigkeit ist ein Datensatz, null Zeilen Code; Kits der AA-Units: `tools/aa-import/kits.ts`.
+
+- **Befehle** `{ type: 'ability', entityId, index? }` (Knopf-Fähigkeit auslösen, `index` Standard = die erste) und `{ type: 'autoAbility', entityId, on }` (Auto-Schalter). Gründe: `no-ability`, `locked` (Stufe zu niedrig), `cooldown`, `no-target`. `sim.abilityBlocked(entityId, index?)` liefert denselben Grund (oder `null`) ohne Nebenwirkung (Knöpfe im Client).
+- **Zustand** (nur wenn die Unit es braucht, damit ältere Replay-Hashes gleich bleiben): `UnitState.ab` (Rest-Abklingzeit je Fähigkeit in Ticks), `auto`, `run` (laufende Mehrfach-Wirkung), `rot` (Zähler des Angriffs-Wechsels), `motTempo*`/`motCrit*` (Buffs); `SimState.summons` entsteht mit der ersten Beschwörung.
+- **Tick-Reihenfolge:** nach `moveEnemies`: `applyAuras` (Buff mit 2 Ticks Dauer, jeden Tick erneuert) -> `runUnits` (Angriffe, mit Zweitangriffs-Wechsel) -> `tickAbilities` (Abklingzeit, Mehrfach-Wirkung, Auto) -> `runSummons` (Lebensdauer, Bewegung, Angriff, Ende). `moveEnemies` fragt vorher `blockerOf`: eine aufhaltende Beschwörung stoppt Bodengegner (nicht Flieger, nicht Bosse) im Kontakt (500 Milli-Tiles + Gegnerradius) und verliert dabei Haltbarkeit (Standard-Gegner 1, Elite 3 je Tick).
+- **Wirkung einer Fähigkeit:** Angriff aus dem Katalog (Form, Treffer, DoT, Effekte) mit Schaden = Stufen-Schaden x `damageMult` (oder absolut), Reichweite der Unit oder global (Zeitstopp, Flächenschlag); danach Selbst-Buff, Buff auf Verbündete, Beschwörung, Münzen (nur beim ersten Schlag einer Mehrfach-Wirkung). Buffs wirken wie Motivate (`motDmg`, `motRange`, `motTempo`, `motCrit`: stärkster gewinnt, gleicher erneuert die Dauer, Caps `economy.buffCaps`; Crit addiert sich zur Crit-Chance und würfelt über die Sim-PRNG nur, wenn die Chance > 0 ist).
+- **Auto:** `trigger: auto` feuert bei Bereitschaft von selbst, Knopf-Fähigkeiten nur mit gesetztem `auto` der Unit. Auto-Auslösung braucht einen lebenden Gegner, bei `needsTarget` ein Ziel in Reichweite, bei Beschwörungen Platz unter `maxAlive`. Ein Knopfdruck am Limit ersetzt das älteste Wesen.
+- **Beschwörung:** `walk` erscheint auf dem Pfad am Punkt nächst dem Beschwörer, läuft anrückenden Gegnern entgegen (höchstens 8 Kacheln vom Ausgangspunkt), kämpft mit eigenem Angriff und hält auf; `stand` steht auf einem von acht Plätzen neben dem Beschwörer. Der Schaden gehört dem Beschwörer (Meta-Mods, Statistik, `damageDealt`). Ende: Lebensdauer, Haltbarkeit 0 oder Verkauf des Beschwörers (`summonEnd` mit `cause`), optional ein letzter Schlag (`endAttack`).
+- **Ereignisse:** `ability` (`unitId`, `ability`, `name`, `auto`), `summonSpawn`, `summonEnd`; `income` kennt die Quelle `ability`.
+- **Replay-Format v5** (Runde 9): neue Befehle; v4 bleibt nachspielbar (kein Zustandsfeld entsteht ohne Fähigkeit). `meta/src/verify.ts` akzeptiert v4 und v5. Tests: `test/abilities.test.ts`, `test/replay.test.ts` (v5-Replay mit Fähigkeiten und Beschwörungen).
+- Bots (Rauchtest) schalten bei Units mit Knopf-Fähigkeit den Auto-Schalter an.
+
 **Maßstab** (`economy.json` `scale`, Begründung `docs/aa-import/massstab.md`): AA-Werte (Yen, Schaden, SPA, Sekunden) unverändert; `studsPerTile` = 5 (Range 25 = 5 Kacheln), `yenPerCoin` = 1. Gegner-HP, Start-Yen und Einkommen sind auf AA-Maßstab gehoben (`startCoins` 3000, `waveBonus` 500 + 150n, `hpCurve.baseCenti` 30000).
 
 **Test-Bots** (nur Rauchtest, `src/bots/`): `getBot('auto')` (4 zufällige Angreifer), `'auto-N'`, `'mono-ID[,ID..]'` — gierig nach Schadenszuwachs je Münze, Rollen nur aus den Daten. Keine Messreihen, keine Siegquoten-Korridore (Kurswechsel 07.10.2026). `test/smoke.test.ts`: zufällige Sample-Units laufen ohne Absturz durch, eine starke Unit schafft Standard20 Normal; `test/units-data.test.ts` lässt jede der 550 AA-Units 3 Waves spielen.
@@ -122,10 +136,10 @@ sim.hash(); sim.result(); sim.drainEvents();
 
 `Sim`: `state` (live, readonly), `apply`, `step`, `runWave`, `isOver`, `result`, `hash`, `drainEvents`, `slotCenters()` (Altbestand, nur Daten), `coverage(x, y, range)`, `canPlace(player, unit, x, y)` (Grund oder `null`), `placementGrid(unit)`, `zoneAt(x, y)`, `map()`, `pathSamples()` (alle Runde 6), `catalog()` (`UnitDef[]`: `levels[]` mit `attack`, `fx`, `damageCenti`, `spaTicks`, `rangeMilli`), `upgradeCost(entityId)`, `placeCost(unitId)`, `previewWave(n, cardId?)`, `cards()`, `bossKits()` (P4).
 
-Befehle: `place`, `upgrade`, `sell`, `setTargeting`, `skipWave`, `chooseCard` (P4) sowie (Erweiterung §16) `donate`. Ablehnungsgründe u. a.: `not-enough-coins`, bei `place` `invalid-position`, `out-of-bounds`, `on-path`, `blocked`, `wrong-zone`, `overlap` (Abschnitt „Freie Platzierung“), `team-limit`, `team-slots`, `max-level`, `unsellable`, `not-owner`, `no-next-wave`, `unknown-card`, `boss-wave`, `game-over`.
+Befehle: `place`, `upgrade`, `sell`, `setTargeting`, `skipWave`, `chooseCard` (P4), `ability`/`autoAbility` (Runde 9) sowie (Erweiterung §16) `donate`. Ablehnungsgründe u. a.: `not-enough-coins`, bei `place` `invalid-position`, `out-of-bounds`, `on-path`, `blocked`, `wrong-zone`, `overlap` (Abschnitt „Freie Platzierung“), `team-limit`, `team-slots`, `max-level`, `unsellable`, `not-owner`, `no-next-wave`, `unknown-card`, `boss-wave`, `game-over`.
 Befehle wirken zu Tick-Beginn: `apply` verändert den Zustand zwischen zwei Ticks, `skipWave` greift im nächsten Tick (Koop: mehr als die Hälfte der Spieler).
 
-Events (`drainEvents`): `spawn`, `kill`, `leak`, `waveStart`, `waveEnd`, `income{source: waveBonus|bounty|farm|sell|donate}`, `damage` (je Unit aggregiert, bei Wave-Ende/Verkauf), `place`, `upgrade`, `sell`, `over` sowie (P4) `bossPhase`, `bossTelegraph`, `bossCast`, `bossWindow`, `bossWard`, `cardChosen` und (Runde 5 / P3) `bossArmor` (Felder `staggerNeed`, `cause`, `armor` an den Boss-Ereignissen, siehe `docs/design/boss-telegraphs.md`); `spawn` trägt bei Beschwörungen des Bosses `summon: true`.
+Events (`drainEvents`): `spawn`, `kill`, `leak`, `waveStart`, `waveEnd`, `income{source: waveBonus|bounty|farm|sell|donate}`, `damage` (je Unit aggregiert, bei Wave-Ende/Verkauf), `ability`, `summonSpawn`, `summonEnd` (Runde 9), `place`, `upgrade`, `sell`, `over` sowie (P4) `bossPhase`, `bossTelegraph`, `bossCast`, `bossWindow`, `bossWard`, `cardChosen` und (Runde 5 / P3) `bossArmor` (Felder `staggerNeed`, `cause`, `armor` an den Boss-Ereignissen, siehe `docs/design/boss-telegraphs.md`); `spawn` trägt bei Beschwörungen des Bosses `summon: true`.
 
 ## Leben-System (Runde 4 / P2)
 
@@ -239,7 +253,9 @@ Kurven stehen als Daten in `data/progression.json` (zod: `ProgressionSchema` in 
 
 **Format v2 (Runde 6 / P1):** `place` trägt `x`, `y` (Milli-Tiles) statt `slot`. v1-Dateien (`beispiel-normal.json`, `2026-10-07-max-normal-loss.json`) bleiben als Dokument liegen.
 
-**Format v4 (Runde 8 / P1, aktuell):** wie v3, aber die Units kommen aus dem AA-Datenformat (`sim/data/units/*.json`) und dem Maßstab in `economy.json`; v1 bis v3 sind „altes Regelwerk“ (nicht nachspielbar, die Dateien bleiben als Dokument lesbar, `meta` meldet `replay-old-rules`). Beispiele (vom Simulator erzeugt): `beispiel-v4-bot-normal.json`, `beispiel-v4-bot-normal-mid.json` (`npx tsx scripts/export-replay.ts --bot mono-goku_ssj3 --difficulty normal --seed 7 --meta mid --out ...`). Nach jeder Regel- oder Datenänderung neu erzeugen, sonst schlägt `test/replay.test.ts` an.
+**Format v5 (Runde 9 / P1, aktuell):** wie v4, dazu die Befehle `ability` und `autoAbility`; v4 bleibt nachspielbar.
+
+**Format v4 (Runde 8 / P1):** wie v3, aber die Units kommen aus dem AA-Datenformat (`sim/data/units/*.json`) und dem Maßstab in `economy.json`; v1 bis v3 sind „altes Regelwerk“ (nicht nachspielbar, die Dateien bleiben als Dokument lesbar, `meta` meldet `replay-old-rules`). Beispiele (vom Simulator erzeugt): `beispiel-v4-bot-normal.json`, `beispiel-v4-bot-normal-mid.json` (`npx tsx scripts/export-replay.ts --bot mono-goku_ssj3 --difficulty normal --seed 7 --meta mid --out ...`). Nach jeder Regel- oder Datenänderung neu erzeugen, sonst schlägt `test/replay.test.ts` an.
 
 
 ## Karten, Stages und Welten (Runde 8 / P3)
