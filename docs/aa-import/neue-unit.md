@@ -1,6 +1,6 @@
 # So fügt man eine Figur hinzu (Crossover, Runde 8 / P6)
 
-Eine neue Figur ist **ein Datensatz plus ein Bild**, null Code. Format: [format.md](format.md). Beispiele: `sim/data/units/crossover.json` (25 Figuren).
+Eine neue Figur ist **ein Datensatz plus ein Bild**, null Code. Format: [format.md](format.md). Beispiele: `sim/data/units/crossover.json` (25 Figuren), `sim/data/units/legends.json` (25 Promis, mit Fähigkeiten).
 
 ## 1. Datensatz
 
@@ -8,6 +8,8 @@ Zwei Wege, beide enden in `sim/data/units/crossover.json`:
 
 - **Über die Spec (empfohlen):** Eintrag in `tools/aa-import/crossover-spec.ts` (Feld `FIGURES`): `id` (Präfix `x_`), `name`, `rarity`, `placement`, optional `damageType`, `elements`, `critChance`, `footprint`, `hitsAir`, Faktoren `dmg`/`spa`/`range` (1 = Median der Seltenheit), `flavor`, `imageQuery` und `stages`: je Stufe ab `from` ein Angriff (`aoe` single/circle/cone/line/full, `radius`/`angle`/`width`, `hits`, `dot`, `special`). Dann `npm run crossover` (schreibt die Datei, rechnet die Zahlen aus der Vorlage).
 - **Von Hand:** Datensatz direkt in `crossover.json` (`units` + `attacks`, Angriffs-IDs `x_<figur>:<key>`, global eindeutig). Dann nur prüfen (Schritt 5). Beim nächsten `npm run crossover` wird von Hand Ergänztes überschrieben, also zusätzlich in die Spec übernehmen.
+
+**Promi-Figur (Legends of Earth, Runde 10):** gleicher Weg, aber in `tools/aa-import/legends-spec.ts` (`LEGENDS`), Präfix `p_`, schreiben mit `npm run legends`. Zusätzlich zu `stages` darf die Figur `abilities`, `aura`, `extraAttacks` (Angriffe der Fähigkeiten) und `summons` tragen. Name und Serie stehen in `docs/aa-import/figuren.json` (Zeile je Figur, `series: "Legends of Earth"`, `imageQuery` = Wikipedia-Seitentitel), der Name dort muss zur Spec passen. Der Pool `legends` liest `source: "legends"` (Katalog `meta/src/catalog.ts`), das Banner steht in `meta/data/banners/legends.json` (`ratesVersion` anheben, wenn sich die Tabelle ändert). Die Zahlen (25 Figuren) stehen in `sim/test/aa-import.test.ts` (600), `sim/test/legends.test.ts`, `meta/test/aa-p2.test.ts` (600, Pool-Größen).
 
 Pflichtfelder für Anzeige und Bild: `flavor` (ein Satz, englisch), `imageQuery`, `source: "custom"` (**damit die Figur nur im Crossover-Banner liegt**; ohne `source: "custom"` landet sie im Standard-Pool).
 

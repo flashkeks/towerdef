@@ -119,7 +119,7 @@ class UnitsScreen {
     sort.addEventListener('change', () => this.set({ sort: sort.value as SortKey }));
     sortWrap.append(icon('sort'), h('span', undefined, t('units.sort')), sort);
     const serWrap = h('label', 'unit-sortwrap unit-serieswrap');
-    const ser = h('select', 'unit-series');
+    const ser = h('select', 'unit-sort unit-series');
     ser.setAttribute('aria-label', t('units.filter.series'));
     const all = h('option', undefined, t('units.filter.seriesAll'));
     all.value = '';
