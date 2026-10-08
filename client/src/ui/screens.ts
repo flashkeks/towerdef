@@ -46,8 +46,8 @@ export class Screens {
     units: (id) => this.open(buildUnits(this.nav, id)),
     team: () => this.open(buildTeam(this.nav)),
     shop: () => this.open(buildShop(this.nav)),
-    settings: () => this.open(buildSettings(() => void this.showLobby())),
-    credits: () => this.open(buildCredits(() => void this.showLobby())),
+    settings: () => this.open(buildSettings(this.nav)),
+    credits: () => this.open(buildCredits(this.nav)),
     world: () => this.open(buildWorldMap(this.nav)),
     stage: (id) => this.open(buildStageSelect(this.nav, id)),
     play: (d, stageId) => this.handlers.onStart(d, stageId),
@@ -83,6 +83,7 @@ export class Screens {
         buildPause(
           { onResume: () => s.togglePause(), onRestart: () => this.handlers.onStart(s.difficulty, s.stageId), onMenu: () => this.handlers.onMenu() },
           slot,
+          { wave: s.sim.state.wave, totalWaves: s.totalWaves, lives: s.sim.state.lives, coins: s.sim.state.players[0]?.coins ?? 0, difficulty: s.difficulty },
         ),
       );
     }
