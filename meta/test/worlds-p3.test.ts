@@ -21,19 +21,22 @@ describe('Welten: Katalog und Freischaltung', () => {
     expect(WORLDS[0].unlock).toBeNull();
   });
 
-  it('Acts schalten nacheinander frei, Welt 2 erst nach Act 3 von Welt 1, Infinite nach Act 3', () => {
+  it('Acts schalten nacheinander frei, Welt 2 erst nach Act 6 von Welt 1 (Max 08.10.2026), Infinite nach Act 3', () => {
     const p = fresh();
     expect(isStageUnlocked(p, 'greenie-1')).toBe(true);
     expect(stageLock(p, 'greenie-2')).toEqual({ kind: 'act', act: 1 });
     expect(stageLock(p, 'greenie-6')).toEqual({ kind: 'act', act: 5 });
-    expect(stageLock(p, 'walled-city-1')).toEqual({ kind: 'world', worldId: 'greenie', worldName: 'Planet Greenie', afterAct: 3 });
+    expect(stageLock(p, 'walled-city-1')).toEqual({ kind: 'world', worldId: 'greenie', worldName: 'Planet Greenie', afterAct: 6 });
     expect(stageLock(p, 'greenie-infinite')).toEqual({ kind: 'infinite', act: 3 });
     const a = cleared('greenie-1');
     expect(isStageUnlocked(a, 'greenie-2')).toBe(true);
     expect(isStageUnlocked(a, 'greenie-3')).toBe(false);
     const b = cleared('greenie-1', 'greenie-2', 'greenie-3');
-    expect(isStageUnlocked(b, 'walled-city-1')).toBe(true);
+    expect(isStageUnlocked(b, 'walled-city-1')).toBe(false);
     expect(isStageUnlocked(b, 'greenie-infinite')).toBe(true);
+    const c = cleared('greenie-1', 'greenie-2', 'greenie-3', 'greenie-4', 'greenie-5', 'greenie-6');
+    expect(isStageUnlocked(c, 'walled-city-1')).toBe(true);
+    expect(isStageUnlocked(c, 'snowy-town-1')).toBe(false);
     expect(isStageUnlocked(b, 'snowy-town-1')).toBe(false);
     // geschafft in Hard zaehlt auch
     const hard: Profile = { ...fresh(), stages: { 'greenie-1': { hard: { clears: 1, firstClearAt: 'x', bestWave: 15 } } } };
@@ -111,7 +114,7 @@ describe('Welten: Belohnung aus dem nachgerechneten Replay (Stage aus dem Replay
     const ok = rewardFromReplay(cleared('greenie-1'), act2, env());
     expect(ok.ok && ok.result.firstClear).toBe(true);
     expect(rewardFromReplay(fresh(), snowy, env())).toMatchObject({ ok: false, code: 'stage-locked' });
-    const s = rewardFromReplay(cleared('greenie-1', 'greenie-2', 'greenie-3', 'walled-city-1', 'walled-city-2', 'walled-city-3'), snowy, env());
+    const s = rewardFromReplay(cleared('greenie-1', 'greenie-2', 'greenie-3', 'greenie-4', 'greenie-5', 'greenie-6', 'walled-city-1', 'walled-city-2', 'walled-city-3', 'walled-city-4', 'walled-city-5', 'walled-city-6'), snowy, env());
     if (!s.ok) throw new Error(s.message);
     expect(Object.keys(s.profile.stages)).toContain('snowy-town-1');
   });

@@ -9,7 +9,7 @@
   "blurb": "Twisting streets inside the walls. Short on room, long on corners.",
   "unlock": {
     "afterWorld": "greenie",
-    "afterAct": 3
+    "afterAct": 6
   },
   "map": {
     "path": [

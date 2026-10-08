@@ -95,7 +95,7 @@ describe('Weltkarte ueber das Backend', () => {
     const a2 = actCardModel(w1.acts[1]);
     expect(a2).toMatchObject({ state: 'locked', lockText: 'Clear act 1 first.' });
     expect(actCardModel(w1.infinite)).toMatchObject({ state: 'locked', infinite: true, title: 'Infinite', lockText: 'Clear act 3 of this world first.' });
-    expect(worldTabModel(v.worlds[1]).lockText).toBe('Clear act 3 of Planet Greenie first.');
+    expect(worldTabModel(v.worlds[1]).lockText).toBe('Clear act 6 of Planet Greenie first.');
     expect(lockText({ kind: 'act', act: 4 })).toBe('Clear act 4 first.');
   });
 

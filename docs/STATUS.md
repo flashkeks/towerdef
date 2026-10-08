@@ -4,6 +4,21 @@ Arbeitsauftrag: [`/run.md`](../run.md) (**Runde 9**: Fähigkeiten/Beschwörungen
 Frühere Aufträge: [archiv/run-runde1.md](archiv/run-runde1.md), [archiv/run-runde2.md](archiv/run-runde2.md), [archiv/run-runde3.md](archiv/run-runde3.md), [archiv/run-runde4.md](archiv/run-runde4.md), [archiv/run-runde5.md](archiv/run-runde5.md), [archiv/run-runde6.md](archiv/run-runde6.md), [archiv/run-runde7.md](archiv/run-runde7.md), [archiv/run-runde8-verworfen.md](archiv/run-runde8-verworfen.md), [archiv/run-runde8.md](archiv/run-runde8.md).
 
 
+## Runde 9 (Fähigkeiten, 10 Welten, Legend/Raids, Interface)
+
+Letzte Aktualisierung: 2026-10-08 (P0)
+
+| Paket | Inhalt | Status | Agent (Modell) | Was man jetzt sehen kann |
+|---|---|---|---|---|
+| P0 | Status, Welt-Freischaltung nach Act 6 | **erledigt** | Hauptsitzung | `unlock.afterAct` = 6 in `walled-city`/`snowy-town` (Max, 08.10.2026), Tests angepasst. Stand vor Runde 9: sim 325, meta 143, client 234 Tests grün |
+| P1 | Fähigkeiten, Beschwörungen, Zweitangriffe | läuft | 1 × Sonnet | |
+| P2 | Welten 4–10, größere Karten | läuft | 1 × Sonnet | |
+| P3 | Legend Stages, Raids | wartet auf P1 | 1 × Sonnet | |
+| P4 | Interface komplett | läuft | 1 × Sonnet | |
+| P5 | Abschluss | offen | Hauptsitzung | |
+
+Plan: P1, P2, P4 parallel in lokalen Worktrees (max. 3 Agenten, nur Sonnet), P3 sobald P1 gemerged ist. `sim/`-Kern ändert P1; P2 nur Weltdaten + Kartenraster; P4 nur `client/` ohne Match-Kern. Screenshots in `client/docs/r9/`.
+
 ## Runde 8 (AA-Import)
 
 Letzte Aktualisierung: 2026-10-08 (Runde 8 abgeschlossen, P5)

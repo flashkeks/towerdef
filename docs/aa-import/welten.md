@@ -12,7 +12,7 @@ Story-Struktur nach `docs/anime-adventures/data/maps.json`: **Welt -> 6 Acts, Bo
 
 Je Welt: Act 1-3 mit 15 Wellen, Act 4-6 mit 20 Wellen (AA: "mindestens 15", Schild in Act 4 Welle 15). Welle N ist die Boss-Welle (Boss + Elite + Grunts). Dazu **Infinite** (`<welt>-infinite`): 14 feste Wellen, danach erzeugt (Boss alle 10 Wellen, wie AA).
 
-**Freischaltung:** Act n+1 nach Act n (irgendeine Schwierigkeit); Welt 2 nach Act 3 von Welt 1, Welt 3 nach Act 3 von Welt 2 (`unlock` in der Welt-Datei, Zahl frei einstellbar; AA selbst verlangt weitgehend Act 6); Infinite nach Act 3 der Welt. Der Fortschritt liegt im Profil (`stages[stageId][difficulty]`), kein neues Profilfeld, keine Migration. Replays auf gesperrten Stages zahlen nichts (`stage-locked`).
+**Freischaltung:** Act n+1 nach Act n (irgendeine Schwierigkeit); Welt 2 nach Act 6 von Welt 1, Welt 3 nach Act 6 von Welt 2 (`unlock` in der Welt-Datei, Zahl frei einstellbar; wie AA, Entscheidung Max 08.10.2026); Infinite nach Act 3 der Welt. Der Fortschritt liegt im Profil (`stages[stageId][difficulty]`), kein neues Profilfeld, keine Migration. Replays auf gesperrten Stages zahlen nichts (`stage-locked`).
 
 **Belohnung** (design-brief § 1): Erst-Clear eines Acts 80 Crystals + 50 XP (Normal; Hard 120 / 80 XP, Nightmare 160 / 115 XP), Wiederholung 20 Crystals (Hard 30, Nightmare 40). Gold und XP je gehaltener Welle werden auf die Wellenzahl des Acts gekappt. Infinite zahlt die AA-Gem-Tabelle (Welle 6: 18, 7-14: je 3, 15-105: je 5, Summe 497) 1:1 als Crystals, nur fuer den Zuwachs ueber der bisherigen Bestwelle. Alles aus dem nachgerechneten Replay: `meta/src/verify.ts` liest Stage und Schwierigkeit aus dem Replay-Kopf, ein umgebogener Kopf liefert einen anderen Hash (`replay-mismatch`).
 

@@ -9,7 +9,7 @@
   "blurb": "A frozen village with one road bending around the square. Short walk, hard hitters.",
   "unlock": {
     "afterWorld": "walled-city",
-    "afterAct": 3
+    "afterAct": 6
   },
   "map": {
     "path": [
