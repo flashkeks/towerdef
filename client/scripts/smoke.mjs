@@ -22,7 +22,7 @@ import { chromium } from 'playwright';
 import { clickWorld, readGhost, readPathPoint, readSpots, worldToScreen } from './lib/mouse.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const docs = resolve(root, 'docs', 'r8');
+const docs = resolve(root, 'docs', 'r10');
 mkdirSync(docs, { recursive: true });
 const PORT = Number(process.env.SMOKE_PORT ?? 4173);
 const URL_ = `http://127.0.0.1:${PORT}/`;
@@ -76,7 +76,9 @@ async function launch() {
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 
-const RESOLUTIONS = (process.env.SMOKE_RES ?? '1280x720,1920x1080,2560x1440').split(',').map((r) => r.split('x').map(Number));
+// SMOKE_ONLY=sweep: nur den Interaktions-Durchgang (schneller Lauf beim Arbeiten an Knoepfen)
+const ONLY = process.env.SMOKE_ONLY ?? '';
+const RESOLUTIONS = ONLY ? [] : (process.env.SMOKE_RES ?? '1280x720,1920x1080,2560x1440').split(',').map((r) => r.split('x').map(Number));
 const MAX_STAGE_S = Number(process.env.SMOKE_MAX_S ?? 900);
 const FULL = (process.env.SMOKE_FULL ?? '1280x720').split(',');
 const shotDir = docs;
@@ -139,6 +141,17 @@ async function playStage(browser, [W, H]) {
   /** Klick auf eine gesetzte Unit (Mitte). */
   const clickUnit = (u, opts) => clickWorld(page, u.x, u.y, opts);
   const press = (k) => page.keyboard.press(k);
+  /** Eine verdeckte Karte per Mausklick aufdecken; ein Rampenlicht (ab Legendary) danach per Klick schliessen. */
+  const flipOne = async () => {
+    const n = await page.locator('.pk-card.flipped').count();
+    await clickSel('.pk-card:not(.flipped)');
+    await sleep(350);
+    if (await page.locator('.rv-spot.in').count()) {
+      await page.mouse.click(W / 2, H / 2);
+      await sleep(250);
+    }
+    return (await page.locator('.pk-card.flipped').count()) - n;
+  };
   const pickKey = async (def, s) => {
     await press(String(s.order.indexOf(def) + 1));
     await sleep(250); // die Seitenleiste aendert beim Waehlen die Breite (Brett verschiebt sich): erst danach klicken
@@ -205,6 +218,27 @@ async function playStage(browser, [W, H]) {
   ok(w && w.crystals === 0 && w.gold === 0 && w.level === 1, `neues Profil: 0 Crystals, 0 Gold, Level 1 (${JSON.stringify(w)})`);
   ok(await page.locator('.lobby-play').isDisabled(), 'Play gesperrt, solange es keine Units gibt');
   await clickSel('.starter-claim');
+  await page.waitForSelector('.reveal');
+  ok((await page.locator('.reveal[data-phase="charge"]').count()) === 1 && (await page.locator('.rv-portal').count()) === 1, 'Starter-Paket: Aufbau mit Portal laeuft');
+  await page.mouse.click(W / 2, 120); // Klick ueberspringt den Aufbau
+  await page.waitForSelector('.reveal[data-phase="cards"]');
+  const starterN = await page.locator('.pk-card').count();
+  ok(starterN >= 7 && (await page.locator('.pk-card.flipped').count()) === 0, `Starter-Paket: ${starterN} Karten verdeckt (Crystals + Units)`);
+  // Fehler aus Runde 9: nur der erste Gewinn war zu sehen. Jetzt deckt jeder Klick genau EINE Karte auf.
+  await flipOne();
+  ok((await page.locator('.pk-card.flipped').count()) === 1 && (await page.locator('.rv-count').textContent())?.includes(`${starterN - 1} of ${starterN}`), `Starter-Paket: ein Klick = eine Karte (aufgedeckt 1 von ${starterN})`);
+  await flipOne();
+  await press('Space'); // naechste verdeckte Karte per Taste
+  await sleep(200);
+  ok((await page.locator('.pk-card.flipped').count()) === 3, 'Starter-Paket: zweiter Klick und Leertaste decken je eine weitere auf (3)');
+  ok((await page.locator('.rv-summary').count()) === 0, 'Starter-Paket: Uebersicht erst, wenn alles offen ist');
+  await clickSel('.rv-all');
+  await page.waitForSelector('.rv-summary', { timeout: 15000 });
+  ok((await page.locator('.rv-sum-cell').count()) === starterN && (await page.locator('.rv-sum-cell.r-mythic').count()) >= 1, `Starter-Paket: Uebersicht zeigt alle ${starterN} Gewinne (auch der Mythic)`);
+  await sleep(900);
+  await shot('starter-summary');
+  await clickSel('.reveal-done');
+  await page.waitForSelector('.reveal', { state: 'detached' });
   await page.waitForSelector('.starter-card.done');
   w = await waitWallet('w.crystals === 450');
   ok(w.crystals === 450, `Starter-Geschenk: 450 Crystals (${w.crystals})`);
@@ -225,13 +259,24 @@ async function playStage(browser, [W, H]) {
   await clickSel('.pull-btn[data-count="10"]');
   await page.waitForSelector('.reveal');
   ok(await page.evaluate(() => document.querySelector('.pull-btn[data-count="10"]').disabled), 'Knopf waehrend des Zugs gesperrt');
-  ok((await page.locator('.reveal-card').count()) === 10, 'Enthuellung: 10 Karten');
+  ok((await page.locator('.reveal[data-phase="charge"]').count()) === 1 && ['rare', 'epic', 'legendary', 'mythic', 'secret', 'exclusive'].includes(await page.locator('.reveal').getAttribute('data-best')), 'Zug: Aufbau (Portal) laeuft, beste Seltenheit steht schon fest');
   await sleep(500);
-  await page.mouse.click(W / 2, 60); // Klick irgendwo ueberspringt
-  await page.waitForSelector('.reveal.finished');
-  ok((await page.locator('.reveal.skipped').count()) === 1, 'Klick ueberspringt die Animation');
+  await shot('charge');
+  await page.mouse.click(W / 2, 80); // Klick ueberspringt den Aufbau
+  await page.waitForSelector('.reveal[data-phase="cards"]');
+  ok((await page.locator('.pk-card').count()) === 10 && (await page.locator('.pk-card.flipped').count()) === 0, 'Zug: 10 verdeckte Karten');
+  await shot('cards');
+  await flipOne();
+  ok((await page.locator('.pk-card.flipped').count()) === 1 && /9 of 10/.test((await page.locator('.rv-count').textContent()) ?? ''), 'Zug: ein Klick deckt genau eine Karte auf (1 von 10, Zaehler "9 of 10")');
+  await sleep(500);
+  await shot('flip');
+  await clickSel('.rv-all');
+  await page.waitForSelector('.rv-summary', { timeout: 15000 });
+  ok((await page.locator('.rv-sum-cell').count()) === 10, 'Zug: Uebersicht zeigt alle 10 Gewinne');
+  const sumRar = await page.locator('.rv-sum-cell').evaluateAll((els) => els.map((e) => ['rare', 'epic', 'legendary', 'mythic', 'secret', 'exclusive'].findIndex((r) => e.classList.contains(`r-${r}`))));
+  ok(sumRar.every((v, i) => i === 0 || v >= sumRar[i - 1]), `Zug: Uebersicht aufsteigend, hoechste Seltenheit zuletzt (${sumRar.join(',')})`);
+  await sleep(900);
   await shot('reveal');
-  await sleep(350);
   await clickSel('.reveal-done');
   await page.waitForSelector('.reveal', { state: 'detached' });
   ok((await page.locator('.hist-item').count()) === 10, `Ziehungsverlauf zeigt 10 Zuege (${await page.locator('.hist-item').count()})`);
@@ -774,13 +819,158 @@ async function modesCase(browser) {
   await ctx.close();
 }
 
+
+/**
+ * Runde 10 / P3: Interaktions-Durchgang. Ein reich gefuellter Speicherstand (Crystals, Gold, Raid-Marken, Material, Units) und JEDER Knopf der Meta-Bildschirme
+ * wird einmal mit der Maus gedrueckt. Pro Knopf gilt: es muss etwas Sichtbares passieren (DOM aendert sich, Dialog, Meldung, Bildschirmwechsel) und ein Klang
+ * angefordert werden (`window.__uiSounds`, auch ohne laufendes Audio). Knoepfe ohne sichtbare Reaktion stehen am Ende als Liste in der Ausgabe.
+ * Gleich aussehende Knoepfe (Raster) werden je Art hoechstens zweimal gedrueckt. Nur 1280x720.
+ */
+async function interactionCase(browser) {
+  const ok = (cond, msg) => check(cond, `Durchgang: ${msg}`);
+  const stages = Object.fromEntries([1, 2, 3, 4, 5, 6].map((a) => [`greenie-${a}`, { normal: { clears: 1, firstClearAt: '2026-10-08T00:00:00.000Z', bestWave: 20 } }]));
+  const mk = () => ({ level: 1, xp: 0, copies: 1, stars: 1, firstObtainedAt: '2026-10-08T00:00:00.000Z' });
+  const at = '2026-10-08T00:00:00.000Z';
+  const profile = {
+    schemaVersion: 3, id: 'smoke-sweep-0001', displayName: 'Warden', createdAt: at, playerLevel: 1, playerXp: 0,
+    wallet: { crystals: 3000, gold: 5000 },
+    ledger: [
+      { id: 'L000001', currency: 'crystals', delta: 3000, kind: 'grant', refType: 'smoke', refId: 'c', createdAt: at },
+      { id: 'L000002', currency: 'gold', delta: 5000, kind: 'grant', refType: 'smoke', refId: 'g', createdAt: at },
+    ],
+    units: Object.fromEntries(['goku_ssj3', 'genos', 'krillin', 'jotaro', 'law', 'speedwagon'].map((u) => [u, mk()])),
+    team: ['goku_ssj3', 'genos', 'krillin', 'jotaro', 'law', 'speedwagon'],
+    pity: {}, pullHistory: [], stages, settings: {}, flags: { starterGiftClaimed: true }, counters: {}, idem: {}, inventory: { raidMarks: 300, materials: { crystallite: 20 } },
+  };
+  const env = JSON.stringify({ app: 'dw-meta', rev: 1, profile });
+  const ctx = await browser.newContext({ viewport: { width: 1280, height: 720 }, acceptDownloads: true });
+  const page = await ctx.newPage();
+  const errors = [];
+  page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`));
+  page.on('console', (m) => {
+    if (m.type() === 'error' && !/\/aa\/(units\/|index\.json)/.test(m.location()?.url ?? '')) errors.push(`console: ${m.text()}`);
+  });
+  page.on('filechooser', (fc) => void fc.setFiles([])); // Import: Dateiwahl ohne Datei = Abbruch
+  await page.addInitScript((e) => {
+    try {
+      if (!localStorage.getItem('dw.sweep.smoke')) {
+        localStorage.setItem('dw.sweep.smoke', '1');
+        localStorage.setItem('dw.meta.profile.a', e);
+        localStorage.setItem('dw.hints', JSON.stringify({ off: true }));
+      }
+    } catch { /* egal */ }
+  }, env);
+
+  const screens = [
+    { name: 'Lobby', root: '.lobby:not(.loading)', open: async () => {} },
+    { name: 'Summon', root: '.screen.summon', open: () => page.locator('.lobby-summon').click() },
+    { name: 'Units', root: '.screen.units', open: () => page.locator('.lobby-units').click(), prep: async () => { await page.locator('.unit-tile[data-owned="true"]').first().click(); await sleep(400); } },
+    { name: 'Team', root: '.screen.team', open: () => page.locator('.lobby-team').click() },
+    { name: 'Shop', root: '.screen.shopscr', open: () => page.locator('.lobby-shop').click() },
+    { name: 'Settings', root: '.screen.settings', open: () => page.locator('.lobby-settings').click() },
+    { name: 'Credits', root: '.screen.credits', open: () => page.locator('.menu-credits').click() },
+    { name: 'World map', root: '.screen.world', open: () => page.locator('.lobby-play').click() },
+    { name: 'Raid shop', root: '.screen.raidshopscr', open: async () => { await page.locator('.lobby-play').click(); await page.waitForSelector('.mode-shop'); await page.locator('.mode-shop').click(); } },
+  ];
+  const home = async () => {
+    await page.goto(URL_);
+    await page.waitForSelector('.lobby:not(.loading)');
+  };
+  /** Immer frisch von der Lobby aus (Neuladen), damit die Knopf-Nummern je Durchgang gleich bleiben. */
+  const enter = async (s) => {
+    await home();
+    await s.open();
+    await page.waitForSelector(s.root);
+    await sleep(500);
+    if (s.prep) await s.prep();
+  };
+  /** Knoepfe des Bildschirms mit Kennung; je gleicher Art hoechstens zwei. */
+  const buttons = (s) =>
+    page.evaluate((root) => {
+      const rootEl = document.querySelector(root);
+      const seen = {};
+      const out = [];
+      const all = [...rootEl.querySelectorAll('button:not([disabled]), summary, [role="button"]:not([aria-disabled="true"])')];
+      all.forEach((el, i) => {
+        const r = el.getBoundingClientRect();
+        const cs = getComputedStyle(el);
+        if (r.width < 4 || r.height < 4 || cs.visibility === 'hidden' || Number(cs.opacity) < 0.1 || cs.pointerEvents === 'none') return; // versteckte Randpfeile u. a. zaehlen nicht
+        if (el.matches('.menu-back, .save-reset, .active, .banner-tab[aria-selected="true"]')) return; // Zurueck ist Navigation (anderswo geprueft); Reset hat eigenen Test
+        const sig = (el.className || el.tagName).toString().split(/\s+/).filter((c) => !/^(r-|active|selected|picked|flipped|on|off|in-team)/.test(c)).join('.') + '|' + (el.parentElement?.className ?? '');
+        seen[sig] = (seen[sig] ?? 0) + 1;
+        if (seen[sig] > 2) return;
+        const label = (el.getAttribute('aria-label') || el.textContent || el.title || '').trim().replace(/\s+/g, ' ').slice(0, 40);
+        out.push({ i, label: label || (el.className || '').toString().split(' ')[0] || el.tagName, cls: (el.className || '').toString().split(' ').slice(0, 3).join('.') });
+      });
+      return out;
+    }, s.root);
+  const closeLayers = async () => {
+    for (let k = 0; k < 6; k++) {
+      if (await page.locator('.reveal').count()) await page.keyboard.press('Escape');
+      else if (await page.locator('.confirm-layer').count()) await page.locator('.confirm-no').click();
+      else break;
+      await sleep(250);
+    }
+  };
+  const report = [];
+  for (const s of screens) {
+    await enter(s);
+    const list = await buttons(s);
+    ok(list.length > 0 || s.name === 'Credits', `${s.name}: ${list.length} Knoepfe gefunden`);
+    for (const b of list) {
+      await enter(s);
+      const handle = (await page.evaluateHandle(({ root, i }) => [...document.querySelector(root).querySelectorAll('button:not([disabled]), summary, [role="button"]:not([aria-disabled="true"])')][i] ?? null, { root: s.root, i: b.i })).asElement();
+      if (!handle) continue;
+      await page.evaluate(() => {
+        document.querySelectorAll('.flash').forEach((e) => e.remove());
+        window.__sweep = { mut: 0 };
+        window.__sweepObs?.disconnect();
+        window.__sweepObs = new MutationObserver((list) => {
+          for (const m of list) if (!(m.target instanceof Element && m.target.closest('.flashes') && m.type === 'childList' && m.addedNodes.length === 0)) window.__sweep.mut++;
+        });
+        window.__sweepObs.observe(document.body, { subtree: true, childList: true, attributes: true, characterData: true, attributeFilter: ['class', 'style', 'disabled', 'data-count', 'data-phase', 'data-value', 'aria-pressed', 'aria-selected', 'open'] });
+        window.__sweep.s0 = window.__uiSounds?.n ?? 0;
+        window.__sweep.root = document.querySelector('.screen, .lobby')?.className ?? '';
+      });
+      try {
+        await handle.scrollIntoViewIfNeeded({ timeout: 2000 });
+        await handle.click({ timeout: 4000 });
+      } catch (e) {
+        report.push({ screen: s.name, label: b.label, note: `nicht klickbar (${String(e.message).split('\n')[0]})`, visual: false, sound: false, bad: true });
+        continue;
+      }
+      await sleep(550);
+      const r = await page.evaluate(() => ({
+        mut: window.__sweep.mut,
+        sounds: (window.__uiSounds?.n ?? 0) - window.__sweep.s0,
+        layers: ['.reveal', '.confirm-layer', '.flash', '.celebrate'].filter((q) => document.querySelector(q)),
+        screenChanged: (document.querySelector('.screen, .lobby')?.className ?? '') !== window.__sweep.root,
+      }));
+      const visual = r.mut > 0 || r.layers.length > 0 || r.screenChanged;
+      report.push({ screen: s.name, label: b.label, visual, sound: r.sounds > 0, layers: r.layers, bad: !visual });
+      await closeLayers();
+    }
+  }
+  const bad = report.filter((x) => x.bad);
+  console.log(`Interaktions-Durchgang: ${report.length} Knoepfe, ${report.filter((x) => x.visual).length} mit sichtbarer Reaktion, ${report.filter((x) => x.sound).length} mit Klang`);
+  for (const x of report) console.log(`   ${x.visual ? 'sicht' : '  -- '} ${x.sound ? 'ton' : '   '}  ${x.screen} / ${x.label}${x.layers?.length ? `  -> ${x.layers.join(' ')}` : ''}${x.note ? `  ${x.note}` : ''}`);
+  ok(report.length >= 40, `mindestens 40 Knoepfe gedrueckt (${report.length})`);
+  ok(bad.length === 0, `jeder Knopf reagiert sichtbar${bad.length ? `; ohne Reaktion: ${bad.map((x) => `${x.screen}/${x.label}`).join(', ')}` : ''}`);
+  ok(report.filter((x) => !x.sound).length === 0, `jeder Knopf macht einen Klang${report.some((x) => !x.sound) ? `; stumm: ${report.filter((x) => !x.sound).map((x) => `${x.screen}/${x.label}`).join(', ')}` : ''}`);
+  ok(errors.length === 0, `keine Seitenfehler${errors.length ? ': ' + errors[0] : ''}`);
+  await ctx.close();
+}
+
 try {
   await waitForServer();
   {
     const browser = await launch();
     try {
-      await edgeCases(browser);
-      await modesCase(browser);
+      if (!ONLY) {
+        await edgeCases(browser);
+        await modesCase(browser);
+      }
+      if (!ONLY || ONLY === 'sweep') await interactionCase(browser);
     } catch (e) {
       console.error(e);
       failures.push(`Randfaelle: ${e}`);
@@ -807,7 +997,7 @@ try {
   // ---- Mobil 390 x 844, Touch -----------------------------------------------------------------------------------
   // eigener Browser: nach dem WebGL-Lauf haengt in dieser Sandbox sonst das naechste goto()
   const mobileBrowser = await launch();
-  {
+  if (!ONLY) {
     const ctx = await mobileBrowser.newContext({
       viewport: { width: 390, height: 844 },
       hasTouch: true,
@@ -846,4 +1036,4 @@ if (failures.length) {
   console.error(`\n${failures.length} Pruefung(en) fehlgeschlagen`);
   process.exit(1);
 }
-console.log('\nSmoke gruen. Screenshots: client/docs/r8/p3-smoke-*.png');
+console.log('\nSmoke gruen. Screenshots: client/docs/r10/p3-smoke-*.png');

@@ -23,6 +23,7 @@ import { rarityName, unitName } from './meta-model';
 import { chargePlan, gridShape, isSpotlight, PackState, prizeRarity, prizesFromPulls, REVEAL_HUE, type Prize } from './reveal-model';
 import { unitMeta } from './unit-card';
 import { unitDefs } from './unit-defs';
+import { celebrate } from './menu-fx';
 import { Sparks } from './sparks';
 
 export interface RevealOptions {
@@ -484,7 +485,7 @@ class Reveal {
 declare global {
   interface Window {
     /** Debug-Zugriff (Screenshots, Playwright): Animation mit frei gewaehltem Ergebnis zeigen. Rechnet nichts, buchbar ist nichts. */
-    __ui?: { openReveal: typeof openReveal; openPrizes: typeof openPrizes; backend: typeof getBackend };
+    __ui?: { openReveal: typeof openReveal; openPrizes: typeof openPrizes; backend: typeof getBackend; celebrate: typeof celebrate };
   }
 }
-window.__ui = { openReveal, openPrizes, backend: getBackend };
+window.__ui = { openReveal, openPrizes, backend: getBackend, celebrate };

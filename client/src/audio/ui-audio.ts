@@ -14,8 +14,19 @@ export function registerAudio(e: AudioEngine | null): void {
 
 const now = (): number => (typeof performance !== 'undefined' ? performance.now() : Date.now());
 
+/** Pruefzugriff (Smoke, Screenshots): die letzten Menue-Klaenge in Reihenfolge, auch ohne laufendes Audio. Aendert nichts am Ton. */
+function logSound(id: UiSoundId): void {
+  if (typeof window === 'undefined') return;
+  const w = window as unknown as { __uiSounds?: { n: number; last: string[] } };
+  const log = (w.__uiSounds ??= { n: 0, last: [] });
+  log.n++;
+  log.last.push(id);
+  if (log.last.length > 40) log.last.shift();
+}
+
 /** Menue-/Beschwoer-Klang. `rate` verstimmt leicht (Zaehler-Ticks steigen mit dem Wert). */
 export function uiSound(id: UiSoundId, gain = 1, rate = 1): void {
+  logSound(id);
   if (!engine) return;
   const gap = UI_GAP_MS[id];
   if (gap) {
