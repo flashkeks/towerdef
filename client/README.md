@@ -66,6 +66,18 @@ Alle Bildschirme sind im Kit (keine Reste im alten Look). Gestaltung in `src/ui/
 Texte: nichts mehr aus der alten Welt („Grenzgilde“, Rift, Terrassen, Runde-1-7-Units). `test/r9-p4-texte.test.ts` prueft das und dass jeder im Code benutzte Textschluessel existiert.
 Screenshots: `npm run build && node scripts/shots-r9-p4.mjs` (Port `SHOT_PORT`) schreibt `docs/r9/p4-*.png`; die Datei `p4-lobby-portrait-test.png` nutzt ein Platzhalter-SVG als Porträt, nur um den Bildpfad zu zeigen.
 
+## Beschwören, Pakete, Rückmeldung (Runde 10, P3)
+
+Ein Bildschirm für alle Mehrfach-Ergebnisse: `ui/reveal.ts` (DOM, Phasen `charge` -> `single` | `cards` -> `summary`) auf `ui/reveal-model.ts` (ohne DOM, Tests `test/r10-p3-reveal.test.ts`), Stil `ui/reveal.css`, Funken `ui/sparks.ts` (Canvas 2D, gedeckelt auf 900 Teilchen).
+
+- **Aufbau:** Portal mit Ringen, Riss und Kern; die Farbe steigt Blau -> Lila -> Gold -> Regenbogen bis zur besten Seltenheit des Zugs (`chargePlan`), das Bild ruckelt (`rumble`), Durchbruch mit Blitz, Funken und Ton; Mythic/Secret mit Stinger. Klick, Leertaste, Enter oder „Skip“ überspringen jederzeit; Esc springt zur Übersicht; `prefers-reduced-motion` kürzt auf 400 ms.
+- **Pakete:** `PackState` — ein Klick deckt genau **eine** Karte auf (der Fehler aus Runde 9: ein Klick sprang an das Ende), Leertaste die nächste, „Reveal all“ (Taste A) den Rest, erst danach die Übersicht (Raster, höchste Seltenheit zuletzt, Chips je Seltenheit). Karten ab Legendary öffnen beim einzelnen Aufdecken ein Rampenlicht. Ein Gewinn ist eine Unit (mit NEW/Copy, Serie, optional Shiny), Währung oder Material (`Prize`).
+- **Quellen** (`ui/prize-sources.ts`): Starter-Paket (Lobby, „Daily Pack“), Match-Belohnung (Knopf „Open rewards“; Raid-Meilensteine und garantierte Raid-Unit öffnen sich von selbst), Crystal-Shop (Basis + Bonus als zwei Karten), Raid-Shop (gekaufte Unit). Neue Quelle = eine Funktion dort plus ein Builder in `reveal-model.ts`.
+- **Serie** unter dem Namen: optionales Feld `series` an der Unit-Definition (`unitSeries`), ohne Feld steht die Seltenheit da.
+- **Menü-Ton** (`audio/recipes-ui.ts`, `audio/ui-audio.ts`, Abspielen in `audio/engine.ts`): alles WebAudio-Synthese. Hover/Klick für alle Knöpfe per Delegation (`installUiSounds`; `data-sfx="none"` schaltet ab), Toasts mit Ton, Zähler (`ui/menu-fx.ts` `countUp`) laufen hoch, Stempel (`celebrate`) für Level-Up, Evolution, Freischaltung (Weltkarte merkt den Stand in `dw.seenUnlocks`). **Menü-Musik** je Bildschirm (`dusk`, `arcane`, `march`, `bazaar`), abschaltbar in Einstellungen („Menu music“, `settings.menuMusic`); im Match spielt das Match-Lied. Prüfprotokoll `window.__uiSounds`.
+- **Prüfen:** `npm run smoke` (Pakete mit echten Klicks und `interactionCase`: jeder Knopf der Meta-Bildschirme einmal, sichtbare Reaktion und Klang gefordert; `SMOKE_ONLY=sweep` für nur diesen Teil). Screenshots: `npm run build && node scripts/shots-r10-p3.mjs` -> `docs/r10/p3-*.png`. Debug: `window.__ui.openPrizes([...])` mit festem Ergebnis, `window.__uiSlow = 4` dehnt den Aufbau.
+- **Fallen:** Alte Screenshot-Skripte nutzen `closeReveal` (`scripts/lib/drive.mjs`), weil das Starter-Paket jetzt ein Bildschirm ist. `engine.ts` ist gemeinsam mit dem Match-Ton (P2): Menü-Klänge liegen bewusst in `recipes-ui.ts`.
+
 ## Bildschirme (Runde 7)
 
 Start ist die **Lobby** (`ui/lobby.ts`): Kontostaende oben (Crystals, Gold, Spieler-Level mit XP-Balken), Starter-Geschenk als sichtbarer Knopf (solange offen), Play, Summon, Units, Team, Shop, Settings, Credits. Alle Bildschirme sprechen **nur mit `getBackend()`** (nie direkt mit `meta/`), Texte nur in `en.ts`, Zustand immer vom Backend (`playerView`, `collectionView`, `bannerViews`, `stageView`, `pullHistory`, `matchSetup`).

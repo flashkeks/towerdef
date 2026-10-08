@@ -8,6 +8,7 @@ import type { CollectionUnitView, PlayerView } from '../backend/meta';
 import { t } from '../i18n/t';
 import { pickHero } from './collection-model';
 import { h } from './dom';
+import { openStarterPack } from './prize-sources';
 import { notify } from './flash';
 import { backdrop, crest, elementIcon, icon, panel, sigil, stars, tile } from './kit';
 import { importSaveFlow, newKey, resetFlow, WalletBar } from './meta-ui';
@@ -189,6 +190,7 @@ function starterCard(nav: Nav): HTMLElement {
       return;
     }
     pendingGift = { crystals: r.gift.crystals, units: r.gift.units };
+    await openStarterPack(r.gift);
     nav.lobby();
   });
   return card;

@@ -13,6 +13,12 @@ export const portraitUrl = (id: string): string => `/aa/units/${encodeURICompone
 
 const inManifest: ReadonlySet<string> = new Set(Object.keys((manifest as { units?: Record<string, unknown> }).units ?? {}));
 
+/** Serie einer Unit aus dem Bild-Manifest (Feld `series`, seit Runde 10 / P1), sonst `null`. */
+export function manifestSeries(id: string): string | null {
+  const e = (manifest as { units?: Record<string, { series?: unknown }> }).units?.[id];
+  return typeof e?.series === 'string' && e.series.trim() ? e.series : null;
+}
+
 /** Ids aus `/aa/index.json` bzw. `null` (noch nicht geladen / nicht vorhanden). */
 let index: Set<string> | null = null;
 let indexTried: Promise<void> | null = null;

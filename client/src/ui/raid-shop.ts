@@ -11,6 +11,7 @@ import { icon, panel } from './kit';
 import { errorText } from './meta-model';
 import { metaFrame, newKey, type MetaFrame } from './meta-ui';
 import type { Nav } from './nav';
+import { openRaidPurchase } from './prize-sources';
 import { miniOf } from './unit-card';
 
 export function buildRaidShop(nav: Nav): HTMLElement {
@@ -105,6 +106,7 @@ class RaidShopScreen {
         p.kind === 'unit' ? t('raidshop.bought.unit', { name: o.title }) : p.kind === 'material' ? t('raidshop.bought.material', { n: p.amount, name: o.title }) : t(`raidshop.bought.${p.kind}`, { n: p.amount }),
         'good',
       );
+      if (p.kind === 'unit') await openRaidPurchase(p);
     }
     this.busy = false;
     await this.f.refreshWallet();

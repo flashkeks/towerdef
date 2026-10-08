@@ -20,7 +20,7 @@ import {
   visibleRange,
   type CollectionQuery,
 } from '../src/ui/collection-model';
-import { revealPlan, rarityIndex } from '../src/ui/reveal-model';
+import { chargePlan, rarityIndex } from '../src/ui/reveal-model';
 
 const view = (unitId: string, rarity: string, o: Partial<CollectionUnitView> = {}): CollectionUnitView => ({
   name: unitId, series: '', evolvedFrom: null, trait: null, rerollCost: null, evolution: null,
@@ -179,26 +179,21 @@ describe('Angriffsform', () => {
   });
 });
 
-describe('Zieh-Animation (Plan)', () => {
-  it('Vorspann waechst mit der besten Seltenheit', () => {
-    const rare = revealPlan(Array(10).fill('rare'));
-    const myth = revealPlan([...Array(9).fill('rare'), 'mythic']);
-    const secret = revealPlan(['rare', 'secret']);
+describe('Zieh-Animation (Aufbau)', () => {
+  it('Vorspann waechst mit der besten Seltenheit, Farbstufen enden in deren Farbe', () => {
+    const rare = chargePlan('rare');
+    const myth = chargePlan('mythic');
+    const secret = chargePlan('secret');
     expect(myth.introMs).toBeGreaterThan(rare.introMs);
     expect(secret.introMs).toBeGreaterThan(myth.introMs);
     expect(myth.best).toBe('mythic');
+    expect(secret.stages.map((s) => s.rarity)).toEqual(['rare', 'epic', 'legendary', 'secret']);
+    expect(secret.stages.at(-1)!.hue).toBe('rainbow');
   });
-  it('Rampenlicht nur ab Legendary, Einzelzug immer', () => {
-    const p = revealPlan(['rare', 'epic', 'legendary', 'mythic']);
-    expect(p.steps.map((s) => s.spotlight)).toEqual([false, false, true, true]);
-    expect(revealPlan(['rare']).steps[0]!.spotlight).toBe(true);
-    expect(p.steps[3]!.ms).toBeGreaterThan(p.steps[2]!.ms);
-  });
-  it('Gesamtdauer = Vorspann + Schritte + Abschluss; unbekannte Seltenheit zaehlt wie Rare', () => {
-    const p = revealPlan(['rare', 'zzz']);
-    expect(p.totalMs).toBe(p.introMs + p.steps.reduce((s, x) => s + x.ms, 0) + 450);
+  it('unbekannte Seltenheit zaehlt wie Rare', () => {
     expect(rarityIndex('zzz')).toBe(0);
     expect(rarityIndex('Secret')).toBe(4);
+    expect(chargePlan('zzz').best).toBe('rare');
   });
 });
 

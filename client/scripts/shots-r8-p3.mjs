@@ -4,7 +4,7 @@
 // (Datei: SHOT_SAVE, erzeugt aus meta/ mit einem Profil mit Starter-Team und Act 1-3 von Welt 1 und 2).
 import { mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { buildTeam, fastForward, launch, root, sleep, startServer } from './lib/drive.mjs';
+import { buildTeam, fastForward, launch, root, sleep, startServer, closeReveal } from './lib/drive.mjs';
 
 const PORT = Number(process.env.SHOT_PORT ?? 4430);
 const SAVE = process.env.SHOT_SAVE;
@@ -29,6 +29,7 @@ try {
     await page.waitForSelector('.lobby');
   } else if (await page.locator('.starter-claim').isVisible().catch(() => false)) {
     await page.locator('.starter-claim').click();
+    await closeReveal(page);
     await page.waitForSelector('.starter-card.done');
   }
   const worldMap = async (world) => {

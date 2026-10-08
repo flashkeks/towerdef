@@ -3,7 +3,7 @@
 // Schreibt client/docs/r9/p2-*.png. Port: SHOT_PORT (Standard 4431).
 import { mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { buildTeam, fastForward, launch, root, sleep, startServer } from './lib/drive.mjs';
+import { buildTeam, fastForward, launch, root, sleep, startServer, closeReveal } from './lib/drive.mjs';
 import { clickWorld, readGhost, readSpots, worldToScreen } from './lib/mouse.mjs';
 
 const PORT = Number(process.env.SHOT_PORT ?? 4431);
@@ -30,6 +30,7 @@ try {
   }
   if (await page.locator('.starter-claim').isVisible().catch(() => false)) {
     await page.locator('.starter-claim').click();
+    await closeReveal(page);
     await page.waitForSelector('.starter-card.done');
   }
   const worldMap = async (world) => {

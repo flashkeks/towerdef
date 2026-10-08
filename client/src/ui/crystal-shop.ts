@@ -11,6 +11,7 @@ import { icon, panel } from './kit';
 import { gemCluster } from './kit/gems';
 import { metaFrame, newKey, type MetaFrame } from './meta-ui';
 import { errorText } from './meta-model';
+import { openCrystalPack } from './prize-sources';
 import type { Nav } from './nav';
 
 export function buildShop(nav: Nav): HTMLElement {
@@ -23,6 +24,8 @@ export function buildShop(nav: Nav): HTMLElement {
 class ShopScreen {
   private busy = false;
   private pending: string | null = null;
+  /** Bonus des Pakets der offenen Bestellung (fuer die Karten nach `refresh`) */
+  private pendingBonus = 0;
   private readonly list = h('div', 'shop-products');
   private readonly status = h('p', 'muted shop-status');
 
@@ -82,6 +85,7 @@ class ShopScreen {
     }
     if (r.order.status === 'pending') {
       this.pending = r.order.orderId;
+      this.pendingBonus = p.bonusCrystals;
       this.status.textContent = t('shopscreen.pending');
       const again = h('button', 'btn refresh-order', t('shopscreen.refresh'));
       again.addEventListener('click', () => void this.refresh(again));
@@ -90,6 +94,7 @@ class ShopScreen {
       this.pending = null;
       this.status.textContent = t('shopscreen.done', { n: r.order.crystals.toLocaleString('en-US') });
       notify(t('shopscreen.done', { n: r.order.crystals.toLocaleString('en-US') }), 'good');
+      await openCrystalPack({ crystals: r.order.crystals, bonusCrystals: p.bonusCrystals });
     }
     await this.f.refreshWallet();
     this.setBusy(false);
@@ -107,6 +112,7 @@ class ShopScreen {
     if (r.order.status === 'paid') {
       this.pending = null;
       this.status.textContent = t('shopscreen.done', { n: r.order.crystals.toLocaleString('en-US') });
+      await openCrystalPack({ crystals: r.order.crystals, bonusCrystals: this.pendingBonus });
       await this.f.refreshWallet();
     } else btn.disabled = false;
   }

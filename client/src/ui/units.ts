@@ -13,7 +13,9 @@ import { unitTags } from '../view/readability';
 import { attackPreview } from './attack-preview';
 import { attackShape, DEFAULT_QUERY, levelDps, primaryElement, queryCollection, seriesOptions, SORT_KEYS, unitDps, type CollectionQuery, type SortKey } from './collection-model';
 import { clear, h } from './dom';
+import { uiSound } from '../audio/ui-audio';
 import { notify } from './flash';
+import { celebrate } from './menu-fx';
 import { artLayer, chip, elementIcon, elementVar, icon, panel, rarityFrame, rarityId, stars } from './kit';
 import { ELEMENT_IDS } from './kit/icons';
 import { confirmDialog, metaFrame, newKey, type MetaFrame } from './meta-ui';
@@ -364,6 +366,7 @@ class UnitsScreen {
       b.disabled = true;
     });
     badge.classList.add('rolling');
+    uiSound('summon.rumble', 0.5);
     const r = await getBackend().rerollTrait(u.unitId, newKey());
     await new Promise((res) => setTimeout(res, 650)); // kurzes Wuerfeln, das Ergebnis steht schon fest
     this.busy = false;
@@ -403,6 +406,7 @@ class UnitsScreen {
       return;
     }
     notify(t('units.evolved', { from: unitName(r.evolution.from), to: unitName(r.evolution.to) }), 'good', 3200);
+    celebrate({ kind: 'evolve', title: t('evolve.title'), sub: `${unitName(r.evolution.from)} → ${unitName(r.evolution.to)}` });
     this.selected = r.evolution.to;
     await Promise.all([this.load(), this.f.refreshWallet().then((p) => p && (this.crystals = p.crystals))]);
     this.grid.refresh();
@@ -420,7 +424,10 @@ class UnitsScreen {
     const r = await getBackend().levelUp(u.unitId, newKey());
     this.busy = false;
     if (!r.ok) notify(errorText(r), 'error');
-    else notify(t('units.leveled', { name: unitName(u.unitId), n: r.level.level }), 'good', 2200);
+    else {
+      notify(t('units.leveled', { name: unitName(u.unitId), n: r.level.level }), 'good', 2200);
+      celebrate({ kind: 'levelup', title: t('levelup.title'), sub: t('levelup.unit', { name: unitName(u.unitId), n: r.level.level }), ms: 1600 });
+    }
     await Promise.all([this.load(), this.f.refreshWallet()]);
     this.grid.refresh();
   }

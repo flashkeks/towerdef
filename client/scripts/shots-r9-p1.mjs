@@ -3,7 +3,7 @@
 // Das Profil wird nach dem Starter-Geschenk im localStorage mit den Test-Units und einem Team aufgestockt (nur Testaufbau).
 import { mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { buildTeam, fastForward, launch, root, sleep, startServer } from './lib/drive.mjs';
+import { buildTeam, fastForward, launch, root, sleep, startServer, closeReveal } from './lib/drive.mjs';
 
 const PORT = Number(process.env.SHOT_PORT ?? 4491);
 const OUT = process.env.SHOT_DIR ?? resolve(root, 'docs', 'r9');
@@ -17,6 +17,7 @@ try {
   await page.goto(url);
   await page.waitForSelector('.lobby:not(.loading)');
   await page.locator('.starter-claim').click();
+  await closeReveal(page);
   await page.waitForSelector('.starter-card.done');
   await sleep(600);
   await page.evaluate(({ team }) => {
