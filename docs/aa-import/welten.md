@@ -37,7 +37,7 @@ Je Welt: Act 1-3 mit 15 Wellen, Act 4-6 mit 20 Wellen (AA: "mindestens 15", Schi
 | `sim/data/worlds/<welt>.json` | Karte (Wegpunkte, Pfadbreite, Zonenmaske), Farbwelt (`theme`), Acts (Name, Boss, Boss-Kit, Wellenzahl, HP-Stufe, Modifier), Anzeigenamen der Gegner (`roster`), Welt-HP-Faktor, Element-Versatz, Freischaltung, Infinite |
 | `sim/data/wave-template.json` | gemeinsame Wellen-Vorlage (19 Wellen ohne Boss, Boss-Welle als Anhang); AA hat keine Wellen-Tabelle, das Geruest ist DESIGN |
 | `sim/data/bosses.json` | vier neue Kits ohne feste Welle (`charger`, `summoner`, `mender`, `shielder`), dazu die vorhandenen `warden` und `colossus` |
-| `sim/data/modes/legend-stages.json`, `raids.json` | **Daten-Geruest** (8 Legend Stages, 11 Raids aus `maps.json`), `playable: false`, noch nicht spielbar; in der Weltkarte als "Coming later" gelistet |
+| `sim/data/modes/legend-stages.json`, `raids.json` | 8 Legend Stages und 11 Raids aus `maps.json`, **spielbar seit Runde 9 / P3**, benutzen die Karte einer Welt (`host`) wieder; Daten, Freischaltung und Belohnungen: [modi.md](modi.md) |
 
 `sim/src/data/worlds.ts` setzt zur Ladezeit aus jeder Welt-Datei die Stages `<welt>-1` .. `<welt>-6` und `<welt>-infinite` zusammen (`expandWorld`); Sim, Client und Meta laden dieselben Dateien. Gegner-HP: `stage.hpBp` = Welt-Faktor x Act-Faktor (Welt 1/2/3 = 1,0 / 1,1 / 1,2; Acts 1,0 / 1,3 / 1,7 / 2,3 / 3,0 / 4,0), wirkt auch auf die Bounty-Basis. Kein Messlauf: Goku SSJ3 allein schafft Act 1 jeder Welt (Test), die HP-Stufung ist ein Rauchtest-Wert.
 

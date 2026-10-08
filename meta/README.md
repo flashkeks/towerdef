@@ -81,7 +81,7 @@ Fehlercodes: `unknown-banner`, `banner-inactive`, `invalid-count`, `banner-limit
 (Deduplikation per Ereignis-ID, genau **eine** Ledger-Buchung `purchase` mit `order/<orderId>`). `pending` bleibt offen (`refreshOrder` fragt nach), `fail` -> `payment-failed` (kein Profil gespeichert),
 `refundOrder` -> Ledger `refund` (Saldo darf negativ werden). Idempotenz je Aktion ueber `withIdempotency*` (Doppelklick = eine Buchung).
 
-## Profil-Schema (Version 1)
+## Profil-Schema (Version 3, ab Runde 9)
 
 `Profile` (zod in `src/profile.ts`, Pflichtfeld `schemaVersion`):
 
@@ -98,6 +98,7 @@ Fehlercodes: `unknown-banner`, `banner-inactive`, `invalid-count`, `banner-limit
 | `stages` | `stages[stageId][difficulty] = { clears, firstClearAt, bestWave }` |
 | `settings`, `flags`, `counters` | freie Einstellungen, Schalter (`starterGiftClaimed`), Zaehler (`pullBatches`) |
 | `idem` | Idempotenz-Tabelle, gekappt auf 200 |
+| `inventory` | (Schema 3, Runde 9 / P3) `{ raidMarks, materials }`: Raid-Waehrung und Evolutions-Material, **ausserhalb von Ledger und Wallet** (siehe unten) |
 | `orders` | (P3, optional) Mock-Shop-Bestellungen `{ orderId, sku, crystals, status, providerRef, eventIds }`, gekappt auf 100 |
 
 **Zwei Meta-Waehrungen:** `crystals` (Gacha; erspielbar und im Mock-Shop; entspricht `shards` in architecture 7) und `gold` (Unit-Level, nur erspielbar).
@@ -169,7 +170,7 @@ Folge fuer den Client: Team und Mods kommen aus `Backend.matchSetup()` (Profil),
 ## Welten und Fortschritt (Runde 8 / P3)
 
 - `src/worlds.ts`: liest `sim/data/worlds/*.json` (Katalog `WORLDS`), Freischaltung (`stageLock`, `isStageUnlocked`, `worldLock`: Acts nacheinander, Welt nach Act n der Vorgaengerwelt, Infinite nach Act n), `infiniteGemsUpTo` (AA-Gem-Tabelle). Kein neues Profilfeld: Fortschritt = `stages[stageId][difficulty]`.
-- `src/world-view.ts`: `worldView(profile)` (Weltkarte: Welten, Acts, Sperrgruende als `LockReason`, naechster Act, Legend/Raids als Geruest) und `stageInfoView`; `stageView` liefert zusaetzlich `info` und `maxWaves` je Stage.
+- `src/world-view.ts`: `worldView(profile)` (Weltkarte: Welten, Acts, Sperrgruende als `LockReason`, naechster Act, Legend Stages und Raids als `ModeCardView`, Raid-Marken, Material) und `stageInfoView`; `stageView` liefert zusaetzlich `info` und `maxWaves` je Stage.
 - `rewards.ts`: Fehlercode `stage-locked`; Gold/XP werden auf die Wellenzahl der Stage gekappt; Infinite zahlt Crystals nach Gem-Tabelle nur fuer neue Bestwellen. Werte in `data/rewards.json` (Act-Erst-Clear 80/120/160 Crystals).
 
 ## Runde 8 / P2: AA-Katalog, Evolution, Traits, Migration
@@ -194,3 +195,24 @@ AA-Vorlage (`banners.json`): Standard Mythic 0,25 %, Pity 400, Secret 1/400 000,
 **Starter** (`starter.ts`): 12 feste AA-Units (`STARTER_UNITS`), Team = die ersten sechs (Goku SSJ3, Genos, Krillin, Speedwagon, Jotaro, Law), 450 Crystals (Ledger `starter/v2`; wer `starter/v1` hat, bekommt sie nicht noch einmal).
 
 **Migration 1 -> 2** (`migrate.ts`, Schema-Version 2): Runde-7-Units (`LEGACY_R7_UNITS`, 14) und unbekannte IDs werden entfernt. Erstattung: Crystals je Kopie (Rare 25, Epic 60, Legendary 150, Mythic 450; `data/unit-costs.json`), Gold zu 100 % fuer gekaufte Level (`levelUpTotalCost`), je Waehrung eine Buchung `refund`, `migration/v2-units`. Team leer, Idempotenz-Tabelle leer, `starterGiftClaimed` zurueckgesetzt (neues Geschenk abholbar). **Pity je Banner bleibt** (Regeln gleich), Verlauf, Stages, Level, Zaehler bleiben. Bericht fuer die UI in `settings.migrationR8` (`removedUnits`, `refundCrystals`, `refundGold`). Test mit echtem Runde-7-Profil (`test/fixtures/profile-r7.json`, mit dem Code der Runde 7 erzeugt).
+
+## Runde 9 / P3: Legend Stages, Raids, Material, Raid-Shop
+
+Ausfuehrlich fuer Spielinhalt und Daten: [docs/aa-import/modi.md](../docs/aa-import/modi.md). Hier die Meta-Seite.
+
+**Schema 3, Migration 2 -> 3** (`migrate.ts` `v2ToV3`, `profile.ts` `SCHEMA_VERSION = 3`): neues Pflichtfeld `inventory = { raidMarks: nat, materials: Record<materialId, nat> }`. Die Migration setzt `{ raidMarks: 0, materials: {} }`, bereinigt ein schon vorhandenes Inventar (negative oder nicht ganzzahlige Mengen fallen weg) und laesst alles andere unveraendert (Ledger, Wallet, Units, Team, Pity, Stage-Fortschritt, Flags). Neue Stages (`legend-*`, `raid-*`) stehen einfach noch nicht in `stages`. Ketten 0 -> 1 -> 2 -> 3 laufen durch, eine Sicherung aus Version 4 wird abgelehnt (`profile-too-new`). Tests: `test/modes-p3.test.ts`.
+
+**Warum das Inventar nicht im Ledger liegt:** Crystals und Gold sind Ledger-Waehrungen (Gacha, Mock-Shop, Erstattungen, Saldo-Cache). Raid-Marken und Material werden weder gekauft noch gezogen, sondern nur mit der verifizierten Match-Belohnung gutgeschrieben (Doppelsperre ueber die Ledger-Buchung desselben Replays: Gold ist bei jedem Sieg > 0) und im Raid-Shop/bei der Evolution ausgegeben (`withIdempotency`, Zaehler fuer Limits). Dadurch bleiben `wallet`, `CURRENCIES` und alle Tests dazu unveraendert. `inventory.ts`: `applyInventory` (atomar, `not-enough-raid-marks` / `not-enough-material`), `materialCount`.
+
+**Stages und Sperre** (`mode-catalog.ts`, `worlds.ts`): `legend-<id>-<act>` und `raid-<id>` / `raid-<id>-<act>` kommen aus `sim/data/modes/*.json` (Sim erzeugt daraus die Stages, `sim/src/data/modes.ts`). Offen, wenn Act `unlock.afterAct` der Host-Welt geschafft ist (Legend 6, Raid 3), Act n+1 nach Act n. `stageLock` kennt die Modi (gleicher `LockReason`: `world` / `act`), `rewardForMatch` gibt auf gesperrten Stages `stage-locked` und zahlt nichts. Belohnung nur ueber `rewardFromReplay` (nachgerechnet, `bindToProfile`).
+
+**Belohnung** (`modes.ts`, `data/modes.json`): Crystals/Gold/XP = Story-Wert mal Faktor (Legend 1,5 / 2,0 / 1,5, Raid 0,8 / 1,2 / 1,2), Stufen-Faktor fuer Material und Marken Normal 1, Hard 1,5, Nightmare 2.
+- Legend Stage: Sieg gibt Material (`drop` im Act: Erst-Clear / Wiederholung je Stage und Stufe). Niederlage: nur Gold und XP je gehaltener Welle.
+- Raid: Sieg gibt Raid-Marken (`marks` im Act) plus beim ersten Sieg je Stage und Stufe 40. Meilensteine zaehlen alle Siege des Raids (alle Acts und Stufen, `raidClears`): 5 Siege +250 Crystals, 10 Siege +100 Marken, einmalig (Flags `raidms:<raid>:<n>`); garantierte Unit bei `guarantee.clears` (10, Spider-Raid 15), einmalig (Flag `raidunit:<raid>`), schon besessen = Kopie +1.
+- `MatchReward` bekommt optional `mode`, `materials`, `raidMarks`, `milestones`, `unit`.
+
+**Material und Evolution** (`materials.ts`, `data/materials.json`, `evolution.ts`): 8 Materialien, je eines pro Legend Stage. Eine Evolution kostet zusaetzlich zu Crystals und Gold `amount[Seltenheit der Form]` Stueck (Rare 4, Epic 6, Legendary 10, Mythic 15, Secret/Exclusive 25) eines Materials; welches, bestimmt `pools[Seltenheit]` ueber einen stabilen Hash der Unit-ID (`overrides` pro Unit moeglich). Fruehe Seltenheiten ziehen aus fruehen Legend Stages. `evolutionView.material` zeigt Menge, Besitz und die Legend Stage; Code `evolution-needs-material`.
+
+**Raid-Shop** (`raid-shop.ts`, `data/raid-shop.json`): `raidShopView(p)`, `buyRaidOffer(p, offerId, env)`. Angebote Gold, Crystals, Material, dazu je Raid-Garantie-Unit ein Angebot (Preis nach Seltenheit, Limit 1, nicht wenn besessen). Limits in `counters['raidshop:<id>']`. Codes `unknown-offer`, `offer-sold-out`, `not-enough-raid-marks`. Backend: `raidShop()`, `buyRaidOffer(offerId, idemKey)`.
+
+Startwerte, alle in Daten und **nicht kalibriert**: Marken 20 je Sieg (Raids mit 5 Acts 15..35), Erst-Clear +40; Shop Gold 2000 = 15 Marken, 100 Crystals = 30, 5 Material = 20..35, Units 40..400 je Seltenheit.

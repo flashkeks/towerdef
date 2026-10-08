@@ -674,12 +674,119 @@ async function edgeCases(browser) {
   await ctx.close();
 }
 
+/**
+ * Runde 9 / P3: Legend Stages, Raids, Raid-Shop und Material mit echten Klicks (1280x720). Ein Speicherstand mit geschafften Acts von Planet Greenie,
+ * 200 Raid-Marken und 20 Crystallite wird vor dem Laden in den localStorage geschrieben (nur beim ersten Laden).
+ */
+async function modesCase(browser) {
+  const ok = (cond, msg) => check(cond, `Modi: ${msg}`);
+  const stages = Object.fromEntries([1, 2, 3, 4, 5, 6].map((a) => [`greenie-${a}`, { normal: { clears: 1, firstClearAt: '2026-10-08T00:00:00.000Z', bestWave: a <= 3 ? 15 : 20 } }]));
+  const profile = {
+    schemaVersion: 3, id: 'smoke-modes-0001', displayName: 'Warden', createdAt: '2026-10-08T00:00:00.000Z', playerLevel: 1, playerXp: 0,
+    wallet: { crystals: 0, gold: 0 }, ledger: [], units: { goku_ssj3: { level: 1, xp: 0, copies: 1, stars: 1, firstObtainedAt: '2026-10-08T00:00:00.000Z' } }, team: ['goku_ssj3'],
+    pity: {}, pullHistory: [], stages, settings: {}, flags: { starterGiftClaimed: true }, counters: {}, idem: {}, inventory: { raidMarks: 200, materials: { crystallite: 20 } },
+  };
+  const env = JSON.stringify({ app: 'dw-meta', rev: 1, profile });
+  const ctx = await browser.newContext({ viewport: { width: 1280, height: 720 } });
+  const page = await ctx.newPage();
+  const errors = [];
+  page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`));
+  page.on('console', (m) => {
+    if (m.type() === 'error' && !/\/aa\/(units\/|index\.json)/.test(m.location()?.url ?? '')) errors.push(`console: ${m.text()}`);
+  });
+  await page.addInitScript((e) => {
+    try {
+      if (!localStorage.getItem('dw.modes.smoke')) {
+        localStorage.setItem('dw.modes.smoke', '1');
+        localStorage.setItem('dw.meta.profile.a', e);
+        localStorage.setItem('dw.hints', JSON.stringify({ off: true }));
+      }
+    } catch { /* egal */ }
+  }, env);
+  const txt = async (sel) => ((await page.locator(sel).first().textContent()) ?? '').trim();
+  const snapOf = (name) => page.screenshot({ path: resolve(docs, `p3-smoke-${name}.png`) });
+  await page.goto(URL_);
+  await page.waitForSelector('.lobby:not(.loading)');
+  await page.waitForFunction(() => document.querySelector('.wallet')?.getAttribute('data-raid') === '200');
+  ok(true, 'Brieftasche zeigt 200 Raid-Marken');
+
+  await page.locator('.lobby-play').click();
+  await page.waitForSelector('.act-card');
+  ok((await page.locator('.mode-btn').count()) === 3, 'Weltkarte hat Umschalter Story / Legend Stages / Raids');
+  await page.locator('.mode-btn[data-mode="legend"]').click();
+  await page.waitForSelector('.mode-panel[data-mode="legend"]');
+  ok((await page.locator('.world-tab').count()) === 8, 'Legend Stages: 8 Eintraege');
+  ok((await page.locator('.world-tab[data-world="space-center"]').isDisabled()) === false && (await page.locator('.world-tab[data-world="spirit-invasion"]').isDisabled()), 'Space Center (Host Greenie) offen, Spirit Invasion gesperrt');
+  ok((await page.locator('.mode-panel .act-card').count()) === 3 && !(await page.locator('.act-card[data-stage="legend-space-center-1"]').isDisabled()) && (await page.locator('.act-card[data-stage="legend-space-center-2"]').isDisabled()), 'Space Center: 3 Acts, nur Act 1 offen');
+  ok(/Physical 40/.test(await txt('.affin.resist')) && /Magic \+30%/.test(await txt('.affin.weak')), `Resistenz und Schwaeche sichtbar (${await txt('.affin.resist')} / ${await txt('.affin.weak')})`);
+  ok(/Disc Fragment/.test(await txt('.mode-drop')), 'Material der Legend Stage genannt');
+  await snapOf('legend');
+  await page.locator('.mode-btn[data-mode="raids"]').click();
+  await page.waitForSelector('.mode-panel[data-mode="raid"]');
+  ok((await page.locator('.world-tab').count()) === 11, 'Raids: 11 Eintraege');
+  ok(!(await page.locator('.world-tab[data-world="sacred-planet"]').isDisabled()) && (await page.locator('.world-tab[data-world="future-city"]').isDisabled()), 'Sacred Planet (Greenie, Act 3 geschafft) offen, Future City gesperrt');
+  await page.locator('.world-tab[data-world="sacred-planet"]').click();
+  await page.waitForSelector('.mode-panel[data-id="sacred-planet"]');
+  ok((await page.locator('.mode-panel .act-card').count()) === 5 && /Guaranteed after 10 clears/.test(await txt('.guarantee-text')), 'Sacred Planet: 5 Acts, Garantie nach 10 Siegen');
+  await snapOf('raids');
+
+  await page.locator('.act-card[data-stage="raid-sacred-planet-1"]').click();
+  await page.waitForSelector('.stage-card');
+  ok(/Sacred Planet - Act 1/i.test(await txt('h1')) && /55 Raid Marks/.test(await txt('.stage-card[data-difficulty="normal"] .stage-reward.extra')), `Stufenwahl des Raids: Titel und Marken (${await txt('.stage-card[data-difficulty="normal"] .stage-reward.extra')})`);
+  await page.locator('.stage-card[data-difficulty="normal"]').click();
+  await page.waitForSelector('canvas.board');
+  const run = await page.evaluate(() => ({ stage: window.__duskwardens.session().stageId, waves: window.__duskwardens.session().totalWaves, hud: document.querySelector('.hud')?.textContent ?? '' }));
+  ok(run.stage === 'raid-sacred-planet-1' && run.waves === 20 && /Raid/.test(run.hud), `Raid-Match laeuft: ${run.stage}, ${run.waves} Wellen, Anzeige "Raid"`);
+  await sleep(1500);
+  await snapOf('raid-match');
+  // Legend-Stage-Match: laeuft ohne Absturz an
+  await page.goto(URL_);
+  await page.waitForSelector('.lobby:not(.loading)');
+  await page.locator('.lobby-play').click();
+  await page.waitForSelector('.act-card');
+  await page.locator('.mode-btn[data-mode="legend"]').click();
+  await page.locator('.act-card[data-stage="legend-space-center-1"]').click();
+  await page.waitForSelector('.stage-card');
+  await page.locator('.stage-card[data-difficulty="normal"]').click();
+  await page.waitForSelector('canvas.board');
+  const lrun = await page.evaluate(() => ({ stage: window.__duskwardens.session().stageId, aff: window.__duskwardens.session().sim.state.wave }));
+  ok(lrun.stage === 'legend-space-center-1', 'Legend-Stage-Match laeuft an');
+
+  // Raid-Shop
+  await page.goto(URL_);
+  await page.waitForSelector('.lobby:not(.loading)');
+  await page.locator('.lobby-play').click();
+  await page.waitForSelector('.act-card');
+  await page.locator('.mode-shop').click();
+  await page.waitForSelector('.rs-card');
+  ok((await page.locator('.rs-card').count()) >= 20 && (await txt('.rs-balance-num')) === '200', `Raid-Shop: ${await page.locator('.rs-card').count()} Angebote, Kontostand ${await txt('.rs-balance-num')}`);
+  await page.locator('.rs-card[data-offer="gold-1"] .rs-buy').click();
+  await page.waitForFunction(() => document.querySelector('.rs-balance-num')?.textContent === '185');
+  ok(true, 'Kauf: Raid-Marken 200 -> 185');
+  await page.waitForFunction(() => document.querySelector('.wallet')?.getAttribute('data-gold') === '2000');
+  ok(true, 'Kauf: 2000 Gold in der Brieftasche');
+  await snapOf('raidshop');
+
+  // Evolution mit Material
+  await page.goto(URL_);
+  await page.waitForSelector('.lobby:not(.loading)');
+  await page.locator('.lobby-units').click();
+  await page.waitForSelector('.unit-tile');
+  await page.locator('.unit-tile[data-unit="goku_ssj3"]').click();
+  await page.waitForSelector('.ud-evo .ud-material');
+  ok(/Crystallite 15\/15/.test(await txt('.ud-material')) && (await page.locator('.ud-material.ok').count()) === 1, `Evolution nennt das Material: "${await txt('.ud-material')}"`);
+  await snapOf('evolution');
+  ok(errors.length === 0, `keine Seitenfehler${errors.length ? ': ' + errors[0] : ''}`);
+  await ctx.close();
+}
+
 try {
   await waitForServer();
   {
     const browser = await launch();
     try {
       await edgeCases(browser);
+      await modesCase(browser);
     } catch (e) {
       console.error(e);
       failures.push(`Randfaelle: ${e}`);
