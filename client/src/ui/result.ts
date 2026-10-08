@@ -81,7 +81,7 @@ function mvpTile(mvp: Mvp | null): HTMLElement {
   const m = unitMeta(mvp.unit);
   const card = miniOf(mvp.unit, 74, 'mvp-card');
   const copy = h('span', 'stat-copy');
-  copy.append(h('dt', undefined, t('result.mvp.title')), h('dd', 'r-mvp', unitName(mvp.unit)), h('span', 'mvp-dmg', t('result.mvp.damage', { damage: Math.round(mvp.damage).toLocaleString('en-US') })));
+  copy.append(h('dt', undefined, t('result.mvp.title')), h('dd', 'r-mvp', unitName(mvp.unit)), h('span', 'mvp-series', m.series), h('span', 'mvp-dmg', t('result.mvp.damage', { damage: Math.round(mvp.damage).toLocaleString('en-US') })));
   el.append(card, copy);
   el.dataset.rarity = m.rarity;
   return el;

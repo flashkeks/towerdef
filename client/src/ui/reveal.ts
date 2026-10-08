@@ -19,7 +19,7 @@ import type { UiSoundId } from '../audio/recipes-ui';
 import { t } from '../i18n/t';
 import { h } from './dom';
 import { icon, portraitCard, sigil, type RarityId } from './kit';
-import { rarityName, unitName } from './meta-model';
+import { rarityName, unitName, unitSeries as metaSeries } from './meta-model';
 import { chargePlan, gridShape, isSpotlight, PackState, prizeRarity, prizesFromPulls, REVEAL_HUE, type Prize } from './reveal-model';
 import { manifestSeries } from '../view/portrait';
 import { unitMeta } from './unit-card';
@@ -34,10 +34,9 @@ export interface RevealOptions {
   charge?: boolean | 'short';
 }
 
-/** Serie einer Unit, wenn die Daten sie kennen (Feld `series` an der Unit-Definition oder im Bild-Manifest, kommt mit P1). Ohne Feld: nichts, die Karte sieht trotzdem fertig aus. */
+/** Serie einer Unit: eine zentrale Quelle (`meta-model`: Unit-Daten, sonst Bild-Manifest), leer = keine Zweitzeile. */
 export function unitSeries(id: string): string | null {
-  const d = unitDefs().get(id) as { series?: unknown } | undefined;
-  return typeof d?.series === 'string' && d.series.trim() ? d.series : manifestSeries(id);
+  return metaSeries(id) || manifestSeries(id);
 }
 
 const CURRENCY_ICON: Record<string, string> = { crystals: 'crystal', gold: 'coin', xp: 'star', marks: 'mark' };

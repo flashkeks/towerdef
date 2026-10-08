@@ -14,7 +14,7 @@ describe('AA-Import (tools/aa-import, Runde 8 / P2)', () => {
     expect(src.units.length).toBe(561);
     expect(aa.units.length).toBe(550);
     expect(new Set(aa.units.map((u: any) => u.id)).size).toBe(550);
-    expect(data.units.units.length).toBe(575);
+    expect(data.units.units.length).toBe(600);
     const fixture = read('./fixtures/sample-units.json');
     expect(fixture.units.length).toBe(26);
     for (const u of fixture.units) expect(aa.units.some((x: any) => x.id === u.id), u.id).toBe(true);
@@ -34,7 +34,7 @@ describe('AA-Import (tools/aa-import, Runde 8 / P2)', () => {
   });
   it('Bild-Manifest: je Unit echter Name, Serie, anilistQuery, Wiki-Rueckfall und Pfad', () => {
     const m = read('../../client/public/aa/manifest.json');
-    expect(Object.keys(m.units).length).toBe(575);
+    expect(Object.keys(m.units).length).toBe(600);
     expect(m.units['rokuhira']).toMatchObject({ name: 'Gintoki Sakata', series: 'Gintama', anilistQuery: 'Gintoki Sakata', source: 'anilist', wiki: 'Vengeful_Swordsman.png', path: '/aa/units/rokuhira.webp', wikiShiny: 'Vengeful_Swordsman_(Shiny).png' });
     expect(m.units['kakashi']).toMatchObject({ name: 'Kakashi Hatake', series: 'Naruto', anilistQuery: 'Kakashi Hatake', source: 'anilist' });
     expect(m.units['goku_ssb']).toMatchObject({ name: 'Son Goku', form: 'Super Saiyan Blue', series: 'Dragon Ball' });
@@ -46,9 +46,9 @@ describe('AA-Import (tools/aa-import, Runde 8 / P2)', () => {
   });
   it('figuren.json (Runde 10 / P1): genau ein Eintrag je Unit, keine doppelte (name, form), Manifest stimmt damit ueberein', () => {
     const fig = loadFiguren(new URL('../../docs/aa-import/figuren.json', import.meta.url).pathname);
-    const cross = read('../data/units/crossover.json').units.map((u: any) => u.id);
+    const cross = [...read('../data/units/crossover.json').units, ...read('../data/units/legends.json').units].map((u: any) => u.id);
     expect(checkFiguren(fig, aa.units.map((u: any) => u.id), cross)).toEqual([]);
-    expect(fig.length).toBe(575);
+    expect(fig.length).toBe(600);
     const m = read('../../client/public/aa/manifest.json');
     for (const f of fig) {
       expect(m.units[f.id].name, f.id).toBe(f.name);

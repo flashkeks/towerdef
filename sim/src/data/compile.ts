@@ -159,7 +159,10 @@ export type DamageType = 'physical' | 'magic' | 'true';
 
 export interface UnitDef {
   id: string;
+  /** Anzeigename: echter Name der Figur, bei Formen mit "(Form)" (Runde 10 / P1). */
   name: string;
+  /** Serie der Figur (Anzeige, Filter); fehlt bei Units ohne Zuordnung. */
+  series?: string;
   rarity: UnitData['rarity'];
   placement: UnitData['placement'];
   /** Aus den Daten abgeleitet: economy | control | aoe | single (nur Anzeige und Bot-Hinweise, nie Regel). */
@@ -475,7 +478,8 @@ function build(u: UnitData, d: GameData, unknown: Set<string>): UnitDef {
   const role = hasFarm ? 'economy' : allFx.some((f) => CC_KINDS.has(f.kind)) ? 'control' : last && last.kind !== 'single' ? 'aoe' : 'single';
   return {
     id: u.id,
-    name: u.name,
+    name: u.form ? `${u.name} (${u.form})` : u.name,
+    series: u.series ?? undefined,
     rarity: u.rarity,
     placement: u.placement,
     role,

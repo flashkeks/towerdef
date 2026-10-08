@@ -33,13 +33,15 @@ export interface CollectionQuery {
   element: string | null;
   placement: string | null;
   role: RoleCat | null;
+  /** Serie der Figur ("Naruto"), `null` = alle (Runde 10 / P1) */
+  series: string | null;
   ownedOnly: boolean;
-  /** Teil des Namens, ohne Gross-/Kleinschreibung */
+  /** Teil des Namens oder der Serie, ohne Gross-/Kleinschreibung */
   search: string;
   sort: SortKey;
 }
 
-export const DEFAULT_QUERY: CollectionQuery = { rarity: null, element: null, placement: null, role: null, ownedOnly: false, search: '', sort: 'rarity' };
+export const DEFAULT_QUERY: CollectionQuery = { rarity: null, element: null, placement: null, role: null, series: null, ownedOnly: false, search: '', sort: 'rarity' };
 
 /** Nur die Filter (ohne Sortierung). Units ohne Sim-Definition fallen durch Element-, Rollen- und Platzierungsfilter. */
 export function filterCollection(units: readonly CollectionUnitView[], defs: ReadonlyMap<string, UnitDef>, nameOf: (id: string) => string, q: CollectionQuery): CollectionUnitView[] {
@@ -51,9 +53,17 @@ export function filterCollection(units: readonly CollectionUnitView[], defs: Rea
     if (q.element && (d?.elements[0] ?? 'none') !== q.element && !(d?.elements ?? []).includes(q.element)) return false;
     if (q.role && (!d || roleCat(d) !== q.role)) return false;
     if (q.placement && (!d || d.placement !== q.placement)) return false;
-    if (needle && !nameOf(u.unitId).toLowerCase().includes(needle)) return false;
+    if (q.series && u.series !== q.series) return false;
+    if (needle && !nameOf(u.unitId).toLowerCase().includes(needle) && !(u.series ?? '').toLowerCase().includes(needle)) return false;
     return true;
   });
+}
+
+/** Alle Serien der Sammlung mit Anzahl der Units, groesste zuerst (Auswahl "Series"); leere Serien entfallen. */
+export function seriesOptions(units: readonly CollectionUnitView[]): { series: string; count: number }[] {
+  const n = new Map<string, number>();
+  for (const u of units) if (u.series) n.set(u.series, (n.get(u.series) ?? 0) + 1);
+  return [...n.entries()].map(([series, count]) => ({ series, count })).sort((a, b) => b.count - a.count || a.series.localeCompare(b.series));
 }
 
 const elementRank = (e: string): number => {

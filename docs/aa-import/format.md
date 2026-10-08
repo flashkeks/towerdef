@@ -26,7 +26,9 @@ Alles in `sim/data/units/*.json` wird geladen (alphabetisch) und zusammengeführ
 | Feld | Typ | Pflicht | Bedeutung / AA-Quelle |
 |---|---|---|---|
 | `id` | string | ja | AA `id` |
-| `name` | string | ja | Anzeigename. AA: `nameRR` wird als `name` akzeptiert (Alias beim Parsen) |
+| `name` | string | ja | Anzeigename. **Seit Runde 10 der echte Name der Figur** ("Son Goku"), geschrieben vom Importer aus `docs/aa-import/figuren.json`; der AA-Parodiename (`nameRR`) steht dort als `aaName` und nicht mehr in den Spieldaten. Rohdaten ohne `name` lesen `nameRR` als Alias (Test `units-data`) |
+| `series` | string | nein | Serie der Figur ("Naruto", "One Piece", "Legends of Earth"): Zweitzeile unter dem Namen, Serien-Filter der Sammlung. Nur Anzeige, nie Regel |
+| `form` | string | nein | Form derselben Figur ("Super Saiyan Blue"). Anzeige: `name (form)`, so steht es in `UnitDef.name` und im Meta-Katalog |
 | `rarity` | `Rare` `Epic` `Legendary` `Mythic` `Secret` `Exclusive` | ja | wie AA (Groß-/Kleinschreibung beachten). AA-Einträge mit `kind: "summon"` (Rarity `summon`, 11 Stück) sind **keine Units**, sondern Wesen im Katalog `summons` (Runde 9) |
 | `placement` | `ground` `hill` `hybrid` | ja | AA `placement`. Boden trifft keine Flieger, Hügel/Hybrid schon |
 | `damageType` | `physical` `magic` `true` | nein (physical) | AA `damageType`; `true_damage` wird als `true` gelesen; `null` = physical (4 AA-Units) |
@@ -138,6 +140,10 @@ AA kennt dazu nur Marken (`extra.active_attack` mit Abklingzeit, `spawn_unit`, `
 **Zweitangriffe:** der Importer setzt `levels[].also` für alle Units, deren AA-Daten mehrere Angriffe führen (`_attacks`, `secondary_attacks`) und für die Stufen-Notizen "+ Scatter", "+ Kaminari" (Rokuhira): je Stufe laufen die bisher freigeschalteten Angriffe neben dem der Stufe im Wechsel mit. Alle anderen Units wechseln wie bisher auf den Angriff der Stufe (516 von 550 tun das; ob AA dort auch rotiert, sagen die Daten nicht).
 
 **Replay:** neue Befehle `{ type: 'ability', entityId, index? }` und `{ type: 'autoAbility', entityId, on }` (Replay-Format v5; v4 bleibt nachspielbar).
+
+## Legends of Earth (Runde 10 / P1)
+
+Promis und Internet-Größen in `sim/data/units/legends.json` (25 Figuren, `source: "legends"`, `series: "Legends of Earth"`, IDs `p_*`, eigener Pool `legends` und Banner `meta/data/banners/legends.json`). Gleiches Format wie das Crossover; zusätzlich tragen die Figuren Knopf-Fähigkeiten (`abilities`: Münzen, Buff, globaler Slow, Beschwörung) und eine Aura. Quelle: `tools/aa-import/legends-spec.ts`, schreiben mit `npm run legends`, prüfen mit `npm run legends:check`. Anleitung: [neue-unit.md](neue-unit.md).
 
 ## Crossover (P6)
 

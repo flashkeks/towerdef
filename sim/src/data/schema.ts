@@ -460,6 +460,10 @@ const aaAlias = (v: unknown): unknown => {
 export const UnitSchema = z.preprocess(aaAlias, z.object({
   id: z.string().min(1),
   name: z.string().min(1),
+  /** Serie der Figur ("Naruto"), Runde 10 / P1: nur Anzeige und Filter, nie Regel. Der Importer schreibt sie aus `docs/aa-import/figuren.json`. */
+  series: z.string().nullish(),
+  /** Form derselben Figur ("Super Saiyan 3"); Anzeige: `name (form)`. */
+  form: z.string().nullish(),
   rarity: z.enum(UNIT_RARITIES),
   placement: z.enum(['ground', 'hill', 'hybrid']),
   /** AA: `true_damage` wird als `true` gelesen; fehlend = physical. */

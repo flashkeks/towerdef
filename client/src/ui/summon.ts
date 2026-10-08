@@ -9,7 +9,7 @@ import { t } from '../i18n/t';
 import { clear, h } from './dom';
 import { notify } from './flash';
 import { metaFrame, newKey, type MetaFrame } from './meta-ui';
-import { errorText, pullOptions, rarityName, selectableBanners, unitName } from './meta-model';
+import { errorText, pullOptions, rarityName, selectableBanners, unitName, unitSeries } from './meta-model';
 import type { Nav } from './nav';
 import { openReveal } from './reveal';
 import { backdrop, icon, panel, portraitCard, sigil } from './kit';
@@ -186,7 +186,7 @@ function bannerArt(v: BannerView): HTMLElement[] {
   const row = h('div', 'banner-feature');
   ids.slice(0, 3).forEach((x, i) => {
     const m = unitMeta(x.id, x.rarity);
-    const c = portraitCard({ unitId: x.id, name: m.name, rarity: x.rarity, elements: m.elements, live: i === 0, tag: 'div', cls: `feat f${i}`, trait: x.featured ? t('summon.featured') : undefined });
+    const c = portraitCard({ unitId: x.id, name: m.name, series: m.series, rarity: x.rarity, elements: m.elements, live: i === 0, tag: 'div', cls: `feat f${i}`, trait: x.featured ? t('summon.featured') : undefined });
     c.querySelector('.pc-sub')?.remove();
     row.append(c);
   });
@@ -215,6 +215,7 @@ function bannerInfo(v: BannerView): HTMLElement[] {
       const pool = h('div', 'pool-list');
       for (const u of tier.units) {
         const c = h('span', `pool-chip${u.featured ? ' featured' : ''}`, `${unitName(u.unitId)} ${u.baseText}`);
+        c.title = unitSeries(u.unitId);
         pool.append(c);
       }
       td.append(pool);

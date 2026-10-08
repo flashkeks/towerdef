@@ -99,15 +99,19 @@ export function initials(name: string): string {
 
 const colorCache = new Map<string, number>();
 const nameCache = new Map<string, string>();
+const seriesCache = new Map<string, string>();
 
 /** Anzeigename aus den Unit-Daten (`UnitDef.name`); unbekannte ID: `null`. */
 export const registeredUnitName = (id: string): string | null => nameCache.get(id) ?? null;
+/** Serie aus den Unit-Daten (`UnitDef.series`, Runde 10 / P1); unbekannt oder ohne Serie: `null`. */
+export const registeredUnitSeries = (id: string): string | null => seriesCache.get(id) ?? null;
 
 /** Farbe einer Unit aus ihren Daten (erstes Element, sonst Damage-Typ). Wird beim Aufbau der Kataloge registriert; unbekannte IDs bekommen eine stabile Farbe aus der ID. */
-export function registerUnitColors(defs: readonly Pick<UnitDef, 'id' | 'name' | 'elements' | 'damageType'>[]): void {
+export function registerUnitColors(defs: readonly Pick<UnitDef, 'id' | 'name' | 'series' | 'elements' | 'damageType'>[]): void {
   for (const d of defs) {
     colorCache.set(d.id, ELEMENT_COLORS[d.elements[0]] ?? TYPE_COLORS[d.damageType] ?? 0xc3c7d6);
     nameCache.set(d.id, d.name);
+    if (d.series) seriesCache.set(d.id, d.series);
   }
 }
 

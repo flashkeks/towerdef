@@ -90,3 +90,7 @@
 .ud-card.evolved { animation: trait-land 0.9s var(--ease-out); }
 @keyframes evo-charge { 0% { filter: none; } 60% { filter: brightness(1.8) saturate(1.5); transform: scale(1.04); } 100% { filter: brightness(4); transform: scale(1.08); } }
 @media (prefers-reduced-motion: reduce) { .ud-trait-badge.rolling, .ud-trait-badge.landed, .ud-card.evolving, .ud-card.evolved { animation: none; } }
+
+/* ---- Serie unter dem Namen (Runde 10 / P1) ---- */
+.unit-detail .ud-series { font: 700 0.8rem var(--font-ui); letter-spacing: 0.12em; text-transform: uppercase; color: var(--tx-2); }
+.unit-serieswrap select { max-width: 190px; }

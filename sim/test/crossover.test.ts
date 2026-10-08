@@ -46,7 +46,7 @@ describe('Crossover-Figuren (Runde 8 / P6)', () => {
   });
   it('Bild-Manifest: 25 Einträge mit source custom und imageQuery', () => {
     const m = read('../../client/public/aa/manifest.json');
-    const x = Object.entries<any>(m.units).filter(([, e]) => e.source === 'custom');
+    const x = Object.entries<any>(m.units).filter(([id, e]) => e.source === 'custom' && id.startsWith('x_'));
     expect(x).toHaveLength(25);
     for (const [id, e] of x) expect(e.imageQuery && e.path === `/aa/units/${id}.webp`, id).toBeTruthy();
   });

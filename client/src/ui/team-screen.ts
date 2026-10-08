@@ -10,7 +10,7 @@ import { clear, h } from './dom';
 import { notify } from './flash';
 import { panel } from './kit';
 import { metaFrame, newKey } from './meta-ui';
-import { cleanTeam, errorText, rarityName, sortUnits, teamComplete, toggleTeam, unitName } from './meta-model';
+import { cleanTeam, errorText, rarityName, sortUnits, teamComplete, toggleTeam, unitName, unitSeries } from './meta-model';
 import type { Nav } from './nav';
 import { cardOf, miniOf } from './unit-card';
 import { unitDefMap } from './unit-defs';
@@ -54,7 +54,7 @@ export function buildTeam(nav: Nav): HTMLElement {
         }
         c.querySelector('.pc')?.append(tags);
       }
-      c.title = `${rarityName(u.rarity)} - ${unitName(u.unitId)}`;
+      c.title = `${rarityName(u.rarity)} - ${unitName(u.unitId)} (${unitSeries(u.unitId)})`;
       c.addEventListener('click', () => {
         team = toggleTeam(team, u.unitId, ownedIds, target);
         refresh();
@@ -70,7 +70,7 @@ export function buildTeam(nav: Nav): HTMLElement {
         s.type = 'button';
         if (id) {
           s.dataset.unit = id;
-          s.title = t('team.slot.remove', { name: unitName(id) });
+          s.title = `${t('team.slot.remove', { name: unitName(id) })} (${unitSeries(id)})`;
           s.append(miniOf(id, 82), h('span', 'slot-name', unitName(id)));
           s.addEventListener('click', () => {
             team = team.filter((x) => x !== id);

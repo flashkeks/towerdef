@@ -255,8 +255,9 @@ async function playStage(browser, [W, H]) {
   ok(/Starting values/.test(await text('.start-values')) && /Rates version/.test(await text('.rates-version')), 'Hinweis "Startwerte" und Ratenversion sichtbar');
   ok(/Pull x10 · Mythic pity 0\/150/.test(await text('.pull-btn[data-count="10"] strong')), `Pity-Zaehler auf dem Knopf: "${await text('.pull-btn[data-count="10"] strong')}"`);
   ok((await page.locator('.pity-row').count()) === 2 && /Mythic or better: 0 \/ 150/.test(await text('.pity-top')), 'Pity-Zeilen (Mythic, Legendary oder besser) sichtbar');
+  await page.waitForSelector('.banner-tab[data-banner="legends"]', { timeout: 8000 }).catch(() => {}); // Banner kommen asynchron, unter Last fehlte der letzte Tab
   const tabNames = await page.locator('.banner-tab').allTextContents();
-  ok(tabNames.length === 4, `Banner: Standard, Starter, Special und Crossover (solange verfuegbar) (ist: ${tabNames.join(' / ')})`);
+  ok(tabNames.length === 5, `Banner: Standard, Starter, Special, Crossover und Legends of Earth (solange verfuegbar) (ist: ${tabNames.join(' / ')})`);
   await clickSel('.pull-btn[data-count="10"]');
   await page.waitForSelector('.reveal');
   ok(await page.evaluate(() => document.querySelector('.pull-btn[data-count="10"]').disabled), 'Knopf waehrend des Zugs gesperrt');

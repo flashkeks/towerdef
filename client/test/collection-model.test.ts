@@ -16,13 +16,14 @@ import {
   shapeGeometry,
   sortCollection,
   unitDps,
+  seriesOptions,
   visibleRange,
   type CollectionQuery,
 } from '../src/ui/collection-model';
 import { chargePlan, rarityIndex } from '../src/ui/reveal-model';
 
 const view = (unitId: string, rarity: string, o: Partial<CollectionUnitView> = {}): CollectionUnitView => ({
-  name: unitId, evolvedFrom: null, trait: null, rerollCost: null, evolution: null,
+  name: unitId, series: '', evolvedFrom: null, trait: null, rerollCost: null, evolution: null,
   unitId, rarity: rarity as CollectionUnitView['rarity'], owned: false, level: 0, maxLevel: 40, copies: 0, stars: 0, maxStars: 5, copiesForNextStar: null, copiesToNextStar: null, levelUpCost: null, canLevelUp: false, powerBp: 10000, powerBonusPct: 0, inTeam: false, ...o,
 });
 const lv = (damageCenti: number, spaTicks: number, attack: LevelStat['attack'] = { id: 'a', kind: 'single', radiusMilli: 0, widthMilli: 0, coneDeg: 0, cos2Bp: 0, hits: 1, dot: null, fx: [] }, rangeMilli = 6000): LevelStat => ({ damageCenti, spaTicks, rangeMilli, damageRawCenti: damageCenti, attack, farm: 0, rotation: null });
@@ -209,5 +210,30 @@ describe('Lobby-Held', () => {
     const r = pickHero(['c', 'a'], units);
     expect(r.lead).toBe('a');
     expect(r.side).toEqual(['b', 'd']);
+  });
+});
+
+describe('Serien-Filter (Runde 10 / P1)', () => {
+  const sv = [
+    view('n1', 'rare', { series: 'Naruto', name: 'Kakashi Hatake' }),
+    view('n2', 'epic', { series: 'Naruto', name: 'Minato Namikaze' }),
+    view('o1', 'rare', { series: 'One Piece', name: 'Monkey D. Luffy' }),
+    view('d1', 'mythic', { series: 'Dragon Ball', name: 'Son Goku (Super Saiyan Blue)' }),
+    view('d2', 'rare', { series: 'Dragon Ball', name: 'Vegeta' }),
+    view('d3', 'epic', { series: 'Dragon Ball', name: 'Gohan' }),
+  ];
+  const nameOf = (id: string): string => sv.find((u) => u.unitId === id)!.name;
+  const none = new Map<string, UnitDef>();
+  it('seriesOptions: groesste Serie zuerst, mit Anzahl', () => {
+    expect(seriesOptions(sv)).toEqual([{ series: 'Dragon Ball', count: 3 }, { series: 'Naruto', count: 2 }, { series: 'One Piece', count: 1 }]);
+  });
+  it('filtert nach Serie; die Suche findet auch ueber die Serie', () => {
+    const q = (o: Partial<CollectionQuery>): string[] => filterCollection(sv, none, nameOf, { ...DEFAULT_QUERY, ...o }).map((u) => u.unitId);
+    expect(q({ series: 'Naruto' })).toEqual(['n1', 'n2']);
+    expect(q({ series: 'One Piece' })).toEqual(['o1']);
+    expect(q({ series: 'Dragon Ball', rarity: 'epic' })).toEqual(['d3']);
+    expect(q({ search: 'piece' })).toEqual(['o1']);
+    expect(q({ search: 'kakashi' })).toEqual(['n1']);
+    expect(q({})).toHaveLength(6);
   });
 });

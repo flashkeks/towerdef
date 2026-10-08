@@ -49,6 +49,14 @@ export interface Figure {
   flavor: string;
   imageQuery: string;
   stages: Stage[];
+  /** Knopf-/Auto-Faehigkeiten (Runde 9, `AbilitySchema`), Attack-IDs `<figur>:<key>`; die Angriffe dazu stehen in `extraAttacks` */
+  abilities?: Record<string, unknown>[];
+  /** Dauer-Aura (`AuraSchema`) */
+  aura?: Record<string, unknown> | Record<string, unknown>[];
+  /** Zusaetzliche Angriffe fuer Faehigkeiten und Beschwoerungen: Schluessel = Angriffs-ID komplett (`p_trump:tariff`) */
+  extraAttacks?: Record<string, AttackDef>;
+  /** Beschwoerungen (`SummonSchema`), IDs global eindeutig (`p_...`) */
+  summons?: Record<string, Record<string, unknown>>;
 }
 
 const slow = (influence: number, duration?: number): Special => ({ name: 'Slow', influence, ...(duration ? { duration } : {}) });

@@ -90,6 +90,8 @@ function main(): void {
   const all = raw.units as any[];
   const attacksRaw = raw.attacks as Record<string, unknown>;
 
+  const figuren = loadFiguren(resolve(ROOT, 'docs/aa-import/figuren.json'));
+  const figById = new Map(figuren.map((f) => [f.id, f]));
   const units: Record<string, unknown>[] = [];
   const skipped: { id: string; reason: string }[] = [];
   const usedAttacks = new Set<string>();
@@ -112,7 +114,7 @@ function main(): void {
     results.push({ unit: u, support });
     const rec: Record<string, unknown> = {};
     for (const k of UNIT_KEYS) {
-      const src = k === 'name' ? u.nameRR : k === 'elements' ? u.secondaryDamageTypes : u[k];
+      const src = k === 'name' ? (figById.get(u.id)?.name ?? u.nameRR) : k === 'elements' ? u.secondaryDamageTypes : u[k];
       if (src === null || src === undefined) continue;
       if (k === 'elements' && Array.isArray(src) && src.length === 0) continue;
       if (k === 'damageType') {
@@ -122,6 +124,12 @@ function main(): void {
       }
       if ((k === 'limited' || k === 'hideFromBanner' || k === 'rateupBannerOnly' || k === 'shinyVariant' || k === 'unsellable' || k === 'spawnCapGlobal') && src === false) continue;
       rec[k] = src;
+    }
+    // Runde 10 / P1: echter Name, Serie, Form aus figuren.json (der AA-Name steht dort als `aaName`); Werte/Kits unveraendert
+    const fig = figById.get(u.id);
+    if (fig) {
+      rec.series = fig.series;
+      if (fig.form) rec.form = fig.form;
     }
     rec.support = support.level;
     if (support.notes.length) rec.supportNotes = support.notes;
@@ -159,9 +167,9 @@ function main(): void {
   const supportById = new Map(results.map((r) => [r.unit.id as string, r.support.level]));
   const evolutions = buildEvolutions(read('items.json'), new Set(units.map((u) => u.id as string)), (id) => supportById.get(id));
   const traits = buildTraits(read('traits.json'));
-  const crossoverPath = resolve(ROOT, 'sim/data/units/crossover.json');
-  const crossover = existsSync(crossoverPath) ? (JSON.parse(readFileSync(crossoverPath, 'utf8')).units as any[]) : [];
-  const figuren = loadFiguren(resolve(ROOT, 'docs/aa-import/figuren.json'));
+  // Eigene Figuren (Crossover Runde 8, Legends of Earth Runde 10): kein AniList-Bild, Bild per Wikipedia (`imageQuery`)
+  const customUnits = (rel: string): any[] => (existsSync(resolve(ROOT, rel)) ? (JSON.parse(readFileSync(resolve(ROOT, rel), 'utf8')).units as any[]) : []);
+  const crossover = [...customUnits('sim/data/units/crossover.json'), ...customUnits('sim/data/units/legends.json')];
   const figErrs = checkFiguren(figuren, units.map((u) => u.id as string), crossover.map((u) => u.id as string));
   if (figErrs.length) {
     console.error(`docs/aa-import/figuren.json stimmt nicht:\n  ${figErrs.join('\n  ')}`);

@@ -44,7 +44,7 @@ export function buildManifest(units: any[], custom: any[], figuren: Figur[]): { 
   for (const u of custom) {
     const f = byId.get(u.id);
     if (!f) throw new Error(`figuren.json: kein Eintrag fuer ${u.id}`);
-    out[u.id] = { name: u.name, series: f.series, rarity: u.rarity, imageQuery: u.imageQuery, path: `/aa/units/${u.id}.webp`, source: 'custom' };
+    out[u.id] = { name: f.name, series: f.series, rarity: u.rarity, imageQuery: u.imageQuery, path: `/aa/units/${u.id}.webp`, source: 'custom' };
   }
   return { ref: 'Runde 10 / P1, erzeugt von tools/aa-import aus docs/aa-import/figuren.json. Vorgabe fuer die Bild-Beschaffung (Homelab): AniList-Suche per anilistQuery (source "anilist"), Wikipedia per imageQuery (source "custom", Crossover); wiki = Rueckfall (AA-Wiki, Roblox-Bild).', units: out };
 }

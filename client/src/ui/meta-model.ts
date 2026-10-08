@@ -6,7 +6,7 @@
 import { hasKey, t } from '../i18n/t';
 import { materialName, type BannerView, type CollectionUnitView, type MatchReward, type PlayerView, type StageDifficultyView } from '../backend/meta';
 import type { UnitDef } from '../sim';
-import { initials, registeredUnitName } from '../view/model';
+import { initials, registeredUnitName, registeredUnitSeries } from '../view/model';
 import { unitCatalog } from './unit-defs';
 
 // ---- Namen und Fehler ------------------------------------------------------------------------------------------------
@@ -17,6 +17,8 @@ const capitalize = (s: string): string => (s ? s.charAt(0).toUpperCase() + s.sli
 /** Name aus den Unit-Daten; der Katalog (`unit-defs.ts`) wird beim ersten Zugriff gebaut und registriert alle Namen und Farben. */
 const dataName = (id: string): string | null => registeredUnitName(id) ?? (unitCatalog(), registeredUnitName(id));
 export const unitName = (id: string): string => (hasKey(`unit.${id}.name`) ? t(`unit.${id}.name`) : (dataName(id) ?? capitalize(id)));
+/** Serie einer Unit (Zweitzeile unter dem Namen); leer, wenn die Daten keine kennen. */
+export const unitSeries = (id: string): string => (dataName(id), registeredUnitSeries(id) ?? '');
 export const unitAbbr = (id: string): string => {
   const n = dataName(id);
   return n ? initials(n) : id.slice(0, 3).toUpperCase();

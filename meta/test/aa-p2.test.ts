@@ -27,6 +27,7 @@ import {
   migrate,
   newProfile,
   nameOf,
+  seriesOf,
   poolOfRarity,
   RAID_UNIT_IDS,
   pull,
@@ -63,12 +64,12 @@ const rich = (crystals = 1_000_000, gold = 1_000_000): Profile => {
 const own = (p: Profile, id: string, o: Partial<Profile['units'][string]> = {}): Profile => ({ ...p, units: { ...p.units, [id]: { level: 1, xp: 0, copies: 1, stars: 1, firstObtainedAt: 'x', ...o } } });
 
 describe('Katalog (AA)', () => {
-  it('575 Units (550 AA + 25 Crossover), alle sechs Seltenheiten, Ausgeblendete nie im Pool', () => {
-    expect(UNIT_CATALOG.length).toBe(575);
+  it('600 Units (550 AA + 25 Crossover + 25 Legends), alle sechs Seltenheiten, Ausgeblendete nie im Pool', () => {
+    expect(UNIT_CATALOG.length).toBe(600);
     for (const r of RARITIES) expect(UNIT_CATALOG.some((u) => u.rarity === r), r).toBe(true);
     const hidden = UNIT_CATALOG.filter((u) => u.hidden).map((u) => u.id);
     expect(hidden.length).toBeGreaterThan(0);
-    for (const pool of ['summonable', 'special', 'crossover'] as const) for (const r of RARITIES) for (const id of poolOfRarity(pool, r)) expect(hidden).not.toContain(id);
+    for (const pool of ['summonable', 'special', 'crossover', 'legends'] as const) for (const r of RARITIES) for (const id of poolOfRarity(pool, r)) expect(hidden).not.toContain(id);
     // Standard-Pool und Special-Pool ueberschneiden sich nicht
     for (const r of RARITIES) {
       const a = new Set(poolOfRarity('summonable', r));
@@ -80,9 +81,9 @@ describe('Katalog (AA)', () => {
     expect(cov.unknownTargets).toEqual([]);
     for (const id of cov.orphans) {
       const u = UNIT_CATALOG.find((x) => x.id === id)!;
-      expect(u.hidden || [...poolOfRarity('summonable', u.rarity), ...poolOfRarity('special', u.rarity), ...poolOfRarity('crossover', u.rarity)].includes(id), id).toBe(true);
+      expect(u.hidden || [...poolOfRarity('summonable', u.rarity), ...poolOfRarity('special', u.rarity), ...poolOfRarity('crossover', u.rarity), ...poolOfRarity('legends', u.rarity)].includes(id), id).toBe(true);
     }
-    const reachable = new Set([...RARITIES.flatMap((r) => [...poolOfRarity('summonable', r), ...poolOfRarity('special', r), ...poolOfRarity('crossover', r)]), ...allRecipes().flatMap((r) => r.to.map((t) => t.id)), ...RAID_UNIT_IDS]);
+    const reachable = new Set([...RARITIES.flatMap((r) => [...poolOfRarity('summonable', r), ...poolOfRarity('special', r), ...poolOfRarity('crossover', r), ...poolOfRarity('legends', r)]), ...allRecipes().flatMap((r) => r.to.map((t) => t.id)), ...RAID_UNIT_IDS]);
     for (const u of UNIT_CATALOG) expect(reachable.has(u.id) || u.hidden, u.id).toBe(true);
   });
 });
@@ -389,5 +390,33 @@ describe('Crossover-Banner (Runde 8 / P6)', () => {
     expect(r.result.pulls).toHaveLength(10);
     for (const h of r.result.pulls) expect(h.unitId.startsWith('x_'), h.unitId).toBe(true);
     expect(balanceOf(r.profile, 'crystals')).toBe(10_000 - 540);
+  });
+});
+
+describe('Legends-of-Earth-Banner (Runde 10 / P1)', () => {
+  it('aktiv, Pool nur p_-Figuren, The Rock ist Featured; 10er-Zug zieht nur p_-Units; Standard/Special/Crossover enthalten keine', () => {
+    const b = getBanner('legends')!;
+    expect(b.active).toBe(true);
+    expect(b.name).toBe('Legends of Earth');
+    expect(b.featured?.unitId).toBe('p_rock');
+    for (const pool of ['summonable', 'special', 'crossover'] as const) for (const r of RARITIES) for (const id of poolOfRarity(pool, r)) expect(id.startsWith('p_'), `${pool}/${id}`).toBe(false);
+    const sizes = Object.fromEntries(RARITIES.map((r) => [r, poolOfRarity('legends', r).length]));
+    expect(sizes).toMatchObject({ rare: 5, epic: 5, legendary: 7, mythic: 5, secret: 3, exclusive: 0 });
+    for (const t of b.tiers) for (const id of poolOfRarity('legends', t.rarity as 'rare')) expect(id.startsWith('p_'), id).toBe(true);
+    const r = pull(rich(10_000), 'legends', 10, env(5));
+    if (!r.ok) throw new Error(r.message);
+    expect(r.result.pulls).toHaveLength(10);
+    for (const h of r.result.pulls) expect(h.unitId.startsWith('p_'), h.unitId).toBe(true);
+    expect(balanceOf(r.profile, 'crystals')).toBe(10_000 - 540);
+  });
+  it('Anzeigename und Serie aus den Unit-Daten: echte Namen, Form in Klammern, keine AA-Parodienamen', () => {
+    expect(nameOf('goku_ssb')).toBe('Son Goku (Super Saiyan Blue)');
+    expect(seriesOf('goku_ssb')).toBe('Dragon Ball');
+    expect(nameOf('kakashi')).toBe('Kakashi Hatake');
+    expect(seriesOf('kakashi')).toBe('Naruto');
+    expect(seriesOf('p_trump')).toBe('Legends of Earth');
+    for (const u of UNIT_CATALOG) expect(u.series, u.id).toBeTruthy();
+    const shown = new Set(UNIT_CATALOG.map((u) => u.name.toLowerCase()));
+    for (const parody of ['copy ninja', 'joykid', 'carrot (super iii)']) expect(shown.has(parody), parody).toBe(false);
   });
 });

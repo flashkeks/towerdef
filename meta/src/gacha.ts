@@ -20,6 +20,7 @@ import { z } from 'zod';
 import featuredExampleJson from '../data/banners/featured-example.json';
 import specialJson from '../data/banners/special.json';
 import crossoverJson from '../data/banners/crossover.json';
+import legendsJson from '../data/banners/legends.json';
 import standardJson from '../data/banners/standard.json';
 import starterJson from '../data/banners/starter.json';
 import { RARITIES, poolOfRarity, type PoolName, type Rarity } from './catalog';
@@ -61,8 +62,8 @@ export const BannerRatesSchema = z
           baseRateBp: z.number().int().min(0),
           /** Verteilung in der Stufe; ohne Angabe: alle Units der Seltenheit aus sim/data/units.json, gleichverteilt */
           units: z.array(z.object({ unitId: z.string(), weightBp: z.number().int().min(1).optional() })).optional(),
-          /** Pool ohne `units`-Liste (Runde 8): `summonable` (Standard, Vorgabe), `special` (begrenzt/Event/Rate-up), `crossover` (Pop-Kultur-Figuren) oder `all`. Siehe `poolOfRarity` in catalog.ts */
-          pool: z.enum(['summonable', 'special', 'crossover', 'all']).optional(),
+          /** Pool ohne `units`-Liste (Runde 8): `summonable` (Standard, Vorgabe), `special` (begrenzt/Event/Rate-up), `crossover` (Pop-Kultur-Figuren), `legends` (Promis, Runde 10) oder `all`. Siehe `poolOfRarity` in catalog.ts */
+          pool: z.enum(['summonable', 'special', 'crossover', 'legends', 'all']).optional(),
         }),
       )
       .min(1),
@@ -80,7 +81,7 @@ export type BannerRates = z.infer<typeof BannerRatesSchema>;
 
 /** Registry: eine Datei je Banner. */
 const ALL_BANNERS: Record<string, BannerRates> = {};
-for (const raw of [standardJson, starterJson, specialJson, crossoverJson, featuredExampleJson]) {
+for (const raw of [standardJson, starterJson, specialJson, crossoverJson, legendsJson, featuredExampleJson]) {
   const b = BannerRatesSchema.parse(raw);
   ALL_BANNERS[b.bannerId] = b;
 }
