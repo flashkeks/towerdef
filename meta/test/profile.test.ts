@@ -16,11 +16,11 @@ describe('Profil-Schema', () => {
     expect(ProfileSchema.safeParse({ ...p, team: ['a', 'b', 'c', 'd', 'e', 'f', 'g'] }).success).toBe(false);
     expect(ProfileSchema.safeParse({ ...p, playerXp: -1 }).success).toBe(false);
     expect(ProfileSchema.safeParse({ ...p, wallet: { crystals: 1.5, gold: 0 } }).success).toBe(false);
-    expect(ProfileSchema.safeParse({ ...p, schemaVersion: 2 }).success).toBe(false);
+    expect(ProfileSchema.safeParse({ ...p, schemaVersion: SCHEMA_VERSION + 1 }).success).toBe(false);
   });
   it('Katalog kommt aus sim/data/units.json, Banner-Pools sind bekannt', () => {
-    expect(UNIT_CATALOG.length).toBeGreaterThanOrEqual(8);
+    expect(UNIT_CATALOG.length).toBeGreaterThanOrEqual(550);
     for (const b of listBanners()) for (const t of b.tiers) for (const u of t.units ?? []) expect(isKnownUnit(u.unitId)).toBe(true);
-    expect(getBanner('standard')?.tiers.map((t) => t.baseRateBp)).toEqual([7000, 2500, 400, 100]);
+    expect(getBanner('standard')?.tiers.map((t) => t.baseRateBp)).toEqual([6900, 2400, 540, 130, 25, 5]);
   });
 });

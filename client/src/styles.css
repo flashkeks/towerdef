@@ -1,6 +1,7 @@
 @import './ui/kit/kit.css';
 @import './ui/kit/backdrop.css';
 @import './ui/lobby.css';
+@import './ui/world.css';
 @import './ui/summon.css';
 @import './ui/collection.css';
 @import './ui/match.css';

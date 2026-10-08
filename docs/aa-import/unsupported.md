@@ -42,3 +42,13 @@ Alles hier ist **No-op oder Näherung, nichts blockiert**: die Unit lädt, wird 
 - `critChance` über 100 % („erneut critten“, U11) gibt es nicht; AA-Daten liegen bei <= 50 %.
 - AoE-`full` trifft alles im Radius der Reichweite um die Unit, auch hinter ihr (AA: „alles in Range“).
 - Ein Angriff ohne Katalog-Eintrag (`null`) greift als `single` an; fehlende `radius`/`angle`/`width` bekommen Standardwerte (8 Studs / 60 Grad / 4 Studs).
+
+## Traits (Runde 8 / P2)
+
+Wirkung im Match ueber `UnitMod` (`traitBp` Schaden additiv, `rangeBp`, `spaBp`, `yieldBp`); Daten `meta/data/aa/traits.json`. **No-op** (Daten bleiben):
+Zusatzschaden gegen Bosse (Reaper) und gegen Gegner mit wenig HP (Culling), True-Damage-Anteil (Celestial), Unit-XP (Adept), Platzierlimit 1 (Unique; x4 Schaden gilt ohne Limit), Doppel-Trait. Golden-Ertrag wirkt nur bei `speedwagon` und `bulma`.
+Neue Units haben keinen Trait (AA: 1 % beim Ziehen); er entsteht nur durch Reroll. Die Verteilung der Stufen 1-3 (70/25/5 %) ist DESIGN, AA nennt sie nicht.
+
+## Import-Einstufung (Runde 8 / P2)
+
+`support: "hidden"` (10 Units) und `limited` (61) stehen mit Gruenden in `report.md`. Ausgeblendete sind nicht ziehbar. Evolutionen ohne spielbares Ziel sind `blocked` (3 Rezepte).

@@ -5,7 +5,6 @@
  * keine IP, kein Geraet, nur Spieldaten und der freiwillige Freitext.
  */
 import type { Command, DifficultyId, SimEvent, UnitMod } from '../sim';
-import { STAGE_ID } from '../sim';
 import { t } from '../i18n/t';
 import type { GameBus } from './events';
 import type { Session } from './session';
@@ -157,7 +156,7 @@ export class Recorder {
       format: REPLAY_FORMAT,
       formatVersion: REPLAY_FORMAT_VERSION,
       gameVersion: appVersion(),
-      stage: STAGE_ID,
+      stage: s.stageId,
       difficulty: s.difficulty,
       players: s.sim.state.players.length,
       seed: s.seed,

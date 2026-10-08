@@ -35,6 +35,9 @@ function kitData(mut?: (k: Record<string, unknown>) => void): GameData {
   };
   mut?.(kit);
   d.bosses = { ref: 't', kits: [BossKitSchema.parse(kit)] } as GameData['bosses'];
+  // Welt-Stages (Runde 8 / P3) wählen ihre Kits per ID; mit ersetzten Kits laufen sie ohne
+  for (const s of Object.values(d.stages)) if (s.world) delete s.bossKits;
+  d.worlds = undefined;
   return d;
 }
 

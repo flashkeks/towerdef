@@ -57,7 +57,7 @@ interface MenuItem {
 }
 
 const MENU: MenuItem[] = [
-  { id: 'play', key: 'lobby.play', icon: 'play', tone: 'var(--gold)', go: (n) => n.stage(), cls: 'span6 hero-tile' },
+  { id: 'play', key: 'lobby.play', icon: 'play', tone: 'var(--gold)', go: (n) => n.world(), cls: 'span6 hero-tile' },
   { id: 'summon', key: 'lobby.summon', icon: 'summon', tone: 'var(--violet)', go: (n) => n.summon(), cls: 'span3' },
   { id: 'units', key: 'lobby.units', icon: 'swords', tone: 'var(--sky)', go: (n) => n.units(), cls: 'span3' },
   { id: 'team', key: 'lobby.team', icon: 'shield', tone: 'var(--aether)', go: (n) => n.team(), cls: 'span2 compact' },

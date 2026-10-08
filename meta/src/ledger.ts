@@ -19,6 +19,9 @@ export const KIND = {
   reward: 'reward',
   levelUp: 'level_up',
   starterGift: 'starter_gift',
+  evolve: 'evolve',
+  traitReroll: 'trait_reroll',
+  migration: 'migration',
 } as const;
 
 export interface BookingInput {

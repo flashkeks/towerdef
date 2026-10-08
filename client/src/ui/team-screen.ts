@@ -100,7 +100,7 @@ export function buildTeam(nav: Nav): HTMLElement {
       }
       team = [...r.team];
       notify(t('team.saved'), 'good', 2200);
-      if (thenPlay) nav.stage();
+      if (thenPlay) nav.world();
       else refresh();
     };
     save.addEventListener('click', () => void doSave(false));

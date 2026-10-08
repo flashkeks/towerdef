@@ -65,4 +65,27 @@
 .ud-progress .stars { display: inline-flex; gap: 3px; color: var(--gold); font-size: 1.05rem; } .ud-progress .stars .off { color: rgba(255, 255, 255, 0.2); }
 .ud-power { color: var(--aether); font-size: 0.84rem; font-weight: 700; }
 .btn.levelup { width: 100%; padding: 11px; }
-.ud-why, .ud-notowned { margin: 4px 0 0; font-size: 0.82rem; }
+.ud-why, .ud-hint, .ud-notowned { margin: 4px 0 0; font-size: 0.82rem; }
+
+/* Trait-Reroll und Evolution */
+.ud-slots { grid-template-columns: 1fr; }
+.ud-trait-badge { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 10px; border-radius: var(--r-md); border: 1px dashed var(--edge-hi); color: var(--tx-2); background: rgba(0, 0, 0, 0.25); }
+.ud-trait-badge.has { border-style: solid; border-color: rgba(233, 197, 107, 0.55); color: var(--gold); background: linear-gradient(120deg, rgba(233, 197, 107, 0.16), rgba(0, 0, 0, 0.25)); }
+.ud-trait-badge .ic { font-size: 1.5rem; flex: none; }
+.ud-trait-text { display: flex; flex-direction: column; gap: 2px; font-size: 0.78rem; line-height: 1.3; }
+.ud-trait-name { font: 800 0.9rem var(--font-display); letter-spacing: 0.04em; color: var(--tx-0); }
+.ud-trait-badge.rolling { animation: trait-roll 0.13s linear infinite; border-color: var(--gold); }
+.ud-trait-badge.rolling .ic { animation: rot 0.5s linear infinite; }
+.ud-trait-badge.landed { animation: trait-land 0.7s var(--ease-out); }
+@keyframes trait-roll { 0% { filter: hue-rotate(0deg) brightness(1.1); } 50% { transform: translateX(2px); } 100% { filter: hue-rotate(60deg) brightness(1.3); } }
+@keyframes trait-land { 0% { box-shadow: 0 0 0 0 var(--gold); transform: scale(1.04); } 100% { box-shadow: 0 0 0 16px rgba(233, 197, 107, 0); transform: none; } }
+.ud-evo-to { display: flex; gap: 5px; flex-wrap: wrap; }
+.ud-needs { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; font-size: 0.8rem; }
+.ud-needs li.ok { color: var(--good); } .ud-needs li.short { color: var(--bad); }
+.ud-evo-cost { display: flex; align-items: center; gap: 6px; font: 800 0.95rem var(--font-num); }
+.ud-evo-cost .ic:first-child { color: var(--aether); } .ud-evo-cost .ic:nth-child(3) { color: var(--gold); }
+.ud-evo-cost .ic + .ic, .ud-evo-cost { }
+.ud-card.evolving { animation: evo-charge 0.8s ease-in forwards; }
+.ud-card.evolved { animation: trait-land 0.9s var(--ease-out); }
+@keyframes evo-charge { 0% { filter: none; } 60% { filter: brightness(1.8) saturate(1.5); transform: scale(1.04); } 100% { filter: brightness(4); transform: scale(1.08); } }
+@media (prefers-reduced-motion: reduce) { .ud-trait-badge.rolling, .ud-trait-badge.landed, .ud-card.evolving, .ud-card.evolved { animation: none; } }

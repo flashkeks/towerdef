@@ -10,8 +10,10 @@ export interface Nav {
   shop(): void;
   settings(): void;
   credits(): void;
-  /** Stage-Auswahl (Terrassenweg mit Stufen) */
-  stage(): void;
-  /** Match starten (Team und Mods holt `main.ts` ueber `Backend.matchSetup`) */
-  play(d: DifficultyId): void;
+  /** Weltkarte: Welten, Acts, Infinite (Runde 8 / P3) */
+  world(): void;
+  /** Stufen-Auswahl eines Acts (ohne Angabe: der naechste offene Act); Schwierigkeit waehlen und starten */
+  stage(stageId?: string): void;
+  /** Match starten (Team und Mods holt `main.ts` ueber `Backend.matchSetup`); ohne `stageId` die Standard-Stage */
+  play(d: DifficultyId, stageId?: string): void;
 }

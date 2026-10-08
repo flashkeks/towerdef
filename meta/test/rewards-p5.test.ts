@@ -19,15 +19,15 @@ describe('Belohnung aus dem Replay (nachgerechnet)', () => {
     expect(loss.result).toBe('loss');
   });
 
-  it('Sieg: Erst-Clear 100 Crystals, Gold und XP nach Tabelle, Stage-Fortschritt, Messung der Rechenzeit', () => {
+  it('Sieg: Erst-Clear 80 Crystals, Gold und XP nach Tabelle, Stage-Fortschritt, Messung der Rechenzeit', () => {
     const r = rewardFromReplay(fresh(), win, env());
     if (!r.ok) throw new Error(r.message);
-    expect(r.result).toMatchObject({ crystals: 100, firstClear: true });
+    expect(r.result).toMatchObject({ crystals: 80, firstClear: true });
     expect(r.result.gold).toBe(150 + 10 * 20);
-    expect(r.result.xp).toBe(60 + 2 * 20);
+    expect(r.result.xp).toBe(35 + 1 * 20);
     expect(r.profile.stages['standard20']!['normal']).toMatchObject({ clears: 1, bestWave: 20 });
-    expect(balanceOf(r.profile, 'crystals')).toBe(100);
-    expect(r.profile.playerXp).toBe(100);
+    expect(balanceOf(r.profile, 'crystals')).toBe(80);
+    expect(r.profile.playerXp).toBe(55);
     console.log(`Nachrechnen eines vollen Siegs: ${r.result.verifyMs} ms (Node)`);
     expect(r.result.verifyMs).toBeLessThan(20_000);
   });
@@ -45,7 +45,7 @@ describe('Belohnung aus dem Replay (nachgerechnet)', () => {
     expect(v.match.wavesHeld).toBeLessThanOrEqual(v.match.waveReached);
     expect(r.result.gold).toBe(10 * v.match.wavesHeld);
     expect(r.result.gold).toBeGreaterThan(0);
-    expect(r.result.xp).toBe(2 * v.match.wavesHeld);
+    expect(r.result.xp).toBe(1 * v.match.wavesHeld);
     expect(r.profile.stages['standard20']!['normal']).toMatchObject({ clears: 0, firstClearAt: null, bestWave: v.match.wavesHeld });
   });
 
@@ -54,10 +54,10 @@ describe('Belohnung aus dem Replay (nachgerechnet)', () => {
     if (!a.ok) throw new Error(a.message);
     const b = rewardFromReplay(a.profile, win, env());
     expect(b).toMatchObject({ ok: false, code: 'already-reported' });
-    expect(balanceOf(a.profile, 'crystals')).toBe(100);
+    expect(balanceOf(a.profile, 'crystals')).toBe(80);
     // anderes Replay desselben Spielers: Wiederholung 25 %
     const c = rewardFromReplay(a.profile, botReplay({ seed: 1 }), env());
-    expect(c.ok && c.result).toMatchObject({ crystals: 25, firstClear: false });
+    expect(c.ok && c.result).toMatchObject({ crystals: 20, firstClear: false });
   });
 
   it('manipuliertes Replay: Ergebnis, Hash, Welle, Befehle, Seed -> keine Belohnung', () => {
@@ -129,12 +129,12 @@ function verifyReplayPlaced(): string[] {
 
 describe('Zahlen der Tabelle', () => {
   it('Erst-Clear und Wiederholung', () => {
-    expect(REWARD_TABLE.crystals.firstClear).toEqual({ normal: 100, hard: 150, nightmare: 200 });
-    expect(['normal', 'hard', 'nightmare'].map(repeatCrystals)).toEqual([25, 38, 50]);
+    expect(REWARD_TABLE.crystals.firstClear).toEqual({ normal: 80, hard: 120, nightmare: 160 });
+    expect(['normal', 'hard', 'nightmare'].map(repeatCrystals)).toEqual([20, 30, 40]);
   });
-  it('Sieg in Welle 20 entspricht 100/150/200 XP (rec 15), Niederlage bekommt Wellenanteil', () => {
-    expect(['normal', 'hard', 'nightmare'].map((d) => rewardAmounts(d, 'win', 20, true).xp)).toEqual([100, 150, 200]);
-    expect(rewardAmounts('normal', 'loss', 10, false)).toEqual({ crystals: 0, gold: 100, xp: 20 });
+  it('Sieg in Welle 15 entspricht 50/80/115 XP (AA: 50 je Act), Niederlage bekommt Wellenanteil', () => {
+    expect(['normal', 'hard', 'nightmare'].map((d) => rewardAmounts(d, 'win', 15, true).xp)).toEqual([50, 80, 115]);
+    expect(rewardAmounts('normal', 'loss', 10, false)).toEqual({ crystals: 0, gold: 100, xp: 10 });
     expect(rewardAmounts('normal', 'loss', 0, false)).toEqual({ crystals: 0, gold: 0, xp: 0 });
     expect(rewardAmounts('normal', 'loss', 99, false).gold).toBe(200); // gekappt auf 20 Wellen
   });

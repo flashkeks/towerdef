@@ -4,7 +4,7 @@ import { data } from './helpers.js';
 
 /** Rauchtest (Kurswechsel 07.10.2026, Punkt 4): keine Siegquoten-Korridore, nur "läuft durch" und "nichts völlig kaputt". */
 describe('Rauchtest: Bots spielen beliebige Units aus dem Datenformat', () => {
-  it('zufällige Units aus sample.json (auto): die Stage läuft ohne Absturz bis zum Ende, deterministisch je Seed', () => {
+  it('zufällige Units aus aa.json (auto): die Stage läuft ohne Absturz bis zum Ende, deterministisch je Seed', () => {
     for (const seed of [1, 2, 3, 4, 5, 6]) {
       const a = runMatch({ stage: 'standard20', difficulty: 'normal', players: 1, seed, bots: ['auto'] });
       expect(['win', 'loss']).toContain(a.result);
@@ -12,8 +12,8 @@ describe('Rauchtest: Bots spielen beliebige Units aus dem Datenformat', () => {
       if (seed <= 2) expect(runMatch({ stage: 'standard20', difficulty: 'normal', players: 1, seed, bots: ['auto'] }).hash).toBe(a.hash);
     }
   });
-  it('jede Unit aus sample.json für sich (mono): 2 Waves ohne Absturz', () => {
-    for (const u of data.units.units) {
+  it('jede elfte Unit aus aa.json für sich (mono): 2 Waves ohne Absturz (alle 550 prüft units-data.test.ts mit 3 Waves)', () => {
+    for (const u of data.units.units.filter((_, i) => i % 11 === 0)) {
       const r = runMatch({ stage: 'standard20', difficulty: 'normal', players: 1, seed: 1, bots: [`mono-${u.id}`], maxTicks: 2 * 900 });
       expect(r.ticks, u.id).toBeGreaterThan(0);
     }

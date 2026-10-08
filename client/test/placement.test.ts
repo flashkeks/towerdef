@@ -231,7 +231,7 @@ describe('Unit-Anzeige', () => {
     expect(statValues(by.speedwagon, 0)[0].key).toBe('stat.yield');
   });
   it('alle Units haben anzeigbare Werte auf jeder Stufe', () => {
-    for (const d of defs) {
+    for (const d of defs.filter((x) => x.support !== 'hidden' && !x.supportNotes?.includes('partial-levels'))) {
       const def = catalog.find((c) => c.id === d.id)!;
       for (let l = 0; l <= def.maxLevel; l++) expect(statValues(def, l).length, `${d.id}@${l}`).toBeGreaterThan(0);
     }

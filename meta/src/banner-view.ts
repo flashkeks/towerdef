@@ -11,7 +11,7 @@ import { batchesUsed, pullCost, resolveBanner, type BannerRates } from './gacha'
 import type { Pity, Profile } from './profile';
 import type { Rarity } from './catalog';
 
-export const START_VALUES_NOTICE = 'Starting values (round 7), not calibrated. They may change; every change gets a new rates version.';
+export const START_VALUES_NOTICE = 'Starting values (round 8), not calibrated. They may change; every change gets a new rates version.';
 
 const label = (r: string): string => r.charAt(0).toUpperCase() + r.slice(1);
 const article = (r: string): string => (/^[aeiou]/i.test(r) ? 'an' : 'a');

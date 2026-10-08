@@ -240,3 +240,12 @@ Kurven stehen als Daten in `data/progression.json` (zod: `ProgressionSchema` in 
 **Format v2 (Runde 6 / P1):** `place` trägt `x`, `y` (Milli-Tiles) statt `slot`. v1-Dateien (`beispiel-normal.json`, `2026-10-07-max-normal-loss.json`) bleiben als Dokument liegen.
 
 **Format v4 (Runde 8 / P1, aktuell):** wie v3, aber die Units kommen aus dem AA-Datenformat (`sim/data/units/*.json`) und dem Maßstab in `economy.json`; v1 bis v3 sind „altes Regelwerk“ (nicht nachspielbar, die Dateien bleiben als Dokument lesbar, `meta` meldet `replay-old-rules`). Beispiele (vom Simulator erzeugt): `beispiel-v4-bot-normal.json`, `beispiel-v4-bot-normal-mid.json` (`npx tsx scripts/export-replay.ts --bot mono-goku_ssj3 --difficulty normal --seed 7 --meta mid --out ...`). Nach jeder Regel- oder Datenänderung neu erzeugen, sonst schlägt `test/replay.test.ts` an.
+
+
+## Karten, Stages und Welten (Runde 8 / P3)
+
+**Stage-Format** (`data/stages/*.json` und erzeugte Welt-Stages): `path` (Wegpunkte in Tiles, Tile-Mitten), `pathWidth`, `zones.rows` (Kachelmaske, Zeile = y, Spalte = x, `.` Boden, `h` Huegel, `#` blockiert, `p` Pfad nur Anzeige), `waves`. Die Sim laedt **Karte und Pfad aus der Stage** (`createSim({ stage })`), es gibt keine feste Karte; mehrere Karten liegen nebeneinander. Optionale Felder (Runde 8): `world`, `act`, `hpBp` (Gegner-HP-Faktor der Stage, wirkt auch auf die Bounty-Basis), `roster` (Anzeigenamen je Gegnertyp), `bossName`, `bossKits` (Welle -> Kit-ID; ohne Angabe gilt `kit.wave`), `theme` (Farbwelt, nur Client). Der Client zeichnet jede Karte aus der Maske (17 x 11).
+
+**Welten** (`data/worlds/*.json`, `data/wave-template.json`): eine Datei je Welt, `loadGameData()` erzeugt daraus `<welt>-1` .. `<welt>-6` und `<welt>-infinite` (`src/data/worlds.ts`, `expandWorld`). Neue Welt = nur Daten, Anleitung und Inhalt: [docs/aa-import/welten.md](../docs/aa-import/welten.md). Vorschau: `npx tsx scripts/map-preview.ts [welt]`. Legend Stages und Raids: `data/modes/*.json` (Daten-Geruest, nicht spielbar).
+
+Boss-Kits ohne `wave` gehoeren keiner Welle und werden nur ueber `stage.bossKits` gewaehlt.

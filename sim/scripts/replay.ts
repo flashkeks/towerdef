@@ -206,7 +206,7 @@ function validMods(m: unknown): UnitMod[] | undefined {
   if (!Array.isArray(m)) throw new Error('unitMods ist keine Liste');
   for (const x of m as Partial<UnitMod>[]) {
     if (!Number.isInteger(x?.player) || typeof x?.unit !== 'string') throw new Error('unitMods: Eintrag ohne player/unit');
-    for (const k of ['lvlBp', 'traitBp', 'yieldBp'] as const) if (x[k] !== undefined && !Number.isInteger(x[k])) throw new Error(`unitMods: ${k} keine ganze Zahl`);
+    for (const k of ['lvlBp', 'traitBp', 'yieldBp', 'rangeBp', 'spaBp'] as const) if (x[k] !== undefined && !Number.isInteger(x[k])) throw new Error(`unitMods: ${k} keine ganze Zahl`);
   }
   return m as UnitMod[];
 }

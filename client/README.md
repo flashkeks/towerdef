@@ -38,7 +38,9 @@ Faustregeln: Farben nur ueber Tokens; ein Baustein kennt keine Spieldaten (Name,
 **Seltenheits-Rahmen:** `rarityFrame('mythic', inhalt, { live })`: Ring mit Verlauf und Leuchten, Mythic/Secret/Exclusive laufen (gedrehtes Pseudo-Element, kein Repaint).
 **Portraets:** `view/portrait.ts` (`portraitUrl(id)` = `/aa/units/<id>.webp`, `hasPortrait(id)`); fehlt das Bild, steht eine gestaltete Ersatzkarte (Initialen, Element-Farbe, Silhouette), Ladefehler werden gemerkt.
 
-Sichtlogik ohne DOM (Tests `test/collection-model.test.ts`):
+Weltkarte: `ui/world-map.ts` (DOM im Kit-Stil, `ui/world.css`) auf `ui/world-model.ts` (P3, ohne DOM). Porträt-Quelle: `view/portrait.ts` (Manifest + optional `/aa/index.json`, `portraitKnown(id)` sofort, `hasPortrait(id)` async).
+
+Sichtlogik ohne DOM (Tests `test/collection-model.test.ts`, `test/portrait-index.test.ts`):
 
 - `ui/collection-model.ts`: `filterCollection`/`sortCollection`/`queryCollection` (Seltenheit, Element, Platzierung, Rolle, Besitz, Suche; Sortierung nach Seltenheit, Element, Platzierung, DPS, Level, Name), `gridLayout`/`visibleRange`/`itemPos` (virtuelles Raster), `attackShape`/`shapeGeometry` (Angriffsform), `pickHero` (Lobby-Held).
 - `ui/virtual-grid.ts`: DOM-Huelle um die Rasterrechnung (561+ Units, nur sichtbare Zeilen im DOM; `data-count` am Raster = Gesamtzahl).

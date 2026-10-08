@@ -85,6 +85,8 @@ export function applyCommand(w: World, playerId: number, cmd: Command): CommandR
         lvlBp: mod?.lvlBp ?? 10000,
         traitBp: mod?.traitBp ?? 0,
         yieldBp: mod?.yieldBp ?? 10000,
+        ...(mod?.rangeBp ? { traitRangeBp: mod.rangeBp } : {}),
+        ...(mod?.spaBp ? { traitSpaBp: mod.spaBp } : {}),
         lust: 0,
         snatch: 0,
         snatchTicks: 0,

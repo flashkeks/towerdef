@@ -9,6 +9,10 @@ export interface FixtureOptions {
   /** Nur diese Units kauft der Bot (`mono-A,B`); ohne `only` und `bot`: Goku SSJ3 + Rikka (gewinnt Normal) */
   only?: string[];
   formatVersion?: number;
+  /** Stage-ID (Standard `standard20`); Runde 8 / P3: auch Welten wie `greenie-1` */
+  stage?: string;
+  maxWaves?: number;
+  maxTicks?: number;
   team?: string[] | null;
   extra?: Record<string, unknown>;
 }
@@ -18,12 +22,12 @@ export function botReplay(o: FixtureOptions = {}): Record<string, any> {
   const difficulty = o.difficulty ?? 'normal';
   const seed = o.seed ?? 7;
   const commands: { tick: number; player: number; cmd: unknown; ok: boolean; reason?: string }[] = [];
-    const r = runMatch({ stage: 'standard20', difficulty, players: 1, seed, bots: [bot], onCommand: (c) => commands.push({ tick: c.tick, player: c.player, cmd: c.cmd, ok: c.ok, ...(c.reason ? { reason: c.reason } : {}) }) });
+    const r = runMatch({ stage: o.stage ?? 'standard20', difficulty, players: 1, seed, bots: [bot], ...(o.maxWaves ? { maxWaves: o.maxWaves } : {}), ...(o.maxTicks ? { maxTicks: o.maxTicks } : {}), onCommand: (c) => commands.push({ tick: c.tick, player: c.player, cmd: c.cmd, ok: c.ok, ...(c.reason ? { reason: c.reason } : {}) }) });
     return {
       format: 'towerdef-replay',
       formatVersion: o.formatVersion ?? 4,
       gameVersion: 'test',
-      stage: 'standard20',
+      stage: o.stage ?? 'standard20',
       difficulty,
       players: 1,
       seed,

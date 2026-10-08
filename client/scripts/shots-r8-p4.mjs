@@ -1,6 +1,7 @@
 // Runde 8 / P4: Screenshots des neuen Interface (Lobby, Summon, Enthuellung Mythic/Secret, 10er-Uebersicht, Sammlung, Detail, Match-HUD).
 // Braucht dist/ (npm run build). Schreibt client/docs/r8/p4-*.png. Port: SHOT_PORT (Standard 4443). SHOT_DIR aendert das Ziel.
-// Fuer "Sammlung mit vielen Units" liegt waehrend des Builds eine Stress-Datei in sim/data/units (nicht im Repo); ohne sie zeigt die Sammlung nur den Bestand.
+// Echte Daten (550 AA-Units aus sim/data/units/aa.json). Der Fortschritt wird teils ueber das Backend im Browser vorbereitet (`window.__ui.backend()`:
+// Mock-Kauf fuer Crystals, Zuege fuer Units), das Fotografieren laeuft ueber echte Klicks.
 import { mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { buildTeam, fastForward, launch, root, sleep, startServer } from './lib/drive.mjs';
@@ -21,7 +22,31 @@ try {
   await shot(page, 'lobby-fresh');
   await page.locator('.starter-claim').click();
   await page.waitForSelector('.starter-card.done');
-  await sleep(1500);
+  // Vorbereitung ueber das Backend: Crystals (Mock-Shop) und ein paar Zuege, damit die Sammlung gefuellt ist und Evolution/Trait zu sehen sind
+  const prep = await page.evaluate(async () => {
+    const b = window.__ui.backend();
+    const key = () => crypto.randomUUID();
+    const cat = await b.shopCatalog();
+    const sku = cat.products[cat.products.length - 1].sku;
+    for (let i = 0; i < 4; i++) {
+      const r = await b.buy(sku, key());
+      if (r.ok && r.order.status === 'pending') await b.refreshOrder(r.order.orderId, key());
+    }
+    let pulls = 0;
+    for (let i = 0; i < 12; i++) {
+      const v = await b.bannerViews();
+      const std = v.views.find((x) => x.kind === 'standard');
+      const r = await b.pull(std.bannerId, 10, key());
+      if (!r.ok) break;
+      pulls++;
+    }
+    const pv = await b.playerView();
+    return { pulls, owned: pv.player.ownedCount, crystals: pv.player.crystals };
+  });
+  console.log('Vorbereitung', JSON.stringify(prep));
+  await page.reload();
+  await page.waitForSelector('.lobby:not(.loading)');
+  await sleep(1800);
   await shot(page, 'lobby');
 
   // Summon
@@ -79,9 +104,29 @@ try {
   await sleep(1000);
   await shot(page, 'collection');
   console.log('Karten im DOM', await page.locator('.unit-tile').count(), 'von', await page.locator('.unit-grid').getAttribute('data-count'));
-  await page.locator('.unit-tile[data-owned="true"]').nth(2).click();
-  await sleep(500);
+  console.log('Seltenheits-Chips', await page.locator('.filter-btn[data-group="rarity"]').count() - 1);
+  // eine besessene Unit mit Evolution und Trait suchen (Detail zeigt Kosten, Zutaten, Reroll)
+  const owned = page.locator('.unit-tile[data-owned="true"]');
+  const n = await owned.count();
+  let found = false;
+  for (let i = 0; i < n && !found; i++) {
+    await owned.nth(i).click();
+    await sleep(120);
+    found = (await page.locator('.ud-evolve').count()) > 0;
+  }
+  console.log('Detail mit Evolution gefunden:', found);
+  await sleep(300);
+  await page.locator('.unit-detail').evaluate((e) => (e.scrollTop = 250));
   await shot(page, 'unit-detail');
+  if (!(await page.locator('.ud-reroll').isDisabled())) {
+    await page.locator('.ud-reroll').click();
+    await sleep(350);
+    await shot(page, 'unit-reroll');
+    await page.waitForSelector('.ud-trait-badge.has', { timeout: 6000 }).catch(() => {});
+    await sleep(500);
+    await page.locator('.unit-detail').evaluate((e) => (e.scrollTop = 250));
+    await shot(page, 'unit-detail-trait');
+  }
   await page.locator('.filter-btn[data-group="rarity"][data-value="secret"]').click();
   await page.locator('.unit-sort').selectOption('dps');
   await page.locator('.vgrid').evaluate((e) => (e.scrollTop = 600));
@@ -105,13 +150,17 @@ try {
   await page.locator('.meta-head .menu-back').click();
   await page.waitForSelector('.lobby:not(.loading)');
   await page.locator('.lobby-play').click();
+  await page.waitForSelector('.act-card');
+  await sleep(700);
+  await shot(page, 'world');
+  await page.locator('.act-card[data-stage="greenie-1"]').click();
   await page.waitForSelector('.stage-card');
   await sleep(500);
   await shot(page, 'stage');
   await page.locator('.stage-card[data-difficulty="normal"]').click();
   await page.waitForSelector('canvas.board');
   await page.evaluate(() => localStorage.setItem('dw.hints', JSON.stringify({ off: true })));
-  const placed = await buildTeam(page, { units: ['goku_ssj3', 'goku_ssj3', 'ichigo', 'ichigo', 'krillin'], level: 2 });
+  const placed = await buildTeam(page, { units: ['goku_ssj3', 'goku_ssj3', 'monet', 'ichigo', 'krillin'], level: 2 });
   console.log('gesetzt', placed);
   await fastForward(page, 9);
   await page.evaluate(() => {

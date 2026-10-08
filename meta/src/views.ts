@@ -4,12 +4,16 @@
  * Besitzer: P4.
  */
 import { UNIT_CATALOG, type Rarity } from './catalog';
+import { evolutionView, type EvolutionView } from './evolution';
+import { rerollCost, traitName, traitText } from './traits';
 import { levelUpCost, MAX_UNIT_LEVEL } from './leveling';
 import { MAX_PLAYER_LEVEL, unlockLevelFor, xpToReach } from './progression';
 import { MAX_TEAM, type Profile } from './profile';
 import { REWARD_TABLE, repeatCrystals } from './rewards';
 import { copiesForNextStar, MAX_STARS, starsForCopies } from './stars';
 import { damageBpOf, NEUTRAL_BP } from './unit-mods';
+import { stageInfoView, type StageInfoView } from './world-view';
+import { stageWaveCap } from './worlds';
 
 export interface PlayerView {
   displayName: string;
@@ -55,7 +59,17 @@ export function playerView(p: Profile): PlayerView {
 
 export interface CollectionUnitView {
   unitId: string;
+  /** Anzeigename (AA `nameRR`) */
+  name: string;
   rarity: Rarity;
+  /** entwickelte Form: nur ueber Evolution zu bekommen (Vorstufe) */
+  evolvedFrom: string | null;
+  /** Trait der besessenen Unit (Name mit Stufe, Wirkungstext) oder `null` */
+  trait: { id: string; tier: number; name: string; text: string } | null;
+  /** Crystals fuer einen Trait-Reroll (nach Seltenheit) */
+  rerollCost: number | null;
+  /** Evolution dieser Unit (Ziel, Kosten, Voraussetzungen, `ready`) oder `null` ohne Rezept */
+  evolution: EvolutionView | null;
   owned: boolean;
   level: number;
   maxLevel: number;
@@ -74,18 +88,26 @@ export interface CollectionUnitView {
   inTeam: boolean;
 }
 
-/** Alle Units des Katalogs (auch nicht besessene), in Katalogreihenfolge. Neue Units aus `units.json` erscheinen von selbst. */
+/** Alle Units des Katalogs (auch nicht besessene), in Katalogreihenfolge; ausgeblendete (`support: hidden`) nur, wenn sie besessen werden. Neue Units erscheinen von selbst. */
 export function collectionView(p: Profile): { units: CollectionUnitView[]; ownedCount: number; total: number } {
-  const units = UNIT_CATALOG.map((c): CollectionUnitView => {
+  const units = UNIT_CATALOG.filter((c) => !c.hidden || p.units[c.id]).map((c): CollectionUnitView => {
     const o = p.units[c.id];
+    const common = {
+      name: c.name,
+      evolvedFrom: c.evolvedFrom,
+      trait: o?.trait ? { id: o.trait.id, tier: o.trait.tier, name: traitName(o.trait), text: traitText(o.trait) } : null,
+      rerollCost: rerollCost(c.id),
+      evolution: evolutionView(c.id, p),
+    };
     if (!o) {
-      return { unitId: c.id, rarity: c.rarity, owned: false, level: 0, maxLevel: MAX_UNIT_LEVEL, copies: 0, stars: 0, maxStars: MAX_STARS, copiesForNextStar: null, copiesToNextStar: null, levelUpCost: null, canLevelUp: false, powerBp: NEUTRAL_BP, powerBonusPct: 0, inTeam: false };
+      return { ...common, unitId: c.id, rarity: c.rarity, owned: false, level: 0, maxLevel: MAX_UNIT_LEVEL, copies: 0, stars: 0, maxStars: MAX_STARS, copiesForNextStar: null, copiesToNextStar: null, levelUpCost: null, canLevelUp: false, powerBp: NEUTRAL_BP, powerBonusPct: 0, inTeam: false };
     }
     const stars = starsForCopies(o.copies);
     const next = copiesForNextStar(stars);
     const cost = o.level >= MAX_UNIT_LEVEL ? null : levelUpCost(o.level);
     const powerBp = damageBpOf(o);
     return {
+      ...common,
       unitId: c.id,
       rarity: c.rarity,
       owned: true,
@@ -121,7 +143,16 @@ export interface StageDifficultyView {
   maxWaves: number;
 }
 
-export function stageView(p: Profile, stageId: string): { stageId: string; playerLevel: number; difficulties: StageDifficultyView[] } {
+export interface StageViewData {
+  stageId: string;
+  playerLevel: number;
+  difficulties: StageDifficultyView[];
+  /** Runde 8 / P3: Welt/Act/Boss/Sperre der Stage; `null` fuer Stages ausserhalb der Weltstruktur (`standard20`) */
+  info: StageInfoView | null;
+}
+
+export function stageView(p: Profile, stageId: string): StageViewData {
+  const maxWaves = stageWaveCap(stageId);
   const difficulties = Object.keys(REWARD_TABLE.crystals.firstClear).map((d): StageDifficultyView => {
     const prog = p.stages[stageId]?.[d];
     const unlockLevel = unlockLevelFor(d);
@@ -134,10 +165,10 @@ export function stageView(p: Profile, stageId: string): { stageId: string; playe
       cleared: !!prog?.firstClearAt,
       clears: prog?.clears ?? 0,
       bestWave: prog?.bestWave ?? 0,
-      maxWaves: REWARD_TABLE.maxWaves,
+      maxWaves,
     };
   });
-  return { stageId, playerLevel: p.playerLevel, difficulties };
+  return { stageId, playerLevel: p.playerLevel, difficulties, info: stageInfoView(p, stageId) };
 }
 
 export interface HistoryEntry {

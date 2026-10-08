@@ -4,6 +4,7 @@
  * (bei 10 Zuegen 5 x 2). Ein Klick (irgendwo), Esc oder der Knopf ueberspringt zur Uebersicht; ein weiterer schliesst. Das Ergebnis steht beim
  * Zeigen schon fest, die Animation aendert nichts. Ablaufplan ohne DOM: `reveal-model.ts`.
  */
+import { getBackend } from '../backend';
 import type { PullBatchResult } from '../backend/meta';
 import { t } from '../i18n/t';
 import { h } from './dom';
@@ -150,7 +151,7 @@ export function openReveal(batch: Pick<PullBatchResult, 'pulls'>): Promise<void>
 declare global {
   interface Window {
     /** Debug-Zugriff (Screenshots, Playwright): Animation mit frei gewaehltem Ergebnis zeigen. Rechnet nichts, buchbar ist nichts. */
-    __ui?: { openReveal: typeof openReveal };
+    __ui?: { openReveal: typeof openReveal; backend: typeof getBackend };
   }
 }
-window.__ui = { openReveal };
+window.__ui = { openReveal, backend: getBackend };

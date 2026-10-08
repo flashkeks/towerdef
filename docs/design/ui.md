@@ -72,9 +72,13 @@ Name (Display) und Stufe/Sterne unten. **Ohne Bild** (lokal immer, auf der Previ
   Unit-Leiste aus Porträt-Karten (Taste, Kosten, Platzierungs-Chip, Symbole); Unit-Panel mit Porträt, Stufen-Leiste und Werten **alt → neu**; Vorschau-, Karten- und
   Boss-Panels im gleichen Glas-Stil.
 
+## Nach dem Merge mit P2/P3
+
+- **Porträts genau:** `view/portrait.ts` kennt das Bild-Manifest des Importers (`client/public/aa/manifest.json`, nur diese IDs kommen für ein Bild in Frage) und liest zur Laufzeit `/aa/index.json`, wenn die Preview sie ausliefert (Liste der tatsächlich vorhandenen Bilder). Ohne Index (lokal) gilt der Ladeversuch je ID, Fehlschläge fallen auf die Ersatzkarte zurück.
+- **Weltkarte (P3-Funktion):** Welt-Banner als Reiter (Farbe aus der Welt-Palette, Fortschrittsleiste, Schloss mit Grund), Acts als Medaillons (Nummer, geschafft = Haken, gesperrt = Schloss, „NEXT“-Marke), Infinite als breites Banner, „Coming later“ als gestrichelte Leiste. Danach die Stufenwahl je Act im selben Stil.
+- **Trait und Evolution (P2-Backend):** Detailseite zeigt Trait (Name, Wirkung) mit Reroll-Kosten, Evolution mit Zielen (Zufalls-Evolution mit Prozent), Zutaten (grün/rot), Kosten, Sperrgrund. Reroll: kurzes Würfeln (Badge flackert und dreht), danach Landeblitz; Evolution: Bestätigung, Aufladen der Karte, Blitz, Auswahl springt auf die neue Form. Fehlercodes als Toast.
+
 ## Was bewusst nicht gemacht wurde
 
-- Keine Porträt-Bilder erzeugt oder simuliert: der Fallback ist das Gestaltungsmittel, solange P2 die Bilder nicht liefert.
-- Evolution und Trait-Reroll sind Oberfläche ohne Funktion (Backend: P2).
+- Keine Porträt-Bilder erzeugt oder simuliert: der Fallback ist das Gestaltungsmittel, solange die Bilder nicht ausgeliefert sind.
 - Einstellungen, Credits, Ergebnis, Pause und Hilfe erben nur die Farbwelt (Tokens, Panels, Knöpfe), sind aber nicht neu gebaut.
-- Weltkarte (P3) ist nicht angefasst; sie kann `panel()`, `rarityFrame()`, `portraitCard()`, `tile()` aus `ui/kit/` übernehmen.

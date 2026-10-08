@@ -2,7 +2,7 @@
 import { t } from '../i18n/t';
 import type { Session } from '../game/session';
 import type { WavePreview } from '../sim';
-import { compactNumber, previewModel } from '../view/model';
+import { compactNumber, enemyName, previewModel } from '../view/model';
 import { airCapable, bossHelpers, flyerWarning, joinOr } from '../view/readability';
 import { clear, h, setClass } from './dom';
 import { unitName } from './meta-model';
@@ -53,7 +53,7 @@ export class WavePanels {
       if (r.flying) li.classList.add('flying');
       const cnt = h('span', 'cnt');
       if (r.flying) cnt.append(h('span', 'sym fly', t('preview.flyers.icon')));
-      cnt.append(t('preview.group', { count: r.count, name: t(`enemy.${r.type}.name`) }));
+      cnt.append(t('preview.group', { count: r.count, name: enemyName(r.type) }));
       li.append(cnt);
       const extras: string[] = r.modifiers.map((x) => t(x.key, x.params));
       if (r.flying) extras.push(t('preview.flying'));

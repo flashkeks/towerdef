@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { LEVEL_COST_BASE, MAX_PLAYER_LEVEL, MAX_UNIT_LEVEL, MAX_TEAM, STARTER_EXTRA, addPlayerXp, balanceOf, book, claimStarterGift, isDifficultyUnlocked, levelFromXp, levelUp, levelUpCost, levelUpTotalCost, newProfile, pull, rewardFromReplay, starterUnits, testEnv, unitIds, xpToReach, KIND, type Profile } from '../src';
+import { LEVEL_COST_BASE, MAX_PLAYER_LEVEL, MAX_UNIT_LEVEL, MAX_TEAM, STARTER_UNITS, addPlayerXp, balanceOf, book, claimStarterGift, isDifficultyUnlocked, levelFromXp, levelUp, levelUpCost, levelUpTotalCost, newProfile, pull, rewardFromReplay, starterUnits, testEnv, unitIds, xpToReach, KIND, type Profile } from '../src';
 import { botReplay } from './replay-fixture';
 
 const env = () => testEnv(5);
@@ -66,9 +66,9 @@ describe('Spieler-Level', () => {
     expect(levelFromXp(xpToReach(25))).toBe(25);
     expect(levelFromXp(10_000_000)).toBe(MAX_PLAYER_LEVEL);
   });
-  it('Belohnung aus dem Replay hebt das Level (Sieg = 100 XP)', () => {
+  it('Belohnung aus dem Replay hebt das Level (Sieg in 20 Wellen = 55 XP)', () => {
     const win = botReplay({ seed: 7 });
-    let p = addPlayerXp(newProfile(env()), xpToReach(2) - 100).profile;
+    let p = addPlayerXp(newProfile(env()), xpToReach(2) - 55).profile;
     expect(p.playerLevel).toBe(1);
     const r = rewardFromReplay(p, win, env());
     if (!r.ok) throw new Error(r.message);
@@ -80,15 +80,15 @@ describe('Spieler-Level', () => {
 });
 
 describe('Starter-Geschenk', () => {
-  it('einmalig: 450 Crystals, Rare+Epic+Goku, Team gesetzt; zweites Mal geht nicht', () => {
+  it('einmalig: 450 Crystals, feste AA-Start-Sammlung, Team = die ersten sechs; zweites Mal geht nicht', () => {
     const p = starter();
     expect(balanceOf(p, 'crystals')).toBe(450);
     const ids = starterUnits();
-    expect(ids).toEqual(expect.arrayContaining(['ichigo', 'krillin', 'josuke', 'speedwagon', ...STARTER_EXTRA]));
+    expect(ids).toEqual([...STARTER_UNITS]);
+    expect(ids).toEqual(expect.arrayContaining(['goku_ssj3', 'krillin', 'speedwagon']));
     expect(Object.keys(p.units).sort()).toEqual([...ids].sort());
-    expect(p.team.length).toBe(Math.min(MAX_TEAM, ids.length));
+    expect(p.team).toEqual(ids.slice(0, MAX_TEAM));
     expect(p.team).toContain('goku_ssj3');
-    expect(p.team.every((u) => p.units[u])).toBe(true);
     expect(claimStarterGift(p, env())).toMatchObject({ ok: false, code: 'starter-already-claimed' });
     expect(balanceOf(p, 'crystals')).toBe(450);
     for (const id of ids) expect(unitIds()).toContain(id);
@@ -97,9 +97,9 @@ describe('Starter-Geschenk', () => {
     const r = pull(starter(), 'standard', 10, env());
     expect(r.ok).toBe(true);
   });
-  it('Start-Sammlung reicht fuer Normal (Rauchtest, kein Balancing): ein Bot mit der Starter-Extra-Unit siegt', () => {
-    expect(starterUnits()).toEqual(expect.arrayContaining([...STARTER_EXTRA]));
-    const wins = [1, 2, 3].filter((seed) => botReplay({ seed, only: [...STARTER_EXTRA] }).result === 'win').length;
+  it('Start-Team reicht fuer Normal (Rauchtest, kein Balancing): ein Bot mit dem Start-Team siegt', () => {
+    const team = starter().team;
+    const wins = [1, 2, 3].filter((seed) => botReplay({ seed, only: team }).result === 'win').length;
     expect(wins).toBeGreaterThanOrEqual(2);
   });
 });

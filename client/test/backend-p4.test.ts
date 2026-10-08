@@ -41,10 +41,10 @@ describe('Sichtmodelle ueber das Backend', () => {
     const pv = await be.playerView();
     const cv = await be.collectionView();
     if (!pv.ok || !cv.ok) throw new Error('x');
-    expect(pv.player).toMatchObject({ crystals: 450, starterGiftAvailable: false, teamTarget: 5 }); // Starter: alle Rare/Epic des Katalogs + Goku SSJ3
-    expect(pv.player.team).toHaveLength(5);
+    expect(pv.player).toMatchObject({ crystals: 450, starterGiftAvailable: false, teamTarget: 6 }); // Starter: 12 AA-Units, Team = die ersten sechs
+    expect(pv.player.team).toHaveLength(6);
     expect(cv.ownedCount).toBe(pv.player.ownedCount);
-    expect(cv.units.filter((u) => u.inTeam)).toHaveLength(5);
+    expect(cv.units.filter((u) => u.inTeam)).toHaveLength(6);
     expect((await be.claimStarterGift(key(2))).ok).toBe(false);
   });
 
@@ -56,7 +56,7 @@ describe('Sichtmodelle ueber das Backend', () => {
     const m = await be.reportMatch(starterReplay({ seed: 1 }), key(3));
     if (!m.ok) throw new Error(m.message);
     const after = await be.stageView(STAGE_ID);
-    expect(after.ok && after.difficulties[0]).toMatchObject({ cleared: true, clears: 1, bestWave: 20, firstClearCrystals: 100, repeatCrystals: 25 });
+    expect(after.ok && after.difficulties[0]).toMatchObject({ cleared: true, clears: 1, bestWave: 20, firstClearCrystals: 80, repeatCrystals: 20 });
   });
 
   it('pullHistory: neueste zuerst, begrenzt', async () => {
@@ -91,8 +91,8 @@ describe('matchSetup', () => {
     const be = await started();
     const a = await be.matchSetup('normal');
     if (!a.ok) throw new Error(a.message);
-    expect(a.team).toHaveLength(5);
-    expect(a.unitMods).toHaveLength(5);
+    expect(a.team).toHaveLength(6);
+    expect(a.unitMods).toHaveLength(6);
     expect(a.unitMods.every((m) => m.lvlBp === 10000)).toBe(true);
     // Gold per Sieg, dann Level-Up
     const win = await be.reportMatch(starterReplay({ seed: 1 }), key(2));
@@ -141,10 +141,10 @@ describe('reportMatch ist ans Profil gebunden (P5-Luecke)', () => {
     const pv = await be.playerView();
     if (!pv.ok) throw new Error('x');
     // Team ohne Striker speichern, dann ein Replay, in dem der Bot Striker setzt
-    const without = pv.player.team.filter((u) => u !== 'ichigo');
+    const without = pv.player.team.filter((u) => u !== 'krillin');
     const t = await be.setTeam(without, key(2));
     if (!t.ok) throw new Error(t.message);
-    const stray = starterReplay({ seed: 3, only: ['ichigo'], team: without, unitMods: unitModsFor(t.profile, without) });
+    const stray = starterReplay({ seed: 3, only: ['krillin'], team: without, unitMods: unitModsFor(t.profile, without) });
     expect(await be.reportMatch(stray, key(3))).toMatchObject({ ok: false, code: 'team-invalid' });
   });
 });

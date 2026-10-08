@@ -4,7 +4,7 @@
  * `chip()` Filter-Knopf, `stars()`, `walletChip()`. Icons: `icons.ts`, gemalte Flaechen: `art.ts`, Tokens: `tokens.css`.
  * Der Baukasten kennt keine Spieldaten: Namen, Elemente, Seltenheit kommen als Parameter (so laesst er sich auch fuer die Weltkarte von P3 nutzen).
  */
-import { hasPortrait, portraitUrl } from '../../view/portrait';
+import { loadPortraitIndex, portraitKnown, portraitUrl } from '../../view/portrait';
 import { h } from '../dom';
 import { bust } from './art';
 import { elementIcon, elementId, elementVar, icon } from './icons';
@@ -85,6 +85,9 @@ export function stars(n: number, max: number): HTMLElement {
 
 // ---- Portraet-Karte ------------------------------------------------------------------------------------------------
 
+// Index der vorhandenen Bilder frueh holen (stilles Scheitern lokal): danach weiss `portraitKnown` genau, welche Karten ein Bild versuchen
+void loadPortraitIndex();
+
 /** Ladefehler merken, damit nicht jede Karte erneut ein fehlendes Bild anfragt. */
 const noImage = new Set<string>();
 
@@ -119,7 +122,7 @@ export function artLayer(unitId: string, elements: readonly string[] | undefined
   fb.append(bust(unitId), h('span', 'pc-ini', initials));
   const box = h('div', 'pc-art-box');
   box.append(fb);
-  if (hasPortrait(unitId) && !noImage.has(unitId)) {
+  if (portraitKnown(unitId) !== false && !noImage.has(unitId)) {
     const img = new Image();
     img.className = 'pc-img';
     img.alt = '';

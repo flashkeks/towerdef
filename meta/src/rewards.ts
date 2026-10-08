@@ -9,6 +9,7 @@
 import type { MetaEnv } from './env';
 import { bookAll, KIND, type BookingInput } from './ledger';
 import { addPlayerXp, isDifficultyUnlocked } from './progression';
+import { infiniteGemsUpTo, isInfiniteStage, stageLock, stageWaveCap } from './worlds';
 import { MAX_TEAM, type Profile } from './profile';
 import { fail, opOk, type Fail, type Op } from './result';
 import { canonicalJson } from './util';
@@ -32,6 +33,10 @@ export interface MatchReward {
   firstClear: boolean;
   levelsGained: number;
   playerLevel: number;
+  /** Runde 8 / P3: Infinite-Lauf (Crystals nach AA-Gem-Tabelle, nur Zuwachs ueber der Bestwelle) */
+  infinite?: boolean;
+  /** Runde 8 / P3: Infinite: neue Bestwelle erreicht */
+  newBest?: boolean;
   /** Rechenzeit des Nachrechnens in ms (nur bei `rewardFromReplay`) */
   verifyMs?: number;
 }
@@ -42,15 +47,16 @@ export const REWARD_TABLE = rewardsJson as unknown as {
   crystals: { firstClear: ByDifficulty; repeatBp: number };
   gold: { win: ByDifficulty; perWave: ByDifficulty };
   xp: { win: ByDifficulty; perWave: ByDifficulty };
+  infinite: { gems: { from: number; to: number; perWave: number }[] };
 };
 const FIRST_CLEAR_CRYSTALS = REWARD_TABLE.crystals.firstClear;
 
 /** Wiederholungs-Crystals: Anteil des Erst-Clears, kaufmaennisch gerundet (Normal 25, Hard 38, Nightmare 50). */
 export const repeatCrystals = (difficulty: string): number => Math.floor(((FIRST_CLEAR_CRYSTALS[difficulty] ?? 0) * REWARD_TABLE.crystals.repeatBp + 5000) / 10000);
 
-/** Reine Rechnung ohne Profil: was ein Lauf bringt. `waveReached` wird auf 0..maxWaves gekappt. */
-export function rewardAmounts(difficulty: string, outcome: 'win' | 'loss', waveReached: number, firstClear: boolean): { crystals: number; gold: number; xp: number } {
-  const w = Math.min(REWARD_TABLE.maxWaves, Math.max(0, Math.floor(waveReached)));
+/** Reine Rechnung ohne Profil: was ein Lauf bringt. `waveReached` wird auf 0..`cap` gekappt (Standard `maxWaves`; Acts kappen auf ihre Wellenzahl). */
+export function rewardAmounts(difficulty: string, outcome: 'win' | 'loss', waveReached: number, firstClear: boolean, cap: number = REWARD_TABLE.maxWaves): { crystals: number; gold: number; xp: number } {
+  const w = Math.min(cap, Math.max(0, Math.floor(waveReached)));
   const win = outcome === 'win';
   return {
     crystals: win ? (firstClear ? FIRST_CLEAR_CRYSTALS[difficulty]! : repeatCrystals(difficulty)) : 0,
@@ -64,11 +70,19 @@ export function rewardForMatch(p: Profile, s: MatchSummary, env: Pick<MetaEnv, '
   if (!(s.difficulty in FIRST_CLEAR_CRYSTALS)) return fail('unknown-difficulty', `Unknown difficulty ${s.difficulty}.`);
   if (!s.stageId) return fail('invalid-match', 'Match has no stage.');
   if (!isDifficultyUnlocked(p, s.difficulty)) return fail('difficulty-locked', 'This difficulty is not unlocked yet.');
+  // Runde 8 / P3: Acts schalten nacheinander frei; ein Replay auf einer gesperrten Stage bringt nichts (Stages ausserhalb der Welten sind offen)
+  if (stageLock(p, s.stageId)) return fail('stage-locked', 'This stage is not unlocked yet.');
 
   const prev = p.stages[s.stageId]?.[s.difficulty];
   const win = s.outcome === 'win';
-  const firstClear = win && !(prev && prev.firstClearAt);
-  const { crystals, gold, xp } = rewardAmounts(s.difficulty, s.outcome, s.waveReached, firstClear);
+  const infinite = isInfiniteStage(s.stageId);
+  const firstClear = win && !infinite && !(prev && prev.firstClearAt);
+  const amounts = rewardAmounts(s.difficulty, s.outcome, s.waveReached, firstClear, infinite ? REWARD_TABLE.maxWaves : stageWaveCap(s.stageId));
+  // Infinite (AA): Crystals nach Gem-Tabelle je gehaltener Welle, bezahlt wird nur der Zuwachs ueber der bisherigen Bestwelle dieser Stufe
+  const held = Math.max(0, Math.floor(s.waveReached));
+  const newBest = infinite && held > (prev?.bestWave ?? 0);
+  const crystals = infinite ? Math.max(0, infiniteGemsUpTo(held) - infiniteGemsUpTo(prev?.bestWave ?? 0)) : amounts.crystals;
+  const { gold, xp } = amounts;
 
   const bookings: BookingInput[] = [];
   const base = { kind: KIND.reward, refType: 'match', refId: s.replayHash };
@@ -84,7 +98,7 @@ export function rewardForMatch(p: Profile, s: MatchSummary, env: Pick<MetaEnv, '
     bestWave: Math.max(prev?.bestWave ?? 0, Math.max(0, Math.floor(s.waveReached))),
   };
   const profile: Profile = { ...xpr.profile, stages: { ...p.stages, [s.stageId]: { ...(p.stages[s.stageId] ?? {}), [s.difficulty]: stage } } };
-  return opOk(profile, { crystals, gold, xp, firstClear, levelsGained: xpr.levelsGained, playerLevel: profile.playerLevel });
+  return opOk(profile, { crystals, gold, xp, firstClear, levelsGained: xpr.levelsGained, playerLevel: profile.playerLevel, ...(infinite ? { infinite: true, newBest } : {}) });
 }
 
 export interface RewardOptions extends VerifyOptions {

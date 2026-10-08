@@ -5,6 +5,7 @@
  */
 import { t } from '../i18n/t';
 import type { UnitDef } from '../sim';
+import { enemyName } from './model';
 import { airCapable, bossHelpers, COIN_NUDGE_FACTOR, joinOr } from './readability';
 import { unitName } from '../ui/meta-model';
 
@@ -100,7 +101,7 @@ export function defeatTips(input: TipInput): Tip[] {
       if (!swarm || n > swarm.n) swarm = { type, wave: w.wave, n };
     }
   }
-  if (swarm && area.length > 0) out.push({ id: 'swarm', text: t('tips.swarm', { n: swarm.n, name: t(`enemy.${swarm.type}.name`), wave: swarm.wave, list: names(area) }) });
+  if (swarm && area.length > 0) out.push({ id: 'swarm', text: t('tips.swarm', { n: swarm.n, name: enemyName(swarm.type), wave: swarm.wave, list: names(area) }) });
 
   // 7) Kaum Upgrades
   if (placed >= 3 && upgrades * 2 < placed) out.push({ id: 'upgrades', text: t('tips.upgrades', { n: upgrades, m: placed }) });

@@ -23,7 +23,7 @@ import { UnitPanel } from './unit-panel';
 import { testBuildEl, versionEl } from './version';
 
 export interface UiHandlers {
-  onStart(d: DifficultyId): void;
+  onStart(d: DifficultyId, stageId?: string): void;
   onMenu(): void;
   /** Replay-Knopf (P2) fuer Ergebnis- und Pause-Menue; `main.ts` verbindet ihn. */
   replayButton?: ReplayButtonFactory;

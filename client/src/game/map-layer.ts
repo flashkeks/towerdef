@@ -6,7 +6,7 @@
 import { Container, Sprite, Texture } from 'pixi.js';
 import { getAtlas, loadAtlas } from './atlas';
 import { WORLD_H, WORLD_W, type RenderContext } from './context';
-import { ART, buildMapOps, hillRects } from './map-compose';
+import { ART, buildMapOps, hillRects, tintFor, type Tint } from './map-compose';
 
 export class MapLayer {
   readonly container = new Container();
@@ -37,10 +37,40 @@ export class MapLayer {
       // Reihenfolge: Gras und Pfad, Huegel-Flaechen, dann Deko/Spawn/Basis obenauf
       const base = ops.filter((o) => /tiles\/(grass|path)_/.test(o.frame));
       const rest = ops.filter((o) => !/tiles\/(grass|path)_/.test(o.frame));
+      const theme = ctx.stage.theme;
+      const tinted = new Map<string, HTMLCanvasElement>();
+      /** Kachel einfaerben: Farbton per `color`-Mischung (Helligkeit der Kachel bleibt), dann aufhellen/abdunkeln, Form (Alpha) bleibt. */
+      const tintTile = (frame: string, tint: Tint): HTMLCanvasElement | null => {
+        let cv = tinted.get(frame);
+        if (cv) return cv;
+        const r = atlas.rect(frame);
+        cv = document.createElement('canvas');
+        cv.width = r.w;
+        cv.height = r.h;
+        const t2 = cv.getContext('2d');
+        if (!t2) return null;
+        t2.imageSmoothingEnabled = false;
+        t2.drawImage(atlas.image, r.x, r.y, r.w, r.h, 0, 0, r.w, r.h);
+        t2.globalCompositeOperation = 'source-atop';
+        t2.globalAlpha = tint.alpha ?? 0.6;
+        t2.fillStyle = tint.color;
+        t2.fillRect(0, 0, r.w, r.h);
+        const lift = tint.lift ?? 0;
+        if (lift !== 0) {
+          t2.globalAlpha = Math.abs(lift);
+          t2.fillStyle = lift > 0 ? '#ffffff' : '#000000';
+          t2.fillRect(0, 0, r.w, r.h);
+        }
+        tinted.set(frame, cv);
+        return cv;
+      };
       const put = (list: typeof ops): void => {
         for (const op of list) {
           const r = atlas.rect(op.frame);
-          c2.drawImage(atlas.image, r.x, r.y, r.w, r.h, op.x, op.y, r.w, r.h);
+          const tint = tintFor(op.frame, theme);
+          const cv = tint ? tintTile(op.frame, tint) : null;
+          if (cv) c2.drawImage(cv, op.x, op.y);
+          else c2.drawImage(atlas.image, r.x, r.y, r.w, r.h, op.x, op.y, r.w, r.h);
         }
       };
       put(base);
