@@ -1,0 +1,188 @@
+/*
+ * Baukasten-Komponenten (Runde 8, P4): Knoepfe, Panel, Seltenheits-Rahmen, Portraet-Karte, Chips, Balken, Kacheln, Brieftasche.
+ * Gebaut aus den Tokens (`tokens.css`); DOM-Seite in `kit/index.ts`.
+ */
+
+/* ---- Grundlage ---- */
+button { font: inherit; color: inherit; cursor: pointer; }
+button:disabled { cursor: default; opacity: 0.45; filter: saturate(0.6); }
+.ic { width: 1em; height: 1em; flex: none; vertical-align: -0.12em; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.ic.fill { fill: currentColor; stroke: none; }
+.muted { color: var(--tx-2); }
+.hidden { display: none !important; }
+.eyebrow { font: 700 0.68rem var(--font-ui); letter-spacing: 0.22em; text-transform: uppercase; color: var(--gold); }
+.display { font-family: var(--font-display); font-weight: 800; letter-spacing: 0.04em; }
+.num { font-family: var(--font-num); font-variant-numeric: tabular-nums; }
+* { scrollbar-width: thin; scrollbar-color: var(--bg-4) transparent; }
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: var(--bg-4); border-radius: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+
+/* ---- Knoepfe ---- */
+.btn {
+  position: relative; font-family: var(--font-ui); font-weight: 700; font-size: 0.88rem; letter-spacing: 0.02em; color: var(--tx-0);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.015)), var(--bg-3);
+  border: 1px solid var(--edge); border-radius: var(--r-md); padding: 8px 16px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.09), 0 2px 8px rgba(0, 0, 0, 0.4);
+  transition: transform 0.15s var(--ease-out), box-shadow 0.2s, border-color 0.2s, background-color 0.2s;
+}
+.btn:hover:not(:disabled) { border-color: var(--edge-hi); transform: translateY(-1px); background-color: var(--bg-4); }
+.btn:active:not(:disabled) { transform: translateY(0); }
+.btn:focus-visible, .tile:focus-visible, .chip:focus-visible, .unit-tile:focus-visible, .unit-btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.btn.primary {
+  color: var(--tx-dark); border-color: rgba(255, 244, 196, 0.75); text-shadow: 0 1px 0 rgba(255, 255, 255, 0.4);
+  background: linear-gradient(180deg, var(--gold-hi), var(--gold) 52%, var(--gold-lo));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65), 0 6px 22px -6px rgba(233, 197, 107, 0.65);
+  overflow: hidden;
+}
+.btn.primary::after { content: ''; position: absolute; top: 0; left: -60%; width: 40%; height: 100%; background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.55), transparent); transform: skewX(-18deg); transition: left 0.6s var(--ease-out); pointer-events: none; }
+.btn.primary:hover:not(:disabled)::after { left: 130%; }
+.btn.primary:hover:not(:disabled) { background-color: transparent; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7), 0 10px 28px -6px rgba(233, 197, 107, 0.85); }
+.btn.danger { background: linear-gradient(180deg, #9a2f4a, #6a1c35); border-color: rgba(255, 110, 140, 0.6); }
+.btn.link { background: none; border: none; box-shadow: none; color: var(--tx-2); text-decoration: underline; text-underline-offset: 3px; padding: 2px 6px; font-weight: 600; }
+.btn.link:hover:not(:disabled) { color: var(--tx-0); background: none; transform: none; }
+.btn.small { padding: 4px 10px; font-size: 0.78rem; }
+
+/* ---- Panel: Glas, Kantenlicht, optionale Eckmarken ---- */
+.kp {
+  --kp-accent: var(--gold);
+  position: relative; border-radius: var(--r-lg); border: 1px solid var(--edge);
+  background: linear-gradient(160deg, rgba(34, 39, 78, 0.72), rgba(12, 14, 32, 0.84));
+  box-shadow: var(--shadow-2), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(14px) saturate(1.2);
+}
+.kp::before { content: ''; position: absolute; left: 14px; right: 14px; top: -1px; height: 1px; background: linear-gradient(90deg, transparent, var(--kp-accent), transparent); opacity: 0.8; pointer-events: none; }
+.kp.corners::after { content: ''; position: absolute; inset: 5px; border-radius: calc(var(--r-lg) - 4px); pointer-events: none;
+  background:
+    linear-gradient(var(--kp-accent), var(--kp-accent)) top left / 14px 1px no-repeat, linear-gradient(var(--kp-accent), var(--kp-accent)) top left / 1px 14px no-repeat,
+    linear-gradient(var(--kp-accent), var(--kp-accent)) top right / 14px 1px no-repeat, linear-gradient(var(--kp-accent), var(--kp-accent)) top right / 1px 14px no-repeat,
+    linear-gradient(var(--kp-accent), var(--kp-accent)) bottom left / 14px 1px no-repeat, linear-gradient(var(--kp-accent), var(--kp-accent)) bottom left / 1px 14px no-repeat,
+    linear-gradient(var(--kp-accent), var(--kp-accent)) bottom right / 14px 1px no-repeat, linear-gradient(var(--kp-accent), var(--kp-accent)) bottom right / 1px 14px no-repeat;
+  opacity: 0.55; }
+.kp.aether { --kp-accent: var(--aether); }
+.kp.violet { --kp-accent: var(--violet); }
+.kp.ember { --kp-accent: var(--ember); }
+.kp-head { display: flex; align-items: center; gap: 8px; padding: 10px 14px 0; }
+.kp-head h3 { margin: 0; font: 800 0.74rem var(--font-ui); letter-spacing: 0.2em; text-transform: uppercase; color: var(--kp-accent); }
+.kp-body { padding: 10px 14px 14px; }
+
+/* ---- Seltenheits-Rahmen: Verlauf im Ring, Leuchten; Mythic/Secret laufen (Rotation per transform: guenstig, auch bei vielen Karten) ---- */
+.rf {
+  --rf-w: 2px; --rf-r: var(--r-card); --rf-fill: var(--bg-2);
+  --rf-a: var(--rare-a); --rf-b: var(--rare-b); --rf-c: var(--rare-c); --rf-glow: var(--rare-glow);
+  position: relative; display: block; border-radius: var(--rf-r); overflow: hidden; isolation: isolate;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.55), 0 8px 20px -8px var(--rf-glow);
+}
+.rf::before { content: ''; position: absolute; left: -60%; top: -60%; width: 220%; height: 220%; z-index: 0; background: linear-gradient(135deg, var(--rf-a), var(--rf-b) 52%, var(--rf-c)); }
+.rf > .rf-in { position: absolute; inset: var(--rf-w); z-index: 1; border-radius: calc(var(--rf-r) - var(--rf-w)); overflow: hidden; background: var(--rf-fill); }
+.rf.flow { padding: var(--rf-w); }
+.rf.flow > .rf-in { position: relative; inset: auto; }
+.rf[data-rarity='epic'] { --rf-a: var(--epic-a); --rf-b: var(--epic-b); --rf-c: var(--epic-c); --rf-glow: var(--epic-glow); }
+.rf[data-rarity='legendary'] { --rf-a: var(--legendary-a); --rf-b: var(--legendary-b); --rf-c: var(--legendary-c); --rf-glow: var(--legendary-glow); box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.55), 0 0 18px -4px var(--rf-glow), 0 8px 20px -8px var(--rf-glow); }
+.rf[data-rarity='mythic'] { --rf-w: 3px; --rf-a: var(--mythic-a); --rf-b: var(--mythic-b); --rf-c: var(--mythic-c); --rf-glow: var(--mythic-glow); box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.6), 0 0 22px -3px var(--rf-glow), 0 8px 20px -8px var(--rf-glow); }
+.rf[data-rarity='mythic']::before { background: conic-gradient(var(--mythic-a), var(--mythic-b), var(--mythic-c), var(--legendary-b), var(--mythic-b), var(--mythic-a)); animation: rf-spin 7s linear infinite; }
+.rf[data-rarity='secret'] { --rf-w: 3px; --rf-a: var(--secret-a); --rf-b: var(--secret-b); --rf-c: var(--secret-c); --rf-glow: var(--secret-glow); --rf-fill: #0a0716; box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.7), 0 0 26px -2px var(--rf-glow), 0 8px 20px -8px var(--rf-glow); }
+.rf[data-rarity='secret']::before { background: conic-gradient(var(--secret-a), var(--secret-b), var(--rose), var(--secret-c), var(--secret-a), var(--secret-b), var(--secret-a)); animation: rf-spin 3.6s linear infinite; }
+.rf[data-rarity='exclusive'] { --rf-w: 3px; --rf-a: var(--exclusive-a); --rf-b: var(--exclusive-b); --rf-c: var(--exclusive-c); --rf-glow: var(--exclusive-glow); box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.6), 0 0 20px -3px var(--rf-glow), 0 8px 20px -8px var(--rf-glow); }
+.rf[data-rarity='exclusive']::before { background: conic-gradient(var(--exclusive-a), var(--exclusive-b), var(--exclusive-c), #fff, var(--exclusive-b), var(--exclusive-a)); animation: rf-spin 9s linear infinite; }
+.rf.live[data-rarity='mythic'], .rf.live[data-rarity='secret'], .rf.live[data-rarity='legendary'], .rf.live[data-rarity='exclusive'] { animation: rf-pulse 2.4s ease-in-out infinite; }
+@keyframes rf-spin { to { transform: rotate(360deg); } }
+@keyframes rf-pulse { 0%, 100% { box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.6), 0 0 18px -3px var(--rf-glow), 0 8px 20px -8px var(--rf-glow); } 50% { box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.6), 0 0 44px 2px var(--rf-glow), 0 8px 20px -8px var(--rf-glow); } }
+.rf.flat { --rf-r: 10px; box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.55); }
+.rf.flat::before { animation: none !important; }
+
+/* ---- Portraet-Karte: Bild (oder gestaltete Ersatzkarte), Schattenverlauf, Element, Trait, Name, Stufe, Sterne ---- */
+.pc { position: relative; width: 100%; height: 100%; overflow: hidden; background: var(--bg-2); container-type: size; }
+.pc-art-box { position: absolute; inset: 0; }
+.pc-img, .pc-fb { position: absolute; inset: 0; width: 100%; height: 100%; }
+.pc-img { object-fit: cover; object-position: 50% 14%; transition: transform 0.5s var(--ease-out); }
+.unit-tile:hover .pc-img, .unit-tile:hover .pc-fb svg, .unit-btn:hover .pc-img { transform: scale(1.05); }
+.pc-fb { --el: var(--el-none); overflow: hidden; background:
+  radial-gradient(120% 90% at 50% 22%, color-mix(in srgb, var(--el) 55%, #000) 0%, color-mix(in srgb, var(--el) 22%, var(--bg-1)) 48%, var(--bg-1) 100%); }
+.pc-fb svg { position: absolute; inset: 0; width: 100%; height: 100%; transition: transform 0.5s var(--ease-out); }
+.pc-fb .pc-ini { position: absolute; left: 0; right: 0; top: 17%; text-align: center; font: 900 clamp(1.1rem, 24cqw, 4rem) var(--font-display); letter-spacing: 0.06em; color: rgba(255, 255, 255, 0.92); text-shadow: 0 0 18px var(--el), 0 2px 0 rgba(0, 0, 0, 0.5); }
+.pc-shade { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(to top, rgba(5, 6, 14, 0.96) 0%, rgba(5, 6, 14, 0.7) 24%, rgba(5, 6, 14, 0) 52%), linear-gradient(to bottom, rgba(5, 6, 14, 0.5), rgba(5, 6, 14, 0) 20%); }
+.pc-el { position: absolute; top: 6px; left: 6px; width: 24px; height: 24px; display: grid; place-items: center; font-size: 14px; border-radius: 50%; color: var(--el, var(--el-none)); background: rgba(6, 7, 15, 0.72); border: 1px solid color-mix(in srgb, var(--el, var(--el-none)) 60%, transparent); box-shadow: 0 0 10px -2px var(--el, var(--el-none)); }
+.pc-trait { position: absolute; top: 7px; right: 6px; max-width: 70%; padding: 1px 7px; border-radius: 99px; font: 700 0.6rem var(--font-ui); letter-spacing: 0.06em; text-transform: uppercase; color: var(--tx-dark); background: linear-gradient(180deg, var(--gold-hi), var(--gold)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pc-trait ~ .pc-team { top: 30px; }
+.pc-team { position: absolute; top: 7px; right: 6px; padding: 0 6px; border-radius: 99px; font: 800 0.56rem var(--font-ui); letter-spacing: 0.12em; color: var(--tx-dark); background: var(--aether); }
+.pc-cap { position: absolute; left: 8px; right: 8px; bottom: 6px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.pc-name { font: 700 0.76rem/1.15 var(--font-display); letter-spacing: 0.02em; color: var(--tx-0); text-shadow: 0 1px 6px #000; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.pc-sub { display: flex; align-items: center; justify-content: space-between; gap: 4px; font: 600 0.68rem var(--font-num); color: var(--tx-1); min-height: 1em; }
+.pc-sub .stars { color: var(--gold); font-size: 0.62rem; display: inline-flex; gap: 1px; }
+.pc-sub .stars .off { color: rgba(255, 255, 255, 0.2); }
+.pc-lvl { letter-spacing: 0.05em; }
+.pc-sheen { position: absolute; inset: 0; pointer-events: none; opacity: 0; background: linear-gradient(115deg, transparent 38%, rgba(255, 255, 255, 0.16) 48%, rgba(255, 255, 255, 0.34) 50%, rgba(255, 255, 255, 0.16) 52%, transparent 62%); background-size: 260% 100%; background-position: 130% 0; }
+.rf[data-rarity='legendary'] .pc-sheen, .rf[data-rarity='mythic'] .pc-sheen, .rf[data-rarity='secret'] .pc-sheen, .rf[data-rarity='exclusive'] .pc-sheen { opacity: 1; animation: pc-sheen 5.5s ease-in-out infinite; }
+.rf[data-rarity='secret'] .pc-sheen { animation-duration: 3.2s; background-image: linear-gradient(115deg, transparent 30%, rgba(94, 240, 255, 0.3) 44%, rgba(255, 255, 255, 0.5) 50%, rgba(255, 211, 94, 0.3) 56%, transparent 70%); }
+@keyframes pc-sheen { 0%, 55% { background-position: 130% 0; } 100% { background-position: -40% 0; } }
+.unit-tile.unowned .pc-img, .unit-tile.unowned .pc-fb { filter: grayscale(1) brightness(0.7); }
+.unit-tile.unowned { box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.6); }
+.unit-tile.unowned::before { filter: grayscale(1) brightness(0.45); animation: none; }
+.unit-tile.unowned .pc-name { color: var(--tx-2); }
+.unit-tile.unowned .pc-sheen { display: none; }
+.unit-tile, .unit-btn { cursor: pointer; text-align: left; font: inherit; color: inherit; border: 0; background: none; transition: transform 0.2s var(--ease-out), box-shadow 0.2s; }
+.unit-tile:hover, .unit-btn:hover { transform: translateY(-3px); }
+.unit-tile.selected, .unit-tile.picked { transform: translateY(-3px); box-shadow: 0 0 0 2px var(--gold), 0 0 26px -2px var(--gold), 0 10px 24px -8px var(--rf-glow); }
+.unit-tile.picked::after { content: ''; position: absolute; inset: 0; z-index: 4; pointer-events: none; border-radius: var(--rf-r); box-shadow: inset 0 0 0 2px var(--aether); }
+
+/* kleine Karte (Teamleiste, Unit-Leiste): gleiche Bausteine, kompakter */
+.mini { --rf-r: 10px; display: inline-block; flex: none; }
+.mini .pc-fb .pc-ini { font-size: 0.95em; top: 24%; }
+.mini .pc-el { width: 16px; height: 16px; font-size: 10px; top: 3px; left: 3px; }
+
+/* ---- Chips, Filter ---- */
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 11px; border-radius: 99px; font: 700 0.76rem var(--font-ui); letter-spacing: 0.02em; color: var(--tx-1); background: rgba(255, 255, 255, 0.045); border: 1px solid var(--edge); box-shadow: none; transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.15s; }
+.chip:hover:not(:disabled) { color: var(--tx-0); border-color: var(--edge-hi); background: rgba(255, 255, 255, 0.09); transform: none; }
+.chip.active { color: var(--tx-dark); background: linear-gradient(180deg, var(--gold-hi), var(--gold)); border-color: var(--gold-hi); box-shadow: 0 0 14px -3px var(--gold); }
+.chip .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--dot, var(--tx-2)); box-shadow: 0 0 8px var(--dot, transparent); }
+.chip.active .dot { box-shadow: none; }
+.chip .ic { font-size: 0.95em; color: var(--el, currentColor); }
+.chip.active .ic { color: inherit; }
+.tag-pill { display: inline-flex; align-items: center; gap: 5px; padding: 2px 9px; border-radius: 99px; font: 700 0.68rem var(--font-ui); letter-spacing: 0.08em; text-transform: uppercase; background: rgba(255, 255, 255, 0.06); border: 1px solid var(--edge); color: var(--tx-1); }
+
+/* ---- Balken ---- */
+.bar { position: relative; width: 120px; height: 10px; background: rgba(0, 0, 0, 0.5); border: 1px solid var(--edge); border-radius: 99px; overflow: hidden; box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.6); }
+.bar-fill { height: 100%; width: 100%; border-radius: 99px; background: linear-gradient(180deg, #8cf0a8, #3fb36b); transition: width 0.18s; box-shadow: 0 0 10px -1px rgba(111, 227, 154, 0.7); }
+.bar-fill.low, .bar-fill.boss { background: linear-gradient(180deg, #ff8aa0, #d6244a); box-shadow: 0 0 10px -1px rgba(255, 84, 112, 0.7); }
+.bar-fill.xp { background: linear-gradient(90deg, var(--ember), var(--gold)); width: 0; box-shadow: 0 0 10px -1px rgba(233, 197, 107, 0.6); }
+.bar-fill.pity { background: linear-gradient(90deg, var(--violet), var(--aether)); width: 0; box-shadow: 0 0 12px -1px rgba(120, 140, 255, 0.7); }
+
+/* ---- Kachel (Menue-Kachel der Lobby) ---- */
+.tile { --tile: var(--gold); position: relative; display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-end; gap: 3px; min-height: 92px; padding: 14px 16px; text-align: left; overflow: hidden; border-radius: var(--r-lg); border: 1px solid var(--edge);
+  background: linear-gradient(160deg, rgba(40, 46, 92, 0.62), rgba(12, 14, 34, 0.78)); box-shadow: var(--shadow-1), inset 0 1px 0 rgba(255, 255, 255, 0.07); backdrop-filter: blur(10px);
+  transition: transform 0.25s var(--ease-out), border-color 0.25s, box-shadow 0.25s; }
+.tile::before { content: ''; position: absolute; right: -20px; top: -24px; width: 120px; height: 120px; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--tile) 55%, transparent), transparent 70%); opacity: 0.55; transition: opacity 0.3s, transform 0.4s var(--ease-out); pointer-events: none; }
+.tile::after { content: ''; position: absolute; left: 14px; right: 14px; top: 0; height: 1px; background: linear-gradient(90deg, transparent, var(--tile), transparent); opacity: 0.7; }
+.tile:hover:not(:disabled) { transform: translateY(-3px); border-color: color-mix(in srgb, var(--tile) 60%, transparent); box-shadow: 0 14px 34px -10px color-mix(in srgb, var(--tile) 55%, transparent), inset 0 1px 0 rgba(255, 255, 255, 0.1); }
+.tile:hover:not(:disabled)::before { opacity: 1; transform: scale(1.25); }
+.tile .tile-ic { position: absolute; right: 14px; top: 12px; font-size: 1.9rem; color: var(--tile); filter: drop-shadow(0 0 10px color-mix(in srgb, var(--tile) 70%, transparent)); transition: transform 0.35s var(--ease-spring); }
+.tile:hover:not(:disabled) .tile-ic { transform: scale(1.15) rotate(-6deg); }
+.tile strong { font: 800 1.08rem var(--font-display); letter-spacing: 0.08em; text-transform: uppercase; color: var(--tx-0); }
+.tile .tile-sub { font: 500 0.76rem var(--font-ui); color: var(--tx-1); max-width: 88%; line-height: 1.3; }
+.tile .tile-badge { position: absolute; left: 12px; top: 12px; padding: 1px 8px; border-radius: 99px; font: 800 0.6rem var(--font-ui); letter-spacing: 0.14em; color: var(--tx-dark); background: var(--tile); }
+
+/* ---- Brieftasche und Spielerstufe ---- */
+.wallet { display: flex; align-items: center; gap: 10px; }
+.w-item { display: inline-flex; align-items: center; gap: 8px; padding: 5px 14px 5px 8px; border-radius: 99px; font: 700 1.12rem var(--font-num); letter-spacing: 0.02em; font-variant-numeric: tabular-nums; background: linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.015)), rgba(8, 10, 24, 0.7); border: 1px solid var(--edge); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06); }
+.w-icon { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; font-size: 15px; color: var(--tx-dark); }
+.w-icon.crystals { background: radial-gradient(circle at 35% 30%, #d6fff7, var(--aether) 55%, #1e9c8e); box-shadow: 0 0 12px -1px var(--aether); }
+.w-icon.gold { background: radial-gradient(circle at 35% 30%, #fff3c4, var(--gold) 55%, var(--gold-lo)); box-shadow: 0 0 12px -1px var(--gold); }
+.w-player { padding-left: 10px; gap: 10px; }
+.w-level { font: 800 0.95rem var(--font-num); letter-spacing: 0.1em; color: var(--gold); text-transform: uppercase; }
+.w-xp { color: var(--tx-2); font: 600 0.72rem var(--font-ui); min-width: 5.2rem; }
+.bar.xpbar { width: 96px; height: 7px; }
+
+/* ---- Meldungen ---- */
+.warn { color: #ffd5dd; background: rgba(255, 84, 112, 0.14); border: 1px solid rgba(255, 84, 112, 0.55); border-radius: var(--r-md); padding: 8px 12px; margin: 8px 0; }
+.notice { color: var(--parch); background: rgba(233, 197, 107, 0.1); border: 1px solid rgba(233, 197, 107, 0.4); border-radius: var(--r-md); padding: 6px 12px; margin: 0 0 8px; font-size: 0.84rem; }
+.flashes { position: fixed; top: 16px; left: 50%; transform: translateX(-50%); z-index: 90; display: flex; flex-direction: column; gap: 8px; align-items: center; pointer-events: none; }
+.flash { padding: 9px 20px; border-radius: 99px; font: 700 0.9rem var(--font-ui); background: var(--glass-strong); color: var(--tx-0); border: 1px solid var(--edge-hi); box-shadow: var(--shadow-2); max-width: 36rem; text-align: center; backdrop-filter: blur(12px); animation: flash-in 0.3s var(--ease-spring); }
+.flash.error { border-color: var(--bad); color: #ffd5dd; box-shadow: 0 0 22px -6px var(--bad), var(--shadow-2); }
+.flash.good { border-color: var(--aether); color: #d4fff8; box-shadow: 0 0 22px -6px var(--aether), var(--shadow-2); }
+@keyframes flash-in { from { opacity: 0; transform: translateY(-12px) scale(0.92); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .rf::before, .rf.live, .pc-sheen, .flash { animation: none !important; }
+}
+.w-icon.xp { background: radial-gradient(circle at 35% 30%, #ffd9b8, var(--ember) 60%, #b04a14); box-shadow: 0 0 12px -1px var(--ember); }

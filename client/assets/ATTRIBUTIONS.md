@@ -45,3 +45,15 @@ offene Spur in `docs/STATUS.md`). Stattdessen gibt es **keine Audiodateien im Re
 
 Klänge (alle **eigen**): `place`, `upgrade`, `sell`, `error`, `hit.slash`, `hit.tracer`, `hit.shell`, `hit.bolt`, `hit.blast`, `hit.cone`, `hit.line`, `kill`, `leak`, `wave`, `frost`, `nuke`,
 `bossEnter`, `bossPhase`, `bossWarn`, `bossCast`, `bossBreak`, `windowOpen`, `windowClose`, `wardBreak`, `win`, `lose`. Musik: ein erzeugter a-Moll-Loop (8 Takte, 84 BPM: Bass, Arpeggio, Fläche).
+
+## Schriften und Icons (Runde 8, P4: Interface-Neubau)
+
+Laut Kurswechsel 07.10.2026 zählt die Lizenz hier nicht als Hürde; trotzdem ist die Herkunft festgehalten.
+
+| Quelle | Lizenz | Abruf | Verwendung |
+|---|---|---|---|
+| **Cinzel** (Natanael Gama), Google Fonts, `fonts.gstatic.com`, woff2 latin, variabel 500-900 | SIL Open Font License 1.1 | 07.10.2026 | Display-Schrift (`src/ui/kit/fonts/cinzel-500-900.woff2`) |
+| **Manrope** (Mikhail Sharanda), Google Fonts, woff2 latin, variabel 400-800 | SIL OFL 1.1 | 07.10.2026 | UI-Schrift (`manrope-400-800.woff2`) |
+| **Rajdhani** (Indian Type Foundry), Google Fonts, woff2 latin, 500/600/700 | SIL OFL 1.1 | 07.10.2026 | Zahlen und Werte (`rajdhani-*.woff2`) |
+| Icons (`src/ui/kit/icons.ts`), eigene Pfade im Strichstil von Feather/Lucide (MIT/ISC) | eigen, Stil nach Feather/Lucide | - | Menü, Elemente, HUD |
+| Ersatzfiguren, Siegel, Wappen, Hintergrund (`src/ui/kit/art.ts`) | eigen (Code) | - | Karten ohne Bild, Lobby, Enthüllung |

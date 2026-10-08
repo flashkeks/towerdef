@@ -9,9 +9,9 @@ import { unitTags } from '../view/readability';
 import { clear, h } from './dom';
 import { notify } from './flash';
 import { metaFrame, newKey } from './meta-ui';
-import { cleanTeam, errorText, rarityName, sortUnits, starsText, teamComplete, toggleTeam, unitName } from './meta-model';
+import { cleanTeam, errorText, rarityName, sortUnits, teamComplete, toggleTeam, unitName } from './meta-model';
 import type { Nav } from './nav';
-import { portrait } from './portrait';
+import { cardOf, miniOf } from './unit-card';
 import { unitDefMap } from './unit-defs';
 
 export function buildTeam(nav: Nav): HTMLElement {
@@ -40,20 +40,18 @@ export function buildTeam(nav: Nav): HTMLElement {
     const grid = h('div', 'unit-grid team-pick');
 
     const tile = (u: CollectionUnitView): HTMLElement => {
-      const c = h('button', `unit-tile r-${u.rarity}${team.includes(u.unitId) ? ' picked' : ''}`);
-      c.type = 'button';
-      c.dataset.unit = u.unitId;
-      c.setAttribute('aria-pressed', String(team.includes(u.unitId)));
-      c.append(portrait(u.unitId, 64), h('strong', 'ut-name', unitName(u.unitId)), h('span', 'ut-sub', `${t('units.lv', { n: u.level })} ${starsText(u.stars, u.maxStars)}`));
+      const on = team.includes(u.unitId);
+      const c = cardOf(u, { picked: on });
+      c.setAttribute('aria-pressed', String(on));
       const d = defs.get(u.unitId);
       if (d) {
-        const tags = h('span', 'utags');
+        const tags = h('span', 'utags pc-tags');
         for (const tag of unitTags(d)) {
           const s = h('span', `utag ${tag}`, t(`tag.${tag}.sym`));
           s.title = t(`tag.${tag}.tip`);
           tags.append(s);
         }
-        c.append(tags);
+        c.querySelector('.pc')?.append(tags);
       }
       c.title = `${rarityName(u.rarity)} - ${unitName(u.unitId)}`;
       c.addEventListener('click', () => {
@@ -72,7 +70,7 @@ export function buildTeam(nav: Nav): HTMLElement {
         if (id) {
           s.dataset.unit = id;
           s.title = t('team.slot.remove', { name: unitName(id) });
-          s.append(portrait(id, 48), h('span', 'slot-name', unitName(id)));
+          s.append(miniOf(id, 82), h('span', 'slot-name', unitName(id)));
           s.addEventListener('click', () => {
             team = team.filter((x) => x !== id);
             refresh();

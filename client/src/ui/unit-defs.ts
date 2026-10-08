@@ -12,4 +12,7 @@ export function unitCatalog(): UnitDef[] {
   return cache;
 }
 
-export const unitDefMap = (): Map<string, UnitDef> => new Map(unitCatalog().map((d) => [d.id, d]));
+let mapCache: Map<string, UnitDef> | null = null;
+/** Id -> Definition. Die Karte wird einmal gebaut und geteilt (nicht veraendern). */
+export const unitDefs = (): ReadonlyMap<string, UnitDef> => (mapCache ??= new Map(unitCatalog().map((d) => [d.id, d])));
+export const unitDefMap = (): Map<string, UnitDef> => new Map(unitDefs());

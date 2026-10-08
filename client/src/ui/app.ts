@@ -51,7 +51,7 @@ export class Ui {
     clear(root);
     root.classList.add('game');
     const side = h('aside', 'side');
-    side.append(this.hints.el, this.waves.previewEl, this.waves.cardsEl, this.unitPanel.el);
+    side.append(this.hints.el, this.unitPanel.el, this.waves.previewEl, this.waves.cardsEl);
     this.boardWrap.append(this.banner.el, this.nudges.el, this.toast.el, this.screens.pausedEl);
     const main = h('main', 'main');
     main.append(this.boardWrap, side);

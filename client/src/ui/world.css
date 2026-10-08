@@ -1,0 +1,37 @@
+/* Weltkarte (P3-Funktion, P4-Gestaltung): Welt-Banner als Reiter, Act-Medaillons, Infinite-Banner, "Coming later". */
+.screen.world .meta-body { display: flex; flex-direction: column; gap: 12px; }
+.world-tabs { display: flex; gap: 14px; flex-wrap: wrap; margin: 4px 0 2px; }
+.btn.world-tab { --world: var(--aether); position: relative; display: flex; align-items: center; gap: 12px; min-width: 250px; padding: 12px 18px 12px 12px; text-align: left; overflow: hidden; border-radius: var(--r-lg); border-color: color-mix(in srgb, var(--world) 45%, transparent);
+  background: radial-gradient(120% 140% at 0% 0%, color-mix(in srgb, var(--world) 38%, transparent), transparent 65%), linear-gradient(170deg, rgba(34, 39, 78, 0.8), rgba(10, 12, 28, 0.92)); }
+.btn.world-tab.active { box-shadow: 0 0 0 2px var(--world), 0 14px 30px -10px color-mix(in srgb, var(--world) 70%, transparent); transform: translateY(-2px); }
+.btn.world-tab.locked { filter: grayscale(0.7); opacity: 0.65; }
+.world-ic { display: grid; place-items: center; width: 44px; height: 44px; flex: none; border-radius: 50%; font-size: 1.4rem; color: var(--tx-dark); background: radial-gradient(circle at 35% 30%, #fff, var(--world) 60%); box-shadow: 0 0 18px -2px var(--world); }
+.world-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.world-info strong { font: 800 1rem var(--font-display); letter-spacing: 0.08em; text-transform: uppercase; }
+.world-bar { position: absolute; left: 0; right: 0; bottom: 0; width: auto; height: 4px; border: 0; border-radius: 0; background: rgba(0, 0, 0, 0.45); }
+.world-bar .bar-fill { background: var(--world); box-shadow: none; border-radius: 0; }
+.world-panel { --world: var(--aether); padding: 16px 20px 18px; }
+.world-panel::before { background: linear-gradient(90deg, transparent, var(--world), transparent); }
+.world-blurb { margin: 0 0 14px; color: var(--tx-1); font-size: 0.9rem; max-width: 60rem; }
+.act-grid { position: relative; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-bottom: 14px; }
+.btn.act-card { --world: var(--aether); position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 5px; text-align: left; padding: 14px 16px 14px 70px; min-height: 108px; overflow: hidden; border-radius: var(--r-md);
+  border-color: color-mix(in srgb, var(--world) 40%, transparent); background: linear-gradient(120deg, color-mix(in srgb, var(--world) 20%, transparent), rgba(10, 12, 28, 0.9) 60%); }
+.btn.act-card:hover:not(:disabled) { box-shadow: 0 12px 28px -10px color-mix(in srgb, var(--world) 70%, transparent); border-color: var(--world); }
+.act-medal { position: absolute; left: 14px; top: 14px; display: grid; place-items: center; width: 42px; height: 42px; border-radius: 50%; font: 900 1.15rem var(--font-display); color: var(--tx-dark); background: radial-gradient(circle at 35% 30%, #fff, var(--world) 65%); box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.4), 0 0 18px -2px var(--world); }
+.btn.act-card.open .act-medal { animation: tile-pulse 2.6s ease-in-out infinite; }
+.btn.act-card.cleared .act-medal { background: radial-gradient(circle at 35% 30%, #d6fff7, var(--aether) 65%); }
+.btn.act-card.locked { filter: grayscale(0.75); opacity: 0.6; }
+.btn.act-card.locked .act-medal { background: #3a3f66; color: var(--tx-1); box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.4); }
+.btn.act-card.next { box-shadow: 0 0 0 2px var(--gold), 0 0 26px -4px var(--gold); }
+.btn.act-card.next::after { content: 'NEXT'; position: absolute; right: 12px; top: 10px; font: 800 0.6rem var(--font-ui); letter-spacing: 0.14em; padding: 1px 8px; border-radius: 99px; color: var(--tx-dark); background: var(--gold); }
+.act-title { font: 800 0.95rem var(--font-display); letter-spacing: 0.06em; }
+.act-boss, .act-waves { display: inline-flex; align-items: center; gap: 6px; font-size: 0.8rem; color: var(--tx-1); font-weight: 500; }
+.act-boss .ic { color: var(--bad); }
+.btn.act-card.infinite { grid-column: 1 / -1; width: 100%; min-height: 84px; background: linear-gradient(110deg, color-mix(in srgb, var(--world) 32%, transparent), rgba(10, 12, 28, 0.9) 70%); }
+.btn.act-card.infinite .act-title { font-size: 1.1rem; letter-spacing: 0.14em; text-transform: uppercase; }
+.world-panel > .btn.act-card.infinite { display: flex; }
+.world-soon { padding: 10px 14px; border: 1px dashed var(--edge-hi); border-radius: var(--r-md); background: rgba(0, 0, 0, 0.22); }
+.world-soon h3 { margin: 0 0 6px; font: 800 0.66rem var(--font-ui); letter-spacing: 0.2em; text-transform: uppercase; color: var(--tx-2); }
+.soon-list { display: flex; flex-wrap: wrap; gap: 6px 16px; }
+.soon-item { display: flex; flex-direction: column; font-size: 0.78rem; opacity: 0.85; }
+.stage-world-btn { margin-bottom: 6px; align-self: flex-start; }

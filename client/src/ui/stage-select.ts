@@ -10,7 +10,8 @@ import { h } from './dom';
 import { metaFrame } from './meta-ui';
 import { errorText, stageCardView, teamComplete, unitName } from './meta-model';
 import type { Nav } from './nav';
-import { portrait } from './portrait';
+import { miniOf } from './unit-card';
+import { icon } from './kit';
 
 /** Stufen-Auswahl eines Acts (oder Infinite, oder der Standard-Stage). Ohne `stageId`: der naechste offene Act laut Weltkarte. */
 export function buildStageSelect(nav: Nav, stageId?: string): HTMLElement {
@@ -46,7 +47,7 @@ export function buildStageSelect(nav: Nav, stageId?: string): HTMLElement {
       for (const id of p.team) {
         const c = h('span', 'strip-unit');
         c.title = unitName(id);
-        c.append(portrait(id, 32));
+        c.append(miniOf(id, 36));
         teamRow.append(c);
       }
     }
@@ -63,9 +64,16 @@ export function buildStageSelect(nav: Nav, stageId?: string): HTMLElement {
       const b = h('button', `btn diff stage-card ${d.difficulty}${v.locked ? ' locked' : ''}${v.cleared ? ' cleared' : ''}`);
       b.type = 'button';
       b.dataset.difficulty = d.difficulty;
+      b.dataset.rank = ({ normal: 'I', hard: 'II', nightmare: 'III' } as Record<string, string>)[d.difficulty] ?? '';
       b.disabled = v.locked || !ready;
-      b.append(h('strong', undefined, t(`difficulty.${d.difficulty}`)), h('span', 'diff-desc', t(`difficulty.${d.difficulty}.desc`)));
-      if (v.locked) b.append(h('span', 'lock-reason', v.lockText ?? ''));
+      const ic = h('span', 'stage-ic');
+      ic.append(icon(({ normal: 'shield', hard: 'bolt', nightmare: 'skull' } as Record<string, string>)[d.difficulty] ?? 'flag'));
+      b.append(ic, h('strong', undefined, t(`difficulty.${d.difficulty}`)), h('span', 'diff-desc', t(`difficulty.${d.difficulty}.desc`)));
+      if (v.locked) {
+        const lr = h('span', 'lock-reason');
+        lr.append(icon('lock'), v.lockText ?? '');
+        b.append(lr);
+      }
       else b.append(h('span', 'stage-reward', v.rewardText));
       b.append(h('span', 'stage-best', v.bestText));
       if (v.cleared) b.append(h('span', 'stage-cleared', t('stage.cleared')));
