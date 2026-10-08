@@ -6,19 +6,70 @@ Frühere Aufträge: [archiv/run-runde1.md](archiv/run-runde1.md), [archiv/run-ru
 
 ## Runde 8 (AA-Import)
 
-Letzte Aktualisierung: 2026-10-07 (Runde 8, P1 und P3 erledigt)
+Letzte Aktualisierung: 2026-10-08 (Runde 8 abgeschlossen, P5)
 
 | Paket | Inhalt | Status | Agent (Modell) | Was man jetzt sehen kann |
 |---|---|---|---|---|
 | P0 | Status | **erledigt** | Hauptsitzung | Runde 7 abgeschlossen (Kurzbericht unten), Kurswechsel gelesen. Stand vor Runde 8: sim 290, meta 105, client 198 Tests, smoke 299 Prüfungen grün |
-| P1 | Baukasten im Simulator (Angriffsformen, Stufen-Angriffe, Damage-Typen, Elemente, Crit, 22 Effekte, Maßstab) | **erledigt** | 1 × Opus, allein | Eine Unit ist ein Datensatz (`sim/data/units/*.json`, AA-nahes Format, `docs/aa-import/format.md`): 5 Angriffsformen, Treffer-Teilung, Angriffswechsel je Stufe, physical/magic/true, Schwächen/Resistenzen, Crit, alle 22 AA-Effekte (0 No-op; Lücken in `unsupported.md`). **Alle 550 AA-Units und 1098 Angriffe parsen und laufen ohne Umbau** (Test), `sample.json` hat 26 echte AA-Units. Maßstab AA 1:1 (5 Studs = 1 Kachel, 1 Yen = 1 Münze, `massstab.md`), Standard20 Normal: Goku SSJ3 (Mythic) gewinnt allein. Nur noch ein Unit-Pfad (die 14 alten Units, Auren/Fähigkeits-Knöpfe, Bot-Messreihen und `sanity/` entfernt), Replay **v4** (v1–v3 = „altes Regelwerk“), Fallback-Figur im Match (Kreis, Element-Farbe, Initialen). Tests: sim 290, meta 105, client 199, Smoke grün. Screenshots `client/docs/r8/p1-match-*.png` |
+| P1 | Baukasten im Simulator (Angriffsformen, Stufen-Angriffe, Damage-Typen, Elemente, Crit, 22 Effekte, Maßstab) | **erledigt** | 1 × Sonnet, allein | Eine Unit ist ein Datensatz (`sim/data/units/*.json`, AA-nahes Format, `docs/aa-import/format.md`): 5 Angriffsformen, Treffer-Teilung, Angriffswechsel je Stufe, physical/magic/true, Schwächen/Resistenzen, Crit, alle 22 AA-Effekte (0 No-op; Lücken in `unsupported.md`). **Alle 550 AA-Units und 1098 Angriffe parsen und laufen ohne Umbau** (Test), `sample.json` hat 26 echte AA-Units. Maßstab AA 1:1 (5 Studs = 1 Kachel, 1 Yen = 1 Münze, `massstab.md`), Standard20 Normal: Goku SSJ3 (Mythic) gewinnt allein. Nur noch ein Unit-Pfad (die 14 alten Units, Auren/Fähigkeits-Knöpfe, Bot-Messreihen und `sanity/` entfernt), Replay **v4** (v1–v3 = „altes Regelwerk“), Fallback-Figur im Match (Kreis, Element-Farbe, Initialen). Tests: sim 290, meta 105, client 199, Smoke grün. Screenshots `client/docs/r8/p1-match-*.png` |
 | P2 | Importer (561 Units, Evolutionen, Traits, Banner, Bild-Manifest) | **erledigt** | 1 × Sonnet | `npm run aa-import` (`tools/aa-import/`) schreibt `sim/data/units/aa.json` (550 Units + 11 Beschwörungen nicht importiert; 479 voll, 61 eingeschränkt, 10 ausgeblendet = 98,2 % spielbar), `meta/data/aa/{evolutions,traits}.json`, `client/public/aa/manifest.json`, `docs/aa-import/report.md`. Gacha mit 6 Seltenheiten (Standard, Special mit Featured Goku SSJ3, Starter), `evolve`/`rerollTrait` in meta + Backend, Trait-Wirkung über `UnitMod` (Schaden/Reichweite/Tempo), Migration Schema 1 → 2 (Runde-7-Units gegen Crystals/Gold erstattet), Starter-Geschenk mit 12 AA-Units, `view/portrait.ts`. **Was man sehen kann:** Summon mit 10er-Zug aus AA-Units, Sammlung mit 550 Units, Match mit importierten Units (`client/docs/r8/p2-*.png`). Offen für Menschen: Raten/Kosten sind Startwerte |
 | P3 | Welten, Acts, Maps (≥ 3 spielbar) | **erledigt** | 1 × Sonnet | Weltkarte (Lobby → Play) mit 3 spielbaren Welten à 6 Acts + Infinite, je eigene Karte und Farbwelt: Planet Greenie (Spirale), Walled City (enge Schlangenlinie, Schild ab Act 4), Snowy Town (Hufeisen um den Dorfkern, Regen ab Act 4); AA-Bosse und Act-Titel aus `enemies.json`, 6 Boss-Kits (4 neue, Daten). Neue Welt = nur Datei in `sim/data/worlds/` ([welten.md](aa-import/welten.md)). Acts schalten nacheinander frei (Welt 2/3 nach Act 3 der Vorwelt, Infinite nach Act 3), Erst-Clear 80 Crystals + 50 XP, Wiederholung 20; Infinite zahlt AA-Gems; Legend Stages (8) und Raids (11) als Daten-Gerüst, in der Weltkarte als „Coming later“. Belohnung aus dem Replay (Stage kommt aus dem Replay, `stage-locked`). Tests: sim 314, meta 119, client 205, Smoke grün. Screenshots `client/docs/r8/p3-*.png` |
 | P4 | Interface-Neubau | **erledigt** | 1 × Sonnet | Neuer Look „Dusk Gilt“ (`docs/design/ui.md`): Tokens, gebündelte Schriften, Kit (`client/src/ui/kit/`: Panel, Seltenheits-Rahmen mit animiertem Mythic/Secret, Porträt-Karte mit gestalteter Ersatzkarte, Kachel, Chips, Icons). **Lobby** als Hub (Dämmerungs-Hintergrund mit Funken, Team-Anführer als große Karte, Menü-Kacheln), **Summon** mit Banner-Bühne und Featured-Karten, **Zieh-Animation** (Siegel, Lichtsäule in Seltenheitsfarbe, Rampenlicht ab Legendary, überspringbar, 10er-Übersicht), **Sammlung** virtuell (561+ Units) mit Suche/Filter/Sortierung (Seltenheit, Element, Platzierung, DPS), Detail mit Werten je Stufe und Angriffsform-Vorschau (Evolution/Trait-Reroll gesperrt bis P2), **Match-HUD** mit Wellenleiste, Porträt-Unit-Leiste, Upgrade alt → neu. Nach dem Merge mit P2/P3: Weltkarte und Act-Auswahl im Kit, Trait-Reroll und Evolution in der Detailseite verdrahtet (Kosten, Zutaten, kurze Animation), Porträts über Manifest und `/aa/index.json`, Sammlung mit den echten 540 Units. Screenshots `client/docs/r8/p4-*.png` |
 | P6 | Crossover-Figuren (25) | **erledigt** | 1 × Sonnet | `sim/data/units/crossover.json`: 25 Figuren (3 Rare, 4 Epic, 5 Legendary, 8 Mythic, 5 Secret; IDs `x_*`) nur als Daten, 72 Angriffe aus dem Baukasten (Rick Astley = Confused, Shrek = Slow-Fläche, Iron Man = hybrid, `line` + `circle` mit Hits, Doge = Wild Card, Neo = Timestop, Wick = Bleed + OverCrit …), Angriffswechsel je Stufe, Flavor-Satz je Figur (`flavor` zeigt die Unit-Detailansicht). Werte aus der Median-Stufenkurve der Seltenheit (`tools/aa-import/vorlage.ts`, `npm run crossover:vorlage`), Prüfung gegen das AA-Band P5..P95 (`npm run crossover:check`). Eigenes **Crossover-Banner** (`meta/data/banners/crossover.json`, Pool `crossover`, Featured Rick Astley, Pity Mythic 100); Crossover-Figuren sind nur dort ziehbar. Bild-Manifest: 25 Einträge `source: "custom"` + `imageQuery` (Importer übernimmt sie). Anleitung [neue-unit.md](aa-import/neue-unit.md). Tests: sim 325, meta 143, client 208. Zu sehen: Crossover-Tab im Summon mit Raten, Sammlung/Detail mit Flavor, Match mit 8 Crossover-Figuren, `client/docs/r8/p6-*.png` |
-| P5 | Abschluss | offen | Hauptsitzung | |
+| P5 | Abschluss | **erledigt** | Hauptsitzung | Merges (P3 → P2 → P4 → P6, Konflikte in Backend-Typen, meta-Exporten, Smoke, Styles), Kurzbericht unten. Screenshots in `client/docs/r8/` |
 
 Plan: P1 allein. Danach P2, P3, P4 parallel in Worktrees, P6 sobald P2 gemerged ist. Keine Balance-Messreihen, Bots nur Rauchtest, jedes Paket mit Screenshots in `client/docs/r8/`.
+
+## Kurzbericht Runde 8 (AA-Import, P5, 08.10.2026)
+
+```text
+STATUS — Runde 8 (AA-Import)
+Was man jetzt sehen kann:
+  1. Neuer Look „Dusk Gilt": Lobby als Hub mit Team-Anführer, Menü-Kacheln, Kontostände (p4-lobby.png)
+  2. Summon mit 4 Bannern (Standard, Special, Starter, Crossover), Siegel-/Lichtsäulen-Reveal je Seltenheit,
+     10er-Übersicht als Karten, Raten und Pity weiter sichtbar (p4-summon, p4-reveal-*, p4-pull10*, p6-*)
+  3. Sammlung mit 565 ziehbaren Units (540 AA + 25 Crossover), virtuelles Raster, Filter/Sortierung,
+     Detail mit Werten je Stufe, Angriffsform-Vorschau, Trait-Reroll und Evolution (p4-collection, p4-unit-*)
+  4. Weltkarte mit 3 Welten à 6 Acts + Infinite, eigene Karten und Farbwelten (p4-world, p3-match-world1..3)
+  5. Match mit AA-Units, Effekten und Angriffsformen, neues HUD (p1-match-combat, p4-match-hud)
+Units: 561 AA-Einträge → 550 importiert (11 Beschwörungen sind keine Units), 540 spielbar (98,2 %),
+  davon 479 voll, 61 mit Einschränkung (Summons 25, Zweitangriff 15, aktive Fähigkeit 14, Rest klein);
+  10 ausgeblendet (kein Angriff, kein Einkommen). Details docs/aa-import/report.md
+Crossover-Figuren (25, sim/data/units/crossover.json, Banner „Crossover", Featured Rick Astley):
+  Rick Astley, Iron Man, Shrek, Gandalf, John Wick, Doge, Gigachad, Mario, Darth Vader, Neo u. a.
+  (3 Rare, 4 Epic, 5 Legendary, 8 Mythic, 5 Secret), Werte aus der Median-Stufenkurve der AA-Seltenheit
+Effekte: alle 22 AA-Effekte umgesetzt, 0 No-op; Lücken auf Unit-Ebene (aktive Fähigkeiten, Summon-Körper,
+  Fallen, Auren) in docs/aa-import/unsupported.md
+Welten spielbar: 3 (Planet Greenie — Spirale, Walled City — Schlangenlinie mit Schild ab Act 4,
+  Snowy Town — Hufeisen mit Regen ab Act 4), je 6 Acts mit AA-Boss; Infinite in der Lobby;
+  Legend Stages (8) und Raids (11) als Daten-Gerüst
+Maßstab: AA 1:1 — 1 Yen = 1 Münze, 5 Studs = 1 Kachel, Start 3000 Yen, Wellenbonus 500 + 150·n,
+  Gegner-HP Basis 300 mit Kurve je Stufe, Verkauf 25 % (docs/aa-import/massstab.md)
+Interface: Design-System mit Tokens und Kit (ui/kit), Schriften Cinzel/Manrope/Rajdhani,
+  animierte Seltenheits-Rahmen (Mythic/Secret/Exclusive), Porträt-Karten mit gestalteter Ersatzkarte,
+  Porträts aus /aa/units/<id>.webp über Manifest + /aa/index.json (lokal nur Ersatzkarte)
+Bekannte Lücken:
+  - aktive Fähigkeiten (Knopf/Cooldown), Beschwörungen, Zweitangriffe fehlen (≈ 54 Units eingeschränkt)
+  - nur 3 von 22 Welten; Karten fest 17×11 Kacheln
+  - Einstellungen, Credits, Hilfe, Pause tragen nur die Farbwelt, sind nicht neu gestaltet
+  - Raten, Preise, Evolution-/Reroll-Kosten sind Startwerte; Hard/Nightmare im AA-Maßstab nicht neu eingestellt
+  - Crossover-Porträts fehlen noch (Homelab-Seite nach imageQuery im Manifest); 88 AA-Porträts fehlen auf der Preview
+  - Smoke-Screenshots p1-smoke-*/p3-smoke-* zeigen teils noch den alten Look (Smoke schreibt sie bei Bedarf neu)
+Vorschlag Runde 9: Aktive Fähigkeiten als Baukasten-Baustein (Knopf, Cooldown, Wirkung aus Daten) und
+  Beschwörungen, damit die letzten ~54 eingeschränkten Units voll laufen. Weitere Welten per Daten
+  (Ziel 8–10 von 22), dazu ein dynamisches Kartenraster für größere Maps. Legend Stages und Raids
+  spielbar machen. Im Interface die restlichen Bildschirme (Einstellungen, Pause, Hilfe) nachziehen und
+  im Match Fähigkeits-Knöpfe und Boss-Phasen im neuen Stil.
+Agenten: 6 × Sonnet (P1 allein, dann P2/P3/P4 parallel, dann P6; P4 hat zusätzlich dev gemerged);
+  dreimal am Nutzungslimit abgebrochen und mit gesichertem Zwischenstand fortgesetzt
+Commits: 12 auf dev seit dem Auftrag (af9aa71)
+```
+
+**Offene Fragen an die Menschen (Runde 8, mit Empfehlung):**
+- **Welt-Freischaltung:** Welt 2 und 3 öffnen nach Act 3 der Vorwelt (AA eher Act 6). Empfehlung: so lassen, `unlock.afterAct` je Welt-Datei ist ein Einzeiler.
+- **Raten und Kosten** (Standard Mythic 1,3 % statt AA 0,25 %, Evolution Gold + Crystals statt AA-Items): Startwerte. Empfehlung: erst nach dem Spielen anfassen.
+- **Runde-7-Spielstände** werden migriert (alte Units gegen Crystals erstattet, Team leer, Starter-Units neu, ohne zweite 450 Crystals). Empfehlung: so lassen.
+- **Neue Units ohne Start-Trait** (erst per Reroll). Empfehlung: so lassen.
 
 ## Runde 7 (abgeschlossen)
 
