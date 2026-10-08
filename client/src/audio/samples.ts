@@ -2,6 +2,7 @@
  * Optionale Klang-Dateien (Runde 10 / P2): Liegt unter `/sfx/index.json` eine Liste, ersetzt jede darin genannte Datei den synthetisierten Klang
  * mit derselben ID. Ohne Liste (lokal, ohne die Homelab-Seite) bleibt alles synthetisiert; ein kaputter Eintrag wird uebersprungen.
  *
+ * Die Datei `public/sfx/index.json` liegt leer (`{}`) im Repo, damit kein 404 in der Konsole steht (der Smoke-Test prueft das).
  * Format der Liste: Objekt `{ "hit.fire": "hit.fire.ogg", "crit": "crit.ogg", ... }` (ID -> Dateiname unter `/sfx/`) oder Array von IDs
  * (dann gilt `<id>.ogg`). Die ID-Namen stehen in `logic.ts` (`SoundId`) und `logic-match.ts` (`MatchSoundId`).
  * Die Homelab-Seite legt Dateien und Liste nach `client/public/sfx/` (siehe Wunschliste in `docs/STATUS.md`).

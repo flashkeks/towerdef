@@ -4,7 +4,7 @@ Stand 08.10.2026. Aus der Agent-Umgebung sind kenney.nl, opengameart.org und fre
 der Match-Ton wird synthetisiert (`src/audio/recipes*.ts`). Die Homelab-Seite kann die Dateien holen und nach `client/public/sfx/` legen, **ohne Code zu aendern**:
 
 1. Dateien als `.ogg` (oder `.wav`/`.mp3`) nach `client/public/sfx/`.
-2. Liste `client/public/sfx/index.json` mit ID -> Dateiname, z. B. `{ "hit.fire": "fire-whoosh.ogg", "crit": "crit.ogg" }` (oder ein Array von IDs, dann gilt `<id>.ogg`).
+2. Liste `client/public/sfx/index.json` (liegt als leeres `{}` schon da, damit der Browser keinen 404 meldet; einfach fuellen) mit ID -> Dateiname, z. B. `{ "hit.fire": "fire-whoosh.ogg", "crit": "crit.ogg" }` (oder ein Array von IDs, dann gilt `<id>.ogg`).
 3. Jede genannte ID ersetzt den synthetisierten Klang; fehlt eine ID, bleibt die Synthese. Ein Fehlschlag beim Laden ist still (`src/audio/samples.ts`).
 
 Lizenz und Herkunft der geholten Dateien in `client/assets/ATTRIBUTIONS.md` eintragen (Kenney = CC0).

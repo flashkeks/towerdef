@@ -22,20 +22,6 @@ const { url, stop } = await startServer(PORT);
 const browser = await launch();
 const shot = (page, name) => page.screenshot({ path: resolve(OUT, `p2-${name}.png`) });
 
-/** Mehrere Aufnahmen kurz nacheinander, die zwei mit den meisten laufenden Effekten bleiben (Angriffe mitten im Flug). */
-async function bestOf(page, name, n, gap) {
-  const got = [];
-  for (let i = 0; i < n; i++) {
-    const a = await page.evaluate(() => window.__duskwardens.renderer().fx.active);
-    const buf = await page.screenshot();
-    got.push({ score: a.effects * 3 + a.particles, buf });
-    await sleep(gap);
-  }
-  got.sort((x, y) => y.score - x.score);
-  const { writeFileSync } = await import('node:fs');
-  got.slice(0, 2).forEach((g, i) => writeFileSync(resolve(OUT, `p2-${name}-${i + 1}.png`), g.buf));
-}
-
 const setup = (team) => setupRun(browser, url, team, { width: W, height: H });
 
 /** Vorspulen ohne Zeichnen, bis ein Gegner-Typ auf dem Feld steht (oder Welle erreicht). */
@@ -183,7 +169,6 @@ try {
   await shot(page, 'attacks-volley-2');
   await sleep(150);
   await shot(page, 'attacks-volley-3');
-  await bestOf(page, 'attacks-mix', 8, 160);
 
   // Platzier-Vorschau: Unit waehlen, Maus auf eine freie, gueltige Stelle (gruen) und auf den Pfad (rot)
   await page.keyboard.press('1');
