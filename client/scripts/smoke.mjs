@@ -704,7 +704,6 @@ async function modesCase(browser) {
     } catch { /* egal */ }
   }, env);
   const txt = async (sel) => ((await page.locator(sel).first().textContent()) ?? '').trim();
-  const snapOf = (name) => page.screenshot({ path: resolve(docs, `p3-smoke-${name}.png`) });
   await page.goto(URL_);
   await page.waitForSelector('.lobby:not(.loading)');
   await page.waitForFunction(() => document.querySelector('.wallet')?.getAttribute('data-raid') === '200');
@@ -720,7 +719,6 @@ async function modesCase(browser) {
   ok((await page.locator('.mode-panel .act-card').count()) === 3 && !(await page.locator('.act-card[data-stage="legend-space-center-1"]').isDisabled()) && (await page.locator('.act-card[data-stage="legend-space-center-2"]').isDisabled()), 'Space Center: 3 Acts, nur Act 1 offen');
   ok(/Physical 40/.test(await txt('.affin.resist')) && /Magic \+30%/.test(await txt('.affin.weak')), `Resistenz und Schwaeche sichtbar (${await txt('.affin.resist')} / ${await txt('.affin.weak')})`);
   ok(/Disc Fragment/.test(await txt('.mode-drop')), 'Material der Legend Stage genannt');
-  await snapOf('legend');
   await page.locator('.mode-btn[data-mode="raids"]').click();
   await page.waitForSelector('.mode-panel[data-mode="raid"]');
   ok((await page.locator('.world-tab').count()) === 11, 'Raids: 11 Eintraege');
@@ -728,7 +726,6 @@ async function modesCase(browser) {
   await page.locator('.world-tab[data-world="sacred-planet"]').click();
   await page.waitForSelector('.mode-panel[data-id="sacred-planet"]');
   ok((await page.locator('.mode-panel .act-card').count()) === 5 && /Guaranteed after 10 clears/.test(await txt('.guarantee-text')), 'Sacred Planet: 5 Acts, Garantie nach 10 Siegen');
-  await snapOf('raids');
 
   await page.locator('.act-card[data-stage="raid-sacred-planet-1"]').click();
   await page.waitForSelector('.stage-card');
@@ -738,7 +735,6 @@ async function modesCase(browser) {
   const run = await page.evaluate(() => ({ stage: window.__duskwardens.session().stageId, waves: window.__duskwardens.session().totalWaves, hud: document.querySelector('.hud')?.textContent ?? '' }));
   ok(run.stage === 'raid-sacred-planet-1' && run.waves === 20 && /Raid/.test(run.hud), `Raid-Match laeuft: ${run.stage}, ${run.waves} Wellen, Anzeige "Raid"`);
   await sleep(1500);
-  await snapOf('raid-match');
   // Legend-Stage-Match: laeuft ohne Absturz an
   await page.goto(URL_);
   await page.waitForSelector('.lobby:not(.loading)');
@@ -765,7 +761,6 @@ async function modesCase(browser) {
   ok(true, 'Kauf: Raid-Marken 200 -> 185');
   await page.waitForFunction(() => document.querySelector('.wallet')?.getAttribute('data-gold') === '2000');
   ok(true, 'Kauf: 2000 Gold in der Brieftasche');
-  await snapOf('raidshop');
 
   // Evolution mit Material
   await page.goto(URL_);
@@ -775,7 +770,6 @@ async function modesCase(browser) {
   await page.locator('.unit-tile[data-unit="goku_ssj3"]').click();
   await page.waitForSelector('.ud-evo .ud-material');
   ok(/Crystallite 15\/15/.test(await txt('.ud-material')) && (await page.locator('.ud-material.ok').count()) === 1, `Evolution nennt das Material: "${await txt('.ud-material')}"`);
-  await snapOf('evolution');
   ok(errors.length === 0, `keine Seitenfehler${errors.length ? ': ' + errors[0] : ''}`);
   await ctx.close();
 }
