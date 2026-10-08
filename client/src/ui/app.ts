@@ -75,6 +75,7 @@ export class Ui {
     this.hud.bind(session);
     this.nudges.bind(session);
     this.hints.bind();
+    this.hints.update(session); // sofort zeigen, nicht erst mit dem ersten Frame (Smoke sah sonst ein leeres Panel)
   }
 
   showStart(): void {
