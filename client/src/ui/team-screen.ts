@@ -8,6 +8,7 @@ import { t } from '../i18n/t';
 import { unitTags } from '../view/readability';
 import { clear, h } from './dom';
 import { notify } from './flash';
+import { panel } from './kit';
 import { metaFrame, newKey } from './meta-ui';
 import { cleanTeam, errorText, rarityName, sortUnits, teamComplete, toggleTeam, unitName } from './meta-model';
 import type { Nav } from './nav';
@@ -106,9 +107,13 @@ export function buildTeam(nav: Nav): HTMLElement {
     save.addEventListener('click', () => void doSave(false));
     play.addEventListener('click', () => void doSave(true));
 
-    const row = h('div', 'diff-row');
+    const row = h('div', 'diff-row team-actions');
     row.append(save, play);
-    f.body.append(h('p', 'tagline', t('team.subtitle', { n: target, total: owned.length })), slots, count, grid, row);
+    const lineup = panel({ title: t('team.slots'), corners: true, cls: 'team-panel', tag: 'section' });
+    const head = h('div', 'team-head');
+    head.append(count, row);
+    lineup.body.append(slots, head);
+    f.body.append(h('p', 'tagline', t('team.subtitle', { n: target, total: owned.length })), lineup, h('h2', 'section-title', t('team.pool')), grid);
     refresh();
   })();
   return f.box;

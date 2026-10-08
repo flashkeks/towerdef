@@ -19,8 +19,8 @@ Erzeugte Quellbilder (`assets/src/`, PNG, 1:1) — alle **eigen**:
 | Pfad (16 Kantenmasken, Bit N=1, O=2, S=4, W=8) | `tiles/path_0000` bis `tiles/path_1111` |
 | Slot-Untergründe | `tiles/slot_ground` (Steinplatte), `tiles/slot_hill` (Sockel mit Frontmauer), `tiles/slot_big` (Holzdeck 2×2, 64×64) |
 | Deko | `tiles/deco_bush`, `tiles/deco_rock`, `tiles/deco_flowers`, `tiles/deco_tree` |
-| Spawn, Basis | `tiles/spawn` (Nebelriss), `tiles/base` (Gildentor) |
-| Units (14) | `units/striker`, `units/gunner`, `units/blaster`, `units/banner`, `units/farm` (64×64), `units/lancer`, `units/frost`, `units/titan`; Runde 7: `units/warden`, `units/mortar`, `units/broker`, `units/stormcaller`, `units/seer`, `units/weaver` (alle code-generiert, eigenes Werk) |
+| Spawn, Basis | `tiles/spawn` (Portal), `tiles/base` (Tor) |
+| Units (14, Runden 1-7) | Platzhalter-Sprites `units/*` aus den ersten Runden (code-generiert, eigenes Werk); die Figuren des Spiels sind seit Runde 8 die AA-Units (Fallback: gestaltete Ersatzkarte) |
 | Gegner (8 Typen × 2 Geh-Frames) | `enemies/TYP_0`, `enemies/TYP_1` mit TYP = `grunt`, `runner`, `brute`, `flyer`, `splitter`, `splitter_child`, `elite`, `boss` |
 | Boden-Schatten Flieger | `enemies/shadow` |
 
@@ -28,10 +28,6 @@ Atlas (aus den Quellbildern gebaut, ebenfalls eigen): `assets/atlas/atlas.png`, 
 
 Hinweis: Das sind Platzhalter im Styleguide-Raster (schlicht, einheitlich), keine Endgrafik. Austausch gegen Packs oder Handzeichnung: Quellbild gleichen Namens ersetzen
 (Präfix `ph_` aus dem Styleguide wird nicht verwendet, weil die Namen im Atlas stabil bleiben sollen) und `npm run assets` bzw. nur `node scripts/build-atlas.mjs` laufen lassen.
-
-## Schriften, Töne, Musik
-
-Noch keine eingebunden.
 
 ## Ton (Runde 5, P5): alles eigen, zur Laufzeit erzeugt
 
@@ -57,3 +53,13 @@ Laut Kurswechsel 07.10.2026 zählt die Lizenz hier nicht als Hürde; trotzdem is
 | **Rajdhani** (Indian Type Foundry), Google Fonts, woff2 latin, 500/600/700 | SIL OFL 1.1 | 07.10.2026 | Zahlen und Werte (`rajdhani-*.woff2`) |
 | Icons (`src/ui/kit/icons.ts`), eigene Pfade im Strichstil von Feather/Lucide (MIT/ISC) | eigen, Stil nach Feather/Lucide | - | Menü, Elemente, HUD |
 | Ersatzfiguren, Siegel, Wappen, Hintergrund (`src/ui/kit/art.ts`) | eigen (Code) | - | Karten ohne Bild, Lobby, Enthüllung |
+
+## Figuren, Werte und Porträts (Runde 8/9)
+
+Laut Kurswechsel 07.10.2026 sind AA-Inhalte erlaubt; die Herkunft ist trotzdem festgehalten (Ordnung, keine Lizenzpflicht).
+
+| Quelle | Verwendung | Stand |
+|---|---|---|
+| Anime Adventures Wiki (Community-Wiki), Recherche in `docs/anime-adventures/data/` | Unit-Namen, Werte, Angriffe, Effekte, Evolutionen, Traits, Banner, Bosse und Welten; per Importer (`npm run aa-import`) in `sim/data/` und `meta/data/` | 07.10.2026 |
+| Bilder aus dem AA-Wiki | Porträts unter `/aa/units/ID.webp` (Preview-Server liefert sie aus, Quelle je Eintrag in `client/public/aa/manifest.json`); lokal ohne Bild zeigt das Spiel die gestaltete Ersatzkarte | laufend |
+| Crossover-Figuren (`x_*`) | eigene Daten (`sim/data/units/crossover.json`) nach Vorbildern aus Film, Musik und Netz; Bilder über `imageQuery` im Manifest | 08.10.2026 |

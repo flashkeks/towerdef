@@ -29,7 +29,7 @@ export function buildLoadError(f: { code: string; message: string }, onRecovered
   const box = h('div', 'dialog wide load-error');
   box.dataset.code = f.code;
   const tooNew = f.code === 'profile-too-new';
-  box.append(h('h1', 'title small', t(tooNew ? 'loaderr.tooNew.title' : 'loaderr.corrupt.title')), h('p', 'tagline', t(tooNew ? 'loaderr.tooNew.text' : 'loaderr.corrupt.text')));
+  box.append(crest(), h('h1', 'title small', t(tooNew ? 'loaderr.tooNew.title' : 'loaderr.corrupt.title')), h('p', 'tagline', t(tooNew ? 'loaderr.tooNew.text' : 'loaderr.corrupt.text')));
   box.append(h('p', 'loaderr-detail muted', errorText(f)));
   const row = h('div', 'diff-row');
   const imp = h('button', 'btn primary load-import', t('loaderr.import'));

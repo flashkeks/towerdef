@@ -104,7 +104,9 @@ export function confirmDialog(o: ConfirmOptions): Promise<boolean> {
     const no = h('button', 'btn confirm-no', o.cancel ?? t('meta.cancel'));
     const row = h('div', 'diff-row');
     row.append(no, yes);
-    box.append(h('h2', 'confirm-title', o.title), h('p', 'confirm-text', o.text), row);
+    const ic = h('span', `confirm-ic${o.danger ? ' danger' : ''}`);
+    ic.append(icon(o.danger ? 'skull' : 'help'));
+    box.append(ic, h('h2', 'confirm-title', o.title), h('p', 'confirm-text', o.text), row);
     layer.append(box);
     const done = (v: boolean): void => {
       document.removeEventListener('keydown', onKey, true);

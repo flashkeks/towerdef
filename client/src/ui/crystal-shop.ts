@@ -7,12 +7,15 @@ import type { ShopProduct } from '../backend/meta';
 import { t } from '../i18n/t';
 import { h } from './dom';
 import { notify } from './flash';
+import { icon, panel } from './kit';
+import { gemCluster } from './kit/gems';
 import { metaFrame, newKey, type MetaFrame } from './meta-ui';
 import { errorText } from './meta-model';
 import type { Nav } from './nav';
 
 export function buildShop(nav: Nav): HTMLElement {
   const f = metaFrame('shopscr', 'shopscreen.title', nav);
+  f.box.classList.add('screen-shop');
   void new ShopScreen(f).load();
   return f.box;
 }
@@ -24,22 +27,37 @@ class ShopScreen {
   private readonly status = h('p', 'muted shop-status');
 
   constructor(private readonly f: MetaFrame) {
-    f.body.append(h('p', 'tagline', t('shopscreen.subtitle')), this.list, this.status);
+    const note = panel({ tone: 'ember', cls: 'shop-note', tag: 'div' });
+    const ic = h('span', 'shop-note-ic');
+    ic.append(icon('bag'));
+    const copy = h('div', 'shop-note-copy');
+    copy.append(h('strong', undefined, t('shopscreen.mock')), h('span', undefined, t('shopscreen.mock.text')), h('span', 'shop-note-sub', t('shopscreen.subtitle')));
+    note.body.append(ic, copy);
+    f.body.append(note, this.list, this.status);
   }
 
   async load(): Promise<void> {
     const r = await getBackend().shopCatalog();
     if (!r.ok) return void this.f.body.replaceChildren(h('p', 'warn', errorText(r)));
-    for (const p of r.products) this.list.append(this.product(p));
+    r.products.forEach((p, i) => this.list.append(this.product(p, i, r.products.length)));
   }
 
-  private product(p: ShopProduct): HTMLElement {
-    const c = h('div', 'product');
+  private product(p: ShopProduct, i: number, n: number): HTMLElement {
+    const tier = Math.min(2, n <= 1 ? 0 : Math.round((i / (n - 1)) * 2));
+    const c = h('div', `product tier${tier}`);
     c.dataset.sku = p.sku;
     const buy = h('button', 'btn primary buy-btn', t('shopscreen.buy'));
     buy.type = 'button';
     buy.addEventListener('click', () => void this.buy(p));
-    c.append(h('strong', 'product-name', p.label), h('span', 'product-crystals', t('shopscreen.crystals', { n: p.crystals.toLocaleString('en-US') })));
+    if (n >= 3 && i === n - 1) c.append(h('span', 'product-ribbon best', t('shopscreen.best')));
+    else if (n >= 3 && i === 1) c.append(h('span', 'product-ribbon', t('shopscreen.popular')));
+    const art = h('div', 'product-art');
+    art.append(gemCluster(tier));
+    c.append(art, h('strong', 'product-name', t(`shopscreen.tier.${tier}`)));
+    const amount = h('span', 'product-crystals');
+    amount.append(icon('crystal'), h('b', undefined, p.crystals.toLocaleString('en-US')), h('small', undefined, t('shopscreen.unit')));
+    amount.setAttribute('aria-label', t('shopscreen.crystals', { n: p.crystals.toLocaleString('en-US') }));
+    c.append(amount);
     if (p.bonusCrystals > 0) c.append(h('span', 'product-bonus', t('shopscreen.bonus', { n: p.bonusCrystals.toLocaleString('en-US'), pct: p.bonusPct })));
     else c.append(h('span', 'product-bonus none', ' '));
     c.append(h('span', 'product-note', p.priceNote), buy);

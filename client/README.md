@@ -49,6 +49,23 @@ Sichtlogik ohne DOM (Tests `test/collection-model.test.ts`, `test/portrait-index
 Screenshots: `npm run build && node scripts/shots-r8-p4.mjs` (Port `SHOT_PORT`, Standard 4443) schreibt `docs/r8/p4-*.png`. Fuer eine Sammlung mit 561 Units braucht der Build
 waehrend der Aufnahme eine Datei mit vielen Units in `sim/data/units/` (`zz-*.json`, nicht einchecken); mit dem Stand von P1 sind es 26.
 
+## Interface komplett (Runde 9, P4)
+
+Alle Bildschirme sind im Kit (keine Reste im alten Look). Gestaltung in `src/ui/screens.css` (nach `kit/` geladen), Logik je Bildschirm in einer Datei:
+
+| Bildschirm | Datei | Aufbau |
+|---|---|---|
+| Einstellungen | `ui/settings-screen.ts` | Meta-Rahmen, zwei Spalten mit Panels (Audio mit Gold-Reglern, Spiel mit Schalter und Tempo, Speicherstand, Hilfe) |
+| Credits | `ui/menu.ts` | Panels (Spiel, Figuren und Welten, Technik) und eine aufklappbare Quellenliste (Texte in `en.ts`, keine rohe Markdown-Datei mehr) |
+| Hilfe | `ui/help.ts` | Tastenkappen, Ablauf in drei Schritten, Bodenarten mit Legende, Seltenheits-Rahmen |
+| Pause | `ui/result.ts` (`buildPause`) | Dialog mit Lauf-Chips (Welle, Leben, Muenzen, Stufe) und Knoepfen mit Symbol |
+| Ergebnis | `ui/result.ts` (`buildResult`) | Siegel mit Krone/Totenkopf, Kennzahl-Kacheln, wertvollste Unit als Karte, Belohnung als Kacheln (`ui/reward-box.ts`), bei Niederlage Tipps |
+| Shop (Mock) | `ui/crystal-shop.ts` | Hinweis-Panel, drei Pakete mit Kristall-Gruppe (`kit/gems.ts`), Band „Best value“, Test-Kauf |
+| Team, Stufenwahl, Bestaetigung, Ladefehler | `team-screen.ts`, `stage-select.ts`, `meta-ui.ts`, `lobby.ts` | Panels, Wappen, Symbol im Bestaetigungsdialog |
+
+Texte: nichts mehr aus der alten Welt („Grenzgilde“, Rift, Terrassen, Runde-1-7-Units). `test/r9-p4-texte.test.ts` prueft das und dass jeder im Code benutzte Textschluessel existiert.
+Screenshots: `npm run build && node scripts/shots-r9-p4.mjs` (Port `SHOT_PORT`) schreibt `docs/r9/p4-*.png`; die Datei `p4-lobby-portrait-test.png` nutzt ein Platzhalter-SVG als Porträt, nur um den Bildpfad zu zeigen.
+
 ## Bildschirme (Runde 7)
 
 Start ist die **Lobby** (`ui/lobby.ts`): Kontostaende oben (Crystals, Gold, Spieler-Level mit XP-Balken), Starter-Geschenk als sichtbarer Knopf (solange offen), Play, Summon, Units, Team, Shop, Settings, Credits. Alle Bildschirme sprechen **nur mit `getBackend()`** (nie direkt mit `meta/`), Texte nur in `en.ts`, Zustand immer vom Backend (`playerView`, `collectionView`, `bannerViews`, `stageView`, `pullHistory`, `matchSetup`).
