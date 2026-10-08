@@ -203,6 +203,43 @@ export class Session {
     this.run({ type: 'setTargeting', entityId: u.id, mode: next });
   }
 
+  /** Fähigkeit der gewählten Unit (oder `entityId`) auslösen; eine Ablehnung der Sim erscheint als Toast mit Grund. */
+  useAbility(entityId: number | null = this.selectedUnit, index?: number): CommandResult | null {
+    if (entityId === null) return null;
+    return this.run(index === undefined ? { type: 'ability', entityId } : { type: 'ability', entityId, index });
+  }
+
+  /** Die erste Knopf-Fähigkeit aller gesetzten Units dieser Art, die jetzt geht (Knopf in der Unit-Leiste). Gibt die Zahl der ausgelösten zurück. */
+  useAbilityType(defId: string): number {
+    const def = this.sim.catalog().find((d) => d.id === defId);
+    if (!def) return 0;
+    const index = def.abilities.findIndex((a) => a.trigger === 'button');
+    if (index < 0) return 0;
+    const mine = this.sim.state.units.filter((u) => u.defId === defId);
+    if (mine.length === 0) return 0;
+    const go = mine.filter((u) => this.sim.abilityBlocked(u.id, index) === null);
+    // Nichts geht: ein Versuch an der ersten Unit liefert den Grund als Toast (Abklingzeit, kein Ziel ...)
+    if (go.length === 0) {
+      this.run({ type: 'ability', entityId: mine[0].id, index });
+      return 0;
+    }
+    for (const u of go) this.run({ type: 'ability', entityId: u.id, index });
+    return go.length;
+  }
+
+  /** Auto-Schalter der Unit umlegen (an, wenn er aus ist). */
+  toggleAuto(entityId: number | null = this.selectedUnit): void {
+    const u = entityId === null ? undefined : this.sim.state.units.find((x) => x.id === entityId);
+    if (u) this.run({ type: 'autoAbility', entityId: u.id, on: !u.auto });
+  }
+
+  /** Auto-Schalter für alle gesetzten Units einer Art (Unit-Leiste): an, wenn nicht alle an sind, sonst aus. */
+  toggleAutoType(defId: string): void {
+    const mine = this.sim.state.units.filter((u) => u.defId === defId);
+    const on = mine.some((u) => !u.auto);
+    for (const u of mine) if (!!u.auto !== on) this.run({ type: 'autoAbility', entityId: u.id, on });
+  }
+
   startNextWave(): void {
     this.run({ type: 'skipWave' });
   }

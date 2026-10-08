@@ -171,7 +171,11 @@ export type FeelCue =
   | { kind: 'windowOpen'; enemyId: number; armor: number }
   | { kind: 'windowClose'; enemyId: number }
   | { kind: 'wardBreak'; enemyId: number }
-  | { kind: 'waveStart'; wave: number };
+  | { kind: 'waveStart'; wave: number }
+  // Fähigkeiten und Beschwörungen (Runde 9 / P1)
+  | { kind: 'ability'; unitId: number; name: string; auto: boolean }
+  | { kind: 'summon'; x: number; y: number; name: string }
+  | { kind: 'summonEnd'; x: number; y: number; cause: 'life' | 'dead' | 'parent' | 'blast' };
 
 /** Welcher Effekt zu einem Sim-Ereignis gehoert (oder keiner). Rein, damit Ton und Bild dasselbe lesen. */
 export function cueFor(e: SimEvent): FeelCue | null {
@@ -194,6 +198,12 @@ export function cueFor(e: SimEvent): FeelCue | null {
       return e.state === 'broken' ? { kind: 'wardBreak', enemyId: e.enemyId } : null;
     case 'waveStart':
       return { kind: 'waveStart', wave: e.wave };
+    case 'ability':
+      return { kind: 'ability', unitId: e.unitId, name: e.name, auto: e.auto };
+    case 'summonSpawn':
+      return { kind: 'summon', x: e.x, y: e.y, name: e.name };
+    case 'summonEnd':
+      return { kind: 'summonEnd', x: e.x, y: e.y, cause: e.cause };
     default:
       return null;
   }

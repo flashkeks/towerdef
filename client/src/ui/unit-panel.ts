@@ -6,6 +6,7 @@ import { t } from '../i18n/t';
 import type { Session } from '../game/session';
 import { sellPreview } from '../view/model';
 import { attackEffects, attackForm, reachMilli, upgradeEffect } from '../view/unit-info';
+import { AbilityBlock } from './ability-ui';
 import { clear, h, setClass } from './dom';
 import { elementIcon, icon } from './kit';
 import { rarityName, unitName } from './meta-model';
@@ -14,9 +15,12 @@ import { miniOf } from './unit-card';
 export class UnitPanel {
   readonly el = h('section', 'panel unitpanel');
   private sig = '';
+  /** Fähigkeiten-Block der gewählten Unit (Runde 9 / P1); wird mit dem Panel neu gebaut, `update` läuft jeden Frame. */
+  private block: AbilityBlock | null = null;
 
   bind(): void {
     this.sig = '';
+    this.block = null;
   }
 
   update(s: Session): void {
@@ -27,8 +31,12 @@ export class UnitPanel {
     const up = u ? s.sim.upgradeCost(u.id) : null;
     const def = u ? s.sim.catalog().find((d) => d.id === u.defId) : undefined;
     const sig = u && def ? `${u.id}|${u.level}|${u.targeting}|${up}|${coins >= (up ?? 0)}|${u.invested}` : 'none';
-    if (sig === this.sig) return;
+    if (sig === this.sig) {
+      if (u && this.block) this.block.update(u);
+      return;
+    }
     this.sig = sig;
+    this.block = null;
     clear(this.el);
     if (!u || !def) {
       this.el.append(h('p', 'muted', t('unit.none')));
@@ -51,6 +59,11 @@ export class UnitPanel {
       // Runde 8: Form, Treffer und Effekte des aktuellen Angriffs (alles aus den Unit-Daten)
       const bits = [attackForm(lv), ...(lv.attack.hits > 1 ? [t('stat.hits') + ' ' + lv.attack.hits] : []), ...attackEffects(lv)];
       this.el.append(h('p', 'muted attack', bits.join(' · ')));
+    }
+    // Fähigkeiten, Aura, Beschwörer (Runde 9 / P1)
+    if (def.abilities.length > 0 || def.aura.length > 0) {
+      this.block = new AbilityBlock(s, def, u, s.sim.summonDefs());
+      this.el.append(this.block.el);
     }
     // Upgrade: Kosten, Wirkung alt -> neu
     const upBtn = h('button', 'btn primary upgrade');

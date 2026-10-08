@@ -9,7 +9,7 @@
  *  6. Sieg-Prüfung                                 7. tick++
  */
 import { applyCommand, placeCostFor, placeError, type Command, type CommandResult } from './commands.js';
-import { compile, type Ctx, type UnitDef } from './data/compile.js';
+import { compile, type Ctx, type SummonDef, type UnitDef } from './data/compile.js';
 import { loadGameData } from './data/load.js';
 import type { BossKit, DifficultyId, GameData, RiskCard, StageData } from './data/schema.js';
 import { hashState } from './hash.js';
@@ -77,6 +77,8 @@ export interface Sim {
   /** Karte: Raster, Zonen je Kachel, Kartenrand, Pfadabstand. Nur lesen. */
   map(): Readonly<MapDef>;
   catalog(): UnitDef[];
+  /** Beschwörungen (Runde 9 / P1) nach ID: Name, Art, Reichweite ... für Darstellung und Hinweise. */
+  summonDefs(): Record<string, SummonDef>;
   upgradeCost(entityId: number): number | null;
   /** Warum Fähigkeit `index` der Unit jetzt nicht geht (`cooldown`, `locked`, `no-target` ...); `null` = geht. Für Knöpfe im Client. */
   abilityBlocked(entityId: number, index?: number): string | null;
@@ -203,6 +205,7 @@ export function createSim(opts: SimOptions): Sim {
     zoneAt: (x, y) => zoneAt(ctx.map, x, y),
     map: () => ctx.map,
     catalog: () => ctx.unitList,
+    summonDefs: () => ctx.summons,
     upgradeCost(entityId) {
       const u = state.units.find((x) => x.id === entityId);
       if (!u) return null;

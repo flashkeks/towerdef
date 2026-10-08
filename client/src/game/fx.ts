@@ -254,6 +254,31 @@ export class Fx {
         this.shake(2.5, 0.25);
         break;
       }
+      case 'ability': {
+        const u = this.session?.sim.state.units.find((x) => x.id === cue.unitId);
+        if (!u) break;
+        const p = this.ctx.px(u.x / 1000, u.y / 1000);
+        this.ring(p.x, p.y, T * 0.3, T * (cue.auto ? 1.4 : 2.6), C.teal, 0.95, 0.6, cue.auto ? 3 : 5);
+        if (cue.auto) break;
+        this.ring(p.x, p.y, T * 0.2, T * 1.6, C.white, 0.85, 0.4, 3, 0.05);
+        this.burst(p.x, p.y, 18, C.teal, T * 2.6, 0.7, 4);
+        // Automatisch gerufene Fähigkeiten (Beschwörer) bleiben leise: nur der Ring, kein Name und kein Wackeln
+        if (!cue.auto && this.pops.length < MAX_POPS) this.addPop(cue.name, p.x, p.y - T * 0.85, C.teal, 1.05, 1.1);
+        if (!cue.auto) this.shake(1.5, 0.2);
+        break;
+      }
+      case 'summon': {
+        const p = this.ctx.px(cue.x / 1000, cue.y / 1000);
+        this.ring(p.x, p.y, T * 0.1, T * 0.9, C.rim, 0.9, 0.4, 4);
+        this.burst(p.x, p.y, 8, C.rim, T * 1.4, 0.5, 3);
+        break;
+      }
+      case 'summonEnd': {
+        const p = this.ctx.px(cue.x / 1000, cue.y / 1000);
+        if (cue.cause === 'blast' || cue.cause === 'dead') this.burst(p.x, p.y, cue.cause === 'blast' ? 16 : 8, cue.cause === 'blast' ? C.ember : C.white, T * 1.8, 0.5, 3);
+        else this.ring(p.x, p.y, T * 0.5, T * 0.1, C.rim, 0.6, 0.3, 3);
+        break;
+      }
       default:
         break;
     }

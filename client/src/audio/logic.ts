@@ -154,6 +154,10 @@ export function soundsFor(e: SimEvent): SoundId[] {
       return ['windowClose'];
     case 'wardBreak':
       return ['wardBreak'];
+    case 'ability':
+      return c.auto ? [] : ['windowOpen'];
+    case 'summon':
+      return ['place'];
     default:
       return [];
   }
