@@ -25,7 +25,7 @@ const view = (unitId: string, rarity: string, o: Partial<CollectionUnitView> = {
   name: unitId, evolvedFrom: null, trait: null, rerollCost: null, evolution: null,
   unitId, rarity: rarity as CollectionUnitView['rarity'], owned: false, level: 0, maxLevel: 40, copies: 0, stars: 0, maxStars: 5, copiesForNextStar: null, copiesToNextStar: null, levelUpCost: null, canLevelUp: false, powerBp: 10000, powerBonusPct: 0, inTeam: false, ...o,
 });
-const lv = (damageCenti: number, spaTicks: number, attack: LevelStat['attack'] = { id: 'a', kind: 'single', radiusMilli: 0, widthMilli: 0, coneDeg: 0, cos2Bp: 0, hits: 1, dot: null, fx: [] }, rangeMilli = 6000): LevelStat => ({ damageCenti, spaTicks, rangeMilli, attack, farm: 0 });
+const lv = (damageCenti: number, spaTicks: number, attack: LevelStat['attack'] = { id: 'a', kind: 'single', radiusMilli: 0, widthMilli: 0, coneDeg: 0, cos2Bp: 0, hits: 1, dot: null, fx: [] }, rangeMilli = 6000): LevelStat => ({ damageCenti, spaTicks, rangeMilli, damageRawCenti: damageCenti, attack, farm: 0, rotation: null });
 const def = (id: string, elements: string[], placement: string, levels: LevelStat[], extra: Partial<UnitDef> = {}): UnitDef => ({ id, name: id, rarity: 'Rare', placement, role: 'single', elements, levels, ...extra }) as unknown as UnitDef;
 
 const units = [

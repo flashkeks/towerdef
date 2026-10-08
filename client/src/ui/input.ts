@@ -1,5 +1,5 @@
 /**
- * Eingabe: Tastatur (Esc, Leertaste, N, 1-9, U, T, A, S, ?/H) und Rechtsklick. Mausklicks aufs Spielfeld liegen in `board-input.ts`.
+ * Eingabe: Tastatur (Esc, Leertaste, N, 1-9, U, T, Q, A, S, ?/H) und Rechtsklick. Mausklicks aufs Spielfeld liegen in `board-input.ts`.
  * Besitzer: P1 (Bedienbarkeit).
  */
 import { SPEEDS, type Session } from '../game/session';
@@ -39,6 +39,7 @@ export class Input {
     } else if (k === 'n' || k === 'N') s.startNextWave();
     else if (k === 'u' || k === 'U') s.upgrade();
     else if (k === 't' || k === 'T') s.cycleTargeting();
+    else if (k === 'q' || k === 'Q') s.useAbility();
     else if (k === 's' || k === 'S') s.setSpeed(SPEEDS[(SPEEDS.indexOf(s.speed) + 1) % SPEEDS.length]);
     else if (/^[1-9]$/.test(k)) {
       const d = s.teamCatalog()[Number(k) - 1]; // P6: Tasten folgen dem Team

@@ -44,7 +44,7 @@ describe('Recorder (nur am GameBus)', () => {
     for (let i = 0; i < 40; i++) s.advance(TICK_MS * 2);
     const snap = rec.snapshot()!;
     expect(snap.format).toBe(REPLAY_FORMAT);
-    expect(snap.formatVersion).toBe(4);
+    expect(snap.formatVersion).toBe(5);
     expect(snap.unitMods).toEqual([]); // Standard: neutral
     expect(snap.commands[0].cmd).toMatchObject({ type: 'place', x: 3000, y: 3000 });
     expect(snap.seed).toBe(7);

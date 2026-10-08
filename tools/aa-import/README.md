@@ -15,13 +15,14 @@ npm run aa-import:check    # schreibt nichts, Exit 1 wenn eine Datei nicht zur Q
 | `client/public/aa/manifest.json` | je Unit-ID Wiki-Dateiname (`nameRR` mit `_`, `.png`, Shiny-Variante) und Pfad `/aa/units/<id>.webp` |
 | `docs/aa-import/report.md` | Bericht: voll / eingeschraenkt / ausgeblendet mit Gruenden |
 
-Dateien: `index.ts` (Ablauf), `support.ts` (Einstufung und Gruende), `evolutions.ts`, `traits.ts`, `manifest.ts`, `report.ts`.
+Dateien: `index.ts` (Ablauf), `support.ts` (Einstufung und Gruende), `kits.ts` (Runde 9: Faehigkeiten, Auren, Beschwoerungen, Zweitangriffe-Ausnahmen, Animations-Spawner), `evolutions.ts`, `traits.ts`, `manifest.ts`, `report.ts`.
 
 ## Regeln
 
 - **Nichts wird umgerechnet** (Maßstab `docs/aa-import/massstab.md`). Der Importer waehlt aus, benennt um (`nameRR` -> `name`, `secondaryDamageTypes` -> `elements`, `true_damage` -> `true`), laesst vererbte `attack`-Werte weg und prueft die fertige Datei mit `UnitFileSchema`.
-- `kind: "summon"` (11 Eintraege) wird nicht importiert (keine Units). 561 - 11 = 550.
-- **Ausgeblendet** (`support: "hidden"`): keine Stufe greift an und kein Farm-Ertrag. Die Unit bleibt im Datensatz; Meta nimmt sie aus Gacha und Sammlung (ausser sie wird besessen).
+- `kind: "summon"` (11 Eintraege) ist keine Unit (561 - 11 = 550), sondern ein Wesen im Katalog `summons` von `aa.json` (Runde 9, Zahlen aus `kits.ts`). Dort stehen auch die Angriffe der Kits (`kit:*`) und Ergaenzungen fuer Angriffe ohne Details (`giselle:three`, `carrot:two`).
+- **Kits** (Runde 9 / P1): die AA-Rohdaten kennen nur Marken (`active_attack`, `spawn_unit`, `aura_buff`), keine Wirkungszahlen. `kits.ts` ergaenzt sie als Datensatz (`abilities`, `aura`), `index.ts` schreibt Zweitangriffe (`also`) fuer Units mit mehreren Angriffen. Einstufung: ein Kit loest die Gruende `handles`, `leaves` bleiben (die Unit bleibt `limited`); Animations-Spawner (`COSMETIC_SPAWN`) zaehlen als voll.
+- **Ausgeblendet** (`support: "hidden"`): keine Stufe greift an, kein Farm-Ertrag und kein Kit (Faehigkeit/Aura). Die Unit bleibt im Datensatz; Meta nimmt sie aus Gacha und Sammlung (ausser sie wird besessen).
 - **Eingeschraenkt** (`limited`): spielbar, aber Aktiv-Faehigkeit, Beschwoerung, Aura, Heilung usw. fehlen (`supportNotes`).
 - Handgepflegte Banner und Kosten liegen **nicht** hier: `meta/data/banners/*.json`, `meta/data/unit-costs.json`.
 - `aa.json` nicht von Hand aendern. Neue Figuren (Crossover, P6) kommen in eine eigene Datei `sim/data/units/crossover.json`.

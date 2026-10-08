@@ -1,5 +1,5 @@
 {
-  "ref": "Runde 8 / P1: Effekt-Katalog = die 22 Effekte aus docs/anime-adventures/data/units.json (effects) nach combat-system.md § 7, plus zwei Hilfseintraege fuer Wild Card (WildBurn, WildBleed). Alle Werte DESIGN, wo die Quelle UNKNOWN ist (siehe docs/aa-import/unsupported.md). Sekunden, Prozent, Faktoren wie im AA-Datensatz; ein Angriff kann duration/influence/chance je Eintrag ueberstimmen.",
+  "ref": "Runde 8 / P1: Effekt-Katalog = die 22 Effekte aus docs/anime-adventures/data/units.json (effects) nach combat-system.md § 7, plus zwei Hilfseintraege fuer Wild Card (WildBurn, WildBleed) und (Runde 9 / P1) Overtime fuer Kento (Annahme: Sunshine-Art, +50 % Schaden ueber 10 Waves). Alle Werte DESIGN, wo die Quelle UNKNOWN ist (siehe docs/aa-import/unsupported.md). Sekunden, Prozent, Faktoren wie im AA-Datensatz; ein Angriff kann duration/influence/chance je Eintrag ueberstimmen.",
   "effects": {
     "Slow": { "kind": "slow", "durationSec": 3, "influence": 0.5, "immuneSec": 4 },
     "Stun": { "kind": "stun", "durationSec": 2, "immuneSec": 12 },
@@ -21,6 +21,7 @@
     "Sunshine": { "kind": "sunshine", "maxWaves": 15, "damageFactor": 2.25, "rangeFactor": 1.67 },
     "Motivate": { "kind": "motivate", "damagePercent": 15, "rangePercent": 0, "durationSec": 10 },
     "Shatter": { "kind": "shatter" },
+    "Overtime": { "kind": "sunshine", "maxWaves": 10, "damageFactor": 1.5, "rangeFactor": 1 },
     "Wither": { "kind": "wither", "durationSec": 5 },
     "Wild Card": { "kind": "wildcard", "pool": ["WildBurn", "Slow", "WildBleed", "Freeze", "Knockback"] },
     "WildBurn": { "kind": "dot", "type": "Burn", "multiplierPerTick": 0.1, "ticks": 4 },

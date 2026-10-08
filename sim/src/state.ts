@@ -136,6 +136,44 @@ export interface UnitState {
   motRangeTicks: number;
   damageDealt: number;
   damageReported: number;
+  /**
+   * Fähigkeiten (Runde 9 / P1). Alle Felder nur gesetzt, wenn die Unit sie braucht (Replay-Hashes älterer Läufe bleiben gleich):
+   * `ab` = Rest-Abklingzeit je Fähigkeit (Ticks, Index = Position in `def.abilities`), `auto` = 1, wenn der Auto-Schalter an ist,
+   * `run` = laufende Mehrfach-Wirkung (Fähigkeit, übrige Schläge, Ticks bis zum nächsten),
+   * `rot` = Zähler des Angriffs-Wechsels (Zweitangriffe), `motTempoBp/Ticks` und `motCritBp/Ticks` = Tempo- und Crit-Buffs (wie Motivate: stärkster gewinnt).
+   */
+  ab?: number[];
+  auto?: 1;
+  run?: { i: number; left: number; next: number };
+  rot?: number;
+  motTempoBp?: number;
+  motTempoTicks?: number;
+  motCritBp?: number;
+  motCritTicks?: number;
+}
+
+/** Eine Beschwörung im Spiel (Runde 9 / P1). */
+export interface SummonState {
+  id: number;
+  /** Eintrag im Katalog `units.summons`. */
+  def: string;
+  owner: number;
+  /** Beschwörer (Unit-ID); verschwindet die Unit, verschwinden ihre Wesen. */
+  parent: number;
+  x: number;
+  y: number;
+  /** `walk`: Pfadfortschritt in Milli-Tiles + Rest (wie bei Gegnern); `stand`: 0. */
+  progress: number;
+  frac: number;
+  /** Rest-Lebensdauer in Ticks (-1 = unbegrenzt). */
+  life: number;
+  /** Rest-Haltbarkeit in Ticks gegen einen Standard-Gegner im Kontakt. */
+  hp: number;
+  cd: number;
+  /** `walk`: Pfadfortschritt, an dem die Beschwörung erschien (sie entfernt sich nur begrenzt davon). */
+  home: number;
+  /** Platz neben dem Beschwörer (`stand`). */
+  slot: number;
 }
 
 export interface PlayerState {
@@ -190,12 +228,14 @@ export interface SimState {
   rng: RngState;
   players: PlayerState[];
   units: UnitState[];
+  /** Beschwörungen (Runde 9 / P1); das Feld entsteht erst mit der ersten Beschwörung. */
+  summons?: SummonState[];
   enemies: EnemyState[];
   spawnQueue: SpawnEntry[];
   stats: SimStats;
 }
 
-export type IncomeSource = 'waveBonus' | 'bounty' | 'farm' | 'sell' | 'donate';
+export type IncomeSource = 'waveBonus' | 'bounty' | 'farm' | 'sell' | 'donate' | 'ability';
 
 export type SimEvent =
   | { type: 'spawn'; tick: number; enemyId: number; enemy: string; wave: number; summon?: true }
@@ -216,7 +256,11 @@ export type SimEvent =
   | { type: 'bossWindow'; tick: number; enemyId: number; open: boolean; damageBp: number; ticks: number; cause: 'ward' | 'cast' | 'interrupt' | 'exhaust' | 'phase'; /** Runde 5 / P3: Rüstung im Fenster (-1 = unverändert). */ armor?: number }
   | { type: 'bossArmor'; tick: number; enemyId: number; armor: number; base: number }
   | { type: 'bossWard'; tick: number; enemyId: number; state: 'up' | 'broken' | 'expired'; hp: number }
-  | { type: 'cardChosen'; tick: number; player: number; card: string | null; wave: number };
+  | { type: 'cardChosen'; tick: number; player: number; card: string | null; wave: number }
+  // Fähigkeiten und Beschwörungen (Runde 9 / P1).
+  | { type: 'ability'; tick: number; unitId: number; owner: number; ability: string; name: string; auto: boolean }
+  | { type: 'summonSpawn'; tick: number; summonId: number; def: string; name: string; parent: number; x: number; y: number }
+  | { type: 'summonEnd'; tick: number; summonId: number; def: string; cause: 'life' | 'dead' | 'parent' | 'blast'; x: number; y: number };
 
 /** Laufzeitkontext der Systeme: veränderlicher Zustand + unveränderliche abgeleitete Daten. */
 export interface World {

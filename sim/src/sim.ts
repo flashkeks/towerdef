@@ -4,11 +4,12 @@
  * Tick-Reihenfolge (alles in aufsteigender Entity-ID):
  *  1. Waves (Prep-Timer, Wave-Ende/-Start, Skip)   2. Spawns   2b. Boss-Kits (Phasen, Telegraph, Fenster)
  *  3. Statuseffekte/DoT/Regen + Tode
- *  4. Bewegung + Leaks (Niederlage)                5. Units: Cooldowns, Angriffe + Tode
+ *  4. Bewegung + Leaks (Niederlage; Beschwörungen halten Bodengegner auf)
+ *  5. Auren, Units: Cooldowns, Angriffe; Fähigkeiten (Abklingzeit, Auto); Beschwörungen; Tode
  *  6. Sieg-Prüfung                                 7. tick++
  */
 import { applyCommand, placeCostFor, placeError, type Command, type CommandResult } from './commands.js';
-import { compile, type Ctx, type UnitDef } from './data/compile.js';
+import { compile, type Ctx, type SummonDef, type UnitDef } from './data/compile.js';
 import { loadGameData } from './data/load.js';
 import type { BossKit, DifficultyId, GameData, RiskCard, StageData } from './data/schema.js';
 import { hashState } from './hash.js';
@@ -23,6 +24,8 @@ import { tickEffects } from './systems/effects.js';
 import { processSpawns } from './systems/spawn.js';
 import { resolveDeaths } from './systems/economy.js';
 import { runUnits } from './systems/attack.js';
+import { abilityError, applyAuras, tickAbilities } from './systems/ability.js';
+import { runSummons } from './systems/summon.js';
 import { checkVictory, finish, updateWaves } from './systems/waves.js';
 
 export interface SimOptions {
@@ -74,7 +77,11 @@ export interface Sim {
   /** Karte: Raster, Zonen je Kachel, Kartenrand, Pfadabstand. Nur lesen. */
   map(): Readonly<MapDef>;
   catalog(): UnitDef[];
+  /** Beschwörungen (Runde 9 / P1) nach ID: Name, Art, Reichweite ... für Darstellung und Hinweise. */
+  summonDefs(): Record<string, SummonDef>;
   upgradeCost(entityId: number): number | null;
+  /** Warum Fähigkeit `index` der Unit jetzt nicht geht (`cooldown`, `locked`, `no-target` ...); `null` = geht. Für Knöpfe im Client. */
+  abilityBlocked(entityId: number, index?: number): string | null;
   /**
    * Aktuelle Platzierkosten (Münzen) von `unitId` für `player`: Basispreis plus Zuwachs je eigener Unit gleichen Typs, die gerade steht
    * (`economy.placeCostGrowthBp`, Unit-Feld `placeGrowthBp`). Genau der Betrag, den `place` abbucht. Ohne `player` (nur `unitId`): Spieler 0.
@@ -142,7 +149,10 @@ export function createSim(opts: SimOptions): Sim {
       finish(w, 'loss');
       return;
     }
+    applyAuras(w);
     runUnits(w);
+    tickAbilities(w);
+    runSummons(w);
     resolveDeaths(w);
     checkVictory(w);
     state.tick++;
@@ -195,11 +205,20 @@ export function createSim(opts: SimOptions): Sim {
     zoneAt: (x, y) => zoneAt(ctx.map, x, y),
     map: () => ctx.map,
     catalog: () => ctx.unitList,
+    summonDefs: () => ctx.summons,
     upgradeCost(entityId) {
       const u = state.units.find((x) => x.id === entityId);
       if (!u) return null;
       const def = ctx.units[u.defId];
       return u.level >= def.maxLevel ? null : def.upgradeCosts[u.level];
+    },
+    abilityBlocked(entityId, index) {
+      const u = state.units.find((x) => x.id === entityId);
+      if (!u) return 'unknown-entity';
+      const def = ctx.units[u.defId];
+      const i = index ?? def.abilities.findIndex((a) => a.trigger === 'button');
+      if (i < 0) return 'no-ability';
+      return abilityError(w, u, def, i, false);
     },
     previewWave: (n, cardId) => previewWave(ctx, state, n, cardId),
     cards: () => ctx.cardList,

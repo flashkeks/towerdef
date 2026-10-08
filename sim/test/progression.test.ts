@@ -61,8 +61,8 @@ describe('Progression (Level-/Sterne-Kurven als Daten)', () => {
 describe('Replay v3 (Mods im Kopf)', () => {
   const dir = new URL('../../docs/balancing/playtests/', import.meta.url).pathname;
   const f = readdirSync(dir).find((x) => /^beispiel-v4-.*mid\.json$/.test(x));
-  it('Format ist v4, Beispiel mit Mods liegt da', () => {
-    expect(REPLAY_FORMAT_VERSION).toBe(4);
+  it('Format ist v5 (das v4-Beispiel mit Mods bleibt spielbar), Beispiel liegt da', () => {
+    expect(REPLAY_FORMAT_VERSION).toBe(5);
     expect(f).toBeDefined();
   });
   if (f) {

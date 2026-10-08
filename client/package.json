@@ -16,7 +16,8 @@
     "replay-check": "node scripts/replay-check.mjs",
     "perf": "node scripts/perf.mjs",
     "shots:p5": "node scripts/shots-p5.mjs",
-    "audio-check": "node scripts/audio-check.mjs"
+    "audio-check": "node scripts/audio-check.mjs",
+    "ability-check": "node scripts/ability-check.mjs"
   },
   "dependencies": {
     "pixi.js": "^8.22.0",

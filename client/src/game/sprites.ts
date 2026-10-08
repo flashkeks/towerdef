@@ -60,7 +60,7 @@ export function makeUnitNode(ctx: RenderContext, def: Pick<UnitDef, 'id' | 'name
 export const unitLift = (def: UnitDef, kind: 'ground' | 'hill'): number => (def.footprint === 2 ? 0 : kind === 'hill' ? 10 : 3);
 
 /** Zeichnet Stufenpunkte und Auswahlring neu (Aufruf nur bei geaenderter Signatur). Das Sprite selbst bleibt. */
-export function drawUnit(node: UnitNode, ctx: RenderContext, def: UnitDef, u: UnitState, selected: boolean, kind: 'ground' | 'hill'): void {
+export function drawUnit(node: UnitNode, ctx: RenderContext, def: UnitDef, u: UnitState, selected: boolean, kind: 'ground' | 'hill', abilityReady = false): void {
   const s = ctx.art;
   const big = def.footprint === 2;
   const lift = unitLift(def, kind) * s;
@@ -72,6 +72,13 @@ export function drawUnit(node: UnitNode, ctx: RenderContext, def: UnitDef, u: Un
   // Stufenpunkte: kleine Quadrate in Gold ueber dem Kopf
   const px = Math.max(2, s * 2);
   for (let i = 0; i < u.level; i++) g.rect(Math.round(-((u.level * (px + 1) - 1) / 2) + i * (px + 1)), topY, px, px).fill(C.gold).stroke({ width: 1, color: C.ink });
+  if (abilityReady) {
+    // Fähigkeit bereit (Runde 9 / P1): kleiner Blitz über dem Kopf
+    const bx = Math.round(half * 0.9);
+    const by = Math.round(topY - 2 * s);
+    const k = Math.max(2, s * 2);
+    g.poly([bx + k, by - k * 3, bx - k, by + 0, bx + 0, by + 0, bx - k, by + k * 3, bx + k * 2, by - k, bx + k, by - k]).fill(C.teal).stroke({ width: 1, color: C.ink });
+  }
   if (selected) {
     // Auswahlring flach am Boden (Ellipse), Schrittweite in Pixeln
     const ry = (big ? 7 : 4) * s;

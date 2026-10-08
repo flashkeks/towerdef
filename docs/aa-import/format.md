@@ -1,18 +1,19 @@
 # Unit-Format (Zielformat für Importer P2 und Crossover P6)
 
-Stand: Runde 8 / P1 (07.10.2026). Quelle der Wahrheit im Code: `sim/src/data/schema.ts` (`UnitFileSchema`, `UnitSchema`, `AttackSchema`, `EffectsSchema`). Erklärung der Wirkung: `sim/README.md`, Abschnitt „Unit-Baukasten“.
+Stand: Runde 9 / P1 (08.10.2026; Fähigkeiten, Auren, Beschwörungen, Zweitangriffe, siehe unten). Runde 8 / P1 (07.10.2026). Quelle der Wahrheit im Code: `sim/src/data/schema.ts` (`UnitFileSchema`, `UnitSchema`, `AttackSchema`, `EffectsSchema`). Erklärung der Wirkung: `sim/README.md`, Abschnitt „Unit-Baukasten“.
 
 **Grundsatz:** eine neue Unit ist **nur ein Datensatz**. Das Format folgt der AA-Struktur aus `docs/anime-adventures/data/units.json`, damit der Importer fast 1:1 kopiert. Zahlen stehen in **AA-Einheiten** (Yen, Schaden, Sekunden, Studs, Grad, Dezimalzahlen); die Sim rechnet sie beim Laden mit den Konstanten aus `sim/data/economy.json` (`scale`) in Festkomma um. Unbekannte Zusatzfelder (AA-Rohdaten wie `dps`, `cumulativeCost`, `extra`, `meta`) werden beim Parsen **verworfen**, nicht abgelehnt.
 
 ## Dateien
 
-Alles in `sim/data/units/*.json` wird geladen (alphabetisch) und zusammengeführt. Heute: `aa.json` (550 Units, Importer P2). `sample.json` ist als Test-Fixture nach `sim/test/fixtures/sample-units.json` gewandert (sonst Doppel-IDs). `crossover.json` (25 Figuren, P6, `source: "custom"`, Anleitung [neue-unit.md](neue-unit.md)). Zusatzfelder des Importers: `support` (`full`/`limited`/`hidden`) und `supportNotes`.
+Alles in `sim/data/units/*.json` wird geladen (alphabetisch) und zusammengeführt. Heute: `aa.json` (550 Units, Importer P2; seit Runde 9 auch die Beschwörungen und die Kit-Angriffe, siehe unten). `sample.json` ist als Test-Fixture nach `sim/test/fixtures/sample-units.json` gewandert (sonst Doppel-IDs). `crossover.json` (25 Figuren, P6, `source: "custom"`, Anleitung [neue-unit.md](neue-unit.md)). Zusatzfelder des Importers: `support` (`full`/`limited`/`hidden`) und `supportNotes`.
 
 ```jsonc
 {
   "ref": "woher die Daten stammen (frei)",
   "units":   [ /* Unit */ ],
-  "attacks": { "<attack-id>": { /* Angriff */ }, "<id-ohne-details>": null }
+  "attacks": { "<attack-id>": { /* Angriff */ }, "<id-ohne-details>": null },
+  "summons": { "<summon-id>": { /* Beschwörung, Runde 9 */ } }
 }
 ```
 
@@ -26,7 +27,7 @@ Alles in `sim/data/units/*.json` wird geladen (alphabetisch) und zusammengeführ
 |---|---|---|---|
 | `id` | string | ja | AA `id` |
 | `name` | string | ja | Anzeigename. AA: `nameRR` wird als `name` akzeptiert (Alias beim Parsen) |
-| `rarity` | `Rare` `Epic` `Legendary` `Mythic` `Secret` `Exclusive` | ja | wie AA (Groß-/Kleinschreibung beachten). AA-Einträge mit `kind: "summon"` (Rarity `summon`, 11 Stück) **nicht** importieren |
+| `rarity` | `Rare` `Epic` `Legendary` `Mythic` `Secret` `Exclusive` | ja | wie AA (Groß-/Kleinschreibung beachten). AA-Einträge mit `kind: "summon"` (Rarity `summon`, 11 Stück) sind **keine Units**, sondern Wesen im Katalog `summons` (Runde 9) |
 | `placement` | `ground` `hill` `hybrid` | ja | AA `placement`. Boden trifft keine Flieger, Hügel/Hybrid schon |
 | `damageType` | `physical` `magic` `true` | nein (physical) | AA `damageType`; `true_damage` wird als `true` gelesen; `null` = physical (4 AA-Units) |
 | `elements` | Liste aus `dark` `fire` `lightning` `ice` `air` `light` `water` `rose` | nein | AA `secondaryDamageTypes` (Alias beim Parsen) |
@@ -39,6 +40,8 @@ Alles in `sim/data/units/*.json` wird geladen (alphabetisch) und zusammengeführ
 | `placeGrowthBp` | int | nein | Zuwachs der Platzierkosten je weiterer gleicher Unit (Bp), überstimmt `economy.placeCostGrowthBp` |
 | `levels` | Liste, mindestens 1 | ja | Stufen, Reihenfolge = Stufe. Siehe unten |
 | `flavor`, `imageQuery`, `source` | string | nein | nur Beschreibung (P6: Flavor-Text, Bild-Suchhinweis) |
+| `abilities` | Liste von Fähigkeiten | nein | Runde 9: Knopf-Fähigkeiten, automatische Fähigkeiten, periodische Beschwörer. Siehe Abschnitt „Fähigkeiten“ |
+| `aura` | Aura oder Liste je Stufe | nein | Runde 9: Dauer-Buff auf Verbündete |
 | `evolvedFrom`, `evolution`, `limited`, `hideFromBanner`, `rateupBannerOnly`, `shinyVariant` | wie AA | nein | **die Sim wertet sie nicht aus**; sie bleiben im Datensatz für Meta/Gacha/Evolution (P2) |
 
 ### Stufe (`levels[]`)
@@ -52,6 +55,7 @@ Alles in `sim/data/units/*.json` wird geladen (alphabetisch) und zusammengeführ
 | `range` | Studs | Reichweite (25 Studs = 5 Kacheln). Fehlt: Vorwert |
 | `attack` | Angriffs-ID | Eintrag in `attacks`. Fehlt: Vorwert. **Eine andere ID auf einer späteren Stufe wechselt den Angriff** (`rokuhira:one` -> `:two` -> `:three`) |
 | `farm` | Yen | Einkommen je Wave (Farm-Units) |
+| `also` | Liste von Angriffs-IDs | Zweitangriffe (Runde 9): laufen zusammen mit `attack` im Wechsel (Schlag 1 `attack`, Schlag 2 das erste `also` ...), eine gemeinsame Abklingzeit, gleicher Stufen-Schaden. Wird wie die anderen Stufenfelder vererbt; `[]` setzt zurück |
 | `note` | string | frei, nur Anzeige |
 
 Eine Stufe **greift an**, wenn `damage`, `spa` und `range` > 0 sind. Eine Unit ohne Angriff und mit `farm` ist eine Farm.
@@ -98,10 +102,42 @@ Stufe 1 erbt `attack` (`stain:one`); Stufe 2 wechselt auf `stain:two`. Mit einem
 | `damageType` `true_damage` / `null` | `true` / weglassen (physical) |
 | `levels[]` | `levels[]` mit den Feldern `level cost damage spa range attack farm note`; `cumulativeCost`, `dps`, `dpsWithDot`, `extra` entfallen |
 | `attacks` | `attacks` 1:1 (Felder `aoe radius angle width hits dot special` stimmen schon) |
-| `kind: "summon"` | nicht übernehmen (siehe `unsupported.md`) |
+| `kind: "summon"` | als Wesen in `summons` (Runde 9, Kit-Tabelle `tools/aa-import/kits.ts`) |
+| `extra.active_attack`, `spawn_unit`, `aura_buff`, `secondary_attacks`, `_attacks` | Fähigkeit, Beschwörer, Aura, Zweitangriffe: Kit-Tabelle bzw. `also` (Runde 9) |
 | `evolution`, `evolvedFrom`, `limited`, ... | 1:1 mitgeben, die Sim ignoriert sie |
 
 `test/units-data.test.ts` parst **alle 550 AA-Units und 1098 Angriffe** ohne jede Umformung (Aliase) und lässt jede Unit drei Waves spielen; der Importer braucht also nur auszuwählen, zu ergänzen (Bild, Banner, Meta) und zu schreiben. Prüfen nach dem Schreiben: `cd sim && npx vitest run test/units-data.test.ts test/smoke.test.ts`.
+
+## Fähigkeiten, Auren, Beschwörungen, Zweitangriffe (Runde 9 / P1)
+
+AA kennt dazu nur Marken (`extra.active_attack` mit Abklingzeit, `spawn_unit`, `aura_buff`, `_attacks`), **keine Wirkungszahlen**. Namen und Abklingzeiten sind AA; Wirkung und Stärke stehen als Datensatz in `tools/aa-import/kits.ts` (DESIGN, Annahmen in `unsupported.md`). Schema: `sim/src/data/schema.ts` (`AbilitySchema`, `AuraSchema`, `SummonSchema`), Wirkung: `sim/README.md`, Abschnitt „Fähigkeiten und Beschwörungen“.
+
+**Fähigkeit** (`units[].abilities[]`):
+
+| Feld | Typ | Bedeutung |
+|---|---|---|
+| `id`, `name` | string | `name` ist die Anzeige (Englisch) |
+| `trigger` | `button` (Standard) `auto` | `button`: der Spieler löst aus (Befehl `ability`, Taste Q, Knopf), der **Auto-Schalter** der Unit (`autoAbility`) löst sie bei Bereitschaft selbst aus. `auto`: feuert immer von selbst (Dauer-Beschwörer) |
+| `cooldown` | Sekunden | Abklingzeit nach dem Auslösen (AA `active_attack_stats.attack_cooldown`); die Unit startet bereit |
+| `minLevel` | Stufe (Index) | ab hier verfügbar (`levels[].note` "+ Nullification" = Stufe 6) |
+| `attack` | Angriffs-ID | Form, Treffer, DoT, Spezialeffekte aus dem Katalog (Zeitstopp = `{ "aoe": "full", "special": { "name": "Timestop" } }`) |
+| `damageMult` / `damage` | Zahl | Schaden = Stufen-Schaden x `damageMult` (Standard 1), oder absolut in AA-Einheiten (`damage`, für Units ohne eigenen Schaden); 0 = nur die Effekte |
+| `scope` | `range` (Standard) `global` | `range`: braucht ein Ziel in Reichweite (sonst `no-target`); `global`: trifft die ganze Karte (braucht einen lebenden Gegner) |
+| `pulses`, `durationSec` | Zahl | mehrere Schläge, gleichmäßig über `durationSec` verteilt (der erste sofort) |
+| `selfBuff` | Buff | auf die Unit selbst |
+| `buff` | Buff + `radius` (Studs, fehlt = alle Verbündeten) + `self` | auf Verbündete |
+| `summon` | `{ id, count }` oder Liste | ruft Wesen aus `summons` |
+| `coins` | Yen | zusätzliche Münzen |
+
+**Buff:** `damagePct`, `rangePct`, `tempoPct` (Angriffstempo), `critPct` (Crit-Chance), `durationSec`; wirkt wie Motivate (stärkster gewinnt, kein Stapeln, Deckel aus `economy.buffCaps`).
+
+**Aura** (`units[].aura`, ein Eintrag oder je Stufe eine Liste): `damagePct`, `rangePct`, `tempoPct`, `critPct`, `radius` (Studs; fehlt = global). Wirkt dauerhaft auf Verbündete (nicht auf den Träger), gleiche Auren stapeln nicht.
+
+**Beschwörung** (`summons.<id>`): `name`, `mode` (`walk` läuft den Gegnern auf dem Pfad entgegen, hält Bodengegner auf und kämpft; `stand` steht neben dem Beschwörer und schießt), `damageType`, `elements`, `damageMult` (Vielfaches des Stufen-Schadens des Beschwörers) oder `damage` (absolut), `spa`, `range` (Studs), `attack` (Katalog-ID, ohne Angriff tut sie nichts außer Aufhalten), `lifetime` (Sekunden, 0 = bis zum Fall oder Verkauf des Beschwörers), `durability` (Sekunden, die sie gegen einen Standard-Gegner im Kontakt durchhält), `blocks`, `speed` (Kacheln/s), `hitsAir`, `endAttack` + `endDamageMult` (letzter Schlag beim Ende, Kamikaze), `maxAlive` (Grenze je Beschwörer, ein neues Wesen ersetzt das älteste).
+
+**Zweitangriffe:** der Importer setzt `levels[].also` für alle Units, deren AA-Daten mehrere Angriffe führen (`_attacks`, `secondary_attacks`) und für die Stufen-Notizen "+ Scatter", "+ Kaminari" (Rokuhira): je Stufe laufen die bisher freigeschalteten Angriffe neben dem der Stufe im Wechsel mit. Alle anderen Units wechseln wie bisher auf den Angriff der Stufe (516 von 550 tun das; ob AA dort auch rotiert, sagen die Daten nicht).
+
+**Replay:** neue Befehle `{ type: 'ability', entityId, index? }` und `{ type: 'autoAbility', entityId, on }` (Replay-Format v5; v4 bleibt nachspielbar).
 
 ## Crossover (P6)
 

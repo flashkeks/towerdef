@@ -3,14 +3,21 @@
  * Aussehen kommt aus `sprites.ts`. Besitzer: P4 (Grafik); Treffer-/Todeseffekte gehoeren in `fx.ts` (P5).
  */
 import { Container, Graphics, Text } from 'pixi.js';
-import type { EnemyState, UnitState } from '../sim';
-import { enemyHpRatio, hpBarColor, statusMarks, statusTint } from '../view/model';
+import type { EnemyState, SummonState, UnitState } from '../sim';
+import { enemyHpRatio, hpBarColor, initials, statusMarks, statusTint, unitColor } from '../view/model';
 import { C } from './palette';
 import type { RenderContext } from './context';
 import type { Session } from './session';
 import { drawUnit, makeEnemyBody, makeUnitNode, setEnemyFrame, type EnemyBody, type UnitNode } from './sprites';
 
 interface UnitView extends UnitNode {
+  version: number;
+  sig: string;
+}
+/** Beschwörung (Runde 9 / P1): Fallback-Figur (Kreis in der Farbe des Beschwörers, gestrichelter Lebensdauer-Ring, Haltbarkeitsbalken). */
+interface SummonView {
+  c: Container;
+  g: Graphics;
   version: number;
   sig: string;
 }
@@ -29,6 +36,7 @@ export class EntitiesLayer {
   readonly enemyLayer = new Container();
   private unitViews = new Map<number, UnitView>();
   private enemyViews = new Map<number, EnemyView>();
+  private summonViews = new Map<number, SummonView>();
   /** Letzte Canvas-Position je Gegner (fuer Effekte an Gegner-Positionen, z. B. Kill-Popup). */
   private lastPos = new Map<number, { x: number; y: number }>();
 
@@ -42,6 +50,8 @@ export class EntitiesLayer {
     for (const v of this.unitViews.values()) v.c.destroy({ children: true });
     for (const v of this.enemyViews.values()) v.c.destroy({ children: true });
     this.unitViews.clear();
+    for (const v of this.summonViews.values()) v.c.destroy({ children: true });
+    this.summonViews.clear();
     this.enemyViews.clear();
     this.lastPos.clear();
   }
@@ -60,6 +70,7 @@ export class EntitiesLayer {
   sync(session: Session, nowMs: number): void {
     this.syncUnits(session, session.sim.state.units);
     this.syncEnemies(session, session.sim.state.enemies, nowMs);
+    this.syncSummons(session, session.sim.state.summons ?? []);
   }
 
   private syncUnits(session: Session, units: readonly UnitState[]): void {
@@ -82,15 +93,67 @@ export class EntitiesLayer {
       v.c.zIndex = pos.y;
       const selected = session.selectedUnit === u.id;
       const kind = session.sim.zoneAt(u.x, u.y) === 'hill' ? 'hill' : 'ground';
-      const sig = `${u.level}|${selected}|${kind}`;
+      const ready = def.abilities.some((a, i) => a.trigger === 'button' && u.level >= a.minLevel && (u.ab?.[i] ?? 0) === 0);
+      const sig = `${u.level}|${selected}|${kind}|${ready}`;
       if (sig === v.sig) continue;
       v.sig = sig;
-      drawUnit(v, ctx, def, u, selected, kind);
+      drawUnit(v, ctx, def, u, selected, kind, ready);
     }
     for (const [id, v] of this.unitViews) {
       if (!seen.has(id)) {
         v.c.destroy({ children: true });
         this.unitViews.delete(id);
+      }
+    }
+  }
+
+  /** Beschwörungen: Figur anlegen, positionieren, Ring und Balken nachzeichnen, Verschwundene entfernen. */
+  private syncSummons(session: Session, list: readonly SummonState[]): void {
+    const { ctx } = this;
+    const defs = session.sim.summonDefs();
+    const seen = new Set<number>();
+    for (const s of list) {
+      const sd = defs[s.def];
+      if (!sd) continue;
+      seen.add(s.id);
+      let v = this.summonViews.get(s.id);
+      if (!v || v.version !== ctx.version) {
+        v?.c.destroy({ children: true });
+        const c = new Container();
+        const g = new Graphics();
+        const r = ctx.tile * 0.27;
+        const parent = session.sim.state.units.find((u) => u.id === s.parent);
+        const col = unitColor(parent?.defId ?? s.def);
+        const body = new Graphics();
+        body.circle(0, 0, r).fill({ color: col, alpha: 0.92 }).stroke({ width: Math.max(2, ctx.art * 2), color: C.white });
+        body.circle(0, 0, r * 0.7).fill({ color: C.ink, alpha: 0.35 });
+        const label = new Text({ text: initials(sd.name), style: { fontFamily: 'sans-serif', fontSize: Math.round(r * 0.95), fontWeight: 'bold', fill: C.white, stroke: { color: C.ink, width: 3 } } });
+        label.anchor.set(0.5);
+        c.addChild(body, label, g);
+        this.unitLayer.addChild(c);
+        v = { c, g, version: ctx.version, sig: '' };
+        this.summonViews.set(s.id, v);
+      }
+      const p = ctx.px(s.x / 1000, s.y / 1000);
+      v.c.position.set(Math.round(p.x), Math.round(p.y));
+      v.c.zIndex = p.y;
+      const r = ctx.tile * 0.27;
+      const lifeRatio = s.life > 0 && sd.lifeTicks > 0 ? Math.round((s.life / sd.lifeTicks) * 24) / 24 : 1;
+      const hpRatio = Math.round(Math.max(0, Math.min(1, s.hp / sd.durabilityTicks)) * 20) / 20;
+      const sig = `${lifeRatio}|${hpRatio}`;
+      if (sig === v.sig) continue;
+      v.sig = sig;
+      v.g.clear();
+      if (lifeRatio < 1) v.g.arc(0, 0, r + 4, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * lifeRatio).stroke({ width: 2, color: C.teal, alpha: 0.9 });
+      if (hpRatio < 1) {
+        v.g.rect(-r, r + 7, r * 2, 3).fill(C.ink);
+        v.g.rect(-r, r + 7, r * 2 * hpRatio, 3).fill(hpBarColor(hpRatio));
+      }
+    }
+    for (const [id, v] of this.summonViews) {
+      if (!seen.has(id)) {
+        v.c.destroy({ children: true });
+        this.summonViews.delete(id);
       }
     }
   }

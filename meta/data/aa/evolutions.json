@@ -1121,8 +1121,7 @@
     "starFruits": 0,
     "items": 11,
     "takedowns": null
-   },
-   "blocked": "Ziel nicht spielbar (eren_final)"
+   }
   },
   {
    "from": "ermes",
@@ -2120,8 +2119,7 @@
     "starFruits": 0,
     "items": 1,
     "takedowns": null
-   },
-   "blocked": "Ziel nicht spielbar (hoshino_evolved)"
+   }
   },
   {
    "from": "ichigo_mugetsu",

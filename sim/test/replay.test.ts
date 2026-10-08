@@ -3,20 +3,21 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { formatReport, OLD_RULES_MESSAGE, parseReplay, replay, REPLAY_FORMAT_VERSION } from '../scripts/replay.js';
 import { runMatch } from '../src/bots/index.js';
+import { createSim, type Command } from '../src/index.js';
 
 const dir = new URL('../../docs/balancing/playtests/', import.meta.url).pathname;
 const beispiele = readdirSync(dir).filter((f) => /^beispiel-.*\.json$/.test(f));
 const dateien = readdirSync(dir).filter((f) => f.endsWith('.json'));
 const load = (f: string) => parseReplay(readFileSync(join(dir, f), 'utf8'));
-// Spielbar ist nur das aktuelle Format v4 (Runde 8, AA-Baukasten); v1 bis v3 sind „altes Regelwerk“.
+// Spielbar sind v4 (Runde 8, AA-Baukasten) und v5 (Runde 9, Faehigkeiten); v1 bis v3 sind „altes Regelwerk“.
 const v2 = beispiele.filter((f) => load(f).formatVersion >= 4);
 
 describe('Replay (Export aus dem Browser nachspielen)', () => {
   it('es gibt mindestens ein eingechecktes v4-Beispiel (vom Simulator selbst erzeugt)', () => {
     expect(v2.length).toBeGreaterThan(0);
   });
-  it('das Format ist v4: Positionen statt Slot-IDs', () => {
-    expect(REPLAY_FORMAT_VERSION).toBe(4);
+  it('das Format ist v5 (v4 bleibt spielbar): Positionen statt Slot-IDs', () => {
+    expect(REPLAY_FORMAT_VERSION).toBe(5);
     for (const f of v2) {
       const places = load(f).commands.filter((c) => c.cmd.type === 'place');
       expect(places.length).toBeGreaterThan(0);
@@ -96,6 +97,39 @@ describe('Replay (Export aus dem Browser nachspielen)', () => {
   it('kaputte Dateien werden abgelehnt', () => {
     expect(() => parseReplay('{"format":"x"}')).toThrow();
     expect(() => parseReplay('{"format":"towerdef-replay","formatVersion":3}')).toThrow();
-    expect(() => parseReplay('{"format":"towerdef-replay","formatVersion":5}')).toThrow(/nicht unterst/);
+    expect(() => parseReplay('{"format":"towerdef-replay","formatVersion":6}')).toThrow(/nicht unterst/);
+  });
+  it('v5: Fähigkeits-Befehle (ability, autoAbility) und Beschwörungen werden nachgespielt, Hash stimmt; v4-Kopf mit denselben Befehlen ebenso', () => {
+    const seed = 21;
+    const sim = createSim({ stage: 'standard20', difficulty: 'normal', players: 1, seed });
+    const commands: { tick: number; player: number; cmd: Command; ok: boolean }[] = [];
+    const run = (cmd: Command) => {
+      const tick = sim.state.tick;
+      const r = sim.apply(0, cmd);
+      commands.push({ tick, player: 0, cmd, ok: r.ok });
+      return r;
+    };
+    const spot = (id: string) => sim.placementGrid(id).filter((p) => !sim.canPlace(0, id, p.x, p.y)).sort((a, b) => sim.coverage(b.x, b.y, 5000) - sim.coverage(a.x, a.y, 5000))[0];
+    const e = spot('erwin');
+    const placed = run({ type: 'place', unitId: 'erwin', x: e.x, y: e.y });
+    const id = placed.ok ? (placed.entityId as number) : -1;
+    run({ type: 'skipWave' });
+    sim.step(200);
+    expect(run({ type: 'ability', entityId: id }).ok).toBe(true); // Buff
+    run({ type: 'autoAbility', entityId: id, on: true });
+    let spawned = 0;
+    for (let i = 0; i < 9; i++) {
+      sim.step(100);
+      spawned += sim.drainEvents().filter((x) => x.type === 'summonSpawn').length;
+    }
+    expect(spawned).toBeGreaterThan(0); // Erwin ruft Soldaten
+    run({ type: 'ability', entityId: id }); // meist noch in der Abklingzeit: abgelehnt, auch das wird verglichen
+    sim.step(100);
+    for (const v of [4, 5]) {
+      const file = parseReplay(JSON.stringify({ format: 'towerdef-replay', formatVersion: v, stage: 'standard20', difficulty: 'normal', players: 1, seed, endTick: sim.state.tick, endHash: sim.hash(), result: sim.result(), complete: false, commands }));
+      const rep = replay(file);
+      expect(rep.problems).toEqual([]);
+      expect(rep.ok).toBe(true);
+    }
   });
 });

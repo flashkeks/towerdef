@@ -50,4 +50,33 @@ describe('AA-Import (tools/aa-import, Runde 8 / P2)', () => {
     expect(mod({ spaBp: -5000 }).damageByPlayer[0]).toBeGreaterThan(base.damageByPlayer[0]);
     expect(mod({ rangeBp: 5000 }).damageByPlayer[0]).toBeGreaterThanOrEqual(base.damageByPlayer[0]);
   });
+
+  it('Kits (Runde 9 / P1): unter 10 eingeschraenkte Units, hoechstens 3 ausgeblendet; die 11 AA-Beschwoerungen stehen als Wesen im Katalog', () => {
+    const by = { full: 0, limited: 0, hidden: 0 } as Record<string, number>;
+    for (const u of aa.units) by[u.support]++;
+    expect(by.limited).toBeLessThan(10);
+    expect(by.hidden).toBeLessThanOrEqual(3);
+    const src = read('../../docs/anime-adventures/data/units.json');
+    for (const sm of src.units.filter((u: any) => u.kind === 'summon')) expect(aa.summons[sm.id], sm.id).toBeDefined();
+    expect(Object.keys(aa.summons).length).toBeGreaterThanOrEqual(11);
+  });
+  it('Kits: Fähigkeiten stehen in den kompilierten Units, Knopf-Fähigkeiten haben Namen und Abklingzeit', () => {
+    const withAbility = data.units.units.filter((u) => (u.abilities?.length ?? 0) > 0);
+    expect(withAbility.length).toBeGreaterThanOrEqual(25);
+    for (const u of withAbility) for (const a of u.abilities ?? []) expect(a.cooldown, `${u.id}:${a.id}`).toBeGreaterThan(0);
+    const armin = data.units.units.find((u) => u.id === 'armin')!;
+    expect(armin.support).toBe('full'); // vorher ausgeblendet: nur Aktiv-Faehigkeit
+    expect(data.units.units.find((u) => u.id === 'griffith_reincarnation')?.aura?.[0].damagePct).toBe(100);
+  });
+  it('Zweitangriffe: Units mit mehreren AA-Angriffen fuehren sie im Wechsel (also), Rokuhira "+ Scatter", "+ Kaminari"', () => {
+    const roku = data.units.units.find((u) => u.id === 'rokuhira')!;
+    expect(roku.levels[3].also).toEqual(['rokuhira:one']);
+    expect(roku.levels[6].also).toEqual(['rokuhira:one', 'rokuhira:two']);
+  });
+  it('Rauchtest: Bot-Lauf mit Beschwoerer, Aura- und Fähigkeits-Units laeuft ohne Absturz', () => {
+    for (const unit of ['erwin', 'lucy_evolved', 'eren', 'griffith_reincarnation']) {
+      const r = runMatch({ stage: 'standard20', difficulty: 'normal', players: 1, seed: 4, bots: [`mono-${unit}`], maxTicks: 6000 });
+      expect(r.hash, unit).toMatch(/^[0-9a-f]{16}$/);
+    }
+  });
 });

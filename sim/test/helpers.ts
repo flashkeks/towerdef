@@ -76,10 +76,10 @@ export function createSim(o: SimOptions): Sim {
  * Testdaten mit zusätzlichen Units im Datenformat (AA-nah, siehe `UnitFileSchema`): reichlich Münzen, regelfreie Stufen. So braucht ein
  * Test eine Unit nur als Datensatz. `units`/`attacks` wie in `sim/data/units/*.json`; `over` ändert danach die Daten (z. B. Gegner-Resistenzen).
  */
-export function extraData(file: { units?: unknown[]; attacks?: Record<string, unknown> }, over?: (d: GameData) => void): GameData {
+export function extraData(file: { units?: unknown[]; attacks?: Record<string, unknown>; summons?: Record<string, unknown> }, over?: (d: GameData) => void): GameData {
   const d = richData();
-  const parsed = UnitFileSchema.parse({ units: file.units ?? [], attacks: file.attacks ?? {} });
-  d.units = mergeUnitFiles([{ units: d.units.units, attacks: d.units.attacks }, parsed]);
+  const parsed = UnitFileSchema.parse({ units: file.units ?? [], attacks: file.attacks ?? {}, summons: file.summons ?? {} });
+  d.units = mergeUnitFiles([{ units: d.units.units, attacks: d.units.attacks, summons: d.units.summons }, parsed]);
   over?.(d);
   return d;
 }

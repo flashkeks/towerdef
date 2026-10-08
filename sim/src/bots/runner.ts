@@ -151,7 +151,7 @@ export function runMatch(opts: MatchOptions): MatchResult {
         }
         case 'income': {
           const r = row(cur);
-          const k = e.source === 'bounty' ? 'kill' : e.source === 'waveBonus' ? 'wave' : e.source;
+          const k = e.source === 'bounty' ? 'kill' : e.source === 'waveBonus' ? 'wave' : e.source === 'ability' ? 'farm' : e.source;
           r.income[k][e.player] += e.amount;
           if (e.source === 'farm') r.farmYield[e.player] += e.amount;
           if (e.source === 'sell') r.sold[e.player] += e.amount;
@@ -197,6 +197,10 @@ export function runMatch(opts: MatchOptions): MatchResult {
       if (sim.isOver()) return;
       const before = st.players[p].coins;
       bots[p].decide({ sim, playerId: p, rng: rngs[p] });
+      // Runde 9 / P1: wie ein Mensch schalten die Bots bei jeder Unit mit Knopf-Fähigkeit den Auto-Schalter an.
+      for (const u of st.units) {
+        if (u.owner === p && !u.auto && sim.catalog().find((d) => d.id === u.defId)?.abilities.some((a) => a.trigger === 'button')) sim.apply(p, { type: 'autoAbility', entityId: u.id, on: true });
+      }
       const ev = sim.drainEvents();
       handle(ev);
       // Gegebene Spenden = Münzabnahme, die nicht durch Platzierung/Upgrade erklärt ist (Verkauf zählt als Zufluss).

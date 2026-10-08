@@ -10,7 +10,8 @@ import type { GameBus } from './events';
 import type { Session } from './session';
 
 export const REPLAY_FORMAT = 'towerdef-replay';
-export const REPLAY_FORMAT_VERSION = 4;
+/** v5 (Runde 9 / P1): neue Befehle `ability` und `autoAbility`; v4-Dateien bleiben nachspielbar (sie kennen keine Faehigkeiten). */
+export const REPLAY_FORMAT_VERSION = 5;
 
 declare const __APP_VERSION__: string | undefined;
 

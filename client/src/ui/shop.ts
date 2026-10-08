@@ -7,6 +7,8 @@ import type { Session } from '../game/session';
 import type { UnitDef } from '../sim';
 import { needOf } from '../view/placement';
 import { unitTags } from '../view/readability';
+import { Ring } from './ability-ui';
+import { typeAbility, firstButton, secondsLeft } from '../view/ability';
 import { clear, h, setClass, setText } from './dom';
 import { icon, portraitCard } from './kit';
 import { unitName } from './meta-model';
@@ -16,11 +18,14 @@ export class Shop {
   private hint = h('div', 'hint');
   private btns = new Map<string, HTMLButtonElement>();
   private costs = new Map<string, HTMLElement>();
+  /** Fähigkeits-Knopf je Unit-Typ mit Knopf-Fähigkeit (Runde 9 / P1). */
+  private abilities = new Map<string, { ring: Ring; count: HTMLElement; dot: HTMLElement }>();
 
   bind(session: Session): void {
     clear(this.el);
     this.btns.clear();
     this.costs.clear();
+    this.abilities.clear();
     const list = h('div', 'shop-list');
     session.teamCatalog().forEach((d, i) => list.append(this.button(session, d, i)));
     this.el.append(h('div', 'shop-title', t('shop.title')), list, this.hint);
@@ -49,6 +54,28 @@ export class Shop {
     b.querySelector('.pc-cap')?.classList.add('ub-cap');
     b.querySelector('.pc-sheen')?.before(h('span', 'key', String(index + 1)));
     b.addEventListener('click', () => session.choosePlacing(d.id));
+    const ai = firstButton(d);
+    if (ai >= 0) {
+      // Fähigkeits-Knopf auf der Karte: erscheint, sobald eine Unit dieser Art steht; Klick löst bei allen bereiten aus, der Punkt schaltet Auto
+      b.dataset.abilityUnit = d.id;
+      const slot = h('span', 'ab-slot');
+      const ring = new Ring();
+      const count = h('span', 'ab-count', '');
+      const dot = h('span', 'ab-auto-dot');
+      dot.title = t('ability.auto.tip');
+      ring.el.setAttribute('role', 'button');
+      ring.el.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        session.useAbilityType(d.id);
+      });
+      dot.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        session.toggleAutoType(d.id);
+      });
+      slot.append(ring.el, count, dot);
+      b.querySelector('.pc-sheen')?.before(slot);
+      this.abilities.set(d.id, { ring, count, dot });
+    }
     this.btns.set(d.id, b);
     return b;
   }
@@ -61,6 +88,20 @@ export class Shop {
       setClass(b, 'active', s.placing === d.id);
       const price = s.sim.placeCost(0, d.id);
       setClass(b, 'poor', coins < price);
+      const ab = this.abilities.get(d.id);
+      if (ab) {
+        const ta = typeAbility(s.sim.state.units, d);
+        setClass(b, 'has-ability', ta !== null);
+        if (ta) {
+          if (ta.ready > 0) ab.ring.set('ready', 1, '');
+          else ab.ring.set('cooldown', ta.ratio, secondsLeft(ta.cdTicks));
+          setText(ab.count, ta.count > 1 ? `${ta.ready}/${ta.count}` : '');
+          ab.count.style.display = ta.count > 1 ? '' : 'none';
+          setClass(ab.dot, 'on', ta.auto > 0);
+          const tip = t('ability.shop.tip', { name: ta.def.name, unit: unitName(d.id), ready: ta.ready, count: ta.count });
+          if (ab.ring.el.title !== tip) ab.ring.el.title = tip;
+        }
+      }
       const cost = this.costs.get(d.id);
       if (cost) {
         setText(cost.lastElementChild as HTMLElement, String(price));

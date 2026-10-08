@@ -15,7 +15,8 @@ import { fail, type Fail } from './result';
 /** Obergrenzen gegen Muell-Replays (eine echte Partie hat ~19 000 Ticks und wenige hundert Befehle). */
 export const MAX_REPLAY_TICKS = 60_000;
 export const MAX_REPLAY_COMMANDS = 20_000;
-const SUPPORTED_VERSIONS = [4];
+/** v4 (Runde 8, AA-Baukasten) und v5 (Runde 9, Faehigkeiten: Befehle `ability`/`autoAbility`). */
+const SUPPORTED_VERSIONS = [4, 5];
 const DIFFICULTIES: readonly string[] = ['normal', 'hard', 'nightmare'];
 
 export interface VerifiedMatch {
