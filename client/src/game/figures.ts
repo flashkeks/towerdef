@@ -9,6 +9,7 @@
  * - Kleinkram: Schatten, Element-Abzeichen, Ring-Glanz, Blickrichtungs-Keil.
  */
 import { Assets, Container, Graphics, Rectangle, Sprite, Texture, type Renderer } from 'pixi.js';
+import type { UnitDef } from '../sim';
 import { hash, rng } from '../ui/kit/art';
 import { hasPortrait, portraitKnown, portraitUrl } from '../view/portrait';
 import { enemyLook, lookOf, rarityLook, unitLook, type ElementLook, type EnemyLook, type LookKey, type ParticleKind } from '../view/look';
@@ -363,7 +364,7 @@ export class Figures {
   }
 
   /** Figur einer Unit: Scheibe mit Bild (oder Ersatzfigur) und Seltenheits-Ring, Groesse `2 * (R + Rand)`. */
-  unit(def: { id: string; rarity: string; elements: string[]; damageType: string; footprint: 1 | 2 }, tile: number): { tex: Texture; half: number } {
+  unit(def: Pick<UnitDef, 'id' | 'rarity' | 'elements' | 'damageType' | 'footprint'>, tile: number): { tex: Texture; half: number } {
     const R = unitRadius(tile, def.footprint);
     const half = Math.ceil(R * 1.3);
     this.wantPortrait(def.id);
