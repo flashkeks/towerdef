@@ -4,6 +4,7 @@
  */
 import { t } from '../i18n/t';
 import type { LevelStat, UnitDef } from '../sim';
+import { auraShort } from './ability';
 
 const TICKS_PER_SECOND = 20;
 
@@ -68,6 +69,11 @@ export function statValues(def: UnitDef, level: number): { key: string; value: s
     const fx = attackEffects(lv);
     if (fx.length > 0) rows.push({ key: 'stat.effects', value: fx.join(', ') });
   }
+  // Fähigkeiten und Aura (Runde 9 / P1): Units ohne eigenen Angriff (Buffer, Beschwörer) zeigen ihre Wirkung als Zeile
+  const open = def.abilities.filter((a) => level >= a.minLevel).map((a) => a.name);
+  if (def.abilities.length > 0) rows.push({ key: 'stat.ability', value: open.length > 0 ? open.join(', ') : '-' });
+  const aura = auraShort(def, level);
+  if (aura) rows.push({ key: 'stat.aura', value: aura });
   if (def.farm) rows.push({ key: 'stat.yield', value: String(def.farm.yieldByLevel[Math.min(level, def.farm.yieldByLevel.length - 1)] ?? 0) });
   return rows;
 }

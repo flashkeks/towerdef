@@ -127,5 +127,13 @@ export function describeAura(def: Pick<UnitDef, 'aura'>, level: number): string 
   return t(a.radiusMilli === null ? 'aura.line.all' : 'aura.line', { parts: bits.join(', '), r: a.radiusMilli ? tilesOf(a.radiusMilli) : '' });
 }
 
+/** Kurzform der Aura einer Stufe für Wertezeilen ("+10% dmg, +25% crit"), `null` ohne Aura. */
+export function auraShort(def: Pick<UnitDef, 'aura'>, level: number): string | null {
+  if (def.aura.length === 0) return null;
+  const a: AuraDef = def.aura[Math.min(level, def.aura.length - 1)];
+  const bits = [...(a.damageBp ? [`+${pct(a.damageBp)} dmg`] : []), ...(a.rangeBp ? [`+${pct(a.rangeBp)} range`] : []), ...(a.tempoBp ? [`+${pct(a.tempoBp)} speed`] : []), ...(a.critBp ? [`+${pct(a.critBp)} crit`] : [])];
+  return bits.join(', ');
+}
+
 /** Hat die Unit etwas Aktives (Knopf, Auto-Beschwörer, Aura)? Für Marken in der Sammlung. */
 export const hasKit = (def: Pick<UnitDef, 'abilities' | 'aura'>): boolean => def.abilities.length > 0 || def.aura.length > 0;

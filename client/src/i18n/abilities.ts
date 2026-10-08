@@ -28,6 +28,8 @@ export const abilityStrings = {
   'ability.buff.tempo': '+{n} attack speed',
   'ability.buff.crit': '+{n} crit chance',
   'aura.title': 'Aura',
+  'stat.ability': 'Ability',
+  'stat.aura': 'Aura',
   'aura.line': 'Allies within {r} tiles: {parts}',
   'aura.line.all': 'All allies: {parts}',
   'ability.shop.tip': '{name}: use on every ready {unit} ({ready}/{count} ready). Hotkey Q uses the selected unit\'s ability.',
