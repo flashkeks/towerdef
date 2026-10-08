@@ -405,12 +405,12 @@ async function playStage(browser, [W, H]) {
   };
   let g = await hover(...hillSpots[0]);
   ok(g && g.ok && g.reason === null, `Geist gruen auf freiem Huegel (${JSON.stringify(g)})`);
-  await page.screenshot({ path: resolve(docs, `p1-smoke-ghost-green-${tag}.png`) });
+  await page.screenshot({ path: resolve(root, 'docs', 'r8', `p1-smoke-ghost-green-${tag}.png`) });
   g = await hover(...groundSpots[0]);
   ok(g && !g.ok && g.reason === 'wrong-zone', `Geist rot auf Boden mit Huegel-Unit: ${g?.reason}`);
   g = await hover(pathPt[0], pathPt[1]);
   ok(g && !g.ok && g.reason === 'on-path', `Geist rot auf dem Pfad: ${g?.reason}`);
-  await page.screenshot({ path: resolve(docs, `p1-smoke-ghost-red-${tag}.png`) });
+  await page.screenshot({ path: resolve(root, 'docs', 'r8', `p1-smoke-ghost-red-${tag}.png`) });
   g = await hover(-450, 5500);
   ok(g && !g.ok && g.reason === 'out-of-bounds', `Geist rot am Kartenrand: ${g?.reason}`);
   // Klicks an roten Stellen: Toast mit Grund, nichts wird gesetzt, keine toten Klicks
