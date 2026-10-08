@@ -2,10 +2,9 @@
  * Karte (Runde 10 / P4): das Kartenbild der Welt (`board-art.ts`: Boden, Huegel, Pfad, Deko, Licht aus `theme.board`) wird einmal gemalt,
  * als Textur gecacht und als ein einziges Sprite gezeigt; dazu wenige Schwebeteilchen (`board-ambient.ts`). Pro Frame kostet nur die Ambient-Schicht.
  * Neu gemalt wird bei Kartenwechsel und wenn die Aufloesung (Kachel x Pixeldichte) in die naechste Stufe springt.
- * Frueher setzte diese Ebene Atlas-Kacheln zusammen (`map-compose.ts`); die Kacheln `tiles/*` des Atlas werden dafuer nicht mehr gebraucht.
+ * Frueher setzte diese Ebene Atlas-Kacheln zusammen (`map-compose.ts`); die Kacheln `tiles/*` des Atlas (und das Laden des Atlas durch diese Ebene) entfallen.
  */
 import { Container, Sprite, Texture, Ticker } from 'pixi.js';
-import { loadAtlas } from './atlas';
 import { Ambient } from './board-ambient';
 import { boardPx, paintBoard, resolveBoard } from './board-art';
 import { type RenderContext } from './context';
@@ -20,10 +19,6 @@ export class MapLayer {
   private readonly cache = new Map<string, Texture>();
 
   constructor(private readonly ctx: RenderContext) {
-    // Der Atlas wird noch von den Figuren gebraucht; sobald er da ist, werden deren Ansichten neu gebaut.
-    void loadAtlas().then(() => {
-      ctx.version++;
-    });
     const reduced = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (!reduced) Ticker.shared.add((tk) => this.ambient.update(tk.deltaMS));
   }
