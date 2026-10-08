@@ -7,7 +7,10 @@ import { buildPath, type Path } from '../path.js';
 import { buildMap, type MapDef } from '../placement.js';
 import { TILE } from '../fixed.js';
 import type {
+  AbilityData,
   AttackData,
+  AuraData,
+  BuffData,
   BossKit,
   DifficultyDef,
   DifficultyId,
@@ -18,6 +21,7 @@ import type {
   RiskCard,
   SpecialData,
   StageData,
+  SummonData,
   UnitData,
 } from './schema.js';
 
@@ -66,15 +70,87 @@ export interface CompiledAttack {
   fx: FxSpec[];
 }
 
+/** Buff in Festkomma (Basispunkte, Ticks). */
+export interface BuffSpec {
+  damageBp: number;
+  rangeBp: number;
+  tempoBp: number;
+  critBp: number;
+  ticks: number;
+}
+
+/** Fähigkeit in Festkomma (Runde 9 / P1), abgeleitet aus `AbilityData`. */
+export interface AbilityDef {
+  id: string;
+  name: string;
+  trigger: 'button' | 'auto';
+  cooldownTicks: number;
+  minLevel: number;
+  attack: CompiledAttack | null;
+  /** Schaden: Vielfaches des Stufen-Schadens (Bp) oder absolut (Centi-HP, `damageCenti` > 0 überstimmt). */
+  damageMultBp: number;
+  damageCenti: number;
+  global: boolean;
+  pulses: number;
+  /** Abstand zwischen den Schlägen (Ticks). */
+  pulseEvery: number;
+  selfBuff: BuffSpec | null;
+  buff: (BuffSpec & { radiusMilli: number | null; self: boolean }) | null;
+  summon: { id: string; count: number } | null;
+  coins: number;
+  /** Braucht ein Ziel in Reichweite (Angriff mit `scope: range`). */
+  needsTarget: boolean;
+}
+
+export interface AuraDef {
+  damageBp: number;
+  rangeBp: number;
+  tempoBp: number;
+  critBp: number;
+  /** null = alle Units des Spielers. */
+  radiusMilli: number | null;
+}
+
+/** Beschwörung in Festkomma (Runde 9 / P1). */
+export interface SummonDef {
+  id: string;
+  name: string;
+  mode: 'walk' | 'stand';
+  damageType: DamageType;
+  elements: string[];
+  damageMultBp: number;
+  critMultBp: number;
+  spaTicks: number;
+  rangeMilli: number;
+  attack: CompiledAttack | null;
+  /** 0 = unbegrenzt. */
+  lifeTicks: number;
+  /** Haltbarkeit in Ticks gegen einen Standard-Gegner im Kontakt. */
+  durabilityTicks: number;
+  blocks: boolean;
+  /** Mikro-Milli-Tiles je Tick (wie `EnemyState.speedMicro`). */
+  speedMicro: number;
+  canHitAir: boolean;
+  endAttack: CompiledAttack | null;
+  endDamageMultBp: number;
+  cap: number;
+  /** Kontaktradius, in dem sie Gegner aufhält und von ihnen angegriffen wird. */
+  contactMilli: number;
+}
+
 export interface LevelStat {
   /** Basis-Schaden je Angriff in Centi-HP (vor Level/Trait/Buff/Schwäche/Resistenz); wird auf `attack.hits` geteilt. 0 = diese Stufe greift nicht an. */
   damageCenti: number;
   spaTicks: number;
   rangeMilli: number;
+  /** Schaden der Stufe in Centi-HP auch dann, wenn die Stufe nicht selbst angreift (Fähigkeiten und Beschwörungen rechnen damit, Runde 9 / P1). */
+  damageRawCenti: number;
   /** Angriff dieser Stufe (null = greift nicht an). */
   attack: CompiledAttack | null;
   /** Farm-Ertrag je Wave in Münzen. */
   farm: number;
+  /** Zweitangriffe (Runde 9 / P1): `attack` plus `also` im Wechsel; null = nur `attack`. */
+  rotation: CompiledAttack[] | null;
 }
 
 export type DamageType = 'physical' | 'magic' | 'true';
@@ -113,6 +189,9 @@ export interface UnitDef {
   farm?: { yieldByLevel: number[] };
   canHitAir: boolean;
   levels: LevelStat[];
+  /** Fähigkeiten (Runde 9 / P1); leer = keine. */
+  abilities: AbilityDef[];
+  aura: AuraDef | null;
 }
 
 /** Altbestand (Runden 1-5): Position eines festen Slots. Keine Platzierregel mehr (siehe `placement.ts`). */
@@ -147,6 +226,8 @@ export interface Ctx {
   slots: SlotDef[];
   units: Record<string, UnitDef>;
   unitList: UnitDef[];
+  /** Beschwörungen (Runde 9 / P1) nach ID. */
+  summons: Record<string, SummonDef>;
   enemies: Record<string, EnemyArchetype>;
   /** Wave-Element (Index) -> AA-Element (`enemies.waveElements`); 0 = keins. */
   waveElement(index: number): string | null;
@@ -274,6 +355,72 @@ export function compileAttack(id: string, a: AttackData | null | undefined, d: G
   };
 }
 
+function compileBuff(b: BuffData): BuffSpec {
+  return { damageBp: bpOf(b.damagePct / 100), rangeBp: bpOf(b.rangePct / 100), tempoBp: bpOf(b.tempoPct / 100), critBp: bpOf(b.critPct / 100), ticks: ticksOf(b.durationSec) };
+}
+
+/** Fähigkeit -> Festkomma. Unbekannte Angriffs-IDs werden als `single` ohne Details behandelt (wie bei Unit-Angriffen). */
+export function compileAbility(a: AbilityData, d: GameData, unknown: Set<string>): AbilityDef {
+  const eco = d.economy;
+  const atk = a.attack ? compileAttack(a.attack, d.units.attacks[a.attack], d, unknown) : null;
+  const global = a.scope === 'global';
+  return {
+    id: a.id,
+    name: a.name,
+    trigger: a.trigger,
+    cooldownTicks: Math.max(1, ticksOf(a.cooldown)),
+    minLevel: a.minLevel,
+    attack: atk,
+    damageMultBp: bpOf(a.damageMult),
+    damageCenti: a.damage ? Math.max(1, Math.round(a.damage * 100)) : 0,
+    global,
+    pulses: a.pulses,
+    pulseEvery: a.pulses > 1 ? Math.max(1, Math.floor(ticksOf(a.durationSec) / (a.pulses - 1))) : 0,
+    selfBuff: a.selfBuff ? compileBuff(a.selfBuff) : null,
+    buff: a.buff
+      ? { ...compileBuff(a.buff), radiusMilli: a.buff.radius ? Math.round((a.buff.radius * 1000) / eco.scale.studsPerTile) : null, self: a.buff.self }
+      : null,
+    summon: a.summon ? { id: a.summon.id, count: a.summon.count } : null,
+    coins: a.coins ?? 0,
+    needsTarget: atk !== null && !global,
+  };
+}
+
+function compileAura(a: AuraData, d: GameData): AuraDef {
+  return {
+    damageBp: bpOf(a.damagePct / 100),
+    rangeBp: bpOf(a.rangePct / 100),
+    tempoBp: bpOf(a.tempoPct / 100),
+    critBp: bpOf(a.critPct / 100),
+    radiusMilli: a.radius ? Math.round((a.radius * 1000) / d.economy.scale.studsPerTile) : null,
+  };
+}
+
+export function compileSummon(id: string, sm: SummonData, d: GameData, unknown: Set<string>): SummonDef {
+  const eco = d.economy;
+  return {
+    id,
+    name: sm.name,
+    mode: sm.mode,
+    damageType: sm.damageType,
+    elements: sm.elements,
+    damageMultBp: bpOf(sm.damageMult),
+    critMultBp: eco.damage.critDefaultMultBp,
+    spaTicks: Math.max(1, ticksOf(sm.spa)),
+    rangeMilli: Math.round((sm.range * 1000) / eco.scale.studsPerTile),
+    attack: sm.attack ? compileAttack(sm.attack, d.units.attacks[sm.attack], d, unknown) : null,
+    lifeTicks: ticksOf(sm.lifetime),
+    durabilityTicks: ticksOf(sm.durability),
+    blocks: sm.blocks,
+    speedMicro: Math.floor((sm.speed * 1000 * 1000) / 20),
+    canHitAir: sm.hitsAir,
+    endAttack: sm.endAttack ? compileAttack(sm.endAttack, d.units.attacks[sm.endAttack], d, unknown) : null,
+    endDamageMultBp: bpOf(sm.endDamageMult),
+    cap: sm.cap,
+    contactMilli: 500,
+  };
+}
+
 const CC_KINDS = new Set(['slow', 'stun', 'freeze', 'timestop', 'unconscious', 'walkback', 'knockback']);
 
 function build(u: UnitData, d: GameData, unknown: Set<string>): UnitDef {
@@ -294,6 +441,7 @@ function build(u: UnitData, d: GameData, unknown: Set<string>): UnitDef {
   let spa = 1;
   let range = 0;
   let attackId: string | null = null;
+  let also: string[] = [];
   let cost = 0;
   const costs: number[] = [];
   u.levels.forEach((l, k) => {
@@ -301,6 +449,7 @@ function build(u: UnitData, d: GameData, unknown: Set<string>): UnitDef {
     spa = l.spa ?? spa;
     range = l.range ?? range;
     attackId = l.attack ?? attackId;
+    also = l.also ?? also;
     cost = l.cost ?? cost;
     costs.push(yen(cost));
     const attacks = damage > 0 && spa > 0 && range > 0;
@@ -308,8 +457,10 @@ function build(u: UnitData, d: GameData, unknown: Set<string>): UnitDef {
       damageCenti: attacks ? Math.max(1, Math.round(damage * 100)) : 0,
       spaTicks: Math.max(1, ticksOf(spa)),
       rangeMilli: Math.round((range * 1000) / eco.scale.studsPerTile),
+      damageRawCenti: damage > 0 ? Math.max(1, Math.round(damage * 100)) : 0,
       attack: attacks ? attackFor(attackId) : null,
       farm: l.farm ? yen(l.farm) : 0,
+      rotation: attacks && also.length > 0 ? [attackFor(attackId), ...also.map((a) => attackFor(a))] : null,
     });
     void k;
   });
@@ -343,6 +494,8 @@ function build(u: UnitData, d: GameData, unknown: Set<string>): UnitDef {
     farm: hasFarm ? { yieldByLevel: levels.map((l) => l.farm) } : undefined,
     canHitAir: u.hitsAir ?? u.placement !== 'ground',
     levels,
+    abilities: (u.abilities ?? []).map((a) => compileAbility(a, d, unknown)),
+    aura: u.aura ? compileAura(u.aura, d) : null,
   };
 }
 
@@ -402,6 +555,8 @@ export function compile(data: GameData, stage: StageData, difficultyId: Difficul
   const upBp = coopTable(data.economy.coop.upgradeCostTableBp, players) ?? 10000;
   if (upBp !== 10000) for (const u of unitList) if (!u.farm) u.upgradeCosts = u.upgradeCosts.map((c) => Math.round((c * upBp) / 10000));
   for (const u of unitList) units[u.id] = u;
+  const summons: Record<string, SummonDef> = {};
+  for (const [id, sm] of Object.entries(data.units.summons ?? {})) summons[id] = compileSummon(id, sm, data, unknownFx);
   const enemies: Record<string, EnemyArchetype> = {};
   for (const a of data.enemies.archetypes) enemies[a.id] = a;
   const affCache = new Map<string, Affinity>();
@@ -469,6 +624,7 @@ export function compile(data: GameData, stage: StageData, difficultyId: Difficul
     slots: stage.slots.map((s) => ({ id: s.id, x: Math.round(s.x * TILE), y: Math.round(s.y * TILE), kind: s.kind, size: s.size })),
     units,
     unitList,
+    summons,
     enemies,
     waveElement,
     affinity,

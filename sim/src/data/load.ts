@@ -28,6 +28,7 @@ import {
   type GameData,
   type ProgressionData,
   type StageData,
+  type SummonData,
   type UnitData,
   type UnitFile,
   type UnitsData,
@@ -75,11 +76,33 @@ export function validateGameData(d: GameData): void {
       if (l.level !== k) throw new Error(`${u.id}: Stufe ${l.level} an Index ${k}`);
     });
   }
+  validateAbilities(d);
   validateBosses(d, enemyIds);
   validateCards(d);
   validateCoop(d);
   for (const [sid, s] of Object.entries(d.stages)) validateStage(d, s, sid);
   if (d.worlds && d.waveTemplate) validateWorlds(d.worlds, d.waveTemplate, new Set((d.bosses?.kits ?? []).map((k) => k.id)), enemyIds);
+}
+
+/** Fähigkeiten und Beschwörungen (Runde 9 / P1): Querverweise auf Angriffe und Beschwörungen, eindeutige Fähigkeits-IDs je Unit. */
+function validateAbilities(d: GameData): void {
+  const attacks = d.units.attacks;
+  const summons = d.units.summons ?? {};
+  for (const [id, sm] of Object.entries(summons)) {
+    for (const a of [sm.attack, sm.endAttack]) if (a && !(a in attacks)) throw new Error(`Beschwörung ${id}: Angriff ${a} unbekannt`);
+  }
+  for (const u of d.units.units) {
+    const seen = new Set<string>();
+    for (const a of u.abilities ?? []) {
+      if (seen.has(a.id)) throw new Error(`${u.id}: Fähigkeit ${a.id} doppelt`);
+      seen.add(a.id);
+      if (a.attack && !(a.attack in attacks)) throw new Error(`${u.id}: Fähigkeit ${a.id}: Angriff ${a.attack} unbekannt`);
+      if (a.summon && !(a.summon.id in summons)) throw new Error(`${u.id}: Fähigkeit ${a.id}: Beschwörung ${a.summon.id} unbekannt`);
+      if (a.minLevel >= u.levels.length) throw new Error(`${u.id}: Fähigkeit ${a.id}: minLevel ${a.minLevel} über der letzten Stufe`);
+      if (!a.attack && !a.selfBuff && !a.buff && !a.summon && !a.coins) throw new Error(`${u.id}: Fähigkeit ${a.id} ohne Wirkung`);
+    }
+    for (const l of u.levels) for (const a of l.also ?? []) if (!(a in attacks)) throw new Error(`${u.id}: Stufe ${l.level}: Zweitangriff ${a} unbekannt`);
+  }
 }
 
 /** Boss-Kits (P4): Wave eindeutig, Phasen-Schwellen fallend, Querverweise auf Gegnertypen und Phasen-Indizes. */
@@ -170,15 +193,20 @@ export function validateStage(d: GameData, s: StageData, label = s.id): void {
 export function mergeUnitFiles(files: readonly UnitFile[]): UnitsData {
   const units: UnitData[] = [];
   const attacks: Record<string, AttackData> = {};
+  const summons: Record<string, SummonData> = {};
   for (const f of files) {
     units.push(...f.units);
+    for (const [id, sm] of Object.entries(f.summons)) {
+      if (id in summons && JSON.stringify(summons[id]) !== JSON.stringify(sm)) throw new Error(`Beschwörung ${id} in mehreren Unit-Dateien mit verschiedenem Inhalt`);
+      summons[id] = sm;
+    }
     for (const [id, a] of Object.entries(f.attacks)) {
       if (a === null) continue;
       if (id in attacks && JSON.stringify(attacks[id]) !== JSON.stringify(a)) throw new Error(`Angriff ${id} in mehreren Unit-Dateien mit verschiedenem Inhalt`);
       attacks[id] = a;
     }
   }
-  return { units, attacks };
+  return { units, attacks, summons };
 }
 
 /** Lädt alle `data/units/*.json` (AA, Crossover, Beispiele ...) und führt sie zusammen. */

@@ -324,6 +324,91 @@ export const AttackSchema = z.object({
 });
 export type AttackData = z.infer<typeof AttackSchema>;
 
+/**
+ * Buff-Baustein (Runde 9 / P1): Prozentwerte (15 = +15 %), Dauer in Sekunden. Wirkt als Motivate-artiger Buff
+ * (stärkster gewinnt, kein Stapeln, Schaden/Reichweite/Tempo mit den Caps aus `economy.buffCaps`). `critPct` addiert Crit-Chance.
+ */
+export const BuffSchema = z.object({
+  damagePct: z.number().nonnegative().default(0),
+  rangePct: z.number().nonnegative().default(0),
+  /** Angriffstempo (+20 = Angriffe 20 % schneller). */
+  tempoPct: z.number().nonnegative().default(0),
+  critPct: z.number().nonnegative().default(0),
+  durationSec: z.number().positive().default(10),
+});
+export type BuffData = z.infer<typeof BuffSchema>;
+
+/**
+ * Aktive oder automatische Fähigkeit einer Unit (Runde 9 / P1). Wirkung aus dem vorhandenen Baukasten: ein Angriff aus dem
+ * Angriffs-Katalog (Form, Treffer, DoT, Spezialeffekte wie Timestop/Stun/Slow), Selbst-Buff, Buff auf Verbündete, Beschwörung.
+ * `trigger`: `button` = der Spieler löst sie aus (Befehl `ability`; der Auto-Schalter `autoAbility` löst sie, sobald bereit, von selbst aus);
+ * `auto` = feuert immer von selbst, sobald bereit (periodische Beschwörer, Dauer-Effekte).
+ */
+export const AbilitySchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  trigger: z.enum(['button', 'auto']).default('button'),
+  /** Sekunden bis zur nächsten Auslösung. */
+  cooldown: z.number().positive(),
+  /** Erste Stufe (Index), ab der die Fähigkeit verfügbar ist. */
+  minLevel: z.number().int().nonnegative().default(0),
+  /** Angriff aus dem Katalog (Form/Effekte). Fehlt er, hat die Fähigkeit keine Trefferfläche (nur Buff/Beschwörung). */
+  attack: z.string().nullish(),
+  /** Schaden als Vielfaches des Stufen-Schadens (Standard 1) oder absolut in AA-Einheiten (`damage`, überstimmt). */
+  damageMult: z.number().nonnegative().default(1),
+  damage: z.number().positive().nullish(),
+  /** `range`: Ziel in Reichweite der Unit nötig. `global`: trifft die ganze Karte (Zeitstopp, Flächenschlag). */
+  scope: z.enum(['range', 'global']).default('range'),
+  /** Mehrere Schläge: `pulses` Wirkungen, gleichmäßig über `durationSec` verteilt (die erste sofort). */
+  pulses: z.number().int().min(1).max(30).default(1),
+  durationSec: z.number().nonnegative().default(0),
+  /** Buff auf die Unit selbst. */
+  selfBuff: BuffSchema.nullish(),
+  /** Buff auf Verbündete im Radius (Studs; fehlt = alle Units des Spielers). */
+  buff: BuffSchema.extend({ radius: z.number().positive().nullish(), self: z.boolean().default(true) }).nullish(),
+  /** Beschwörung: `count` Wesen aus dem Katalog `summons`. */
+  summon: z.object({ id: z.string().min(1), count: z.number().int().min(1).max(12).default(1) }).nullish(),
+  /** Zusätzliche Münzen beim Auslösen (Yen), z. B. für Glücksspiel-Fähigkeiten. */
+  coins: z.number().int().positive().nullish(),
+});
+export type AbilityData = z.infer<typeof AbilitySchema>;
+
+/** Dauer-Aura (Runde 9 / P1): wirkt ununterbrochen auf Verbündete im Radius; gleiche Auren stapeln nicht (stärkste gewinnt). */
+export const AuraSchema = BuffSchema.omit({ durationSec: true }).extend({ radius: z.number().positive().nullish() });
+export type AuraData = z.infer<typeof AuraSchema>;
+
+/**
+ * Beschwörung mit eigenem Körper (Runde 9 / P1, AA `kind: "summon"`). Lebt, bis die Lebensdauer abläuft, der Beschwörer verkauft wird
+ * oder sie im Kampf fällt (`durability`: Sekunden, die sie gegen einen Standard-Gegner im Kontakt durchhält).
+ * `walk`: erscheint auf dem Pfad nahe dem Beschwörer und läuft den Gegnern entgegen, hält sie auf (`blocks`) und kämpft;
+ * `stand`: steht neben dem Beschwörer und schießt.
+ */
+export const SummonSchema = z.object({
+  name: z.string().min(1),
+  mode: z.enum(['walk', 'stand']).default('walk'),
+  damageType: z.enum(['physical', 'magic', 'true']).default('physical'),
+  elements: z.array(z.enum(ELEMENTS)).default([]),
+  /** Schaden je Angriff als Vielfaches des Stufen-Schadens des Beschwörers. */
+  damageMult: z.number().nonnegative().default(0.5),
+  spa: z.number().positive().default(4),
+  /** Reichweite in Studs. */
+  range: z.number().positive().default(8),
+  attack: z.string().nullish(),
+  /** Lebensdauer in Sekunden (0 = bis zum Verkauf des Beschwörers oder bis sie fällt). */
+  lifetime: z.number().nonnegative().default(0),
+  durability: z.number().positive().default(12),
+  blocks: z.boolean().default(true),
+  /** Lauftempo in Kacheln/s (`walk`). */
+  speed: z.number().positive().default(1),
+  hitsAir: z.boolean().default(false),
+  /** Beim Ende (Tod oder Ablauf) ein Schlag dieses Angriffs mit diesem Schadens-Vielfachen (Kamikaze). */
+  endAttack: z.string().nullish(),
+  endDamageMult: z.number().nonnegative().default(1),
+  /** Höchstens so viele gleichzeitig je Beschwörer (ein neues ersetzt das älteste). */
+  cap: z.number().int().positive().default(3),
+});
+export type SummonData = z.infer<typeof SummonSchema>;
+
 export const UnitLevelSchema = z.object({
   /** 0 = Platzierung, 1..n = Upgrades (Reihenfolge im Array = Stufe). */
   level: z.number().int().nonnegative(),
@@ -339,6 +424,8 @@ export const UnitLevelSchema = z.object({
   attack: z.string().nullish(),
   /** Farm-Units: Yen je Wave. */
   farm: optNum,
+  /** Zweitangriffe (Runde 9 / P1): weitere Angriffs-IDs, die zusammen mit `attack` im Wechsel gewirkt werden (jeder Schlag der Reihe nach, gleiche Abklingzeit). */
+  also: z.array(z.string()).nullish(),
   note: z.string().nullish(),
 });
 
@@ -382,6 +469,10 @@ export const UnitSchema = z.preprocess(aaAlias, z.object({
   /** Rein beschreibend (Katalog/UI), die Sim wertet es nicht aus. */
   flavor: z.string().nullish(),
   levels: z.array(UnitLevelSchema).min(1),
+  /** Fähigkeiten (Runde 9 / P1): Knopf-Fähigkeiten, automatische Fähigkeiten, periodische Beschwörer. */
+  abilities: z.array(AbilitySchema).nullish(),
+  /** Dauer-Aura auf Verbündete (Runde 9 / P1). */
+  aura: AuraSchema.nullish(),
   evolvedFrom: z.string().nullish(),
   evolution: z.unknown().optional(),
   limited: z.boolean().nullish(),
@@ -403,12 +494,15 @@ export const UnitFileSchema = z.object({
   _comment: comment,
   units: z.array(UnitSchema).default([]),
   attacks: z.record(z.string(), AttackSchema.nullable()).default({}),
+  /** Beschwörungen (Runde 9 / P1): Katalog der Wesen, die Fähigkeiten rufen. IDs global. */
+  summons: z.record(z.string(), SummonSchema).default({}),
 });
 export type UnitFile = z.infer<typeof UnitFileSchema>;
 
 export interface UnitsData {
   units: UnitData[];
   attacks: Record<string, AttackData>;
+  summons: Record<string, SummonData>;
 }
 
 /**

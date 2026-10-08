@@ -7,6 +7,7 @@ import { nextWaveNumber, waveHasBoss } from './systems/cards.js';
 import type { UnitDef } from './data/compile.js';
 import { addCoins, flushDamage, sellValue } from './systems/economy.js';
 import { checkPlacement } from './placement.js';
+import { abilityError, fireAbility, initAbilities } from './systems/ability.js';
 
 export type Command =
   /** Freie Platzierung (Runde 6 / P1): Mitte der Unit in Milli-Tiles (ganze Zahlen). */
@@ -17,6 +18,10 @@ export type Command =
   | { type: 'skipWave' }
   /** Risikokarte (K1) für die nächste zu startende Wave wählen; `null` nimmt die Wahl zurück. Gilt für ein Team, die letzte Wahl zählt. */
   | { type: 'chooseCard'; cardId: string | null }
+  /** Fähigkeit auslösen (Runde 9 / P1): `index` = Position in den Fähigkeiten der Unit (Standard: die erste Knopf-Fähigkeit). */
+  | { type: 'ability'; entityId: number; index?: number }
+  /** Auto-Schalter (Runde 9 / P1): löst die Knopf-Fähigkeiten der Unit, sobald sie bereit sind, von selbst aus. */
+  | { type: 'autoAbility'; entityId: number; on: boolean }
   /** Erweiterung (§16): Münzen an Mitspieler in 50er-Schritten. */
   | { type: 'donate'; to: number; amount: number };
 
@@ -97,6 +102,7 @@ export function applyCommand(w: World, playerId: number, cmd: Command): CommandR
         motRangeTicks: 0,
         damageDealt: 0,
         damageReported: 0,
+        ...initAbilities(def),
       });
       w.events.push({ type: 'place', tick: state.tick, player: playerId, unitId: id, unit: def.id, x: cmd.x, y: cmd.y, cost });
       return { ok: true, entityId: id };
@@ -135,6 +141,27 @@ export function applyCommand(w: World, playerId: number, cmd: Command): CommandR
       if (!ctx.units[u.defId].levels[u.level].attack) return fail('no-targeting');
       if (!['first', 'last', 'close', 'strongest'].includes(cmd.mode)) return fail('invalid-mode');
       u.targeting = cmd.mode;
+      return { ok: true, entityId: u.id };
+    }
+    case 'ability': {
+      const u = state.units.find((x) => x.id === cmd.entityId);
+      if (!u) return fail('unknown-entity');
+      if (u.owner !== playerId) return fail('not-owner');
+      const def = ctx.units[u.defId];
+      const index = cmd.index ?? def.abilities.findIndex((a) => a.trigger === 'button');
+      if (index < 0 || !Number.isInteger(index) || def.abilities[index]?.trigger !== 'button') return fail('no-ability');
+      const bad = abilityError(w, u, def, index, false);
+      if (bad) return fail(bad);
+      fireAbility(w, u, def, index, false);
+      return { ok: true, entityId: u.id };
+    }
+    case 'autoAbility': {
+      const u = state.units.find((x) => x.id === cmd.entityId);
+      if (!u) return fail('unknown-entity');
+      if (u.owner !== playerId) return fail('not-owner');
+      if (!ctx.units[u.defId].abilities.some((a) => a.trigger === 'button')) return fail('no-ability');
+      if (cmd.on) u.auto = 1;
+      else delete u.auto;
       return { ok: true, entityId: u.id };
     }
     case 'skipWave': {

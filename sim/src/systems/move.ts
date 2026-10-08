@@ -6,6 +6,7 @@ import { BP, mulBp } from '../fixed.js';
 import { positionAt } from '../path.js';
 import type { World } from '../state.js';
 import { cardLeakCost } from './cards.js';
+import { blockerOf, holdEnemy } from './summon.js';
 
 /**
  * Lebenskosten eines Leaks: ceil(Basis * RestHP / MaxHP), mindestens 1 (nur Ganzzahlen; Schild zählt nicht).
@@ -34,6 +35,12 @@ export function moveEnemies(w: World): void {
       const q = positionAt(ctx.path, e.progress);
       e.x = q.x;
       e.y = q.y;
+      continue;
+    }
+    // Beschwörungen (Runde 9 / P1) halten Bodengegner auf; der Gegner bleibt stehen, die Beschwörung zehrt an ihrer Haltbarkeit.
+    const blocker = blockerOf(w, e);
+    if (blocker) {
+      holdEnemy(blocker, e);
       continue;
     }
     const total = e.frac + speed;

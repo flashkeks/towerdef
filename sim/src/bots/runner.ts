@@ -151,7 +151,7 @@ export function runMatch(opts: MatchOptions): MatchResult {
         }
         case 'income': {
           const r = row(cur);
-          const k = e.source === 'bounty' ? 'kill' : e.source === 'waveBonus' ? 'wave' : e.source;
+          const k = e.source === 'bounty' ? 'kill' : e.source === 'waveBonus' ? 'wave' : e.source === 'ability' ? 'farm' : e.source;
           r.income[k][e.player] += e.amount;
           if (e.source === 'farm') r.farmYield[e.player] += e.amount;
           if (e.source === 'sell') r.sold[e.player] += e.amount;
