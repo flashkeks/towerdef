@@ -27,6 +27,7 @@ export type {
   UnitMod,
   StageData,
   Theme,
+  BoardTheme,
   GameData,
   DifficultyId,
 } from '../../../sim/src/index';

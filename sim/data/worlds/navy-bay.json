@@ -110,7 +110,67 @@
       "lift": 0
     },
     "flowers": false,
-    "background": "#0d1b27"
+    "background": "#0d1b27",
+    "board": {
+      "ground": {
+        "pattern": "cobble",
+        "base": "#7c93a4",
+        "dark": "#4d6676",
+        "light": "#a8c0cf"
+      },
+      "path": {
+        "pattern": "planks",
+        "base": "#a07b4f",
+        "edge": "#43301d",
+        "light": "#c9a06c"
+      },
+      "deco": [
+        {
+          "kind": "crate",
+          "color": "#9c7547",
+          "weight": 3
+        },
+        {
+          "kind": "barrel",
+          "color": "#7d5a37",
+          "weight": 2
+        },
+        {
+          "kind": "rock",
+          "color": "#5e7384",
+          "weight": 2
+        },
+        {
+          "kind": "lantern",
+          "color": "#ffd890",
+          "color2": "#3b4a58"
+        }
+      ],
+      "scatter": [
+        {
+          "kind": "puddle",
+          "color": "#5d86a8",
+          "density": 0.16
+        },
+        {
+          "kind": "pebbles",
+          "color": "#5e7384",
+          "density": 0.1
+        },
+        {
+          "kind": "sparkle",
+          "color": "#cfe8ff",
+          "density": 0.08
+        }
+      ],
+      "light": {
+        "tint": "#7fb8ff",
+        "tintAlpha": 0.16,
+        "vignette": 0.5,
+        "glow": "#ffd890",
+        "ambient": "motes"
+      }
+    }
   },
   "hpBp": 14000,
   "elementOffset": 4,

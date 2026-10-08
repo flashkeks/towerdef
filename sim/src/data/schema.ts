@@ -196,6 +196,57 @@ const Modifier = z.string().regex(/^(shield:\d+|regen|armored|fast)$/);
  */
 const hex = z.string().regex(/^#[0-9a-fA-F]{6}$/);
 export const TintSchema = z.object({ color: hex, alpha: z.number().min(0).max(1).optional(), lift: z.number().min(-0.6).max(0.6).optional() });
+/**
+ * Kartenthema (Runde 10 / P4), reine Darstellung wie der Rest von `theme`: Die Sim liest es nicht, es geht in keinen Replay-Hash.
+ * Der Client malt daraus Boden, Pfad, Deko, Licht und Hintergrund einmal in eine Textur (`client/src/game/board-art.ts`).
+ * Alles optional: ohne `board` leitet der Client ein Thema aus `grass`/`path`/`hill` ab.
+ */
+export const BOARD_GROUND_PATTERNS = ['grass', 'snow', 'sand', 'dirt', 'cobble', 'flagstone', 'cracked', 'moss'] as const;
+export const BOARD_PATH_PATTERNS = ['dirt', 'cobble', 'planks', 'flagstone', 'ice', 'sand', 'glow'] as const;
+export const BOARD_DECO_KINDS = [
+  'tree', 'pine', 'deadtree', 'rock', 'bush', 'crystal', 'pillar', 'ice', 'cactus', 'mushroom', 'tombstone', 'crate', 'barrel', 'house', 'mound', 'lantern', 'stalagmite',
+] as const;
+export const BOARD_SCATTER_KINDS = ['flowers', 'tufts', 'pebbles', 'puddle', 'drift', 'bones', 'leaves', 'sparkle', 'rune', 'moss'] as const;
+export const BOARD_AMBIENTS = ['none', 'motes', 'snow', 'embers', 'spores', 'wisps', 'dust'] as const;
+export const BoardSchema = z.object({
+  ground: z.object({
+    pattern: z.enum(BOARD_GROUND_PATTERNS),
+    base: hex,
+    dark: hex,
+    light: hex,
+    /** Zweitfarbe der Muster: Halm-Spitzen, Glut in Rissen, Glitzer. */
+    accent: hex.optional(),
+  }),
+  path: z.object({
+    pattern: z.enum(BOARD_PATH_PATTERNS),
+    base: hex,
+    /** Randstein / Kante (dunkel). */
+    edge: hex,
+    /** Lichtkante und Aufhellung der Mitte. */
+    light: hex,
+    /** Leuchtende Mittellinie (Runen, Glut), optional. */
+    glow: hex.optional(),
+  }),
+  /** Hindernisse auf `#`-Kacheln, reihum nach Kachel-Hash; `weight` = relative Haeufigkeit. */
+  deco: z.array(z.object({ kind: z.enum(BOARD_DECO_KINDS), color: hex, color2: hex.optional(), weight: z.number().positive().default(1) })).min(1),
+  /** Kleine Bodendeko auf freien Kacheln; `density` = Anteil der Kacheln (0..1). */
+  scatter: z.array(z.object({ kind: z.enum(BOARD_SCATTER_KINDS), color: hex, density: z.number().min(0).max(1).default(0.2) })).default([]),
+  light: z.object({
+    /** Grundton der Lichtstimmung, wird weich ueber die Karte gelegt. */
+    tint: hex,
+    tintAlpha: z.number().min(0).max(0.6).default(0.18),
+    /** Abdunkelung zum Rand hin, 0..1. */
+    vignette: z.number().min(0).max(1).default(0.45),
+    /** Leuchten um Spawn und Basis, optional. */
+    glow: hex.optional(),
+    /** Schwebende Teilchen ueber der Karte (wenige, billig). */
+    ambient: z.enum(BOARD_AMBIENTS).default('none'),
+  }),
+  /** Farbe des Spawn-Portals und des Basis-Schreins (Standard rot / tuerkis). */
+  markers: z.object({ spawn: hex.optional(), base: hex.optional() }).optional(),
+});
+export type BoardTheme = z.infer<typeof BoardSchema>;
+
 export const ThemeSchema = z.object({
   id: z.string().min(1),
   grass: TintSchema,
@@ -208,6 +259,8 @@ export const ThemeSchema = z.object({
   flowers: z.boolean().default(true),
   /** Hintergrund um das Spielfeld (CSS-Farbe), optional. */
   background: hex.optional(),
+  /** Kartenthema (Runde 10 / P4), reine Darstellung. */
+  board: BoardSchema.optional(),
 });
 export type Theme = z.infer<typeof ThemeSchema>;
 

@@ -64,7 +64,69 @@
       "alpha": 0.5
     },
     "flowers": true,
-    "background": "#0e2a2a"
+    "background": "#0e2a2a",
+    "board": {
+      "ground": {
+        "pattern": "grass",
+        "base": "#2aa88f",
+        "dark": "#1b7f74",
+        "light": "#5fd6b5",
+        "accent": "#c4f2a6"
+      },
+      "path": {
+        "pattern": "dirt",
+        "base": "#cfd88a",
+        "edge": "#6b7638",
+        "light": "#eef3b0"
+      },
+      "deco": [
+        {
+          "kind": "tree",
+          "color": "#2f9e6e",
+          "color2": "#7a5a3a",
+          "weight": 3
+        },
+        {
+          "kind": "rock",
+          "color": "#6aa59c",
+          "weight": 2
+        },
+        {
+          "kind": "bush",
+          "color": "#3bb58a",
+          "weight": 2
+        },
+        {
+          "kind": "crystal",
+          "color": "#7fe0d0",
+          "color2": "#c8fff0"
+        }
+      ],
+      "scatter": [
+        {
+          "kind": "tufts",
+          "color": "#9be8c0",
+          "density": 0.35
+        },
+        {
+          "kind": "flowers",
+          "color": "#fff2a0",
+          "density": 0.14
+        },
+        {
+          "kind": "pebbles",
+          "color": "#8fc9bb",
+          "density": 0.1
+        }
+      ],
+      "light": {
+        "tint": "#9ff5d0",
+        "tintAlpha": 0.14,
+        "vignette": 0.5,
+        "glow": "#fff2a0",
+        "ambient": "motes"
+      }
+    }
   },
   "hpBp": 10000,
   "elementOffset": 0,

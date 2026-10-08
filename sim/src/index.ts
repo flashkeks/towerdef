@@ -10,7 +10,7 @@ import type { WavePreview } from './systems/cards.js';
 export const previewWave = (sim: Sim, n: number, cardId?: string | null): WavePreview | null => sim.previewWave(n, cardId);
 export type { UnitDef, LevelStat, CompiledAttack, CompiledDot, FxSpec, AttackKind, DamageType, AbilityDef, AuraDef, SummonDef, BuffSpec } from './data/compile.js';
 export { unknownEffects } from './data/compile.js';
-export type { GameData, StageData, DifficultyId, Theme, WorldFile, WaveTemplate, LegendStagesData, RaidsData, LegendStageData, RaidData, StageAffinity } from './data/schema.js';
+export type { GameData, StageData, DifficultyId, Theme, BoardTheme, WorldFile, WaveTemplate, LegendStagesData, RaidsData, LegendStageData, RaidData, StageAffinity } from './data/schema.js';
 export { WorldFileSchema, WaveTemplateSchema, StageSchema, LegendStagesSchema, RaidsSchema } from './data/schema.js';
 export { loadGameData, loadModes, loadProgression, loadUnits, loadWorlds, mergeUnitFiles, validateGameData } from './data/load.js';
 export { expandLegend, expandModes, expandRaid, legendStageId, modeCatalog, raidStageId, validateModes, type ModeInfo, type ModeKind, type ModeStageInfo } from './data/modes.js';

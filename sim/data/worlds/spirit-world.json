@@ -104,7 +104,69 @@
       "lift": 0
     },
     "flowers": false,
-    "background": "#10142a"
+    "background": "#10142a",
+    "board": {
+      "ground": {
+        "pattern": "sand",
+        "base": "#bcc7e2",
+        "dark": "#8a96bd",
+        "light": "#e6ecfb",
+        "accent": "#ffffff"
+      },
+      "path": {
+        "pattern": "flagstone",
+        "base": "#ece9f5",
+        "edge": "#5f6d9c",
+        "light": "#ffffff",
+        "glow": "#8fb4ff"
+      },
+      "deco": [
+        {
+          "kind": "stalagmite",
+          "color": "#dcd8ea",
+          "color2": "#9aa6cc",
+          "weight": 3
+        },
+        {
+          "kind": "tombstone",
+          "color": "#c8cde0"
+        },
+        {
+          "kind": "crystal",
+          "color": "#9fb7ff",
+          "color2": "#e0e8ff",
+          "weight": 2
+        },
+        {
+          "kind": "deadtree",
+          "color": "#e6e2f0"
+        }
+      ],
+      "scatter": [
+        {
+          "kind": "bones",
+          "color": "#ffffff",
+          "density": 0.08
+        },
+        {
+          "kind": "sparkle",
+          "color": "#ffffff",
+          "density": 0.14
+        },
+        {
+          "kind": "rune",
+          "color": "#9fb7ff",
+          "density": 0.05
+        }
+      ],
+      "light": {
+        "tint": "#8fa6ff",
+        "tintAlpha": 0.18,
+        "vignette": 0.55,
+        "glow": "#bcd0ff",
+        "ambient": "wisps"
+      }
+    }
   },
   "hpBp": 16000,
   "elementOffset": 3,
