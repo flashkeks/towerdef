@@ -190,6 +190,8 @@ export const en = {
   'settings.menuMusic': 'Menu music',
   'settings.menuMusic.sub': 'Quiet background music in the lobby and menus.',
   'settings.damageNumbers': 'Show damage numbers',
+  'settings.shake': 'Screen shake',
+  'settings.shake.sub': 'Big hits, boss entrances and ability call-outs rattle the screen.',
   'settings.speed': 'Default speed',
   'settings.hints': 'Show tutorial hints again',
   'settings.hints.done': 'Hints will show on your next run.',

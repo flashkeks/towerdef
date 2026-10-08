@@ -101,7 +101,7 @@ describe('Fähigkeiten: Ansicht', () => {
   it('Ereignisse: Fähigkeit und Beschwörung lösen Effekt und Ton aus; automatische Auslösung bleibt leise', () => {
     const ev = { type: 'ability', tick: 1, unitId: 1, owner: 0, ability: 'x', name: 'X', auto: false } as const;
     expect(cueFor(ev)).toMatchObject({ kind: 'ability', unitId: 1, auto: false });
-    expect(soundsFor(ev)).toEqual(['windowOpen']);
+    expect(soundsFor(ev)).toEqual(['cutin']);
     expect(soundsFor({ ...ev, auto: true })).toEqual([]);
     expect(cueFor({ type: 'summonSpawn', tick: 1, summonId: 2, def: 'taurus', name: 'Taurus', parent: 1, x: 1000, y: 2000 })).toMatchObject({ kind: 'summon' });
     expect(cueFor({ type: 'summonEnd', tick: 1, summonId: 2, def: 'taurus', cause: 'dead', x: 1, y: 2 })).toMatchObject({ kind: 'summonEnd', cause: 'dead' });

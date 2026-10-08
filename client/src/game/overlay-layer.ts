@@ -3,7 +3,7 @@
  * Platzier-Modus (Runde 6, freie Platzierung): passende Zonen hervorgehoben, Rest der Karte gedimmt, Geist in Unit-Groesse
  * folgt der Maus (gruen/rot mit Grund), Reichweitenkreis immer sichtbar. Boss-Zeichnung gehoert P5.
  */
-import { Container, Graphics, Text } from 'pixi.js';
+import { Container, Graphics, Sprite, Text } from 'pixi.js';
 import { t } from '../i18n/t';
 import { enemyStyle, unitColor } from '../view/model';
 import { ghostLabelKey, zoneFits } from '../view/placement';
@@ -28,6 +28,8 @@ export class OverlayLayer {
   private readonly zonesG = new Graphics();
   private zonesSig = '';
   private ghostText: Text | null = null;
+  /** Geist als Portraet-Figur der Unit (Runde 10 / P2), gruen bei erlaubt, rot getoent sonst. */
+  private ghostFig: Sprite | null = null;
   private ghostSig = '';
   private rangeSig = '';
   private bossDrawn = false;
@@ -53,6 +55,7 @@ export class OverlayLayer {
     this.zonesSig = '';
     this.zonesG.clear();
     if (this.ghostText) this.ghostText.visible = false;
+    if (this.ghostFig) this.ghostFig.visible = false;
   }
 
   /** Vor `entities.sync`: Ebene unter den Figuren. */
@@ -102,7 +105,7 @@ export class OverlayLayer {
     }
     const T = ctx.tile;
     const c = ctx.px(gh.x / 1000, gh.y / 1000);
-    const sig = `${def.id}|${gh.x}|${gh.y}|${gh.reason ?? ''}|${T}`;
+    const sig = `${def.id}|${gh.x}|${gh.y}|${gh.reason ?? ''}|${T}|${ctx.figures.rev}`;
     if (sig === this.ghostSig) return;
     this.ghostSig = sig;
     const tint = gh.ok ? C.teal : C.red;
@@ -113,7 +116,19 @@ export class OverlayLayer {
     const g = this.ghostG.clear();
     // Geist in echter Unit-Groesse (Kollisionskreis der Sim), so sieht man, wie viel Platz sie braucht
     const r = (def.radiusMilli / 1000) * T;
-    g.circle(c.x, c.y, r).fill({ color: gh.ok ? unitColor(def.id) : C.red, alpha: gh.ok ? 0.75 : 0.4 }).stroke({ width: 3, color: tint, alpha: 0.95 });
+    // Figur der Unit als Geist: Portraet-Scheibe mit Seltenheits-Ring, halbtransparent; rot getoent an unerlaubter Stelle
+    if (!this.ghostFig) {
+      this.ghostFig = new Sprite();
+      this.ghostFig.anchor.set(0.5);
+      this.above.addChildAt(this.ghostFig, 0);
+    }
+    const gf = this.ghostFig;
+    gf.texture = ctx.figures.unit(def, T).tex;
+    gf.position.set(Math.round(c.x), Math.round(c.y - T * 0.06));
+    gf.alpha = gh.ok ? 0.82 : 0.5;
+    gf.tint = gh.ok ? 0xffffff : 0xff8080;
+    gf.visible = true;
+    g.circle(c.x, c.y, r).fill({ color: gh.ok ? unitColor(def.id) : C.red, alpha: gh.ok ? 0.1 : 0.2 }).stroke({ width: 2, color: tint, alpha: 0.9 });
     if (!gh.ok) {
       const d = Math.min(r * 0.6, T * 0.25);
       g.moveTo(c.x - d, c.y - d).lineTo(c.x + d, c.y + d).moveTo(c.x + d, c.y - d).lineTo(c.x - d, c.y + d).stroke({ width: 4, color: C.white });
@@ -137,6 +152,7 @@ export class OverlayLayer {
     this.ghostRangeG.clear();
     this.ghostG.clear();
     if (this.ghostText) this.ghostText.visible = false;
+    if (this.ghostFig) this.ghostFig.visible = false;
   }
 
   /**
