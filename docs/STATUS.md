@@ -6,18 +6,57 @@ Frühere Aufträge: [archiv/run-runde1.md](archiv/run-runde1.md), [archiv/run-ru
 
 ## Runde 9 (Fähigkeiten, 10 Welten, Legend/Raids, Interface)
 
-Letzte Aktualisierung: 2026-10-08 (P0)
+Letzte Aktualisierung: 2026-10-08 (Runde 9 abgeschlossen, P5)
 
 | Paket | Inhalt | Status | Agent (Modell) | Was man jetzt sehen kann |
 |---|---|---|---|---|
 | P0 | Status, Welt-Freischaltung nach Act 6 | **erledigt** | Hauptsitzung | `unlock.afterAct` = 6 in `walled-city`/`snowy-town` (Max, 08.10.2026), Tests angepasst. Stand vor Runde 9: sim 325, meta 143, client 234 Tests grün |
 | P1 | Fähigkeiten, Beschwörungen, Zweitangriffe | **erledigt** | 1 × Sonnet | **542 voll / 5 eingeschränkt / 3 ausgeblendet** (vorher 479/61/10). Aktive Fähigkeiten als Datenbaustein (Knopf/Auto, Abklingzeit, Wirkung aus dem Baukasten), Auren, Zweitangriffe (`levels[].also`), 12 Beschwörungen als eigene Wesen (laufen dem Pfad entgegen und halten auf, oder stehen), 53 Kits in `tools/aa-import/kits.ts`; armin, erwin, eren_final, griffith_reincarnation, hoshino(+evolved), sakura jetzt spielbar. Client: Ring-Knopf mit Abklingzeit in Panel und Unit-Leiste, Auto-Schalter, Taste Q, Beschwörungen auf dem Feld. **Replay v5** (v4 läuft mit gleichem Hash). Kit-Wirkungszahlen sind Annahmen (`unsupported.md`, `report.md`). Screenshots `client/docs/r9/p1-*.png` |
 | P2 | Welten 4–10, größere Karten | **erledigt** | 1 × Sonnet | 10 Welten: + Sand Village 22×13, Navy Bay 22×12, Fiend City 24×14, Spirit World 24×14, Ant Kingdom 22×14, Magic Town 24×14, Haunted Academy 24×14 (97 Kacheln Pfad), je 6 Acts + Infinite, AA-Bosse, eigene Farbwelt, Freischaltung nach Act 6. Raster je Stage im Client (Renderer, BoardInput, Mausprobe), Welt 1–3 unverändert 17×11 (Hashes gleich). Weltkarte mit scrollbarer Reiterzeile und Kartenvorschau. Näherungen: `fortify`/`egg_spawner`/Feuer/Eis → armored/shield/fast. Screenshots `client/docs/r9/p2-*.png` |
-| P3 | Legend Stages, Raids | läuft | 1 × Sonnet | |
+| P3 | Legend Stages, Raids | **erledigt** | 1 × Sonnet | Weltkarte mit Umschalter Story / Legend Stages / Raids. **8 Legend Stages** (je Host-Welt-Karte, Stage-weite Resistenzen `affinity`, frei nach Act 6 der Host-Welt) zahlen **Evolutions-Material** (8 Sorten); Evolution kostet jetzt zusätzlich Material (Rare 4 … Secret/Exclusive 25). **11 Raids** (20 Wellen, Boss am Ende, frei nach Act 3 der Host-Welt) zahlen **Raid-Marken**, Meilensteine (5 / 10 Siege), garantierte Unit nach 10 Siegen (Spider 15); **Raid-Shop** mit 21 Angeboten. Profil-**Schema 3** (`inventory = { raidMarks, materials }`, Migration 2 → 3). Alles aus dem nachgerechneten Replay. Startwerte in `meta/data/{modes,materials,raid-shop}.json`, Doku `docs/aa-import/modi.md`. Screenshots `client/docs/r9/p3-*.png` |
 | P4 | Interface komplett | **erledigt** | 1 × Sonnet | Alle Bildschirme außerhalb des Matches im Dusk-Gilt-Look: Einstellungen (Vollbild, Regler/Schalter), Hilfe (Tastenkappen, Ablauf, Bodenarten, Seltenheits-Legende), Pause mit Lauf-Chips, Ergebnis mit Siegel/Kacheln/MVP-Karte/Belohnungen, Kristall-Shop (Mock), Credits, Team, Stufenwahl, Ladefehler; Lobby mit großer Anführer-Karte und neuem Untertitel. Alte Grenzgilde-Texte raus (Test `r9-p4-texte`); grep-Rest nur Boss-Schild-Mechanik (`ward` intern, Text „Shield“) und „Duskwardens“. client 237 Tests, Smoke 1280×720 grün (121). Screenshots `client/docs/r9/p4-*.png`. Noch alt: Spielfeld-Kacheln/Sprites |
-| P5 | Abschluss | offen | Hauptsitzung | |
+| P5 | Abschluss | **erledigt** | Hauptsitzung | Merges P4 → P2 → P1 → P3 ohne Konflikte. Nacharbeit: Ersthinweis wurde erst im ersten Frame gefüllt, Smoke bei 1920/2560 reproduzierbar rot → `App.bind()` zeigt ihn sofort (`6352522`). Kurzbericht unten |
 
 Plan: P1, P2, P4 parallel in lokalen Worktrees (max. 3 Agenten, nur Sonnet), P3 sobald P1 gemerged ist. `sim/`-Kern ändert P1; P2 nur Weltdaten + Kartenraster; P4 nur `client/` ohne Match-Kern. Screenshots in `client/docs/r9/`.
+
+## Kurzbericht Runde 9 (P5, 08.10.2026)
+
+```text
+STATUS — Runde 9
+Was man jetzt sehen kann (5 Zeilen):
+  1. Fähigkeiten im Match: Ring-Knopf mit Abklingzeit in Panel und Unit-Leiste, Auto-Schalter, Taste Q;
+     Beschwörungen (Lucy, Erwin, Eren, Lelouch …) laufen dem Pfad entgegen und halten auf (p1-match-ability-*)
+  2. Weltkarte mit 10 Welten (scrollbare Reiter, Kartenvorschau), ab Welt 4 Karten bis 24×14 (p2-worldmap, p2-match-*)
+  3. Umschalter Story / Legend Stages / Raids, Raid-Match, Raid-Shop, Evolution mit Material (p3-*)
+  4. Einstellungen, Hilfe, Pause, Ergebnis mit Belohnungskacheln, Kristall-Shop, Credits im Dusk-Gilt-Look (p4-*)
+  5. Lobby mit großer Anführer-Karte und neuen Texten, keine Grenzgilde-Reste mehr
+Units: voll / eingeschränkt / ausgeblendet: 542 / 5 / 3 (vorher 479 / 61 / 10), + 25 Crossover.
+  Eingeschränkt: usopp_ts(+evolved) Fallen-Obergrenze, sakura Heilung, hoshino_evolved Kosten-Rabatt, eto_evolved Kill-Bonus.
+  Ausgeblendet: isharmla, isharmla_evo, mahoraga (AA liefert keine Werte). Wirkungszahlen der 53 Kits sind Annahmen.
+Welten spielbar, Kartengröße: 10 — Greenie, Walled City, Snowy Town (17×11), Sand Village 22×13, Navy Bay 22×12,
+  Fiend City 24×14, Spirit World 24×14, Ant Kingdom 22×14, Magic Town 24×14, Haunted Academy 24×14;
+  je 6 Acts + Infinite, Freischaltung nach Act 6 der Vorwelt
+Legend Stages, Raids: 8 Legend Stages (Material für Evolution), 11 Raids (Marken, Shop, garantierte Unit), solo
+Interface: was noch alt aussieht: Spielfeld-Kacheln und Gegner-Sprites (Pixel-Look aus Runde 1–7);
+  Fähigkeiten in der Sammlung nur als Wertezeile, kein eigener Block; Weltkarte Raids/Legend unten viel Leerfläche
+Neue imageQuery-Einträge für die Homelab-Seite: keine (Manifest unverändert; Beschwörungen zeigen Initialen-Figur)
+Vorschlag Runde 10: Welten 11–22 als Daten nachziehen (dann bekommen die Legend Stages ihre echte Welt) und
+  Gegner-Eigenschaften aus AA (fortify, egg_spawner, Feuer/Eis, Beschwörungen angreifen) in den Kern. Spielfeld
+  und Gegner grafisch auf den neuen Look heben (Kacheln, Sprites, Boss-Phasen). Fähigkeiten in der Unit-Detailseite
+  als eigener Block, Raid-Units aus dem Special-Banner nehmen. Danach M2 (Server, Koop) vorbereiten.
+Agenten (Anzahl, Modell), Limits erreicht wie oft: 4 × Sonnet (P1, P2, P4 parallel, dann P3); einmal Nutzungslimit
+  (alle drei gleichzeitig, ca. 03:00–06:40 UTC), Stand gesichert und fortgesetzt
+Commits: 34 auf dev seit dem Auftrag (443803d), davon 4 Merges
+Tests: sim 381, meta 168 (+1 übersprungen: Speicherstand-Werkzeug), client 252; Smoke 323 Prüfungen grün
+  auf 1280×720, 1920×1080, 2560×1440 (Endstand mit P3); aa-import:check grün
+```
+
+**Offene Fragen an die Menschen (Runde 9, Empfehlung zuerst):**
+- **Host-Welten der Legend Stages:** 7 von 8 laufen auf einer thematisch passenden der 10 Welten, weil ihre AA-Welt noch fehlt. Empfehlung: so lassen, bis die Welten 11–22 als Dateien da sind (dann eine Zeile je Stage).
+- **Raid-Garantie nach 10 Siegen** (Spider 15, einzige belegte AA-Zahl). Empfehlung: so lassen; Alternative einheitlich 15.
+- **Material-Kosten der Evolution** (Mythic 15 Stück): Empfehlung nach dem Playtest justieren, nicht messen.
+- **Raid-Units im Special-Banner:** in AA `hideFromBanner`, bei uns ziehbar. Empfehlung: aus dem Pool nehmen, nur über Raid/Shop (Runde 10).
+- **Fähigkeits-Wirkungen** (Domain x1,5, Zeitstopp-Dauer …) sind geschätzt, AA nennt nur Namen und Abklingzeit. Empfehlung: nach Gefühl im Playtest melden, wir stellen in Daten nach.
 
 ## Runde 8 (AA-Import)
 
