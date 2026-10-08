@@ -10,6 +10,7 @@ import type { ModeCardView, WorldCardView, WorldView } from '../backend/meta';
 import { t } from '../i18n/t';
 import { h } from './dom';
 import { icon } from './kit';
+import { announceUnlocks } from './menu-fx';
 import { metaFrame } from './meta-ui';
 import { errorText } from './meta-model';
 import type { Nav } from './nav';
@@ -223,6 +224,7 @@ export function buildWorldMap(nav: Nav, startMode?: MapMode): HTMLElement {
     if (!r.ok) return void f.body.replaceChildren(h('p', 'warn', errorText(r)));
     const v = r.world;
     if (startMode) lastMode = startMode;
+    announceUnlocks([...v.worlds, ...v.legend, ...v.raids].filter((x) => x.unlocked).map((x) => ({ id: x.id, name: x.name })), t('unlock.title'));
 
     // Kopf: Umschalter Story / Legend / Raids, rechts Raid-Marken, Material und Raid-Shop
     const bar = h('div', 'mode-bar');

@@ -70,6 +70,10 @@ try {
   await page.waitForSelector('.lobby');
   if (await page.locator('.starter-claim').isVisible().catch(() => false)) {
     await page.click('.starter-claim');
+    for (let i = 0; i < 6 && (await page.locator('.reveal').count()); i++) {
+      await page.keyboard.press('Escape');
+      await new Promise((r) => setTimeout(r, 300));
+    }
     await page.waitForSelector('.starter-card.done');
   }
   await page.click('.lobby-play');

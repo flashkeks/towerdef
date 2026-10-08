@@ -2,7 +2,7 @@
 // Braucht dist/ (npm run build). Schreibt client/docs/r8/p2-*.png. Port: SHOT_PORT (Standard 4441).
 import { mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { buildTeam, fastForward, launch, root, sleep, startServer } from './lib/drive.mjs';
+import { buildTeam, fastForward, launch, root, sleep, startServer, closeReveal } from './lib/drive.mjs';
 
 const PORT = Number(process.env.SHOT_PORT ?? 4441);
 const OUT = process.env.SHOT_DIR ?? resolve(root, 'docs', 'r8');
@@ -14,6 +14,7 @@ try {
   await page.goto(url);
   await page.waitForSelector('.lobby:not(.loading)');
   await page.locator('.starter-claim').click();
+  await closeReveal(page);
   await page.waitForSelector('.starter-card.done');
   await page.screenshot({ path: resolve(OUT, 'p2-lobby-starter.png') });
   await page.locator('.lobby-summon').click();

@@ -84,7 +84,14 @@ export function buildSettings(nav: Nav): HTMLElement {
   const right = h('div', 'settings-col');
 
   const audio = panel({ title: t('settings.group.audio'), tone: 'violet', tag: 'section' });
-  audio.body.append(slider('master'), slider('sfx'), slider('music'), h('p', 'set-note', t('settings.note')));
+  const mm = h('label', 'switch');
+  const mmCheck = h('input');
+  mmCheck.type = 'checkbox';
+  mmCheck.dataset.setting = 'menuMusic';
+  mmCheck.checked = getSettings().menuMusic;
+  mmCheck.addEventListener('change', () => setSetting('menuMusic', mmCheck.checked));
+  mm.append(mmCheck, h('span', 'switch-knob'));
+  audio.body.append(slider('master'), slider('sfx'), slider('music'), row(t('settings.menuMusic'), t('settings.menuMusic.sub'), mm, 'sparkle'), h('p', 'set-note', t('settings.note')));
 
   const play = panel({ title: t('settings.group.play'), tag: 'section' });
   const dmg = h('label', 'switch');
