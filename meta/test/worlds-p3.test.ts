@@ -135,7 +135,7 @@ describe('Welten: Belohnung aus dem nachgerechneten Replay (Stage aus dem Replay
 });
 
 describe('Welten: Sichtmodelle', () => {
-  it('worldView: frisches Profil, nur Welt 1 offen, Act 1 vorgeschlagen, Legend und Raids als Geruest', () => {
+  it('worldView: frisches Profil, nur Welt 1 offen, Act 1 vorgeschlagen, Legend und Raids vorhanden (Details: modes-p3.test.ts)', () => {
     const v = worldView(fresh());
     expect(v.worlds.map((w) => w.unlocked)).toEqual(WORLDS.map((w) => w.order === 1));
     expect(v.nextStageId).toBe('greenie-1');
@@ -146,8 +146,7 @@ describe('Welten: Sichtmodelle', () => {
     expect(w1.palette.grass).toMatch(/^#/);
     expect(v.worlds[1].lock).toMatchObject({ kind: 'world', worldName: 'Planet Greenie' });
     expect(v.legend.length).toBeGreaterThanOrEqual(8);
-    expect(v.raids.length).toBeGreaterThanOrEqual(5);
-    expect([...v.legend, ...v.raids].every((x) => !x.playable)).toBe(true);
+    expect(v.raids.length).toBeGreaterThanOrEqual(11);
   });
 
   it('worldView: Fortschritt geht ein, naechster Act wandert weiter, Bestwelle und Schwierigkeiten', () => {

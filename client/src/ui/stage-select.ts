@@ -5,7 +5,7 @@
 import { getBackend } from '../backend';
 import { t } from '../i18n/t';
 import { STAGE_ID, type DifficultyId } from '../sim';
-import { lockText } from './world-model';
+import { affinityChips, lockText } from './world-model';
 import { h } from './dom';
 import { metaFrame } from './meta-ui';
 import { errorText, stageCardView, teamComplete, unitName } from './meta-model';
@@ -32,14 +32,35 @@ export function buildStageSelect(nav: Nav, stageId?: string): HTMLElement {
 
     const info = sv.info;
     const title = f.box.querySelector('h1');
-    if (title && info) title.textContent = info.kind === 'infinite' ? t('stage.infinite.title', { world: info.worldName }) : t('stage.world', { world: info.worldName, act: info.act });
+    const isMode = info?.kind === 'legend' || info?.kind === 'raid';
+    if (title && info) {
+      title.textContent = info.kind === 'infinite' ? t('stage.infinite.title', { world: info.worldName }) : isMode ? ((info.actCount ?? 1) > 1 ? t('stage.mode.title', { name: info.modeName ?? '', act: info.act }) : (info.modeName ?? '')) : t('stage.world', { world: info.worldName, act: info.act });
+    }
+    f.box.dataset.kind = info?.kind ?? 'standard';
     const toWorld = h('button', 'btn stage-world-btn', t('stage.toWorld'));
     toWorld.type = 'button';
-    toWorld.addEventListener('click', () => nav.world());
+    toWorld.addEventListener('click', () => nav.world(info?.kind === 'legend' ? 'legend' : info?.kind === 'raid' ? 'raids' : undefined));
     const head = panel({ corners: true, cls: 'stage-head', tag: 'section' });
     head.body.append(toWorld);
     if (info) {
-      head.body.append(h('p', 'tagline', [info.kind === 'act' ? info.name : '', info.bossName ? t('stage.boss', { name: info.bossName }) : '', t('stage.waves', { n: info.waves })].filter(Boolean).join(' - ')));
+      head.body.append(h('p', 'tagline', [info.kind === 'act' ? info.name : isMode ? t(info.kind === 'legend' ? 'stage.mode.legend' : 'stage.mode.raid') : '', info.bossName ? t('stage.boss', { name: info.bossName }) : '', t('stage.waves', { n: info.waves })].filter(Boolean).join(' - ')));
+      if (isMode) {
+        head.body.append(h('p', 'mode-host', t('world.host', { world: info.worldName })));
+        const ac = affinityChips(info.affinity ?? { resist: {}, weakBp: {} });
+        if (ac.length > 0) {
+          const row = h('div', 'affin-row');
+          for (const kind of ['resist', 'weak'] as const) {
+            const of = ac.filter((c) => c.kind === kind);
+            if (of.length === 0) continue;
+            const g = h('span', `affin-group ${kind}`);
+            g.append(h('span', 'affin-label', t(kind === 'resist' ? 'world.affin.resist' : 'world.affin.weak')));
+            for (const c of of) g.append(h('span', `tag-pill affin ${kind}`, kind === 'resist' ? `${c.label} ${c.value}` : `${c.label} +${c.value}%`));
+            row.append(g);
+          }
+          head.body.append(row);
+        }
+        if (info.guarantee) head.body.append(h('p', 'mode-drop', t('stage.guarantee', { unit: info.guarantee.unitName, done: Math.min(info.guarantee.progress, info.guarantee.clears), n: info.guarantee.clears })));
+      }
       if (!info.unlocked && info.lock) head.body.append(h('p', 'warn stage-warn', t('stage.locked.stage', { reason: lockText(info.lock) })));
     } else head.body.append(h('p', 'tagline', t('stage.subtitle')));
     const teamRow = h('div', 'stage-team');
@@ -76,13 +97,16 @@ export function buildStageSelect(nav: Nav, stageId?: string): HTMLElement {
         lr.append(icon('lock'), v.lockText ?? '');
         b.append(lr);
       }
-      else b.append(h('span', 'stage-reward', v.rewardText));
+      else {
+        b.append(h('span', 'stage-reward', v.rewardText));
+        if (v.extraText) b.append(h('span', 'stage-reward extra', v.extraText));
+      }
       b.append(h('span', 'stage-best', v.bestText));
       if (v.cleared) b.append(h('span', 'stage-cleared', t('stage.cleared')));
       b.addEventListener('click', () => nav.play(d.difficulty as DifficultyId, id));
       row.append(b);
     }
-    f.body.append(row, h('p', 'set-note', t('stage.note')));
+    f.body.append(row, h('p', 'set-note', t(info?.kind === 'legend' ? 'stage.note.legend' : info?.kind === 'raid' ? 'stage.note.raid' : 'stage.note')));
   })();
   return f.box;
 }

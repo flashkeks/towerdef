@@ -1,0 +1,21 @@
+{
+  "_note": "Runde 9 / P3. Belohnungen der Legend Stages und Raids. Basis ist die Story-Tabelle (`rewards.json`), hier nur Faktoren in Basispunkten und die Raid-Waehrung. Alles kommt aus dem nachgerechneten Replay (`rewardFromReplay`), gesperrte Stages zahlen nichts. STARTWERTE, nicht kalibriert.",
+  "difficultyBp": { "normal": 10000, "hard": 15000, "nightmare": 20000 },
+  "legend": {
+    "_note": "Crystals/Gold/XP = Story-Wert (Erst-Clear bzw. Wiederholung) mal Faktor. Material je Sieg aus `drop` im Act (Erst-Clear / Wiederholung), mal difficultyBp. Niederlage: nur Gold und XP je gehaltener Welle wie in der Story, kein Material.",
+    "crystalsBp": 15000,
+    "goldBp": 20000,
+    "xpBp": 15000
+  },
+  "raid": {
+    "_note": "Raid-Marken je Sieg = `marks` des Acts (Normal) mal difficultyBp, dazu beim ersten Sieg je Stage und Schwierigkeit `firstClearMarks`. Crystals/Gold/XP kleiner als Legend. Meilensteine zaehlen die Siege ALLER Acts und Schwierigkeiten eines Raids; garantierte Unit bei `guarantee.clears` (Daten im Raid).",
+    "crystalsBp": 8000,
+    "goldBp": 12000,
+    "xpBp": 12000,
+    "firstClearMarks": 40,
+    "milestones": [
+      { "clears": 5, "crystals": 250 },
+      { "clears": 10, "marks": 100 }
+    ]
+  }
+}

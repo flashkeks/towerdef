@@ -211,6 +211,13 @@ export const ThemeSchema = z.object({
 });
 export type Theme = z.infer<typeof ThemeSchema>;
 
+/** Resistenzen (R, Faktor 100/(100+R)) und Schwaechen (Bp, additiv) je Damage-Typ (physical/magic/true) oder Element; wirken auf alle Gegner einer Stage. */
+export const StageAffinitySchema = z.object({
+  resist: z.record(z.string(), nat).default({}),
+  weakBp: z.record(z.string(), pos).default({}),
+});
+export type StageAffinity = z.infer<typeof StageAffinitySchema>;
+
 export const StageSchema = z.object({
   ref,
   _comment: comment,
@@ -221,6 +228,10 @@ export const StageSchema = z.object({
   act: pos.optional(),
   /** Faktor auf die Gegner-HP (und die Bounty-Basis) dieser Stage in Basispunkten, Standard 10000. Act-Stufung der Welten. */
   hpBp: pos.optional(),
+  /** Runde 9 / P3: Modus der Stage (Legend Stage / Raid), nur Anzeige und Fortschritt; die Sim braucht es nicht. */
+  mode: z.enum(['legend', 'raid']).optional(),
+  /** Runde 9 / P3: Resistenzen und Schwaechen ALLER Gegner dieser Stage (addiert zu Archetyp und Element-Affinitaet). */
+  affinity: StageAffinitySchema.optional(),
   /** Anzeigenamen der Gegnertypen dieser Stage (Archetyp-ID -> Name, z. B. grunt -> "Saibaman"); die Sim rechnet weiter mit dem Archetyp. */
   roster: z.record(z.string(), z.string()).optional(),
   /** Name des Act-Bosses (Anzeige). */
@@ -686,6 +697,8 @@ export interface GameData {
   /** Runde 8 / P3: Welt-Dateien und Wellen-Vorlage (aus den Welten sind die Stages in `stages` schon erzeugt). Optional wie `bosses`. */
   worlds?: WorldFile[];
   waveTemplate?: WaveTemplate;
+  /** Runde 9 / P3: Legend Stages und Raids (die Stages daraus stehen schon in `stages`). */
+  modes?: { legend: LegendStagesData; raids: RaidsData };
 }
 export { int };
 
@@ -821,40 +834,79 @@ export const WorldFileSchema = z.object({
 });
 export type WorldFile = z.infer<typeof WorldFileSchema>;
 
-/** Legend Stages (Runde 8 / P3, Daten-Gerüst: noch nicht spielbar). Quelle `maps.json` `legendStages`. */
+const Unlock = z.object({ afterWorld: z.string(), afterAct: pos });
+const ModeId = z.string().regex(/^[a-z0-9]+(-[a-z0-9]+)*$/);
+
+/** Legend Stages (Runde 9 / P3, spielbar). Quelle `maps.json` `legendStages`. Karte, Farben und Gegnernamen kommen von der Host-Welt (`host`). */
 export const LegendStagesSchema = z.object({
   ref,
   _comment: comment,
   stages: z.array(
     z.object({
-      id: z.string().regex(/^[a-z0-9]+(-[a-z0-9]+)*$/),
+      id: ModeId,
       name: z.string(),
       legacyName: z.string().optional(),
-      /** Herkunftswelt (`WorldFile.id` oder `aaId`). */
+      /** AA-Welt-ID (Herkunft, nur Anzeige/Referenz) */
       world: z.string(),
-      acts: pos,
-      bosses: z.array(z.string()),
-      unlock: z.object({ afterWorld: z.string(), afterAct: pos }),
+      /** unsere Welt (`WorldFile.id`), deren Karte/Theme/roster die Stage benutzt */
+      host: z.string(),
+      blurb: z.string().default(''),
+      /** frei nach Act `afterAct` (AA: 6) der Welt `afterWorld` */
+      unlock: Unlock,
+      /** Faktor auf die Gegner-HP der Stage (mal Host-Welt-Faktor mal Act-Faktor) */
+      hpBp: pos.default(10000),
+      /** Evolutions-Material, das die Stage fallen laesst (ID aus `meta/data/materials.json`) */
+      material: z.string(),
+      /** Resistenzen/Schwaechen aller Gegner der Stage */
+      affinity: StageAffinitySchema.default({ resist: {}, weakBp: {} }),
+      acts: z
+        .array(
+          ActSchema.extend({
+            /** Material-Menge je Sieg auf Normal (Hard x1,5, Nightmare x2 in `meta/data/modes.json`) */
+            drop: z.object({ first: pos, repeat: pos }),
+            /** zusaetzlich zur Stage-Affinitaet nur in diesem Act */
+            affinity: StageAffinitySchema.optional(),
+          }),
+        )
+        .min(1),
       playable: z.boolean().default(false),
     }),
   ),
 });
 export type LegendStagesData = z.infer<typeof LegendStagesSchema>;
+export type LegendStageData = LegendStagesData['stages'][number];
 
-/** Raids (Runde 8 / P3, Daten-Gerüst: noch nicht spielbar). Quelle `maps.json` `raids`, `waves.json` (`raid_legacy_2022`: 20 Wellen). */
+/** Raids (Runde 9 / P3, spielbar). Quelle `maps.json` `raids`, `waves.json` (`raid_legacy_2022`: 20 Wellen). */
 export const RaidsSchema = z.object({
   ref,
   _comment: comment,
   raids: z.array(
     z.object({
-      id: z.string().regex(/^[a-z0-9]+(-[a-z0-9]+)*$/),
+      id: ModeId,
       name: z.string(),
       legacyName: z.string().optional(),
-      acts: pos.optional(),
-      waves: pos,
+      host: z.string(),
+      blurb: z.string().default(''),
+      unlock: Unlock,
+      waves: pos.min(2).max(30),
       players: z.object({ min: pos, max: pos }),
+      hpBp: pos.default(10000),
+      /** garantierte Unit nach `clears` Siegen (ueber alle Acts und Schwierigkeiten) */
+      guarantee: z.object({ unit: z.string(), clears: pos }),
+      affinity: StageAffinitySchema.default({ resist: {}, weakBp: {} }),
+      /** ein Eintrag = eine Stage `raid-<id>`; mehrere = `raid-<id>-<act>` mit steigender Belohnung */
+      acts: z
+        .array(
+          ActSchema.omit({ waves: true }).extend({
+            /** Raid-Marken je Sieg auf Normal */
+            marks: pos,
+            affinity: StageAffinitySchema.optional(),
+          }),
+        )
+        .min(1),
       playable: z.boolean().default(false),
     }),
   ),
 });
 export type RaidsData = z.infer<typeof RaidsSchema>;
+export type RaidData = RaidsData['raids'][number];

@@ -15,6 +15,7 @@ import {
   SHOP_CATALOG,
   bannerView,
   buy,
+  buyRaidOffer,
   claimStarterGift,
   collectionView,
   evolve,
@@ -27,6 +28,7 @@ import {
   playerView,
   pull,
   pullHistoryView,
+  raidShopView,
   refreshOrder,
   rerollTrait,
   rewardFromReplay,
@@ -187,6 +189,14 @@ export class LocalBackend implements Backend {
 
   evolve(unitId: string, idemKey: string): ReturnType<Backend['evolve']> {
     return this.mutate('evolve', { unitId }, idemKey, 'evolution', (p) => evolve(p, unitId, this.env));
+  }
+
+  raidShop(): ReturnType<Backend['raidShop']> {
+    return this.read((p) => ({ ok: true as const, shop: raidShopView(p) }));
+  }
+
+  buyRaidOffer(offerId: string, idemKey: string): ReturnType<Backend['buyRaidOffer']> {
+    return this.mutate('buyRaidOffer', { offerId }, idemKey, 'purchase', (p) => buyRaidOffer(p, offerId, this.env));
   }
 
   rerollTrait(unitId: string, idemKey: string): ReturnType<Backend['rerollTrait']> {

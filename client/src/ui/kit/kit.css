@@ -186,3 +186,9 @@ button:disabled { cursor: default; opacity: 0.45; filter: saturate(0.6); }
   .rf::before, .rf.live, .pc-sheen, .flash { animation: none !important; }
 }
 .w-icon.xp { background: radial-gradient(circle at 35% 30%, #ffd9b8, var(--ember) 60%, #b04a14); box-shadow: 0 0 12px -1px var(--ember); }
+
+/* Runde 9 / P3: Raid-Marken und Evolutions-Material in der Brieftasche und in Belohnungen */
+.w-icon.raid, .w-icon.marks { background: radial-gradient(circle at 35% 30%, #ffe2c9, var(--ember) 55%, #b04a14); box-shadow: 0 0 12px -1px var(--ember); }
+.w-icon.material { background: radial-gradient(circle at 35% 30%, #e6dcff, var(--violet) 55%, #5a3fc2); box-shadow: 0 0 12px -1px var(--violet); }
+.w-icon.bonus { background: radial-gradient(circle at 35% 30%, #fff, var(--gold-hi) 55%, var(--gold)); box-shadow: 0 0 12px -1px var(--gold); }
+.wallet .w-item.raid, .wallet .w-item.material { font-size: 1rem; padding-right: 11px; }

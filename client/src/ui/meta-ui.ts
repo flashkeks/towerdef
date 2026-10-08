@@ -20,6 +20,9 @@ export class WalletBar {
   readonly el = h('div', 'wallet');
   private readonly crystals = h('span', 'w-val');
   private readonly gold = h('span', 'w-val');
+  private readonly raid = h('span', 'w-val');
+  private readonly mats = h('span', 'w-val');
+  private readonly matsItem: HTMLElement;
   private readonly level = h('span', 'w-level');
   private readonly xp = h('span', 'w-xp');
   private readonly fill = h('div', 'bar-fill xp');
@@ -37,18 +40,26 @@ export class WalletBar {
     xpBar.append(this.fill);
     const lv = h('span', 'w-item w-player');
     lv.append(this.level, xpBar, this.xp);
-    this.el.append(mk('crystals', 'crystal', t('wallet.crystals'), this.crystals), mk('gold', 'coin', t('wallet.gold'), this.gold), lv);
+    this.matsItem = mk('material', 'shard', '', this.mats);
+    this.el.append(mk('crystals', 'crystal', t('wallet.crystals'), this.crystals), mk('gold', 'coin', t('wallet.gold'), this.gold), mk('raid', 'mark', t('wallet.raid'), this.raid), this.matsItem, lv);
   }
 
   update(p: PlayerView): void {
     const w = walletView(p);
     this.crystals.textContent = w.crystals;
     this.gold.textContent = w.gold;
+    // Runde 9 / P3: Raid-Marken immer, Evolutions-Material erst wenn welches da ist
+    this.raid.textContent = w.raidMarks;
+    this.mats.textContent = w.materialTotal;
+    this.matsItem.classList.toggle('hidden', p.materials.length === 0);
+    this.matsItem.title = t('wallet.materials', { list: p.materials.map((m) => `${m.name} x${m.count}`).join(', ') });
     this.level.textContent = w.level;
     this.xp.textContent = w.xp;
     this.fill.style.width = `${w.xpPct}%`;
     this.el.dataset.crystals = String(p.crystals);
     this.el.dataset.gold = String(p.gold);
+    this.el.dataset.raid = String(p.raidMarks);
+    this.el.dataset.materials = String(p.materials.reduce((n, m) => n + m.count, 0));
     this.el.dataset.level = String(p.level);
   }
 }

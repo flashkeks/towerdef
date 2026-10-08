@@ -43,3 +43,41 @@
 .soon-list { display: flex; flex-wrap: wrap; gap: 6px 16px; }
 .soon-item { display: flex; flex-direction: column; font-size: 0.78rem; opacity: 0.85; }
 .stage-world-btn { margin-bottom: 6px; align-self: flex-start; }
+
+/* ---- Runde 9 / P3: Umschalter Story / Legend Stages / Raids, Resistenz-Chips, Garantie-Balken, Raid-Shop-Knopf ---- */
+.mode-bar { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.mode-seg { display: inline-flex; gap: 4px; padding: 4px; border-radius: 99px; border: 1px solid var(--edge); background: rgba(8, 10, 24, 0.62); }
+.btn.mode-btn { display: inline-flex; align-items: center; gap: 8px; padding: 8px 18px; border-radius: 99px; border-color: transparent; background: transparent; box-shadow: none; color: var(--tx-1); font: 800 0.8rem var(--font-ui); letter-spacing: 0.12em; text-transform: uppercase; }
+.btn.mode-btn .ic { font-size: 1.1rem; }
+.btn.mode-btn .mode-count { font: 700 0.78rem var(--font-num); color: var(--tx-2); letter-spacing: 0.04em; }
+.btn.mode-btn:hover:not(.active) { color: var(--tx-0); background: rgba(255, 255, 255, 0.06); transform: none; }
+.btn.mode-btn.active { color: var(--tx-dark); background: linear-gradient(180deg, var(--gold-hi), var(--gold)); box-shadow: 0 0 16px -3px var(--gold); }
+.btn.mode-btn.active .mode-count { color: rgba(0, 0, 0, 0.6); }
+.screen.world[data-mode='raids'] .btn.mode-btn.active { background: linear-gradient(180deg, #ffc9a2, var(--ember)); box-shadow: 0 0 16px -3px var(--ember); }
+.mode-side { display: flex; align-items: center; gap: 10px; }
+.mode-side .w-item, .mode-mats { display: inline-flex; align-items: center; gap: 8px; padding: 4px 12px 4px 6px; border-radius: 99px; border: 1px solid var(--edge); background: rgba(8, 10, 24, 0.62); font: 700 1rem var(--font-num); }
+.btn.mode-shop { display: inline-flex; align-items: center; gap: 7px; border-color: color-mix(in srgb, var(--ember) 55%, transparent); }
+.btn.mode-shop .ic { color: var(--ember); }
+.mode-content { display: flex; flex-direction: column; gap: 12px; }
+.mode-info { display: flex; flex-direction: column; gap: 8px; min-width: 0; flex: 1; }
+.mode-info .world-blurb { margin: 0; }
+.mode-host { margin: 0; font: 600 0.78rem var(--font-ui); letter-spacing: 0.08em; text-transform: uppercase; color: var(--tx-2); }
+.mode-drop { margin: 0; display: inline-flex; align-items: center; gap: 8px; font: 700 0.86rem var(--font-ui); color: var(--violet); }
+.mode-drop .ic { font-size: 1.15rem; }
+.affin-row { display: flex; flex-wrap: wrap; gap: 6px 18px; }
+.affin-group { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+.affin-label { font: 800 0.64rem var(--font-ui); letter-spacing: 0.16em; text-transform: uppercase; color: var(--tx-2); }
+.tag-pill.affin.resist { color: #ffb0b0; border-color: rgba(255, 110, 110, 0.4); background: rgba(255, 110, 110, 0.1); }
+.tag-pill.affin.weak { color: #a8ffcf; border-color: rgba(100, 255, 170, 0.4); background: rgba(100, 255, 170, 0.1); }
+.guarantee { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; max-width: 52rem; }
+.guarantee-text { font: 700 0.86rem var(--font-ui); color: var(--ember); }
+.guarantee-bar { display: block; width: 180px; height: 8px; }
+.guarantee-bar .bar-fill { background: linear-gradient(90deg, var(--ember), var(--gold)); }
+.guarantee-count { font: 700 0.8rem var(--font-num); }
+.act-grid.single { grid-template-columns: minmax(0, 420px); }
+.stage-reward.extra { color: var(--violet); }
+.screen.world[data-mode='raids'] .stage-reward.extra { color: var(--ember); }
+.stage-head .affin-row { margin-top: 8px; }
+.stage-head .mode-host, .stage-head .mode-drop { margin-top: 6px; }
+.bar > span.bar-fill { display: block; }
+span.bar.guarantee-bar, span.bar.world-bar { display: block; }

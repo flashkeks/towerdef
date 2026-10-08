@@ -34,6 +34,7 @@ import {
   type UnitsData,
 } from './schema.js';
 import { expandWorld, validateWorlds } from './worlds.js';
+import { expandModes, validateModes } from './modes.js';
 
 const DATA_DIR = fileURLToPath(new URL('../../data/', import.meta.url));
 
@@ -82,6 +83,9 @@ export function validateGameData(d: GameData): void {
   validateCoop(d);
   for (const [sid, s] of Object.entries(d.stages)) validateStage(d, s, sid);
   if (d.worlds && d.waveTemplate) validateWorlds(d.worlds, d.waveTemplate, new Set((d.bosses?.kits ?? []).map((k) => k.id)), enemyIds);
+  if (d.worlds && d.waveTemplate && d.modes) {
+    validateModes(d.modes.legend, d.modes.raids, d.worlds, d.waveTemplate, new Set((d.bosses?.kits ?? []).map((k) => k.id)), new Set(d.units.units.map((u) => u.id)));
+  }
 }
 
 /** Fähigkeiten und Beschwörungen (Runde 9 / P1): Querverweise auf Angriffe und Beschwörungen, eindeutige Fähigkeits-IDs je Unit. */
@@ -227,7 +231,7 @@ export function loadWorlds(): { worlds: WorldFile[]; waveTemplate: WaveTemplate 
   return { worlds, waveTemplate: WaveTemplateSchema.parse(readJson('wave-template.json')) };
 }
 
-/** Legend Stages und Raids (Daten-Gerüst, noch nicht spielbar). */
+/** Legend Stages und Raids (Runde 9 / P3: spielbar; Stages entstehen in `loadGameData` aus den Welten, `modes.ts`). */
 export function loadModes(): { legend: LegendStagesData; raids: RaidsData } {
   return { legend: LegendStagesSchema.parse(readJson('modes/legend-stages.json')), raids: RaidsSchema.parse(readJson('modes/raids.json')) };
 }
@@ -245,6 +249,8 @@ export function loadGameData(): GameData {
   if (base && !stages['infinite']) stages['infinite'] = { ...base, id: 'infinite', name: 'Infinite', infinite: true };
   const { worlds, waveTemplate } = loadWorlds();
   for (const w of worlds) for (const s of expandWorld(w, waveTemplate)) stages[s.id] = StageSchema.parse(s);
+  const modes = loadModes();
+  for (const s of expandModes(modes.legend, modes.raids, worlds, waveTemplate)) stages[s.id] = StageSchema.parse(s);
   const data: GameData = {
     economy: EconomySchema.parse(readJson('economy.json')),
     enemies: EnemiesSchema.parse(readJson('enemies.json')),
@@ -258,6 +264,7 @@ export function loadGameData(): GameData {
     stages,
     worlds,
     waveTemplate,
+    modes,
   };
   validateGameData(data);
   return data;

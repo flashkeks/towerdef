@@ -575,6 +575,9 @@ export function compile(data: GameData, stage: StageData, difficultyId: Difficul
       a = { weakBp: { ...base.weakBp }, resist: { ...base.resist } };
       for (const [k, v] of Object.entries(extra?.weakBp ?? {})) a.weakBp[k] = (a.weakBp[k] ?? 0) + v;
       for (const [k, v] of Object.entries(extra?.resist ?? {})) a.resist[k] = (a.resist[k] ?? 0) + v;
+      // Runde 9 / P3: Stage-Affinitaet (Legend Stages, Raids) gilt fuer alle Gegner der Stage
+      for (const [k, v] of Object.entries(stage.affinity?.weakBp ?? {})) a.weakBp[k] = (a.weakBp[k] ?? 0) + v;
+      for (const [k, v] of Object.entries(stage.affinity?.resist ?? {})) a.resist[k] = (a.resist[k] ?? 0) + v;
       affCache.set(key, a);
     }
     return a;

@@ -14,6 +14,7 @@ import type { Mvp } from './mvp';
 import type { Nav } from './nav';
 import { buildPause, buildResult, replaySlot, type ReplayButtonFactory } from './result';
 import { buildRewardBox } from './reward-box';
+import { buildRaidShop } from './raid-shop';
 import { buildSettings } from './settings-screen';
 import { buildStageSelect } from './stage-select';
 import { buildWorldMap } from './world-map';
@@ -48,7 +49,8 @@ export class Screens {
     shop: () => this.open(buildShop(this.nav)),
     settings: () => this.open(buildSettings(this.nav)),
     credits: () => this.open(buildCredits(this.nav)),
-    world: () => this.open(buildWorldMap(this.nav)),
+    world: (mode) => this.open(buildWorldMap(this.nav, mode)),
+    raidShop: () => this.open(buildRaidShop(this.nav)),
     stage: (id) => this.open(buildStageSelect(this.nav, id)),
     play: (d, stageId) => this.handlers.onStart(d, stageId),
   };

@@ -8,8 +8,11 @@
 import { z } from 'zod';
 import type { MetaEnv } from './env';
 
-/** Version 2 (Runde 8 / P2): AA-Units statt der 14 alten, `OwnedUnit.trait`. Migration 1 -> 2 in `migrate.ts`. */
-export const SCHEMA_VERSION = 2;
+/**
+ * Version 2 (Runde 8 / P2): AA-Units statt der 14 alten, `OwnedUnit.trait`. Migration 1 -> 2 in `migrate.ts`.
+ * Version 3 (Runde 9 / P3): `inventory` (Raid-Marken, Evolutions-Material). Migration 2 -> 3 in `migrate.ts`.
+ */
+export const SCHEMA_VERSION = 3;
 export const MAX_TEAM = 6;
 export const PULL_HISTORY_MAX = 500;
 export const IDEM_MAX = 200;
@@ -114,6 +117,18 @@ export const OrderSchema = z.object({
 });
 export type Order = z.infer<typeof OrderSchema>;
 
+/**
+ * Inventar (Runde 9 / P3): Raid-Waehrung und Evolutions-Material. Bewusst NICHT im Ledger/Wallet (kein Gacha, kein Mock-Shop, nie gekauft mit Geld);
+ * gutgeschrieben werden beide nur mit der Match-Belohnung (Duplikatsperre ueber die Ledger-Buchung desselben Replays) oder im Raid-Shop.
+ */
+export const InventorySchema = z.object({
+  /** Raid-Marken: Waehrung des Raid-Shops */
+  raidMarks: nat,
+  /** Material-ID (`data/materials.json`) -> Menge; Mengen 0 werden gestrichen */
+  materials: z.record(z.string(), nat),
+});
+export type Inventory = z.infer<typeof InventorySchema>;
+
 export const ProfileSchema = z.object({
   schemaVersion: z.literal(SCHEMA_VERSION),
   id: z.string().min(1),
@@ -138,6 +153,8 @@ export const ProfileSchema = z.object({
   counters: z.record(z.string(), nat),
   /** Idempotenz-Tabelle, gekappt auf `IDEM_MAX` */
   idem: z.record(z.string(), IdemEntrySchema),
+  /** Runde 9 / P3: Raid-Marken und Evolutions-Material (Schema 3) */
+  inventory: InventorySchema,
   /** Mock-Shop-Bestellungen (P3, additiv, optional; fehlt = keine) */
   orders: z.record(z.string(), OrderSchema).optional(),
 });
@@ -162,6 +179,7 @@ export function newProfile(env: MetaEnv, opts: { displayName?: string } = {}): P
     flags: { starterGiftClaimed: false },
     counters: {},
     idem: {},
+    inventory: { raidMarks: 0, materials: {} },
   };
 }
 
