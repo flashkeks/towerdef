@@ -19,7 +19,8 @@
     "audio-check": "node scripts/audio-check.mjs",
     "ability-check": "node scripts/ability-check.mjs",
     "perf:r10": "node scripts/perf-r10.mjs",
-    "shots:r10-p2": "node scripts/shots-r10-p2.mjs"
+    "shots:r10-p2": "node scripts/shots-r10-p2.mjs",
+    "audio-check:r10": "node scripts/audio-check-r10.mjs"
   },
   "dependencies": {
     "pixi.js": "^8.22.0",

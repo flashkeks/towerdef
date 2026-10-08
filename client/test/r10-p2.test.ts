@@ -3,6 +3,7 @@ import { RECIPES } from '../src/audio/recipes';
 import { RateLimiter, soundsFor } from '../src/audio/logic';
 import { ELEMENT_SHOT_SOUNDS, shotGain, shotSoundFor } from '../src/audio/logic-match';
 import { MATCH_RECIPES } from '../src/audio/recipes-match';
+import { parseSampleIndex } from '../src/audio/samples';
 import { hitStyle, type HitStyle } from '../src/view/feel';
 import {
   attackLook,
@@ -240,5 +241,16 @@ describe('Faehigkeits-Ansage und Einstellung', () => {
     expect(sanitize({ screenShake: false }).screenShake).toBe(false);
     expect(sanitize({ screenShake: 'nein' }).screenShake).toBe(true);
     expect(sanitize(null).screenShake).toBe(true);
+  });
+});
+
+describe('Klang-Dateien (optional, Liste unter /sfx/index.json)', () => {
+  it('Objekt: ID -> Dateiname; Array: ID -> ID.ogg; Unfug wird verworfen', () => {
+    expect([...parseSampleIndex({ 'hit.fire': 'fire.ogg', crit: 'crit.wav' })]).toEqual([['hit.fire', 'fire.ogg'], ['crit', 'crit.wav']]);
+    expect([...parseSampleIndex(['cutin', 'kill'])]).toEqual([['cutin', 'cutin.ogg'], ['kill', 'kill.ogg']]);
+    expect(parseSampleIndex({ place: '../../etc/passwd', ok: 'a/b.ogg', fine: 'x.ogg' }).size).toBe(1);
+    expect(parseSampleIndex(null).size).toBe(0);
+    expect(parseSampleIndex('quatsch').size).toBe(0);
+    expect(parseSampleIndex([1, {}, 'a b']).size).toBe(0);
   });
 });

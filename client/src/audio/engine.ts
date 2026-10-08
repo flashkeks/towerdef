@@ -9,6 +9,7 @@ import type { HitStyle } from '../view/feel';
 import { crowdGain, effectiveVolume, RateLimiter, soundsFor, type SoundId } from './logic';
 import { shotGain, shotSoundFor } from './logic-match';
 import { MUSIC, RECIPES, type Voice } from './recipes';
+import { loadSamples } from './samples';
 import type { Session } from '../game/session';
 
 /** Gleichzeitige Stimmen (Obergrenze gegen Knackser und CPU-Last). */
@@ -22,6 +23,8 @@ export class AudioEngine {
   private sfxGain: GainNode | null = null;
   private musicGain: GainNode | null = null;
   private noise: AudioBuffer | null = null;
+  /** Optionale Klang-Dateien (`/sfx/index.json`), ersetzen die Synthese je ID. */
+  private samples = new Map<string, AudioBuffer>();
   private voices = 0;
   private recent: number[] = [];
   private readonly limiter = new RateLimiter();
@@ -118,6 +121,7 @@ export class AudioEngine {
       }
       this.applyVolumes();
       this.startMusic();
+      void loadSamples(ctx).then((m) => (this.samples = m));
     }
     if (this.ctx.state === 'suspended') void this.ctx.resume();
   }
@@ -146,6 +150,23 @@ export class AudioEngine {
     const g = gain * crowdGain(this.recent.length);
     this.recent.push(nowMs);
     const t0 = ctx.currentTime + 0.005;
+    const sample = this.samples.get(id);
+    if (sample && this.voices < MAX_VOICES) {
+      const src = ctx.createBufferSource();
+      const env = ctx.createGain();
+      src.buffer = sample;
+      src.playbackRate.value = rate;
+      env.gain.value = g;
+      src.connect(env);
+      env.connect(this.sfxGain);
+      this.voices++;
+      src.onended = () => {
+        this.voices--;
+        env.disconnect();
+      };
+      src.start(t0);
+      return;
+    }
     for (const v of RECIPES[id]) this.voice(v, t0, g, rate);
   }
 
