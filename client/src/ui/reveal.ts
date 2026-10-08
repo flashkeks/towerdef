@@ -166,7 +166,8 @@ class Reveal {
   }
 
   private charge(): void {
-    const k = this.o.charge === 'short' ? 0.55 : 1;
+    // `window.__uiSlow` (Zeitlupe) nur fuer Screenshots: dehnt den Aufbau, damit Farbstufen einzeln zu fotografieren sind
+    const k = (this.o.charge === 'short' ? 0.55 : 1) * (typeof window.__uiSlow === 'number' ? window.__uiSlow : 1);
     const plan = this.plan;
     const total = reduced() ? 400 : Math.round(plan.introMs * k);
     this.layer.dataset.phase = 'charge';
@@ -485,6 +486,8 @@ class Reveal {
 declare global {
   interface Window {
     /** Debug-Zugriff (Screenshots, Playwright): Animation mit frei gewaehltem Ergebnis zeigen. Rechnet nichts, buchbar ist nichts. */
+    /** Zeitlupe fuer den Aufbau (Faktor, nur Screenshots) */
+    __uiSlow?: number;
     __ui?: { openReveal: typeof openReveal; openPrizes: typeof openPrizes; backend: typeof getBackend; celebrate: typeof celebrate };
   }
 }

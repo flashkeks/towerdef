@@ -80,7 +80,7 @@
 .pz-shiny { bottom: 38%; left: 50%; translate: -50% 0; color: #fff; background: linear-gradient(90deg, #ff8de3, #8de0ff, #fff08d, #8dffb4); background-size: 200% 100%; animation: pz-shine 2s linear infinite; color: var(--tx-dark); }
 @keyframes pz-stamp { from { transform: rotate(-20deg) scale(2.4); opacity: 0; } to { transform: rotate(6deg) scale(1); opacity: 1; } }
 @keyframes pz-shine { to { background-position: -200% 0; } }
-.pcard.shiny::after, .unit-tile.shiny::after { content: ''; position: absolute; inset: 0; z-index: 4; pointer-events: none; border-radius: inherit; background: linear-gradient(115deg, transparent 30%, rgba(255, 255, 255, 0.55) 46%, rgba(180, 240, 255, 0.4) 52%, transparent 66%); background-size: 260% 100%; mix-blend-mode: screen; animation: pz-glint 2.2s linear infinite; }
+.pcard.shiny::after, .unit-tile.shiny::after { content: ''; position: absolute; inset: 0; z-index: 4; pointer-events: none; border-radius: inherit; background: linear-gradient(115deg, transparent 38%, rgba(255, 255, 255, 0.4) 47%, rgba(180, 240, 255, 0.28) 51%, transparent 58%); background-size: 260% 100%; mix-blend-mode: screen; animation: pz-glint 2.2s linear infinite; }
 @keyframes pz-glint { from { background-position: 130% 0; } to { background-position: -130% 0; } }
 
 .pz-item { --pz: var(--rare-b); position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 8px; border-radius: 12px; text-align: center; background: radial-gradient(circle at 50% 30%, color-mix(in srgb, var(--pz) 40%, #14172f), #0d1024 78%); box-shadow: inset 0 0 0 2px var(--pz), 0 0 18px -4px var(--pz); }

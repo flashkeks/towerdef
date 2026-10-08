@@ -131,17 +131,26 @@ try {
       const mk = (unitId, rarity, isNew, shiny) => ({ kind: 'unit', unitId, rarity, isNew, ...(shiny ? { shiny: true } : {}) });
       void window.__ui.openPrizes([mk('goku_ssj3', 'Mythic', true), mk('genos', 'Rare', true), mk('krillin', 'Epic', false), mk('jotaro', 'Legendary', true), mk('law', 'Rare', false), mk('luffy', 'Rare', true), mk('naruto', 'Secret', true, true), mk('ichigo', 'Epic', true), { kind: 'currency', currency: 'crystals', amount: 300 }, mk('tanjiro', 'Rare', false)]);
     });
+  await page.evaluate(() => (window.__uiSlow = 4)); // Zeitlupe, damit jede Farbstufe auf ein Bild passt
   await secret();
-  await sleep(350);
+  await sleep(300);
   await shot(page, 'secret-1-charge-blue');
-  await sleep(750);
-  await shot(page, 'secret-2-charge-purple');
-  await sleep(750);
-  await shot(page, 'secret-3-charge-gold');
-  await sleep(850);
-  await shot(page, 'secret-4-charge-rainbow-rumble');
-  await page.waitForSelector('.reveal[data-phase="cards"]', { timeout: 8000 });
+  await page.waitForSelector('.reveal[data-stage="epic"]');
   await sleep(250);
+  await shot(page, 'secret-2-charge-purple');
+  await page.waitForSelector('.reveal[data-stage="legendary"]');
+  await sleep(250);
+  await shot(page, 'secret-3-charge-gold');
+  await page.waitForSelector('.reveal[data-stage="secret"]');
+  await sleep(300);
+  await shot(page, 'secret-4-charge-rainbow');
+  await page.waitForSelector('.reveal.rumble', { timeout: 15000 });
+  await sleep(600);
+  await shot(page, 'secret-4b-charge-rumble');
+  await page.evaluate(() => (window.__uiSlow = 1));
+  await page.mouse.click(800, 120); // jetzt skippen: Durchbruch mit Blitz
+  await page.waitForSelector('.reveal[data-phase="cards"]', { timeout: 8000 });
+  await sleep(150);
   await shot(page, 'secret-5-burst');
   await sleep(1500);
   await shot(page, 'secret-6-cards');
