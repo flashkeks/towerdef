@@ -66,7 +66,8 @@ Commits: 12 auf dev seit dem Auftrag (af9aa71)
 ```
 
 **Offene Fragen an die Menschen (Runde 8, mit Empfehlung):**
-- **Welt-Freischaltung:** Welt 2 und 3 öffnen nach Act 3 der Vorwelt (AA eher Act 6). Empfehlung: so lassen, `unlock.afterAct` je Welt-Datei ist ein Einzeiler.
+- ~~Welt-Freischaltung~~ **entschieden (Max, 08.10.2026): wie AA nach Act 6 der Vorwelt** (gegen die Empfehlung). Umsetzen in Runde 9: `unlock.afterAct` = 6 je Welt-Datei.
+- Übrige offene Fragen Runde 8: Empfehlung „so lassen“ gilt, bis Max etwas anderes sagt.
 - **Raten und Kosten** (Standard Mythic 1,3 % statt AA 0,25 %, Evolution Gold + Crystals statt AA-Items): Startwerte. Empfehlung: erst nach dem Spielen anfassen.
 - **Runde-7-Spielstände** werden migriert (alte Units gegen Crystals erstattet, Team leer, Starter-Units neu, ohne zweite 450 Crystals). Empfehlung: so lassen.
 - **Neue Units ohne Start-Trait** (erst per Reroll). Empfehlung: so lassen.
