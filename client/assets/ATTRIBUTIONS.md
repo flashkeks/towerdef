@@ -37,7 +37,7 @@ offene Spur in `docs/STATUS.md`). Stattdessen gibt es **keine Audiodateien im Re
 
 | Quelle | Lizenz | Urheber | Abruf | Bearbeitung |
 |---|---|---|---|---|
-| `src/audio/recipes.ts` (26 Klang-Rezepte, 1 Musik-Loop), `src/audio/engine.ts` | eigen (Projektlizenz des Repos) | Claude (Anthropic) im Auftrag von Max/Flashkeks | entf. (nicht heruntergeladen) | Synthese zur Laufzeit, keine Fremdsamples |
+| `src/audio/recipes.ts` (26 Klang-Rezepte, 1 Musik-Loop), `src/audio/recipes-ui.ts` (Runde 10, P3: 27 Menü-/Beschwör-Klänge, 4 Menü-Stimmungen), `src/audio/engine.ts` | eigen (Projektlizenz des Repos) | Claude (Anthropic) im Auftrag von Max/Flashkeks | entf. (nicht heruntergeladen) | Synthese zur Laufzeit, keine Fremdsamples |
 
 Klänge (alle **eigen**): `place`, `upgrade`, `sell`, `error`, `hit.slash`, `hit.tracer`, `hit.shell`, `hit.bolt`, `hit.blast`, `hit.cone`, `hit.line`, `kill`, `leak`, `wave`, `frost`, `nuke`,
 `bossEnter`, `bossPhase`, `bossWarn`, `bossCast`, `bossBreak`, `windowOpen`, `windowClose`, `wardBreak`, `win`, `lose`. Musik: ein erzeugter a-Moll-Loop (8 Takte, 84 BPM: Bass, Arpeggio, Fläche).
