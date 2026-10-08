@@ -8,6 +8,7 @@ import { getSettings, readJson, writeJson } from '../ui/settings';
 import type { HitStyle } from '../view/feel';
 import { crowdGain, effectiveVolume, RateLimiter, shotSound, soundsFor, type SoundId } from './logic';
 import { MUSIC, RECIPES, type Voice } from './recipes';
+import { MENU_THEMES, UI_RECIPES, type MenuThemeId, type MusicTheme, type UiSoundId } from './recipes-ui';
 import type { Session } from '../game/session';
 
 /** Gleichzeitige Stimmen (Obergrenze gegen Knackser und CPU-Last). */
@@ -15,6 +16,12 @@ const MAX_VOICES = 28;
 const MUTE_KEY = 'dw.muted';
 
 type Ctor = typeof AudioContext;
+
+/** Das Lied des Matches (`MUSIC` aus `recipes.ts`) im Format der Menue-Stimmungen. */
+const MATCH_THEME: MusicTheme = { ...MUSIC, bass: [...MUSIC.bass], chords: MUSIC.chords.map((c) => [...c]), pattern: [...MUSIC.pattern], arpWave: 'square', arpVol: 0.05, arpLp: 1500, arpOct: 12, padVol: 0.07 };
+
+/** Wo der Spieler gerade ist: Match = altes Lied, Menue = ruhige Stimmung je Bildschirm. */
+export type MusicScene = 'match' | 'menu';
 
 export class AudioEngine {
   private ctx: AudioContext | null = null;
@@ -32,13 +39,21 @@ export class AudioEngine {
   private musicTimer: ReturnType<typeof setInterval> | null = null;
   private musicNext = 0;
   private musicStep = 0;
+  /** Runde 10 / P3: Menue-Musik. Alle Tonlagen laufen ueber `sceneGain`, damit ein Stimmungswechsel weich ueberblendet. */
+  private sceneGain: GainNode | null = null;
+  private scene: MusicScene = 'menu';
+  private menuTheme: MenuThemeId = 'dusk';
+  private activeTheme: MusicTheme = MENU_THEMES.dusk;
+  private themeSwitch: ReturnType<typeof setTimeout> | null = null;
 
   constructor(bus: GameBus, onShot: (fn: (style: HitStyle) => void) => () => void) {
     this.muted = readJson(MUTE_KEY) === true;
     bus.onRunStart((s) => {
       this.session = s;
       this.limiter.reset();
+      this.setScene('match');
     });
+    bus.onRunEnd(() => this.setScene('menu'));
     bus.onEvents((events) => {
       for (const e of events) for (const id of soundsFor(e)) this.play(id);
     });
@@ -103,6 +118,8 @@ export class AudioEngine {
       limiter.ratio.value = 8;
       limiter.attack.value = 0.003;
       limiter.release.value = 0.12;
+      this.sceneGain = ctx.createGain();
+      this.sceneGain.connect(this.musicGain);
       this.sfxGain.connect(limiter);
       this.musicGain.connect(limiter);
       limiter.connect(ctx.destination);
@@ -219,13 +236,15 @@ export class AudioEngine {
       if (ctx) this.musicNext = Math.max(this.musicNext, ctx.currentTime + 0.1);
       return;
     }
-    const silent = this.muted || effectiveVolume(getSettings(), 'music', false) <= 0;
-    const eighth = 60 / MUSIC.bpm / 2;
+    const st = getSettings();
+    const silent = this.muted || effectiveVolume(st, 'music', false) <= 0 || (this.scene === 'menu' && !st.menuMusic);
+    const th = this.activeTheme;
+    const eighth = 60 / th.bpm / 2;
     while (this.musicNext < ctx.currentTime + 0.5) {
       if (silent) this.musicNext = Math.max(this.musicNext, ctx.currentTime + 0.05);
       else this.note(this.musicNext, this.musicStep);
       this.musicNext += eighth;
-      this.musicStep = (this.musicStep + 1) % (MUSIC.bass.length * 8);
+      this.musicStep = (this.musicStep + 1) % (th.bass.length * 8);
     }
   }
 
@@ -244,21 +263,80 @@ export class AudioEngine {
     env.gain.exponentialRampToValueAtTime(0.0001, start + dur);
     o.connect(f);
     f.connect(env);
-    env.connect(this.musicGain);
+    env.connect(this.sceneGain ?? this.musicGain);
     o.start(start);
     o.stop(start + dur + 0.03);
     o.onended = () => env.disconnect();
   }
 
   private note(at: number, step: number): void {
-    const bar = Math.floor(step / 8);
+    const th = this.activeTheme;
+    const bar = Math.floor(step / 8) % th.bass.length;
     const i = step % 8;
-    const hz = (semi: number): number => MUSIC.rootHz * Math.pow(2, semi / 12);
-    const bass = MUSIC.bass[bar];
-    if (i === 0 || i === 4) this.tone('triangle', hz(bass), at, 0.5, 0.2, 700);
-    if (i === 0) this.tone('sine', hz(bass + 19), at, 2.6, 0.07, 1800, 0.5);
-    const arp = MUSIC.chords[bar][MUSIC.pattern[i]];
-    this.tone('square', hz(bass + arp + 12), at, 0.2, 0.05, 1500);
+    const hz = (semi: number): number => th.rootHz * Math.pow(2, semi / 12);
+    const bass = th.bass[bar]!;
+    const soft = this.scene === 'menu';
+    if (i === 0 || i === 4) this.tone('triangle', hz(bass), at, soft ? 0.9 : 0.5, soft ? 0.15 : 0.2, 700);
+    if (i === 0) this.tone('sine', hz(bass + 19), at, 2.6, th.padVol, 1800, 0.5);
+    const arp = th.chords[bar]![th.pattern[i]!]!;
+    this.tone(th.arpWave, hz(bass + arp + th.arpOct), at, soft ? 0.5 : 0.2, th.arpVol, th.arpLp);
+  }
+
+  // ---- Menue-Ton und Stimmungen (Runde 10, P3) -------------------------------------------------------------------------
+
+  /** Menue-/Beschwoer-Klang spielen. Drosselung macht der Aufrufer (`ui-audio.ts`), hier nur Lautstaerke und Stimmenlimit. */
+  playUi(id: UiSoundId, gain = 1, rate = 1): void {
+    this.playVoices(UI_RECIPES[id], gain, rate);
+  }
+
+  /** Frei zusammengesetzte Stimmen (z. B. der Beschwoer-Aufstieg, dessen Dauer vom Zug abhaengt). */
+  playVoices(voices: readonly Voice[], gain = 1, rate = 1): void {
+    const ctx = this.ctx;
+    if (!ctx || !this.sfxGain || ctx.state !== 'running' || this.muted) return;
+    if (effectiveVolume(getSettings(), 'sfx', false) <= 0) return;
+    const t0 = ctx.currentTime + 0.005;
+    for (const v of voices) this.voice(v, t0, gain, rate);
+  }
+
+  /** Match oder Menue: wechselt das Lied (weiche Ueberblendung). */
+  setScene(scene: MusicScene): void {
+    if (scene === this.scene && this.activeTheme === (scene === 'match' ? MATCH_THEME : MENU_THEMES[this.menuTheme])) return;
+    this.scene = scene;
+    this.switchTheme(scene === 'match' ? MATCH_THEME : MENU_THEMES[this.menuTheme]);
+  }
+
+  /** Stimmung des Menues je Bildschirm; im Match ohne Wirkung (merkt sich nur fuer danach). */
+  setMenuTheme(id: MenuThemeId): void {
+    if (id === this.menuTheme) return;
+    this.menuTheme = id;
+    if (this.scene === 'menu') this.switchTheme(MENU_THEMES[id]);
+  }
+
+  private switchTheme(next: MusicTheme): void {
+    if (this.themeSwitch) clearTimeout(this.themeSwitch);
+    const ctx = this.ctx;
+    if (!ctx || !this.sceneGain) {
+      this.activeTheme = next;
+      this.musicStep = 0;
+      return;
+    }
+    const g = this.sceneGain.gain;
+    g.cancelScheduledValues(ctx.currentTime);
+    g.setTargetAtTime(0, ctx.currentTime, 0.12);
+    this.themeSwitch = setTimeout(() => {
+      this.themeSwitch = null;
+      this.activeTheme = next;
+      this.musicStep = 0;
+      if (this.ctx) {
+        this.musicNext = this.ctx.currentTime + 0.1;
+        this.sceneGain?.gain.cancelScheduledValues(this.ctx.currentTime);
+        this.sceneGain?.gain.setTargetAtTime(1, this.ctx.currentTime, 0.5);
+      }
+    }, 450);
+  }
+
+  get debugScene(): { scene: MusicScene; theme: string } {
+    return { scene: this.scene, theme: this.scene === 'match' ? 'match' : this.menuTheme };
   }
 }
 
