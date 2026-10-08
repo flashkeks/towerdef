@@ -22,6 +22,14 @@ try {
   await page.goto(url);
   await page.waitForSelector('.lobby:not(.loading)');
   await page.locator('.starter-claim').click();
+  await page.waitForSelector('.reveal');
+  await page.locator('.reveal .rv-skip').first().click();
+  await page.waitForSelector('.reveal[data-phase="cards"]');
+  await page.locator('.reveal .rv-all').click();
+  await page.waitForSelector('.rv-summary', { timeout: 15000 });
+  await sleep(900);
+  await page.locator('.reveal-done').click();
+  await page.waitForSelector('.reveal', { state: 'detached' });
   await page.waitForSelector('.starter-card.done');
   await sleep(600);
   await page.evaluate(({ owned }) => {
@@ -80,14 +88,28 @@ try {
   await page.locator('.banner-tab[data-banner="legends"]').click();
   await sleep(500);
   await shot(page, 'banner-legends');
+  // 10er-Zug im neuen Beschwoeren (P3): Aufbau ueberspringen, Karten aufdecken lassen, Uebersicht fotografieren
   await page.waitForSelector('.pull-btn[data-count="10"]');
   await page.locator('.pull-btn[data-count="10"]').click();
   await page.waitForSelector('.reveal');
-  await sleep(500);
-  await page.mouse.click(800, 60);
-  await page.waitForSelector('.reveal.finished');
-  await sleep(400);
+  await page.locator('.reveal .rv-skip').first().click();
+  await page.waitForSelector('.reveal[data-phase="cards"]');
+  await sleep(600);
+  await shot(page, 'legends-pull10-cards');
+  await page.locator('.reveal .rv-all').click();
+  await page.waitForSelector('.rv-summary', { timeout: 15000 });
+  await sleep(900);
   await shot(page, 'legends-pull10');
+  await page.locator('.reveal-done').click();
+  await page.waitForSelector('.reveal', { state: 'detached' });
+  // Einzelzug: grosse Enthuellung mit echtem Namen und Serie
+  await page.waitForSelector('.pull-btn[data-count="1"]');
+  await page.locator('.pull-btn[data-count="1"]').click();
+  await page.waitForSelector('.reveal');
+  await page.locator('.reveal .rv-skip').first().click();
+  await page.waitForSelector('.reveal[data-phase="single"]');
+  await sleep(1500);
+  await shot(page, 'reveal-single');
   console.log('ok', ids.length, 'Units der Serien');
 } finally {
   await browser.close();
