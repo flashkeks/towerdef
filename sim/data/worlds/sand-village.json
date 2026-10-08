@@ -107,7 +107,67 @@
       "lift": 0
     },
     "flowers": false,
-    "background": "#2a1d10"
+    "background": "#2a1d10",
+    "board": {
+      "ground": {
+        "pattern": "sand",
+        "base": "#e0bf7e",
+        "dark": "#b98f4c",
+        "light": "#f3d9a0",
+        "accent": "#c9a05a"
+      },
+      "path": {
+        "pattern": "flagstone",
+        "base": "#b98450",
+        "edge": "#64401d",
+        "light": "#dba873"
+      },
+      "deco": [
+        {
+          "kind": "cactus",
+          "color": "#5d8a46",
+          "weight": 2
+        },
+        {
+          "kind": "rock",
+          "color": "#c58a52",
+          "weight": 2
+        },
+        {
+          "kind": "house",
+          "color": "#c99a62",
+          "color2": "#8a5a2e",
+          "weight": 2
+        },
+        {
+          "kind": "pillar",
+          "color": "#d8b27a"
+        }
+      ],
+      "scatter": [
+        {
+          "kind": "pebbles",
+          "color": "#a87d44",
+          "density": 0.15
+        },
+        {
+          "kind": "bones",
+          "color": "#f0e6cc",
+          "density": 0.04
+        },
+        {
+          "kind": "tufts",
+          "color": "#b49a52",
+          "density": 0.12
+        }
+      ],
+      "light": {
+        "tint": "#ffc070",
+        "tintAlpha": 0.18,
+        "vignette": 0.45,
+        "ambient": "dust"
+      }
+    }
   },
   "hpBp": 13000,
   "elementOffset": 2,

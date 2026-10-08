@@ -96,8 +96,8 @@
       "lift": 0.0
     },
     "hill": {
-      "top": "#7d5e3c",
-      "topLight": "#a07c52",
+      "top": "#8c6a44",
+      "topLight": "#b8915e",
       "wall": "#4a3522",
       "wallDark": "#30221a"
     },
@@ -112,7 +112,68 @@
       "lift": 0
     },
     "flowers": false,
-    "background": "#1a120c"
+    "background": "#1a120c",
+    "board": {
+      "ground": {
+        "pattern": "dirt",
+        "base": "#6e5236",
+        "dark": "#45321f",
+        "light": "#946f48"
+      },
+      "path": {
+        "pattern": "dirt",
+        "base": "#b8905a",
+        "edge": "#3a2816",
+        "light": "#d9b57d"
+      },
+      "deco": [
+        {
+          "kind": "mound",
+          "color": "#8a6340",
+          "color2": "#2e2014",
+          "weight": 3
+        },
+        {
+          "kind": "rock",
+          "color": "#6f5a45",
+          "weight": 2
+        },
+        {
+          "kind": "mushroom",
+          "color": "#c8603a",
+          "color2": "#f2d7b0",
+          "weight": 2
+        },
+        {
+          "kind": "stalagmite",
+          "color": "#7a6248"
+        }
+      ],
+      "scatter": [
+        {
+          "kind": "pebbles",
+          "color": "#8a6c48",
+          "density": 0.18
+        },
+        {
+          "kind": "bones",
+          "color": "#e8dcc0",
+          "density": 0.05
+        },
+        {
+          "kind": "moss",
+          "color": "#6a8a3a",
+          "density": 0.06
+        }
+      ],
+      "light": {
+        "tint": "#ff9a50",
+        "tintAlpha": 0.14,
+        "vignette": 0.6,
+        "glow": "#ffcf80",
+        "ambient": "spores"
+      }
+    }
   },
   "hpBp": 17000,
   "elementOffset": 1,

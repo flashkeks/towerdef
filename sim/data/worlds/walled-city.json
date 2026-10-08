@@ -72,7 +72,65 @@
       "alpha": 0.45
     },
     "flowers": false,
-    "background": "#1d1a18"
+    "background": "#1d1a18",
+    "board": {
+      "ground": {
+        "pattern": "flagstone",
+        "base": "#8f8d84",
+        "dark": "#5e5b54",
+        "light": "#b5b2a6"
+      },
+      "path": {
+        "pattern": "cobble",
+        "base": "#b6a98f",
+        "edge": "#463e33",
+        "light": "#d8ccb2"
+      },
+      "deco": [
+        {
+          "kind": "house",
+          "color": "#cfc4ac",
+          "color2": "#9a4a3a",
+          "weight": 3
+        },
+        {
+          "kind": "barrel",
+          "color": "#7a5434"
+        },
+        {
+          "kind": "crate",
+          "color": "#8b6a3f"
+        },
+        {
+          "kind": "pillar",
+          "color": "#a8a398",
+          "weight": 2
+        }
+      ],
+      "scatter": [
+        {
+          "kind": "pebbles",
+          "color": "#6f6a60",
+          "density": 0.2
+        },
+        {
+          "kind": "leaves",
+          "color": "#9b7a4a",
+          "density": 0.1
+        },
+        {
+          "kind": "puddle",
+          "color": "#6a7f94",
+          "density": 0.06
+        }
+      ],
+      "light": {
+        "tint": "#ffd9a0",
+        "tintAlpha": 0.14,
+        "vignette": 0.5,
+        "ambient": "dust"
+      }
+    }
   },
   "hpBp": 11000,
   "elementOffset": 3,
