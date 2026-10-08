@@ -4,9 +4,28 @@ Arbeitsauftrag: [`/run.md`](../run.md) (**Runde 10, neu gefasst 08.10.2026 nach 
 Frühere Aufträge: [archiv/run-runde1.md](archiv/run-runde1.md), [archiv/run-runde2.md](archiv/run-runde2.md), [archiv/run-runde3.md](archiv/run-runde3.md), [archiv/run-runde4.md](archiv/run-runde4.md), [archiv/run-runde5.md](archiv/run-runde5.md), [archiv/run-runde6.md](archiv/run-runde6.md), [archiv/run-runde7.md](archiv/run-runde7.md), [archiv/run-runde8-verworfen.md](archiv/run-runde8-verworfen.md), [archiv/run-runde8.md](archiv/run-runde8.md), [archiv/run-runde9.md](archiv/run-runde9.md).
 
 
+## Runde 10 (echte Figuren, Match-Grafik, Beschwören, Karten je Welt)
+
+Letzte Aktualisierung: 2026-10-08 (Runde 10 läuft, P0 erledigt)
+
+**Rückmeldung Max zu Runde 9 (08.10.2026):** Interface gut; Summonen „ungeil“, mehr Ton und Effekte; Daily Pack zeigt nur den ersten Gewinn; Roblox-Bilder raus, echte Bilder; echte, bekannte Namen plus Promis; im Match nur Buchstaben auf den Units, Units und Attacken brauchen Design.
+
+| Paket | Inhalt | Status | Agent (Modell) | Was man jetzt sehen kann |
+|---|---|---|---|---|
+| P0 | Status, Raid-Units aus dem Banner-Pool | **erledigt** | Hauptsitzung | Die 11 Garantie-Units der Raids (`guarantee.unit` in `sim/data/modes/raids.json`: vegeta_majin, naruto_pts, trunks, bambietta, chuya, frieza_mecha, stain, feitan, rengoku, akaza_unit …) tragen `raidOnly` im Meta-Katalog und liegen in **keinem** Banner-Pool mehr (wie AA `hideFromBanner`); zu bekommen nur über Raid-Garantie und Raid-Shop. Besessene bleiben (Test `meta/test/raid-units-r10.test.ts`). Banner-Raten unverändert (Pools sind gleichverteilt, nur die Einzelrate der übrigen steigt leicht). Stand vor Runde 10: sim 381, meta 168 → 171, client 252 |
+| P1 | Echte Figuren: `figuren.json`, Manifest mit `anilistQuery`, Anzeige Name + Serie, Promi-Banner „Legends of Earth“ | läuft (Phase A: Tabelle + Manifest) | 1 × Sonnet | – |
+| P2 | Match: Porträt-Figuren, Angriffs-Grafik je Form × Element, Treffer/Tod, Fähigkeits-Ansage, Gegner-Figuren, Ton | läuft | 1 × Sonnet | – |
+| P3 | Beschwören neu, Mehrfach-Ergebnisse durchklickbar, Interaktions-Durchgang, Menü-Ton | läuft | 1 × Sonnet | – |
+| P4 | Karten-Grafik je Welt | wartet (startet, sobald P1/P2/P3 frei) | 1 × Sonnet | – |
+| P5 | Abschluss | offen | Hauptsitzung | – |
+
+Plan: P1, P2, P3 parallel in lokalen Worktrees (max. 3 Agenten, nur Sonnet, Zwischenstand spätestens alle 30 min), P1 liefert zuerst `figuren.json` + Manifest (sofort nach `dev`, Meldung unten), P4 danach. Screenshots in `client/docs/r10/`.
+
+**Für die Homelab-Seite (Runde 10):** Manifest mit `anilistQuery` folgt, sobald P1 Phase A steht (Commit wird hier eingetragen). Nichts deployen ohne Ansage von Max.
+
 ## Runde 9 (Fähigkeiten, 10 Welten, Legend/Raids, Interface)
 
-Letzte Aktualisierung: 2026-10-08 (Runde 9 abgeschlossen, P5)
+Letzte Aktualisierung: 2026-10-08 (Runde 9 abgeschlossen, P5; Raid-Units aus dem Banner-Pool in Runde 10 / P0 erledigt)
 
 | Paket | Inhalt | Status | Agent (Modell) | Was man jetzt sehen kann |
 |---|---|---|---|---|

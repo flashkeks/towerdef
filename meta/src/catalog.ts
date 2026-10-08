@@ -1,4 +1,5 @@
 import evolutionsJson from '../data/aa/evolutions.json';
+import raidsJson from '../../sim/data/modes/raids.json';
 
 /**
  * Unit-Katalog fuer die Meta-Schicht: nur ID und Seltenheit, gelesen aus `sim/data/units/*.json` (einzige Quelle, alle Dateien:
@@ -20,6 +21,11 @@ export interface CatalogUnit {
   evolvedOnly: boolean;
   /** Begrenzte/Event-/Rate-up-Unit (AA `limited`, `rateupBannerOnly`, `hideFromBanner`): nur im Special-Banner. */
   special: boolean;
+  /**
+   * Raid-Unit (Runde 10 / P0, Entscheidung Max 08.10.2026, wie AA `hideFromBanner`): garantierte Unit eines Raids
+   * (`guarantee.unit` in `sim/data/modes/raids.json`). Nie im Banner, nur ueber Raid-Garantie und Raid-Shop. Wer sie schon besitzt, behaelt sie.
+   */
+  raidOnly: boolean;
   /** Crossover-Figur (Runde 8 / P6, `source: "custom"`): nur im Crossover-Banner (Pool `crossover`), nicht im Standard- oder Special-Pool. */
   crossover: boolean;
 }
@@ -40,6 +46,11 @@ const files = import.meta.glob('../../sim/data/units/*.json', { eager: true, imp
 
 const EVO_TARGETS = new Set((evolutionsJson as { recipes: { to: { id: string }[] }[] }).recipes.flatMap((r) => r.to.map((t) => t.id)));
 
+/** Raid-Units: Garantie-Units der Raids (Rohdaten, ohne Schema, damit catalog.ts keine Sim-Abhaengigkeit bekommt). */
+export const RAID_UNIT_IDS: ReadonlySet<string> = new Set(
+  ((raidsJson as { raids?: { guarantee?: { unit?: string } | null }[] }).raids ?? []).flatMap((r) => (r.guarantee?.unit ? [r.guarantee.unit] : [])),
+);
+
 const seen = new Set<string>();
 export const UNIT_CATALOG: readonly CatalogUnit[] = Object.keys(files)
   .sort()
@@ -58,6 +69,7 @@ export const UNIT_CATALOG: readonly CatalogUnit[] = Object.keys(files)
       evolvedFrom: u.evolvedFrom ?? null,
       evolvedOnly: !!u.evolvedFrom && EVO_TARGETS.has(u.id),
       special: !crossover && !!(u.limited || u.rateupBannerOnly || u.hideFromBanner),
+      raidOnly: RAID_UNIT_IDS.has(u.id),
       crossover,
     };
   });
@@ -72,12 +84,12 @@ export const unitsOfRarity = (r: Rarity): string[] => UNIT_CATALOG.filter((u) =>
  * `summonable` = Standard-Pool (kein Limited/Event/Rate-up, keine Evolution, nicht ausgeblendet);
  * `special` = die uebrigen nicht entwickelten, nicht ausgeblendeten Units (begrenzt, Event, Rate-up);
  * `crossover` = die Crossover-Figuren (Pop-Kultur/Memes, `source: "custom"`), nur dort;
- * `all` = alles Ziehbare (Union). Entwickelte Formen und ausgeblendete Units sind nie ziehbar.
+ * `all` = alles Ziehbare (Union). Entwickelte Formen, ausgeblendete Units und Raid-Units (`raidOnly`) sind nie ziehbar.
  */
 export type PoolName = 'summonable' | 'special' | 'crossover' | 'all';
 const inPool = (pool: PoolName, u: CatalogUnit): boolean =>
   pool === 'all' || (pool === 'crossover' ? u.crossover : !u.crossover && (pool === 'special') === u.special);
 export const poolOfRarity = (pool: PoolName, r: Rarity): string[] =>
-  UNIT_CATALOG.filter((u) => u.rarity === r && !u.hidden && !u.evolvedOnly && inPool(pool, u)).map((u) => u.id);
+  UNIT_CATALOG.filter((u) => u.rarity === r && !u.hidden && !u.evolvedOnly && !u.raidOnly && inPool(pool, u)).map((u) => u.id);
 export const nameOf = (id: string): string => UNIT_CATALOG.find((u) => u.id === id)?.name ?? id;
 export const rarityOf = (id: string): Rarity | null => UNIT_CATALOG.find((u) => u.id === id)?.rarity ?? null;

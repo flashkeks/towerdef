@@ -28,6 +28,7 @@ import {
   newProfile,
   nameOf,
   poolOfRarity,
+  RAID_UNIT_IDS,
   pull,
   recipeFor,
   rerollCost,
@@ -81,7 +82,7 @@ describe('Katalog (AA)', () => {
       const u = UNIT_CATALOG.find((x) => x.id === id)!;
       expect(u.hidden || [...poolOfRarity('summonable', u.rarity), ...poolOfRarity('special', u.rarity), ...poolOfRarity('crossover', u.rarity)].includes(id), id).toBe(true);
     }
-    const reachable = new Set([...RARITIES.flatMap((r) => [...poolOfRarity('summonable', r), ...poolOfRarity('special', r), ...poolOfRarity('crossover', r)]), ...allRecipes().flatMap((r) => r.to.map((t) => t.id))]);
+    const reachable = new Set([...RARITIES.flatMap((r) => [...poolOfRarity('summonable', r), ...poolOfRarity('special', r), ...poolOfRarity('crossover', r)]), ...allRecipes().flatMap((r) => r.to.map((t) => t.id)), ...RAID_UNIT_IDS]);
     for (const u of UNIT_CATALOG) expect(reachable.has(u.id) || u.hidden, u.id).toBe(true);
   });
 });
