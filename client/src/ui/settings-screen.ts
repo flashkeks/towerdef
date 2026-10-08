@@ -101,6 +101,13 @@ export function buildSettings(nav: Nav): HTMLElement {
   check.checked = getSettings().damageNumbers;
   check.addEventListener('change', () => setSetting('damageNumbers', check.checked));
   dmg.append(check, h('span', 'switch-knob'));
+  const shk = h('label', 'switch');
+  const shkCheck = h('input');
+  shkCheck.type = 'checkbox';
+  shkCheck.dataset.setting = 'screenShake';
+  shkCheck.checked = getSettings().screenShake;
+  shkCheck.addEventListener('change', () => setSetting('screenShake', shkCheck.checked));
+  shk.append(shkCheck, h('span', 'switch-knob'));
   const btns = h('div', 'speeds');
   const mark = (): void => btns.querySelectorAll('button').forEach((b) => b.classList.toggle('active', b.dataset.speed === String(getSettings().defaultSpeed)));
   for (const s of [1, 2, 3] as const) {
@@ -114,7 +121,7 @@ export function buildSettings(nav: Nav): HTMLElement {
     btns.append(b);
   }
   mark();
-  play.body.append(row(t('settings.damageNumbers'), t('settings.damageNumbers.sub'), dmg, 'sword'), row(t('settings.speed'), t('settings.speed.sub'), btns, 'fast'));
+  play.body.append(row(t('settings.damageNumbers'), t('settings.damageNumbers.sub'), dmg, 'sword'), row(t('settings.shake'), t('settings.shake.sub'), shk, 'bolt'), row(t('settings.speed'), t('settings.speed.sub'), btns, 'fast'));
 
   const help = panel({ title: t('settings.group.help'), tone: 'ember', tag: 'section' });
   const hintBtn = h('button', 'btn reset-hints', t('settings.hints.btn'));

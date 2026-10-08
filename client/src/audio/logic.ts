@@ -4,8 +4,11 @@
  */
 import type { SimEvent } from '../sim';
 import { cueFor, type HitStyle } from '../view/feel';
+import { LIMITS_MATCH, type MatchSoundId } from './logic-match';
 
-export type SoundId =
+export type SoundId = BaseSoundId | MatchSoundId;
+
+export type BaseSoundId =
   | 'place'
   | 'upgrade'
   | 'sell'
@@ -71,6 +74,7 @@ export const LIMITS: Record<string, LimitRule> = {
   upgrade: { gapMs: 60 },
   sell: { gapMs: 60 },
   leak: { gapMs: 120, burst: { count: 3, windowMs: 800 } },
+  ...LIMITS_MATCH,
 };
 /** Je Stil ein eigener Mindestabstand innerhalb des Treffer-Topfs (zwei Blaster-Schuesse dicht hintereinander sind ein Klang). */
 export const HIT_STYLE_GAP_MS = 90;
@@ -155,7 +159,7 @@ export function soundsFor(e: SimEvent): SoundId[] {
     case 'wardBreak':
       return ['wardBreak'];
     case 'ability':
-      return c.auto ? [] : ['windowOpen'];
+      return c.auto ? [] : ['cutin'];
     case 'summon':
       return ['place'];
     default:

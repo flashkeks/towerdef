@@ -46,6 +46,13 @@ export class Renderer {
       resolution: Math.min(window.devicePixelRatio || 1, 2),
       autoDensity: true,
     });
+    this.ctx.figures.init(this.app.renderer);
+    // Schriften fuer Bitmap-Texte (Zahlen, Boss-Namen) vor dem ersten Gebrauch laden, sonst backt Pixi die Ersatzschrift ein
+    try {
+      await Promise.race([Promise.all([document.fonts.load('700 32px Rajdhani'), document.fonts.load('700 32px Cinzel')]), new Promise((r) => setTimeout(r, 1500))]);
+    } catch {
+      /* ohne Schrift weiter */
+    }
     this.app.canvas.classList.add('board');
     host.appendChild(this.app.canvas);
     // Reihenfolge von unten nach oben
@@ -74,6 +81,8 @@ export class Renderer {
     if (tile !== this.ctx.tile) {
       this.ctx.tile = tile;
       this.ctx.version++;
+      this.entities.reset();
+      this.ctx.figures.clear();
       this.resize();
       this.map.draw();
     }

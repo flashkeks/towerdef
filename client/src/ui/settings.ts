@@ -14,11 +14,13 @@ export interface Settings {
   menuMusic: boolean;
   /** Schadenszahlen ueber den Gegnern */
   damageNumbers: boolean;
+  /** Bildschirmruckeln bei grossen Treffern, Faehigkeiten und Bossen (Runde 10); aus = Bild bleibt ruhig */
+  screenShake: boolean;
   /** Start-Geschwindigkeit einer neuen Runde */
   defaultSpeed: 1 | 2 | 3;
 }
 
-export const DEFAULT_SETTINGS: Readonly<Settings> = { master: 0.8, sfx: 1, music: 0.6, menuMusic: true, damageNumbers: true, defaultSpeed: 1 };
+export const DEFAULT_SETTINGS: Readonly<Settings> = { master: 0.8, sfx: 1, music: 0.6, menuMusic: true, damageNumbers: true, screenShake: true, defaultSpeed: 1 };
 
 export const SETTINGS_KEY = 'dw.settings';
 /** Schluessel der Erst-Start-Hinweise (P1 legt sie dort ab, `resetHints` loescht sie). */
@@ -62,6 +64,7 @@ export function sanitize(raw: unknown): Settings {
     music: clamp01(o.music, d.music),
     menuMusic: typeof o.menuMusic === 'boolean' ? o.menuMusic : d.menuMusic,
     damageNumbers: typeof o.damageNumbers === 'boolean' ? o.damageNumbers : d.damageNumbers,
+    screenShake: typeof o.screenShake === 'boolean' ? o.screenShake : d.screenShake,
     defaultSpeed: o.defaultSpeed === 2 || o.defaultSpeed === 3 ? o.defaultSpeed : 1,
   };
 }

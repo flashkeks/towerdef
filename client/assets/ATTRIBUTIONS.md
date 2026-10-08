@@ -63,3 +63,16 @@ Laut Kurswechsel 07.10.2026 sind AA-Inhalte erlaubt; die Herkunft ist trotzdem f
 | Anime Adventures Wiki (Community-Wiki), Recherche in `docs/anime-adventures/data/` | Unit-Namen, Werte, Angriffe, Effekte, Evolutionen, Traits, Banner, Bosse und Welten; per Importer (`npm run aa-import`) in `sim/data/` und `meta/data/` | 07.10.2026 |
 | Bilder aus dem AA-Wiki | Porträts unter `/aa/units/ID.webp` (Preview-Server liefert sie aus, Quelle je Eintrag in `client/public/aa/manifest.json`); lokal ohne Bild zeigt das Spiel die gestaltete Ersatzkarte | laufend |
 | Crossover-Figuren (`x_*`) | eigene Daten (`sim/data/units/crossover.json`) nach Vorbildern aus Film, Musik und Netz; Bilder über `imageQuery` im Manifest | 08.10.2026 |
+
+## Runde 10 / P2: Match-Figuren, Angriffs-Grafik, Match-Ton (alles eigen, kein Pack)
+
+Stand 08.10.2026. Der Download freier Packs (Kenney, OpenGameArt, freesound) ist aus der Agent-Umgebung weiter gesperrt (Proxy 403), es wurde **nichts** eingebunden; die Wunschliste mit Adressen steht in `docs/STATUS.md` unter „Für die Homelab-Seite“.
+
+| Was | Wo | Lizenz | Urheber |
+|---|---|---|---|
+| Unit-Figuren (Scheibe, Seltenheits-Ring, gestaltete Ersatzfigur), Gegner-Figuren je Typ, Abzeichen, Splitter-Formen | `src/game/figures.ts` (Pixi-Grafik im Code, zur Laufzeit gebacken) | eigen (Projektlizenz des Repos) | Claude (Anthropic) im Auftrag von Max/Flashkeks |
+| Angriffs-Grafik je Form x Element | `src/game/attack-gfx.ts`, `src/view/look.ts` | eigen | wie oben |
+| Faehigkeits-Ansage | `src/ui/cutin.ts`, `cutin.css` | eigen | wie oben |
+| Match-Klaenge (Element-Schuesse, Krit, Ansage, Boss-Tod, Aufschlag beim Platzieren) | `src/audio/recipes-match.ts` (WebAudio-Synthese, keine Dateien) | eigen | wie oben |
+
+Die Pixel-Sprites der Gegner im Atlas (`enemies/*`) werden im Match nicht mehr gezeichnet; die Karte nutzt den Atlas weiter (Gras, Pfad, Deko, Tor, Portal).

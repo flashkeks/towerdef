@@ -13,6 +13,7 @@ import { installUiSounds, registerAudio } from './audio/ui-audio';
 import { getBackend } from './backend';
 import { Ui } from './ui/app';
 import { mountPauseDownload, replayDownloadBox } from './ui/download';
+import { mountCutIn } from './ui/cutin';
 import { mountLeakShake } from './ui/leak-shake';
 import { notify } from './ui/flash';
 import { errorText } from './ui/meta-model';
@@ -36,7 +37,7 @@ export async function startGame(root: HTMLElement): Promise<GameHandle> {
   mountPauseDownload(bus);
   const renderer = new Renderer(bus);
   // P5: Ton (nach erster Nutzeraktion) und Leak-Wackeln der Leben-Anzeige
-  const audio = new AudioEngine(bus, (fn) => renderer.fx.onShot(fn));
+  const audio = new AudioEngine(bus, (fn) => renderer.fx.onShot(fn), (fn) => renderer.fx.onCue(fn));
   registerAudio(audio);
   installUiSounds();
   mountLeakShake(bus);
@@ -53,6 +54,7 @@ export async function startGame(root: HTMLElement): Promise<GameHandle> {
     // P2 x P6: Replay-Knopf samt Freitext im Ergebnis-Bildschirm und Pause-Menue.
     replayButton: () => replayDownloadBox(),
   });
+  mountCutIn(bus, ui.boardWrap);
   await renderer.init(ui.boardWrap);
   ui.boardWrap.prepend(renderer.app.canvas);
 
