@@ -266,3 +266,27 @@ input[type='range']:focus-visible { outline: 2px solid var(--gold); outline-offs
 @media (prefers-reduced-motion: reduce) {
   .end-seal .sigil, .end-seal .end-seal-ic, .gems, .gem-spark, .reward-line, .reward-box[data-state='pending'] p { animation: none !important; }
 }
+
+/* ---- Runde 9 / P3: Raid-Shop ---- */
+.screen-raidshop .meta-body { display: flex; flex-direction: column; gap: 16px; }
+.rs-head .kp-body { display: flex; align-items: center; gap: 22px; }
+.rs-mark { display: grid; place-items: center; width: 72px; height: 72px; flex: none; border-radius: 50%; font-size: 40px; color: var(--tx-dark); background: radial-gradient(circle at 35% 30%, #ffe2c9, var(--ember) 55%, #b04a14); box-shadow: 0 0 30px -4px var(--ember); }
+.rs-head-copy { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.rs-balance-label { font: 800 0.66rem var(--font-ui); letter-spacing: 0.22em; text-transform: uppercase; color: var(--tx-2); }
+.rs-balance-num { font: 800 2.4rem/1 var(--font-num); color: var(--ember); letter-spacing: 0.02em; }
+.rs-sub { font-size: 0.86rem; color: var(--tx-1); max-width: 52rem; }
+.rs-sections { display: flex; flex-direction: column; gap: 18px; }
+.rs-title { margin: 0 0 8px; font: 800 0.74rem var(--font-ui); letter-spacing: 0.2em; text-transform: uppercase; color: var(--tx-2); }
+.rs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+.rs-card { --tone: var(--aether); position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 14px 12px 12px; text-align: center; border-radius: var(--r-md); border: 1px solid color-mix(in srgb, var(--tone) 38%, transparent);
+  background: radial-gradient(120% 90% at 50% 0%, color-mix(in srgb, var(--tone) 22%, transparent), transparent 70%), linear-gradient(170deg, rgba(34, 39, 78, 0.82), rgba(10, 12, 28, 0.94)); transition: transform 0.15s, box-shadow 0.15s; }
+.rs-card:hover:not(.soldout) { transform: translateY(-3px); box-shadow: 0 14px 30px -12px color-mix(in srgb, var(--tone) 70%, transparent); }
+.rs-card.soldout { opacity: 0.55; filter: grayscale(0.6); }
+.rs-art { display: grid; place-items: center; height: 76px; font-size: 52px; color: var(--tone); filter: drop-shadow(0 0 14px color-mix(in srgb, var(--tone) 65%, transparent)); }
+.rs-name { font: 800 0.9rem var(--font-display); letter-spacing: 0.05em; }
+.rs-stock, .rs-limit { font-size: 0.72rem; min-height: 1em; }
+.rs-limit { color: var(--tx-1); }
+.rs-buy { display: inline-flex; align-items: center; justify-content: center; gap: 10px; width: 100%; margin-top: 4px; }
+.rs-price { display: inline-flex; align-items: center; gap: 4px; font: 800 0.95rem var(--font-num); padding-right: 10px; border-right: 1px solid rgba(0, 0, 0, 0.25); }
+.rs-price .ic { font-size: 1rem; }
+.rs-card.cant:not(.soldout) .rs-price { color: #7a1d1d; }

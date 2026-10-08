@@ -319,7 +319,16 @@ class UnitsScreen {
     evo.body.append(to);
     const needs = h('ul', 'ud-needs');
     for (const n of e.needs) needs.append(h('li', n.owned >= n.amount ? 'ok' : 'short', `${n.name} ${Math.min(n.owned, n.amount)}/${n.amount}`));
+    if (e.material) {
+      const m = e.material;
+      const li = h('li', `ud-material ${m.owned >= m.amount ? 'ok' : 'short'}`, t('units.evolve.material', { name: m.name, have: Math.min(m.owned, m.amount), n: m.amount }));
+      li.dataset.material = m.id;
+      li.title = t('units.evolve.materialFrom', { stage: m.legendName });
+      li.prepend(icon('shard'));
+      needs.append(li);
+    }
     evo.body.append(needs);
+    if (e.material && e.material.owned < e.material.amount) evo.body.append(h('span', 'muted ud-hint ud-matfrom', t('units.evolve.materialFrom', { stage: e.material.legendName })));
     const costs = h('div', 'ud-evo-cost');
     costs.append(icon('crystal'), `${e.cost.crystals}`, icon('coin'), `${e.cost.gold}`);
     evo.body.append(costs);
@@ -360,7 +369,9 @@ class UnitsScreen {
     if (this.busy || !u.evolution) return;
     const ok = await confirmDialog({
       title: t('units.evolve.confirm.title', { name: unitName(u.unitId) }),
-      text: t('units.evolve.confirm.text', { crystals: u.evolution.cost.crystals, gold: u.evolution.cost.gold }),
+      text: u.evolution.material
+        ? t('units.evolve.confirm.textMat', { mat: `${u.evolution.material.amount} x ${u.evolution.material.name}`, crystals: u.evolution.cost.crystals, gold: u.evolution.cost.gold })
+        : t('units.evolve.confirm.text', { crystals: u.evolution.cost.crystals, gold: u.evolution.cost.gold }),
       confirm: t('units.evolve.btn'),
     });
     if (!ok) return;

@@ -57,7 +57,7 @@ function showReward(box: HTMLElement, reward: MatchReward, won: boolean, wallet:
     const li = h('li', `reward-line ${l.kind}`);
     li.dataset.value = String(l.value);
     const bub = h('span', `w-icon ${l.kind}`);
-    bub.append(icon(l.kind === 'crystals' ? 'crystal' : l.kind === 'gold' ? 'coin' : 'star', 'fill'));
+    bub.append(icon(({ crystals: 'crystal', gold: 'coin', xp: 'star', material: 'shard', marks: 'mark', bonus: 'sparkle' } as Record<string, string>)[l.kind] ?? 'star', 'fill'));
     li.append(bub, h('span', undefined, l.text));
     list.append(li);
   }

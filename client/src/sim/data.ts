@@ -3,7 +3,8 @@
  * zod-Schemas und Querpruefungen wie in Node geprueft (`loadGameData()` selbst liest Dateien und laeuft nur in Node).
  */
 import { expandWorld } from '../../../sim/src/data/worlds';
-import { WaveTemplateSchema, WorldFileSchema } from '../../../sim/src/data/schema';
+import { expandModes } from '../../../sim/src/data/modes';
+import { LegendStagesSchema, RaidsSchema, WaveTemplateSchema, WorldFileSchema } from '../../../sim/src/data/schema';
 import waveTemplate from '../../../sim/data/wave-template.json';
 import { BossesSchema, CardsSchema, ChallengesSchema, DifficultiesSchema, EconomySchema, EffectsSchema, EnemiesSchema, ModifiersSchema, StageSchema, UnitFileSchema } from '../../../sim/src/data/schema';
 import type { GameData } from '../../../sim/src/data/schema';
@@ -17,6 +18,8 @@ import enemies from '../../../sim/data/enemies.json';
 import modifiers from '../../../sim/data/modifiers.json';
 import effects from '../../../sim/data/effects.json';
 import standard20 from '../../../sim/data/stages/standard20.json';
+import legendJson from '../../../sim/data/modes/legend-stages.json';
+import raidsJson from '../../../sim/data/modes/raids.json';
 
 export const STAGE_ID = 'standard20';
 
@@ -35,6 +38,9 @@ export function loadBrowserData(): GameData {
   const worlds = Object.keys(worldFiles).sort().map((f) => WorldFileSchema.parse(worldFiles[f]));
   const stages = { [stage.id]: stage } as GameData['stages'];
   for (const w of worlds) for (const st of expandWorld(w, tpl)) stages[st.id] = StageSchema.parse(st);
+  // Runde 9 / P3: Legend Stages und Raids (Karte der Host-Welt, eigene Wellen/Affinitaet)
+  const modes = { legend: LegendStagesSchema.parse(legendJson), raids: RaidsSchema.parse(raidsJson) };
+  for (const st of expandModes(modes.legend, modes.raids, worlds, tpl)) stages[st.id] = StageSchema.parse(st);
   const data: GameData = {
     economy: EconomySchema.parse(economy),
     enemies: EnemiesSchema.parse(enemies),
@@ -48,6 +54,7 @@ export function loadBrowserData(): GameData {
     stages,
     worlds,
     waveTemplate: tpl,
+    modes,
   };
   validateGameData(data);
   cached = data;

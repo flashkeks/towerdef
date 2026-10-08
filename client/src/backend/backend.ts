@@ -9,7 +9,7 @@
  */
 import type { ReplayFile } from '../game/recorder';
 import type { DifficultyId, UnitMod } from '../sim';
-import type { BannerRates, BannerView, CollectionUnitView, EvolveResult, HistoryEntry, MatchReward, PlayerView, Profile, PullBatchResult, RerollResult, ShopProduct, PurchaseResult, StageDifficultyView, StageViewData, StarterResult, WorldView } from './meta';
+import type { BannerRates, BannerView, CollectionUnitView, EvolveResult, RaidPurchase, RaidShopView, HistoryEntry, MatchReward, PlayerView, Profile, PullBatchResult, RerollResult, ShopProduct, PurchaseResult, StageDifficultyView, StageViewData, StarterResult, WorldView } from './meta';
 import type { Persistence } from './storage';
 
 export interface BFail {
@@ -49,6 +49,10 @@ export interface Backend {
   levelUp(unitId: string, idemKey: string): Promise<BResult<Saved & { level: { unitId: string; level: number; cost: number } }>>;
   /** Runde 8: Unit zu ihrer entwickelten Form (Kosten Gold + Crystals). Fehlercodes: `unit-not-owned`, `no-evolution`, `evolution-unavailable`, `evolution-needs-units`, `not-enough-crystals`, `not-enough-gold`. */
   evolve(unitId: string, idemKey: string): Promise<BResult<Saved & { evolution: EvolveResult }>>;
+  /** Runde 9 / P3: Raid-Shop (Angebote, Preise in Raid-Marken, Limits, Besitz). Fehlercodes wie `loadProfile`. */
+  raidShop(): Promise<BResult<{ shop: RaidShopView }>>;
+  /** Runde 9 / P3: Angebot kaufen. Fehlercodes: `unknown-offer`, `offer-sold-out`, `not-enough-raid-marks`. */
+  buyRaidOffer(offerId: string, idemKey: string): Promise<BResult<Saved & { purchase: RaidPurchase }>>;
   /** Runde 8: Trait neu wuerfeln (Crystals nach Seltenheit). Fehlercodes: `unit-not-owned`, `not-enough-crystals`. */
   rerollTrait(unitId: string, idemKey: string): Promise<BResult<Saved & { reroll: RerollResult }>>;
   setTeam(unitIds: string[], idemKey: string): Promise<BResult<Saved & { team: string[] }>>;
@@ -71,7 +75,7 @@ export interface Backend {
   collectionView(): Promise<BResult<{ units: CollectionUnitView[]; ownedCount: number; total: number }>>;
   /** P4: Stufen einer Stage: freigeschaltet (und ab welchem Spieler-Level), Erst-Clear-Crystals, Bestwelle. */
   stageView(stageId: string): Promise<BResult<StageViewData>>;
-  /** Runde 8 / P3: Weltkarte (Welten, Acts mit Sperrgrund und Fortschritt, Infinite, Legend Stages/Raids als Geruest, naechster Act). Fehlercodes wie `loadProfile`. */
+  /** Runde 8 / P3: Weltkarte (Welten, Acts mit Sperrgrund und Fortschritt, Infinite, Legend Stages und Raids mit Fortschritt, Raid-Marken/Material, naechster Act). Fehlercodes wie `loadProfile`. */
   worldView(): Promise<BResult<{ world: WorldView }>>;
   /** P4: die letzten Ziehungen aus dem Profil, neueste zuerst. */
   pullHistory(limit?: number): Promise<BResult<{ history: HistoryEntry[] }>>;

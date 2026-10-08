@@ -4,7 +4,7 @@
  * Texte nur ueber `en.ts` (`t`); wo es keinen Eintrag gibt (neue Unit, unbekannter Fehlercode), greift ein lesbarer Ersatz.
  */
 import { hasKey, t } from '../i18n/t';
-import type { BannerView, CollectionUnitView, MatchReward, PlayerView, StageDifficultyView } from '../backend/meta';
+import { materialName, type BannerView, type CollectionUnitView, type MatchReward, type PlayerView, type StageDifficultyView } from '../backend/meta';
 import type { UnitDef } from '../sim';
 import { initials, registeredUnitName } from '../view/model';
 import { unitCatalog } from './unit-defs';
@@ -177,6 +177,8 @@ export interface StageCardView {
   rewardText: string;
   bestText: string;
   cleared: boolean;
+  /** Runde 9 / P3: Material (Legend Stage) bzw. Raid-Marken (Raid) dieses Sieges */
+  extraText: string | null;
 }
 
 export function stageCardView(d: StageDifficultyView): StageCardView {
@@ -187,13 +189,14 @@ export function stageCardView(d: StageDifficultyView): StageCardView {
     rewardText: d.cleared ? t('stage.reward.repeat', { n: d.repeatCrystals }) : t('stage.reward.first', { n: d.firstClearCrystals }),
     bestText: d.bestWave > 0 ? t('stage.best', { wave: d.bestWave, max: d.maxWaves }) : t('stage.best.none'),
     cleared: d.cleared,
+    extraText: d.materialDrop ? t('stage.reward.material', { n: d.materialDrop.amount, name: d.materialDrop.name }) : d.raidMarks ? t('stage.reward.marks', { n: d.raidMarks }) : null,
   };
 }
 
 // ---- Belohnung -------------------------------------------------------------------------------------------------------
 
 export interface RewardLine {
-  kind: 'crystals' | 'gold' | 'xp';
+  kind: 'crystals' | 'gold' | 'xp' | 'material' | 'marks' | 'bonus';
   value: number;
   text: string;
 }
@@ -212,6 +215,14 @@ export function rewardView(r: MatchReward, won: boolean): RewardView {
   if (r.crystals > 0) lines.push({ kind: 'crystals', value: r.crystals, text: t('reward.crystals', { n: r.crystals }) });
   lines.push({ kind: 'gold', value: r.gold, text: t('reward.gold', { n: r.gold }) });
   lines.push({ kind: 'xp', value: r.xp, text: t('reward.xp', { n: r.xp }) });
+  // Runde 9 / P3: Evolutions-Material, Raid-Marken, Meilensteine, garantierte Raid-Unit
+  for (const [id, n] of Object.entries(r.materials ?? {})) lines.push({ kind: 'material', value: n, text: t('reward.material', { n, name: materialName(id) }) });
+  if ((r.raidMarks ?? 0) > 0) lines.push({ kind: 'marks', value: r.raidMarks!, text: t('reward.marks', { n: r.raidMarks! }) });
+  for (const m of r.milestones ?? []) {
+    if (m.crystals > 0) lines.push({ kind: 'bonus', value: m.crystals, text: t('reward.milestone.crystals', { n: m.clears, c: m.crystals }) });
+    if (m.raidMarks > 0) lines.push({ kind: 'bonus', value: m.raidMarks, text: t('reward.milestone.marks', { n: m.clears, c: m.raidMarks }) });
+  }
+  if (r.unit) lines.push({ kind: 'bonus', value: 1, text: t(r.unit.isNew ? 'reward.raidUnit' : 'reward.raidUnit.copy', { name: unitName(r.unit.id) }) });
   return { lines, firstClear: r.firstClear, levelUp: r.levelsGained > 0 ? r.playerLevel : null, consolation: !won };
 }
 
@@ -220,6 +231,8 @@ export function rewardView(r: MatchReward, won: boolean): RewardView {
 export interface WalletView {
   crystals: string;
   gold: string;
+  raidMarks: string;
+  materialTotal: string;
   level: string;
   xp: string;
   xpPct: number;
@@ -231,6 +244,8 @@ export function walletView(p: PlayerView): WalletView {
   return {
     crystals: fmt(p.crystals),
     gold: fmt(p.gold),
+    raidMarks: fmt(p.raidMarks),
+    materialTotal: fmt(p.materials.reduce((n, m) => n + m.count, 0)),
     level: t('wallet.level', { n: p.level }),
     xp: p.xpForNext > 0 ? t('wallet.xp', { cur: fmt(p.xpIntoLevel), max: fmt(p.xpForNext) }) : t('wallet.xp.max'),
     xpPct: p.xpPct,
