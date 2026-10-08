@@ -11,7 +11,7 @@
 import { Assets, Container, Graphics, Rectangle, Sprite, Texture, type Renderer } from 'pixi.js';
 import { hash, rng } from '../ui/kit/art';
 import { hasPortrait, portraitKnown, portraitUrl } from '../view/portrait';
-import { enemyLook, lookOf, rarityLook, unitLook, type ElementLook, type EnemyLook, type LookKey } from '../view/look';
+import { enemyLook, lookOf, rarityLook, unitLook, type ElementLook, type EnemyLook, type LookKey, type ParticleKind } from '../view/look';
 
 const mix = (a: number, b: number, f: number): number => {
   const r = ((a >> 16) & 255) * (1 - f) + ((b >> 16) & 255) * f;
@@ -299,6 +299,8 @@ type Cached = Texture;
 export class Figures {
   private renderer: Renderer | null = null;
   private cache = new Map<string, Cached>();
+  /** Texturen ohne Kachelbezug (Splitter), ueberleben `clear()`. */
+  private keep = new Map<string, Texture>();
   private portrait = new Map<string, Texture | 'pending' | 'none'>();
   /** Zaehlt hoch, wenn ein Portraet nachgeladen wurde: Ansichten mit altem Stand holen sich die neue Textur. */
   rev = 0;
@@ -530,6 +532,53 @@ export class Figures {
       c.tint = 0xffffff;
       tex = this.bake(c, Math.ceil(R * 1.75));
       this.cache.set(k, tex);
+    }
+    return tex;
+  }
+
+  /** Weisse Splitter-Form (16 px, wird getoent und skaliert). Unabhaengig von der Kachelgroesse, bleibt bei `clear()` erhalten. */
+  particle(kind: ParticleKind): Texture {
+    const k = `p|${kind}`;
+    let tex = this.keep.get(k);
+    if (!tex) {
+      const c = new Container();
+      const g = new Graphics();
+      const s = 8;
+      const W = 0xffffff;
+      switch (kind) {
+        case 'ember':
+        case 'wisp':
+          g.circle(0, 0, s).fill({ color: W, alpha: 0.25 });
+          g.circle(0, 0, s * 0.6).fill({ color: W, alpha: 0.6 });
+          g.circle(0, 0, s * 0.32).fill({ color: W });
+          break;
+        case 'drop':
+          g.moveTo(0, -s).bezierCurveTo(s * 0.2, -s * 0.4, s * 0.65, 0, s * 0.6, s * 0.35).bezierCurveTo(s * 0.5, s * 0.9, -s * 0.5, s * 0.9, -s * 0.6, s * 0.35).bezierCurveTo(-s * 0.65, 0, -s * 0.2, -s * 0.4, 0, -s).fill({ color: W });
+          break;
+        case 'spark':
+        case 'ray':
+          g.roundRect(-s, -s * 0.18, s * 2, s * 0.36, s * 0.18).fill({ color: W });
+          break;
+        case 'shard':
+          g.poly([0, -s, s * 0.4, 0, 0, s, -s * 0.4, 0]).fill({ color: W });
+          break;
+        case 'star':
+        case 'rune':
+          g.poly([0, -s, s * 0.22, -s * 0.22, s, 0, s * 0.22, s * 0.22, 0, s, -s * 0.22, s * 0.22, -s, 0, -s * 0.22, -s * 0.22]).fill({ color: W });
+          break;
+        case 'petal':
+          g.ellipse(0, 0, s * 0.5, s * 0.9).fill({ color: W });
+          break;
+        case 'coin':
+          g.circle(0, 0, s * 0.8).fill({ color: W });
+          g.circle(0, 0, s * 0.5).stroke({ width: s * 0.16, color: 0x000000, alpha: 0.25 });
+          break;
+        default:
+          g.rect(-s * 0.55, -s * 0.55, s * 1.1, s * 1.1).fill({ color: W });
+      }
+      c.addChild(g);
+      tex = this.bake(c, s + 1, 2);
+      this.keep.set(k, tex);
     }
     return tex;
   }

@@ -11,7 +11,7 @@ import type { HitStyle } from './feel';
 export type LookKey = 'fire' | 'water' | 'ice' | 'lightning' | 'air' | 'light' | 'dark' | 'rose' | 'physical' | 'magic' | 'true';
 
 /** Wie Splitter eines Elements aussehen und sich bewegen. */
-export type ParticleKind = 'ember' | 'drop' | 'spark' | 'shard' | 'wisp' | 'star' | 'petal' | 'chip' | 'rune' | 'ray';
+export type ParticleKind = 'ember' | 'drop' | 'spark' | 'shard' | 'wisp' | 'star' | 'petal' | 'chip' | 'rune' | 'ray' | 'coin';
 
 export interface ElementLook {
   key: LookKey;

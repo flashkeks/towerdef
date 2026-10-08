@@ -1,5 +1,6 @@
 /** Gemeinsamer Zustand aller Renderer-Ebenen (nur Darstellung, nie Spielwissen). Gehoert dem Renderer, die Ebenen lesen ihn. */
 import type { StageData, UnitDef } from '../sim';
+import { Figures } from './figures';
 
 /** Vorgabe-Raster (Welten 1-3); jede Welt-Datei darf ein anderes Raster haben, dann gilt `RenderContext.cols/rows` (aus `stage.zones`). */
 export const WORLD_W = 17;
@@ -14,6 +15,8 @@ export class RenderContext {
   static readonly ART = 32;
   stage: StageData | null = null;
   defs: Record<string, UnitDef> = {};
+  /** Gebackene Figuren-Texturen (Runde 10 / P2), vom Renderer mit dem Pixi-Renderer verbunden. */
+  readonly figures = new Figures();
 
   /** Kartenbreite in Kacheln (aus der Zonenmaske der Stage). */
   get cols(): number {
