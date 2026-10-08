@@ -4,7 +4,7 @@
 // (Befehle ueber die Session, Schnellvorlauf per advance), ihre Belohnung wird aus dem nachgerechneten Replay gebucht.
 import { mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { buildTeam, fastForward, launch, root, sleep, startServer } from './lib/drive.mjs';
+import { buildTeam, fastForward, launch, root, sleep, startServer, closeReveal } from './lib/drive.mjs';
 
 const PORT = Number(process.env.SHOT_PORT ?? 4432);
 const SAVE = process.env.SHOT_SAVE;
@@ -82,6 +82,7 @@ try {
   await page.waitForSelector('.lobby');
   if (await page.locator('.starter-claim').isVisible().catch(() => false)) {
     await page.locator('.starter-claim').click();
+    await closeReveal(page);
     await page.waitForSelector('.starter-card.done');
   }
   await sleep(400);

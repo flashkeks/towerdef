@@ -56,6 +56,12 @@ export function prizesFromPulls(pulls: readonly { unitId: string; rarity: string
   return pulls.map((p): Prize => ({ kind: 'unit', unitId: p.unitId, rarity: p.rarity, isNew: p.isNew, ...(p.shiny ? { shiny: true } : {}) }));
 }
 
+/** Spalten und Zeilen fuer n Karten (5 x 2 beim 10er-Zug, 6 x 2 beim Starter-Paket). */
+export function gridShape(n: number): { cols: number; rows: number } {
+  const cols = n <= 5 ? Math.max(1, n) : n <= 12 ? Math.ceil(n / 2) : Math.min(8, Math.ceil(n / 3));
+  return { cols, rows: Math.max(1, Math.ceil(n / cols)) };
+}
+
 // ---- Zustand des Paket-Oeffnens ------------------------------------------------------------------------------------
 
 export interface PackSummary {
@@ -178,4 +184,59 @@ export function chargePlan(best: string): ChargePlan {
     stages: list.map((rarity, i) => ({ rarity, hue: REVEAL_HUE[rarity], atMs: Math.round(i * slot) })),
     shakeFromMs: Math.round(introMs * 0.55),
   };
+}
+
+// ---- Gewinne aus den Quellen (alle Mehrfach-Ergebnisse laufen durch denselben Bildschirm) -----------------------------
+
+/** Starter-Paket: Crystals und alle Units (neu). `rarityOf` loest die Seltenheit aus den Sim-Daten auf. */
+export function prizesFromStarter(gift: { crystals: number; units: readonly string[] }, rarityOf: (id: string) => string): Prize[] {
+  const out: Prize[] = [];
+  if (gift.crystals > 0) out.push({ kind: 'currency', currency: 'crystals', amount: gift.crystals });
+  for (const id of gift.units) out.push({ kind: 'unit', unitId: id, rarity: rarityOf(id), isNew: true });
+  return out;
+}
+
+/** Form von `MatchReward`, soweit die Anzeige sie braucht (die Meta-Schicht liefert mehr). */
+export interface RewardLike {
+  crystals: number;
+  gold: number;
+  xp: number;
+  firstClear?: boolean;
+  materials?: Record<string, number>;
+  raidMarks?: number;
+  milestones?: readonly { clears: number; crystals: number; raidMarks: number }[];
+  unit?: { id: string; isNew: boolean };
+}
+
+export interface RewardLabels {
+  material: (id: string) => string;
+  rarityOf: (id: string) => string;
+  firstClear: string;
+  milestone: (clears: number) => string;
+}
+
+/** Belohnung eines Matches als Gewinne: Crystals, Gold, XP, Material, Marken, Meilensteine, garantierte Raid-Unit. Nullwerte entfallen. */
+export function prizesFromReward(r: RewardLike, l: RewardLabels): Prize[] {
+  const out: Prize[] = [];
+  if (r.crystals > 0) out.push({ kind: 'currency', currency: 'crystals', amount: r.crystals, ...(r.firstClear ? { note: l.firstClear } : {}) });
+  if (r.gold > 0) out.push({ kind: 'currency', currency: 'gold', amount: r.gold });
+  if (r.xp > 0) out.push({ kind: 'currency', currency: 'xp', amount: r.xp });
+  for (const [id, n] of Object.entries(r.materials ?? {})) if (n > 0) out.push({ kind: 'material', id, name: l.material(id), amount: n });
+  if ((r.raidMarks ?? 0) > 0) out.push({ kind: 'currency', currency: 'marks', amount: r.raidMarks! });
+  for (const m of r.milestones ?? []) {
+    if (m.crystals > 0) out.push({ kind: 'currency', currency: 'crystals', amount: m.crystals, note: l.milestone(m.clears) });
+    if (m.raidMarks > 0) out.push({ kind: 'currency', currency: 'marks', amount: m.raidMarks, note: l.milestone(m.clears) });
+  }
+  if (r.unit) out.push({ kind: 'unit', unitId: r.unit.id, rarity: l.rarityOf(r.unit.id), isNew: r.unit.isNew });
+  return out;
+}
+
+/** Crystal-Paket aus dem Shop: Basis und Bonus als zwei Karten (der Bonus ist sichtbar, kein Kleingedrucktes). */
+export function prizesFromCrystalOrder(o: { crystals: number; bonusCrystals?: number }, bonusNote = 'Bonus'): Prize[] {
+  const bonus = Math.max(0, o.bonusCrystals ?? 0);
+  const base = o.crystals - bonus;
+  const out: Prize[] = [];
+  if (base > 0) out.push({ kind: 'currency', currency: 'crystals', amount: base });
+  if (bonus > 0) out.push({ kind: 'currency', currency: 'crystals', amount: bonus, note: bonusNote });
+  return out;
 }

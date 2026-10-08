@@ -20,7 +20,7 @@ import { t } from '../i18n/t';
 import { h } from './dom';
 import { icon, portraitCard, sigil, type RarityId } from './kit';
 import { rarityName, unitName } from './meta-model';
-import { chargePlan, isSpotlight, PackState, prizeRarity, prizesFromPulls, REVEAL_HUE, type Prize } from './reveal-model';
+import { chargePlan, gridShape, isSpotlight, PackState, prizeRarity, prizesFromPulls, REVEAL_HUE, type Prize } from './reveal-model';
 import { unitMeta } from './unit-card';
 import { unitDefs } from './unit-defs';
 import { Sparks } from './sparks';
@@ -36,12 +36,6 @@ export interface RevealOptions {
 export function unitSeries(id: string): string | null {
   const d = unitDefs().get(id) as { series?: unknown } | undefined;
   return typeof d?.series === 'string' && d.series.trim() ? d.series : null;
-}
-
-/** Spalten und Zeilen fuer n Karten (5 x 2 beim 10er-Zug, 6 x 2 beim Starter-Paket). */
-export function gridShape(n: number): { cols: number; rows: number } {
-  const cols = n <= 5 ? Math.max(1, n) : n <= 12 ? Math.ceil(n / 2) : Math.min(8, Math.ceil(n / 3));
-  return { cols, rows: Math.max(1, Math.ceil(n / cols)) };
 }
 
 const CURRENCY_ICON: Record<string, string> = { crystals: 'crystal', gold: 'coin', xp: 'star', marks: 'mark' };
@@ -260,6 +254,7 @@ class Reveal {
     this.state.items.forEach((p, i) => {
       const c = h('button', `pk-card r-${prizeRarity(p)}${isSpotlight(p) ? ' tease' : ''}`);
       c.type = 'button';
+      c.dataset.sfx = 'none';
       c.dataset.index = String(i);
       c.dataset.kind = p.kind;
       c.setAttribute('aria-label', t('reveal.card', { n: i + 1 }));

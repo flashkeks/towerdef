@@ -3,7 +3,7 @@
 // Port: SHOT_PORT (Standard 4443), SHOT_DIR aendert das Ziel. Lokal gibt es keine Porträt-Bilder: die gestalteten Ersatzkarten sind normal.
 import { mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { launch, openRun, root, sleep, startServer } from './lib/drive.mjs';
+import { launch, openRun, root, sleep, startServer, closeReveal } from './lib/drive.mjs';
 
 const PORT = Number(process.env.SHOT_PORT ?? 4443);
 const OUT = process.env.SHOT_DIR ?? resolve(root, 'docs', 'r9');
@@ -26,6 +26,7 @@ try {
   await sleep(1200);
   await shot(page, 'lobby-fresh');
   await page.locator('.starter-claim').click();
+  await closeReveal(page);
   await page.waitForSelector('.starter-card.done');
   await sleep(1500);
   await shot(page, 'lobby');

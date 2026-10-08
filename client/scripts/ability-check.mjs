@@ -1,7 +1,7 @@
 // Runde 9 / P1: Pruefung der Faehigkeits-Bedienung im echten Browser (Klicks auf Ring in der Unit-Leiste, Knopf im Unit-Panel, Taste Q,
 // Auto-Schalter) und der Beschwoerungen auf dem Feld. Braucht dist/ (npm run build). Port: ABILITY_PORT (Standard 4494).
 // Aufbau wie in den Screenshot-Skripten: Profil mit Team (Wendy = Buff-Faehigkeit ohne Ziel, Erwin = Beschwoerer, Lucy), Units ueber die Sim gesetzt.
-import { launch, sleep, startServer, buildTeam } from './lib/drive.mjs';
+import { launch, sleep, startServer, buildTeam, closeReveal } from './lib/drive.mjs';
 
 const PORT = Number(process.env.ABILITY_PORT ?? 4494);
 const TEAM = ['wendy', 'erwin', 'lucy_evolved', 'goku_ssj3', 'sakura', 'hoshino'];
@@ -19,6 +19,7 @@ try {
   await page.goto(url);
   await page.waitForSelector('.lobby:not(.loading)');
   await page.locator('.starter-claim').click();
+  await closeReveal(page);
   await page.waitForSelector('.starter-card.done');
   await sleep(500);
   await page.evaluate(({ team }) => {

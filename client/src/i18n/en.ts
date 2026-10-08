@@ -412,6 +412,7 @@ export const en = {
   'reveal.title.starter': 'Starter pack',
   'reveal.title.reward': 'Battle rewards',
   'reveal.title.shop': 'Your purchase',
+  'reveal.bonus': 'Bonus',
   'reveal.open': 'Open rewards',
   'reveal.open.again': 'Show rewards again',
   'reveal.milestone': 'Milestone: {n} clears',

@@ -31,6 +31,15 @@ export async function startServer(port) {
   return { url, stop };
 }
 
+/** Zieh-/Paket-Bildschirm (Runde 10) schliessen: Esc springt zur Uebersicht, noch einmal Esc schliesst. Tut nichts, wenn keiner offen ist. */
+export async function closeReveal(page) {
+  for (let i = 0; i < 6; i++) {
+    if (!(await page.locator('.reveal').count())) return;
+    await page.keyboard.press('Escape');
+    await sleep(300);
+  }
+}
+
 export async function launch() {
   try {
     return await chromium.launch();
@@ -48,6 +57,7 @@ export async function openRun(page, url, difficulty = 'normal', stage = 'greenie
   await page.waitForSelector('.lobby');
   if (await page.locator('.starter-claim').isVisible().catch(() => false)) {
     await page.locator('.starter-claim').click();
+    await closeReveal(page);
     await page.waitForSelector('.starter-card.done');
   }
   await page.locator('.lobby-play').click();

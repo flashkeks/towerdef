@@ -38,3 +38,49 @@ export function menuTheme(id: MenuThemeId): void {
 }
 
 export const hasAudio = (): boolean => engine !== null;
+
+const CLICKABLE = 'button, .btn, [role="button"], a[href], summary, .tile, [data-go], .switch, .unit-tile[data-owned], input[type="range"]';
+let installed = false;
+
+/**
+ * Hover und Klick fuer alle Knoepfe der Bildschirme, an einer Stelle (Delegation am Dokument), damit kein Bildschirm einzeln verdrahtet werden
+ * muss und neue Knoepfe von selbst Ton bekommen. `data-sfx="none"` am Element schaltet den Klang ab (dann spielt der Bildschirm einen eigenen),
+ * `.menu-back` und Abbrechen klingen als "zurueck". Maus-Hover nur mit Zeigergeraet Maus, nicht bei Touch.
+ */
+export function installUiSounds(doc: Document = document): void {
+  if (installed) return;
+  installed = true;
+  let lastHover: Element | null = null;
+  const find = (e: Event): HTMLElement | null => {
+    const el = (e.target as Element | null)?.closest?.(CLICKABLE) as HTMLElement | null;
+    if (!el || (el as HTMLButtonElement).disabled || el.getAttribute('aria-disabled') === 'true') return null;
+    return el;
+  };
+  doc.addEventListener(
+    'pointerover',
+    (e) => {
+      if ((e as PointerEvent).pointerType && (e as PointerEvent).pointerType !== 'mouse') return;
+      const el = find(e);
+      if (!el || el === lastHover) return;
+      lastHover = el;
+      uiSound('ui.hover');
+    },
+    true,
+  );
+  doc.addEventListener(
+    'pointerout',
+    (e) => {
+      if (!(e.relatedTarget instanceof Element) || !lastHover?.contains(e.relatedTarget)) lastHover = null;
+    },
+    true,
+  );
+  doc.addEventListener(
+    'click',
+    (e) => {
+      const el = find(e);
+      if (!el || el.dataset.sfx === 'none') return;
+      uiSound(el.matches('.menu-back, .confirm-no') ? 'ui.back' : 'ui.click');
+    },
+    true,
+  );
+}

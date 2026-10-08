@@ -143,3 +143,17 @@
   .rv-ring, .rv-rays, .rv-rift, .rv-orb, .rv-flash.go, .reveal.shake > *, .reveal.rumble .rv-portal, .reveal.rumble .rv-bg, .pk-card, .rv-sum-cell, .rv-hero > *, .rv-spot.in > *, .pk-back .pk-sigil, .pk-card.tease .pk-back, .pcard.shiny::after, .unit-tile.shiny::after { animation: none !important; }
   .rv-ring { opacity: 0.8; } .rv-rift { scale: 1.6 1; opacity: 0.8; } .pk-inner { transition: none; }
 }
+
+/* ---- Menue-Rueckmeldung: Stempel (Level-Up, Evolution, Freischaltung) und Zaehler ---- */
+.celebrate { position: fixed; inset: 0; z-index: 85; pointer-events: none; display: grid; place-items: center; transition: opacity 0.45s; }
+.celebrate.out { opacity: 0; }
+.cel-fx { position: absolute; inset: 0; width: 100%; height: 100%; }
+.cel-stamp { --cc: var(--gold); position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 18px 46px; border-radius: 14px; background: radial-gradient(ellipse at center, rgba(8, 10, 24, 0.86), rgba(8, 10, 24, 0.55) 70%, transparent); animation: cel-in 0.6s var(--ease-spring) both; text-shadow: 0 0 22px var(--cc), 0 2px 10px #000; }
+.cel-evolve .cel-stamp { --cc: var(--aether); } .cel-unlock .cel-stamp { --cc: var(--violet); }
+.cel-title { font: 900 clamp(1.8rem, 5.4vh, 3.4rem) var(--font-display); letter-spacing: 0.14em; text-transform: uppercase; color: var(--cc); }
+.cel-sub { font: 700 clamp(0.85rem, 2vh, 1.15rem) var(--font-ui); letter-spacing: 0.08em; color: var(--tx-0); }
+@keyframes cel-in { from { transform: scale(2.2) rotate(-4deg); opacity: 0; } to { transform: none; opacity: 1; } }
+.w-val.counting { color: var(--gold-hi); }
+.w-item.bump { animation: w-bump 0.7s var(--ease-spring); }
+@keyframes w-bump { 0% { transform: scale(1); } 30% { transform: scale(1.18); filter: brightness(1.5); } 100% { transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) { .cel-stamp, .w-item.bump { animation: none; } }
