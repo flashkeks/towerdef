@@ -5,6 +5,7 @@ import { createSim } from '../../sim/src/index';
 import {
   KIND,
   LEGACY_R7_UNITS,
+  MATERIALS,
   RARITIES,
   SCHEMA_VERSION,
   TRAITS,
@@ -46,8 +47,10 @@ import {
 
 const env = (seed = 1) => testEnv(seed);
 const rng = (seed: number) => ({ randomInt: randomIntFrom(seededRng(seed)) });
+/** Runde 9 / P3: viel Evolutions-Material von jeder Sorte (Evolutionen kosten jetzt Material). */
+const withMaterials = (p: Profile): Profile => ({ ...p, inventory: { ...p.inventory, materials: Object.fromEntries(MATERIALS.map((m) => [m.id, 1000])) } });
 const rich = (crystals = 1_000_000, gold = 1_000_000): Profile => {
-  let p = newProfile(env(3));
+  let p = withMaterials(newProfile(env(3)));
   const a = book(p, { currency: 'crystals', delta: crystals, kind: KIND.grant, refType: 't', refId: 'c' }, env());
   if (!a.ok) throw new Error('x');
   if (gold === 0) return a.profile;

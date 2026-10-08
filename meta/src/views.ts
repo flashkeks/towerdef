@@ -13,6 +13,9 @@ import { REWARD_TABLE, repeatCrystals } from './rewards';
 import { copiesForNextStar, MAX_STARS, starsForCopies } from './stars';
 import { damageBpOf, NEUTRAL_BP } from './unit-mods';
 import { stageInfoView, type StageInfoView } from './world-view';
+import { materialName } from './materials';
+import { modeStage } from './mode-catalog';
+import { modeDrops, scaleModeAmounts } from './modes';
 import { stageWaveCap } from './worlds';
 
 export interface PlayerView {
@@ -27,6 +30,9 @@ export interface PlayerView {
   xpPct: number;
   crystals: number;
   gold: number;
+  /** Runde 9 / P3: Raid-Marken (Raid-Shop) und Evolutions-Material (nur Mengen > 0) */
+  raidMarks: number;
+  materials: { id: string; name: string; count: number }[];
   starterGiftAvailable: boolean;
   team: string[];
   /** Zielgroesse des Teams: `min(MAX_TEAM, Anzahl besessener Units)`; 0 ohne Units */
@@ -50,6 +56,8 @@ export function playerView(p: Profile): PlayerView {
     xpPct: maxed ? 100 : span > 0 ? Math.min(100, Math.floor((into * 100) / span)) : 0,
     crystals: p.wallet.crystals,
     gold: p.wallet.gold,
+    raidMarks: p.inventory.raidMarks,
+    materials: Object.entries(p.inventory.materials).filter(([, n]) => n > 0).map(([id, count]) => ({ id, name: materialName(id), count })),
     starterGiftAvailable: !p.flags.starterGiftClaimed,
     team: [...p.team],
     teamTarget: Math.min(MAX_TEAM, owned),
@@ -141,6 +149,9 @@ export interface StageDifficultyView {
   clears: number;
   bestWave: number;
   maxWaves: number;
+  /** Runde 9 / P3: Legend Stage: Material dieses Siegs (Erst-Clear bzw. Wiederholung); Raid: Raid-Marken */
+  materialDrop?: { id: string; name: string; amount: number };
+  raidMarks?: number;
 }
 
 export interface StageViewData {
@@ -156,12 +167,20 @@ export function stageView(p: Profile, stageId: string): StageViewData {
   const difficulties = Object.keys(REWARD_TABLE.crystals.firstClear).map((d): StageDifficultyView => {
     const prog = p.stages[stageId]?.[d];
     const unlockLevel = unlockLevelFor(d);
+    const mode = modeStage(stageId);
+    const cleared = !!prog?.firstClearAt;
+    const drops = mode ? modeDrops(mode, d, true, !cleared) : null;
+    const matId = drops ? Object.keys(drops.materials)[0] : undefined;
+    const first = mode ? scaleModeAmounts(mode.mode, { crystals: REWARD_TABLE.crystals.firstClear[d]!, gold: 0, xp: 0 }).crystals : REWARD_TABLE.crystals.firstClear[d]!;
+    const repeat = mode ? scaleModeAmounts(mode.mode, { crystals: repeatCrystals(d), gold: 0, xp: 0 }).crystals : repeatCrystals(d);
     return {
       difficulty: d,
       unlocked: p.playerLevel >= unlockLevel,
       unlockLevel,
-      firstClearCrystals: REWARD_TABLE.crystals.firstClear[d]!,
-      repeatCrystals: repeatCrystals(d),
+      firstClearCrystals: first,
+      repeatCrystals: repeat,
+      ...(matId ? { materialDrop: { id: matId, name: materialName(matId), amount: drops!.materials[matId]! } } : {}),
+      ...(drops && drops.raidMarks > 0 ? { raidMarks: drops.raidMarks } : {}),
       cleared: !!prog?.firstClearAt,
       clears: prog?.clears ?? 0,
       bestWave: prog?.bestWave ?? 0,

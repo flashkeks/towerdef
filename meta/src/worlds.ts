@@ -13,6 +13,7 @@
  * Der Fortschritt steht im Profil (`stages[stageId][difficulty]`), es gibt dafuer keine eigenen Felder.
  */
 import { WorldFileSchema, worldCatalog, type WorldInfo, type WorldFile, type WorldStageInfo } from '../../sim/src/index';
+import { modeById, modeStage } from './mode-catalog';
 import type { Profile } from './profile';
 import rewardsJson from '../data/rewards.json';
 
@@ -46,7 +47,7 @@ export const worldById = (id: string): WorldInfo | undefined => WORLDS.find((w) 
 export const stageInfo = (stageId: string): WorldStageInfo | null => BY_STAGE.get(stageId) ?? null;
 export const isInfiniteStage = (stageId: string): boolean => BY_STAGE.get(stageId)?.kind === 'infinite';
 /** Wellenzahl, auf die Belohnungen gekappt werden: die der Stage, sonst `maxWaves` aus `rewards.json`. */
-export const stageWaveCap = (stageId: string): number => Math.min(BY_STAGE.get(stageId)?.waves ?? rewardsJson.maxWaves, rewardsJson.maxWaves);
+export const stageWaveCap = (stageId: string): number => Math.min(BY_STAGE.get(stageId)?.waves ?? modeStage(stageId)?.waves ?? rewardsJson.maxWaves, rewardsJson.maxWaves);
 
 /** Warum etwas gesperrt ist (die UI uebersetzt in Text; Zahlen und IDs, kein Englisch hier). */
 export type LockReason =
@@ -72,8 +73,22 @@ export function worldLock(p: Profile, worldId: string): LockReason | null {
   return { kind: 'world', worldId: w.unlock.afterWorld, worldName: dep?.name ?? w.unlock.afterWorld, afterAct: w.unlock.afterAct };
 }
 
-/** `null` = Stage offen, sonst der Grund. Stages ausserhalb der Weltstruktur sind offen. */
+/**
+ * `null` = Stage offen, sonst der Grund. Stages ausserhalb der Weltstruktur sind offen.
+ * Legend Stages und Raids (Runde 9 / P3): offen, wenn Act `unlock.afterAct` der Host-Welt geschafft ist (Legend: 6, Raid: 3); Act n+1 nach Act n.
+ */
 export function stageLock(p: Profile, stageId: string): LockReason | null {
+  const m = modeStage(stageId);
+  if (m) {
+    if (!isActCleared(p, m.unlock.afterWorld, m.unlock.afterAct)) {
+      return { kind: 'world', worldId: m.unlock.afterWorld, worldName: worldById(m.unlock.afterWorld)?.name ?? m.unlock.afterWorld, afterAct: m.unlock.afterAct };
+    }
+    if (m.act > 1) {
+      const prev = modeById(m.mode, m.modeId)?.acts[m.act - 2];
+      if (prev && !isStageCleared(p, prev.stageId)) return { kind: 'act', act: m.act - 1 };
+    }
+    return null;
+  }
   const s = BY_STAGE.get(stageId);
   if (!s) return null;
   const w = worldById(s.worldId)!;

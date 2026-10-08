@@ -109,10 +109,23 @@ function v1ToV2(raw: Raw): Raw {
   return { ...raw, schemaVersion: 2, units: kept, team: [], ledger, pity, flags, settings, idem: {} };
 }
 
+/**
+ * v2 -> v3 (Runde 9 / P3: Legend Stages und Raids). Fuegt `inventory` hinzu (Raid-Marken 0, kein Material). Alles andere bleibt unveraendert:
+ * Stage-Fortschritt gilt weiter (neue Stages `legend-*` / `raid-*` stehen einfach noch nicht drin), Ledger, Wallet, Units, Team, Pity.
+ * Ein schon vorhandenes, gueltiges `inventory` (Import einer v3-Sicherung mit falscher Versionsnummer) bleibt erhalten.
+ */
+function v2ToV3(raw: Raw): Raw {
+  const inv = isRecord(raw.inventory) ? raw.inventory : {};
+  const materials: Record<string, number> = {};
+  if (isRecord(inv.materials)) for (const [k, v] of Object.entries(inv.materials)) if (typeof v === 'number' && Number.isInteger(v) && v > 0) materials[k] = v;
+  return { ...raw, schemaVersion: 3, inventory: { raidMarks: asInt(inv.raidMarks, 0), materials } };
+}
+
 /** Schluessel = Ausgangsversion. */
 export const MIGRATIONS: Record<number, (raw: Raw) => Raw> = {
   0: v0ToV1,
   1: v1ToV2,
+  2: v2ToV3,
 };
 
 export type MigrateResult = { ok: true; profile: Profile; migratedFrom: number } | Fail;

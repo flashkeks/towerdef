@@ -10,6 +10,9 @@ import type { MetaEnv } from './env';
 import { bookAll, KIND, type BookingInput } from './ledger';
 import { addPlayerXp, isDifficultyUnlocked } from './progression';
 import { infiniteGemsUpTo, isInfiniteStage, stageLock, stageWaveCap } from './worlds';
+import { applyInventory } from './inventory';
+import { modeStage } from './mode-catalog';
+import { applyRaidMilestones, modeDrops, scaleModeAmounts, type MilestoneResult } from './modes';
 import { MAX_TEAM, type Profile } from './profile';
 import { fail, opOk, type Fail, type Op } from './result';
 import { canonicalJson } from './util';
@@ -37,6 +40,15 @@ export interface MatchReward {
   infinite?: boolean;
   /** Runde 8 / P3: Infinite: neue Bestwelle erreicht */
   newBest?: boolean;
+  /** Runde 9 / P3: Legend Stage oder Raid */
+  mode?: 'legend' | 'raid';
+  /** Runde 9 / P3: Evolutions-Material dieses Sieges (Material-ID -> Menge) */
+  materials?: Record<string, number>;
+  /** Runde 9 / P3: Raid-Marken dieses Sieges (ohne Meilensteine) */
+  raidMarks?: number;
+  /** Runde 9 / P3: erreichte Raid-Meilensteine (einmalig) und die garantierte Unit */
+  milestones?: MilestoneResult[];
+  unit?: { id: string; isNew: boolean };
   /** Rechenzeit des Nachrechnens in ms (nur bei `rewardFromReplay`) */
   verifyMs?: number;
 }
@@ -77,7 +89,9 @@ export function rewardForMatch(p: Profile, s: MatchSummary, env: Pick<MetaEnv, '
   const win = s.outcome === 'win';
   const infinite = isInfiniteStage(s.stageId);
   const firstClear = win && !infinite && !(prev && prev.firstClearAt);
-  const amounts = rewardAmounts(s.difficulty, s.outcome, s.waveReached, firstClear, infinite ? REWARD_TABLE.maxWaves : stageWaveCap(s.stageId));
+  const mode = modeStage(s.stageId);
+  const story = rewardAmounts(s.difficulty, s.outcome, s.waveReached, firstClear, infinite ? REWARD_TABLE.maxWaves : stageWaveCap(s.stageId));
+  const amounts = mode ? scaleModeAmounts(mode.mode, story) : story;
   // Infinite (AA): Crystals nach Gem-Tabelle je gehaltener Welle, bezahlt wird nur der Zuwachs ueber der bisherigen Bestwelle dieser Stufe
   const held = Math.max(0, Math.floor(s.waveReached));
   const newBest = infinite && held > (prev?.bestWave ?? 0);
@@ -97,8 +111,26 @@ export function rewardForMatch(p: Profile, s: MatchSummary, env: Pick<MetaEnv, '
     firstClearAt: prev?.firstClearAt ?? (win ? env.now() : null),
     bestWave: Math.max(prev?.bestWave ?? 0, Math.max(0, Math.floor(s.waveReached))),
   };
-  const profile: Profile = { ...xpr.profile, stages: { ...p.stages, [s.stageId]: { ...(p.stages[s.stageId] ?? {}), [s.difficulty]: stage } } };
-  return opOk(profile, { crystals, gold, xp, firstClear, levelsGained: xpr.levelsGained, playerLevel: profile.playerLevel, ...(infinite ? { infinite: true, newBest } : {}) });
+  let profile: Profile = { ...xpr.profile, stages: { ...p.stages, [s.stageId]: { ...(p.stages[s.stageId] ?? {}), [s.difficulty]: stage } } };
+  const extra: Partial<MatchReward> = {};
+  if (mode) {
+    // Runde 9 / P3: Material (Legend Stage) bzw. Raid-Marken, Meilensteine und garantierte Unit (Raid); nur Siege
+    const drops = modeDrops(mode, s.difficulty, win, firstClear);
+    const inv = applyInventory(profile, { raidMarks: drops.raidMarks, materials: drops.materials });
+    if (!inv.ok) return inv;
+    profile = inv.profile;
+    extra.mode = mode.mode;
+    if (Object.keys(drops.materials).length) extra.materials = drops.materials;
+    if (drops.raidMarks > 0) extra.raidMarks = drops.raidMarks;
+    if (win && mode.mode === 'raid') {
+      const ms = applyRaidMilestones(profile, mode.modeId, env);
+      if (!('profile' in ms)) return ms;
+      profile = ms.profile;
+      if (ms.milestones.length) extra.milestones = ms.milestones;
+      if (ms.unit) extra.unit = ms.unit;
+    }
+  }
+  return opOk(profile, { crystals, gold, xp, firstClear, levelsGained: xpr.levelsGained, playerLevel: profile.playerLevel, ...(infinite ? { infinite: true, newBest } : {}), ...extra });
 }
 
 export interface RewardOptions extends VerifyOptions {

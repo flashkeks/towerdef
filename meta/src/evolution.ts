@@ -3,7 +3,8 @@
  *
  * `evolve(profile, unitId, env)`: die Unit wird durch ihre entwickelte Form ersetzt.
  * - Voraussetzung: besessen, Rezept vorhanden und nicht `blocked`, genug Kopien (`needs`: Basis `amount` Kopien, ggf. weitere Units).
- * - Kosten: Crystals + Gold nach Seltenheit der **entwickelten** Form (AA-Materialien entfallen, siehe Importer). Eine atomare Buchung je Waehrung
+ * - Kosten: Crystals + Gold nach Seltenheit der **entwickelten** Form (AA-Items entfallen, siehe Importer) plus Evolutions-Material aus den Legend Stages
+ *   (Runde 9 / P3, `materials.ts`, Inventar `profile.inventory.materials`). Eine atomare Buchung je Waehrung
  *   `evolve/<von>:<n>` (n = Zaehler `counters['evolve:<von>']`). Fehlt Geld: `not-enough-crystals` / `not-enough-gold`, nichts passiert.
  * - Ergebnis: Level, XP, Trait und Kopien (abzueglich verbrauchter) bleiben erhalten, die Vorstufe verschwindet, die Team-Platz geht auf die neue Form.
  *   Zufalls-Evolutionen (Elize, Chance: mehrere Ziele) wuerfeln gleichverteilt mit `env.randomInt`.
@@ -13,7 +14,9 @@ import evolutionsJson from '../data/aa/evolutions.json';
 import costsJson from '../data/unit-costs.json';
 import { UNIT_CATALOG, nameOf, rarityOf } from './catalog';
 import type { MetaEnv } from './env';
+import { applyInventory, materialCount } from './inventory';
 import { bookAll, KIND } from './ledger';
+import { evolutionMaterial, materialInfo, type MaterialNeed } from './materials';
 import { MAX_TEAM, type OwnedUnit, type Profile } from './profile';
 import { fail, opOk, type Op } from './result';
 import { starsForCopies } from './stars';
@@ -50,6 +53,8 @@ export interface EvolutionView {
   to: { id: string; name: string; chancePct: number }[];
   cost: { crystals: number; gold: number };
   needs: { id: string; name: string; amount: number; owned: number }[];
+  /** Runde 9 / P3: Evolutions-Material (Menge, Besitz, woher), `null` wenn die Evolution keins braucht */
+  material: { id: string; name: string; amount: number; owned: number; legendId: string; legendName: string } | null;
   text: string;
   /** Voraussetzungen erfuellt und Geld da (nur mit Profil) */
   ready: boolean;
@@ -64,12 +69,16 @@ export function evolutionView(unitId: string, profile: Profile | null): Evolutio
   if (!r || !cost) return null;
   const owned = (id: string): number => profile?.units[id]?.copies ?? 0;
   const needs = r.needs.map((n) => ({ id: n.id, name: nameOf(n.id), amount: n.amount, owned: owned(n.id) }));
+  const need = evolutionMaterial(unitId);
+  const info = need ? materialInfo(need.material) : undefined;
+  const material = need ? { id: need.material, name: info?.name ?? need.material, amount: need.amount, owned: profile ? materialCount(profile, need.material) : 0, legendId: info?.legendId ?? '', legendName: info?.legendName ?? '' } : null;
   let reason: string | null = null;
   if (r.blocked) reason = 'This evolution is not available yet.';
   else if (profile) {
     const short = needs.find((n) => n.owned < n.amount);
     if (!profile.units[unitId]) reason = 'You do not own this unit.';
     else if (short) reason = short.id === unitId ? `Needs ${short.amount} copies.` : `Needs ${short.amount} x ${short.name}.`;
+    else if (material && material.owned < material.amount) reason = `Needs ${material.amount} x ${material.name}.`;
     else if (profile.wallet.crystals < cost.crystals) reason = 'Not enough crystals.';
     else if (profile.wallet.gold < cost.gold) reason = 'Not enough gold.';
   }
@@ -78,6 +87,7 @@ export function evolutionView(unitId: string, profile: Profile | null): Evolutio
     to: r.to.map((t) => ({ id: t.id, name: nameOf(t.id), chancePct: t.weight / 100 })),
     cost,
     needs,
+    material,
     text: r.text,
     ready: !!profile && reason === null,
     reason,
@@ -88,6 +98,8 @@ export interface EvolveResult {
   from: string;
   to: string;
   cost: { crystals: number; gold: number };
+  /** Runde 9 / P3: verbrauchtes Material */
+  material: MaterialNeed | null;
   level: number;
   copies: number;
   stars: number;
@@ -105,6 +117,8 @@ export function evolve(p: Profile, unitId: string, env: MetaEnv): Op<EvolveResul
     if (have < n.amount) return fail('evolution-needs-units', n.id === unitId ? `Needs ${n.amount} copies of ${nameOf(unitId)}.` : `Needs ${n.amount} x ${nameOf(n.id)}.`);
   }
   const cost = evolutionCost(unitId)!;
+  const need = evolutionMaterial(unitId);
+  if (need && materialCount(p, need.material) < need.amount) return fail('evolution-needs-material', `Needs ${need.amount} x ${materialInfo(need.material)?.name ?? need.material}.`);
   const key = `evolve:${unitId}`;
   const n = (p.counters[key] ?? 0) + 1;
   const bookings = [
@@ -113,6 +127,11 @@ export function evolve(p: Profile, unitId: string, env: MetaEnv): Op<EvolveResul
   ];
   const paid = bookAll(p, bookings, env);
   if (!paid.ok) return paid;
+  if (need) {
+    const spent = applyInventory(paid.profile, { materials: { [need.material]: -need.amount } });
+    if (!spent.ok) return spent;
+    paid.profile = spent.profile;
+  }
 
   // Ziel: eine Unit, oder gewichtet gewuerfelt
   let to = r.to[0]!.id;
@@ -149,7 +168,7 @@ export function evolve(p: Profile, unitId: string, env: MetaEnv): Op<EvolveResul
   const team = paid.profile.team.filter((x) => units[x] || x === unitId).map((x) => (x === unitId ? to : x));
   const dedup = team.filter((x, i) => team.indexOf(x) === i && units[x]).slice(0, MAX_TEAM);
   const profile: Profile = { ...paid.profile, units, team: dedup, counters: { ...paid.profile.counters, [key]: n } };
-  return opOk(profile, { from: unitId, to, cost, level: evolved.level, copies: evolved.copies, stars: evolved.stars, trait: evolved.trait ?? null });
+  return opOk(profile, { from: unitId, to, cost, material: need, level: evolved.level, copies: evolved.copies, stars: evolved.stars, trait: evolved.trait ?? null });
 }
 
 /**

@@ -4,11 +4,13 @@
  *
  * Aufbau: Welten (je 6 Acts + Infinite), dazu Legend Stages und Raids als Daten-Geruest (noch nicht spielbar).
  */
-import { LegendStagesSchema, RaidsSchema } from '../../sim/src/index';
+import type { ModeInfo, ModeStageInfo } from '../../sim/src/index';
+import { nameOf } from './catalog';
+import { materialName } from './materials';
+import { LEGEND_STAGES, modeStage, RAIDS } from './mode-catalog';
+import { raidClears, raidUnitFlag } from './modes';
 import type { Profile } from './profile';
-import { stageInfo, stageLock, WORLD_PALETTES, WORLDS, worldLock, type LockReason, type WorldPalette } from './worlds';
-import legendJson from '../../sim/data/modes/legend-stages.json';
-import raidsJson from '../../sim/data/modes/raids.json';
+import { stageInfo, stageLock, WORLD_PALETTES, WORLDS, worldById, worldLock, type LockReason, type WorldPalette } from './worlds';
 
 export interface ActView {
   stageId: string;
@@ -42,17 +44,45 @@ export interface WorldCardView {
   infinite: ActView;
 }
 
-export interface ComingSoonView {
+/** Eine Stage (Act) einer Legend Stage oder eines Raids. */
+export interface ModeActView {
+  stageId: string;
+  act: number;
+  name: string;
+  bossName: string;
+  waves: number;
+  unlocked: boolean;
+  lock: LockReason | null;
+  cleared: boolean;
+  clearedDifficulties: string[];
+  bestWave: number;
+  /** Legend: Material je Sieg auf Normal (Erst-Clear / Wiederholung) */
+  drop: { material: string; materialName: string; first: number; repeat: number } | null;
+  /** Raid: Raid-Marken je Sieg auf Normal */
+  marks: number;
+}
+
+/** Legend Stage oder Raid fuer die Weltkarte. */
+export interface ModeCardView {
+  kind: 'legend' | 'raid';
   id: string;
   name: string;
-  /** Legend Stage: Acts; Raid: Acts (falls bekannt) */
-  acts: number | null;
-  /** Raid: Wellen */
-  waves: number | null;
-  bosses: string[];
-  /** Herkunftswelt (Legend Stages), AA-ID */
-  world: string | null;
-  playable: boolean;
+  legacyName: string | null;
+  blurb: string;
+  /** Welt, deren Karte benutzt wird (und nach deren Act `unlock.afterAct` die Stage frei wird) */
+  hostWorldId: string;
+  hostWorldName: string;
+  palette: WorldPalette;
+  unlocked: boolean;
+  lock: LockReason | null;
+  acts: ModeActView[];
+  actsCleared: number;
+  /** Legend: Material, das sie fallen laesst */
+  material: { id: string; name: string } | null;
+  /** Raid: garantierte Unit und Fortschritt (Siege ueber alle Acts) */
+  guarantee: { unitId: string; unitName: string; clears: number; progress: number; granted: boolean } | null;
+  /** Resistenzen (R) und Schwaechen (Bp) der Gegner, Stage-weit (Act 1) */
+  affinity: { resist: Record<string, number>; weakBp: Record<string, number> };
 }
 
 export interface WorldView {
@@ -60,8 +90,11 @@ export interface WorldView {
   worlds: WorldCardView[];
   /** erste offene, noch nicht geschaffte Act-Stage (Vorschlag "weiter"), sonst `null` */
   nextStageId: string | null;
-  legend: ComingSoonView[];
-  raids: ComingSoonView[];
+  legend: ModeCardView[];
+  raids: ModeCardView[];
+  /** Runde 9 / P3: Kontostand der Raid-Waehrung und des Evolutions-Materials (nur > 0) */
+  raidMarks: number;
+  materials: { id: string; name: string; count: number }[];
 }
 
 function actView(p: Profile, stageId: string): ActView {
@@ -84,8 +117,50 @@ function actView(p: Profile, stageId: string): ActView {
   };
 }
 
-const legend = LegendStagesSchema.parse(legendJson);
-const raids = RaidsSchema.parse(raidsJson);
+function modeActView(p: Profile, a: ModeStageInfo): ModeActView {
+  const prog = p.stages[a.stageId] ?? {};
+  const lock = stageLock(p, a.stageId);
+  const cleared = Object.entries(prog).filter(([, d]) => !!d.firstClearAt).map(([k]) => k);
+  return {
+    stageId: a.stageId,
+    act: a.act,
+    name: a.name,
+    bossName: a.bossName,
+    waves: a.waves,
+    unlocked: lock === null,
+    lock,
+    cleared: cleared.length > 0,
+    clearedDifficulties: cleared,
+    bestWave: Math.max(0, ...Object.values(prog).map((d) => d.bestWave)),
+    drop: a.drop ? { material: a.drop.material, materialName: materialName(a.drop.material), first: a.drop.first, repeat: a.drop.repeat } : null,
+    marks: a.marks,
+  };
+}
+
+function modeCard(p: Profile, m: ModeInfo): ModeCardView {
+  const acts = m.acts.map((a) => modeActView(p, a));
+  const lock = acts[0].lock && acts[0].lock.kind === 'world' ? acts[0].lock : null;
+  const host = worldById(m.hostWorldId)!;
+  return {
+    kind: m.kind,
+    id: m.id,
+    name: m.name,
+    legacyName: m.legacyName,
+    blurb: m.blurb,
+    hostWorldId: m.hostWorldId,
+    hostWorldName: host.name,
+    palette: WORLD_PALETTES[m.hostWorldId],
+    unlocked: lock === null,
+    lock,
+    acts,
+    actsCleared: acts.filter((a) => a.cleared).length,
+    material: m.material ? { id: m.material, name: materialName(m.material) } : null,
+    guarantee: m.guarantee
+      ? { unitId: m.guarantee.unit, unitName: nameOf(m.guarantee.unit), clears: m.guarantee.clears, progress: raidClears(p, m.id), granted: !!p.flags[raidUnitFlag(m.id)] }
+      : null,
+    affinity: { resist: m.acts[0].affinity.resist, weakBp: m.acts[0].affinity.weakBp },
+  };
+}
 
 export function worldView(p: Profile): WorldView {
   const worlds = WORLDS.map((w): WorldCardView => {
@@ -117,8 +192,10 @@ export function worldView(p: Profile): WorldView {
     playerLevel: p.playerLevel,
     worlds,
     nextStageId: next,
-    legend: legend.stages.map((s) => ({ id: s.id, name: s.name, acts: s.acts, waves: null, bosses: s.bosses, world: s.world, playable: s.playable })),
-    raids: raids.raids.map((r) => ({ id: r.id, name: r.name, acts: r.acts ?? null, waves: r.waves, bosses: [], world: null, playable: r.playable })),
+    legend: LEGEND_STAGES.map((m) => modeCard(p, m)),
+    raids: RAIDS.map((m) => modeCard(p, m)),
+    raidMarks: p.inventory.raidMarks,
+    materials: Object.entries(p.inventory.materials).filter(([, n]) => n > 0).map(([id, count]) => ({ id, name: materialName(id), count })),
   };
 }
 
@@ -127,7 +204,14 @@ export interface StageInfoView {
   worldId: string;
   worldName: string;
   act: number;
-  kind: 'act' | 'infinite';
+  /** Runde 9 / P3: `legend` / `raid` fuer Legend Stages und Raids (worldId/worldName = Host-Welt) */
+  kind: 'act' | 'infinite' | 'legend' | 'raid';
+  /** Legend/Raid: Name des Modus (z. B. "Spirit Invasion"), Acts des Modus, Resistenzen/Schwaechen */
+  modeName?: string;
+  actCount?: number;
+  affinity?: { resist: Record<string, number>; weakBp: Record<string, number> };
+  /** Raid: Siege bis zur garantierten Unit */
+  guarantee?: { unitName: string; clears: number; progress: number };
   name: string;
   bossName: string | null;
   waves: number;
@@ -136,6 +220,17 @@ export interface StageInfoView {
 }
 
 export function stageInfoView(p: Profile, stageId: string): StageInfoView | null {
+  const ms = modeStage(stageId);
+  if (ms) {
+    const lock = stageLock(p, stageId);
+    const host = worldById(ms.hostWorldId)!;
+    const raid = ms.mode === 'raid' ? RAIDS.find((r) => r.id === ms.modeId) : undefined;
+    return {
+      worldId: host.id, worldName: host.name, act: ms.act, kind: ms.mode, name: ms.name, bossName: ms.bossName, waves: ms.waves, unlocked: lock === null, lock,
+      modeName: ms.modeName, actCount: ms.actCount, affinity: ms.affinity,
+      ...(raid?.guarantee ? { guarantee: { unitName: nameOf(raid.guarantee.unit), clears: raid.guarantee.clears, progress: raidClears(p, raid.id) } } : {}),
+    };
+  }
   const info = stageInfo(stageId);
   if (!info) return null;
   const w = WORLDS.find((x) => x.id === info.worldId)!;
