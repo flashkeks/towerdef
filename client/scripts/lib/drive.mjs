@@ -33,6 +33,8 @@ export async function startServer(port) {
 
 /** Zieh-/Paket-Bildschirm (Runde 10) schliessen: Esc springt zur Uebersicht, noch einmal Esc schliesst. Tut nichts, wenn keiner offen ist. */
 export async function closeReveal(page) {
+  // der Klick auf einen Paket-Knopf wartet erst auf das Backend: der Bildschirm kann einen Augenblick spaeter kommen
+  await page.waitForSelector('.reveal', { timeout: 2500 }).catch(() => {});
   for (let i = 0; i < 6; i++) {
     if (!(await page.locator('.reveal').count())) return;
     await page.keyboard.press('Escape');
