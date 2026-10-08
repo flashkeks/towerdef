@@ -57,6 +57,7 @@ export class Shop {
     const ai = firstButton(d);
     if (ai >= 0) {
       // Fähigkeits-Knopf auf der Karte: erscheint, sobald eine Unit dieser Art steht; Klick löst bei allen bereiten aus, der Punkt schaltet Auto
+      b.dataset.abilityUnit = d.id;
       const slot = h('span', 'ab-slot');
       const ring = new Ring();
       const count = h('span', 'ab-count', '');

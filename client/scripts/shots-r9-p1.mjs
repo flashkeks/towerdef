@@ -75,7 +75,9 @@ try {
   });
   await sleep(300);
   await shot(page, 'panel-ready');
-  await sleep(1300);
+  await sleep(220);
+  await shot(page, 'match-ability-fx');
+  await sleep(1100);
   await shot(page, 'match-ability-summons');
   console.log(
     await page.evaluate(() => {
