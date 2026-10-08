@@ -58,6 +58,10 @@ interface EnemyView {
   shieldBar: Sprite;
   tag: BitmapText | null;
   plate: Container | null;
+  /** Balken, Marken und Namensbanner in einem Container: wird nach unten geschoben, wenn sie oben aus dem Feld ragen wuerden. */
+  bars: Container;
+  /** Oberkante der Balken-Gruppe in lokalen Pixeln (negativ). */
+  topY: number;
   faceLeft: boolean;
   frame: number;
   half: number;
@@ -451,7 +455,10 @@ export class EntitiesLayer {
     shieldBar.width = barW;
     shieldBar.position.set(-barW / 2, barTop - shieldBar.height - 1);
     shieldBar.visible = false;
-    c.addChild(back, fill, shieldBar);
+    const bars = new Container();
+    bars.addChild(back, fill, shieldBar);
+    c.addChild(bars);
+    let topY = barTop - 3;
     let plate: Container | null = null;
     if (e.boss) {
       // Namensbanner ueber dem Boss
@@ -468,10 +475,11 @@ export class EntitiesLayer {
       bg.moveTo(-w / 2 + 4, h / 2 - 3).lineTo(w / 2 - 4, h / 2 - 3).stroke({ width: 1, color: 0xff4a6a, alpha: 0.8 });
       plate.addChild(bg, txt);
       plate.position.set(0, barTop - h * 0.75 - 4);
-      c.addChild(plate);
+      topY = plate.y - h / 2 - 2;
+      bars.addChild(plate);
     }
     this.enemyLayer.addChild(c);
-    return { c, body, flash, shadow, aura, back, fill, shieldBar, tag: null, plate, faceLeft: false, frame: 0, half: f.half, R: f.R, barW, barTop, version: ctx.version, sig: '', lastHp: e.hp + e.shield, hitT: 0, born: session.sim.state.tick > 0 ? nowMs : -1e9 };
+    return { c, body, flash, shadow, aura, back, fill, shieldBar, tag: null, plate, bars, topY, faceLeft: false, frame: 0, half: f.half, R: f.R, barW, barTop, version: ctx.version, sig: '', lastHp: e.hp + e.shield, hitT: 0, born: session.sim.state.tick > 0 ? nowMs : -1e9 };
   }
 
   private syncEnemies(session: Session, enemies: readonly EnemyState[], nowMs: number, dt: number): void {
@@ -509,6 +517,9 @@ export class EntitiesLayer {
       v.flash.y = v.body.y;
       v.c.position.set(Math.round(p.x), Math.round(p.y));
       v.c.zIndex = p.y + (e.boss ? 0.5 : 0);
+      // Balken und Banner nicht oben aus dem Feld ragen lassen (Gegner laufen am oberen Rand los)
+      const shift = Math.max(0, Math.round(3 - (p.y + v.topY)));
+      if (v.bars.y !== shift) v.bars.y = shift;
       this.lastPos.set(e.id, { x: p.x, y: p.y });
       if (v.aura) v.aura.rotation = nowMs / 1400;
       // Auftauchen
@@ -545,7 +556,7 @@ export class EntitiesLayer {
         if (marks && !v.tag) {
           v.tag = new BitmapText({ text: marks, style: { fontFamily: 'Rajdhani, monospace', fontSize: 22, fontWeight: '700', fill: 0xffffff } });
           v.tag.scale.set(Math.max(0.4, T / 110));
-          v.c.addChild(v.tag);
+          v.bars.addChild(v.tag);
         }
         if (v.tag) {
           v.tag.text = marks;

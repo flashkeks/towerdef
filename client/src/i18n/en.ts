@@ -188,6 +188,8 @@ export const en = {
   'settings.sfx': 'Effects volume',
   'settings.music': 'Music volume',
   'settings.damageNumbers': 'Show damage numbers',
+  'settings.shake': 'Screen shake',
+  'settings.shake.sub': 'Big hits, boss entrances and ability call-outs rattle the screen.',
   'settings.speed': 'Default speed',
   'settings.hints': 'Show tutorial hints again',
   'settings.hints.done': 'Hints will show on your next run.',

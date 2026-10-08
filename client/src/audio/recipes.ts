@@ -2,7 +2,8 @@
  * Klang-Rezepte (alles eigen, zur Laufzeit synthetisiert, sfxr-artig): Oszillator oder Rauschen, Frequenzlauf, Huellkurve.
  * Reine Daten; `engine.ts` baut daraus Audio-Knoten. Mehrere Stimmen je Klang werden uebereinander gelegt.
  */
-import type { SoundId } from './logic';
+import type { BaseSoundId, SoundId } from './logic';
+import { MATCH_RECIPES } from './recipes-match';
 
 export interface Voice {
   wave: 'square' | 'sawtooth' | 'triangle' | 'sine' | 'noise';
@@ -24,11 +25,14 @@ export interface Voice {
   vibSemi?: number;
 }
 
-export const RECIPES: Record<SoundId, Voice[]> = {
+const BASE_RECIPES: Record<BaseSoundId, Voice[]> = {
   place: [
     { wave: 'square', f0: 220, f1: 330, dur: 0.09, vol: 0.22, lp: 2400 },
     { wave: 'noise', f0: 900, f1: 300, dur: 0.07, vol: 0.2, delay: 0.0 },
     { wave: 'triangle', f0: 440, f1: 660, dur: 0.12, vol: 0.2, delay: 0.07 },
+    // Aufsetzen: dumpfer Schlag, wenn die Figur landet (Hopser dauert ~0,2 s, siehe look.ts dropIn)
+    { wave: 'sine', f0: 150, f1: 55, dur: 0.14, vol: 0.24, delay: 0.2 },
+    { wave: 'noise', f0: 700, f1: 150, dur: 0.08, vol: 0.14, delay: 0.2 },
   ],
   upgrade: [
     { wave: 'square', f0: 392, f1: 392, dur: 0.08, vol: 0.2, lp: 3000 },
@@ -151,6 +155,9 @@ export const RECIPES: Record<SoundId, Voice[]> = {
     { wave: 'sawtooth', f0: 196, f1: 98, dur: 0.9, vol: 0.28, delay: 0.72, lp: 700 },
   ],
 };
+
+/** Alle Klaenge: Grundsatz (diese Datei) plus Match-Ton (`recipes-match.ts`). */
+export const RECIPES: Record<SoundId, Voice[]> = { ...BASE_RECIPES, ...MATCH_RECIPES };
 
 export const SOUND_IDS = Object.keys(RECIPES) as SoundId[];
 

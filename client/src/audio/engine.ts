@@ -6,7 +6,8 @@
 import type { GameBus } from '../game/events';
 import { getSettings, readJson, writeJson } from '../ui/settings';
 import type { HitStyle } from '../view/feel';
-import { crowdGain, effectiveVolume, RateLimiter, shotSound, soundsFor, type SoundId } from './logic';
+import { crowdGain, effectiveVolume, RateLimiter, soundsFor, type SoundId } from './logic';
+import { shotGain, shotSoundFor } from './logic-match';
 import { MUSIC, RECIPES, type Voice } from './recipes';
 import type { Session } from '../game/session';
 
@@ -33,7 +34,7 @@ export class AudioEngine {
   private musicNext = 0;
   private musicStep = 0;
 
-  constructor(bus: GameBus, onShot: (fn: (style: HitStyle) => void) => () => void) {
+  constructor(bus: GameBus, onShot: (fn: (style: HitStyle, element?: string) => void) => () => void, onCue?: (fn: (id: SoundId, gain?: number) => void) => () => void) {
     this.muted = readJson(MUTE_KEY) === true;
     bus.onRunStart((s) => {
       this.session = s;
@@ -45,7 +46,8 @@ export class AudioEngine {
     bus.onCommand((rec) => {
       if (!rec.result.ok) this.play('error');
     });
-    onShot((style) => this.play(shotSound(style), 1, 0.92 + Math.random() * 0.16));
+    onShot((style, element) => this.play(shotSoundFor(style, element), shotGain(style, element), 0.92 + Math.random() * 0.16));
+    onCue?.((id, gain) => this.play(id, gain ?? 1));
     if (typeof window === 'undefined') return;
     const unlock = (): void => this.unlock();
     window.addEventListener('pointerdown', unlock, { capture: true });
