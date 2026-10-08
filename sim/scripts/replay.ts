@@ -6,7 +6,8 @@
  *
  * Exit-Code 0 = Hash und Ergebnis stimmen, 1 = Abweichung, 2 = Datei/Aufruf unbrauchbar, 3 = altes Regelwerk (Format v1 bis v3).
  *
- * Formatversionen: v4 (Runde 8 / P1, AA-Baukasten) = wie v3, aber die Units kommen aus dem AA-Datenformat (`sim/data/units/*.json`, Maßstab in
+ * Formatversionen: v5 (Runde 9 / P1) = wie v4, dazu die Befehle `ability` (Faehigkeit ausloesen) und `autoAbility` (Auto-Schalter); der Sim-Zustand
+ * bekommt Faehigkeits-/Beschwoerungsfelder nur, wenn eine Unit sie braucht, daher bleiben v4-Dateien nachspielbar (gleicher Hash). v4 (Runde 8 / P1, AA-Baukasten) = wie v3, aber die Units kommen aus dem AA-Datenformat (`sim/data/units/*.json`, Maßstab in
  * `economy.json`); `unitMods` im Kopf wie in v3 (fehlt es, gilt neutral). v3 = Level/Sterne-Mods (Runde 7), v2 = `place` mit Position `x`, `y` (freie
  * Platzierung, Runde 6), v1 = `place` mit Slot-ID (bis Runde 5). v1 bis v3 lassen sich nicht mehr nachspielen: andere Unit-Daten, anderer
  * Zustand, kein Hash stimmt. Sie bleiben als Dokument lesbar (Bericht aus den Wellen-Daten der Datei, `--compare` geht weiter).
@@ -29,8 +30,8 @@ export interface ReplayCommand {
   reason?: string;
 }
 
-/** Aktuelles Format (v4: AA-Baukasten, Positionen + Unit-Mods im Kopf). Der Client schreibt es in `client/src/game/recorder.ts`. */
-export const REPLAY_FORMAT_VERSION = 4;
+/** Aktuelles Format (v5: wie v4 plus die Befehle `ability` und `autoAbility`; v4: AA-Baukasten, Positionen + Unit-Mods im Kopf). Der Client schreibt es in `client/src/game/recorder.ts`. */
+export const REPLAY_FORMAT_VERSION = 5;
 /** Ältestes Format, das sich noch nachspielen lässt. */
 export const REPLAY_MIN_PLAYABLE_VERSION = 4;
 export const OLD_RULES_MESSAGE = 'altes Regelwerk (v1-v3, vor dem AA-Baukasten)';
@@ -91,7 +92,7 @@ export function parseReplay(text: string): ReplayFile {
   const r = JSON.parse(text) as Partial<ReplayFile>;
   if (r.format !== 'towerdef-replay') throw new Error('Keine Duskwardens-Replay-Datei (format fehlt/falsch)');
   if (typeof r.formatVersion !== 'number' || !Number.isInteger(r.formatVersion) || r.formatVersion < 1 || r.formatVersion > REPLAY_FORMAT_VERSION) {
-    throw new Error(`Replay-Format ${String(r.formatVersion)} wird nicht unterstützt (bekannt: 1 bis 3 = ${OLD_RULES_MESSAGE}, ${REPLAY_FORMAT_VERSION})`);
+    throw new Error(`Replay-Format ${String(r.formatVersion)} wird nicht unterstützt (bekannt: 1 bis 3 = ${OLD_RULES_MESSAGE}, 4 bis ${REPLAY_FORMAT_VERSION})`);
   }
   for (const k of ['stage', 'difficulty', 'players', 'seed', 'endTick', 'endHash', 'commands'] as const) {
     if (r[k] === undefined) throw new Error(`Feld "${k}" fehlt`);
