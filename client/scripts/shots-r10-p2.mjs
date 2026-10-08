@@ -280,11 +280,30 @@ try {
     return null;
   });
   console.log('Faehigkeit', fired);
-  await sleep(180);
-  await shot(page, 'ability-cutin');
-  await sleep(120);
-  await shot(page, 'ability-cutin-2');
-  await sleep(900);
+  // Die Ansage ist eine CSS-Animation: anhalten und auf feste Zeitpunkte stellen (Screenshots brauchen unter Software-Grafik unterschiedlich lang)
+  const cutAt = async (ms, name) => {
+    await page.evaluate((ms) => {
+      for (const a of document.getAnimations()) {
+        const t = a.effect?.target;
+        if (t instanceof Element && t.closest('.cutin')) {
+          a.pause();
+          a.currentTime = ms;
+        }
+      }
+    }, ms);
+    await sleep(80);
+    await shot(page, name);
+  };
+  await sleep(50);
+  await cutAt(330, 'ability-cutin');
+  await cutAt(620, 'ability-cutin-2');
+  await page.evaluate(() => {
+    for (const a of document.getAnimations()) {
+      const t = a.effect?.target;
+      if (t instanceof Element && t.closest('.cutin')) a.play();
+    }
+  });
+  await sleep(1600);
   await shot(page, 'ability-after');
   console.log('fx', await page.evaluate(() => window.__duskwardens.renderer().fx.active));
   await page.context().close();
