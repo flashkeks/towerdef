@@ -123,11 +123,11 @@ describe('Welten (Runde 8 / P3): Daten', () => {
     expect(() => validateWorlds([worlds[0], bad2], waveTemplate, kitIds, enemyIds)).toThrow(/unbekannter Welt/);
   });
 
-  it('Legend Stages und Raids sind als Daten-Geruest geladen (nicht spielbar)', () => {
+  it('Legend Stages und Raids sind geladen und spielbar (Details: modes.test.ts)', () => {
     const m = loadModes();
     expect(m.legend.stages.length).toBeGreaterThanOrEqual(8);
-    expect(m.raids.raids.length).toBeGreaterThanOrEqual(5);
-    for (const s of [...m.legend.stages, ...m.raids.raids]) expect(s.playable).toBe(false);
+    expect(m.raids.raids.length).toBeGreaterThanOrEqual(11);
+    for (const s of [...m.legend.stages, ...m.raids.raids]) expect(s.playable).toBe(true);
   });
 });
 

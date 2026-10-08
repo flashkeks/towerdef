@@ -56,7 +56,7 @@ function groupsOf(tpl: WaveTemplate, spec: readonly (readonly [string, number])[
 
 const modKind = (m: string): string => m.split(':')[0];
 
-function actWaves(world: WorldFile, act: Pick<ActData, 'waves' | 'modifiers'>, tpl: WaveTemplate, boss: boolean): StageData['waves'] {
+export function actWaves(world: WorldFile, act: Pick<ActData, 'waves' | 'modifiers'>, tpl: WaveTemplate, boss: boolean): StageData['waves'] {
   const regular = boss ? act.waves - 1 : act.waves;
   if (regular > tpl.waves.length) throw new Error(`Welt ${world.id}: ${regular} reguläre Wellen, die Vorlage hat ${tpl.waves.length}`);
   const out: StageData['waves'] = [];
@@ -82,7 +82,7 @@ function actWaves(world: WorldFile, act: Pick<ActData, 'waves' | 'modifiers'>, t
   return out;
 }
 
-function baseStage(world: WorldFile, id: string, name: string, hpBp: number): Omit<StageData, 'waves'> {
+export function baseStage(world: WorldFile, id: string, name: string, hpBp: number): Omit<StageData, 'waves'> {
   return {
     ref: `Runde 8 / P3: erzeugt aus data/worlds/${world.id}.json und data/wave-template.json (worlds.ts)`,
     id,

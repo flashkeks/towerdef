@@ -1,123 +1,910 @@
 {
-  "ref": "docs/anime-adventures/data/maps.json raids (S72:Raids), waves.json (raid_legacy_2022: 20 Wellen, MEDIUM). Runde 8 / P3: Daten-Geruest, noch nicht spielbar.",
-  "_comment": "Wellenzahl 20 = einzige belegte Raid-Laenge (LEGACY 2022), fuer alle Raids angenommen. Spielerzahl 1-4 ist DESIGN (Koop kommt mit M2). Entfernte Raids (z. B. Marine's Ford (Buddha), U19) sind nicht aufgenommen.",
-  "raids": [
+ "ref": "docs/anime-adventures/data/maps.json raids (S72:Raids), waves.json (raid_legacy_2022: 20 Wellen, MEDIUM), docs/anime-adventures/raids.md. Runde 9 / P3: spielbar.",
+ "_comment": "Runde 9 / P3. `host` = unsere Welt (Karte, Farben, Gegnernamen), `unlock` = Act 3 der Host-Welt (Raids sind frueher offen als Legend Stages). 20 Wellen, Boss am Ende. Mehrere `acts` (Sacred Planet, Strange Town: 5) werden zu Stages `raid-<id>-<act>`, sonst `raid-<id>`. `marks` = Raid-Marken je Sieg (Normal). `guarantee` = garantierte Unit nach N Siegen (DESIGN: AA nennt nur die Spider mit 15). Spielerzahl 1-4 ist DESIGN (Koop kommt mit M2).",
+ "raids": [
+  {
+   "id": "sacred-planet",
+   "name": "Sacred Planet",
+   "host": "greenie",
+   "blurb": "Five trials on a holy planet; the last one hits hard.",
+   "unlock": {
+    "afterWorld": "greenie",
+    "afterAct": 3
+   },
+   "waves": 20,
+   "players": {
+    "min": 1,
+    "max": 4
+   },
+   "hpBp": 10000,
+   "guarantee": {
+    "unit": "vegeta_majin",
+    "clears": 10
+   },
+   "acts": [
     {
-      "id": "ant-kingdom-midnight",
-      "name": "Ant Kingdom (Midnight)",
-      "waves": 20,
-      "players": {
-        "min": 1,
-        "max": 4
+     "act": 1,
+     "name": "The Guardian",
+     "boss": {
+      "name": "The Guardian",
+      "kit": "charger"
+     },
+     "hpBp": 28000,
+     "modifiers": [
+      {
+       "fromWave": 6,
+       "types": [
+        "brute"
+       ],
+       "modifier": "armored"
       },
-      "playable": false
+      {
+       "fromWave": 8,
+       "types": [
+        "flyer",
+        "runner"
+       ],
+       "modifier": "fast"
+      },
+      {
+       "fromWave": 12,
+       "types": [
+        "grunt"
+       ],
+       "modifier": "shield:2"
+      }
+     ],
+     "marks": 15
     },
     {
-      "id": "sacred-planet",
-      "name": "Sacred Planet",
-      "acts": 5,
-      "waves": 20,
-      "players": {
-        "min": 1,
-        "max": 4
+     "act": 2,
+     "name": "The Demon King",
+     "boss": {
+      "name": "The Demon King",
+      "kit": "summoner"
+     },
+     "hpBp": 31000,
+     "modifiers": [
+      {
+       "fromWave": 6,
+       "types": [
+        "brute"
+       ],
+       "modifier": "armored"
       },
-      "playable": false
+      {
+       "fromWave": 8,
+       "types": [
+        "flyer",
+        "runner"
+       ],
+       "modifier": "fast"
+      },
+      {
+       "fromWave": 12,
+       "types": [
+        "grunt"
+       ],
+       "modifier": "shield:2"
+      }
+     ],
+     "marks": 20
     },
     {
-      "id": "strange-town",
-      "name": "Strange Town",
-      "legacyName": "Bizarre Town (U16.5)?",
-      "acts": 5,
-      "waves": 20,
-      "players": {
-        "min": 1,
-        "max": 4
+     "act": 3,
+     "name": "The Warlock",
+     "boss": {
+      "name": "The Warlock",
+      "kit": "mender"
+     },
+     "hpBp": 34000,
+     "modifiers": [
+      {
+       "fromWave": 6,
+       "types": [
+        "brute"
+       ],
+       "modifier": "armored"
       },
-      "playable": false
+      {
+       "fromWave": 8,
+       "types": [
+        "flyer",
+        "runner"
+       ],
+       "modifier": "fast"
+      },
+      {
+       "fromWave": 12,
+       "types": [
+        "grunt"
+       ],
+       "modifier": "shield:2"
+      }
+     ],
+     "marks": 25
     },
     {
-      "id": "ruined-city-the-menace",
-      "name": "Ruined City (The Menace)",
-      "legacyName": "Hero City - The Hero Slayer (U14)",
-      "waves": 20,
-      "players": {
-        "min": 1,
-        "max": 4
+     "act": 4,
+     "name": "The Genie",
+     "boss": {
+      "name": "The Genie",
+      "kit": "shielder"
+     },
+     "hpBp": 38000,
+     "modifiers": [
+      {
+       "fromWave": 6,
+       "types": [
+        "brute"
+       ],
+       "modifier": "armored"
       },
-      "playable": false
+      {
+       "fromWave": 8,
+       "types": [
+        "flyer",
+        "runner"
+       ],
+       "modifier": "fast"
+      },
+      {
+       "fromWave": 12,
+       "types": [
+        "grunt"
+       ],
+       "modifier": "shield:2"
+      }
+     ],
+     "marks": 30
     },
     {
-      "id": "cursed-festival",
-      "name": "Cursed Festival",
-      "waves": 20,
-      "players": {
-        "min": 1,
-        "max": 4
+     "act": 5,
+     "name": "The Pure Form",
+     "boss": {
+      "name": "The Pure Form",
+      "kit": "colossus"
+     },
+     "hpBp": 44000,
+     "modifiers": [
+      {
+       "fromWave": 6,
+       "types": [
+        "brute"
+       ],
+       "modifier": "armored"
       },
-      "playable": false
-    },
-    {
-      "id": "future-city-tyrant-s-invasion",
-      "name": "Future City (Tyrant's Invasion)",
-      "legacyName": "West City: Freezo's Invasion (U11.7.5)?",
-      "waves": 20,
-      "players": {
-        "min": 1,
-        "max": 4
+      {
+       "fromWave": 8,
+       "types": [
+        "flyer",
+        "runner"
+       ],
+       "modifier": "fast"
       },
-      "playable": false
-    },
-    {
-      "id": "future-city",
-      "name": "Future City",
-      "legacyName": "West City - Android Attack (U5.6)?",
-      "waves": 20,
-      "players": {
-        "min": 1,
-        "max": 4
-      },
-      "playable": false
-    },
-    {
-      "id": "storm-hideout",
-      "name": "Storm Hideout",
-      "waves": 20,
-      "players": {
-        "min": 1,
-        "max": 4
-      },
-      "playable": false
-    },
-    {
-      "id": "nightmare-train",
-      "name": "Nightmare Train",
-      "legacyName": "Infinity Train - Demonic Invasion (U2.5)",
-      "waves": 20,
-      "players": {
-        "min": 1,
-        "max": 4
-      },
-      "playable": false
-    },
-    {
-      "id": "sand-village-midnight-attack",
-      "name": "Sand Village (Midnight Attack)",
-      "waves": 20,
-      "players": {
-        "min": 1,
-        "max": 4
-      },
-      "playable": false
-    },
-    {
-      "id": "the-spider",
-      "name": "The Spider",
-      "waves": 20,
-      "players": {
-        "min": 1,
-        "max": 4
-      },
-      "playable": false
+      {
+       "fromWave": 12,
+       "types": [
+        "grunt"
+       ],
+       "modifier": "shield:2"
+      }
+     ],
+     "marks": 35
     }
-  ]
+   ],
+   "playable": true
+  },
+  {
+   "id": "sand-village-midnight-attack",
+   "name": "Sand Village (Midnight Attack)",
+   "host": "sand-village",
+   "blurb": "Midnight over the dunes. The bomber breaks into smaller threats.",
+   "unlock": {
+    "afterWorld": "sand-village",
+    "afterAct": 3
+   },
+   "waves": 20,
+   "players": {
+    "min": 1,
+    "max": 4
+   },
+   "hpBp": 10000,
+   "guarantee": {
+    "unit": "naruto_pts",
+    "clears": 10
+   },
+   "acts": [
+    {
+     "act": 1,
+     "name": "Deidara",
+     "boss": {
+      "name": "Deidara",
+      "kit": "colossus"
+     },
+     "hpBp": 35000,
+     "modifiers": [
+      {
+       "fromWave": 6,
+       "types": [
+        "brute"
+       ],
+       "modifier": "armored"
+      },
+      {
+       "fromWave": 8,
+       "types": [
+        "flyer",
+        "runner"
+       ],
+       "modifier": "fast"
+      },
+      {
+       "fromWave": 12,
+       "types": [
+        "grunt"
+       ],
+       "modifier": "shield:2"
+      }
+     ],
+     "marks": 20
+    }
+   ],
+   "playable": true
+  },
+  {
+   "id": "future-city",
+   "name": "Future City",
+   "legacyName": "West City - Android Attack (U5.6)?",
+   "host": "walled-city",
+   "blurb": "Androids on the avenues. Do not let the experiment finish.",
+   "unlock": {
+    "afterWorld": "walled-city",
+    "afterAct": 3
+   },
+   "waves": 20,
+   "players": {
+    "min": 1,
+    "max": 4
+   },
+   "hpBp": 10000,
+   "guarantee": {
+    "unit": "trunks",
+    "clears": 10
+   },
+   "acts": [
+    {
+     "act": 1,
+     "name": "Experiment X",
+     "boss": {
+      "name": "Experiment X",
+      "kit": "colossus"
+     },
+     "hpBp": 35000,
+     "modifiers": [
+      {
+       "fromWave": 6,
+       "types": [
+        "brute"
+       ],
+       "modifier": "armored"
+      },
+      {
+       "fromWave": 8,
+       "types": [
+        "flyer",
+        "runner"
+       ],
+       "modifier": "fast"
+      },
+      {
+       "fromWave": 12,
+       "types": [
+        "grunt"
+       ],
+       "modifier": "shield:2"
+      }
+     ],
+     "marks": 20
+    }
+   ],
+   "playable": true
+  },
+  {
+   "id": "strange-town",
+   "name": "Strange Town",
+   "legacyName": "Bizarre Town (U16.5)?",
+   "host": "snowy-town",
+   "blurb": "A quiet town, five strange attackers.",
+   "unlock": {
+    "afterWorld": "snowy-town",
+    "afterAct": 3
+   },
+   "waves": 20,
+   "players": {
+    "min": 1,
+    "max": 4
+   },
+   "hpBp": 10000,
+   "guarantee": {
+    "unit": "bambietta",
+    "clears": 10
+   },
+   "acts": [
+    {
+     "act": 1,
+     "name": "Love Deluxe",
+     "boss": {
+      "name": "Love Deluxe",
+      "kit": "charger"
+     },
+     "hpBp": 28000,
+     "modifiers": [
+      {
+       "fromWave": 6,
+       "types": [
+        "brute"
+       ],
+       "modifier": "armored"
+      },
+      {
+       "fromWave": 8,
+       "types": [
+        "flyer",
+        "runner"
+       ],
+       "modifier": "fast"
+      },
+      {
+       "fromWave": 12,
+       "types": [
+        "grunt"
+       ],
+       "modifier": "shield:2"
+      }
+     ],
+     "marks": 15
+    },
+    {
+     "act": 2,
+     "name": "Highway Star",
+     "boss": {
+      "name": "Highway Star",
+      "kit": "summoner"
+     },
+     "hpBp": 31000,
+     "modifiers": [
+      {
+       "fromWave": 6,
+       "types": [
+        "brute"
+       ],
+       "modifier": "armored"
+      },
+      {
+       "fromWave": 8,
+       "types": [
+        "flyer",
+        "runner"
+       ],
+       "modifier": "fast"
+      },
+      {
+       "fromWave": 12,
+       "types": [
+        "grunt"
+       ],
+       "modifier": "shield:2"
+      }
+     ],
+     "marks": 20
+    },
+    {
+     "act": 3,
+     "name": "The Harvest",
+     "boss": {
+      "name": "The Harvest",
+      "kit": "mender"
+     },
+     "hpBp": 34000,
+     "modifiers": [
+      {
+       "fromWave": 6,
+       "types": [
+        "brute"
+       ],
+       "modifier": "armored"
+      },
+      {
+       "fromWave": 8,
+       "types": [
+        "flyer",
+        "runner"
+       ],
+       "modifier": "fast"
+      },
+      {
+       "fromWave": 12,
+       "types": [
+        "grunt"
+       ],
+       "modifier": "shield:2"
+      }
+     ],
+     "marks": 25
+    },
+    {
+     "act": 4,
+     "name": "Atom Heart",
+     "boss": {
+      "name": "Atom Heart",
+      "kit": "shielder"
+     },
+     "hpBp": 38000,
+     "modifiers": [
+      {
+       "fromWave": 6,
+       "types": [
+        "brute"
+       ],
+       "modifier": "armored"
+      },
+      {
+       "fromWave": 8,
+       "types": [
+        "flyer",
+        "runner"
+       ],
+       "modifier": "fast"
+      },
+      {
+       "fromWave": 12,
+       "types": [
+        "grunt"
+       ],
+       "modifier": "shield:2"
+      }
+     ],
+     "marks": 30
+    },
+    {
+     "act": 5,
+     "name": "Killer Queen",
+     "boss": {
+      "name": "Killer Queen",
+      "kit": "colossus"
+     },
+     "hpBp": 44000,
+     "modifiers": [
+      {
+       "fromWave": 6,
+       "types": [
+        "brute"
+       ],
+       "modifier": "armored"
+      },
+      {
+       "fromWave": 8,
+       "types": [
+        "flyer",
+        "runner"
+       ],
+       "modifier": "fast"
+      },
+      {
+       "fromWave": 12,
+       "types": [
+        "grunt"
+       ],
+       "modifier": "shield:2"
+      }
+     ],
+     "marks": 35
+    }
+   ],
+   "playable": true
+  },
+  {
+   "id": "storm-hideout",
+   "name": "Storm Hideout",
+   "host": "navy-bay",
+   "blurb": "A hideout above the waves. Everything arrives at once.",
+   "unlock": {
+    "afterWorld": "navy-bay",
+    "afterAct": 3
+   },
+   "waves": 20,
+   "players": {
+    "min": 1,
+    "max": 4
+   },
+   "hpBp": 10000,
+   "guarantee": {
+    "unit": "chuya",
+    "clears": 10
+   },
+   "acts": [
+    {
+     "act": 1,
+     "name": "Storm Lord",
+     "boss": {
+      "name": "Storm Lord",
+      "kit": "colossus"
+     },
+     "hpBp": 35000,
+     "modifiers": [
+      {
+       "fromWave": 6,
+       "types": [
+        "brute"
+       ],
+       "modifier": "armored"
+      },
+      {
+       "fromWave": 8,
+       "types": [
+        "flyer",
+        "runner"
+       ],
+       "modifier": "fast"
+      },
+      {
+       "fromWave": 12,
+       "types": [
+        "grunt"
+       ],
+       "modifier": "shield:2"
+      }
+     ],
+     "marks": 20
+    }
+   ],
+   "playable": true
+  },
+  {
+   "id": "future-city-tyrant-s-invasion",
+   "name": "Future City (Tyrant's Invasion)",
+   "legacyName": "West City: Freezo's Invasion (U11.7.5)?",
+   "host": "fiend-city",
+   "blurb": "The tyrant returns with a fleet.",
+   "unlock": {
+    "afterWorld": "fiend-city",
+    "afterAct": 3
+   },
+   "waves": 20,
+   "players": {
+    "min": 1,
+    "max": 4
+   },
+   "hpBp": 10000,
+   "guarantee": {
+    "unit": "frieza_mecha",
+    "clears": 10
+   },
+   "acts": [
+    {
+     "act": 1,
+     "name": "Tyrant Freezo",
+     "boss": {
+      "name": "Tyrant Freezo",
+      "kit": "colossus"
+     },
+     "hpBp": 35000,
+     "modifiers": [
+      {
+       "fromWave": 6,
+       "types": [
+        "brute"
+       ],
+       "modifier": "armored"
+      },
+      {
+       "fromWave": 8,
+       "types": [
+        "flyer",
+        "runner"
+       ],
+       "modifier": "fast"
+      },
+      {
+       "fromWave": 12,
+       "types": [
+        "grunt"
+       ],
+       "modifier": "shield:2"
+      }
+     ],
+     "marks": 20
+    }
+   ],
+   "playable": true
+  },
+  {
+   "id": "ruined-city-the-menace",
+   "name": "Ruined City (The Menace)",
+   "legacyName": "Hero City - The Hero Slayer (U14)",
+   "host": "spirit-world",
+   "blurb": "He hunts heroes. Bring a team he cannot choose from.",
+   "unlock": {
+    "afterWorld": "spirit-world",
+    "afterAct": 3
+   },
+   "waves": 20,
+   "players": {
+    "min": 1,
+    "max": 4
+   },
+   "hpBp": 10000,
+   "guarantee": {
+    "unit": "stain",
+    "clears": 10
+   },
+   "acts": [
+    {
+     "act": 1,
+     "name": "Menace",
+     "boss": {
+      "name": "Menace",
+      "kit": "colossus"
+     },
+     "hpBp": 35000,
+     "modifiers": [
+      {
+       "fromWave": 6,
+       "types": [
+        "brute"
+       ],
+       "modifier": "armored"
+      },
+      {
+       "fromWave": 8,
+       "types": [
+        "flyer",
+        "runner"
+       ],
+       "modifier": "fast"
+      },
+      {
+       "fromWave": 12,
+       "types": [
+        "grunt"
+       ],
+       "modifier": "shield:2"
+      }
+     ],
+     "marks": 20
+    }
+   ],
+   "playable": true
+  },
+  {
+   "id": "ant-kingdom-midnight",
+   "name": "Ant Kingdom (Midnight)",
+   "host": "ant-kingdom",
+   "blurb": "The colony wakes at night. Fifteen clears and the Spider is yours.",
+   "unlock": {
+    "afterWorld": "ant-kingdom",
+    "afterAct": 3
+   },
+   "waves": 20,
+   "players": {
+    "min": 1,
+    "max": 4
+   },
+   "hpBp": 10000,
+   "guarantee": {
+    "unit": "feitan",
+    "clears": 15
+   },
+   "acts": [
+    {
+     "act": 1,
+     "name": "Spider Chief",
+     "boss": {
+      "name": "Spider Chief",
+      "kit": "colossus"
+     },
+     "hpBp": 35000,
+     "modifiers": [
+      {
+       "fromWave": 6,
+       "types": [
+        "brute"
+       ],
+       "modifier": "armored"
+      },
+      {
+       "fromWave": 8,
+       "types": [
+        "flyer",
+        "runner"
+       ],
+       "modifier": "fast"
+      },
+      {
+       "fromWave": 12,
+       "types": [
+        "grunt"
+       ],
+       "modifier": "shield:2"
+      }
+     ],
+     "marks": 20
+    }
+   ],
+   "playable": true
+  },
+  {
+   "id": "the-spider",
+   "name": "The Spider",
+   "host": "ant-kingdom",
+   "blurb": "Threads everywhere. Cut them before the web closes.",
+   "unlock": {
+    "afterWorld": "ant-kingdom",
+    "afterAct": 3
+   },
+   "waves": 20,
+   "players": {
+    "min": 1,
+    "max": 4
+   },
+   "hpBp": 10000,
+   "guarantee": {
+    "unit": "feitan_evo",
+    "clears": 15
+   },
+   "acts": [
+    {
+     "act": 1,
+     "name": "The Spider",
+     "boss": {
+      "name": "The Spider",
+      "kit": "colossus"
+     },
+     "hpBp": 35000,
+     "modifiers": [
+      {
+       "fromWave": 6,
+       "types": [
+        "brute"
+       ],
+       "modifier": "armored"
+      },
+      {
+       "fromWave": 8,
+       "types": [
+        "flyer",
+        "runner"
+       ],
+       "modifier": "fast"
+      },
+      {
+       "fromWave": 12,
+       "types": [
+        "grunt"
+       ],
+       "modifier": "shield:2"
+      }
+     ],
+     "marks": 20
+    }
+   ],
+   "playable": true
+  },
+  {
+   "id": "cursed-festival",
+   "name": "Cursed Festival",
+   "host": "magic-town",
+   "blurb": "Lanterns, music and two demons in the crowd.",
+   "unlock": {
+    "afterWorld": "magic-town",
+    "afterAct": 3
+   },
+   "waves": 20,
+   "players": {
+    "min": 1,
+    "max": 4
+   },
+   "hpBp": 10000,
+   "guarantee": {
+    "unit": "rengoku",
+    "clears": 10
+   },
+   "acts": [
+    {
+     "act": 1,
+     "name": "Daki & Gyutaro",
+     "boss": {
+      "name": "Daki & Gyutaro",
+      "kit": "colossus"
+     },
+     "hpBp": 35000,
+     "modifiers": [
+      {
+       "fromWave": 6,
+       "types": [
+        "brute"
+       ],
+       "modifier": "armored"
+      },
+      {
+       "fromWave": 8,
+       "types": [
+        "flyer",
+        "runner"
+       ],
+       "modifier": "fast"
+      },
+      {
+       "fromWave": 12,
+       "types": [
+        "grunt"
+       ],
+       "modifier": "shield:2"
+      }
+     ],
+     "marks": 20
+    }
+   ],
+   "playable": true
+  },
+  {
+   "id": "nightmare-train",
+   "name": "Nightmare Train",
+   "legacyName": "Infinity Train - Demonic Invasion (U2.5)",
+   "host": "haunted-academy",
+   "blurb": "A train that never stops. A demon who never tires.",
+   "unlock": {
+    "afterWorld": "haunted-academy",
+    "afterAct": 3
+   },
+   "waves": 20,
+   "players": {
+    "min": 1,
+    "max": 4
+   },
+   "hpBp": 10000,
+   "guarantee": {
+    "unit": "akaza_unit",
+    "clears": 10
+   },
+   "acts": [
+    {
+     "act": 1,
+     "name": "Akaza",
+     "boss": {
+      "name": "Akaza",
+      "kit": "colossus"
+     },
+     "hpBp": 35000,
+     "modifiers": [
+      {
+       "fromWave": 6,
+       "types": [
+        "brute"
+       ],
+       "modifier": "armored"
+      },
+      {
+       "fromWave": 8,
+       "types": [
+        "flyer",
+        "runner"
+       ],
+       "modifier": "fast"
+      },
+      {
+       "fromWave": 12,
+       "types": [
+        "grunt"
+       ],
+       "modifier": "shield:2"
+      }
+     ],
+     "marks": 20
+    }
+   ],
+   "playable": true
+  }
+ ]
 }
