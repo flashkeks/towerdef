@@ -4,6 +4,7 @@
 import { mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { buildTeam, fastForward, launch, root, sleep, startServer } from './lib/drive.mjs';
+import { clickWorld, readGhost, readSpots, worldToScreen } from './lib/mouse.mjs';
 
 const PORT = Number(process.env.SHOT_PORT ?? 4431);
 const SAVE = process.env.SHOT_SAVE;
@@ -59,6 +60,21 @@ try {
     await page.locator('.diff[data-difficulty="normal"]').click();
     await page.waitForSelector('canvas.board');
     const units = await page.evaluate(() => window.__duskwardens.session().team ?? []);
+    // Mausprobe auf der grossen Karte: Geist liegt unter dem Zeiger, ein echter Klick setzt die Unit dorthin
+    const probe = units[0];
+    await page.evaluate(() => { window.__duskwardens.session().sim.state.players[0].coins = 100000; });
+    await page.keyboard.press('1');
+    const spot = (await readSpots(page, probe, 1, { ignoreCoins: true }))[0];
+    const sp = await worldToScreen(page, spot[0], spot[1]);
+    await page.mouse.move(sp.x, sp.y);
+    await sleep(150);
+    const gh = await readGhost(page);
+    await clickWorld(page, spot[0], spot[1]);
+    await sleep(150);
+    const placed = await page.evaluate(() => window.__duskwardens.session().sim.state.units.map((u) => [u.x, u.y]));
+    const hit = placed.some(([x, y]) => Math.abs(x - spot[0]) <= 60 && Math.abs(y - spot[1]) <= 60);
+    console.log(stage, 'Mausprobe', { spot, ghost: gh && { ok: gh.ok, x: gh.x, y: gh.y }, placed: placed.length, hit });
+    if (!hit || !gh?.ok) process.exitCode = 1;
     await buildTeam(page, { units: [...units, ...units], level: 2 });
     await fastForward(page, 8);
     await page.evaluate(() => window.__duskwardens.session().setSpeed(1));
