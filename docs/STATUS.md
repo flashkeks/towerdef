@@ -1,6 +1,6 @@
 # Status (global)
 
-Arbeitsauftrag: [`/run.md`](../run.md) (**Runde 10**: Spielfeld im neuen Look — Karten-Grafik je Welt, Gegner-Bilder, Units als Mini-Porträt —, Welten 11–22, Raid-Units aus dem Banner; Kaltstart-Abschnitt 0). **Verbindlich zuerst:** [design/ENTSCHEIDUNGEN.md](design/ENTSCHEIDUNGEN.md), Abschnitt „Kurswechsel 07.10.2026“. **Jede Sitzung liest danach diese Datei** und macht beim „Nächsten Schritt“ weiter.
+Arbeitsauftrag: [`/run.md`](../run.md) (**Runde 10, neu gefasst 08.10.2026 nach Max' Rückmeldung zu Runde 9**: echte Anime-Figuren mit echten Namen und Bildern statt AA/Roblox, Promi-Banner, Match mit Figuren/Angriffs-Grafik/Ton, Beschwören und Mehrfach-Ergebnisse neu, Karten-Grafik je Welt; Welten 11–22 → Runde 11; Kaltstart-Abschnitt 0). **Verbindlich zuerst:** [design/ENTSCHEIDUNGEN.md](design/ENTSCHEIDUNGEN.md), Abschnitte „Look-Wechsel 08.10.2026“ und „Kurswechsel 07.10.2026“. **Jede Sitzung liest danach diese Datei** und macht beim „Nächsten Schritt“ weiter.
 Frühere Aufträge: [archiv/run-runde1.md](archiv/run-runde1.md), [archiv/run-runde2.md](archiv/run-runde2.md), [archiv/run-runde3.md](archiv/run-runde3.md), [archiv/run-runde4.md](archiv/run-runde4.md), [archiv/run-runde5.md](archiv/run-runde5.md), [archiv/run-runde6.md](archiv/run-runde6.md), [archiv/run-runde7.md](archiv/run-runde7.md), [archiv/run-runde8-verworfen.md](archiv/run-runde8-verworfen.md), [archiv/run-runde8.md](archiv/run-runde8.md), [archiv/run-runde9.md](archiv/run-runde9.md).
 
 

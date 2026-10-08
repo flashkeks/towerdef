@@ -4,6 +4,34 @@ Verbindlich für alle weiteren Runden. Die beantwortete Fragenliste liegt in
 `docs/design/FRAGEN.md`. Hier steht die Auslegung, nach der gearbeitet wird.
 Änderungen nur durch die Menschen.
 
+## Look-Wechsel 08.10.2026 (Max, nach Runde 9 auf der Preview) — gilt vor dem Kurswechsel unten
+
+Max hat Runde 9 gespielt. Interface außerhalb des Matches: gut. Aber:
+
+1. **Keine AA-/Roblox-Bilder mehr.** Die 1:1 aus dem AA-Wiki kopierten Porträts sind Roblox-Figuren
+   und sehen „scheiße aus“. Jede Unit bekommt ein **echtes Anime-Bild der Figur** (Quelle: AniList,
+   Charakterbilder; Lücken: MyAnimeList/Fandom-Wiki der jeweiligen Serie, notfalls KI). Die
+   Homelab-Seite holt die Bilder auf `edge`; das Repo liefert dafür je Unit Name + Serie (+ AniList-ID,
+   wenn bekannt) im Bild-Manifest. Punkt 2 des Kurswechsels gilt für Werte, Angriffe, Effekte,
+   Evolutionen, Welten weiter — **nicht mehr für Bilder und Namen**.
+2. **Echte Namen statt AA-Parodienamen.** „Carrot“, „Copy Ninja“, „Joykid“ werden zu „Son Goku“,
+   „Kakashi Hatake“, „Monkey D. Luffy“. Angezeigt wird der echte Name, darunter die Serie.
+3. **Bekannte Figuren.** Units, hinter denen keine echte oder nur eine obskure Figur steht (generische
+   Soldaten, Nebenfiguren), werden **auf eine bekannte Figur derselben Serie umgemünzt** (Werte bleiben).
+   Maßstab: AniList-Favoriten (grob ≥ 1.000; Ausnahmen, wo die Serie keine bekanntere Figur mehr hergibt).
+   Dieselbe Figur nicht doppelt, außer als echte Form (z. B. Goku / Goku SSB bleiben getrennt).
+4. **Promis als Crossover sind erwünscht** (Max: „Donald Trump oder so“). Bekannte reale Personen
+   und Internet-Größen, Bild per Wikipedia. Fähigkeiten mit Augenzwinkern, nicht beleidigend.
+   Das Spiel bleibt intern (Kurswechsel Punkt 1), sonst ginge das nicht.
+5. **Alles im Match braucht ein Design:** Units auf dem Feld als Figur/Porträt, nicht als Buchstaben;
+   **Angriffe mit eigener Grafik** (Projektil, Hieb, Strahl, Fläche je Angriffsform und Element),
+   Treffer- und Tod-Effekte.
+6. **Mehr Soundeffekte und visuelle Effekte überall.** Besonders: **Beschwören** sieht „ungeil“ aus
+   und muss ein Höhepunkt werden (Aufbau, Seltenheits-Farbe, Enthüllung). **Mehrfach-Ergebnisse**
+   (Daily Pack, 10er-Zug) müssen sich durchklicken lassen; heute sieht man nur das erste.
+7. Der Grafikstil „Pixel-Anime“ (Tabelle unten) ist damit überholt: Anime-Porträts und -Bilder, im
+   Match als Porträt-Figuren mit Effekten.
+
 ## Kurswechsel 07.10.2026 (Max) — gilt vor allem anderen in dieser Datei
 
 Nach Runde 7 war das Spiel spielbar, aber **deutlich zu klein und zu simpel**: 14 handgemachte Units,
@@ -43,7 +71,7 @@ bleiben (Max, 07.10.2026); die AA-`spawnCap`-Werte werden importiert, aber nicht
 | Plattform | **nur Desktop-Browser.** Handy und Touch werden aktiv gesperrt (freundlicher Hinweis-Bildschirm), keine Mobile-Optimierung |
 | Sprache | **Englisch** (UI, Texte, Namen). Doku im Repo bleibt Deutsch |
 | Hosting | auf `edge` (Netcup) hinter dem vorhandenen Cloudflare-Tunnel, **eigene Domain**. Den Betrieb machen die Menschen bzw. die Homelab-Seite |
-| Grafikstil | **Pixel-Anime**: kleine Sprites im Spiel, große Portraits im Menü. Flat-Chibi bleibt als spätere Option denkbar |
+| Grafikstil | ~~Pixel-Anime~~ **überholt (Look-Wechsel 08.10.2026):** echte Anime-Bilder der Figuren, im Match Porträt-Figuren mit Effekten |
 | Team | ca. 120 Std./Woche gesamt, **kein Zeitdruck**. Qualität vor Tempo |
 
 ## Platzierung (Max, 07.10.2026, nach dem ersten echten Playtest)
