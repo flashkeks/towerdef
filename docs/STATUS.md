@@ -13,13 +13,15 @@ Letzte Aktualisierung: 2026-10-08 (Runde 10 läuft, P0 erledigt)
 | Paket | Inhalt | Status | Agent (Modell) | Was man jetzt sehen kann |
 |---|---|---|---|---|
 | P0 | Status, Raid-Units aus dem Banner-Pool | **erledigt** | Hauptsitzung | Die 11 Garantie-Units der Raids (`guarantee.unit` in `sim/data/modes/raids.json`: vegeta_majin, naruto_pts, trunks, bambietta, chuya, frieza_mecha, stain, feitan, rengoku, akaza_unit …) tragen `raidOnly` im Meta-Katalog und liegen in **keinem** Banner-Pool mehr (wie AA `hideFromBanner`); zu bekommen nur über Raid-Garantie und Raid-Shop. Besessene bleiben (Test `meta/test/raid-units-r10.test.ts`). Banner-Raten unverändert (Pools sind gleichverteilt, nur die Einzelrate der übrigen steigt leicht). Stand vor Runde 10: sim 381, meta 168 → 171, client 252 |
-| P1 | Echte Figuren: `figuren.json`, Manifest mit `anilistQuery`, Anzeige Name + Serie, Promi-Banner „Legends of Earth“ | läuft (Phase A: Tabelle + Manifest) | 1 × Sonnet | – |
-| P2 | Match: Porträt-Figuren, Angriffs-Grafik je Form × Element, Treffer/Tod, Fähigkeits-Ansage, Gegner-Figuren, Ton | läuft | 1 × Sonnet | – |
-| P3 | Beschwören neu, Mehrfach-Ergebnisse durchklickbar, Interaktions-Durchgang, Menü-Ton | läuft | 1 × Sonnet | – |
+| P1 | Echte Figuren: `figuren.json`, Manifest mit `anilistQuery`, Anzeige Name + Serie, Promi-Banner „Legends of Earth“ | läuft (Phase A: Tabelle + Manifest), nach Limit neu gestartet | 2 × Sonnet (1 am Limit) | – |
+| P2 | Match: Porträt-Figuren, Angriffs-Grafik je Form × Element, Treffer/Tod, Fähigkeits-Ansage, Gegner-Figuren, Ton | läuft, nach Limit übernommen | 2 × Sonnet (1 am Limit) | – |
+| P3 | Beschwören neu, Mehrfach-Ergebnisse durchklickbar, Interaktions-Durchgang, Menü-Ton | läuft, nach Limit übernommen | 2 × Sonnet (1 am Limit) | – |
 | P4 | Karten-Grafik je Welt | wartet (startet, sobald P1/P2/P3 frei) | 1 × Sonnet | – |
 | P5 | Abschluss | offen | Hauptsitzung | – |
 
 Plan: P1, P2, P3 parallel in lokalen Worktrees (max. 3 Agenten, nur Sonnet, Zwischenstand spätestens alle 30 min), P1 liefert zuerst `figuren.json` + Manifest (sofort nach `dev`, Meldung unten), P4 danach. Screenshots in `client/docs/r10/`.
+
+**Falle Nutzungslimit (08.10.2026):** Ein am Limit abgebrochener Agent, der per `SendMessage` fortgesetzt wird, läuft **nicht** mehr auf Sonnet, sondern auf dem Modell der Hauptsitzung (hier Opus; die Fehlermeldung nannte `claude-opus-5-5`). Das widerspricht run.md § 1 („nie Opus“). Vorgehen stattdessen: Hauptsitzung committet den Worktree-Stand (`wip(...)`), dann **neuer Agent mit `model: sonnet`** auf demselben Worktree mit Übernahme-Hinweis („Vorgänger-Stand liegt in `git log dev..HEAD`“). So in Runde 10 für P1–P3 gemacht (Limit 15:4x und 16:4x UTC).
 
 **Für die Homelab-Seite (Runde 10):** Manifest mit `anilistQuery` folgt, sobald P1 Phase A steht (Commit wird hier eingetragen). Nichts deployen ohne Ansage von Max.
 
