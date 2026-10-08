@@ -12,6 +12,8 @@
     "aa-import:check": "cd sim && npx tsx ../tools/aa-import/index.ts --check",
     "crossover": "cd sim && npx tsx ../tools/aa-import/crossover.ts",
     "crossover:check": "cd sim && npx tsx ../tools/aa-import/crossover.ts --check",
-    "crossover:vorlage": "cd sim && npx tsx ../tools/aa-import/crossover.ts --vorlage"
+    "crossover:vorlage": "cd sim && npx tsx ../tools/aa-import/crossover.ts --vorlage",
+    "legends": "cd sim && npx tsx ../tools/aa-import/crossover.ts --legends",
+    "legends:check": "cd sim && npx tsx ../tools/aa-import/crossover.ts --legends --check"
   }
 }

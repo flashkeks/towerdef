@@ -11,7 +11,10 @@ export const RARITIES: readonly Rarity[] = ['rare', 'epic', 'legendary', 'mythic
 
 export interface CatalogUnit {
   id: string;
+  /** Anzeigename (Runde 10 / P1): echter Name der Figur, bei Formen "Name (Form)". */
   name: string;
+  /** Serie der Figur ("Naruto", "One Piece", "Legends of Earth"); Filter und Zweitzeile der Karte. */
+  series: string;
   rarity: Rarity;
   /** Importer: `hidden` = ohne Kampf-/Farm-Wirkung, nicht ziehbar und nicht in der Sammlung (ausser besessen). */
   hidden: boolean;
@@ -28,12 +31,16 @@ export interface CatalogUnit {
   raidOnly: boolean;
   /** Crossover-Figur (Runde 8 / P6, `source: "custom"`): nur im Crossover-Banner (Pool `crossover`), nicht im Standard- oder Special-Pool. */
   crossover: boolean;
+  /** Promi-/Internet-Figur (Runde 10 / P1, `source: "legends"`): nur im Banner "Legends of Earth" (Pool `legends`). */
+  legends: boolean;
 }
 
 interface RawUnit {
   id: string;
   name?: string;
   nameRR?: string;
+  series?: string | null;
+  form?: string | null;
   rarity: string;
   support?: string | null;
   evolvedFrom?: string | null;
@@ -61,16 +68,20 @@ export const UNIT_CATALOG: readonly CatalogUnit[] = Object.keys(files)
     if (seen.has(u.id)) throw new Error(`units/*.json: doppelte Unit-ID ${u.id}`);
     seen.add(u.id);
     const crossover = u.source === 'custom';
+    const legends = u.source === 'legends';
+    const base = u.name ?? u.nameRR ?? u.id;
     return {
       id: u.id,
-      name: u.name ?? u.nameRR ?? u.id,
+      name: u.form ? `${base} (${u.form})` : base,
+      series: u.series ?? '',
       rarity: rarity as Rarity,
       hidden: u.support === 'hidden',
       evolvedFrom: u.evolvedFrom ?? null,
       evolvedOnly: !!u.evolvedFrom && EVO_TARGETS.has(u.id),
-      special: !crossover && !!(u.limited || u.rateupBannerOnly || u.hideFromBanner),
+      special: !crossover && !legends && !!(u.limited || u.rateupBannerOnly || u.hideFromBanner),
       raidOnly: RAID_UNIT_IDS.has(u.id),
       crossover,
+      legends,
     };
   });
 
@@ -84,12 +95,15 @@ export const unitsOfRarity = (r: Rarity): string[] => UNIT_CATALOG.filter((u) =>
  * `summonable` = Standard-Pool (kein Limited/Event/Rate-up, keine Evolution, nicht ausgeblendet);
  * `special` = die uebrigen nicht entwickelten, nicht ausgeblendeten Units (begrenzt, Event, Rate-up);
  * `crossover` = die Crossover-Figuren (Pop-Kultur/Memes, `source: "custom"`), nur dort;
+ * `legends` = die Promi-Figuren "Legends of Earth" (`source: "legends"`), nur dort;
  * `all` = alles Ziehbare (Union). Entwickelte Formen, ausgeblendete Units und Raid-Units (`raidOnly`) sind nie ziehbar.
  */
-export type PoolName = 'summonable' | 'special' | 'crossover' | 'all';
+export type PoolName = 'summonable' | 'special' | 'crossover' | 'legends' | 'all';
 const inPool = (pool: PoolName, u: CatalogUnit): boolean =>
-  pool === 'all' || (pool === 'crossover' ? u.crossover : !u.crossover && (pool === 'special') === u.special);
+  pool === 'all' || (pool === 'crossover' ? u.crossover : pool === 'legends' ? u.legends : !u.crossover && !u.legends && (pool === 'special') === u.special);
 export const poolOfRarity = (pool: PoolName, r: Rarity): string[] =>
   UNIT_CATALOG.filter((u) => u.rarity === r && !u.hidden && !u.evolvedOnly && !u.raidOnly && inPool(pool, u)).map((u) => u.id);
 export const nameOf = (id: string): string => UNIT_CATALOG.find((u) => u.id === id)?.name ?? id;
+/** Serie einer Unit (leer, wenn unbekannt). */
+export const seriesOf = (id: string): string => UNIT_CATALOG.find((u) => u.id === id)?.series ?? '';
 export const rarityOf = (id: string): Rarity | null => UNIT_CATALOG.find((u) => u.id === id)?.rarity ?? null;
