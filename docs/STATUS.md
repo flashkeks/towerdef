@@ -1,7 +1,7 @@
 # Status (global)
 
-Arbeitsauftrag: [`/run.md`](../run.md) (**Runde 9**: Fähigkeiten/Beschwörungen, 10 Welten, Legend Stages + Raids, Interface komplett; Kaltstart-Abschnitt 0 für neue Sessions). **Verbindlich zuerst:** [design/ENTSCHEIDUNGEN.md](design/ENTSCHEIDUNGEN.md), Abschnitt „Kurswechsel 07.10.2026“. **Jede Sitzung liest danach diese Datei** und macht beim „Nächsten Schritt“ weiter.
-Frühere Aufträge: [archiv/run-runde1.md](archiv/run-runde1.md), [archiv/run-runde2.md](archiv/run-runde2.md), [archiv/run-runde3.md](archiv/run-runde3.md), [archiv/run-runde4.md](archiv/run-runde4.md), [archiv/run-runde5.md](archiv/run-runde5.md), [archiv/run-runde6.md](archiv/run-runde6.md), [archiv/run-runde7.md](archiv/run-runde7.md), [archiv/run-runde8-verworfen.md](archiv/run-runde8-verworfen.md), [archiv/run-runde8.md](archiv/run-runde8.md).
+Arbeitsauftrag: [`/run.md`](../run.md) (**Runde 10**: Spielfeld im neuen Look — Karten-Grafik je Welt, Gegner-Bilder, Units als Mini-Porträt —, Welten 11–22, Raid-Units aus dem Banner; Kaltstart-Abschnitt 0). **Verbindlich zuerst:** [design/ENTSCHEIDUNGEN.md](design/ENTSCHEIDUNGEN.md), Abschnitt „Kurswechsel 07.10.2026“. **Jede Sitzung liest danach diese Datei** und macht beim „Nächsten Schritt“ weiter.
+Frühere Aufträge: [archiv/run-runde1.md](archiv/run-runde1.md), [archiv/run-runde2.md](archiv/run-runde2.md), [archiv/run-runde3.md](archiv/run-runde3.md), [archiv/run-runde4.md](archiv/run-runde4.md), [archiv/run-runde5.md](archiv/run-runde5.md), [archiv/run-runde6.md](archiv/run-runde6.md), [archiv/run-runde7.md](archiv/run-runde7.md), [archiv/run-runde8-verworfen.md](archiv/run-runde8-verworfen.md), [archiv/run-runde8.md](archiv/run-runde8.md), [archiv/run-runde9.md](archiv/run-runde9.md).
 
 
 ## Runde 9 (Fähigkeiten, 10 Welten, Legend/Raids, Interface)
@@ -52,6 +52,9 @@ Tests: sim 381, meta 168 (+1 übersprungen: Speicherstand-Werkzeug), client 252;
 ```
 
 **Offene Fragen an die Menschen (Runde 9, Empfehlung zuerst):**
+
+**Entschieden (Max, 08.10.2026): alle fünf Empfehlungen übernommen.** Raid-Units kommen in Runde 10 aus dem Banner-Pool (nur Raid/Shop).
+
 - **Host-Welten der Legend Stages:** 7 von 8 laufen auf einer thematisch passenden der 10 Welten, weil ihre AA-Welt noch fehlt. Empfehlung: so lassen, bis die Welten 11–22 als Dateien da sind (dann eine Zeile je Stage).
 - **Raid-Garantie nach 10 Siegen** (Spider 15, einzige belegte AA-Zahl). Empfehlung: so lassen; Alternative einheitlich 15.
 - **Material-Kosten der Evolution** (Mythic 15 Stück): Empfehlung nach dem Playtest justieren, nicht messen.
