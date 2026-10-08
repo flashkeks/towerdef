@@ -1,6 +1,6 @@
 // Gemeinsamer Aufbau fuer die Runde-10-Skripte: frisches Profil, Starter-Geschenk, Team im Speicherstand eintragen, Stage starten.
 // Das Aufstocken des Profils (Units mit Level/Sternen, Team) ist reiner Testaufbau und gilt nur fuer dieses Browser-Profil.
-import { sleep } from './drive.mjs';
+import { closeReveal, sleep } from './drive.mjs';
 
 /** Neue Seite im eigenen Kontext, Team im Profil, Lobby -> Weltkarte -> Act -> Schwierigkeit -> Spielfeld. */
 export async function setupRun(browser, url, team, { width = 1920, height = 1080, stage = null, difficulty = 'normal' } = {}) {
@@ -10,6 +10,7 @@ export async function setupRun(browser, url, team, { width = 1920, height = 1080
   await page.goto(url);
   await page.waitForSelector('.lobby:not(.loading)');
   await page.locator('.starter-claim').click();
+  await closeReveal(page);
   await page.waitForSelector('.starter-card.done');
   await sleep(600);
   await page.evaluate(({ team }) => {
