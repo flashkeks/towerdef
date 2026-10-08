@@ -1,0 +1,254 @@
+{
+  "ref": "docs/anime-adventures/data/maps.json (ant_kingdom, RR: Ant Kingdom; Walk-Time 15 s), enemies.json (Bosse), waves.json (Modifikator-Ereignisse). Karte, Wellen und Werte DESIGN: AA kennt keine Geometrie und keine Wellen-Tabelle.",
+  "_comment": "Welt 8 (Runde 9 / P2). Karte 22x14, Pfad 54 Kacheln: Ameisenbau: unregelmaessiger Gang mit Haken und Sackgassen-Kammern, Ausgang rechts unten. Bosse sind AA (enemies.json), das Fussvolk ist angelehnt (AA nennt es nicht).",
+  "id": "ant-kingdom",
+  "order": 8,
+  "name": "Ant Kingdom",
+  "legacyName": "Ant Kingdom",
+  "aaId": "ant_kingdom",
+  "blurb": "Tunnels under the savanna. Queen guards shielded eggs deep below.",
+  "unlock": {
+    "afterWorld": "spirit-world",
+    "afterAct": 6
+  },
+  "map": {
+    "path": [
+      [
+        0,
+        2
+      ],
+      [
+        7,
+        2
+      ],
+      [
+        7,
+        6
+      ],
+      [
+        3,
+        6
+      ],
+      [
+        3,
+        11
+      ],
+      [
+        10,
+        11
+      ],
+      [
+        10,
+        8
+      ],
+      [
+        14,
+        8
+      ],
+      [
+        14,
+        3
+      ],
+      [
+        18,
+        3
+      ],
+      [
+        18,
+        10
+      ],
+      [
+        21,
+        10
+      ]
+    ],
+    "pathWidth": 1,
+    "zones": {
+      "ref": "Kachelmaske 22x14: . Boden, h Huegel, # blockiert, p Pfad (nur Anzeige). Ameisenbau: unregelmaessiger Gang mit Haken und Sackgassen-Kammern, Ausgang rechts unten.",
+      "rows": [
+        "....###..#############",
+        ".........#############",
+        "pppppppp...........###",
+        ".hhhhh.phhh...ppppp...",
+        ".hhhhh.phhhhhhphh.phh.",
+        ".......phhhhhhphh.phh.",
+        "...ppppp...hhhphh.phh.",
+        "###phhh.......phh.p...",
+        "###phhh...ppppp...p...",
+        "###phhh...phhh....p...",
+        "###p......phhh....pppp",
+        "###pppppppp.....####..",
+        "######################",
+        "######################"
+      ]
+    }
+  },
+  "theme": {
+    "id": "ant-kingdom",
+    "grass": {
+      "color": "#6b4f33",
+      "alpha": 0.8,
+      "lift": -0.05
+    },
+    "path": {
+      "color": "#c9a36a",
+      "alpha": 0.65,
+      "lift": 0.0
+    },
+    "hill": {
+      "top": "#7d5e3c",
+      "topLight": "#a07c52",
+      "wall": "#4a3522",
+      "wallDark": "#30221a"
+    },
+    "blocked": [
+      "tiles/deco_rock",
+      "tiles/deco_bush",
+      "tiles/deco_rock"
+    ],
+    "deco": {
+      "color": "#5a4228",
+      "alpha": 0.45,
+      "lift": 0
+    },
+    "flowers": false,
+    "background": "#1a120c"
+  },
+  "hpBp": 17000,
+  "elementOffset": 1,
+  "roster": {
+    "grunt": "Worker Ant",
+    "runner": "Scout Ant",
+    "brute": "Soldier Ant",
+    "flyer": "Winged Ant",
+    "splitter": "Brood Ant",
+    "splitter_child": "Ant Larva",
+    "elite": "Officer Ant",
+    "boss": "Boss"
+  },
+  "acts": [
+    {
+      "act": 1,
+      "name": "Officer Ant",
+      "boss": {
+        "name": "Officer Ant",
+        "kit": "charger"
+      },
+      "waves": 15,
+      "hpBp": 10000,
+      "modifiers": []
+    },
+    {
+      "act": 2,
+      "name": "Condor",
+      "boss": {
+        "name": "Condor",
+        "kit": "summoner"
+      },
+      "waves": 15,
+      "hpBp": 13000,
+      "modifiers": []
+    },
+    {
+      "act": 3,
+      "name": "Cheetah",
+      "boss": {
+        "name": "Cheetah",
+        "kit": "mender"
+      },
+      "waves": 15,
+      "hpBp": 17000,
+      "modifiers": []
+    },
+    {
+      "act": 4,
+      "name": "Rage Ant",
+      "boss": {
+        "name": "Rage Ant",
+        "kit": "warden"
+      },
+      "waves": 20,
+      "hpBp": 23000,
+      "modifiers": [
+        {
+          "fromWave": 10,
+          "types": [
+            "brute"
+          ],
+          "modifier": "shield:2"
+        },
+        {
+          "fromWave": 12,
+          "types": [
+            "runner"
+          ],
+          "modifier": "fast"
+        }
+      ]
+    },
+    {
+      "act": 5,
+      "name": "Butterfly",
+      "boss": {
+        "name": "Butterfly",
+        "kit": "shielder"
+      },
+      "waves": 20,
+      "hpBp": 30000,
+      "modifiers": [
+        {
+          "fromWave": 8,
+          "types": [
+            "brute"
+          ],
+          "modifier": "shield:2"
+        },
+        {
+          "fromWave": 8,
+          "types": [
+            "runner"
+          ],
+          "modifier": "fast"
+        }
+      ]
+    },
+    {
+      "act": 6,
+      "name": "Queen Ant",
+      "boss": {
+        "name": "Queen Ant",
+        "kit": "colossus"
+      },
+      "waves": 20,
+      "hpBp": 40000,
+      "modifiers": [
+        {
+          "fromWave": 6,
+          "types": [
+            "brute"
+          ],
+          "modifier": "shield:3"
+        },
+        {
+          "fromWave": 5,
+          "types": [
+            "runner"
+          ],
+          "modifier": "fast"
+        },
+        {
+          "fromWave": 12,
+          "types": [
+            "grunt"
+          ],
+          "modifier": "shield:1"
+        }
+      ]
+    }
+  ],
+  "infinite": {
+    "unlockAct": 3,
+    "hpBp": 17000,
+    "fixedWaves": 14
+  }
+}

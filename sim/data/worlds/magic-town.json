@@ -1,0 +1,254 @@
+{
+  "ref": "docs/anime-adventures/data/maps.json (magic_town, RR: Magic Town; Walk-Time 22 s), enemies.json (Bosse), waves.json (Modifikator-Ereignisse). Karte, Wellen und Werte DESIGN: AA kennt keine Geometrie und keine Wellen-Tabelle.",
+  "_comment": "Welt 9 (Runde 9 / P2). Karte 24x14, Pfad 69 Kacheln: Zauberallee: drei lange Bahnen im Z, Basis am Brunnen unten rechts. Bosse sind AA (enemies.json), das Fussvolk ist angelehnt (AA nennt es nicht).",
+  "id": "magic-town",
+  "order": 9,
+  "name": "Magic Town",
+  "legacyName": "Magic Town",
+  "aaId": "magic_town",
+  "blurb": "A guild town of fire and ice. Mages stand firm against the wrong element.",
+  "unlock": {
+    "afterWorld": "ant-kingdom",
+    "afterAct": 6
+  },
+  "map": {
+    "path": [
+      [
+        0,
+        1
+      ],
+      [
+        21,
+        1
+      ],
+      [
+        21,
+        6
+      ],
+      [
+        3,
+        6
+      ],
+      [
+        3,
+        12
+      ],
+      [
+        18,
+        12
+      ],
+      [
+        18,
+        9
+      ]
+    ],
+    "pathWidth": 1,
+    "zones": {
+      "ref": "Kachelmaske 24x14: . Boden, h Huegel, # blockiert, p Pfad (nur Anzeige). Zauberallee: drei lange Bahnen im Z, Basis am Brunnen unten rechts.",
+      "rows": [
+        "......................##",
+        "pppppppppppppppppppppp..",
+        ".hhhhhhhh....hhhhhhhhp..",
+        ".hhhhhhhh....hhhhhhhhp..",
+        "###.......###........p..",
+        "###.......###........p..",
+        "...ppppppppppppppppppp..",
+        "###p.hhhhh..hhhhhh....##",
+        "###p.hhhhh..hhhhhh....##",
+        ".#.p.....##.......p#####",
+        ".#.p.hhhhh#.hhhhh.p#####",
+        ".#.p.hhhhh#.hhhhh.p#####",
+        "...pppppppppppppppp#####",
+        "###.##############.#####"
+      ]
+    }
+  },
+  "theme": {
+    "id": "magic-town",
+    "grass": {
+      "color": "#8e6fc4",
+      "alpha": 0.55,
+      "lift": 0.08
+    },
+    "path": {
+      "color": "#f0d27a",
+      "alpha": 0.6,
+      "lift": 0.05
+    },
+    "hill": {
+      "top": "#a58ad6",
+      "topLight": "#cdb8f4",
+      "wall": "#5e4a96",
+      "wallDark": "#3e2f6a"
+    },
+    "blocked": [
+      "tiles/deco_tree",
+      "tiles/deco_rock",
+      "tiles/deco_tree"
+    ],
+    "deco": {
+      "color": "#7b5eb0",
+      "alpha": 0.4,
+      "lift": 0
+    },
+    "flowers": true,
+    "background": "#1a1230"
+  },
+  "hpBp": 18000,
+  "elementOffset": 2,
+  "roster": {
+    "grunt": "Guild Mage",
+    "runner": "Wind Mage",
+    "brute": "Earth Mage",
+    "flyer": "Broom Mage",
+    "splitter": "Phantom Conjuration",
+    "splitter_child": "Phantom Shard",
+    "elite": "Fire Mage",
+    "boss": "Boss"
+  },
+  "acts": [
+    {
+      "act": 1,
+      "name": "Phantom Conjuration",
+      "boss": {
+        "name": "Phantom Conjuration",
+        "kit": "charger"
+      },
+      "waves": 15,
+      "hpBp": 10000,
+      "modifiers": []
+    },
+    {
+      "act": 2,
+      "name": "Sound Mage",
+      "boss": {
+        "name": "Sound Mage",
+        "kit": "summoner"
+      },
+      "waves": 15,
+      "hpBp": 13000,
+      "modifiers": [
+        {
+          "fromWave": 10,
+          "types": [
+            "runner",
+            "elite"
+          ],
+          "modifier": "fast"
+        }
+      ]
+    },
+    {
+      "act": 3,
+      "name": "Rainbow Fire Mage",
+      "boss": {
+        "name": "Rainbow Fire Mage",
+        "kit": "mender"
+      },
+      "waves": 15,
+      "hpBp": 17000,
+      "modifiers": [
+        {
+          "fromWave": 10,
+          "types": [
+            "runner"
+          ],
+          "modifier": "fast"
+        }
+      ]
+    },
+    {
+      "act": 4,
+      "name": "Water Mage",
+      "boss": {
+        "name": "Water Mage",
+        "kit": "warden"
+      },
+      "waves": 20,
+      "hpBp": 23000,
+      "modifiers": [
+        {
+          "fromWave": 10,
+          "types": [
+            "grunt",
+            "brute"
+          ],
+          "modifier": "armored"
+        },
+        {
+          "fromWave": 10,
+          "types": [
+            "runner"
+          ],
+          "modifier": "fast"
+        }
+      ]
+    },
+    {
+      "act": 5,
+      "name": "Steel Mage",
+      "boss": {
+        "name": "Steel Mage",
+        "kit": "shielder"
+      },
+      "waves": 20,
+      "hpBp": 30000,
+      "modifiers": [
+        {
+          "fromWave": 8,
+          "types": [
+            "grunt",
+            "brute"
+          ],
+          "modifier": "armored"
+        },
+        {
+          "fromWave": 8,
+          "types": [
+            "runner"
+          ],
+          "modifier": "fast"
+        }
+      ]
+    },
+    {
+      "act": 6,
+      "name": "Phantom Mage",
+      "boss": {
+        "name": "Phantom Mage",
+        "kit": "colossus"
+      },
+      "waves": 20,
+      "hpBp": 40000,
+      "modifiers": [
+        {
+          "fromWave": 6,
+          "types": [
+            "grunt",
+            "brute"
+          ],
+          "modifier": "armored"
+        },
+        {
+          "fromWave": 6,
+          "types": [
+            "runner"
+          ],
+          "modifier": "fast"
+        },
+        {
+          "fromWave": 12,
+          "types": [
+            "grunt"
+          ],
+          "modifier": "shield:2"
+        }
+      ]
+    }
+  ],
+  "infinite": {
+    "unlockAct": 3,
+    "hpBp": 17000,
+    "fixedWaves": 14
+  }
+}

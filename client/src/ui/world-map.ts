@@ -4,6 +4,7 @@
  * Daten kommen von `Backend.worldView()`, Texte aus `world-model.ts`. Gestaltung im Kit (Runde 8, P4): Welt-Banner, Act-Medaillons, Infinite-Banner.
  */
 import { getBackend } from '../backend';
+import { loadBrowserData } from '../sim';
 import type { WorldCardView, WorldView } from '../backend/meta';
 import { t } from '../i18n/t';
 import { h } from './dom';
@@ -45,12 +46,48 @@ function actCard(m: ActCardModel, color: string, nav: Nav, num?: number): HTMLEl
   return b;
 }
 
+/** Kleine Kartenansicht der Welt (Zonenmaske in den Farben der Farbwelt), zeigt Pfadform und Groesse. */
+function mapThumb(stageId: string): HTMLElement | null {
+  const stage = loadBrowserData().stages[stageId];
+  if (!stage) return null;
+  const rows = stage.zones.rows;
+  const cols = rows[0].length;
+  const px = Math.max(4, Math.floor(180 / cols));
+  const wrap = h('figure', 'world-thumb');
+  const cv = document.createElement('canvas');
+  cv.width = cols * px;
+  cv.height = rows.length * px;
+  const c = cv.getContext('2d');
+  if (!c) return null;
+  const th = stage.theme;
+  const col = { '.': th?.grass.color ?? '#3a6', h: th?.hill?.top ?? '#6a4', '#': th?.hill?.wallDark ?? '#222', p: th?.path.color ?? '#dd8' } as Record<string, string>;
+  rows.forEach((row, y) => {
+    for (let x = 0; x < cols; x++) {
+      c.fillStyle = col[row[x]] ?? col['.'];
+      c.fillRect(x * px, y * px, px, px);
+    }
+  });
+  const [sx, sy] = stage.path[0];
+  const [bx, by] = stage.path[stage.path.length - 1];
+  c.fillStyle = '#4dffb8';
+  c.fillRect(sx * px, sy * px, px, px);
+  c.fillStyle = '#ff5d6c';
+  c.fillRect(bx * px, by * px, px, px);
+  cv.setAttribute('role', 'img');
+  wrap.append(cv, h('figcaption', undefined, t('world.mapsize', { cols, rows: rows.length })));
+  return wrap;
+}
+
 function renderWorld(w: WorldCardView, v: WorldView, nav: Nav): HTMLElement {
   const box = h('section', 'world-panel kp corners');
   box.dataset.world = w.id;
   box.style.setProperty('--world', w.palette.grass);
   box.style.setProperty('--world-path', w.palette.path);
-  box.append(h('p', 'tagline world-blurb', w.blurb));
+  const head = h('div', 'world-head');
+  head.append(h('p', 'tagline world-blurb', w.blurb));
+  const thumb = mapThumb(w.acts[0].stageId);
+  if (thumb) head.append(thumb);
+  box.append(head);
   const grid = h('div', 'act-grid');
   for (const a of w.acts) {
     const m = actCardModel(a);
@@ -79,6 +116,7 @@ export function buildWorldMap(nav: Nav): HTMLElement {
       current = w;
       lastWorld = w.id;
       for (const b of tabs.querySelectorAll('button')) b.classList.toggle('active', (b as HTMLElement).dataset.world === w.id);
+      tabs.querySelector('.world-tab.active')?.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
       panel.replaceChildren(renderWorld(w, v, nav));
     };
     for (const w of v.worlds) {
@@ -103,7 +141,28 @@ export function buildWorldMap(nav: Nav): HTMLElement {
       b.addEventListener('click', () => show(w));
       tabs.append(b);
     }
-    f.body.append(tabs, panel);
+    // Zehn Welten: Reiter in einer scrollbaren Zeile mit Pfeilen, der offene Reiter wird ins Bild geholt.
+    const strip = h('div', 'world-strip');
+    const arrow = (dir: -1 | 1): HTMLButtonElement => {
+      const b = h('button', `btn world-arrow ${dir < 0 ? 'prev' : 'next'}`);
+      b.type = 'button';
+      b.setAttribute('aria-label', t(dir < 0 ? 'world.scroll.prev' : 'world.scroll.next'));
+      b.append(icon(dir < 0 ? 'back' : 'arrow'));
+      b.addEventListener('click', () => tabs.scrollBy({ left: dir * Math.max(240, tabs.clientWidth * 0.8), behavior: 'smooth' }));
+      return b;
+    };
+    strip.append(arrow(-1), tabs, arrow(1));
+    f.body.append(strip, panel);
+    const edges = (): void => {
+      strip.classList.toggle('at-start', tabs.scrollLeft < 4);
+      strip.classList.toggle('at-end', tabs.scrollLeft + tabs.clientWidth >= tabs.scrollWidth - 4);
+    };
+    tabs.addEventListener('scroll', edges, { passive: true });
+    window.addEventListener('resize', edges);
+    requestAnimationFrame(() => {
+      tabs.querySelector('.world-tab.active')?.scrollIntoView({ block: 'nearest', inline: 'center' });
+      edges();
+    });
 
     const soon = h('section', 'world-soon');
     soon.append(h('h3', undefined, t('world.soon.title')));

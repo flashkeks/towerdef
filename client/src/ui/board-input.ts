@@ -9,6 +9,7 @@ import { pointerToWorld } from '../view/placement';
 
 export class BoardInput {
   private tile = 0;
+  private dims = '';
   private pointerOff: (() => void) | null = null;
 
   /** `boardWrap` = Container ueber dem Canvas; seine Groesse folgt der Tile-Groesse. */
@@ -18,6 +19,7 @@ export class BoardInput {
   bind(session: Session): void {
     this.pointerOff?.();
     this.tile = 0;
+    this.dims = '';
     const wrap = this.boardWrap;
     const toLocal = (e: MouseEvent): { x: number; y: number } => {
       const r = wrap.getBoundingClientRect();
@@ -51,12 +53,14 @@ export class BoardInput {
     };
   }
 
-  update(tile: number, placing = false): void {
+  update(tile: number, placing = false, cols = WORLD_W, rows = WORLD_H): void {
     this.boardWrap.classList.toggle('placing', placing);
-    if (tile === this.tile) return;
+    const dims = `${cols}x${rows}`;
+    if (tile === this.tile && dims === this.dims) return;
     this.tile = tile;
-    this.boardWrap.style.width = `${WORLD_W * tile}px`;
-    this.boardWrap.style.height = `${WORLD_H * tile}px`;
+    this.dims = dims;
+    this.boardWrap.style.width = `${cols * tile}px`;
+    this.boardWrap.style.height = `${rows * tile}px`;
     this.boardWrap.style.setProperty('--tile', `${tile}px`);
   }
 }

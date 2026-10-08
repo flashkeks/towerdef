@@ -5,7 +5,7 @@
  */
 import { Container, Sprite, Texture } from 'pixi.js';
 import { getAtlas, loadAtlas } from './atlas';
-import { WORLD_H, WORLD_W, type RenderContext } from './context';
+import { type RenderContext } from './context';
 import { ART, buildMapOps, hillRects, tintFor, type Tint } from './map-compose';
 
 export class MapLayer {
@@ -28,8 +28,8 @@ export class MapLayer {
     if (!ctx.stage || !atlas) return;
     if (!this.tex || this.texStage !== ctx.stage) {
       const canvas = document.createElement('canvas');
-      canvas.width = WORLD_W * ART;
-      canvas.height = WORLD_H * ART;
+      canvas.width = ctx.cols * ART;
+      canvas.height = ctx.rows * ART;
       const c2 = canvas.getContext('2d');
       if (!c2) return;
       c2.imageSmoothingEnabled = false;
@@ -88,8 +88,8 @@ export class MapLayer {
       this.container.addChild(this.sprite);
     }
     if (this.sprite) {
-      this.sprite.width = WORLD_W * ctx.tile;
-      this.sprite.height = WORLD_H * ctx.tile;
+      this.sprite.width = ctx.cols * ctx.tile;
+      this.sprite.height = ctx.rows * ctx.tile;
     }
   }
 }

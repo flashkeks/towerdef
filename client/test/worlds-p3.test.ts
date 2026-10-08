@@ -6,7 +6,8 @@ import { testEnv } from '../src/backend/meta';
 import { Session } from '../src/game/session';
 import { buildMapOps, hillRects, pathCells, tintFor } from '../src/game/map-compose';
 import atlas from '../assets/atlas/atlas.json';
-import { loadBrowserData } from '../src/sim';
+import { createSim, loadBrowserData } from '../src/sim';
+import { RenderContext } from '../src/game/context';
 import { actCardModel, lockText, worldTabModel } from '../src/ui/world-model';
 import { enemyName, registerStageNames } from '../src/view/model';
 import { hasKey } from '../src/i18n/t';
@@ -33,14 +34,14 @@ describe('Welten im Browser-Datenpaket', () => {
 });
 
 describe('Karten-Rendering je Welt', () => {
-  it('jede Welt zeichnet eine eigene Karte: 17x11 Kacheln, nur Atlas-Bilder, Pfadkacheln aus den Wegpunkten, eigene Farbwelt', () => {
+  it('jede Welt zeichnet eine eigene Karte: Raster aus der Zonenmaske (mindestens 17x11), nur Atlas-Bilder, Pfadkacheln aus den Wegpunkten, eigene Farbwelt', () => {
     const tints = new Set<string>();
     const pathSigs = new Set<string>();
     for (const w of worlds) {
       const stage = data.stages[`${w.id}-1`];
       const ops = buildMapOps(stage);
       for (const op of ops) expect(atlas.frames, `${w.id} ${op.frame}`).toHaveProperty([op.frame]);
-      expect(ops.filter((o) => /tiles\/(grass|path)_/.test(o.frame))).toHaveLength(17 * 11);
+      expect(ops.filter((o) => /tiles\/(grass|path)_/.test(o.frame))).toHaveLength(stage.zones.rows.length * stage.zones.rows[0].length);
       const pathOps = ops.filter((o) => o.frame.startsWith('tiles/path_'));
       expect(pathOps).toHaveLength(pathCells(stage.path).size);
       pathSigs.add(pathOps.map((o) => `${o.x},${o.y}`).join(';'));
@@ -54,6 +55,21 @@ describe('Karten-Rendering je Welt', () => {
     expect(pathSigs.size).toBe(worlds.length);
     expect(tints.size).toBe(worlds.length);
     expect(tintFor('tiles/grass_0', data.stages['standard20'].theme)).toBeNull();
+  });
+
+  it('Runde 9 / P2: das Raster ist Eigenschaft der Welt (Sim-Karte = Zonenmaske), Welten 4-10 sind groesser als 17x11, RenderContext liest es', () => {
+    const big = worlds.filter((w) => w.map.zones.rows[0].length > 17 || w.map.zones.rows.length > 11);
+    expect(big.length).toBeGreaterThanOrEqual(7);
+    for (const w of worlds) {
+      const stage = data.stages[`${w.id}-1`];
+      const sim = createSim({ stage: stage.id, difficulty: 'normal', players: 1, seed: 1, data });
+      expect(sim.map().cols).toBe(stage.zones.rows[0].length);
+      expect(sim.map().rows).toBe(stage.zones.rows.length);
+      const ctx = new RenderContext();
+      expect([ctx.cols, ctx.rows]).toEqual([17, 11]);
+      ctx.stage = stage;
+      expect([ctx.cols, ctx.rows]).toEqual([stage.zones.rows[0].length, stage.zones.rows.length]);
+    }
   });
 
   it('Deko folgt der Farbwelt: Blumen nur, wenn die Welt sie will; blockierte Kacheln nur mit den Bildern der Welt', () => {

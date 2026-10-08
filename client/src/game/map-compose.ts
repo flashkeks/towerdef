@@ -6,6 +6,8 @@
 import type { StageData, Theme } from '../sim';
 import { WORLD_H, WORLD_W } from './context';
 
+const dims = (stage: StageData): { cols: number; rows: number } => ({ cols: stage.zones.rows[0]?.length ?? WORLD_W, rows: stage.zones.rows.length || WORLD_H });
+
 export const ART = 32;
 
 export interface MapOp {
@@ -80,9 +82,10 @@ export const HILL = { top: '#6f9a4c', topLight: '#8cb35e', wall: '#8a5a3a', wall
 export function hillRects(stage: StageData): MapRect[] {
   const out: MapRect[] = [];
   const hc = stage.theme?.hill ?? HILL;
+  const { cols, rows } = dims(stage);
   const isHill = (x: number, y: number): boolean => zoneChar(stage, x, y) === 'h';
-  for (let y = 0; y < WORLD_H; y++) {
-    for (let x = 0; x < WORLD_W; x++) {
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
       if (!isHill(x, y)) continue;
       const px = x * ART;
       const py = y * ART;
@@ -102,10 +105,11 @@ export function hillRects(stage: StageData): MapRect[] {
 
 export function buildMapOps(stage: StageData): MapOp[] {
   const ops: MapOp[] = [];
+  const { cols, rows } = dims(stage);
   const cells = pathCells(stage.path);
   const isPath = (x: number, y: number): boolean => cells.has(`${x},${y}`);
-  for (let y = 0; y < WORLD_H; y++) {
-    for (let x = 0; x < WORLD_W; x++) {
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
       const h = hash(x, y);
       if (isPath(x, y)) {
         const mask = (isPath(x, y - 1) ? 1 : 0) | (isPath(x + 1, y) ? 2 : 0) | (isPath(x, y + 1) ? 4 : 0) | (isPath(x - 1, y) ? 8 : 0);
@@ -117,8 +121,8 @@ export function buildMapOps(stage: StageData): MapOp[] {
   }
   // Deko: Baeume und Felsen nur auf blockierten Kacheln (`#`: dort wird wirklich nicht gebaut), Blumen sparsam auf Boden
   // (flach, ohne Hindernis-Optik). Auf Huegeln und am Pfad keine Deko, damit Platz und Hindernis auf einen Blick lesbar sind.
-  for (let y = 0; y < WORLD_H; y++) {
-    for (let x = 0; x < WORLD_W; x++) {
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
       if (isPath(x, y)) continue;
       const z = zoneChar(stage, x, y);
       const h = hash(x * 3 + 1, y * 5 + 2);

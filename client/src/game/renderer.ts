@@ -1,6 +1,6 @@
 /**
  * Pixi-Renderer: nur Setup, Ebenen-Reihenfolge und Frame-Schleife. Kein Spielwissen, nur Darstellung.
- * Welt: 17 x 11 Tiles (Pfad und Karte liegen in Tile-Koordinaten, Units in Milli-Tiles, +0,5 Rand). Tile-Groesse folgt dem Platz (ganzzahlig).
+ * Welt: Raster je Stage (Vorgabe 17 x 11, groessere Karten moeglich) in Tiles (Pfad und Karte liegen in Tile-Koordinaten, Units in Milli-Tiles, +0,5 Rand). Tile-Groesse folgt dem Platz (ganzzahlig).
  * Die Zeichnung selbst liegt in den Ebenen: `map-layer`, `entities-layer` (+ `sprites`), `overlay-layer`, `fx`.
  */
 import { Application } from 'pixi.js';
@@ -39,8 +39,8 @@ export class Renderer {
 
   async init(host: HTMLElement): Promise<void> {
     await this.app.init({
-      width: WORLD_W * this.ctx.tile,
-      height: WORLD_H * this.ctx.tile,
+      width: this.ctx.cols * this.ctx.tile,
+      height: this.ctx.rows * this.ctx.tile,
       background: C.grass,
       antialias: true,
       resolution: Math.min(window.devicePixelRatio || 1, 2),
@@ -60,15 +60,21 @@ export class Renderer {
     this.overlay.reset();
     this.fx.reset();
     this.map.draw();
+    this.resize();
+  }
+
+  /** Canvas auf Raster x Tile bringen (nach Tile- oder Kartenwechsel). */
+  private resize(): void {
+    this.app.renderer.resize(this.ctx.cols * this.ctx.tile, this.ctx.rows * this.ctx.tile);
   }
 
   /** Passt die Tile-Groesse an den verfuegbaren Platz an (ganzzahlig). Gibt die Tile-Groesse zurueck. */
   fit(availW: number, availH: number): number {
-    const tile = Math.max(MIN_TILE, Math.min(MAX_TILE, Math.floor(Math.min(availW / WORLD_W, availH / WORLD_H))));
+    const tile = Math.max(MIN_TILE, Math.min(MAX_TILE, Math.floor(Math.min(availW / this.ctx.cols, availH / this.ctx.rows))));
     if (tile !== this.ctx.tile) {
       this.ctx.tile = tile;
       this.ctx.version++;
-      this.app.renderer.resize(WORLD_W * tile, WORLD_H * tile);
+      this.resize();
       this.map.draw();
     }
     return this.ctx.tile;

@@ -1,7 +1,7 @@
 /**
  * ASCII-Vorschau der Welt-Karten (Runde 8 / P3): `npx tsx scripts/map-preview.ts [welt-id ...]`.
  * Zeigt Zonenmaske, Wegpunkte, Pfadlänge und je Zone die Zahl der Kacheln, die von Boden-/Hügel-Units erreichbar sind
- * (Kacheln, auf denen eine 1x1-Unit stehen darf). Prüft nebenbei: Raster 17x11, Pfad liegt auf `p`-Kacheln, Wegpunkte achsparallel.
+ * (Kacheln, auf denen eine 1x1-Unit stehen darf). Prüft nebenbei: Raster je Welt, Pfad liegt auf `p`-Kacheln, Wegpunkte achsparallel.
  */
 import { loadGameData } from '../src/data/load.js';
 import { createSim } from '../src/index.js';
