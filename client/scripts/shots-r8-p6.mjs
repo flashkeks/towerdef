@@ -3,7 +3,7 @@
 // Das Profil wird nach dem Starter-Geschenk im localStorage mit allen 25 Crossover-Figuren und Crystals aufgestockt (nur Testaufbau).
 import { mkdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { buildTeam, fastForward, launch, root, sleep, startServer } from './lib/drive.mjs';
+import { buildTeam, fastForward, launch, root, sleep, startServer, closeReveal } from './lib/drive.mjs';
 
 const PORT = Number(process.env.SHOT_PORT ?? 4446);
 const OUT = process.env.SHOT_DIR ?? resolve(root, 'docs', 'r8');
@@ -17,6 +17,7 @@ try {
   await page.goto(url);
   await page.waitForSelector('.lobby:not(.loading)');
   await page.locator('.starter-claim').click();
+  await closeReveal(page);
   await page.waitForSelector('.starter-card.done');
   await sleep(600);
   // Summon: Crossover-Banner

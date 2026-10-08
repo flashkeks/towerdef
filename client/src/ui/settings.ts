@@ -10,6 +10,8 @@ export interface Settings {
   sfx: number;
   /** Musik 0..1 (wirksam: master * music) */
   music: number;
+  /** Runde 10 / P3: ruhige Hintergrundmusik in Lobby und Menues (im Match spielt das Match-Lied ueber den Regler `music`) */
+  menuMusic: boolean;
   /** Schadenszahlen ueber den Gegnern */
   damageNumbers: boolean;
   /** Bildschirmruckeln bei grossen Treffern, Faehigkeiten und Bossen (Runde 10); aus = Bild bleibt ruhig */
@@ -18,7 +20,7 @@ export interface Settings {
   defaultSpeed: 1 | 2 | 3;
 }
 
-export const DEFAULT_SETTINGS: Readonly<Settings> = { master: 0.8, sfx: 1, music: 0.6, damageNumbers: true, screenShake: true, defaultSpeed: 1 };
+export const DEFAULT_SETTINGS: Readonly<Settings> = { master: 0.8, sfx: 1, music: 0.6, menuMusic: true, damageNumbers: true, screenShake: true, defaultSpeed: 1 };
 
 export const SETTINGS_KEY = 'dw.settings';
 /** Schluessel der Erst-Start-Hinweise (P1 legt sie dort ab, `resetHints` loescht sie). */
@@ -60,6 +62,7 @@ export function sanitize(raw: unknown): Settings {
     master: clamp01(o.master, d.master),
     sfx: clamp01(o.sfx, d.sfx),
     music: clamp01(o.music, d.music),
+    menuMusic: typeof o.menuMusic === 'boolean' ? o.menuMusic : d.menuMusic,
     damageNumbers: typeof o.damageNumbers === 'boolean' ? o.damageNumbers : d.damageNumbers,
     screenShake: typeof o.screenShake === 'boolean' ? o.screenShake : d.screenShake,
     defaultSpeed: o.defaultSpeed === 2 || o.defaultSpeed === 3 ? o.defaultSpeed : 1,

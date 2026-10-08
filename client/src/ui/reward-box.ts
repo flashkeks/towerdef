@@ -10,6 +10,8 @@ import { icon } from './kit';
 import { h } from './dom';
 import { newKey } from './meta-ui';
 import { errorText, rewardView, walletView } from './meta-model';
+import { celebrate } from './menu-fx';
+import { openRewardPack, rewardPrizes } from './prize-sources';
 
 /** Fehler, bei denen ein erneuter Versuch mit demselben Schluessel sinnvoll ist (Speicher/Technik), nicht bei einem abgelehnten Replay. */
 export const RETRYABLE: readonly string[] = ['save-failed', 'internal-error'];
@@ -62,6 +64,17 @@ function showReward(box: HTMLElement, reward: MatchReward, won: boolean, wallet:
     list.append(li);
   }
   box.append(list);
+  // Runde 10 / P3: Gewinne als Paket oeffnen. Raid-Meilensteine und die garantierte Raid-Unit oeffnen sich von selbst, sonst per Knopf.
+  const prizes = rewardPrizes(reward);
+  if (prizes.length > 1) {
+    const open = h('button', 'btn primary reward-open');
+    open.type = 'button';
+    open.append(icon('gift'), t('reveal.open'));
+    open.addEventListener('click', () => void openRewardPack(reward));
+    box.append(open);
+    if (reward.unit || (reward.milestones?.length ?? 0) > 0) void openRewardPack(reward);
+  }
+  if (v.levelUp !== null) celebrate({ kind: 'levelup', title: t('levelup.title'), sub: t('reward.levelUp', { n: v.levelUp }) });
   if (v.firstClear) box.append(h('p', 'reward-firstclear', t('reward.firstClear')));
   if (v.consolation) box.append(h('p', 'muted reward-consolation', t('reward.consolation')));
   if (v.levelUp !== null) box.append(h('p', 'reward-levelup', t('reward.levelUp', { n: v.levelUp })));

@@ -96,3 +96,10 @@ Name (Display) und Stufe/Sterne unten. **Ohne Bild** (lokal immer, auf der Previ
 
 - Das Match-Spielfeld selbst (Kacheln, Sprites aus Runde 1–7, Welt 1–3 mit Platzhalter-Gras) ist Sache von Weltkarte/Kamera (P2) und dem Match-HUD (P1).
 - Die Porträts sind lokal immer die gestalteten Ersatzkarten; echte Bilder liefert die Preview.
+
+## Runde 10 (P3): Beschwören, Pakete, Rückmeldung
+
+- **Beschwören ist ein Höhepunkt:** Portal/Riss mit zwei gegenläufigen Ringen, der Farbton verrät die Seltenheit vorab (Blau, Lila, Gold, Regenbogen; Mythic Rot-Magenta, Exclusive Smaragd), Ruckeln, Blitz, Funken, Ton je Stufe, Stinger für Mythic/Secret. Große Enthüllung mit Porträt, Name, Serie (wenn bekannt), Seltenheit, „NEW“-Stempel, Shiny mit Glitzer.
+- **Mehrfach-Ergebnisse** (Starter-Paket, 10er-Zug, Belohnung, Shop): verdeckte Karten, einzeln aufdecken, „Reveal all“, Übersicht aufsteigend. Eine Karte pro Klick ist Regel, nicht Zufall (Test).
+- **Rückmeldung überall:** Hover-/Klickton, Zähler laufen hoch, Stempel für Level-Up/Evolution/Freischaltung, Fehler-/Erfolgston an Toasts, dezente Menü-Musik je Bildschirm.
+- Tokens und Kit unverändert; neue Animationen leben in `ui/reveal.css`, alle mit `prefers-reduced-motion`-Ausweichen.

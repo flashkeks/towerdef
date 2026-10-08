@@ -12,8 +12,10 @@ npm run aa-import:check    # schreibt nichts, Exit 1 wenn eine Datei nicht zur Q
 | `sim/data/units/aa.json` | 550 Units + Angriffs-Katalog im P1-Format (`docs/aa-import/format.md`), eine Unit je Zeile. Zusatzfelder `support` (`full`/`limited`/`hidden`) und `supportNotes` |
 | `meta/data/aa/evolutions.json` | 219 Evolutionsrezepte (Ziel(e), benoetigte Units, AA-Materialaufwand nur zur Information, `blocked`) |
 | `meta/data/aa/traits.json` | 12 Traits in Basispunkten, Wurf-Gewichte, Stufen |
-| `client/public/aa/manifest.json` | je Unit-ID Wiki-Dateiname (`nameRR` mit `_`, `.png`, Shiny-Variante) und Pfad `/aa/units/<id>.webp` |
+| `client/public/aa/manifest.json` | je Unit-ID echter Name, Serie, Form, `anilistQuery` (aus `docs/aa-import/figuren.json`, `source: "anilist"`), dazu Wiki-Dateiname als Rueckfall (`nameRR` mit `_`, `.png`, Shiny-Variante) und Pfad `/aa/units/<id>.webp`; Crossover: `source: "custom"` + `imageQuery` |
 | `docs/aa-import/report.md` | Bericht: voll / eingeschraenkt / ausgeblendet mit Gruenden |
+
+- **Figuren** (Runde 10 / P1): `docs/aa-import/figuren.json` ist die **von Hand gepflegte** Zuordnung AA-Unit -> echte Figur (`{ id, aaName, name, series, form?, anilistQuery, note? }`, Crossover zusaetzlich `imageQuery`). `figuren.ts` prueft sie (genau ein Eintrag je Unit, keine doppelte `(name, form)`), der Importer bricht sonst ab. `note: "umgemünzt von …"` = generische oder doppelte Unit auf eine bekannte Figur umgestellt, `note: "unsicher"` = Zuordnung nicht gesichert. Werte, Angriffe, IDs bleiben unberuehrt.
 
 Dateien: `index.ts` (Ablauf), `support.ts` (Einstufung und Gruende), `kits.ts` (Runde 9: Faehigkeiten, Auren, Beschwoerungen, Zweitangriffe-Ausnahmen, Animations-Spawner), `evolutions.ts`, `traits.ts`, `manifest.ts`, `report.ts`.
 

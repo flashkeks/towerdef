@@ -3,6 +3,7 @@
  * dazu Summon, Units, Team, Stage-Auswahl, Shop (je eine Datei). Hier nur das Umschalten (`Nav`) plus Ergebnis- und Pause-Dialog.
  */
 import { getBackend } from '../backend';
+import { menuTheme, uiSound } from '../audio/ui-audio';
 import { getRecorder } from '../game/recorder';
 import type { Session } from '../game/session';
 import type { DifficultyId } from '../sim';
@@ -43,15 +44,15 @@ export class Screens {
   /** Wohin die Bildschirme einander schicken. */
   readonly nav: Nav = {
     lobby: () => void this.showLobby(),
-    summon: () => this.open(buildSummon(this.nav)),
-    units: (id) => this.open(buildUnits(this.nav, id)),
-    team: () => this.open(buildTeam(this.nav)),
-    shop: () => this.open(buildShop(this.nav)),
-    settings: () => this.open(buildSettings(this.nav)),
-    credits: () => this.open(buildCredits(this.nav)),
-    world: (mode) => this.open(buildWorldMap(this.nav, mode)),
-    raidShop: () => this.open(buildRaidShop(this.nav)),
-    stage: (id) => this.open(buildStageSelect(this.nav, id)),
+    summon: () => this.go('arcane', buildSummon(this.nav)),
+    units: (id) => this.go('march', buildUnits(this.nav, id)),
+    team: () => this.go('march', buildTeam(this.nav)),
+    shop: () => this.go('bazaar', buildShop(this.nav)),
+    settings: () => this.go('dusk', buildSettings(this.nav)),
+    credits: () => this.go('dusk', buildCredits(this.nav)),
+    world: (mode) => this.go('march', buildWorldMap(this.nav, mode)),
+    raidShop: () => this.go('bazaar', buildRaidShop(this.nav)),
+    stage: (id) => this.go('march', buildStageSelect(this.nav, id)),
     play: (d, stageId) => this.handlers.onStart(d, stageId),
   };
 
@@ -92,6 +93,13 @@ export class Screens {
     this.pausedEl.classList.toggle('hidden', !show);
   }
 
+  /** Meta-Bildschirm zeigen und die Menue-Musik auf dessen Stimmung stellen. */
+  private go(theme: Parameters<typeof menuTheme>[0], box: HTMLElement): void {
+    menuTheme(theme);
+    uiSound('ui.open');
+    this.open(box);
+  }
+
   private open(box: HTMLElement): void {
     // ohne laufende Runde (Lobby und Meta-Bildschirme) deckt der Dialog das Spielfeld voll ab, sonst scheint der letzte Frame durch
     this.el.classList.toggle('solid', this.session === null);
@@ -111,6 +119,7 @@ export class Screens {
   /** Lobby aus dem Profil bauen; Ladefehler zeigen Import/Reset statt eines Absturzes. */
   async showLobby(): Promise<void> {
     const loading = buildLobbyLoading();
+    menuTheme('dusk');
     this.open(loading);
     const [r, c] = await Promise.all([getBackend().playerView(), getBackend().collectionView()]);
     if (this.el.firstElementChild !== loading) return; // inzwischen woanders

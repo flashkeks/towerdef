@@ -4,9 +4,47 @@ Arbeitsauftrag: [`/run.md`](../run.md) (**Runde 10, neu gefasst 08.10.2026 nach 
 Frühere Aufträge: [archiv/run-runde1.md](archiv/run-runde1.md), [archiv/run-runde2.md](archiv/run-runde2.md), [archiv/run-runde3.md](archiv/run-runde3.md), [archiv/run-runde4.md](archiv/run-runde4.md), [archiv/run-runde5.md](archiv/run-runde5.md), [archiv/run-runde6.md](archiv/run-runde6.md), [archiv/run-runde7.md](archiv/run-runde7.md), [archiv/run-runde8-verworfen.md](archiv/run-runde8-verworfen.md), [archiv/run-runde8.md](archiv/run-runde8.md), [archiv/run-runde9.md](archiv/run-runde9.md).
 
 
+## Runde 10 (echte Figuren, Match-Grafik, Beschwören, Karten je Welt)
+
+Letzte Aktualisierung: 2026-10-08 (Runde 10 läuft, P0 erledigt)
+
+**Rückmeldung Max zu Runde 9 (08.10.2026):** Interface gut; Summonen „ungeil“, mehr Ton und Effekte; Daily Pack zeigt nur den ersten Gewinn; Roblox-Bilder raus, echte Bilder; echte, bekannte Namen plus Promis; im Match nur Buchstaben auf den Units, Units und Attacken brauchen Design.
+
+| Paket | Inhalt | Status | Agent (Modell) | Was man jetzt sehen kann |
+|---|---|---|---|---|
+| P0 | Status, Raid-Units aus dem Banner-Pool | **erledigt** | Hauptsitzung | Die 11 Garantie-Units der Raids (`guarantee.unit` in `sim/data/modes/raids.json`: vegeta_majin, naruto_pts, trunks, bambietta, chuya, frieza_mecha, stain, feitan, rengoku, akaza_unit …) tragen `raidOnly` im Meta-Katalog und liegen in **keinem** Banner-Pool mehr (wie AA `hideFromBanner`); zu bekommen nur über Raid-Garantie und Raid-Shop. Besessene bleiben (Test `meta/test/raid-units-r10.test.ts`). Banner-Raten unverändert (Pools sind gleichverteilt, nur die Einzelrate der übrigen steigt leicht). Stand vor Runde 10: sim 381, meta 168 → 171, client 252 |
+| P1 | Echte Figuren: `figuren.json`, Manifest mit `anilistQuery`, Anzeige Name + Serie, Promi-Banner „Legends of Earth“ | Phase A **erledigt** (`figuren.json`, Manifest, Prüfung im Importer), Phase B läuft (Anzeige, Serien-Filter, Promi-Banner) | 3 × Sonnet (1 am Limit) | noch nichts im Spiel sichtbar; Daten siehe „Für die Homelab-Seite“ |
+| P2 | Match: Porträt-Figuren, Angriffs-Grafik je Form × Element, Treffer/Tod, Fähigkeits-Ansage, Gegner-Figuren, Ton | läuft, nach Limit übernommen | 2 × Sonnet (1 am Limit) | – |
+| P3 | Beschwören neu, Mehrfach-Ergebnisse durchklickbar, Interaktions-Durchgang, Menü-Ton | **erledigt** (Merge `ceac233`) | 2 × Sonnet (1 am Limit) | **Beschwören** als Portal/Riss, Farbe steigt vorab Blau → Lila → Gold → Regenbogen, Ruckeln, Funken, Durchbruch, große Enthüllung mit Name/Serie/„NEW“, Shiny-Glitzer, Ton je Stufe, überspringbar. **Mehrfach-Ergebnisse** (10er-Zug, Starter-Paket, Match-/Raid-Belohnung, Kristall-Shop, Raid-Shop-Unit) liegen verdeckt, 1 Klick = 1 Karte, „Reveal all“, dann Übersicht (höchste Seltenheit zuletzt). Ursache „nur der erste Gewinn“: jeder Klick beendete die ganze Animation; das Starter-Paket lief gar nicht durch einen Enthüllungs-Bildschirm (Test `client/test/r10-p3-reveal.test.ts` + Smoke). **Interaktions-Durchgang** (Smoke `interactionCase`, 49 Knöpfe, alle mit Reaktion + Ton); nachgerüstet: Paket-Bildschirm fürs Starter-Paket, „Open rewards“ nach Match/Raid, Kristall-Shop- und Raid-Shop-Enthüllung, Stempel für Level-Up/Evolution/Freischaltung, Hover/Klick-Ton überall, Toasts mit Ton, hochlaufende Zähler, Menü-Musik (4 Stimmungen, Schalter in Settings). Alles per WebAudio/Canvas, Packs optional (Wunschliste unten). Screenshots `client/docs/r10/p3-*.png`. client 252 → 271 Tests, Smoke grün (363 Prüfungen) |
+| P4 | Karten-Grafik je Welt | wartet (startet, sobald P1/P2/P3 frei) | 1 × Sonnet | – |
+| P5 | Abschluss | offen | Hauptsitzung | – |
+
+Plan: P1, P2, P3 parallel in lokalen Worktrees (max. 3 Agenten, nur Sonnet, Zwischenstand spätestens alle 30 min), P1 liefert zuerst `figuren.json` + Manifest (sofort nach `dev`, Meldung unten), P4 danach. Screenshots in `client/docs/r10/`.
+
+**Falle Nutzungslimit (08.10.2026):** Ein am Limit abgebrochener Agent, der per `SendMessage` fortgesetzt wird, läuft **nicht** mehr auf Sonnet, sondern auf dem Modell der Hauptsitzung (hier Opus; die Fehlermeldung nannte `claude-opus-5-5`). Das widerspricht run.md § 1 („nie Opus“). Vorgehen stattdessen: Hauptsitzung committet den Worktree-Stand (`wip(...)`), dann **neuer Agent mit `model: sonnet`** auf demselben Worktree mit Übernahme-Hinweis („Vorgänger-Stand liegt in `git log dev..HEAD`“). So in Runde 10 für P1–P3 gemacht (Limit 15:4x und 16:4x UTC).
+
+**Für die Homelab-Seite (Runde 10): Manifest mit `anilistQuery` steht, Commit `6bf8594` auf `dev` (P1 Phase A `09c73d3`).** Die Bilder können jetzt geholt werden, ohne aufs Rundenende zu warten:
+- `client/public/aa/manifest.json`: je Unit `name`, `series`, `form?`, `anilistQuery`, `source: "anilist"`. Suchbegriff ist `anilistQuery`, nicht `name` (weicht ab, wo AniList anders heißt: „Pain“ für Nagato, „Aokiji“ für Kuzan, „Stain“ für Chizome Akaguro, „EMIYA“ für Archer).
+- Formen (`form`, z. B. Son Goku „Super Saiyan 3“) teilen sich die Figur: gleiches AniList-Bild ist ok, ein formspezifisches Bild (Fandom/MAL) wäre schöner.
+- Crossover (`x_*`, `source: "custom"`): `anilistQuery` leer, Bild per Wikipedia über `imageQuery`.
+- `wiki`/`wikiShiny` (alte AA-Wiki-Bilder) nur noch als Notfall-Rückfall.
+- Pfad und `/aa/index.json` bleiben gleich (`/aa/units/<id>.webp`, 256 × 256).
+
+Nichts deployen ohne Ansage von Max.
+
+**Asset-Wunschliste P3 (optional, nichts blockiert; CC0, Ablage `client/public/sfx/` bzw. `client/public/fx/`, Herkunft in `client/assets/ATTRIBUTIONS.md`):** Kenney Interface Sounds https://kenney.nl/assets/interface-sounds · Kenney UI Audio https://kenney.nl/assets/ui-audio · Kenney RPG Audio https://kenney.nl/assets/rpg-audio · Kenney Impact Sounds https://kenney.nl/assets/impact-sounds · Kenney Music Jingles https://kenney.nl/assets/music-jingles · Kenney Particle Pack https://kenney.nl/assets/particle-pack · OpenGameArt „Level Up Sound Effects“ https://opengameart.org/content/level-up-sound-effects und „Fantasy Sound Library“ https://opengameart.org/content/fantasy-sound-library · freesound CC0 (magic/portal/sparkle) https://freesound.org/browse/tags/magic/. Großes Porträt für die Enthüllungskarte (≈ 380 × 510 px): `/aa/units-lg/<id>.webp` (512 px) wäre schöner, 256 px gehen.
+
+**Offene Fragen an die Menschen (Runde 10, Empfehlung zuerst):**
+- **„Daily Pack“ = Starter-Paket?** Eine echte Tagesbelohnung gibt es im Code nicht; P3 hat das Starter-Paket (12 Units + Crystals) als das gemeinte Paket genommen. Empfehlung: so lassen; eine echte Tagesbelohnung wäre Meta-Arbeit (Schema 4) für Runde 11.
+- **Shiny:** Anzeige (Glitzer, Ton, Stempel) ist fertig, die Daten kennen aber keine Shiny-Ziehung. Empfehlung: erst nach den echten Bildern als Drop-Chance in die Meta.
+- **Umgemünzte Figuren** (Liste oben, P1 Phase A): bitte drüberschauen, v. a. die 12 ohne erkennbare AA-Vorlage.
+
+**P1 Phase A in Zahlen:** 575 Zeilen in `docs/aa-import/figuren.json` (550 AA + 25 Crossover), 288 verschiedene echte Figuren hinter den 550 AA-Units (Formen über `form`), keine Dubletten außer Escanor Tag/Nacht (zwei Formen). **Umgemünzt 23 Units** (13 Zielfiguren): Tatara → Ayato Kirishima (Tokyo Ghoul, Serie sicher); ohne erkennbare AA-Vorlage und deshalb auf bekannte Figuren beliebiger Serien gesetzt (`note: unsicher`): Rokuhira → Gintoki Sakata, Osaragi → Spike Spiegel, Noro → Orochimaru, Gaku → Senku Ishigami, Boxxo → Tony Tony Chopper, Honey → Makima, Starlia → Rei Ayanami, Giselle → Mikasa Ackerman, Sato → Sung Jinwoo, Geten → Lyon Vastia, Izumi → Shinobu Kocho, Isharmla → Rem (ausgeblendet). **Weitere unsichere:** `yuma`(+evolved) = Yuma Kuga?, `gogeta_failed` (Benennung), `nokotan` (evtl. zu obskur). Markennamen: Zivilname angezeigt, Marke im Query (Kuzan/Aokiji, Sakazuki/Akainu, Enji Todoroki/Endeavor, Keigo Takami/Hawks, Chizome Akaguro/Stain, Nagato/Pain).
+
+
 ## Runde 9 (Fähigkeiten, 10 Welten, Legend/Raids, Interface)
 
-Letzte Aktualisierung: 2026-10-08 (Runde 9 abgeschlossen, P5)
+Letzte Aktualisierung: 2026-10-08 (Runde 9 abgeschlossen, P5; Raid-Units aus dem Banner-Pool in Runde 10 / P0 erledigt)
 
 | Paket | Inhalt | Status | Agent (Modell) | Was man jetzt sehen kann |
 |---|---|---|---|---|

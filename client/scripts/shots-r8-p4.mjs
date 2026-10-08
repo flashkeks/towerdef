@@ -4,7 +4,7 @@
 // Mock-Kauf fuer Crystals, Zuege fuer Units), das Fotografieren laeuft ueber echte Klicks.
 import { mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { buildTeam, fastForward, launch, root, sleep, startServer } from './lib/drive.mjs';
+import { buildTeam, fastForward, launch, root, sleep, startServer, closeReveal } from './lib/drive.mjs';
 
 const PORT = Number(process.env.SHOT_PORT ?? 4443);
 const OUT = process.env.SHOT_DIR ?? resolve(root, 'docs', 'r8');
@@ -21,6 +21,7 @@ try {
   await sleep(1200);
   await shot(page, 'lobby-fresh');
   await page.locator('.starter-claim').click();
+  await closeReveal(page);
   await page.waitForSelector('.starter-card.done');
   // Vorbereitung ueber das Backend: Crystals (Mock-Shop) und ein paar Zuege, damit die Sammlung gefuellt ist und Evolution/Trait zu sehen sind
   const prep = await page.evaluate(async () => {

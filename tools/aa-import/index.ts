@@ -4,7 +4,7 @@
  *   sim/data/units/aa.json           alle importierbaren Units + ihr Angriffs-Katalog (Format: docs/aa-import/format.md)
  *   meta/data/aa/evolutions.json     Evolutionsrezepte (items.json -> evolutionRecipes), reduziert auf das, was Meta braucht
  *   meta/data/aa/traits.json         die 12 Traits, in Basispunkten, mit Wurf-Gewichten und Stufen
- *   client/public/aa/manifest.json   Bild-Manifest (Wiki-Dateiname + Pfad je Unit-ID; Crossover-Figuren mit source "custom" + imageQuery)
+ *   client/public/aa/manifest.json   Bild-Manifest (Name, Serie, anilistQuery aus docs/aa-import/figuren.json + Wiki-Rueckfall + Pfad je Unit-ID; Crossover-Figuren mit source "custom" + imageQuery)
  *   docs/aa-import/report.md         Bericht: voll / mit Einschraenkungen / ausgeblendet, Gruende
  *
  * Aufruf: `npm run aa-import` im Repo-Wurzelverzeichnis (= `cd sim && npx tsx ../tools/aa-import/index.ts`).
@@ -17,6 +17,7 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { UnitFileSchema } from '../../sim/src/data/schema';
 import { buildEvolutions } from './evolutions';
+import { checkFiguren, loadFiguren } from './figuren';
 import { buildManifest } from './manifest';
 import { buildReport } from './report';
 import { ATTACK_FX, COSMETIC_SPAWN, KIT_ATTACKS, KITS, ROTATION_EXTRA, SUMMONS } from './kits';
@@ -160,7 +161,13 @@ function main(): void {
   const traits = buildTraits(read('traits.json'));
   const crossoverPath = resolve(ROOT, 'sim/data/units/crossover.json');
   const crossover = existsSync(crossoverPath) ? (JSON.parse(readFileSync(crossoverPath, 'utf8')).units as any[]) : [];
-  const manifest = buildManifest(results.map((r) => r.unit), crossover);
+  const figuren = loadFiguren(resolve(ROOT, 'docs/aa-import/figuren.json'));
+  const figErrs = checkFiguren(figuren, units.map((u) => u.id as string), crossover.map((u) => u.id as string));
+  if (figErrs.length) {
+    console.error(`docs/aa-import/figuren.json stimmt nicht:\n  ${figErrs.join('\n  ')}`);
+    process.exit(1);
+  }
+  const manifest = buildManifest(results.map((r) => r.unit), crossover, figuren);
   const kitRows = units
     .filter((u) => KITS[u.id as string] || (u.levels as any[]).some((l) => l.also))
     .map((u) => {

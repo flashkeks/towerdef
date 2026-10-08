@@ -9,6 +9,7 @@ import { Renderer } from './game/renderer';
 import { Session } from './game/session';
 import { loadBrowserData, STAGE_ID, type DifficultyId, type UnitMod } from './sim';
 import { AudioEngine } from './audio/engine';
+import { installUiSounds, registerAudio } from './audio/ui-audio';
 import { getBackend } from './backend';
 import { Ui } from './ui/app';
 import { mountPauseDownload, replayDownloadBox } from './ui/download';
@@ -37,6 +38,8 @@ export async function startGame(root: HTMLElement): Promise<GameHandle> {
   const renderer = new Renderer(bus);
   // P5: Ton (nach erster Nutzeraktion) und Leak-Wackeln der Leben-Anzeige
   const audio = new AudioEngine(bus, (fn) => renderer.fx.onShot(fn), (fn) => renderer.fx.onCue(fn));
+  registerAudio(audio);
+  installUiSounds();
   mountLeakShake(bus);
   let session: Session | null = null;
   let endEmitted = false;

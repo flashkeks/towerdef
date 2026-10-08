@@ -10,6 +10,7 @@ import { h } from './dom';
 import { backdrop, icon } from './kit';
 import { walletView } from './meta-model';
 import { notify } from './flash';
+import { countUp } from './menu-fx';
 import type { Nav } from './nav';
 
 /** Neuer Idempotenz-Schluessel je Nutzeraktion (ein Klick = ein Schluessel). */
@@ -44,13 +45,31 @@ export class WalletBar {
     this.el.append(mk('crystals', 'crystal', t('wallet.crystals'), this.crystals), mk('gold', 'coin', t('wallet.gold'), this.gold), mk('raid', 'mark', t('wallet.raid'), this.raid), this.matsItem, lv);
   }
 
+  /** Zuletzt gezeigte Zahlen: steigt eine, laeuft sie hoch (Runde 10, P3), sinkt sie (Ausgabe), springt sie. */
+  private last: Partial<Record<'crystals' | 'gold' | 'raid' | 'mats', number>> = {};
+
+  private show(key: 'crystals' | 'gold' | 'raid' | 'mats', el: HTMLElement, value: number): void {
+    const before = this.last[key];
+    this.last[key] = value;
+    const fmt = (n: number): string => n.toLocaleString('en-US');
+    if (before !== undefined && value > before) {
+      countUp(el, before, value, fmt);
+      const item = el.parentElement;
+      item?.classList.remove('bump');
+      void item?.offsetWidth;
+      item?.classList.add('bump');
+    } else {
+      countUp(el, value, value, fmt);
+    }
+  }
+
   update(p: PlayerView): void {
     const w = walletView(p);
-    this.crystals.textContent = w.crystals;
-    this.gold.textContent = w.gold;
+    this.show('crystals', this.crystals, p.crystals);
+    this.show('gold', this.gold, p.gold);
     // Runde 9 / P3: Raid-Marken immer, Evolutions-Material erst wenn welches da ist
-    this.raid.textContent = w.raidMarks;
-    this.mats.textContent = w.materialTotal;
+    this.show('raid', this.raid, p.raidMarks);
+    this.show('mats', this.mats, p.materials.reduce((n, m) => n + m.count, 0));
     this.matsItem.classList.toggle('hidden', p.materials.length === 0);
     this.matsItem.title = t('wallet.materials', { list: p.materials.map((m) => `${m.name} x${m.count}`).join(', ') });
     this.level.textContent = w.level;
