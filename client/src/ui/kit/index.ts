@@ -94,6 +94,8 @@ const noImage = new Set<string>();
 export interface PortraitCardOptions {
   unitId: string;
   name: string;
+  /** Serie der Figur: kleine Zweitzeile unter dem Namen (Runde 10 / P1) */
+  series?: string;
   rarity: string;
   /** Elemente der Unit (das erste bestimmt die Farbe) */
   elements?: readonly string[];
@@ -167,6 +169,7 @@ export function portraitCard(o: PortraitCardOptions): HTMLElement {
   if (!o.bare) {
     const cap = h('div', 'pc-cap');
     cap.append(h('span', 'pc-name ut-name', o.name));
+    if (o.series) cap.append(h('span', 'pc-series', o.series));
     const sub = h('span', 'pc-sub ut-sub');
     if (o.owned === false) sub.append(h('span', 'pc-lvl', 'not owned'));
     else {

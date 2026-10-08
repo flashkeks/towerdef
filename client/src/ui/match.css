@@ -167,3 +167,5 @@ canvas.board { display: block; }
 .hints .step { color: var(--aether); }
 .hints .btn { margin-top: 4px; font-size: 0.76rem; padding: 3px 10px; }
 @media (prefers-reduced-motion: reduce) { .hud .stat.lives.leak-hit, .boss-banner.enter, .boss-banner.phase, .boss-banner[data-mode='danger'], .flyer-warning.none, .btn.primary.start.warn-air, .wave-track .seg.now { animation: none; } }
+
+.up-series { display: block; margin: -2px 0 4px; font: 700 0.62rem var(--font-ui); letter-spacing: 0.14em; text-transform: uppercase; color: var(--tx-2); }

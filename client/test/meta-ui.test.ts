@@ -69,8 +69,8 @@ describe('Texte', () => {
     for (const k of ['rarity', 'rate', 'long', 'next']) expect(hasKey(`summon.rates.${k}`)).toBe(true);
   });
   it('unbekannte Unit (neue Unit ohne Text): lesbarer Name statt Schluessel', () => {
-    expect(unitName('rokuhira')).toBe('Vengeful Swordsman'); // Name aus den Unit-Daten
-    expect(unitAbbr('rokuhira')).toBe('VS');
+    expect(unitName('rokuhira')).toBe('Gintoki Sakata'); // Name aus den Unit-Daten
+    expect(unitAbbr('rokuhira')).toBe('GS');
     expect(unitName('wyrm_hunter')).toBe('Wyrm_hunter');
     expect(unitAbbr('wyrm_hunter')).toBe('WYR');
   });

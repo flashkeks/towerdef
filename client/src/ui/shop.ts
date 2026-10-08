@@ -11,7 +11,7 @@ import { Ring } from './ability-ui';
 import { typeAbility, firstButton, secondsLeft } from '../view/ability';
 import { clear, h, setClass, setText } from './dom';
 import { icon, portraitCard } from './kit';
-import { unitName } from './meta-model';
+import { unitName, unitSeries } from './meta-model';
 
 export class Shop {
   readonly el = h('footer', 'shop');
@@ -32,7 +32,7 @@ export class Shop {
   }
 
   private button(session: Session, d: UnitDef, index: number): HTMLButtonElement {
-    const b = portraitCard({ unitId: d.id, name: unitName(d.id), rarity: d.rarity, elements: d.elements, tag: 'button', cls: 'unit-btn', tile: false }) as HTMLButtonElement;
+    const b = portraitCard({ unitId: d.id, name: unitName(d.id), series: unitSeries(d.id), rarity: d.rarity, elements: d.elements, tag: 'button', cls: 'unit-btn', tile: false }) as HTMLButtonElement;
     b.title = `${t(`rarity.${d.rarity.toLowerCase()}`)} - ${t(`placement.${d.placement}`)}`;
     const need = d.placement === 'hybrid' && d.footprint === 1 ? 'any' : needOf(d);
     const chip = h('span', `ptype ${need}`, t(`ptype.${need}`));

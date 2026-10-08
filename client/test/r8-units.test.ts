@@ -18,8 +18,8 @@ describe('Units aus den Datendateien', () => {
     expect(defs.map((d) => d.id)).toEqual(expect.arrayContaining(['rokuhira', 'stain', 'goku_ssj3', 'speedwagon']));
   });
   it('Name kommt aus den Daten, Kuerzel sind Initialen, jede Unit hat eine Farbe (Element), unbekannte IDs eine stabile', () => {
-    expect(unitName('rokuhira')).toBe('Vengeful Swordsman');
-    expect(unitAbbr('rokuhira')).toBe('VS');
+    expect(unitName('rokuhira')).toBe('Gintoki Sakata');
+    expect(unitAbbr('rokuhira')).toBe('GS');
     expect(initials('Krillin')).toBe('KR');
     expect(unitColor('stain')).toBe(unitColor('stain'));
     expect(unitColor('no_such_unit')).toBe(unitColor('no_such_unit'));

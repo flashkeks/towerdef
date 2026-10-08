@@ -124,3 +124,5 @@
 .reveal:not(.finished) .reveal-done { opacity: 0.7; }
 .reveal.finished .reveal-cards { opacity: 1; }
 @media (prefers-reduced-motion: reduce) { .rv-sigil, .rv-beam, .rv-core, .rv-flash.go, .reveal.shake, .rv-spot.in .rv-big, .rv-spot.in .rv-plate { animation: none !important; } .rv-beam { height: 100%; opacity: 1; } .rv-sigil { opacity: 0.7; } }
+
+.rv-series { font: 700 clamp(0.75rem, 1.8vh, 1rem) var(--font-ui); letter-spacing: 0.22em; text-transform: uppercase; color: var(--tx-1); }

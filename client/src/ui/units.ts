@@ -11,7 +11,7 @@ import type { UnitDef } from '../sim';
 import { statValues } from '../view/unit-info';
 import { unitTags } from '../view/readability';
 import { attackPreview } from './attack-preview';
-import { attackShape, DEFAULT_QUERY, levelDps, primaryElement, queryCollection, SORT_KEYS, unitDps, type CollectionQuery, type SortKey } from './collection-model';
+import { attackShape, DEFAULT_QUERY, levelDps, primaryElement, queryCollection, seriesOptions, SORT_KEYS, unitDps, type CollectionQuery, type SortKey } from './collection-model';
 import { clear, h } from './dom';
 import { notify } from './flash';
 import { artLayer, chip, elementIcon, elementVar, icon, panel, rarityFrame, rarityId, stars } from './kit';
@@ -118,11 +118,25 @@ class UnitsScreen {
     sort.value = this.query.sort;
     sort.addEventListener('change', () => this.set({ sort: sort.value as SortKey }));
     sortWrap.append(icon('sort'), h('span', undefined, t('units.sort')), sort);
+    const serWrap = h('label', 'unit-sortwrap unit-serieswrap');
+    const ser = h('select', 'unit-series');
+    ser.setAttribute('aria-label', t('units.filter.series'));
+    const all = h('option', undefined, t('units.filter.seriesAll'));
+    all.value = '';
+    ser.append(all);
+    for (const o of seriesOptions(this.units)) {
+      const op = h('option', undefined, `${o.series} (${o.count})`);
+      op.value = o.series;
+      ser.append(op);
+    }
+    ser.value = this.query.series ?? '';
+    ser.addEventListener('change', () => this.set({ series: ser.value || null }));
+    serWrap.append(icon('search'), h('span', undefined, t('units.filter.series')), ser);
     const own = chip({ text: t('units.filter.owned'), active: this.query.ownedOnly, cls: 'filter-btn owned-only' });
     own.addEventListener('click', () => this.set({ ownedOnly: !this.query.ownedOnly }));
     const wrap = h('span', 'search-wrap');
     wrap.append(icon('search'), search);
-    top.append(wrap, sortWrap, own, this.count);
+    top.append(wrap, serWrap, sortWrap, own, this.count);
     this.filters.append(top);
 
     const rows: [Group, string, readonly string[]][] = [
@@ -183,7 +197,7 @@ class UnitsScreen {
     art.append(artLayer(u.unitId, m.elements, m.name.slice(0, 2).toUpperCase()), h('div', 'pc-shade'));
     const frame = rarityFrame(rar, art, { live: true, cls: `ud-card${u.owned ? '' : ' unowned'}` });
     const titles = h('div', 'ud-titles');
-    titles.append(h('span', `ud-rarity r-${rar}`, rarityName(rar)), h('h2', 'ud-name', m.name));
+    titles.append(h('span', `ud-rarity r-${rar}`, rarityName(rar)), h('h2', 'ud-name', m.name), h('span', 'ud-series', m.series));
     const els = h('div', 'ud-elements');
     for (const e of m.elements.length ? m.elements : ['none']) {
       const pill = h('span', 'tag-pill ud-el');

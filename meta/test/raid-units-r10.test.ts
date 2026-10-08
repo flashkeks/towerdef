@@ -11,7 +11,7 @@ describe('Raid-Units nur ueber Raid und Raid-Shop', () => {
   });
 
   it('kein Pool und kein Banner enthaelt eine Raid-Unit', () => {
-    for (const pool of ['summonable', 'special', 'crossover', 'all'] as const)
+    for (const pool of ['summonable', 'special', 'crossover', 'legends', 'all'] as const)
       for (const r of RARITIES) for (const id of poolOfRarity(pool, r)) expect(RAID_UNIT_IDS.has(id), `${pool}/${r}: ${id}`).toBe(false);
     for (const b of allBanners()) {
       const rb = resolveBanner(b);

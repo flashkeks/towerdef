@@ -9,7 +9,7 @@ import { attackEffects, attackForm, reachMilli, upgradeEffect } from '../view/un
 import { AbilityBlock } from './ability-ui';
 import { clear, h, setClass } from './dom';
 import { elementIcon, icon } from './kit';
-import { rarityName, unitName } from './meta-model';
+import { rarityName, unitName, unitSeries } from './meta-model';
 import { miniOf } from './unit-card';
 
 export class UnitPanel {
@@ -46,7 +46,7 @@ export class UnitPanel {
     const who = h('div', 'up-who');
     const meta = h('div', 'up-meta');
     meta.append(h('span', `up-rarity r-${def.rarity.toLowerCase()}`, rarityName(def.rarity.toLowerCase())), ...def.elements.slice(0, 3).map((e) => elementIcon(e, 'up-el')));
-    who.append(h('h3', undefined, unitName(def.id)), meta);
+    who.append(h('h3', undefined, unitName(def.id)), h('span', 'up-series', unitSeries(def.id)), meta);
     head.append(miniOf(def.id, 46), who);
     const pips = h('div', 'lvlpips');
     pips.setAttribute('aria-hidden', 'true');

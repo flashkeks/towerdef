@@ -389,7 +389,7 @@ export const en = {
   'summon.reveal.done': 'Continue',
   // Units
   'units.title': 'Units',
-  'units.search': 'Search units',
+  'units.search': 'Search name or series',
   'units.sort': 'Sort',
   'units.sort.rarity': 'Rarity',
   'units.sort.element': 'Element',
@@ -431,6 +431,8 @@ export const en = {
   'units.filter.placement': 'Placement',
   'units.filter.all': 'All',
   'units.filter.owned': 'Owned only',
+  'units.filter.series': 'Series',
+  'units.filter.seriesAll': 'All series',
   'units.none': 'No unit matches these filters.',
   'units.pick': 'Pick a unit to see its details.',
   'units.notOwned': 'not owned',

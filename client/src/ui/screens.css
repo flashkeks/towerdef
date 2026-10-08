@@ -296,3 +296,5 @@ input[type='range']:focus-visible { outline: 2px solid var(--gold); outline-offs
 .rs-price { display: inline-flex; align-items: center; gap: 4px; font: 800 0.95rem var(--font-num); padding-right: 10px; border-right: 1px solid rgba(0, 0, 0, 0.25); }
 .rs-price .ic { font-size: 1rem; }
 .rs-card.cant:not(.soldout) .rs-price { color: #7a1d1d; }
+
+.mvp-series { display: block; font: 700 0.7rem var(--font-ui); letter-spacing: 0.12em; text-transform: uppercase; color: var(--tx-2); }

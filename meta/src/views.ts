@@ -67,8 +67,10 @@ export function playerView(p: Profile): PlayerView {
 
 export interface CollectionUnitView {
   unitId: string;
-  /** Anzeigename (AA `nameRR`) */
+  /** Anzeigename: echter Name, bei Formen "Name (Form)" (Runde 10 / P1; die AA-Namen stehen nur noch in den Daten) */
   name: string;
+  /** Serie der Figur ("Naruto", "Legends of Earth") fuer Zweitzeile, Suche und Filter */
+  series: string;
   rarity: Rarity;
   /** entwickelte Form: nur ueber Evolution zu bekommen (Vorstufe) */
   evolvedFrom: string | null;
@@ -102,6 +104,7 @@ export function collectionView(p: Profile): { units: CollectionUnitView[]; owned
     const o = p.units[c.id];
     const common = {
       name: c.name,
+      series: c.series,
       evolvedFrom: c.evolvedFrom,
       trait: o?.trait ? { id: o.trait.id, tier: o.trait.tier, name: traitName(o.trait), text: traitText(o.trait) } : null,
       rerollCost: rerollCost(c.id),

@@ -16,7 +16,7 @@ import { unitMeta } from './unit-card';
 /** Karte einer Ziehung (Uebersicht und Rampenlicht). */
 function pullCard(p: PullBatchResult['pulls'][number], big: boolean): HTMLElement {
   const m = unitMeta(p.unitId, p.rarity);
-  const c = portraitCard({ unitId: p.unitId, name: m.name, rarity: p.rarity, elements: m.elements, trait: p.isNew ? t('summon.new') : undefined, live: big, bare: false, cls: big ? 'rv-big' : 'reveal-card' });
+  const c = portraitCard({ unitId: p.unitId, name: m.name, series: m.series, rarity: p.rarity, elements: m.elements, trait: p.isNew ? t('summon.new') : undefined, live: big, bare: false, cls: big ? 'rv-big' : 'reveal-card' });
   c.querySelector('.pc-sub')?.replaceChildren(h('span', 'pc-lvl', p.isNew ? t('summon.new') : t('summon.duplicate')));
   return c;
 }
@@ -92,8 +92,7 @@ export function openReveal(batch: Pick<PullBatchResult, 'pulls'>): Promise<void>
           const big = pullCard(p, true);
           const m = unitMeta(p.unitId, p.rarity);
           const plate = h('div', 'rv-plate');
-          plate.append(h('span', `rv-rarity r-${step.rarity}`, rarityName(p.rarity)), h('strong', 'rv-name', unitName(p.unitId)), h('span', `rv-new${p.isNew ? ' on' : ''}`, p.isNew ? t('summon.new') : t('summon.duplicate')));
-          void m;
+          plate.append(h('span', `rv-rarity r-${step.rarity}`, rarityName(p.rarity)), h('strong', 'rv-name', unitName(p.unitId)), h('span', 'rv-series', m.series), h('span', `rv-new${p.isNew ? ' on' : ''}`, p.isNew ? t('summon.new') : t('summon.duplicate')));
           spot.dataset.rarity = step.rarity;
           spot.replaceChildren(big, plate);
           spot.classList.remove('in');
