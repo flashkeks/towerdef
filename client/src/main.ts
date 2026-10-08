@@ -88,6 +88,7 @@ export async function startGame(root: HTMLElement): Promise<GameHandle> {
     renderer.setup(data.stages[stageId], session.sim.catalog());
     ui.bind(session);
     fit();
+    renderer.ctx.version++; // Raster kann sich je Welt aendern: Ansichten neu bauen
     bus.emitRunStart(session);
   }
 
@@ -105,7 +106,7 @@ export async function startGame(root: HTMLElement): Promise<GameHandle> {
       endEmitted = true;
       bus.emitRunEnd(session);
     }
-    ui.update(session, renderer.tile);
+    ui.update(session, renderer.tile, renderer.ctx.cols, renderer.ctx.rows);
   });
 
   return {

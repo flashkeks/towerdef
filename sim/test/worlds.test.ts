@@ -23,13 +23,15 @@ describe('Welten (Runde 8 / P3): Daten', () => {
     }
   });
 
-  it('jede Welt hat eine eigene Karte (Pfad verschieden), Raster 17x11, Pfad liegt auf p-Kacheln und es gibt keine losen p-Kacheln', () => {
+  it('jede Welt hat eine eigene Karte (Pfad verschieden), Raster je Welt (mindestens 17x11, Zeilen gleich lang), Pfad liegt auf p-Kacheln und es gibt keine losen p-Kacheln', () => {
     const seen = new Set<string>();
     for (const w of worlds) {
       seen.add(JSON.stringify(w.map.path));
       const rows = w.map.zones.rows;
-      expect(rows).toHaveLength(11);
-      for (const r of rows) expect(r).toHaveLength(17);
+      expect(rows.length).toBeGreaterThanOrEqual(11);
+      expect(rows[0].length).toBeGreaterThanOrEqual(17);
+      for (const r of rows) expect(r).toHaveLength(rows[0].length);
+      for (const [x, y] of w.map.path) expect(x >= 0 && y >= 0 && x < rows[0].length && y < rows.length, `${w.id}: Wegpunkt (${x},${y}) im Raster`).toBe(true);
       const onPath = new Set<string>();
       for (let i = 1; i < w.map.path.length; i++) {
         const [x0, y0] = w.map.path[i - 1];

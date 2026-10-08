@@ -84,11 +84,11 @@ export class Ui {
   }
 
   /** `tile` = aktuelle Tile-Groesse des Renderers (fuer die Mausumrechnung). */
-  update(s: Session, tile: number): void {
+  update(s: Session, tile: number, cols?: number, rows?: number): void {
     const nextWave = this.hud.update(s);
     this.screens.updatePaused(s);
     this.shop.update(s);
-    this.board.update(tile, s.placing !== null);
+    this.board.update(tile, s.placing !== null, cols, rows);
     this.waves.update(s, nextWave);
     this.unitPanel.update(s);
     this.hints.update(s);

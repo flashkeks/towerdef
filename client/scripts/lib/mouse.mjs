@@ -1,5 +1,5 @@
 // Gemeinsame Helfer fuer Smoke und Replay-Abnahme (Runde 6, freie Platzierung): freie Stellen LESEN (`evaluate`, ohne Spielaktion)
-// und per echter Maus anklicken. Karte: Sim-Koordinate (Milli-Tiles) x -> Pixel b.x + (x/1000 + 0.5) * tile, tile = Canvas-Breite / 17.
+// und per echter Maus anklicken. Karte: Sim-Koordinate (Milli-Tiles) x -> Pixel b.x + (x/1000 + 0.5) * tile, tile = Canvas-Breite / Spalten der Stage (17 bei Welt 1-3, sonst Zonenbreite).
 
 /**
  * Freie Stellen fuer eine Unit, beste zuerst (liest nur Sim-Zustand). Kandidaten = `placementGrid` (Halbkachel-Raster),
@@ -33,7 +33,8 @@ export function readSpots(page, unitId, n = 6, { ignoreCoins = false } = {}) {
 /** Bildschirmpunkt einer Sim-Koordinate aus dem Layout des Canvas. */
 export async function worldToScreen(page, x, y) {
   const b = await page.locator('canvas.board').boundingBox();
-  const tile = b.width / 17;
+  const cols = await page.evaluate(() => window.__duskwardens.renderer().ctx.cols);
+  const tile = b.width / cols;
   return { x: b.x + (x / 1000 + 0.5) * tile, y: b.y + (y / 1000 + 0.5) * tile };
 }
 

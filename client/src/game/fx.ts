@@ -24,7 +24,7 @@ import { reachMilli } from '../view/unit-info';
 import { t } from '../i18n/t';
 import { getSettings } from '../ui/settings';
 import { C } from './palette';
-import { WORLD_H, WORLD_W, type RenderContext } from './context';
+import { type RenderContext } from './context';
 import type { EntitiesLayer } from './entities-layer';
 import type { GameBus } from './events';
 import type { Session } from './session';
@@ -640,8 +640,8 @@ export class Fx {
     b.age += dt;
     const a = blinkAlpha(b.age, b.seconds, b.strength);
     if (a > 0.01) {
-      const W = WORLD_W * this.ctx.tile;
-      const H = WORLD_H * this.ctx.tile;
+      const W = this.ctx.cols * this.ctx.tile;
+      const H = this.ctx.rows * this.ctx.tile;
       const step = Math.max(6, this.ctx.tile * 0.14);
       const f = this.flash.clear();
       f.rect(0, 0, W, H).fill({ color: C.red, alpha: a * 0.1 });
