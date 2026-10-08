@@ -32,3 +32,7 @@ Dateien: `index.ts` (Ablauf), `support.ts` (Einstufung und Gruende), `evolutions
 cd sim && npx vitest run test/units-data.test.ts test/aa-import.test.ts test/smoke.test.ts
 cd ../meta && npx vitest run
 ```
+
+## Crossover (Runde 8 / P6)
+
+`vorlage.ts` (Median-Stufenkurve und Band P5..P95 je Seltenheit aus `aa.json`), `crossover-spec.ts` (die 25 Figuren), `crossover.ts` (Schreiben/Prüfen). `npm run crossover`, `npm run crossover:check`, `npm run crossover:vorlage -- Mythic`. Der Importer ergänzt das Bild-Manifest um die Crossover-Figuren (`source: "custom"`, `imageQuery`). Anleitung: `docs/aa-import/neue-unit.md`.

@@ -13,7 +13,7 @@ describe('AA-Import (tools/aa-import, Runde 8 / P2)', () => {
     expect(src.units.length).toBe(561);
     expect(aa.units.length).toBe(550);
     expect(new Set(aa.units.map((u: any) => u.id)).size).toBe(550);
-    expect(data.units.units.length).toBe(550);
+    expect(data.units.units.length).toBe(575);
     const fixture = read('./fixtures/sample-units.json');
     expect(fixture.units.length).toBe(26);
     for (const u of fixture.units) expect(aa.units.some((x: any) => x.id === u.id), u.id).toBe(true);
@@ -33,7 +33,7 @@ describe('AA-Import (tools/aa-import, Runde 8 / P2)', () => {
   });
   it('Bild-Manifest: je Unit Wiki-Datei und Pfad', () => {
     const m = read('../../client/public/aa/manifest.json');
-    expect(Object.keys(m.units).length).toBe(550);
+    expect(Object.keys(m.units).length).toBe(575);
     expect(m.units['rokuhira']).toMatchObject({ name: 'Vengeful Swordsman', wiki: 'Vengeful_Swordsman.png', path: '/aa/units/rokuhira.webp', wikiShiny: 'Vengeful_Swordsman_(Shiny).png' });
   });
   it('Rauchtest: Bot auto (zufaellige Units) laeuft eine Stage ohne Absturz, deterministisch', () => {

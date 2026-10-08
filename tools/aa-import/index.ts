@@ -4,7 +4,7 @@
  *   sim/data/units/aa.json           alle importierbaren Units + ihr Angriffs-Katalog (Format: docs/aa-import/format.md)
  *   meta/data/aa/evolutions.json     Evolutionsrezepte (items.json -> evolutionRecipes), reduziert auf das, was Meta braucht
  *   meta/data/aa/traits.json         die 12 Traits, in Basispunkten, mit Wurf-Gewichten und Stufen
- *   client/public/aa/manifest.json   Bild-Manifest (Wiki-Dateiname + Pfad je Unit-ID)
+ *   client/public/aa/manifest.json   Bild-Manifest (Wiki-Dateiname + Pfad je Unit-ID; Crossover-Figuren mit source "custom" + imageQuery)
  *   docs/aa-import/report.md         Bericht: voll / mit Einschraenkungen / ausgeblendet, Gruende
  *
  * Aufruf: `npm run aa-import` im Repo-Wurzelverzeichnis (= `cd sim && npx tsx ../tools/aa-import/index.ts`).
@@ -106,7 +106,9 @@ function main(): void {
   const supportById = new Map(results.map((r) => [r.unit.id as string, r.support.level]));
   const evolutions = buildEvolutions(read('items.json'), new Set(units.map((u) => u.id as string)), (id) => supportById.get(id));
   const traits = buildTraits(read('traits.json'));
-  const manifest = buildManifest(results.map((r) => r.unit));
+  const crossoverPath = resolve(ROOT, 'sim/data/units/crossover.json');
+  const crossover = existsSync(crossoverPath) ? (JSON.parse(readFileSync(crossoverPath, 'utf8')).units as any[]) : [];
+  const manifest = buildManifest(results.map((r) => r.unit), crossover);
   const report = buildReport({ results, skipped, evolutions, traits, attackCount: Object.keys(attacks).length, nullAttacks: Object.values(attacks).filter((a) => a === null).length });
 
   const out: [string, string][] = [

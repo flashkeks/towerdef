@@ -66,6 +66,7 @@
 .ud-power { color: var(--aether); font-size: 0.84rem; font-weight: 700; }
 .btn.levelup { width: 100%; padding: 11px; }
 .ud-why, .ud-hint, .ud-notowned { margin: 4px 0 0; font-size: 0.82rem; }
+.ud-flavor { margin: 4px 0 8px; font-size: 0.85rem; font-style: italic; color: var(--tx-1); }
 
 /* Trait-Reroll und Evolution */
 .ud-slots { grid-template-columns: 1fr; }

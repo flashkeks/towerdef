@@ -88,6 +88,8 @@ export interface UnitDef {
   role: string;
   footprint: 1 | 2;
   placeCost: number;
+  /** Ein Satz Flavor-Text (Crossover, rein Anzeige, kein Einfluss auf die Sim). */
+  flavor?: string;
   /** Unit-eigener Zuwachs der Platzierkosten (Bp je Exemplar), sonst gilt `economy.placeCostGrowthBp`. */
   placeGrowthBp?: number;
   /** Kosten je Upgrade (Stufe k -> k+1 kostet upgradeCosts[k]). */
@@ -324,6 +326,7 @@ function build(u: UnitData, d: GameData, unknown: Set<string>): UnitDef {
     role,
     footprint: u.footprint,
     placeCost: costs[0],
+    flavor: u.flavor ?? undefined,
     placeGrowthBp: u.placeGrowthBp ?? undefined,
     upgradeCosts: costs.slice(1),
     maxLevel: levels.length - 1,

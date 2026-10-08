@@ -204,6 +204,7 @@ class UnitsScreen {
         tags.append(s);
       }
       this.detail.append(tags);
+      if (def.flavor) this.detail.append(h('p', 'ud-flavor', def.flavor));
       const dl = h('dl', 'ud-stats');
       const add = (k: string, v: string): void => {
         dl.append(h('dt', undefined, k), h('dd', undefined, v));
