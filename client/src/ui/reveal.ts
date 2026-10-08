@@ -38,6 +38,12 @@ export function unitSeries(id: string): string | null {
   return typeof d?.series === 'string' && d.series.trim() ? d.series : null;
 }
 
+/** Spalten und Zeilen fuer n Karten (5 x 2 beim 10er-Zug, 6 x 2 beim Starter-Paket). */
+export function gridShape(n: number): { cols: number; rows: number } {
+  const cols = n <= 5 ? Math.max(1, n) : n <= 12 ? Math.ceil(n / 2) : Math.min(8, Math.ceil(n / 3));
+  return { cols, rows: Math.max(1, Math.ceil(n / cols)) };
+}
+
 const CURRENCY_ICON: Record<string, string> = { crystals: 'crystal', gold: 'coin', xp: 'star', marks: 'mark' };
 
 /** Vorderseite eines Gewinns. `big` = Rampenlicht/Einzel-Enthuellung. */
@@ -58,7 +64,7 @@ function prizeFace(p: Prize, big: boolean): HTMLElement {
     return c;
   }
   const r = prizeRarity(p);
-  const c = h('div', `pz-item r-${r} ${p.kind === 'currency' ? `cur-${p.currency}` : 'cur-material'}`);
+  const c = h('div', `pz-item r-${r}${big ? ' rv-big' : ''} ${p.kind === 'currency' ? `cur-${p.currency}` : 'cur-material'}`);
   const ic = h('span', 'pz-ic');
   ic.append(icon(p.kind === 'currency' ? (CURRENCY_ICON[p.currency] ?? 'star') : 'shard', 'fill'));
   const amount = h('strong', 'pz-amount', `${p.amount.toLocaleString('en-US')}`);
@@ -113,7 +119,7 @@ class Reveal {
   private readonly counter = h('span', 'rv-count');
   private readonly canvas = h('canvas', 'rv-fx');
   private readonly sparks: Sparks;
-  private readonly cards: HTMLElement[] = [];
+  private readonly cards: HTMLButtonElement[] = [];
   private phase: Phase = 'charge';
   private timers: ReturnType<typeof setTimeout>[] = [];
   private spotOpen = false;
@@ -247,8 +253,9 @@ class Reveal {
     this.layer.dataset.phase = 'cards';
     const grid = h('div', 'rv-grid');
     const n = this.state.count;
-    const cols = n <= 5 ? n : n <= 12 ? Math.ceil(n / 2) : Math.min(8, Math.ceil(n / 3));
-    grid.style.setProperty('--cols', String(cols));
+    const shape = gridShape(n);
+    grid.style.setProperty('--cols', String(shape.cols));
+    grid.style.setProperty('--rows', String(shape.rows));
     grid.dataset.count = String(n);
     this.state.items.forEach((p, i) => {
       const c = h('button', `pk-card r-${prizeRarity(p)}${isSpotlight(p) ? ' tease' : ''}`);
@@ -290,7 +297,7 @@ class Reveal {
   private flip(i: number, quiet: boolean): void {
     if (this.phase !== 'cards' || this.spotOpen) return;
     if (!this.state.reveal(i)) return;
-    const c = this.cards[i]!;
+    const c = this.cards[i]! as HTMLButtonElement;
     const p = this.state.items[i]!;
     c.classList.add('flipped');
     c.disabled = true;
@@ -386,7 +393,9 @@ class Reveal {
     head.append(chips);
     const grid = h('div', 'rv-sum-grid');
     const n = this.state.count;
-    grid.style.setProperty('--cols', String(n <= 5 ? n : n <= 12 ? Math.ceil(n / 2) : Math.min(8, Math.ceil(n / 3))));
+    const shape = gridShape(n);
+    grid.style.setProperty('--cols', String(shape.cols));
+    grid.style.setProperty('--rows', String(shape.rows));
     this.state.items.forEach((p, i) => {
       const cell = h('div', `rv-sum-cell r-${prizeRarity(p)}`);
       cell.style.setProperty('--i', String(i));
