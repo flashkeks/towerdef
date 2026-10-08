@@ -244,22 +244,12 @@ export function buildWorldMap(nav: Nav, startMode?: MapMode): HTMLElement {
       seg.append(b);
     }
     const side = h('div', 'mode-side');
-    const marks = h('span', 'w-item mode-marks');
-    marks.title = t('wallet.raid');
-    const mb = h('span', 'w-icon raid');
-    mb.append(icon('mark', 'fill'));
-    marks.append(mb, h('span', 'w-val', v.raidMarks.toLocaleString('en-US')));
-    const mats = h('span', 'mode-mats');
-    mats.title = v.materials.length ? v.materials.map((m) => `${m.name} x${m.count}`).join(', ') : t('world.materials.none');
-    const mi = h('span', 'w-icon material');
-    mi.append(icon('shard', 'fill'));
-    mats.append(mi, h('span', 'w-val', String(v.materials.reduce((n, m) => n + m.count, 0))));
     const shopBtn = h('button', 'btn small mode-shop');
     shopBtn.type = 'button';
     shopBtn.dataset.go = 'raidshop';
     shopBtn.append(icon('bag'), t('world.raidshop'));
     shopBtn.addEventListener('click', () => nav.raidShop());
-    side.append(marks, mats, shopBtn);
+    side.append(shopBtn);
     bar.append(seg, side);
     f.body.append(bar, content);
 
@@ -287,7 +277,7 @@ export function buildWorldMap(nav: Nav, startMode?: MapMode): HTMLElement {
       const nextCard = list.find((m) => m.unlocked && m.actsCleared < m.acts.length);
       const current = list.find((m) => m.id === lastCard[kind] && m.unlocked) ?? nextCard ?? open[0] ?? list[0];
       const panelSlot = h('div', 'world-panel-slot');
-      const items: StripItem[] = list.map((m) => ({ ...modeTabModel(m), color: m.palette.grass, icon: kind === 'legend' ? 'crown' : 'swords', pct: Math.round((m.actsCleared / Math.max(1, m.acts.length)) * 100) }));
+      const items: StripItem[] = list.map((m) => ({ ...modeTabModel(m), color: m.palette.grass, icon: kind === 'legend' ? 'crown' : 'swords' }));
       const st = buildStrip(items, current.id, (id) => pick(id));
       const pick = (id: string): void => {
         const m = list.find((x) => x.id === id)!;

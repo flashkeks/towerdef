@@ -1,5 +1,6 @@
 /** Kopfzeile: Leben, Muenzen, Welle, Start/Pause, Geschwindigkeit, Stufe. Besitzer: P1 (Bedienbarkeit); Leak-Wackeln (P5) haengt hier an. */
 import { t } from '../i18n/t';
+import { loadBrowserData } from '../sim';
 import { SPEEDS, type Session } from '../game/session';
 import { hudModel } from '../view/model';
 import { flyerWarning } from '../view/readability';
@@ -61,7 +62,9 @@ export class Hud {
 
   bind(session: Session): void {
     this.session = session;
-    this.diffText.textContent = t('hud.difficulty', { name: t(`difficulty.${session.difficulty}`) });
+    const mode = loadBrowserData().stages[session.stageId]?.mode;
+    const diff = t('hud.difficulty', { name: t(`difficulty.${session.difficulty}`) });
+    this.diffText.textContent = mode ? `${t(mode === 'raid' ? 'stage.mode.raid' : 'stage.mode.legend')} - ${diff}` : diff;
     // Wellenleiste: ein Segment je Welle, Boss-Wellen rot markiert (aus der Vorschau der Sim)
     clear(this.track);
     this.segs = [];

@@ -189,6 +189,11 @@ input[type='range']:focus-visible { outline: 2px solid var(--gold); outline-offs
 .reward-line.gold { border-color: rgba(233, 197, 107, 0.45); color: var(--gold-hi); }
 .reward-line.xp { border-color: rgba(255, 141, 78, 0.45); color: #ffd9b8; }
 .reward-line .w-icon { width: 36px; height: 36px; font-size: 20px; }
+/* Runde 9 / P3: Material und Raid-Marken als Kacheln, Meilensteine und garantierte Unit als breite Zeilen */
+.reward-line.material { border-color: rgba(154, 123, 255, 0.5); color: #e6dcff; }
+.reward-line.marks { border-color: rgba(255, 141, 78, 0.5); color: #ffd9b8; }
+.reward-line.bonus { grid-column: 1 / -1; flex-direction: row; align-items: center; gap: 12px; font: 700 1rem/1.25 var(--font-ui); white-space: normal; border-color: rgba(233, 197, 107, 0.5); color: var(--gold-hi); }
+.reward-line.bonus .w-icon { flex: none; width: 28px; height: 28px; font-size: 16px; }
 @keyframes reward-in { from { opacity: 0; transform: translateY(10px) scale(0.94); } }
 .reward-firstclear { margin: 10px 0 0; padding: 4px 12px; display: inline-block; border-radius: 99px; color: var(--tx-dark); background: linear-gradient(180deg, #d6fff7, var(--aether)); font: 800 0.72rem var(--font-ui); letter-spacing: 0.14em; text-transform: uppercase; }
 .reward-levelup { margin: 10px 0 0; color: var(--gold); font-weight: 800; }
@@ -282,6 +287,7 @@ input[type='range']:focus-visible { outline: 2px solid var(--gold); outline-offs
   background: radial-gradient(120% 90% at 50% 0%, color-mix(in srgb, var(--tone) 22%, transparent), transparent 70%), linear-gradient(170deg, rgba(34, 39, 78, 0.82), rgba(10, 12, 28, 0.94)); transition: transform 0.15s, box-shadow 0.15s; }
 .rs-card:hover:not(.soldout) { transform: translateY(-3px); box-shadow: 0 14px 30px -12px color-mix(in srgb, var(--tone) 70%, transparent); }
 .rs-card.soldout { opacity: 0.55; filter: grayscale(0.6); }
+.rs-card.unit .rs-art { height: 108px; }
 .rs-art { display: grid; place-items: center; height: 76px; font-size: 52px; color: var(--tone); filter: drop-shadow(0 0 14px color-mix(in srgb, var(--tone) 65%, transparent)); }
 .rs-name { font: 800 0.9rem var(--font-display); letter-spacing: 0.05em; }
 .rs-stock, .rs-limit { font-size: 0.72rem; min-height: 1em; }

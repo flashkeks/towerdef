@@ -76,7 +76,7 @@ class RaidShopScreen {
     const name = o.kind === 'unit' ? o.title : o.kind === 'material' ? t('raidshop.amount.material', { n: o.amount, name: o.title }) : t(`raidshop.amount.${o.kind}`, { n: o.amount.toLocaleString('en-US') });
     c.append(art, h('strong', 'rs-name', name));
     if (o.kind === 'material') c.append(h('span', 'rs-stock muted', t('raidshop.owned', { n: o.owned })));
-    else if (o.kind === 'unit' && o.raidId) c.append(h('span', 'rs-stock muted', t('raidshop.from', { raid: o.raidId.replace(/-/g, ' ') })));
+    else if (o.kind === 'unit' && o.raidId) c.append(h('span', 'rs-stock muted', t('raidshop.from', { raid: o.raidName ?? o.raidId })));
     else c.append(h('span', 'rs-stock muted', ' '));
     if (o.limit !== null && o.kind !== 'unit') c.append(h('span', 'rs-limit', o.soldOut ? t('raidshop.soldout') : t('raidshop.limit', { bought: o.bought, limit: o.limit })));
     else if (o.kind === 'unit') c.append(h('span', 'rs-limit', o.owned > 0 ? t('raidshop.ownedUnit') : ' '));

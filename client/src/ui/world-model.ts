@@ -77,13 +77,20 @@ export function modeActCardModel(a: ModeActView, card: ModeCardView): ActCardMod
   };
 }
 
-export const modeTabModel = (m: ModeCardView): WorldTabModel => ({
-  id: m.id,
-  name: m.name,
-  locked: !m.unlocked,
-  lockText: m.lock ? lockText(m.lock) : null,
-  progress: t('world.mode.progress', { n: m.actsCleared, max: m.acts.length }),
-});
+export const modeTabModel = (m: ModeCardView): WorldTabModel & { pct: number } => {
+  // Raids: Fortschritt zaehlt Siege bis zur garantierten Unit, Legend Stages geschaffte Acts
+  const g = m.guarantee;
+  const done = g ? Math.min(g.progress, g.clears) : m.actsCleared;
+  const max = g ? g.clears : m.acts.length;
+  return {
+    id: m.id,
+    name: m.name,
+    locked: !m.unlocked,
+    lockText: m.lock ? lockText(m.lock) : null,
+    progress: g ? t('world.guarantee.progress', { done, n: max }) : t('world.mode.progress', { n: done, max }),
+    pct: Math.round((done / Math.max(1, max)) * 100),
+  };
+};
 
 export interface AffinityChip {
   kind: 'resist' | 'weak';

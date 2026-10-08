@@ -39,6 +39,7 @@ export interface RaidOffer {
   unitId?: string;
   /** Raid, dessen Garantie diese Unit ist (Unit-Angebote) */
   raidId?: string;
+  raidName?: string;
 }
 
 /** Alle Angebote in Anzeigereihenfolge: Gold, Crystals, Material, dann die Raid-Units (nach Raid-Reihenfolge, doppelte Units einmal). */
@@ -50,7 +51,7 @@ export function raidOffers(): RaidOffer[] {
     if (seen.has(u)) continue;
     seen.add(u);
     const rar = rarityOf(u) as Rarity | null;
-    out.push({ id: `unit-${u}`, kind: 'unit', amount: 1, price: RAW.unitPrice[rar ?? 'mythic'] ?? 200, limit: 1, unitId: u, raidId: r.id });
+    out.push({ id: `unit-${u}`, kind: 'unit', amount: 1, price: RAW.unitPrice[rar ?? 'mythic'] ?? 200, limit: 1, unitId: u, raidId: r.id, raidName: r.name });
   }
   return out;
 }

@@ -79,3 +79,5 @@
 .screen.world[data-mode='raids'] .stage-reward.extra { color: var(--ember); }
 .stage-head .affin-row { margin-top: 8px; }
 .stage-head .mode-host, .stage-head .mode-drop { margin-top: 6px; }
+.bar > span.bar-fill { display: block; }
+span.bar.guarantee-bar, span.bar.world-bar { display: block; }
