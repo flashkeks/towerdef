@@ -637,35 +637,49 @@ export class Fx {
   }
 
   private shoot(style: HitStyle, def: UnitDef, u: UnitState, ox: number, oy: number, tx: number, ty: number, rangeMilli: number, T: number): void {
-    const look = attackLook(style, def);
-    const el = look.element;
     const attack = def.levels[Math.min(u.level, def.levels.length - 1)].attack;
+    this.fire(style, attackLook(style, def), attack, rangeMilli, ox, oy, tx, ty, T);
+  }
+
+  /**
+   * Zeigt eine Angriffsform in einem Element ohne Sim (Galerie-Screenshot, Pruefskripte): Pixel-Koordinaten, Reichweite in Milli-Tiles.
+   * Nur Darstellung, es entsteht weder Schaden noch ein Ereignis.
+   */
+  demo(style: HitStyle, element: string, ox: number, oy: number, tx: number, ty: number, rangeMilli = 4000, radiusMilli = 1500): void {
+    const magic = element === 'magic' || element === 'true';
+    const look = attackLook(style, { elements: magic || element === 'physical' ? [] : [element], damageType: element === 'magic' ? 'magic' : element === 'true' ? 'true' : 'physical' });
+    this.fire(style, look, { radiusMilli, widthMilli: 700, coneDeg: 70 }, rangeMilli, ox, oy, tx, ty, this.ctx.tile);
+    for (const fn of this.shotListeners) fn(style, look.element.key);
+  }
+
+  private fire(style: HitStyle, look: ReturnType<typeof attackLook>, attack: { radiusMilli?: number; widthMilli?: number; coneDeg?: number } | null, rangeMilli: number, ox: number, oy: number, tx: number, ty: number, T: number): void {
+    const el = look.element;
     const ang = Math.atan2(ty - oy, tx - ox);
     const dist = Math.hypot(tx - ox, ty - oy);
     const mx = ox + Math.cos(ang) * T * 0.38;
     const my = oy + Math.sin(ang) * T * 0.38;
-    this.addEff({ k: K.Glow, dur: 0.1, x: mx, y: my, r: T * 0.2, color: el.main, w: 0.8 });
+    this.addEff({ k: K.Glow, dur: 0.1, x: mx, y: my, r: T * 0.22, color: el.main, w: 0.8 });
     switch (style) {
       case 'slash':
-        this.addEff({ k: K.Slash, dur: 0.22, x: tx, y: ty, r: T * 0.38, ang, w: Math.max(3, T * 0.07), el, shape: look.shape });
-        this.elBurst(el, tx, ty, 4, T * 1.4, 0.3, 4);
+        this.addEff({ k: K.Slash, dur: 0.24, x: tx, y: ty, r: T * 0.42, ang, w: Math.max(3, T * 0.08), el, shape: look.shape });
+        this.elBurst(el, tx, ty, 5, T * 1.5, 0.32, 4);
         break;
       case 'blast':
       case 'shell': {
         const R = ((attack?.radiusMilli ?? 1200) / 1000) * T;
         if (rangeMilli <= 2000) {
           // Nahkampf-Welle: kein Flug, die Druckwelle kommt gleich am Ziel
-          this.addEff({ k: K.Wave, dur: 0.34, x: tx, y: ty, r2: R, w: Math.max(2.5, T * 0.06), el, shape: look.shape });
+          this.addEff({ k: K.Wave, dur: 0.36, x: tx, y: ty, r2: R, w: Math.max(2.5, T * 0.07), el, shape: look.shape });
           this.elBurst(el, tx, ty, R > T * 1.5 ? 14 : 8, T * 2.2, 0.5, 5);
         } else {
           const d = this.projDur('orb', dist, T);
-          this.addEff({ k: K.Proj, dur: d, x: mx, y: my, x2: tx, y2: ty, r: T * 0.14, w: T * 0.08, el, shape: 'orb', after: After.Blast, r2: R });
+          this.addEff({ k: K.Proj, dur: d, x: mx, y: my, x2: tx, y2: ty, r: T * 0.15, w: T * 0.09, el, shape: 'orb', after: After.Blast, r2: R });
         }
         break;
       }
       case 'cone': {
         const half = ((attack?.coneDeg ?? 60) * Math.PI) / 360;
-        this.addEff({ k: K.Fan, dur: 0.34, x: ox, y: oy, r: (rangeMilli / 1000) * T, ang, spread: half, el, shape: look.shape });
+        this.addEff({ k: K.Fan, dur: 0.36, x: ox, y: oy, r: (rangeMilli / 1000) * T, ang, spread: half, el, shape: look.shape });
         this.elBurst(el, ox + Math.cos(ang) * T * 0.6, oy + Math.sin(ang) * T * 0.6, 6, T * 2.2, 0.4, 4);
         break;
       }
@@ -677,13 +691,13 @@ export class Fx {
         break;
       }
       case 'line':
-        this.addEff({ k: K.Beam, dur: 0.24, x: ox, y: oy, r: (rangeMilli / 1000) * T, w: ((attack?.widthMilli ?? 600) / 1000) * T, ang, el, shape: look.shape });
+        this.addEff({ k: K.Beam, dur: 0.26, x: ox, y: oy, r: (rangeMilli / 1000) * T, w: ((attack?.widthMilli ?? 600) / 1000) * T, ang, el, shape: look.shape });
         this.elBurst(el, tx, ty, 4, T * 1.3, 0.3, 4);
         break;
       default: {
         // Einzelziel aus der Ferne: Geschoss in Form des Elements
         const d = this.projDur(look.shape, dist, T);
-        this.addEff({ k: K.Proj, dur: d, x: mx, y: my, x2: tx, y2: ty, r: T * (look.shape === 'bullet' ? 0.06 : 0.1), w: T * (look.shape === 'bolt' ? 0.05 : 0.04), el, shape: look.shape, after: After.Impact });
+        this.addEff({ k: K.Proj, dur: d, x: mx, y: my, x2: tx, y2: ty, r: T * (look.shape === 'bullet' ? 0.075 : 0.12), w: T * (look.shape === 'bolt' ? 0.06 : 0.05), el, shape: look.shape, after: After.Impact });
       }
     }
   }
