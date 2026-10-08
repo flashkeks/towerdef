@@ -14,7 +14,7 @@ Letzte Aktualisierung: 2026-10-08 (P0)
 | P1 | Fähigkeiten, Beschwörungen, Zweitangriffe | läuft | 1 × Sonnet | |
 | P2 | Welten 4–10, größere Karten | läuft | 1 × Sonnet | |
 | P3 | Legend Stages, Raids | wartet auf P1 | 1 × Sonnet | |
-| P4 | Interface komplett | läuft | 1 × Sonnet | |
+| P4 | Interface komplett | **erledigt** | 1 × Sonnet | Alle Bildschirme außerhalb des Matches im Dusk-Gilt-Look: Einstellungen (Vollbild, Regler/Schalter), Hilfe (Tastenkappen, Ablauf, Bodenarten, Seltenheits-Legende), Pause mit Lauf-Chips, Ergebnis mit Siegel/Kacheln/MVP-Karte/Belohnungen, Kristall-Shop (Mock), Credits, Team, Stufenwahl, Ladefehler; Lobby mit großer Anführer-Karte und neuem Untertitel. Alte Grenzgilde-Texte raus (Test `r9-p4-texte`); grep-Rest nur Boss-Schild-Mechanik (`ward` intern, Text „Shield“) und „Duskwardens“. client 237 Tests, Smoke 1280×720 grün (121). Screenshots `client/docs/r9/p4-*.png`. Noch alt: Spielfeld-Kacheln/Sprites |
 | P5 | Abschluss | offen | Hauptsitzung | |
 
 Plan: P1, P2, P4 parallel in lokalen Worktrees (max. 3 Agenten, nur Sonnet), P3 sobald P1 gemerged ist. `sim/`-Kern ändert P1; P2 nur Weltdaten + Kartenraster; P4 nur `client/` ohne Match-Kern. Screenshots in `client/docs/r9/`.
