@@ -14,7 +14,7 @@ const { url, stop } = await startServer(PORT);
 const browser = await launch();
 const shot = (page, name) => page.screenshot({ path: resolve(OUT, `p2-${name}.png`) });
 try {
-  const page = await (await browser.newContext({ viewport: { width: 1920, height: 1080 } })).newPage();
+  const page = await (await browser.newContext({ viewport: { width: Number(process.env.SHOT_W ?? 1920), height: Number(process.env.SHOT_H ?? 1080) } })).newPage();
   await page.goto(url);
   await page.waitForSelector('.lobby');
   await page.evaluate(() => localStorage.setItem('dw.hints', JSON.stringify({ off: true })));
@@ -63,7 +63,8 @@ try {
     // Mausprobe auf der grossen Karte: Geist liegt unter dem Zeiger, ein echter Klick setzt die Unit dorthin
     const probe = units[0];
     await page.evaluate(() => { window.__duskwardens.session().sim.state.players[0].coins = 100000; });
-    await page.keyboard.press('1');
+    const order = await page.evaluate(() => [...document.querySelectorAll('.unit-btn')].map((b) => b.dataset.unit));
+    await page.keyboard.press(String(order.indexOf(probe) + 1));
     const spot = (await readSpots(page, probe, 1, { ignoreCoins: true }))[0];
     const sp = await worldToScreen(page, spot[0], spot[1]);
     await page.mouse.move(sp.x, sp.y);
@@ -73,7 +74,7 @@ try {
     await sleep(150);
     const placed = await page.evaluate(() => window.__duskwardens.session().sim.state.units.map((u) => [u.x, u.y]));
     const hit = placed.some(([x, y]) => Math.abs(x - spot[0]) <= 60 && Math.abs(y - spot[1]) <= 60);
-    console.log(stage, 'Mausprobe', { spot, ghost: gh && { ok: gh.ok, x: gh.x, y: gh.y }, placed: placed.length, hit });
+    console.log(stage, 'Mausprobe', { spot, ghost: gh && { ok: gh.ok, reason: gh.reason, unit: gh.unitId, x: gh.x, y: gh.y }, probe, placed: placed.length, hit });
     if (!hit || !gh?.ok) process.exitCode = 1;
     await buildTeam(page, { units: [...units, ...units], level: 2 });
     await fastForward(page, 8);
