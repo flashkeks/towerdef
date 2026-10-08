@@ -96,8 +96,8 @@
       "lift": 0.0
     },
     "hill": {
-      "top": "#7d5e3c",
-      "topLight": "#a07c52",
+      "top": "#8c6a44",
+      "topLight": "#b8915e",
       "wall": "#4a3522",
       "wallDark": "#30221a"
     },

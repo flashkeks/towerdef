@@ -34,7 +34,7 @@ Je Welt: Act 1-3 mit 15 Wellen, Act 4-6 mit 20 Wellen (AA: "mindestens 15", Schi
 
 | Datei | Inhalt |
 |---|---|
-| `sim/data/worlds/<welt>.json` | Karte (Wegpunkte, Pfadbreite, Zonenmaske), Farbwelt (`theme`), Acts (Name, Boss, Boss-Kit, Wellenzahl, HP-Stufe, Modifier), Anzeigenamen der Gegner (`roster`), Welt-HP-Faktor, Element-Versatz, Freischaltung, Infinite |
+| `sim/data/worlds/<welt>.json` | Karte (Wegpunkte, Pfadbreite, Zonenmaske), Farbwelt und Kartenthema (`theme`, `theme.board`: siehe unten), Acts (Name, Boss, Boss-Kit, Wellenzahl, HP-Stufe, Modifier), Anzeigenamen der Gegner (`roster`), Welt-HP-Faktor, Element-Versatz, Freischaltung, Infinite |
 | `sim/data/wave-template.json` | gemeinsame Wellen-Vorlage (19 Wellen ohne Boss, Boss-Welle als Anhang); AA hat keine Wellen-Tabelle, das Geruest ist DESIGN |
 | `sim/data/bosses.json` | vier neue Kits ohne feste Welle (`charger`, `summoner`, `mender`, `shielder`), dazu die vorhandenen `warden` und `colossus` |
 | `sim/data/modes/legend-stages.json`, `raids.json` | 8 Legend Stages und 11 Raids aus `maps.json`, **spielbar seit Runde 9 / P3**, benutzen die Karte einer Welt (`host`) wieder; Daten, Freischaltung und Belohnungen: [modi.md](modi.md) |
@@ -59,5 +59,33 @@ Der Kern kennt Phasen, Schilde, Beschwoerungen, Heilung und Sturmlauf (Boss-Kits
 
 1. `sim/data/worlds/<id>.json` kopieren, `id`, `order`, `name`, `aaId`, `unlock` anpassen.
 2. Karte zeichnen: `map.path` (Wegpunkte in Kacheln, achsparallel, im Raster) und `map.zones.rows` (beliebig viele Zeichen x Zeilen, alle Zeilen gleich lang, mindestens 17 x 11 empfohlen, passt bis ca. 24 x 14 in 1280 x 720: `.` Boden, `h` Huegel, `#` blockiert, `p` Pfad). `npx tsx scripts/map-preview.ts <id>` im Ordner `sim/` zeigt das Ergebnis.
-3. `theme` (Farben, Deko), `roster` (Gegnernamen), `acts` (Boss, Kit, Wellenzahl, Modifier) ausfuellen.
+3. `theme` (Farben, Deko) samt `theme.board` (Kartenthema, siehe "Kartenthema je Welt"), `roster` (Gegnernamen), `acts` (Boss, Kit, Wellenzahl, Modifier) ausfuellen.
 4. Fertig: `npm test` in `sim/`, `meta/`, `client/` prueft Struktur, Rauchtest und Weltkarte automatisch.
+
+## Kartenthema je Welt (Runde 10 / P4)
+
+Jede Welt hat in `theme.board` ein **Kartenthema als Daten**. Es ist reine Darstellung (die Sim liest es nicht, es geht in keinen Replay-Hash; Test `sim/test/worlds-board.test.ts` rechnet dieselbe Runde mit und ohne Block und vergleicht den Hash). Der Client malt daraus die ganze Karte einmal in eine Textur (`client/src/game/board-art.ts`).
+
+| Feld | Inhalt |
+|---|---|
+| `ground` | `pattern` (`grass`, `snow`, `sand`, `dirt`, `cobble`, `flagstone`, `cracked`, `moss`), Farben `base`/`dark`/`light`, `accent` (Halmspitzen, Glut in Rissen). Terrassen (`h`) bekommen dasselbe Muster in den Hang-Farben von `theme.hill` |
+| `path` | `pattern` (`dirt`, `cobble`, `planks`, `flagstone`, `ice`, `sand`, `glow`), `base`, `edge` (Randstein), `light`, optional `glow` (leuchtende Mittellinie) |
+| `deco` | Hindernisse auf `#`-Kacheln, reihum nach Gewicht: `tree`, `pine`, `deadtree`, `rock`, `bush`, `crystal`, `pillar`, `ice`, `cactus`, `mushroom`, `tombstone`, `crate`, `barrel`, `house` (`color` = Wand, `color2` = Dach), `mound`, `lantern`, `stalagmite` |
+| `scatter` | kleine Bodendeko auf freien Kacheln (`flowers`, `tufts`, `pebbles`, `puddle`, `drift`, `bones`, `leaves`, `sparkle`, `rune`, `moss`) mit `density` je Kachel |
+| `light` | `tint` + `tintAlpha` (Stimmung), `vignette`, `glow` (Leuchten um Basis), `ambient` (`none`, `motes`, `snow`, `embers`, `spores`, `wisps`, `dust`) |
+| `markers` | Farbe von Spawn-Portal und Basis-Schrein (Standard rot / tuerkis) |
+
+| Welt | Stimmung |
+|---|---|
+| greenie | tuerkises Namek-Gras, gelbgruener Erdweg, runde Baeume, Leuchtkristalle, Gluehwuermchen |
+| walled-city | graues Pflaster, Kopfsteinweg, Fachwerk-Haeuser mit roten Daechern, Saeulen-Ruinen, Staub im warmen Licht |
+| snowy-town | Schnee mit Verwehungen, Eisweg mit Rissen, verschneite Tannen und Haeuser, Schneefall |
+| sand-village | Duenen mit Windrippen, Sandsteinweg, Kakteen, Lehmhuetten, Staub |
+| navy-bay | blaues Kopfsteinpflaster mit Pfuetzen, Holzsteg, Kisten, Faesser, Laternen |
+| fiend-city | Neon-Nacht in Violett, Pflaster mit roter Leuchtlinie, dunkle Haeuser mit Lichtern, rosa Laternen, Glut |
+| spirit-world | bleiche Knochenwueste, heller Steinweg mit blauer Linie, Knochensplitter, Kristalle, kahle Baeume, Irrlichter |
+| ant-kingdom | Erdbau, Lehmweg, Ameisenhuegel, Pilze, Stalagmiten, Sporen |
+| magic-town | Lila Pflaster, goldener Weg, Zauberhaeuser, Kristalle, Bluetenbaeume, Funken |
+| haunted-academy | Moos im Mondlicht, dunkler Steinweg mit Geisterlicht, Grabsteine, kahle Baeume, Irrlichter |
+
+Neues Thema: Block in die Welt-Datei kopieren und anpassen, `npx vitest run test/worlds-board.test.ts` in `sim/` prueft Schema und dass keine zwei Welten gleich aussehen; ansehen mit `client/scripts/shots-r10-p4.mjs` (`SHOT_WORLDS=<welt>`). Ohne `board` zeigt der Client ein aus `grass`/`path` abgeleitetes Gras-Thema.

@@ -515,7 +515,7 @@ function paintPath(c: Ctx, r: Rng, board: BoardTheme, pts: Pt[], cols: number, r
 
 // ---------------------------------------------------------------- Huegel
 
-function paintHills(c: Ctx, r: Rng, stage: StageData, board: BoardTheme, cols: number, rows: number): { shadows: Area[] } {
+function paintHills(c: Ctx, r: Rng, stage: StageData, board: BoardTheme, cols: number, rows: number, px: number): { shadows: Area[] } {
   const hc = stage.theme?.hill ?? { top: '#6f9a4c', topLight: '#8cb35e', wall: '#8a5a3a', wallDark: '#5a3a2a' };
   const isHill = (x: number, y: number): boolean => zoneChar(stage, x, y) === 'h';
   const shadows: Area[] = [];
@@ -530,6 +530,14 @@ function paintHills(c: Ctx, r: Rng, stage: StageData, board: BoardTheme, cols: n
     }
   }
   if (!any) return { shadows };
+  // Schlagschatten der Terrasse auf den Boden: hebt sie vom Untergrund ab, auch wenn die Farben nah beieinander liegen
+  c.save();
+  c.shadowColor = 'rgba(0,0,0,0.5)';
+  c.shadowBlur = px * 0.16;
+  c.shadowOffsetY = px * 0.05;
+  c.fillStyle = hc.wall;
+  c.fill(top);
+  c.restore();
   // Kuppe: Muster der Welt in den Hang-Farben, deutlich heller als der Boden (Terrasse)
   c.save();
   c.clip(top);
@@ -1244,7 +1252,7 @@ export function paintBoard(stage: StageData, px: number): PaintedBoard {
   paintPattern(c, rngFrom(seed ^ 0x11), g.pattern, gpal, all);
 
   // 2) Huegel
-  const { shadows } = paintHills(c, rngFrom(seed ^ 0x22), stage, board, cols, rows);
+  const { shadows } = paintHills(c, rngFrom(seed ^ 0x22), stage, board, cols, rows, px);
 
   // 3) Pfad
   const line = pathLine(stage, cols, rows);

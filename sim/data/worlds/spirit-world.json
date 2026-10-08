@@ -108,9 +108,9 @@
     "board": {
       "ground": {
         "pattern": "sand",
-        "base": "#bcc7e2",
-        "dark": "#8a96bd",
-        "light": "#e6ecfb",
+        "base": "#a9b5da",
+        "dark": "#7683b0",
+        "light": "#d4dcf5",
         "accent": "#ffffff"
       },
       "path": {
