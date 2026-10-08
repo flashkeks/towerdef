@@ -561,9 +561,18 @@ function paintHills(c: Ctx, r: Rng, stage: StageData, board: BoardTheme, cols: n
     for (let x = 0; x < cols; x++) {
       if (!isHill(x, y)) continue;
       const faceH = 1 - (isHill(x, y + 1) ? 0 : WALL);
-      if (!isHill(x, y - 1)) c.moveTo(x, y + 0.025), c.lineTo(x + 1, y + 0.025);
-      if (!isHill(x - 1, y)) c.moveTo(x + 0.025, y), c.lineTo(x + 0.025, y + faceH);
-      if (!isHill(x + 1, y)) c.moveTo(x + 0.975, y), c.lineTo(x + 0.975, y + faceH);
+      if (!isHill(x, y - 1)) {
+        c.moveTo(x, y + 0.025);
+        c.lineTo(x + 1, y + 0.025);
+      }
+      if (!isHill(x - 1, y)) {
+        c.moveTo(x + 0.025, y);
+        c.lineTo(x + 0.025, y + faceH);
+      }
+      if (!isHill(x + 1, y)) {
+        c.moveTo(x + 0.975, y);
+        c.lineTo(x + 0.975, y + faceH);
+      }
     }
   }
   c.stroke();
