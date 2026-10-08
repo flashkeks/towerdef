@@ -59,12 +59,12 @@ const rich = (crystals = 1_000_000, gold = 1_000_000): Profile => {
 const own = (p: Profile, id: string, o: Partial<Profile['units'][string]> = {}): Profile => ({ ...p, units: { ...p.units, [id]: { level: 1, xp: 0, copies: 1, stars: 1, firstObtainedAt: 'x', ...o } } });
 
 describe('Katalog (AA)', () => {
-  it('550 Units, alle sechs Seltenheiten, Ausgeblendete nie im Pool', () => {
-    expect(UNIT_CATALOG.length).toBe(550);
+  it('575 Units (550 AA + 25 Crossover), alle sechs Seltenheiten, Ausgeblendete nie im Pool', () => {
+    expect(UNIT_CATALOG.length).toBe(575);
     for (const r of RARITIES) expect(UNIT_CATALOG.some((u) => u.rarity === r), r).toBe(true);
     const hidden = UNIT_CATALOG.filter((u) => u.hidden).map((u) => u.id);
     expect(hidden.length).toBeGreaterThan(0);
-    for (const pool of ['summonable', 'special'] as const) for (const r of RARITIES) for (const id of poolOfRarity(pool, r)) expect(hidden).not.toContain(id);
+    for (const pool of ['summonable', 'special', 'crossover'] as const) for (const r of RARITIES) for (const id of poolOfRarity(pool, r)) expect(hidden).not.toContain(id);
     // Standard-Pool und Special-Pool ueberschneiden sich nicht
     for (const r of RARITIES) {
       const a = new Set(poolOfRarity('summonable', r));
@@ -76,9 +76,9 @@ describe('Katalog (AA)', () => {
     expect(cov.unknownTargets).toEqual([]);
     for (const id of cov.orphans) {
       const u = UNIT_CATALOG.find((x) => x.id === id)!;
-      expect(u.hidden || [...poolOfRarity('summonable', u.rarity), ...poolOfRarity('special', u.rarity)].includes(id), id).toBe(true);
+      expect(u.hidden || [...poolOfRarity('summonable', u.rarity), ...poolOfRarity('special', u.rarity), ...poolOfRarity('crossover', u.rarity)].includes(id), id).toBe(true);
     }
-    const reachable = new Set([...RARITIES.flatMap((r) => [...poolOfRarity('summonable', r), ...poolOfRarity('special', r)]), ...allRecipes().flatMap((r) => r.to.map((t) => t.id))]);
+    const reachable = new Set([...RARITIES.flatMap((r) => [...poolOfRarity('summonable', r), ...poolOfRarity('special', r), ...poolOfRarity('crossover', r)]), ...allRecipes().flatMap((r) => r.to.map((t) => t.id))]);
     for (const u of UNIT_CATALOG) expect(reachable.has(u.id) || u.hidden, u.id).toBe(true);
   });
 });
@@ -370,5 +370,20 @@ describe('Migration Runde 7 -> 8 (echtes Profil, erzeugt mit dem Code der Runde 
     if (!m.ok) throw new Error(m.message);
     expect(Object.keys(m.profile.units)).toEqual(['ichigo']);
     expect((m.profile.settings['migrationR8'] as { removedUnits: string[] }).removedUnits).toContain('gibts_nicht');
+  });
+});
+
+describe('Crossover-Banner (Runde 8 / P6)', () => {
+  it('aktiv, Raten sichtbar, Pool nur Crossover-Figuren, Rick Astley ist Featured; 10er-Zug zieht nur x_-Units', () => {
+    const b = getBanner('crossover')!;
+    expect(b.active).toBe(true);
+    expect(b.featured?.unitId).toBe('x_rick');
+    for (const r of RARITIES) for (const id of poolOfRarity('summonable', r)) expect(id.startsWith('x_')).toBe(false);
+    for (const t of b.tiers) for (const id of poolOfRarity('crossover', t.rarity as 'rare')) expect(id.startsWith('x_'), id).toBe(true);
+    const r = pull(rich(10_000), 'crossover', 10, env(5));
+    if (!r.ok) throw new Error(r.message);
+    expect(r.result.pulls).toHaveLength(10);
+    for (const h of r.result.pulls) expect(h.unitId.startsWith('x_'), h.unitId).toBe(true);
+    expect(balanceOf(r.profile, 'crystals')).toBe(10_000 - 540);
   });
 });

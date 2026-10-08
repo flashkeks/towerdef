@@ -368,6 +368,7 @@ canvas.board { display: block; }
 .ud-rarity { color: var(--rc); font-weight: 700; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.06em; }
 .ud-tags { display: flex; gap: 4px; align-items: center; margin: 8px 0 4px; flex-wrap: wrap; }
 .ud-role { color: var(--parch); font-weight: 600; margin-right: 4px; }
+.ud-flavor { margin: 4px 0 8px; font-size: 0.85rem; font-style: italic; color: #b9c0d6; }
 .ud-info { margin: 4px 0 8px; font-size: 0.85rem; color: #d8dcea; }
 .ud-stats { display: grid; grid-template-columns: max-content 1fr; gap: 2px 14px; margin: 6px 0; font-size: 0.85rem; }
 .ud-stats dt { color: var(--stone); }

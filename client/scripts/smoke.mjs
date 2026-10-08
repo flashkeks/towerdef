@@ -218,7 +218,7 @@ async function playStage(browser, [W, H]) {
   ok(/Starting values/.test(await text('.start-values')) && /Rates version/.test(await text('.rates-version')), 'Hinweis "Startwerte" und Ratenversion sichtbar');
   ok(/Pull x10 · Mythic pity 0\/150/.test(await text('.pull-btn[data-count="10"] strong')), `Pity-Zaehler auf dem Knopf: "${await text('.pull-btn[data-count="10"] strong')}"`);
   ok((await page.locator('.pity-row').count()) === 2 && /Mythic or better: 0 \/ 150/.test(await text('.pity-top')), 'Pity-Zeilen (Mythic, Legendary oder besser) sichtbar');
-  ok((await page.locator('.banner-tab').count()) === 3, 'Banner: Standard, Starter und Special (solange verfuegbar)');
+  ok((await page.locator('.banner-tab').count()) === 4, 'Banner: Standard, Starter, Special und Crossover (solange verfuegbar)');
   await clickSel('.pull-btn[data-count="10"]');
   await page.waitForSelector('.reveal');
   ok(await page.evaluate(() => document.querySelector('.pull-btn[data-count="10"]').disabled), 'Knopf waehrend des Zugs gesperrt');

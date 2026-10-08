@@ -149,6 +149,7 @@ class UnitsScreen {
       }
       this.detail.append(tags);
       if (hasKey(`team.info.${u.unitId}`)) this.detail.append(h('p', 'ud-info', t(`team.info.${u.unitId}`)));
+      if (def.flavor) this.detail.append(h('p', 'ud-flavor', def.flavor));
       const dl = h('dl', 'ud-stats');
       const add = (k: string, v: string): void => {
         dl.append(h('dt', undefined, k), h('dd', undefined, v));

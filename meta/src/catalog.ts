@@ -20,6 +20,8 @@ export interface CatalogUnit {
   evolvedOnly: boolean;
   /** Begrenzte/Event-/Rate-up-Unit (AA `limited`, `rateupBannerOnly`, `hideFromBanner`): nur im Special-Banner. */
   special: boolean;
+  /** Crossover-Figur (Runde 8 / P6, `source: "custom"`): nur im Crossover-Banner (Pool `crossover`), nicht im Standard- oder Special-Pool. */
+  crossover: boolean;
 }
 
 interface RawUnit {
@@ -32,6 +34,7 @@ interface RawUnit {
   limited?: boolean | null;
   hideFromBanner?: boolean | null;
   rateupBannerOnly?: boolean | null;
+  source?: string | null;
 }
 const files = import.meta.glob('../../sim/data/units/*.json', { eager: true, import: 'default' }) as Record<string, { units?: RawUnit[] }>;
 
@@ -46,6 +49,7 @@ export const UNIT_CATALOG: readonly CatalogUnit[] = Object.keys(files)
     if (!(RARITIES as readonly string[]).includes(rarity)) throw new Error(`units/*.json: unbekannte Seltenheit ${u.rarity} bei ${u.id}`);
     if (seen.has(u.id)) throw new Error(`units/*.json: doppelte Unit-ID ${u.id}`);
     seen.add(u.id);
+    const crossover = u.source === 'custom';
     return {
       id: u.id,
       name: u.name ?? u.nameRR ?? u.id,
@@ -53,7 +57,8 @@ export const UNIT_CATALOG: readonly CatalogUnit[] = Object.keys(files)
       hidden: u.support === 'hidden',
       evolvedFrom: u.evolvedFrom ?? null,
       evolvedOnly: !!u.evolvedFrom && EVO_TARGETS.has(u.id),
-      special: !!(u.limited || u.rateupBannerOnly || u.hideFromBanner),
+      special: !crossover && !!(u.limited || u.rateupBannerOnly || u.hideFromBanner),
+      crossover,
     };
   });
 
@@ -66,10 +71,13 @@ export const unitsOfRarity = (r: Rarity): string[] => UNIT_CATALOG.filter((u) =>
  * Banner-Pools (Wurf und Anzeige lesen dieselbe Funktion):
  * `summonable` = Standard-Pool (kein Limited/Event/Rate-up, keine Evolution, nicht ausgeblendet);
  * `special` = die uebrigen nicht entwickelten, nicht ausgeblendeten Units (begrenzt, Event, Rate-up);
+ * `crossover` = die Crossover-Figuren (Pop-Kultur/Memes, `source: "custom"`), nur dort;
  * `all` = alles Ziehbare (Union). Entwickelte Formen und ausgeblendete Units sind nie ziehbar.
  */
-export type PoolName = 'summonable' | 'special' | 'all';
+export type PoolName = 'summonable' | 'special' | 'crossover' | 'all';
+const inPool = (pool: PoolName, u: CatalogUnit): boolean =>
+  pool === 'all' || (pool === 'crossover' ? u.crossover : !u.crossover && (pool === 'special') === u.special);
 export const poolOfRarity = (pool: PoolName, r: Rarity): string[] =>
-  UNIT_CATALOG.filter((u) => u.rarity === r && !u.hidden && !u.evolvedOnly && (pool === 'all' || (pool === 'special') === u.special)).map((u) => u.id);
+  UNIT_CATALOG.filter((u) => u.rarity === r && !u.hidden && !u.evolvedOnly && inPool(pool, u)).map((u) => u.id);
 export const nameOf = (id: string): string => UNIT_CATALOG.find((u) => u.id === id)?.name ?? id;
 export const rarityOf = (id: string): Rarity | null => UNIT_CATALOG.find((u) => u.id === id)?.rarity ?? null;

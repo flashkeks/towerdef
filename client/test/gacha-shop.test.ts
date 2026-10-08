@@ -25,7 +25,7 @@ describe('Gacha ueber das Backend', () => {
     const be = mk(ls, 5);
     const v0 = await be.bannerViews();
     if (!v0.ok) throw new Error(v0.message);
-    expect(v0.views.map((v) => v.bannerId)).toEqual(['standard', 'starter', 'special']);
+    expect(v0.views.map((v) => v.bannerId)).toEqual(['standard', 'starter', 'special', 'crossover']);
     expect(v0.views[0]!.pity[0]!.text).toBe('Pulls since last Mythic or better: 0 / 150');
     await be.claimStarterGift(key(1));
     const p = await be.pull('standard', 10, key(2));

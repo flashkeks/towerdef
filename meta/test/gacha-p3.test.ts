@@ -41,13 +41,13 @@ const sigma = (p: number, n: number) => Math.sqrt((p * (1 - p)) / n);
 describe('Banner-Dateien', () => {
   it('alle Dateien gueltig, als Startwerte markiert, mit Version; aktiv sind Standard, Special und Starter', () => {
     const all = allBanners();
-    expect(all.map((b) => b.bannerId).sort()).toEqual(['featured-example', 'special', 'standard', 'starter']);
+    expect(all.map((b) => b.bannerId).sort()).toEqual(['crossover', 'featured-example', 'special', 'standard', 'starter']);
     for (const b of all) {
       expect(b.calibrated).toBe(false);
       expect(b.note).toMatch(/Startwerte \(Runde [78].*nicht kalibriert/);
       expect(b.ratesVersion).toMatch(/^2026-/);
     }
-    expect(listBanners().map((b) => b.bannerId).sort()).toEqual(['special', 'standard', 'starter']);
+    expect(listBanners().map((b) => b.bannerId).sort()).toEqual(['crossover', 'special', 'standard', 'starter']);
     expect(need('featured-example').active).toBe(false);
   });
   it('Standard (Runde 8): 50 / 450, sechs Seltenheiten 69/24/5.4/1.3/0.25/0.05, Pity 150 (Mythic oder besser) und 35', () => {

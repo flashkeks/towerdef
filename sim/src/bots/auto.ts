@@ -47,7 +47,11 @@ export function auto(poolIds: readonly string[] | null, pickCount = 4): Bot {
       });
     }
     // Ohne Liste: zufällige Angreifer (eigener Bot-PRNG), höchstens `pickCount`, keine Farm.
-    const fighters = cat.filter((u) => u.levels[0].attack && !u.farm);
+    // Nur Units, die der Bot am Anfang bezahlen kann (sonst wartet er ewig mit leerem Feld; Runde 8 / P6: bei 575 statt 550 Units traf es Seed 3).
+    const coins = ctx.sim.state.players[ctx.playerId].coins;
+    const all = cat.filter((u) => u.levels[0].attack && !u.farm);
+    const affordable = all.filter((u) => ctx.sim.placeCost(ctx.playerId, u.id) <= coins);
+    const fighters = affordable.length > 0 ? affordable : all;
     const out: UnitDef[] = [];
     while (out.length < Math.min(pickCount, fighters.length)) {
       const d = fighters[nextInt(ctx.rng, fighters.length)];
