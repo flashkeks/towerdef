@@ -82,10 +82,7 @@ export function abilityError(w: World, u: UnitState, def: UnitDef, i: number, au
   if (a.needsTarget) {
     if (!targetOf(w, u, def, a)) return 'no-target';
   } else if ((a.global || auto) && !w.state.enemies.some((e) => e.hp > 0)) return 'no-target';
-  if (auto && a.summon) {
-    const sd = w.ctx.summons[a.summon.id];
-    if (sd && summonCount(w, u.id, a.summon.id) >= sd.cap) return 'capped';
-  }
+  if (auto && a.summon && a.summon.every((sc) => summonCount(w, u.id, sc.id) >= (w.ctx.summons[sc.id]?.cap ?? 1))) return 'capped';
   return null;
 }
 
@@ -105,12 +102,12 @@ function pulse(w: World, u: UnitState, def: UnitDef, a: AbilityDef, first: boole
   if (a.buff) {
     const r2 = a.buff.radiusMilli === null ? -1 : a.buff.radiusMilli * a.buff.radiusMilli;
     for (const o of w.state.units) {
-      if (o.id === u.id ? !a.buff.self : false) continue;
+      if (o.id === u.id && !a.buff.self) continue;
       if (r2 >= 0 && dist2(o.x, o.y, u.x, u.y) > r2) continue;
       giveBuff(o, a.buff, a.buff.ticks);
     }
   }
-  if (a.summon) spawnSummons(w, u, a.summon.id, a.summon.count);
+  for (const sc of a.summon ?? []) spawnSummons(w, u, sc.id, sc.count);
   if (a.coins > 0) addCoins(w, u.owner, a.coins, 'ability');
 }
 
@@ -147,8 +144,9 @@ export function tickAbilities(w: World): void {
 export function applyAuras(w: World): void {
   const { state, ctx } = w;
   for (const u of state.units) {
-    const aura = ctx.units[u.defId].aura;
-    if (!aura) continue;
+    const auras = ctx.units[u.defId].aura;
+    if (auras.length === 0) continue;
+    const aura = auras[Math.min(u.level, auras.length - 1)];
     const r2 = aura.radiusMilli === null ? -1 : aura.radiusMilli * aura.radiusMilli;
     for (const o of state.units) {
       if (o.id === u.id) continue;

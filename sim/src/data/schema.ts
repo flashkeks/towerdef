@@ -344,6 +344,7 @@ export type BuffData = z.infer<typeof BuffSchema>;
  * `trigger`: `button` = der Spieler löst sie aus (Befehl `ability`; der Auto-Schalter `autoAbility` löst sie, sobald bereit, von selbst aus);
  * `auto` = feuert immer von selbst, sobald bereit (periodische Beschwörer, Dauer-Effekte).
  */
+const SummonCallSchema = z.object({ id: z.string().min(1), count: z.number().int().min(1).max(12).default(1) });
 export const AbilitySchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
@@ -366,8 +367,11 @@ export const AbilitySchema = z.object({
   selfBuff: BuffSchema.nullish(),
   /** Buff auf Verbündete im Radius (Studs; fehlt = alle Units des Spielers). */
   buff: BuffSchema.extend({ radius: z.number().positive().nullish(), self: z.boolean().default(true) }).nullish(),
-  /** Beschwörung: `count` Wesen aus dem Katalog `summons`. */
-  summon: z.object({ id: z.string().min(1), count: z.number().int().min(1).max(12).default(1) }).nullish(),
+  /** Beschwörung: `count` Wesen aus dem Katalog `summons` (ein Eintrag oder eine Liste). */
+  summon: z
+    .union([SummonCallSchema, z.array(SummonCallSchema)])
+    .nullish()
+    .transform((v) => (v === null || v === undefined ? null : Array.isArray(v) ? v : [v])),
   /** Zusätzliche Münzen beim Auslösen (Yen), z. B. für Glücksspiel-Fähigkeiten. */
   coins: z.number().int().positive().nullish(),
 });
@@ -388,8 +392,9 @@ export const SummonSchema = z.object({
   mode: z.enum(['walk', 'stand']).default('walk'),
   damageType: z.enum(['physical', 'magic', 'true']).default('physical'),
   elements: z.array(z.enum(ELEMENTS)).default([]),
-  /** Schaden je Angriff als Vielfaches des Stufen-Schadens des Beschwörers. */
+  /** Schaden je Angriff als Vielfaches des Stufen-Schadens des Beschwörers; `damage` (AA-Einheiten, absolut) überstimmt es, z. B. bei Beschwörern ohne eigenen Schaden. */
   damageMult: z.number().nonnegative().default(0.5),
+  damage: z.number().positive().nullish(),
   spa: z.number().positive().default(4),
   /** Reichweite in Studs. */
   range: z.number().positive().default(8),
@@ -405,7 +410,7 @@ export const SummonSchema = z.object({
   endAttack: z.string().nullish(),
   endDamageMult: z.number().nonnegative().default(1),
   /** Höchstens so viele gleichzeitig je Beschwörer (ein neues ersetzt das älteste). */
-  cap: z.number().int().positive().default(3),
+  maxAlive: z.number().int().positive().default(3),
 });
 export type SummonData = z.infer<typeof SummonSchema>;
 
@@ -471,8 +476,11 @@ export const UnitSchema = z.preprocess(aaAlias, z.object({
   levels: z.array(UnitLevelSchema).min(1),
   /** Fähigkeiten (Runde 9 / P1): Knopf-Fähigkeiten, automatische Fähigkeiten, periodische Beschwörer. */
   abilities: z.array(AbilitySchema).nullish(),
-  /** Dauer-Aura auf Verbündete (Runde 9 / P1). */
-  aura: AuraSchema.nullish(),
+  /** Dauer-Aura auf Verbündete (Runde 9 / P1): ein Eintrag oder eine Liste je Stufe (Index = Stufe, der letzte gilt für höhere). */
+  aura: z
+    .union([AuraSchema, z.array(AuraSchema).min(1)])
+    .nullish()
+    .transform((v) => (v === null || v === undefined ? null : Array.isArray(v) ? v : [v])),
   evolvedFrom: z.string().nullish(),
   evolution: z.unknown().optional(),
   limited: z.boolean().nullish(),

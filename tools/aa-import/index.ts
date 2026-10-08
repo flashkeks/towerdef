@@ -19,6 +19,7 @@ import { UnitFileSchema } from '../../sim/src/data/schema';
 import { buildEvolutions } from './evolutions';
 import { buildManifest } from './manifest';
 import { buildReport } from './report';
+import { ATTACK_FX, COSMETIC_SPAWN, KIT_ATTACKS, KITS, ROTATION_EXTRA, SUMMONS } from './kits';
 import { classify, type Support } from './support';
 import { buildTraits } from './traits';
 
@@ -33,14 +34,46 @@ const LEVEL_KEYS = ['level', 'cost', 'damage', 'spa', 'range', 'attack', 'farm',
 const clean = (o: Record<string, unknown>): Record<string, unknown> => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== null && v !== undefined && v !== ''));
 
 /** Eine Unit pro Zeile: Datei bleibt diff-freundlich und klein (kein Einrueckungs-Ballast). */
-function stringifyUnitFile(f: { ref: string; units: unknown[]; attacks: Record<string, unknown> }): string {
+function stringifyUnitFile(f: { ref: string; units: unknown[]; attacks: Record<string, unknown>; summons: Record<string, unknown> }): string {
   const lines: string[] = ['{', `"ref": ${JSON.stringify(f.ref)},`, '"units": ['];
   f.units.forEach((u, i) => lines.push(JSON.stringify(u) + (i < f.units.length - 1 ? ',' : '')));
   lines.push('],', '"attacks": {');
   const ids = Object.keys(f.attacks);
   ids.forEach((id, i) => lines.push(`${JSON.stringify(id)}: ${JSON.stringify(f.attacks[id])}${i < ids.length - 1 ? ',' : ''}`));
+  lines.push('},', '"summons": {');
+  const sids = Object.keys(f.summons);
+  sids.forEach((id, i) => lines.push(`${JSON.stringify(id)}: ${JSON.stringify(f.summons[id])}${i < sids.length - 1 ? ',' : ''}`));
   lines.push('}', '}', '');
   return lines.join('\n');
+}
+
+const has2 = (extra: Record<string, unknown> | null | undefined, ...keys: string[]): boolean => !!extra && keys.some((k) => k in extra);
+const asList = (v: unknown): unknown[] => (v === undefined || v === null ? [] : Array.isArray(v) ? v : [v]);
+
+/** Kit-Angriffe, die irgendein Kit (Fähigkeit, Beschwörung) nennt. */
+function usedByKits(id: string): boolean {
+  const abil = Object.values(KITS).flatMap((k) => k.abilities ?? []);
+  return abil.some((a) => a.attack === id) || Object.values(SUMMONS).some((sm) => sm.attack === id || sm.endAttack === id);
+}
+
+/**
+ * Zweitangriffe (Runde 9 / P1): wer in AA mehrere Angriffe führt, wechselt zwischen ihnen. Je Stufe laufen die bisher freigeschalteten Angriffe
+ * (`also`) neben dem Angriff der Stufe im Wechsel mit; `always` (AA `secondary_attacks`) läuft von Stufe 0 an mit.
+ * `also` wird nur geschrieben, wenn es sich gegenüber der Vorstufe ändert (die Sim erbt es).
+ */
+function addRotation(levels: Record<string, unknown>[], raw: any[], always: string[], used: Set<string>): void {
+  const seen: string[] = [];
+  let prev = '';
+  let cur: string | null = null;
+  raw.forEach((l, k) => {
+    if (l.attack) cur = l.attack;
+    if (cur && !seen.includes(cur)) seen.push(cur);
+    const also = [...new Set([...always, ...seen.filter((a) => a !== cur)])].filter((a) => a !== cur);
+    const key = JSON.stringify(also);
+    if (key !== prev && (also.length > 0 || prev !== '')) levels[k].also = also;
+    prev = key;
+    for (const a of also) used.add(a);
+  });
 }
 
 export interface ImportedUnit {
@@ -66,7 +99,15 @@ function main(): void {
       skipped.push({ id: u.id, reason: `kind=${u.kind} (Beschwoerung mit eigenem Koerper, keine Unit)` });
       continue;
     }
-    const support = classify(u, attacksRaw);
+    const kit = KITS[u.id];
+    const flaggedRotation = ROTATION_EXTRA.has(u.id) || has2(u.extra, 'secondary_attacks', '_attacks');
+    const support = classify(u, attacksRaw, {
+      active: !!(kit?.abilities?.length || kit?.aura),
+      handles: kit?.handles,
+      leaves: kit?.leaves,
+      cosmetic: COSMETIC_SPAWN.has(u.id),
+      rotation: flaggedRotation || !!kit?.alsoAlways,
+    });
     results.push({ unit: u, support });
     const rec: Record<string, unknown> = {};
     for (const k of UNIT_KEYS) {
@@ -90,16 +131,27 @@ function main(): void {
       return o;
     });
     for (const l of u.levels as any[]) if (l.attack) usedAttacks.add(l.attack);
+    if (flaggedRotation || kit?.alsoAlways) addRotation(rec.levels as Record<string, unknown>[], u.levels as any[], kit?.alsoAlways ?? [], usedAttacks);
+    if (kit?.abilities) {
+      rec.abilities = kit.abilities;
+      for (const a of kit.abilities) if (typeof a.attack === 'string') usedAttacks.add(a.attack);
+    }
+    if (kit?.aura) rec.aura = kit.aura;
     units.push(rec);
   }
 
+  // Beschwörungen (Kits) brauchen ihre Angriffe im Katalog
+  for (const sm of Object.values(SUMMONS)) for (const k of ['attack', 'endAttack'] as const) if (typeof sm[k] === 'string') usedAttacks.add(sm[k] as string);
   const attacks: Record<string, unknown> = {};
   for (const id of [...usedAttacks].sort()) {
-    const a = attacksRaw[id];
-    attacks[id] = a === undefined || a === null ? null : clean(a as Record<string, unknown>);
+    const a = KIT_ATTACKS[id] ?? attacksRaw[id];
+    const base = a === undefined || a === null ? null : clean(a as Record<string, unknown>);
+    const fx = ATTACK_FX[id];
+    attacks[id] = base && fx ? { ...base, special: [...asList(base.special), ...asList(fx)] } : base;
   }
+  for (const [id, a] of Object.entries(KIT_ATTACKS)) if (!(id in attacks) && usedByKits(id)) attacks[id] = a;
 
-  const file = { ref: 'Runde 8 / P2: tools/aa-import aus docs/anime-adventures/data/units.json (S65/S66/S67). Nicht von Hand aendern, `npm run aa-import` schreibt die Datei neu.', units, attacks };
+  const file = { ref: 'Runde 8 / P2, Runde 9 / P1: tools/aa-import aus docs/anime-adventures/data/units.json (S65/S66/S67) plus Kits (tools/aa-import/kits.ts: Faehigkeiten, Auren, Beschwoerungen). Nicht von Hand aendern, `npm run aa-import` schreibt die Datei neu.', units, attacks, summons: SUMMONS };
   // Selbsttest: die Datei muss das P1-Schema ohne Umformung bestehen
   UnitFileSchema.parse(JSON.parse(stringifyUnitFile(file)));
 
@@ -109,7 +161,28 @@ function main(): void {
   const crossoverPath = resolve(ROOT, 'sim/data/units/crossover.json');
   const crossover = existsSync(crossoverPath) ? (JSON.parse(readFileSync(crossoverPath, 'utf8')).units as any[]) : [];
   const manifest = buildManifest(results.map((r) => r.unit), crossover);
-  const report = buildReport({ results, skipped, evolutions, traits, attackCount: Object.keys(attacks).length, nullAttacks: Object.values(attacks).filter((a) => a === null).length });
+  const kitRows = units
+    .filter((u) => KITS[u.id as string] || (u.levels as any[]).some((l) => l.also))
+    .map((u) => {
+      const k = KITS[u.id as string];
+      const kinds: string[] = [];
+      if ((u.abilities as any[] | undefined)?.some((a) => a.trigger !== 'auto' && !('summon' in a && a.trigger === 'auto'))) kinds.push('Knopf');
+      if ((u.abilities as any[] | undefined)?.some((a) => a.summon)) kinds.push('Beschwoerung');
+      if ((u.abilities as any[] | undefined)?.some((a) => a.trigger === 'auto' && !a.summon)) kinds.push('automatisch');
+      if (u.aura) kinds.push('Aura');
+      if ((u.levels as any[]).some((l) => l.also)) kinds.push('Zweitangriff');
+      return { id: u.id as string, name: u.name as string, kinds: [...new Set(kinds)], how: k?.how ?? 'Angriffe der freigeschalteten Stufen laufen im Wechsel (Zweitangriffe)', level: u.support as string };
+    });
+  const report = buildReport({
+    results,
+    skipped,
+    evolutions,
+    traits,
+    attackCount: Object.keys(attacks).length,
+    nullAttacks: Object.values(attacks).filter((a) => a === null).length,
+    kits: kitRows,
+    summons: Object.entries(SUMMONS).map(([id, s]) => ({ id, name: s.name as string, mode: s.mode as string })),
+  });
 
   const out: [string, string][] = [
     ['sim/data/units/aa.json', stringifyUnitFile(file)],

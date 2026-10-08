@@ -18,14 +18,28 @@ export function fights(l: { damage?: number | null; spa?: number | null; range?:
   return (l.damage ?? 0) > 0 && (l.spa ?? 0) > 0 && (l.range ?? 0) > 0;
 }
 
-export function classify(u: any, attacks: Record<string, unknown>): Support {
+/** Was der Importer über die Unit weiß, außer den Rohdaten: ihr Kit (`kits.ts`), Animations-Spawner, Zweitangriffe. */
+export interface ClassifyOpts {
+  /** Kit hat Fähigkeiten oder Aura (die Unit wirkt, auch ohne eigenen Angriff). */
+  active?: boolean;
+  /** Gründe, die das Kit löst. */
+  handles?: readonly string[];
+  /** Gründe, die trotz Kit bleiben. */
+  leaves?: readonly string[];
+  /** `spawn_*` ist nur eine Animation. */
+  cosmetic?: boolean;
+  /** Zweitangriffe sind als `also` modelliert. */
+  rotation?: boolean;
+}
+
+export function classify(u: any, attacks: Record<string, unknown>, opts: ClassifyOpts = {}): Support {
   const levels = u.levels as any[];
   const extra = (u.extra ?? null) as Record<string, unknown> | null;
   const fighting = levels.filter(fights);
   const farming = levels.filter((l) => (l.farm ?? 0) > 0);
   const notes: string[] = [];
 
-  if (fighting.length === 0 && farming.length === 0) {
+  if (fighting.length === 0 && farming.length === 0 && !opts.active) {
     const why: string[] = [];
     if (has(extra, 'active_attack', 'active_attack_stats', 'show_active_attack')) why.push('nur Aktiv-Faehigkeit');
     if (has(extra, 'spawn_unit', 'spawn_attack', 'spawn_script', 'delayed_spawn', 'max_spawn_units') || levels.some((l) => String(l.attack ?? '').includes('spawn'))) why.push('Beschwoerer ohne eigenen Schaden');
@@ -48,7 +62,10 @@ export function classify(u: any, attacks: Record<string, unknown>): Support {
   // Angriff ohne Details im Katalog: greift als single an
   if (levels.some((l) => l.attack && (attacks[l.attack] === null || attacks[l.attack] === undefined))) notes.push('attack-details-missing');
 
-  const uniq = [...new Set(notes)];
+  const drop = new Set<string>(opts.handles ?? []);
+  if (opts.cosmetic) drop.add('summon');
+  if (opts.rotation) drop.add('secondary-attack');
+  const uniq = [...new Set([...notes.filter((n) => !drop.has(n)), ...(opts.leaves ?? [])])];
   return { level: uniq.length ? 'limited' : 'full', notes: uniq };
 }
 
@@ -57,7 +74,7 @@ export const NOTE_TEXT: Record<string, string> = {
   'active-ability': 'Aktive Faehigkeit (Knopf, Cooldown) fehlt; die Unit greift nur normal an',
   summon: 'Beschwoerte Figuren (eigener Koerper) fehlen',
   'aura-buff': 'Buff-Aura fuer Verbuendete fehlt',
-  heal: 'Heilung fehlt',
+  heal: 'Heilung fehlt (der Aura-Anteil wirkt)',
   'secondary-attack': 'Zweiter Angriff (secondary_attacks) fehlt',
   'on-kill': 'Kill-Effekt fehlt',
   'end-of-wave': 'Effekt am Wellenende fehlt',
@@ -65,4 +82,5 @@ export const NOTE_TEXT: Record<string, string> = {
   'unit-shield': 'Einheiten-Schild fehlt',
   'partial-levels': 'Einzelne Stufen ohne Angriff (Schaden 0 oder ohne SPA)',
   'attack-details-missing': 'Angriff ohne Details in AA: greift als single an',
+  'cost-aura': 'Kosten-Rabatt der Aura fehlt (der Schadens-Anteil wirkt)',
 };

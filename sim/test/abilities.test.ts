@@ -152,7 +152,7 @@ describe('Buffs und Auren', () => {
 });
 
 describe('Beschwörungen', () => {
-  const sm = { name: 'Golem', mode: 'walk', damageMult: 0.5, spa: 2, range: 8, attack: 'a', durability: 4, blocks: true, cap: 2 };
+  const sm = { name: 'Golem', mode: 'walk', damageMult: 0.5, spa: 2, range: 8, attack: 'a', durability: 4, blocks: true, maxAlive: 2 };
   const summoner = (extra: Record<string, unknown> = {}) => kit({ summon: { id: 'golem', count: 1 }, cooldown: 5 }, {}, { summons: { golem: { ...sm, ...extra } } });
 
   it('ruft ein Wesen mit Event; Limit je Beschwörer: das älteste weicht', () => {
@@ -255,7 +255,7 @@ describe('Zweitangriffe (Rotation)', () => {
 describe('Determinismus', () => {
   it('gleiche Befehle, gleicher Hash', () => {
     const run = () => {
-      const a = arena(kit({ attack: 'nuke', pulses: 3, durationSec: 2, summon: { id: 'g', count: 2 } }, {}, { summons: { g: { name: 'G', attack: 'a', cap: 3 } } }));
+      const a = arena(kit({ attack: 'nuke', pulses: 3, durationSec: 2, summon: { id: 'g', count: 2 } }, {}, { summons: { g: { name: 'G', attack: 'a', maxAlive: 3 } } }));
       const id = a.place('t');
       a.put('grunt', 5000);
       a.sim.apply(0, { type: 'autoAbility', entityId: id, on: true });

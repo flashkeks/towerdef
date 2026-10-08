@@ -124,6 +124,9 @@ function ownerUnit(w: World, id: number): UnitState | undefined {
   return w.state.units.find((u) => u.id === id);
 }
 
+/** Schaden je Schlag einer Beschwörung (Centi-HP): absolut, sonst Vielfaches des Stufen-Schadens des Beschwörers. */
+const baseDamage = (sd: SummonDef, parentCenti: number): number => (sd.damageCenti > 0 ? sd.damageCenti : mulBp(parentCenti, sd.damageMultBp));
+
 function blast(w: World, s: SummonState, sd: SummonDef, parent: UnitState): void {
   if (!sd.endAttack) return;
   const eco = w.ctx.data.economy;
@@ -138,7 +141,7 @@ function blast(w: World, s: SummonState, sd: SummonDef, parent: UnitState): void
     strongestShieldBp: eco.targeting.strongestShieldBp,
   });
   if (!target) return;
-  const dmg = mulBp(mulBp(lv.damageRawCenti, sd.damageMultBp), sd.endDamageMultBp);
+  const dmg = mulBp(baseDamage(sd, lv.damageRawCenti), sd.endDamageMultBp);
   strike(w, parent, sd, s, sd.endAttack, dmg, sd.rangeMilli, target, { damageBp: 0, tempoBp: 0, rangeBp: 0, selfBp: 0, critBp: 0 }, 0, false);
 }
 
@@ -191,7 +194,7 @@ export function runSummons(w: World): void {
     }
     // Angriff
     if (!sd.attack || s.cd > 0 || !inRange) continue;
-    const dmg = mulBp(lv.damageRawCenti, sd.damageMultBp);
+    const dmg = baseDamage(sd, lv.damageRawCenti);
     strike(w, parent, sd, s, sd.attack, dmg, sd.rangeMilli, inRange, { damageBp: 0, tempoBp: 0, rangeBp: 0, selfBp: 0, critBp: 0 }, 0, false);
     s.cd = sd.spaTicks;
   }

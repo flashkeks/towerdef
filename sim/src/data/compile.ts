@@ -96,7 +96,7 @@ export interface AbilityDef {
   pulseEvery: number;
   selfBuff: BuffSpec | null;
   buff: (BuffSpec & { radiusMilli: number | null; self: boolean }) | null;
-  summon: { id: string; count: number } | null;
+  summon: { id: string; count: number }[] | null;
   coins: number;
   /** Braucht ein Ziel in Reichweite (Angriff mit `scope: range`). */
   needsTarget: boolean;
@@ -119,6 +119,8 @@ export interface SummonDef {
   damageType: DamageType;
   elements: string[];
   damageMultBp: number;
+  /** Absoluter Schaden (Centi-HP), 0 = es gilt `damageMultBp` x Stufen-Schaden des Beschwörers. */
+  damageCenti: number;
   critMultBp: number;
   spaTicks: number;
   rangeMilli: number;
@@ -191,7 +193,8 @@ export interface UnitDef {
   levels: LevelStat[];
   /** Fähigkeiten (Runde 9 / P1); leer = keine. */
   abilities: AbilityDef[];
-  aura: AuraDef | null;
+  /** Auren je Stufe (Index = Stufe, die letzte gilt für höhere); leer = keine. */
+  aura: AuraDef[];
 }
 
 /** Altbestand (Runden 1-5): Position eines festen Slots. Keine Platzierregel mehr (siehe `placement.ts`). */
@@ -380,7 +383,7 @@ export function compileAbility(a: AbilityData, d: GameData, unknown: Set<string>
     buff: a.buff
       ? { ...compileBuff(a.buff), radiusMilli: a.buff.radius ? Math.round((a.buff.radius * 1000) / eco.scale.studsPerTile) : null, self: a.buff.self }
       : null,
-    summon: a.summon ? { id: a.summon.id, count: a.summon.count } : null,
+    summon: a.summon ? a.summon.map((x) => ({ id: x.id, count: x.count })) : null,
     coins: a.coins ?? 0,
     needsTarget: atk !== null && !global,
   };
@@ -405,6 +408,7 @@ export function compileSummon(id: string, sm: SummonData, d: GameData, unknown: 
     damageType: sm.damageType,
     elements: sm.elements,
     damageMultBp: bpOf(sm.damageMult),
+    damageCenti: sm.damage ? Math.max(1, Math.round(sm.damage * 100)) : 0,
     critMultBp: eco.damage.critDefaultMultBp,
     spaTicks: Math.max(1, ticksOf(sm.spa)),
     rangeMilli: Math.round((sm.range * 1000) / eco.scale.studsPerTile),
@@ -416,7 +420,7 @@ export function compileSummon(id: string, sm: SummonData, d: GameData, unknown: 
     canHitAir: sm.hitsAir,
     endAttack: sm.endAttack ? compileAttack(sm.endAttack, d.units.attacks[sm.endAttack], d, unknown) : null,
     endDamageMultBp: bpOf(sm.endDamageMult),
-    cap: sm.cap,
+    cap: sm.maxAlive,
     contactMilli: 500,
   };
 }
@@ -495,7 +499,7 @@ function build(u: UnitData, d: GameData, unknown: Set<string>): UnitDef {
     canHitAir: u.hitsAir ?? u.placement !== 'ground',
     levels,
     abilities: (u.abilities ?? []).map((a) => compileAbility(a, d, unknown)),
-    aura: u.aura ? compileAura(u.aura, d) : null,
+    aura: (u.aura ?? []).map((a) => compileAura(a, d)),
   };
 }
 

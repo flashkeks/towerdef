@@ -97,7 +97,7 @@ function validateAbilities(d: GameData): void {
       if (seen.has(a.id)) throw new Error(`${u.id}: Fähigkeit ${a.id} doppelt`);
       seen.add(a.id);
       if (a.attack && !(a.attack in attacks)) throw new Error(`${u.id}: Fähigkeit ${a.id}: Angriff ${a.attack} unbekannt`);
-      if (a.summon && !(a.summon.id in summons)) throw new Error(`${u.id}: Fähigkeit ${a.id}: Beschwörung ${a.summon.id} unbekannt`);
+      for (const sc of a.summon ?? []) if (!(sc.id in summons)) throw new Error(`${u.id}: Fähigkeit ${a.id}: Beschwörung ${sc.id} unbekannt`);
       if (a.minLevel >= u.levels.length) throw new Error(`${u.id}: Fähigkeit ${a.id}: minLevel ${a.minLevel} über der letzten Stufe`);
       if (!a.attack && !a.selfBuff && !a.buff && !a.summon && !a.coins) throw new Error(`${u.id}: Fähigkeit ${a.id} ohne Wirkung`);
     }
