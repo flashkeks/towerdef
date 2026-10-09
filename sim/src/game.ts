@@ -382,7 +382,7 @@ export function createGame(opts: GameOptions): Game {
   }
 
   function makeProj(owner: number, kind: ProjectileKind, x: number, y: number, vx: number, vy: number, dmg: number, dtype: DamageType, pierce: number, life: number, sub: number, st: Stats): ProjectileState {
-    const p: ProjectileState = { id: S.nextId++, kind, owner, x, y, vx, vy, dmg, dtype, pierce, life, age: 0, hit: [], sub };
+    const p: ProjectileState = { id: S.nextId++, kind, owner, x, y, vx, vy, dmg, dtype, pierce, life, age: -1, hit: [], sub };
     S.projectiles.push(p);
     pstats.set(p, st);
     return p;
@@ -630,6 +630,11 @@ export function createGame(opts: GameOptions): Game {
     const removed = new Set<number>();
     for (const p of list) {
       const st = pstats.get(p)!;
+      if (p.age < 0) {
+        // frisch abgeschossen: erst im nächsten Tick unterwegs
+        p.age = 0;
+        continue;
+      }
       if (p.arc) {
         p.age++;
         const flight = p.life;
@@ -777,12 +782,16 @@ export function createGame(opts: GameOptions): Game {
     emit({ type: 'roundEnd', tick: S.tick, round: r, bonus });
   }
 
-  function finishTick(): void {
-    // Aufräumen
+  /** Tote Gegner aus der Liste nehmen (nach jedem Tick und nach jedem Befehl). */
+  function sweep(): void {
     if (S.enemies.some((e) => e.dead)) {
       for (const e of S.enemies) if (e.dead) emap.delete(e.id);
       S.enemies = S.enemies.filter((e) => !e.dead);
     }
+  }
+
+  function finishTick(): void {
+    sweep();
     if (S.lives <= 0) {
       S.phase = 'lost';
       emit({ type: 'gameOver', tick: S.tick, result: 'lost', round: S.round });
@@ -936,6 +945,12 @@ export function createGame(opts: GameOptions): Game {
 
   function apply(cmd: Command): CommandResult {
     if (S.phase === 'won' || S.phase === 'lost') return { ok: false, reason: 'game-over' };
+    const res = applyInner(cmd);
+    sweep();
+    return res;
+  }
+
+  function applyInner(cmd: Command): CommandResult {
     switch (cmd.type) {
       case 'place': {
         const x = Math.round(cmd.x), y = Math.round(cmd.y);
@@ -1024,5 +1039,21 @@ export function createGame(opts: GameOptions): Game {
     upgradeInfo,
     sellValue,
     priceOf,
+    sandbox: {
+      spawn(type, progress = 0, camo = false) {
+        const e = spawnEnemy(type, progress, camo, S.round, false);
+        S.phase = 'wave';
+        return e.id;
+      },
+      hurt(enemyId, amount, dtype = 'explosive') {
+        const e = emap.get(enemyId);
+        const r = e ? damage(e, amount, dtype, 0) : false;
+        sweep();
+        return r;
+      },
+      setCash(cash) {
+        S.cash = cash;
+      },
+    },
   };
 }

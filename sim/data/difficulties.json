@@ -2,21 +2,21 @@
  "easy": {
   "lives": 200,
   "priceBp": 8500,
-  "speedBp": 10000,
+  "speedBp": 7500,
   "bossHp": 200,
   "startCash": 650
  },
  "medium": {
   "lives": 150,
   "priceBp": 10000,
-  "speedBp": 11000,
+  "speedBp": 8500,
   "bossHp": 300,
   "startCash": 650
  },
  "hard": {
   "lives": 100,
   "priceBp": 10800,
-  "speedBp": 12500,
+  "speedBp": 10000,
   "bossHp": 300,
   "startCash": 650
  }
