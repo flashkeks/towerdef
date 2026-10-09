@@ -86,7 +86,7 @@ describe('Optionen: Migration', () => {
       towerXp: { ranger: 120, bombardier: 5, frostcaller: 0 },
       unlocks: { towers: ['ranger', 'longshot'], maxTier: { ranger: [2, 0, 0] } },
     });
-    expect(g.state.towerXp).toEqual({ ranger: 120, bombardier: 5, frostcaller: 0, longshot: 0, market: 0 });
+    expect(g.state.towerXp).toEqual({ ranger: 120, bombardier: 5, frostcaller: 0, longshot: 0, market: 0, thornweaver: 0, alchemist: 0 });
     expect(g.state.maxTier.ranger).toEqual([2, 0, 0]);
     expect(g.state.maxTier.longshot).toEqual([0, 0, 0]);
     expect(g.canPlace('market', 60000, 160000)).toEqual({ ok: false, reason: 'locked' });
