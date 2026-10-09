@@ -20,10 +20,12 @@ export async function serve(port = Number(process.env.SMOKE_PORT ?? 4173)) {
   return { url, stop };
 }
 
+// Hinweis: mit --use-gl=swiftshader liefert Chromium bei teilweise ueberdeckten WebGL-Canvas transparente Loecher im Screenshot
+// ("weisses Rechteck" neben dem Upgrade-Panel). ANGLE+SwiftShader behebt das.
 export async function launch() {
   return chromium.launch({
     executablePath: process.env.SMOKE_CHROMIUM ?? (existsSync('/opt/pw-browsers/chromium') ? '/opt/pw-browsers/chromium' : undefined),
-    args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--autoplay-policy=no-user-gesture-required'],
+    args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--autoplay-policy=no-user-gesture-required'],
   });
 }
 

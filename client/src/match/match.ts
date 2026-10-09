@@ -28,6 +28,8 @@ export interface StartOptions {
 }
 
 export interface MatchResult {
+  /** eindeutige Kennung dieses Laufs (Karte-Schwierigkeit-Seed-Startzeit), z. B. fuer die Meta-Ablage */
+  matchId: string;
   won: boolean;
   round: number;
   difficulty: Difficulty;
@@ -75,6 +77,7 @@ class Match {
   private mouse: { x: number; y: number } | null = null;
   private speed = 1;
   private paused = false;
+  private readonly matchId: string;
   private acc = 0;
   private raf = 0;
   private last = 0;
@@ -88,6 +91,7 @@ class Match {
   private endTimer = 0;
 
   constructor(private readonly root: HTMLElement, private readonly game: Game, private readonly opts: StartOptions & { seed: number }) {
+    this.matchId = `${opts.map ?? 'meadow'}-${opts.difficulty}-${opts.seed}-${Date.now().toString(36)}`;
     this.done = new Promise((res) => (this.finish = res));
     this.panel = new Panel(game, { map: opts.map ?? 'meadow', difficulty: opts.difficulty, seed: opts.seed, unlocks: opts.unlocks, mods: opts.mods }, {
       upgrade: (id, p) => this.report(this.game.apply({ type: 'upgrade', towerId: id, path: p })),
@@ -445,6 +449,7 @@ class Match {
     audio.setMusic(false);
     const st = this.game.state;
     const result: MatchResult = {
+      matchId: this.matchId,
       won: st.phase === 'won',
       round: st.round,
       difficulty: this.opts.difficulty,
