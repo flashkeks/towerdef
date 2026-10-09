@@ -58,7 +58,7 @@
  "brute": {
   "name": "Gloom Brute",
   "hp": 10,
-  "tempo": 160,
+  "tempo": 130,
   "radius": 9,
   "children": [
    "ironshell",

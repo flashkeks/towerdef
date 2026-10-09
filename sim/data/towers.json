@@ -1224,12 +1224,12 @@
    {
     "level": 10,
     "xp": 2350,
-    "desc": "Ability: Dawnbreak - a beam of light across the whole path: 20 damage to every enemy, 100 to the Leviathan.",
+    "desc": "Ability: Dawnbreak - a beam of light across the whole path: 12 damage to every enemy, 100 to the Leviathan.",
     "mods": [
      {
       "op": "set",
       "stat": "dawnDmg",
-      "v": 20
+      "v": 12
      },
      {
       "op": "set",
@@ -1364,12 +1364,12 @@
    {
     "level": 20,
     "xp": 8250,
-    "desc": "Dawnbreak: 60 damage (240 to the Leviathan), cooldown 45 s.",
+    "desc": "Dawnbreak: 36 damage (240 to the Leviathan), cooldown 45 s.",
     "mods": [
      {
       "op": "set",
       "stat": "dawnDmg",
-      "v": 60
+      "v": 36
      },
      {
       "op": "set",

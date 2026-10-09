@@ -162,3 +162,11 @@ Am Turm sichtbar (P2): Level 1–4 kleine Laterne, 5–9 größere Laterne + Umh
 | Dawnbreak | Wren L10 (L20 stärker) | siehe oben | 60 s / 45 s |
 
 Abklingzeit startet beim Kauf bzw. Level-Up **voll** (wie BTD6), nicht sofort einsatzbereit.
+
+## Nachtrag P1/P5 (09.10.2026) — gilt vor den Tabellen oben
+
+- **Wren-XP am Rundenende 60 + 20 × Runde** statt 100 + 30 × Runde (P5): Wren machte 35–45 % aller Pops und trug jeden
+  Einzelturm durch Medium/Hard. Jetzt ab R1 gesetzt ≈ Level 8 nach R10, ≈ Level 13–15 nach R20; Anteil ≈ 30 %.
+- **Dawnbreak** 12 Schaden je Gegner, 100 am Boss (L10); 36 / 240 (L20) (P1: Boss, P5: Normalgegner).
+- **Bombardier-Grundradius 32 px** statt 24 (P1). Weitere P1-Abweichungen: `sim/README.md` „Abweichungen vom Entwurf“.
+- Balance-Ergebnis: `docs/STATUS.md`, Runde 11, „Balance-Rauchtest“; neu prüfen mit `cd sim && npm run matrix`.

@@ -92,6 +92,8 @@ const diffSchema = z.object({
   speedBp: z.number().int().positive(),
   bossHp: z.number().int().positive(),
   startCash: z.number().int().nonnegative(),
+  /** Gold je geknackter Schicht (Runde 11 / P5: 2, weil 20 Runden den Gegnerfortschritt von BTD6-R1-40 tragen). */
+  popCash: z.number().int().positive(),
 });
 const difficultiesSchema = z.object({ easy: diffSchema, medium: diffSchema, hard: diffSchema });
 

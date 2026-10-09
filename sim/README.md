@@ -130,3 +130,11 @@ wenn Max es zu stark findet. (2) Mehrere billige Türme desselben Typs gewinnen 
 | Held verkaufen | nicht festgelegt | nicht möglich | „einmal je Match“. |
 | Sandbox | – | `Game.sandbox` | Tests brauchen gesetzte Gegner. |
 | Freeplay | optional | nicht gebaut | Zeit. |
+
+### Abweichungen aus P5 (Balance-Rauchtest, Hauptsitzung)
+
+- `popCash` 2 je Schicht (neues Pflichtfeld in `difficulties.json`), Boss-Hülle weiter 100.
+- Wren-XP am Rundenende `60 + 20 × Runde` (vorher 100 + 30 ×), Dawnbreak 12/36 statt 20/60 an Normalgegnern.
+- Brute-Tempo 130 statt 160; R17 14 und R19 22 Brutes; Hard `speedBp` 10000 und `bossHp` 400.
+- Regel-Tests laufen auf der Testkarte `bare` (meadow ohne Wasser/Blocker, `test/setup.ts`), Bot-Läufe auf `meadow`.
+- Matrix aller sinnvollen Aufstellungen: `npm run matrix` (`MATRIX_SEEDS`, `MATRIX_DIFFS`); die Sim ist deterministisch, Seeds ändern derzeit nichts am Ergebnis.

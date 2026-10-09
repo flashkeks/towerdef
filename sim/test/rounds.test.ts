@@ -44,7 +44,7 @@ describe('Runden', () => {
     expect(g.state.phase).toBe('build');
   });
 
-  it('Pop-Cash mit Turm: Runde 1 komplett abgeschossen = 20 + 101', () => {
+  it('Pop-Cash mit Turm: Runde 1 komplett abgeschossen = 2 x Pops + 101', () => {
     const g = newGame({ mods: { startCash: -650 } });
     // Held platzieren geht nicht ohne Geld; Ranger über Sandbox-Geld
     g.sandbox.setCash(400);
@@ -54,7 +54,7 @@ describe('Runden', () => {
     g.apply({ type: 'startRound' });
     run(g, 6000, () => g.state.roundsCleared === 1);
     const pops = g.state.stats.pops.ranger;
-    expect(g.state.cash - c0).toBe(pops + 101);
+    expect(g.state.cash - c0).toBe(2 * pops + 101);
     expect(g.state.lives + g.state.stats.leaked).toBe(150);
   });
 

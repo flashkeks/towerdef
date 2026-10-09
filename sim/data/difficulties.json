@@ -4,20 +4,23 @@
   "priceBp": 8500,
   "speedBp": 7500,
   "bossHp": 200,
-  "startCash": 650
+  "startCash": 650,
+  "popCash": 2
  },
  "medium": {
   "lives": 150,
   "priceBp": 10000,
   "speedBp": 8500,
   "bossHp": 300,
-  "startCash": 650
+  "startCash": 650,
+  "popCash": 2
  },
  "hard": {
   "lives": 100,
   "priceBp": 10800,
-  "speedBp": 9000,
-  "bossHp": 300,
-  "startCash": 650
+  "speedBp": 10000,
+  "bossHp": 400,
+  "startCash": 650,
+  "popCash": 2
  }
 }

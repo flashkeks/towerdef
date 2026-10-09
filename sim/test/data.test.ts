@@ -35,13 +35,13 @@ describe('Daten', () => {
     expect(DATA.hero.wren.price).toBe(540);
   });
 
-  it('Held: 20 Level, XP wie Tabelle, Summe 100+30r bis R20 = 8300', () => {
+  it('Held: 20 Level, XP wie Tabelle, Summe 60+20r bis R20 = 5400 (P5)', () => {
     const lv = DATA.hero.wren.levels;
     expect(lv).toHaveLength(20);
     expect(lv.map((l) => l.xp)).toEqual([0, 100, 230, 400, 600, 850, 1150, 1500, 1900, 2350, 2850, 3400, 4000, 4650, 5300, 5950, 6600, 7200, 7750, 8250]);
     let sum = 0;
-    for (let r = 1; r <= 20; r++) sum += 100 + 30 * r;
-    expect(sum).toBe(8300);
+    for (let r = 1; r <= 20; r++) sum += 60 + 20 * r;
+    expect(sum).toBe(5400);
   });
 
   it('RBE je Gegnertyp (Medium) wie gegner.md', () => {
@@ -49,15 +49,15 @@ describe('Daten', () => {
   });
 
   it('20 Runden: RBE wie runden.md', () => {
-    const expected = [20, 35, 45, 70, 94, 110, 170, 152, 186, 240, 162, 286, 260, 366, 384, 424, 688, 576, 1034, 932];
-    // Tabellenwerte sind "RBE"; Runde 15/17/19/20 enthalten Brutes (28), Tabelle nennt 384/688/1034/932
+    const expected = [20, 35, 45, 70, 94, 110, 170, 152, 186, 240, 162, 286, 260, 366, 384, 424, 632, 576, 922, 932];
+    // Tabellenwerte sind "RBE"; Runde 15/17/19/20 enthalten Brutes (28), Tabelle nennt 384/632/922/932 (P5: R17 14 statt 16, R19 22 statt 26 Brutes)
     const got = DATA.rounds.map((r) => r.groups.reduce((a, g) => a + g.n * DATA.rbe[g.type], 0));
     expect(got).toEqual(expected);
   });
 
   it('Runden: Pop-Cash (Schichten) wie runden.md', () => {
-    const cash = [20, 35, 45, 70, 94, 110, 170, 152, 186, 240, 162, 286, 260, 366, 312, 424, 544, 576, 800, 606];
-    // Cash = Schichten x 1, Boss-Hülle 100: brute 19, leviathan 176 (Boss-Hülle 100 + 4 Brutes)
+    const cash = [20, 35, 45, 70, 94, 110, 170, 152, 186, 240, 162, 286, 260, 366, 312, 424, 506, 576, 724, 606];
+    // Schichten je Runde (Cash = Schichten x popCash 2), Boss-Hülle 100: brute 19, leviathan 176 (Boss-Hülle 100 + 4 Brutes)
     const per = { red: 1, blue: 2, green: 3, gold: 4, ironshell: 9, ember: 9, brute: 19, leviathan: 176 };
     const got = DATA.rounds.map((r) => r.groups.reduce((a, g) => a + g.n * per[g.type], 0));
     expect(got).toEqual(cash);

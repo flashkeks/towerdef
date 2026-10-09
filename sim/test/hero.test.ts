@@ -16,19 +16,24 @@ describe('Held Wren', () => {
     expect(g.upgradeInfo(id)).toEqual([]);
   });
 
-  it('XP am Rundenende 100 + 30 x Runde, Level-Up-Events, Fähigkeit ab L3 mit voller Abklingzeit', () => {
+  it('XP am Rundenende 60 + 20 x Runde (P5), Level-Up-Events, Fähigkeit ab L3 mit voller Abklingzeit', () => {
     const g = newGame();
     place(g, 'wren');
-    g.apply({ type: 'startRound' });
-    const ev = run(g, 6000, () => g.state.roundsCleared === 1);
+    const round = (n: number) => {
+      g.apply({ type: 'startRound' });
+      return run(g, 9000, () => g.state.roundsCleared === n);
+    };
+    const ev = round(1);
     expect(ev.find((e) => e.type === 'roundEnd')).toMatchObject({ round: 1, bonus: 101 });
-    expect(g.state.towers[0].heroXp).toBe(130);
+    expect(g.state.towers[0].heroXp).toBe(80);
+    expect(g.state.towers[0].heroLevel).toBe(1);
+    const ev2 = round(2);
+    expect(g.state.towers[0].heroXp).toBe(80 + 100);
     expect(g.state.towers[0].heroLevel).toBe(2);
-    expect(ev.some((e) => e.type === 'heroLevel' && e.level === 2)).toBe(true);
+    expect(ev2.some((e) => e.type === 'heroLevel' && e.level === 2)).toBe(true);
     expect(g.state.abilities).toHaveLength(0);
-    g.apply({ type: 'startRound' });
-    run(g, 8000, () => g.state.roundsCleared === 2);
-    expect(g.state.towers[0].heroXp).toBe(130 + 160);
+    round(3);
+    expect(g.state.towers[0].heroXp).toBe(80 + 100 + 120);
     expect(g.state.towers[0].heroLevel).toBe(3);
     expect(g.state.abilities).toEqual([{ id: 'flare', ready: false, cdLeft: 2400, cdTotal: 2400 }]);
   });

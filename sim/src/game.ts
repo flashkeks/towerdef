@@ -290,7 +290,7 @@ export function createGame(opts: GameOptions): Game {
     const d = etab[e.type];
     e.dead = true;
     e.hp = 0;
-    const cash = d.boss ? 100 : 1;
+    const cash = d.boss ? 100 : diff.popCash;
     S.cash += cash;
     const owner = towerById(src);
     if (owner) {
@@ -778,7 +778,7 @@ export function createGame(opts: GameOptions): Game {
     S.cash += bonus;
     S.roundsCleared++;
     S.activeRounds = S.activeRounds.filter((x) => x !== r);
-    grantHeroXp(100 + 30 * r);
+    grantHeroXp(60 + 20 * r);
     emit({ type: 'roundEnd', tick: S.tick, round: r, bonus });
   }
 

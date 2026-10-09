@@ -1,34 +1,76 @@
 # Status (global)
 
-Arbeitsauftrag: [`/run.md`](../run.md) (**Runde 11: Neustart wie Bloons TD 6 als Vertical Slice** — 3 Türme × 3 Pfade × 5 Stufen + 1 Held, eine Pixel-Karte, 20 Runden, Schichten-Gegner, Projektile mit Flugzeit, Spieler-Level/Turm-XP/Wissensbaum; alles Pixel-Art im Code; AA-Import raus, Archiv-Tag; Kaltstart-Abschnitt 0). **Verbindlich zuerst:** [design/ENTSCHEIDUNGEN.md](design/ENTSCHEIDUNGEN.md), Abschnitt „Neustart als BTD6-artiges Spiel (09.10.2026)“, dann [games/btd6/](games/btd6/). **Jede Sitzung liest danach diese Datei** und macht beim „Nächsten Schritt“ weiter.
+Arbeitsauftrag: [`/run.md`](../run.md) (**Runde 11: Neustart wie Bloons TD 6 als Vertical Slice — abgeschlossen 09.10.2026**, Bericht unten; Runde 12 wartet auf Max' Rückmeldung). **Verbindlich zuerst:** [design/ENTSCHEIDUNGEN.md](design/ENTSCHEIDUNGEN.md), Abschnitt „Neustart als BTD6-artiges Spiel (09.10.2026)“, dann [games/btd6/](games/btd6/) und [design/schnittstelle.md](design/schnittstelle.md). **Jede Sitzung liest danach diese Datei.**
 Frühere Aufträge: [archiv/run-runde1.md](archiv/run-runde1.md), [archiv/run-runde2.md](archiv/run-runde2.md), [archiv/run-runde3.md](archiv/run-runde3.md), [archiv/run-runde4.md](archiv/run-runde4.md), [archiv/run-runde5.md](archiv/run-runde5.md), [archiv/run-runde6.md](archiv/run-runde6.md), [archiv/run-runde7.md](archiv/run-runde7.md), [archiv/run-runde8-verworfen.md](archiv/run-runde8-verworfen.md), [archiv/run-runde8.md](archiv/run-runde8.md), [archiv/run-runde9.md](archiv/run-runde9.md).
 
 
 ## Runde 11 (Neustart wie BTD6, Vertical Slice)
 
-Letzte Aktualisierung: 2026-10-09 (P0 erledigt, P1–P3 laufen)
+Letzte Aktualisierung: 2026-10-09 (**Runde 11 abgeschlossen**, P5)
 
 | Paket | Inhalt | Status | Agent (Modell) | Was man jetzt sehen kann |
 |---|---|---|---|---|
-| P0 | Archiv, AA raus, Entwurf, Vertrag | **erledigt** (`d3af0ca` + Entwurf) | Hauptsitzung | Platzhalter-Bildschirm „Rebuilding“. AA-Import, 550 Units, Gacha, Banner, Evolution, Trade/Reroll, Welten/Raids/Legenden, alter Sim-Kern, alte Meta, alter Match-Client und `tools/aa-import` sind aus dem aktiven Spiel raus. **Rückweg: Commit `783865d`** (Tag `archiv/aa-runde10` lokal gesetzt; der Push des Tags wird vom Git-Proxy der Claude-Session abgelehnt, Max kann ihn auf GitHub setzen). Entwurf in `docs/design/`: `welt.md`, `tuerme.md` (3 Türme × 15 Stufen + Held Wren, alle Zahlen), `gegner.md` (7 Typen + Shade + Boss Dusk Leviathan), `runden.md` (R1–20, Einkommen), `meta.md`, `pixel-stil.md` (ENDESGA 32, 640 × 360, Text-Raster wie Kek-Game), **`schnittstelle.md` (Vertrag Sim ↔ Client, Dateibesitz)**. Gemeinsame Pixel-Basis `client/src/pixel/palette.ts` + `raster.ts` |
-| P1 | Simulator neu (Projektile mit Flugzeit, Schichten, 3 × 5 Pfade, Held, Runden, Bot) | läuft | Sonnet | – |
-| P2 | Pixel-Grafik (Türme × Stufen, Held, Gegner, Projektile, Effekte) | läuft | Sonnet | – |
-| P3 | Karte + Match-Oberfläche (BTD6-Panel) | läuft | Sonnet | – |
-| P4 | Fortschritt (Level, Turm-XP, Wissensbaum, Medaillen) | wartet | – | – |
-| P5 | Balance-Rauchtest, Abschluss | wartet | Hauptsitzung | – |
+| P0 | Archiv, AA raus, Entwurf, Vertrag | **erledigt** (`d3af0ca`, `e9a8da9`) | Hauptsitzung | AA-Import, 550 Units, Gacha, Banner, Evolution, Trade/Reroll, Welten/Raids/Legenden, alter Sim-Kern, alte Meta, alter Match-Client und `tools/aa-import` sind raus. **Rückweg: Commit `783865d`** (Tag `archiv/aa-runde10` nur lokal; Push vom Git-Proxy der Session abgelehnt). Entwurf `docs/design/`: `welt.md`, `tuerme.md`, `gegner.md`, `runden.md`, `meta.md`, `pixel-stil.md`, **`schnittstelle.md`** (Vertrag Sim ↔ Client). Pixel-Basis `client/src/pixel/palette.ts` (ENDESGA 32) + `raster.ts` (Text-Raster wie Kek-Game) |
+| P1 | Simulator neu | **erledigt** (Merge `1d35147`) | 1 × Sonnet | `createGame` nach Vertrag, 60 Ticks/s, Milli-px: **Projektile mit Flugzeit** (Schaden erst beim Aufprall, Sweep-Kollision, Pierce, Weiterflug), Bombe im Bogen auf vorausberechnete Position, Blitz/Aura sofort, Ausholen 6 Ticks (`windup` → `fire`); **Schichten** mit Überschuss-Schaden, Camo-Vererbung, Leck = RBE; Ironshell/Ember-Regeln; 3 × 5 Pfade mit Crosspath, Verkauf 70 %, Freischalt-Sperre + Wissensbaum-`mods`; Held Wren L1–20 mit Flare/Dawnbreak/Aura; Arrow Rain, Absolute Zero; Bot + `npm run bot` / `npm run matrix`. Abweichungen: `sim/README.md` |
+| P2 | Pixel-Grafik | **erledigt** (Merge `f3e9b71`) | 1 × Sonnet | Alles im Code gezeichnet, nur Palette: 3 Türme aus Teilen, **alle 15 Stufen sichtbar** (Stufe 3 neue Waffe, Stufe 5 golden/groß: Pfeilwirbel, Fass-Kanone, Raketenrucksack, Eis-Golem, Gewitterwolke), 8 Richtungen, Idle/Angriff; Wren in 5 Ausbaustufen; alle Gegner mit Lauf-Frames, Treffer-Blitz, Camo-Flimmern, Brute-Risse, Leviathan-Platten; Projektile (16 Richtungen), Effekte, 45 Upgrade-Icons, Pixel-Ziffern. Bilder `client/docs/r11/p2-*` (Sprite-Bogen `p2-tuerme.png`, `p2-angriffe.webm`) |
+| P3 | Karte + Match-Oberfläche | **erledigt** (Merge nach Limit-Neustart) | 2 × Sonnet (1 am Limit) | **Karte „Lanternfall Meadow“** im Code gemalt (Bach mit 3 Brücken, Windmühle, Scheune, Stadt mit Mauer und Laternen, violetter Waldrand, animiertes Wasser/Fahnen/Glühwürmchen); Pixi-Renderer 640 × 360 scharf skaliert; Turm-Leiste, **Upgrade-Panel wie BTD6** (3 Pfade × 5 Stufen, Crosspath-/XP-Sperren sichtbar, Targeting, Verkaufen, Pops), Held-Panel mit Fähigkeiten (Tasten 1–3), Platzieren mit Geist/Reichweite/Grund-Toast, Tempo 1–3×, Auto-Start, Pause, Boss-Banner, Ton je Event. Bilder `client/docs/r11/p3-*` |
+| P4 | Fortschritt + Bildschirme | **erledigt** (Merge `789ef4d`) | 2 × Sonnet (1 am Limit) | Profil 11 (alte Stände → Reset + einmaliger Hinweis), Spieler-Level mit Freischaltungen (Bombardier L2, Wren L3, Frostcaller L4, Hard L5), **Turm-XP** schaltet Stufen im Turm-Detail frei, **Wissensbaum** (10 Knoten), **Medaillen** Easy/Medium/Hard, Ergebnis mit animiertem XP-Balken und Freischalt-Karten, Settings mit Export/Import und „Developer: unlock everything“. Bilder `client/docs/r11/p4-*` |
+| P5 | Balance, Abschluss | **erledigt** | Hauptsitzung | Balance-Matrix (unten), Tests auf Testkarte `bare`, Screenshots auf dem Endstand neu |
 
-**Entscheidungen der Hauptsitzung (P0), mit Empfehlung an Max unter „Offene Fragen“ am Rundenende:**
-- **Dreierbesetzung wie vorgeschlagen** (Ranger / Bombardier / Frostcaller): Einzelziel, Fläche+Panzer, Kontrolle. Eine Farm
-  bringt im 20-Runden-Slice wenig (BTD6-Farm amortisiert sich erst nach 14–23 Runden, `economy.md` § 4).
-- **Kostenkurve gestaucht** (T5 ≈ 15–20× statt 80× Basispreis), weil der Slice 20 statt 40–60 Runden hat; Begründung in `tuerme.md`.
-- **Spielfeld 640 × 360** statt 32er-Raster auf großer Karte: ×2 = 1280 × 720, ×3 = 1920 × 1080 scharf. Türme 32 × 32.
-- **60 Ticks/s** statt 20: Projektile mit Flugzeit und schnelle Schussfolgen (0,08 s) brauchen feinere Zeit.
-- **Held ab Level 3** frei (run.md ließ offen, wann), Frostcaller L4, Bombardier L2.
-- Alter Code wurde **gelöscht, nicht umgebaut**: Sim, Meta und Match-Client sind auf AA zugeschnitten; ein Neubau gegen den Vertrag
-  ist kleiner als ein Umbau. Weiterverwendet: Festkomma/PRNG/Hash/Pfad, Boot/Desktop-Sperre, Kit-Styles und Schriften, Ton-Rezepte.
+**Arbeitsweise dieser Runde:** Hauptsitzung (Homelab-Session, auf Max' Wunsch statt einer neuen TD-Session) hat P0/P5 gemacht, P1–P4 liefen als Sonnet-Agenten in lokalen Worktrees (`/home/user/wt/p1..p4`). Die automatische Worktree-Isolation der Agenten scheitert in diesem Repo („origin/main“ fehlt im Klon) — Worktrees von Hand von `dev` anlegen. Am Nutzungslimit (P3, P4 gleichzeitig) wurde wie in Runde 10 der Stand gesichert und je ein **neuer** Sonnet-Agent gestartet.
 
-Plan: P1, P2, P3 parallel in lokalen Worktrees (Sonnet, max. 3), Vertrag `docs/design/schnittstelle.md`. P4 startet, sobald einer fertig ist.
-Screenshots in `client/docs/r11/`.
+```text
+STATUS — Runde 11 (Vertical Slice)
+Was man jetzt sehen kann (5 Zeilen):
+  Startbildschirm im Pixel-Look mit Level, Karte „Lanternfall Meadow“, Medaillen und Schwierigkeit.
+  Match auf einer handgemalten Pixel-Karte (640 x 360, scharf skaliert), 20 Runden, Boss in Runde 20.
+  3 Türme + Held, jede Upgrade-Stufe sichtbar am Turm, BTD6-Upgrade-Panel mit 3 x 5 Stufen.
+  Projektile fliegen sichtbar, Schaden zählt erst beim Aufprall; Gegner platzen Schicht für Schicht.
+  Nach dem Match: XP-Balken, Level-Up, Freischaltungen, Turm-XP, Wissensbaum, Turm-Detail.
+Türme + Held:
+  Ranger (200, Einzelziel): Volley (mehr Pfeile → Sky Splitter), Rapid (Tempo → Thousand Arrows, Arrow Rain), Eagle Eye (Reichweite, Camo, Balliste → Starfall).
+  Bombardier (350, Fläche/Panzer): Bigger Blasts (→ Doomsday Keg), Clusters (Splitter → Bombardment), Concussion (Betäubung → Earthshaker).
+  Frostcaller (300, Kontrolle): Permafrost (Aura → Absolute Zero), Shatter (Nova/Splitter → Winter's Wrath), Storm (Kettenblitz, Camo → Stormcaller).
+  Wren, the Lamplighter (540, Held): L1–20 im Match, Flare (L3, enttarnt), Dawnbreak (L10, Strahl über den Weg), Aura (L12).
+Gegner, Runden, Boss:
+  Red/Blue/Green/Gold Glim (Schichtenleiter), Ironshell (Pfeile prallen ab), Emberling (kälte-immun), Gloom Brute (10 HP, darin Ironshell + Ember),
+  Shade = Camo-Variante, Dusk Leviathan (Boss R20, 300 HP, darin 4 Brutes). Feste Runden 1–20 (runden.md + P5-Nachtrag).
+Fortschritt: Spieler-Level (Freischaltung Türme/Held/Hard), Turm-XP je Stufe (100/250/900/2.500/8.000), Wissensbaum 10 Knoten, Medaillen je Schwierigkeit.
+Balance-Rauchtest: Tabelle unten.
+Was rausgeflogen ist: AA-Import (550 Units), Gacha/Banner, Evolution, Traits, Trade/Reroll, Promis/Crossover, Welten/Raids, alte Bilder; Rückweg Commit 783865d.
+Offene Fragen an Max (mit Empfehlung): siehe unten.
+Vorschlag Runde 12: siehe unten.
+Agenten: 6 × Sonnet (P1, P2, P3 ×2, P4 ×2), Limit 1 × (P3 und P4 gleichzeitig). Hauptsitzung: P0, P5, Merges.
+Commits / Tests: sim 79, meta 23, client 54 Tests, tsc in allen drei, build, smoke grün.
+```
+
+**Balance-Rauchtest** (`cd sim && npm run matrix`; Bot spielt eine feste Kaufreihenfolge, 4 Türme + optional Held; Sim deterministisch). Ergebnis nach den P5-Anpassungen (Nachträge in `runden.md`, `gegner.md`, `tuerme.md`: **2 Gold je Schicht**, Wren-XP 60 + 20 × Runde, Dawnbreak schwächer, Brute-Tempo 1,3, R17/R19 weniger Brutes, Hard schneller + Boss 400 HP):
+
+| Aufstellung | Held | easy | medium | hard |
+|---|---|---|---|---|
+| Ranger + Bombardier | ja | 1/1 ✔ (200 L) | 1/1 ✔ (150 L) | 1/1 ✔ (65 L) |
+| Ranger + Bombardier | nein | 1/1 ✔ (200 L) | 1/1 ✔ (100 L) | 0/1 (Ø R18.0) |
+| Ranger + Frostcaller | ja | 1/1 ✔ (200 L) | 1/1 ✔ (150 L) | 1/1 ✔ (76 L) |
+| Ranger + Frostcaller | nein | 1/1 ✔ (200 L) | 1/1 ✔ (118 L) | 1/1 ✔ (5 L) |
+| Bombardier + Frostcaller | ja | 1/1 ✔ (200 L) | 1/1 ✔ (145 L) | 0/1 (Ø R20.0) |
+| Bombardier + Frostcaller | nein | 1/1 ✔ (200 L) | 0/1 (Ø R20.0) | 0/1 (Ø R15.0) |
+| nur Ranger | ja | 1/1 ✔ (197 L) | 1/1 ✔ (142 L) | 0/1 (Ø R20.0) |
+| nur Ranger | nein | 1/1 ✔ (38 L) | 0/1 (Ø R18.0) | 0/1 (Ø R17.0) |
+| nur Bombardier | ja | 1/1 ✔ (200 L) | 1/1 ✔ (140 L) | 0/1 (Ø R17.0) |
+| nur Bombardier | nein | 1/1 ✔ (164 L) | 0/1 (Ø R17.0) | 0/1 (Ø R15.0) |
+| nur Frostcaller | ja | 1/1 ✔ (200 L) | 0/1 (Ø R20.0) | 0/1 (Ø R20.0) |
+| nur Frostcaller | nein | 1/1 ✔ (34 L) | 0/1 (Ø R20.0) | 0/1 (Ø R12.0) |
+
+Lesart: Jede Zweier-Kombination schafft Medium mit Held (B + F ohne Held scheitert am Boss = „Boss braucht Vorbereitung“). Kein Einzelturm schafft Medium ohne Held, keiner schafft Hard. Hard braucht Held + passende Kombination. Vor P5 (1 Gold je Schicht) verlor **jede** Aufstellung ohne Held auf Medium in R15–17, und Wren trug Einzeltürme durch Hard. Der Bot ist schlichter als ein Mensch (feste Reihenfolge, keine Umstellung), echte Spieler sollten es leichter haben.
+
+**Offene Fragen an Max (mit Empfehlung):**
+1. **T5-Preise gestaucht** (≈ 15–20× statt 80× Basispreis), sonst wäre in 20 Runden nie ein T5 bezahlbar. Empfehlung: so lassen, mit 2 Gold je Schicht ist ein T5 ab ~R15 erreichbar.
+2. **Erste Partie ist schwer:** Ein neues Profil hat nur den Ranger und 250 Turm-XP je Turm (eine Handvoll Stufen). Easy gewinnt man damit eher nicht beim ersten Mal; nach 1–2 Partien sind Bombardier/Wren da. Empfehlung: so lassen (BTD6-Gefühl), zum Testen der hohen Stufen **Settings → „Developer: unlock everything“** oder `?debug`.
+3. **Freeplay** (R21+) fehlt. Empfehlung: in Runde 12, zusammen mit der zweiten Karte.
+
+**Vorschlag Runde 12:** Max spielt den Slice und sagt, was fehlt. Danach: eine vierte Turmklasse (Support/Farm, damit Ökonomie eine Entscheidung wird), eine zweite Karte (Winter oder Sumpf) und Freeplay ab R21. Gesichter/Ausdruck der Figuren nachschärfen (P2-Schwäche), kleine Effekte (Nova, Eisblock) feiner. Gacha für Helden/Skins erst danach.
+
+**Bekannt:** Echte Bildrate auf GPU ungemessen (headless SwiftShader ≈ 12 fps, Sim+Sync+Render im Code ≈ 9 ms je Bild bei 126 Gegnern). Boss-Banner kommt beim Rundenstart von R20, nicht beim Auftauchen des Bosses.
 
 ## Runde 10 (echte Figuren, Match-Grafik, Beschwören, Karten je Welt)
 

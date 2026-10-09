@@ -42,3 +42,11 @@ Ranger C2, Frostcaller C2, Wren L5 oder Flare. Der Leviathan ist die Prüfung in
 - Schaden durch Bonus-Upgrades: Ranger C4/C5, Bombardier A3–A5, Frostcaller B4, Wren Dawnbreak. Ohne eines davon ist der Boss
   hart: so gewollt („Boss braucht Vorbereitung“, run.md P5).
 - Leck = **412 Leben** → auf jeder Stufe sofort verloren, wenn die Hülle steht. Platzt die Hülle, kommen 4 Brutes.
+
+## Nachtrag P1/P5 (09.10.2026) — gilt vor den Tabellen oben
+
+- **Tempo** (P1): Red 52 px/s × `speedBp` Easy 0,75 / Medium 0,85 / **Hard 1,0** (P5: Hard von 0,9 auf 1,0). Mit den Original-
+  faktoren 1,0/1,1/1,25 war ab R7 nichts zu halten.
+- **Gloom Brute Tempo 1,3** statt 1,6 (P5).
+- **Pop-Cash 2 je Schicht** (P5, siehe `runden.md`), Boss-Hülle 100.
+- **Leviathan Hard: 400 HP** (P5; Easy 200, Medium 300).

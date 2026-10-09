@@ -48,3 +48,13 @@ etwa auf BTD6-R30-Niveau, die Gegnerarten reichen bis BTD6-R40 (Keramik + MOAB).
 R1–4 Einstieg, ein Ranger reicht. R5–9 Menge und Tempo (Gold) → zweiter Turm, erste Upgrades. R10 erster Ansturm (Fläche!).
 R11 Panzer (Bombardier, Frost, Ranger C3). R12 Emberlinge (Frost allein reicht nicht). R13 Shades (Erkennung). R14–16 Mischung.
 R15/17 Brutes (Einzelschaden, Bonus-Upgrades). R18 Gold-Ansturm (Verlangsamung, Fläche). R19 Härtetest. R20 Boss.
+
+## Nachtrag P5 (Balance-Rauchtest, 09.10.2026) — gilt vor der Tabelle oben
+
+- **Pop-Cash 2 je Schicht** (`popCash` in `sim/data/difficulties.json`, Boss-Hülle bleibt 100). Grund: Mit 1 Gold je Schicht
+  kamen die ersten Brutes (R15) bei ≈ 4.800 Gesamteinkommen — nur Stufe-2-Türme bezahlbar, jede Bot-Aufstellung ohne Held
+  verlor in R15–17. Unsere 20 Runden tragen den Gegnerfortschritt von BTD6-R1–40, also gehört auch etwa dessen Einkommen dazu.
+- **R17: 14 statt 16 Brutes, R19: 22 statt 26 Brutes.**
+- Kumuliert (Start 650 + alle Schichten × 2 + Boni): R5 1.693 · R10 3.949 · R15 7.286 · R17 9.379 · **R20 13.448**
+  (BTD6 Medium bis R40: 17.506). Ein T5 (≈ 3.700–5.800 Medium) ist damit ab etwa R15 erreichbar, wenn man darauf spart.
+- Einzelwerte RBE/Schichten je Runde: Test `sim/test/data.test.ts`.

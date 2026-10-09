@@ -88,7 +88,7 @@ describe('Projektile mit Flugzeit', () => {
 });
 
 describe('Schichten', () => {
-  it('Green -> Blue -> Red, Kinder erben Camo, Pop-Cash +1 je Schicht', () => {
+  it('Green -> Blue -> Red, Kinder erben Camo, Pop-Cash +2 je Schicht (popCash)', () => {
     const g = newGame({ mods: { startCash: 0 } });
     const e = g.sandbox.spawn('green', 300000, true);
     const c0 = g.state.cash;
@@ -97,11 +97,11 @@ describe('Schichten', () => {
     const blue = g.state.enemies[0];
     expect(blue.type).toBe('blue');
     expect(blue.camo).toBe(true);
-    expect(g.state.cash - c0).toBe(1);
+    expect(g.state.cash - c0).toBe(2);
     g.sandbox.hurt(blue.id, 1);
     expect(g.state.enemies[0].type).toBe('red');
     expect(g.state.enemies[0].camo).toBe(true);
-    expect(g.state.cash - c0).toBe(2);
+    expect(g.state.cash - c0).toBe(4);
   });
 
   it('Überschuss-Schaden geht an die Kinder', () => {

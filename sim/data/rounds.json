@@ -266,7 +266,7 @@
   "groups": [
    {
     "type": "brute",
-    "n": 16,
+    "n": 14,
     "gapMs": 1200,
     "startMs": 0
    },
@@ -301,7 +301,7 @@
   "groups": [
    {
     "type": "brute",
-    "n": 26,
+    "n": 22,
     "gapMs": 800,
     "startMs": 0
    },

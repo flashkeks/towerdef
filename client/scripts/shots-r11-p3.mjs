@@ -15,6 +15,10 @@ async function open(ctx, qs = '?debug&diff=easy&seed=5') {
   const page = await ctx.newPage();
   const errors = watchErrors(page);
   await page.goto(url + qs);
+  // Seit P4 startet ein Match ueber den Startbildschirm (Schwierigkeit waehlen, Play), nicht mehr ueber ?diff=
+  const diff = /diff=(\w+)/.exec(qs)?.[1] ?? 'easy';
+  await page.click(`.diff[data-diff="${diff}"]`);
+  await page.click('.app-play');
   await page.waitForSelector('.m-canvas', { timeout: 20000 });
   await page.waitForTimeout(500);
   const rect = await page.evaluate(() => { const r = document.querySelector('.m-canvas').getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height }; });
