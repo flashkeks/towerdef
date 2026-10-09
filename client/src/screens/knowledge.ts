@@ -1,11 +1,11 @@
-/** Wissensbaum: drei Aeste als Pixel-Knoten mit Linien, Punkte oben, Klick kauft, Tooltip erklaert. */
+/** Wissensbaum (Runde 14b): eine zusammenhaengende Tafel, fuenf Aeste nebeneinander, Abzeichen mit Ranken, festes Infofeld unten. */
 import {
   BRANCHES, BRANCH_NAMES, KNOWLEDGE, buyNode, knowledgePoints, nodeById, nodeState, resetKnowledge, type Branch,
 } from '../meta';
 import { h } from '../ui/dom';
-import { DEFAULT_OPTS, layoutTree } from './knowledge-layout';
+import { DEFAULT_OPTS, layoutTree, type PlacedLine } from './knowledge-layout';
 import { icon, type IconName } from './icons';
-import { cv, makeTip, ptext } from './px';
+import { cv, ptext } from './px';
 import { S } from './text';
 import type { Ctx, View } from './types';
 
@@ -20,12 +20,7 @@ export const NODE_ICONS: Record<string, IconName> = {
   'deep-roots': 'leaf', 'bountiful-grove': 'leaf', 'potent-brews': 'flask', 'midas-hands': 'coin', 'field-medic': 'cross',
   'sturdy-gate': 'shield', 'ember-rush': 'flame',
 };
-const OPTS = DEFAULT_OPTS;
-
 let lastBought: string | null = null;
-/** Scrollstand vor dem Neuaufbau (Kauf laedt den Bildschirm neu): sonst springt der hohe Baum nach oben. */
-let keepScroll: number | null = null;
-const scroller = (el: HTMLElement): HTMLElement | null => el.closest('.dw-screens');
 
 export function topBar(ctx: Ctx, title: string, right?: HTMLElement): HTMLElement {
   const bar = h('header', 'subtop');
@@ -35,11 +30,19 @@ export function topBar(ctx: Ctx, title: string, right?: HTMLElement): HTMLElemen
   return bar;
 }
 
+const NS = 'http://www.w3.org/2000/svg';
+/** Rechtwinklige Ranke: runter, quer in der Zeilenluecke, runter. Abzeichen liegen darueber, die Linie verschwindet dahinter. */
+const vine = (l: PlacedLine, cell: number): string => `M${l.x1} ${l.y1} V${Math.round(l.y1 + cell * 0.68)} H${l.x2} V${l.y2}`;
+const svgEl = (tag: string, attrs: Record<string, string>): SVGElement => {
+  const e = document.createElementNS(NS, tag);
+  for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+  return e;
+};
+
 export function knowledgeView(ctx: Ctx): View {
   const p = ctx.store.profile;
   const kp = knowledgePoints(p);
   const el = h('div', 'scr knowledge');
-  const tip = makeTip(el);
 
   const right = h('div', 'kp-box');
   const chip = h('div', `chip ${kp.free > 0 ? 'good' : ''}`);
@@ -47,102 +50,122 @@ export function knowledgeView(ctx: Ctx): View {
   const reset = h('button', 'btn-small', S.knowledge.reset);
   reset.disabled = p.knowledge.length === 0;
   reset.title = S.knowledge.resetHint;
-  reset.onclick = () => { ctx.sound('click'); lastBought = null; keepScroll = scroller(el)?.scrollTop ?? null; void ctx.update(resetKnowledge(ctx.store.profile)).then(() => ctx.go({ name: 'knowledge' })); };
+  reset.onclick = () => { ctx.sound('click'); lastBought = null; void ctx.update(resetKnowledge(ctx.store.profile)).then(() => ctx.go({ name: 'knowledge' })); };
   right.append(chip, reset);
   el.append(topBar(ctx, S.knowledge.title, right));
 
-  const tree = h('div', 'ktree');
-  const layout = layoutTree(KNOWLEDGE, BRANCHES as readonly string[], OPTS);
-  const rowEls: HTMLElement[] = Array.from({ length: layout.rows }, () => h('div', 'krow'));
-  for (const r of rowEls) tree.append(r);
-  const NS = 'http://www.w3.org/2000/svg';
-  for (const pb of layout.branches) {
-    const branch = pb.branch as Branch;
-    const panel = h('section', `kbranch ${branch}`);
-    panel.style.width = `${pb.w}px`;
-    const bought = KNOWLEDGE.filter((n) => n.branch === branch && p.knowledge.includes(n.id)).length;
-    const total = KNOWLEDGE.filter((n) => n.branch === branch).length;
-    const title = h('div', 'kbranch-t', BRANCH_NAMES[branch]);
-    title.append(h('span', 'kbranch-c num', `${bought}/${total}`));
-    panel.append(title);
-    const field = h('div', 'kfield');
-    field.style.width = `${pb.fieldW}px`;
-    field.style.height = `${pb.fieldH}px`;
+  const board = h('div', 'kboard');
+  const info = h('div', 'kinfo');
+  el.append(board, info);
 
-    // Linien (SVG, harte Kanten): Voraussetzung -> Knoten, in Astfarbe sobald die Voraussetzung gelernt ist
-    const svg = document.createElementNS(NS, 'svg');
-    svg.setAttribute('class', 'klines');
-    svg.setAttribute('width', String(pb.fieldW));
-    svg.setAttribute('height', String(pb.fieldH));
-    for (const l of pb.lines) {
-      const ym = Math.round((l.y1 + l.y2) / 2);
-      const path = document.createElementNS(NS, 'path');
-      path.setAttribute('d', `M${l.x1} ${l.y1} V${ym} H${l.x2} V${l.y2}`);
-      path.setAttribute('class', `kline ${p.knowledge.includes(l.from) ? 'on' : ''}`);
-      svg.append(path);
-    }
-    field.append(svg);
+  // ---- Infofeld unten: Standardtext + Legende, beim Ueberfahren die Beschreibung des Knotens
+  const infoMain = h('div', 'kinfo-main');
+  const legend = h('div', 'klegend');
+  const rowsL: [string, string][] = [['bought', S.knowledge.legendBought], ['available', S.knowledge.legendAvail], ['unaffordable', S.knowledge.legendPoor], ['locked', S.knowledge.legendLocked]];
+  for (const [cls, txt] of rowsL) {
+    const r = h('div', 'klegend-r');
+    r.append(h('span', `klegend-sw ksw-${cls}`), h('span', '', txt));
+    legend.append(r);
+  }
+  info.append(infoMain, legend);
+  const showTip = (): void => { infoMain.replaceChildren(h('div', 'kinfo-hint', S.knowledge.tip)); };
+  const showNode = (id: string): void => {
+    const n = nodeById(id)!;
+    const st = nodeState(ctx.store.profile, id);
+    const head = h('div', 'kinfo-h');
+    head.append(cv(icon(NODE_ICONS[id] ?? 'star'), 3, 'kinfo-ic'), h('span', 'kinfo-n', n.name), h('span', `kinfo-c ${st}`, st === 'bought' ? S.knowledge.learned : S.knowledge.cost(n.cost)));
+    const box = h('div', 'kinfo-b');
+    box.append(head, h('div', 'kinfo-d', n.desc));
+    if (st === 'locked') {
+      const names = n.requires.map((r) => nodeById(r)?.name ?? r);
+      box.append(h('div', 'kinfo-w', names.length > 1 ? S.knowledge.needsOne(names.join(', ')) : S.knowledge.needs(names[0])));
+    } else if (st === 'unaffordable') box.append(h('div', 'kinfo-w', S.knowledge.noPoints));
+    infoMain.replaceChildren(box);
+  };
+  showTip();
 
-    for (const pn of pb.nodes) {
-      const n = nodeById(pn.id)!;
-      const st = nodeState(p, n.id);
-      const b = h('button', `knode ${st} ${lastBought === n.id ? 'bought-now' : ''}`);
-      b.dataset.node = n.id;
-      b.style.left = `${pn.x}px`;
-      b.style.top = `${pn.y}px`;
-      b.style.width = `${OPTS.nodeW}px`;
-      b.style.height = `${OPTS.nodeH}px`;
-      b.append(cv(icon(NODE_ICONS[n.id] ?? 'star'), 2, 'knode-ic'), h('div', 'knode-n', n.name));
-      const foot = h('div', 'knode-f');
-      if (st === 'bought') foot.append(cv(icon('check'), 2), h('span', 'knode-ok', S.knowledge.learned));
-      else if (st === 'locked') foot.append(cv(icon('lock'), 2), h('span', 'num knode-cost', String(n.cost)));
-      else foot.append(cv(icon('star'), 2), h('span', 'num knode-cost', String(n.cost)));
-      b.append(foot);
-      tip.attach(b, () => {
-        const box = h('div', 'tip-box');
-        box.append(h('div', 'tip-t', n.name), h('div', 'tip-d', n.desc));
-        box.append(h('div', 'tip-c', st === 'bought' ? S.knowledge.learned : S.knowledge.cost(n.cost)));
-        if (st === 'locked') {
-          const names = n.requires.map((r) => nodeById(r)?.name ?? r);
-          box.append(h('div', 'tip-w', names.length > 1 ? S.knowledge.needsOne(names.join(', ')) : S.knowledge.needs(names[0])));
-        } else if (st === 'unaffordable') box.append(h('div', 'tip-w', S.knowledge.noPoints));
-        return box;
-      });
-      b.onclick = () => {
-        const res = buyNode(ctx.store.profile, n.id);
-        if (!res.ok) { ctx.sound('error'); return; }
-        ctx.sound('buy');
-        lastBought = n.id;
-        keepScroll = scroller(el)?.scrollTop ?? null;
-        void ctx.update(res.profile).then(() => ctx.go({ name: 'knowledge' }));
-      };
-      field.append(b);
+  const draw = (): void => {
+    const W = board.clientWidth, H = board.clientHeight;
+    if (W < 50 || H < 50) return;
+    const layout = layoutTree(KNOWLEDGE, BRANCHES as readonly string[], { ...DEFAULT_OPTS, width: W, height: H, headH: H < 600 ? 42 : DEFAULT_OPTS.headH });
+    const { cell, colW, badge } = layout;
+    board.style.setProperty('--head', `${H < 600 ? 42 : DEFAULT_OPTS.headH}px`);
+    board.style.setProperty('--cell', `${cell}px`);
+    board.style.setProperty('--colw', `${colW}px`);
+    board.style.setProperty('--badge', `${badge}px`);
+    board.style.setProperty('--fs', `${Math.max(11, Math.min(18, Math.round(Math.min(cell, colW) * 0.19)))}px`);
+    const lw = Math.max(4, Math.round(cell * 0.05 / 2) * 2);
+    
+    const iconScale = Math.max(2, Math.floor((badge * 0.62) / 14));
+    const kids: Node[] = [];
+    const sparks: HTMLElement[] = [];
+    const svg = svgEl('svg', { class: 'klines', width: String(W), height: String(H) });
+    for (const pb of layout.branches) {
+      const branch = pb.branch as Branch;
+      const bought = KNOWLEDGE.filter((n) => n.branch === branch && p.knowledge.includes(n.id)).length;
+      const total = KNOWLEDGE.filter((n) => n.branch === branch).length;
+      const band = h('div', `kband ${branch}`);
+      band.style.cssText = `left:${pb.x - 6}px;top:${layout.y}px;width:${pb.w + 12}px;height:${layout.h}px`;
+      const title = h('div', 'kbranch-t', BRANCH_NAMES[branch]);
+      title.append(h('span', 'kbranch-c num', `${bought}/${total}`));
+      band.append(title);
+      kids.push(band);
+      for (const l of pb.lines) {
+        const on = p.knowledge.includes(l.from);
+        const d = vine(l, cell);
+        const g = svgEl('g', { class: `kline ${branch} ${on ? 'on' : ''}` });
+        g.append(svgEl('path', { d, class: 'kline-bed', 'stroke-width': String(lw + 4) }), svgEl('path', { d, class: 'kline-core', 'stroke-width': String(lw) }));
+        svg.append(g);
+        if (on && lastBought === l.to) {
+          for (let i = 0; i < 3; i++) {
+            const sp = h('div', 'kspark');
+            sp.style.cssText = `offset-path:path("${d}");animation-delay:${i * 110}ms;--bc:var(--bc-${branch})`;
+            sparks.push(sp);
+          }
+        }
+      }
     }
-    panel.append(field);
-    rowEls[pb.row].append(panel);
-  }
-  // Legende in der Luecke rechts der letzten Zeile (wenn Platz ist): was Farben und Rahmen heissen
-  if (layout.freeRight >= 260) {
-    const lg = h('aside', 'klegend');
-    lg.style.width = `${layout.freeRight - OPTS.gap - 8}px`;
-    lg.append(h('div', 'klegend-t', S.knowledge.legend));
-    const rowsL: [string, string][] = [['bought', S.knowledge.legendBought], ['available', S.knowledge.legendAvail], ['unaffordable', S.knowledge.legendPoor], ['locked', S.knowledge.legendLocked]];
-    for (const [cls, txt] of rowsL) {
-      const r = h('div', 'klegend-r');
-      r.append(h('span', `klegend-sw ksw-${cls}`), h('span', '', txt));
-      lg.append(r);
+    kids.push(svg);
+    for (const pb of layout.branches) {
+      const branch = pb.branch as Branch;
+      for (const pn of pb.nodes) {
+        const n = nodeById(pn.id)!;
+        const st = nodeState(p, n.id);
+        const b = h('button', `knode ${st} ${branch} ${lastBought === n.id ? 'bought-now' : ''}`);
+        b.dataset.node = n.id;
+        b.style.left = `${pn.cx - colW / 2}px`;
+        b.style.top = `${pn.cy - cell / 2}px`;
+        const badgeEl = h('span', 'kbadge');
+        badgeEl.append(h('span', 'kbadge-in'), cv(icon(NODE_ICONS[n.id] ?? 'star'), iconScale, 'knode-ic'));
+        const cost = h('span', 'kcost');
+        if (st === 'bought') cost.append(cv(icon('check'), 1));
+        else cost.append(cv(icon(st === 'locked' ? 'lock' : 'star'), 1), h('span', 'num', String(n.cost)));
+        // Name einzeilig halten: erst schmaler setzen, bricht nur um, wenn es gar nicht passt
+        const fs = Math.max(11, Math.min(18, Math.round(Math.min(cell, colW) * 0.19)));
+        const est = n.name.length * fs * 0.54;
+        const nm = h('span', `knode-n ${est > colW - 6 ? (est * 0.92 > colW - 6 ? 'wrap' : 'long') : ''}`, n.name);
+        b.append(badgeEl, cost, nm);
+        b.addEventListener('pointerenter', () => showNode(n.id));
+        b.addEventListener('focus', () => showNode(n.id));
+        b.addEventListener('pointerleave', showTip);
+        b.addEventListener('blur', showTip);
+        b.onclick = () => {
+          const res = buyNode(ctx.store.profile, n.id);
+          if (!res.ok) { ctx.sound('error'); return; }
+          ctx.sound('buy');
+          lastBought = n.id;
+          void ctx.update(res.profile).then(() => ctx.go({ name: 'knowledge' }));
+        };
+        kids.push(b);
+      }
     }
-    lg.append(h('div', 'klegend-h', S.knowledge.tip));
-    rowEls[rowEls.length - 1].append(lg);
-  }
-  el.append(tree, h('div', 'foot-hint', S.knowledge.tip));
-  setTimeout(() => { lastBought = null; }, 0);
-  if (keepScroll != null) {
-    const k = keepScroll;
-    keepScroll = null;
-    const restore = (): void => { const sc = scroller(el); if (sc) sc.scrollTop = k; };
-    requestAnimationFrame(restore);
-    setTimeout(restore, 30);
-  }
-  return { el };
+    kids.push(...sparks);
+    board.replaceChildren(...kids);
+  };
+
+  const ro = typeof ResizeObserver === 'function' ? new ResizeObserver(() => draw()) : null;
+  ro?.observe(board);
+  requestAnimationFrame(draw);
+  setTimeout(() => { lastBought = null; }, 1200);
+  return { el, dispose: () => ro?.disconnect() };
 }

@@ -133,7 +133,7 @@ try {
   check(await p3.evaluate(() => __audio.ctxState) !== null, 'erster Klick im Menue erzeugt den AudioContext');
   check(await p3.evaluate(() => __audio.log.includes('ui.click')), 'Klick-Ton im Menue ausgeloest');
   check(await p3.locator('.knode').count() === 40, 'Wissensbaum zeigt 40 Knoten');
-  check(await p3.locator('.kbranch').count() === 5, 'Wissensbaum zeigt fuenf Aeste');
+  check(await p3.locator('.kband').count() === 5, 'Wissensbaum zeigt fuenf Aeste');
   check(await p3.evaluate(() => { const sc = document.querySelector('.dw-screens'); return sc.scrollWidth <= sc.clientWidth; }), 'Wissensbaum bei 1280 x 720 ohne Quer-Scrollen');
   check(await p3.evaluate(() => { const sc = document.querySelector('.dw-screens'); return sc.scrollHeight > sc.clientHeight; }), 'Wissensbaum waechst nach unten (senkrechtes Scrollen)');
   check(await p3.evaluate(() => __audio.musicTimer === null), 'Menue ohne Musik (kein Musik-Timer)');

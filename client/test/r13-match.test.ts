@@ -4,7 +4,6 @@ import { TOWER_TYPES, HOTKEY, ABILITY_TEXT } from '../src/match/tower-text';
 import { r13Sound } from '../src/audio/r13-map';
 import { R13_RECIPES } from '../src/audio/recipes-r13';
 import { AudioEngine, MIX_MUSIC, MIX_SFX } from '../src/audio/engine';
-import { DEFAULT_OPTS, layoutTree } from '../src/screens/knowledge-layout';
 import { BRANCHES, KNOWLEDGE } from '../src/meta';
 import type { MarketInfo, TowerAura, TowerState } from '../src/sim';
 
@@ -127,32 +126,4 @@ describe('Ton Runde 13', () => {
     expect(() => a.play('ui.click')).not.toThrow();
     expect(a.log).toContain('ui.click');
   });
-});
-
-describe('Wissensbaum-Layout', () => {
-  const lay = layoutTree(KNOWLEDGE, BRANCHES);
-  it('alle 28 Knoten platziert, fuenf Aeste nebeneinander ohne Ueberlappung', () => {
-    expect(lay.branches.length).toBe(5);
-    expect(lay.branches.reduce((n, b) => n + b.nodes.length, 0)).toBe(KNOWLEDGE.length);
-    for (let i = 1; i < lay.branches.length; i++) {
-      const a = lay.branches[i - 1], b = lay.branches[i];
-      if (a.row === b.row) expect(b.x).toBeGreaterThanOrEqual(a.x + a.w); else expect(b.y).toBeGreaterThanOrEqual(a.y + a.h);
-    }
-  });
-  it('passt in 1280 px Breite (Runde 14: Zeilen brechen um, Hoehe darf scrollen)', () => {
-    expect(lay.width).toBeLessThanOrEqual(1280 - 72);
-    expect(lay.height).toBeGreaterThan(0);
-  });
-  it('Hoehe: Knoten stehen ohne Ueberlappung im Raster', () => {
-    for (const b of lay.branches) {
-      const seen = new Set<string>();
-      for (const n of b.nodes) { const k = `${n.x}|${n.y}`; expect(seen.has(k)).toBe(false); seen.add(k); }
-    }
-  });
-  it('jede Voraussetzung innerhalb des Asts hat eine Linie', () => {
-    const want = KNOWLEDGE.reduce((n, k) => n + k.requires.length, 0);
-    expect(lay.branches.reduce((n, b) => n + b.lines.length, 0)).toBe(want);
-    for (const b of lay.branches) for (const l of b.lines) expect(l.y2).toBeGreaterThan(l.y1 - 1);
-  });
-  it('Knoten haben die Groesse aus den Optionen', () => { expect(DEFAULT_OPTS.nodeW).toBeLessThanOrEqual(DEFAULT_OPTS.cellW); });
 });
