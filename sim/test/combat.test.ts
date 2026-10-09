@@ -307,8 +307,7 @@ describe('Camo und Targeting', () => {
       };
       const ev = run(g, 3).find((e) => e.type === 'windup');
       if (!ev || ev.type !== 'windup') throw new Error('kein windup');
-      const names = Object.fromEntries(Object.entries(ids).map(([k, v]) => [v, k]));
-      return ev.target === ids.redFront ? 0 : ev.target === ids.blueBack ? 1 : ev.target === ids.brute ? 2 : (names, -1);
+      return ev.target === ids.redFront ? 0 : ev.target === ids.blueBack ? 1 : ev.target === ids.brute ? 2 : -1;
     };
     expect(pick('first')).toBe(0); // der vorderste (x≈100 px, y=92) liegt noch in Reichweite 72
     expect(pick('last')).toBe(1);

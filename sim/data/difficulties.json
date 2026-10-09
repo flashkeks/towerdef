@@ -16,7 +16,7 @@
  "hard": {
   "lives": 100,
   "priceBp": 10800,
-  "speedBp": 10000,
+  "speedBp": 9000,
   "bossHp": 300,
   "startCash": 650
  }

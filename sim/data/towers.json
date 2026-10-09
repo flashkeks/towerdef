@@ -374,7 +374,7 @@
    "pk": "bomb",
    "dtype": "explosive",
    "dmg": 1,
-   "radius": 24000,
+   "radius": 32000,
    "maxT": 14,
    "flight": 27,
    "interval": 90000,

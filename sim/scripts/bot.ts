@@ -6,9 +6,10 @@ import { parseStrategy, runBot, type BotResult } from '../src/bot.js';
 import type { Difficulty } from '../src/types.js';
 
 const DEFAULTS = [
-  'ranger 0-2-4 + bombardier 3-2-0 + hero',
-  'bombardier 4-2-0 + frostcaller 2-0-4 + hero',
-  'frostcaller 5-2-0 + ranger 4-0-2 + hero',
+  'ranger 0-0-0 + ranger 0-2-4 + bombardier 0-0-0 + bombardier 4-2-0 + hero',
+  'ranger 0-0-0 + ranger 0-0-0 + bombardier 4-0-2 + hero',
+  'ranger 0-0-0 + ranger 0-4-2 + frostcaller 0-0-0 + frostcaller 2-4-0 + hero',
+  'frostcaller 0-0-0 + frostcaller 0-0-0 + frostcaller 2-0-4 + hero',
 ];
 
 function fmt(r: BotResult, ms: number): string {
