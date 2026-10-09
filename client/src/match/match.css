@@ -357,3 +357,24 @@ kbd { font: 700 10px var(--font-num); background: var(--ink); color: var(--silve
   .m-card-p { font-size: 15px; }
   .m-side { gap: 6px; padding: 10px 12px; }
 }
+
+/* ---- Runde 14: Thornweaver, Alchemist: Buff-Zeilen, Monster-Hinweis ---- */
+.pi-buff .pi-k { color: var(--coral, #f6757a); }
+.pi-chip.brew { background: #f6a5a8; }
+.pi-monster { color: #7bd88f; font: 800 13px var(--font-num); letter-spacing: .1em; background: rgba(14,16,28,.85); padding: 2px 6px; }
+
+/* ---- Runde 14: sieben Tuerme + Wren passen bei 1280 x 720 ohne Scrollen: Karten als Kacheln in zwei Spalten ---- */
+@media (max-height: 860px) {
+  .m-pane-towers { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+  .m-pane-towers .m-cards { display: contents; }
+  .m-pane-towers .m-side-h { display: none; }
+  .m-cards .m-card { flex-direction: column; align-items: center; justify-content: flex-start; gap: 2px; min-height: 0; padding: 4px 4px 3px; text-align: center; }
+  .m-cards .m-port { width: 100%; height: 44px; }
+  .m-cards .m-card-t { width: 100%; flex: none; }
+  .m-cards .m-card-n { font-size: 13px; letter-spacing: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .m-cards .m-card-p { justify-content: center; font-size: 15px; }
+  .m-cards .m-key { position: absolute; top: 3px; right: 3px; }
+  .m-cards .m-lock { font-size: 10px; line-height: 1.1; padding: 2px; }
+  .m-cards .m-lock .px-ic { display: none; }
+}
+.ps-stage.buffed .ps-fig { transform: translateX(-62px); }

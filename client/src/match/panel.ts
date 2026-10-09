@@ -14,6 +14,7 @@ import { heroPortrait, iconUpgrade, towerSprite } from './sprites';
 import { tierButton, type TierBtn } from './tier-button';
 import { ABILITY_TEXT, PATH_COLORS, TARGET_TEXT } from './tower-text';
 import { copyCanvas, uiIcon } from './ui-icons';
+import { buffLines, monsterText } from './r14';
 import { auraLines, canWithdraw, hasAura, marketLines, GLOBAL_RANGE } from './r13';
 
 /** Platz fuer den Turm in der Buehne (px): Stufen-Kuerzel oben, Targeting unten bleiben frei. */
@@ -111,7 +112,9 @@ export class Panel {
     const xp = hero ? 0 : state.towerXp[tw.type as TowerType];
     const mi = hero ? null : this.game.marketInfo(tw.id);
     const au = hero ? null : this.game.auraOf(tw.id);
-    const sig = JSON.stringify([mi, au, tw.range >= GLOBAL_RANGE, tw.tiers, tw.target, tw.heroLevel, tw.camo, infos.map((i) => [i.next, i.price, i.canBuy, i.reason, i.revealed, i.unlocked, i.unlockCost, tierButton(i, xp).kind]), sell, xp, hero ? state.abilities.map((a) => [a.id, a.ready]) : 0]);
+    const bf = hero ? null : this.game.buffOf(tw.id);
+    const bsig = bf ? [bf.dmg, bf.rangeBp, bf.speedBp, bf.groveSpeedBp, bf.permanent, Math.ceil(bf.ticks / 60), Math.ceil(tw.monsterTicks / 60)] : null;
+    const sig = JSON.stringify([mi, au, bsig, tw.range >= GLOBAL_RANGE, tw.tiers, tw.target, tw.heroLevel, tw.camo, infos.map((i) => [i.next, i.price, i.canBuy, i.reason, i.revealed, i.unlocked, i.unlockCost, tierButton(i, xp).kind]), sell, xp, hero ? state.abilities.map((a) => [a.id, a.ready]) : 0]);
     if (sig !== this.sig) {
       this.sig = sig;
       this.build(tw, infos, sell, state);
@@ -192,7 +195,7 @@ export class Panel {
     if (tw.type !== 'market') stage.append(arrow(-1), arrow(1), tg);
     // Runde 13: Market-Konto, Longshot-Reichweite und Aura-Boni liegen in der Buehne (kein zusaetzliches Gewicht im Panel)
     const extra = this.infoBox(tw);
-    if (extra) { stage.append(extra); stage.classList.add(tw.type === 'market' ? 'market' : 'tagged'); }
+    if (extra) { stage.append(extra); stage.classList.add(tw.type === 'market' ? 'market' : 'tagged'); if (extra.querySelector('.pi-buff')) stage.classList.add('buffed'); }
     el.append(stage);
 
     // drei Pfadzeilen
@@ -302,6 +305,14 @@ export class Panel {
       for (const l of auraLines(au)) a.append(h('div', 'pi-chip', l));
       box.append(a);
     }
+    const bl = buffLines(this.game.buffOf(tw.id));
+    if (bl.length) {
+      const b = h('div', 'pi-aura pi-buff');
+      b.append(h('div', 'pi-k', t('panel.brewGets')));
+      for (const l of bl) b.append(h('div', 'pi-chip brew', l));
+      box.append(b);
+    }
+    if (tw.monsterTicks > 0) box.append(h('div', 'pi-line pi-monster', monsterText(tw.monsterTicks)));
     return box.childElementCount ? box : null;
   }
 

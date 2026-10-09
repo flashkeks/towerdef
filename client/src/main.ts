@@ -3,6 +3,7 @@
  * (Startseite -> Match -> Ergebnis, `screens/app.ts`). URL-Parameter fuer Pruefskripte:
  *   ?debug oder ?test  alles freigeschaltet, Profil nur im Speicher (verschmutzt den echten Spielstand nicht)
  *   ?hooks             Pruefskripte (Runde 11b): normales Profil (Sperren sichtbar, Level 4 = alle Tuerme), nur im Arbeitsspeicher, dazu `window.__dw`
+ *   ?level=N           (mit debug/hooks) Spieler-Level N, damit Wissenspunkte und Freischaltungen pruefbar sind
  *   ?seed=N            fester Seed fuer das Match
  */
 import './ui/kit/fonts.css';
@@ -28,9 +29,9 @@ export async function startGame(root: HTMLElement): Promise<GameHandle> {
   const store = await openStore({ memoryOnly: test || hooks });
   if (test) {
     const p = newProfile();
-    await store.update({ ...p, settings: { ...p.settings, unlockAll: true } });
+    await store.update({ ...p, playerXp: q.has('level') ? xpForLevel(Number(q.get('level'))) : p.playerXp, settings: { ...p.settings, unlockAll: true } });
   }
-  if (hooks && !test) await store.update({ ...newProfile(), playerXp: xpForLevel(4) });
+  if (hooks && !test) await store.update({ ...newProfile(), playerXp: xpForLevel(q.has('level') ? Number(q.get('level')) : 4) });
   if (q.has('debug')) (window as unknown as { __audio: unknown }).__audio = audio;
   audio.attach(); // AudioContext schon beim ersten Klick/Tastendruck im Menue entsperren
   void runApp(root, {

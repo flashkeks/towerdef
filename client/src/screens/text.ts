@@ -74,7 +74,12 @@ export const S = {
     needsOne: (names: string): string => `Needs one of: ${names}`,
     noPoints: 'Not enough points',
     branch: { economy: 'Economy', primary: 'Primary', specialists: 'Specialists', wardens: 'Wardens', powers: 'Powers' },
-    tip: 'Each level up earns one point.',
+    tip: 'Each level up earns one point, and so does your first medal on each map and difficulty. Hover a node to read it.',
+    legend: 'How to read the tree',
+    legendBought: 'Learned',
+    legendAvail: 'You can learn it now',
+    legendPoor: 'Open, but not enough points',
+    legendLocked: 'Locked: learn the node above first',
   },
   towers: {
     title: 'Towers',
@@ -98,6 +103,8 @@ export const S = {
       frostcaller: ['Permafrost', 'Shatter', 'Storm'],
       longshot: ['Heavy Rounds', 'Rapid Reload', 'Field Kit'],
       market: ['Harvest', 'Bank', 'Town Square'],
+      thornweaver: ['Storm', 'Wild', 'Grove'],
+      alchemist: ['Brews', 'Unstable', 'Gold'],
     } as Record<string, string[]>,
   },
   settings: {

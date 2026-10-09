@@ -79,6 +79,7 @@ export const matchStrings = {
   'panel.aura': 'Aura',
   'panel.auraNone': 'No Market in reach',
   'panel.auraGets': 'Market aura',
+  'panel.brewGets': 'Potion and blessing',
   'panel.auraRadius': 'Aura radius {n} px',
   'panel.wholeMap': 'Range: whole map',
   'panel.grant': 'Grant pays +{n} gold',
