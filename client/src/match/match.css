@@ -42,7 +42,7 @@ kbd { font: 700 10px var(--font-num); background: var(--ink); color: var(--silve
 .m-card.poor .m-card-p b { color: #ff8a90; }
 .m-card.poor { filter: saturate(.7); }
 .m-card.used { opacity: .5; }
-.m-port { width: 72px; height: 80px; flex: none; display: flex; align-items: flex-end; justify-content: center; background: radial-gradient(circle at 50% 80%, #46507a, var(--night)); border: 2px solid var(--ink); overflow: hidden; }
+.m-port { width: 72px; height: 80px; flex: none; display: flex; align-items: center; justify-content: center; background: radial-gradient(circle at 50% 80%, #46507a, var(--night)); border: 2px solid var(--ink); overflow: hidden; }
 .m-card-t { min-width: 0; flex: 1; }
 .m-card-n { font: 700 17px var(--font-num); letter-spacing: .04em; }
 .m-card-r { font-size: 11px; color: var(--silver); line-height: 1.2; margin: 1px 0 4px; }
@@ -94,7 +94,7 @@ kbd { font: 700 10px var(--font-num); background: var(--ink); color: var(--silve
 .m-panel[data-side="right"] { right: 12px; }
 .m-panel[data-side="left"] { left: 12px; }
 .p-head { display: flex; align-items: center; gap: 10px; }
-.p-port { width: 72px; height: 74px; display: flex; align-items: flex-end; justify-content: center; background: radial-gradient(circle at 50% 80%, #46507a, var(--night)); border: 2px solid var(--ink); overflow: hidden; flex: none; }
+.p-port { width: 72px; height: 74px; display: flex; align-items: center; justify-content: center; background: radial-gradient(circle at 50% 80%, #46507a, var(--night)); border: 2px solid var(--ink); overflow: hidden; flex: none; }
 .p-name { flex: 1; min-width: 0; }
 .p-title { font: 800 24px var(--font-num); letter-spacing: .04em; }
 .p-sub { font: 600 13px var(--font-num); color: var(--stone); letter-spacing: .06em; }
@@ -363,8 +363,9 @@ kbd { font: 700 10px var(--font-num); background: var(--ink); color: var(--silve
 .pi-chip.brew { background: #f6a5a8; }
 .pi-monster { color: #7bd88f; font: 800 13px var(--font-num); letter-spacing: .1em; background: rgba(14,16,28,.85); padding: 2px 6px; }
 
-/* ---- Runde 14: sieben Tuerme + Wren passen bei 1280 x 720 ohne Scrollen: Karten als Kacheln in zwei Spalten ---- */
-@media (max-height: 860px) {
+/* ---- Runde 14: sieben Tuerme + Wren passen bei 1280 x 720 ohne Scrollen: Karten als Kacheln in zwei Spalten.
+   Runde 14b: auch ab 1000 px Hoehe Kacheln, dort mit 2x-Figuren (eine Spalte mit 90-px-Karten passt nicht neben Start-Knopf) ---- */
+@media (max-height: 860px), (min-height: 1000px) {
   .m-pane-towers { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
   .m-pane-towers .m-cards { display: contents; }
   .m-pane-towers .m-side-h { display: none; }
@@ -383,3 +384,18 @@ kbd { font: 700 10px var(--font-num); background: var(--ink); color: var(--silve
 .m-card.locked { filter: none; }
 .m-card.locked .m-port, .m-card.locked .m-card-t, .m-card.locked .m-key { filter: grayscale(.9) brightness(.7); }
 .m-lock { background: rgba(24, 20, 37, .5); color: #fff; font-weight: 800; text-shadow: 1px 1px 0 #181425; }
+
+/* ---- Runde 14b (Max: Bilder in der Turm-Leiste winzig und nicht mittig): Porträts zugeschnitten, ganzzahlig, mittig ---- */
+.m-port { align-items: center; justify-content: center; background: radial-gradient(circle at 50% 50%, #46507a, var(--night)); }
+.m-port .fig2 { display: none; }
+@media (min-height: 1000px) {
+  .m-pane-towers { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .m-card-r { display: none; }
+  .m-cards .m-port { height: 84px; margin-top: 2px; }
+  .m-cards .m-card-p { font-size: 17px; }
+  .m-port .fig1 { display: none; }
+  .m-port .fig2 { display: block; }
+}
+@media (max-height: 860px) {
+  .m-cards .m-port { align-items: center; }
+}

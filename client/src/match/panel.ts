@@ -21,12 +21,12 @@ import { auraLines, canWithdraw, hasAura, marketLines, GLOBAL_RANGE } from './r1
 const FIG_W = 300, FIG_H = 100;
 
 /** Rand ohne Pixel abschneiden und ganzzahlig so gross zeigen, wie es in die Buehne passt (1..4x). */
-export function fitFigure(src: HTMLCanvasElement, maxW: number, maxH: number): HTMLCanvasElement {
+export function fitFigure(src: HTMLCanvasElement, maxW: number, maxH: number, maxScale = 4): HTMLCanvasElement {
   const c = document.createElement('canvas');
   const box = opaqueBox(src);
   c.width = box.w; c.height = box.h;
   c.getContext('2d')!.drawImage(src, box.x, box.y, box.w, box.h, 0, 0, box.w, box.h);
-  const sc = figureScale(box.w, box.h, maxW, maxH);
+  const sc = Math.min(maxScale, figureScale(box.w, box.h, maxW, maxH));
   c.style.width = `${box.w * sc}px`;
   c.style.height = `${box.h * sc}px`;
   c.className = 'px-ic';
@@ -353,7 +353,7 @@ export class Panel {
     const el = this.el;
     const head = h('div', 'p-head');
     const port = h('div', 'p-port');
-    port.append(copyCanvas(heroPortrait().canvas, 2));
+    port.append(fitFigure(heroPortrait().canvas, 68, 70, 2));
     const nm = h('div', 'p-name');
     nm.append(h('div', 'p-title', displayName(tw.type)), h('div', 'p-sub', t('panel.level', { n: tw.heroLevel })));
     const pops = h('div', 'p-pops');

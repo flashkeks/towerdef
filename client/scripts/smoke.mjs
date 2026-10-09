@@ -135,7 +135,7 @@ try {
   check(await p3.locator('.knode').count() === 40, 'Wissensbaum zeigt 40 Knoten');
   check(await p3.locator('.kband').count() === 5, 'Wissensbaum zeigt fuenf Aeste');
   check(await p3.evaluate(() => { const sc = document.querySelector('.dw-screens'); return sc.scrollWidth <= sc.clientWidth; }), 'Wissensbaum bei 1280 x 720 ohne Quer-Scrollen');
-  check(await p3.evaluate(() => { const sc = document.querySelector('.dw-screens'); return sc.scrollHeight > sc.clientHeight; }), 'Wissensbaum waechst nach unten (senkrechtes Scrollen)');
+  check(await p3.evaluate(() => { const sc = document.querySelector('.dw-screens'); return sc.scrollHeight <= sc.clientHeight; }), 'Wissensbaum bei 1280 x 720 ohne Scrollen (alle Aeste auf einer Flaeche)');
   check(await p3.evaluate(() => __audio.musicTimer === null), 'Menue ohne Musik (kein Musik-Timer)');
   await p3.click('.subtop .btn-small');
   await p3.waitForSelector('.app-play');
@@ -189,13 +189,12 @@ try {
   await p4.waitForSelector('.app-play', { timeout: 20000 });
   await p4.click('.navbtn:has-text("Knowledge")');
   await p4.waitForSelector('.knode');
-  await p4.evaluate(() => { document.querySelector('.dw-screens').scrollTop = 600; });
-  const vis = await p4.evaluate(() => { const e = [...document.querySelectorAll('.knode.available')].find((n) => { const r = n.getBoundingClientRect(); return r.top > 120 && r.bottom < 700; }); if (!e) return null; const r = e.getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2]; });
+  const vis = await p4.evaluate(() => { const e = [...document.querySelectorAll('.knode.available')].find((n) => { const r = n.getBoundingClientRect(); return r.top > 60 && r.bottom < 700; }); if (!e) return null; const r = e.getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2]; });
   check(vis !== null, 'im gescrollten Wissensbaum ist ein kaufbarer Knoten sichtbar');
   await p4.mouse.click(...vis);
   await p4.waitForSelector('.knode.bought');
   await p4.waitForTimeout(250);
-  check(await p4.evaluate(() => document.querySelector('.dw-screens').scrollTop) > 300, 'Wissensbaum behaelt den Scrollstand nach einem Kauf');
+  check(await p4.evaluate(() => { const sc = document.querySelector('.dw-screens'); return sc.scrollTop === 0 && document.querySelectorAll('.knode').length === 40; }), 'Wissensbaum nach einem Kauf neu gezeichnet, weiter ohne Scrollen');
   await p4.click('.subtop .btn-small');
   await p4.waitForSelector('.app-play');
   await p4.click('.diff[data-diff="medium"]');

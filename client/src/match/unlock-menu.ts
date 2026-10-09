@@ -10,6 +10,7 @@ import { displayName } from './info';
 import { iconUpgrade, towerPortrait } from './sprites';
 import { PATH_COLORS } from './tower-text';
 import { copyCanvas, uiIcon } from './ui-icons';
+import { fitFigure } from './panel';
 
 export interface UnlockCallbacks {
   unlock(type: TowerType, path: 0 | 1 | 2): void;
@@ -47,7 +48,7 @@ export class UnlockMenu {
     const box = h('div', 'um-box pxbox');
     const head = h('div', 'um-head');
     const port = h('div', 'p-port');
-    port.append(copyCanvas(towerPortrait(ty).canvas, 2));
+    port.append(fitFigure(towerPortrait(ty).canvas, 68, 70, 2));
     const nm = h('div', 'p-name');
     nm.append(h('div', 'p-title', t('unlock.title', { name: displayName(ty) })), h('div', 'p-sub', t('unlock.hint')));
     const chip = h('div', 'um-xp');
