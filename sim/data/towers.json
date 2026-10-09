@@ -1,0 +1,1388 @@
+{
+ "ranger": {
+  "name": "Ranger",
+  "price": 200,
+  "radius": 9,
+  "desc": "Cheap and reliable. Shoots piercing arrows at one target.",
+  "base": {
+   "atk": "projectile",
+   "pk": "arrow",
+   "dtype": "sharp",
+   "dmg": 1,
+   "pierce": 2,
+   "interval": 57000,
+   "range": 68000,
+   "speed": 700,
+   "count": 1,
+   "spread": 12
+  },
+  "paths": [
+   {
+    "name": "Volley",
+    "tiers": [
+     {
+      "name": "Sharp Tips",
+      "price": 120,
+      "desc": "Arrows pierce 1 more enemy.",
+      "mods": [
+       {
+        "op": "add",
+        "stat": "pierce",
+        "v": 1
+       }
+      ]
+     },
+     {
+      "name": "Hunter's Arrows",
+      "price": 180,
+      "desc": "Arrows pierce 2 more enemies.",
+      "mods": [
+       {
+        "op": "add",
+        "stat": "pierce",
+        "v": 2
+       }
+      ]
+     },
+     {
+      "name": "Triple Shot",
+      "price": 450,
+      "desc": "Fires 3 arrows in a fan.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "count",
+        "v": 3
+       }
+      ]
+     },
+     {
+      "name": "Arrowstorm",
+      "price": 1300,
+      "desc": "Fires 5 arrows. +1 damage, pierces 2 more.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "count",
+        "v": 5
+       },
+       {
+        "op": "add",
+        "stat": "dmg",
+        "v": 1
+       },
+       {
+        "op": "add",
+        "stat": "pierce",
+        "v": 2
+       }
+      ]
+     },
+     {
+      "name": "Sky Splitter",
+      "price": 4200,
+      "desc": "Seven giant magic arrows. They pierce Ironshell.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "count",
+        "v": 7
+       },
+       {
+        "op": "set",
+        "stat": "spread",
+        "v": 8
+       },
+       {
+        "op": "set",
+        "stat": "pk",
+        "v": "bigArrow"
+       },
+       {
+        "op": "set",
+        "stat": "dmg",
+        "v": 4
+       },
+       {
+        "op": "set",
+        "stat": "pierce",
+        "v": 14
+       },
+       {
+        "op": "set",
+        "stat": "dtype",
+        "v": "magic"
+       },
+       {
+        "op": "set",
+        "stat": "speed",
+        "v": 1000
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "name": "Rapid",
+    "tiers": [
+     {
+      "name": "Quick Draw",
+      "price": 90,
+      "desc": "Shoots faster.",
+      "mods": [
+       {
+        "op": "mul",
+        "stat": "interval",
+        "v": 8500
+       }
+      ]
+     },
+     {
+      "name": "Quicker Draw",
+      "price": 160,
+      "desc": "Shoots even faster.",
+      "mods": [
+       {
+        "op": "mul",
+        "stat": "interval",
+        "v": 8000
+       }
+      ]
+     },
+     {
+      "name": "Repeater",
+      "price": 500,
+      "desc": "Repeating mechanism: much faster, faster arrows.",
+      "mods": [
+       {
+        "op": "mul",
+        "stat": "interval",
+        "v": 6000
+       },
+       {
+        "op": "set",
+        "stat": "speed",
+        "v": 900
+       }
+      ]
+     },
+     {
+      "name": "Volley Captain",
+      "price": 1500,
+      "desc": "Faster still. Ability: Arrow Rain - all Rangers shoot 3x as fast for 6 s.",
+      "mods": [
+       {
+        "op": "mul",
+        "stat": "interval",
+        "v": 8000
+       },
+       {
+        "op": "set",
+        "stat": "rainDur",
+        "v": 360
+       },
+       {
+        "op": "set",
+        "stat": "rainCd",
+        "v": 3000
+       }
+      ]
+     },
+     {
+      "name": "Thousand Arrows",
+      "price": 4600,
+      "desc": "A blur of arrows: 12 shots a second. Arrow Rain lasts 8 s.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "interval",
+        "v": 4800
+       },
+       {
+        "op": "max",
+        "stat": "dmg",
+        "v": 2
+       },
+       {
+        "op": "max",
+        "stat": "pierce",
+        "v": 3
+       },
+       {
+        "op": "set",
+        "stat": "rainDur",
+        "v": 480
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "name": "Eagle Eye",
+    "tiers": [
+     {
+      "name": "Longbow",
+      "price": 80,
+      "desc": "Range +25%.",
+      "mods": [
+       {
+        "op": "mul",
+        "stat": "range",
+        "v": 12500
+       }
+      ]
+     },
+     {
+      "name": "Eagle Eye",
+      "price": 170,
+      "desc": "Spots camouflaged Glims. Range +10%.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "camo",
+        "v": 1
+       },
+       {
+        "op": "mul",
+        "stat": "range",
+        "v": 11000
+       }
+      ]
+     },
+     {
+      "name": "Ballista",
+      "price": 600,
+      "desc": "A ballista bolt: 3 damage, pierces 5, magic. Slower, longer range.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "pk",
+        "v": "bolt"
+       },
+       {
+        "op": "max",
+        "stat": "dmg",
+        "v": 3
+       },
+       {
+        "op": "max",
+        "stat": "pierce",
+        "v": 5
+       },
+       {
+        "op": "set",
+        "stat": "dtype",
+        "v": "magic"
+       },
+       {
+        "op": "mul",
+        "stat": "interval",
+        "v": 13684
+       },
+       {
+        "op": "set",
+        "stat": "speed",
+        "v": 1000
+       },
+       {
+        "op": "mul",
+        "stat": "range",
+        "v": 11500
+       }
+      ]
+     },
+     {
+      "name": "Siege Ballista",
+      "price": 1500,
+      "desc": "Heavy bolts: 7 damage, pierces 10. +4 vs Brutes, +12 vs the Leviathan.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "dmg",
+        "v": 7
+       },
+       {
+        "op": "set",
+        "stat": "pierce",
+        "v": 10
+       },
+       {
+        "op": "add",
+        "stat": "bonusBrute",
+        "v": 4
+       },
+       {
+        "op": "add",
+        "stat": "bonusBoss",
+        "v": 12
+       }
+      ]
+     },
+     {
+      "name": "Starfall Ballista",
+      "price": 4400,
+      "desc": "Bolts hit for 18, pierce 30, +30 vs the Leviathan. Burst in a starry blast at the last hit.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "pk",
+        "v": "starBolt"
+       },
+       {
+        "op": "set",
+        "stat": "dmg",
+        "v": 18
+       },
+       {
+        "op": "set",
+        "stat": "pierce",
+        "v": 30
+       },
+       {
+        "op": "set",
+        "stat": "bonusBoss",
+        "v": 30
+       },
+       {
+        "op": "set",
+        "stat": "endR",
+        "v": 24000
+       },
+       {
+        "op": "set",
+        "stat": "endDmg",
+        "v": 6
+       },
+       {
+        "op": "set",
+        "stat": "endMax",
+        "v": 14
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ },
+ "bombardier": {
+  "name": "Bombardier",
+  "price": 350,
+  "radius": 10,
+  "desc": "Lobs bombs that burst in an area. Cracks armor.",
+  "base": {
+   "atk": "bomb",
+   "pk": "bomb",
+   "dtype": "explosive",
+   "dmg": 1,
+   "radius": 24000,
+   "maxT": 14,
+   "flight": 27,
+   "interval": 90000,
+   "range": 80000
+  },
+  "paths": [
+   {
+    "name": "Bigger Blasts",
+    "tiers": [
+     {
+      "name": "Bigger Bombs",
+      "price": 250,
+      "desc": "Blast radius +30%, hits 8 more enemies.",
+      "mods": [
+       {
+        "op": "mul",
+        "stat": "radius",
+        "v": 13000
+       },
+       {
+        "op": "add",
+        "stat": "maxT",
+        "v": 8
+       }
+      ]
+     },
+     {
+      "name": "Heavy Shells",
+      "price": 400,
+      "desc": "+1 damage.",
+      "mods": [
+       {
+        "op": "add",
+        "stat": "dmg",
+        "v": 1
+       }
+      ]
+     },
+     {
+      "name": "Shellcracker",
+      "price": 1000,
+      "desc": "+4 damage vs Brutes and the Leviathan.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "bonusBrute",
+        "v": 4
+       }
+      ]
+     },
+     {
+      "name": "Siege Mortar",
+      "price": 2600,
+      "desc": "+3 damage, bigger blast, fires faster.",
+      "mods": [
+       {
+        "op": "add",
+        "stat": "dmg",
+        "v": 3
+       },
+       {
+        "op": "mul",
+        "stat": "radius",
+        "v": 12000
+       },
+       {
+        "op": "mul",
+        "stat": "interval",
+        "v": 8500
+       }
+      ]
+     },
+     {
+      "name": "Doomsday Keg",
+      "price": 5200,
+      "desc": "+10 damage, huge blast, +40 vs the Leviathan.",
+      "mods": [
+       {
+        "op": "add",
+        "stat": "dmg",
+        "v": 10
+       },
+       {
+        "op": "mul",
+        "stat": "radius",
+        "v": 14000
+       },
+       {
+        "op": "set",
+        "stat": "bonusBoss",
+        "v": 40
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "name": "Clusters",
+    "tiers": [
+     {
+      "name": "Quick Fuse",
+      "price": 200,
+      "desc": "Fires faster.",
+      "mods": [
+       {
+        "op": "mul",
+        "stat": "interval",
+        "v": 8000
+       }
+      ]
+     },
+     {
+      "name": "Long Barrel",
+      "price": 250,
+      "desc": "Range +20%, bombs fly faster.",
+      "mods": [
+       {
+        "op": "mul",
+        "stat": "range",
+        "v": 12000
+       },
+       {
+        "op": "set",
+        "stat": "flight",
+        "v": 21
+       }
+      ]
+     },
+     {
+      "name": "Cluster Bombs",
+      "price": 750,
+      "desc": "Each blast throws 6 sharp splinters.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "fragN",
+        "v": 6
+       },
+       {
+        "op": "set",
+        "stat": "fragKind",
+        "v": "frag"
+       },
+       {
+        "op": "set",
+        "stat": "fragDmg",
+        "v": 1
+       },
+       {
+        "op": "set",
+        "stat": "fragPierce",
+        "v": 1
+       },
+       {
+        "op": "set",
+        "stat": "fragSpeed",
+        "v": 450
+       },
+       {
+        "op": "set",
+        "stat": "fragRange",
+        "v": 40000
+       },
+       {
+        "op": "set",
+        "stat": "fragDtype",
+        "v": "sharp"
+       }
+      ]
+     },
+     {
+      "name": "Clusterstorm",
+      "price": 2200,
+      "desc": "8 splinters, each one bursts in a tiny blast.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "fragN",
+        "v": 8
+       },
+       {
+        "op": "set",
+        "stat": "fragExplR",
+        "v": 12000
+       },
+       {
+        "op": "set",
+        "stat": "fragExplDmg",
+        "v": 1
+       }
+      ]
+     },
+     {
+      "name": "Bombardment",
+      "price": 4600,
+      "desc": "Fires 2.5x as fast and throws 12 splinters.",
+      "mods": [
+       {
+        "op": "mul",
+        "stat": "interval",
+        "v": 4000
+       },
+       {
+        "op": "set",
+        "stat": "fragN",
+        "v": 12
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "name": "Concussion",
+    "tiers": [
+     {
+      "name": "Wide Range",
+      "price": 150,
+      "desc": "Range +15%.",
+      "mods": [
+       {
+        "op": "mul",
+        "stat": "range",
+        "v": 11500
+       }
+      ]
+     },
+     {
+      "name": "Ringing Blast",
+      "price": 300,
+      "desc": "Stuns hit enemies for 0.3 s (not the Leviathan).",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "stun",
+        "v": 18
+       }
+      ]
+     },
+     {
+      "name": "Concussion Shells",
+      "price": 850,
+      "desc": "Stuns for 1 s (0.2 s on the Leviathan).",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "stun",
+        "v": 60
+       },
+       {
+        "op": "set",
+        "stat": "stunBoss",
+        "v": 12
+       }
+      ]
+     },
+     {
+      "name": "Thunder Cannon",
+      "price": 2400,
+      "desc": "Stuns for 1.5 s (0.5 s Leviathan). Bigger blast, +2 damage.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "stun",
+        "v": 90
+       },
+       {
+        "op": "set",
+        "stat": "stunBoss",
+        "v": 30
+       },
+       {
+        "op": "mul",
+        "stat": "radius",
+        "v": 12500
+       },
+       {
+        "op": "add",
+        "stat": "dmg",
+        "v": 2
+       }
+      ]
+     },
+     {
+      "name": "Earthshaker",
+      "price": 5000,
+      "desc": "Every 3rd shot is a quake: everything in range takes 5 and is stunned for 2 s (1 s Leviathan).",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "quakeEvery",
+        "v": 3
+       },
+       {
+        "op": "set",
+        "stat": "quakeDmg",
+        "v": 5
+       },
+       {
+        "op": "set",
+        "stat": "quakeStun",
+        "v": 120
+       },
+       {
+        "op": "set",
+        "stat": "quakeStunBoss",
+        "v": 60
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ },
+ "frostcaller": {
+  "name": "Frostcaller",
+  "price": 300,
+  "radius": 9,
+  "desc": "Controls the lane. Slows, freezes and shocks.",
+  "base": {
+   "atk": "projectile",
+   "pk": "frost",
+   "dtype": "cold",
+   "dmg": 1,
+   "pierce": 3,
+   "interval": 66000,
+   "range": 72000,
+   "speed": 500,
+   "count": 1,
+   "spread": 12,
+   "slowBp": 3000,
+   "slowTicks": 90
+  },
+  "paths": [
+   {
+    "name": "Permafrost",
+    "tiers": [
+     {
+      "name": "Chill",
+      "price": 120,
+      "desc": "Bolts slow by 45% for 2 s.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "slowBp",
+        "v": 4500
+       },
+       {
+        "op": "set",
+        "stat": "slowTicks",
+        "v": 120
+       }
+      ]
+     },
+     {
+      "name": "Frost Aura",
+      "price": 300,
+      "desc": "Aura: every Glim in range is 25% slower (not the Leviathan).",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "auraSlowBp",
+        "v": 2500
+       }
+      ]
+     },
+     {
+      "name": "Blizzard",
+      "price": 900,
+      "desc": "Aura slows 50% and deals 1 damage every 1.5 s to up to 20 enemies.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "auraSlowBp",
+        "v": 5000
+       },
+       {
+        "op": "set",
+        "stat": "auraDmg",
+        "v": 1
+       },
+       {
+        "op": "set",
+        "stat": "auraInterval",
+        "v": 90
+       },
+       {
+        "op": "set",
+        "stat": "auraMax",
+        "v": 20
+       }
+      ]
+     },
+     {
+      "name": "Glacier Heart",
+      "price": 2400,
+      "desc": "Aura slows 60%, and the Leviathan by 25%.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "auraSlowBp",
+        "v": 6000
+       },
+       {
+        "op": "set",
+        "stat": "auraBossSlowBp",
+        "v": 2500
+       }
+      ]
+     },
+     {
+      "name": "Absolute Zero",
+      "price": 5000,
+      "desc": "Aura damage 2. Ability: Absolute Zero freezes everything for 4 s (Leviathan 1.5 s).",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "auraDmg",
+        "v": 2
+       },
+       {
+        "op": "set",
+        "stat": "azDur",
+        "v": 240
+       },
+       {
+        "op": "set",
+        "stat": "azBoss",
+        "v": 90
+       },
+       {
+        "op": "set",
+        "stat": "azCd",
+        "v": 2700
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "name": "Shatter",
+    "tiers": [
+     {
+      "name": "Frost Nova",
+      "price": 180,
+      "desc": "Bolts burst on the first hit, freezing up to 6 nearby enemies.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "novaR",
+        "v": 16000
+       },
+       {
+        "op": "set",
+        "stat": "novaMax",
+        "v": 6
+       },
+       {
+        "op": "set",
+        "stat": "novaDmg",
+        "v": 1
+       }
+      ]
+     },
+     {
+      "name": "Brittle Ice",
+      "price": 380,
+      "desc": "Slowed enemies take +1 damage from every source.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "brittle",
+        "v": 1
+       }
+      ]
+     },
+     {
+      "name": "Ice Shards",
+      "price": 1000,
+      "desc": "Each nova throws 5 sharp ice shards.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "fragN",
+        "v": 5
+       },
+       {
+        "op": "set",
+        "stat": "fragKind",
+        "v": "shard"
+       },
+       {
+        "op": "set",
+        "stat": "fragDmg",
+        "v": 2
+       },
+       {
+        "op": "set",
+        "stat": "fragPierce",
+        "v": 2
+       },
+       {
+        "op": "set",
+        "stat": "fragSpeed",
+        "v": 400
+       },
+       {
+        "op": "set",
+        "stat": "fragRange",
+        "v": 48000
+       },
+       {
+        "op": "set",
+        "stat": "fragDtype",
+        "v": "sharp"
+       }
+      ]
+     },
+     {
+      "name": "Glacial Spike",
+      "price": 2700,
+      "desc": "Fires faster. +3 damage, +6 vs the Leviathan.",
+      "mods": [
+       {
+        "op": "mul",
+        "stat": "interval",
+        "v": 7000
+       },
+       {
+        "op": "add",
+        "stat": "dmg",
+        "v": 3
+       },
+       {
+        "op": "add",
+        "stat": "bonusBoss",
+        "v": 6
+       }
+      ]
+     },
+     {
+      "name": "Winter's Wrath",
+      "price": 5400,
+      "desc": "+8 damage, 12 shards, nova radius x1.25.",
+      "mods": [
+       {
+        "op": "add",
+        "stat": "dmg",
+        "v": 8
+       },
+       {
+        "op": "set",
+        "stat": "fragN",
+        "v": 12
+       },
+       {
+        "op": "mul",
+        "stat": "novaR",
+        "v": 12500
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "name": "Storm",
+    "tiers": [
+     {
+      "name": "Spark",
+      "price": 200,
+      "desc": "Hits arc as lightning to 2 more enemies.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "sparkN",
+        "v": 2
+       },
+       {
+        "op": "set",
+        "stat": "sparkDmg",
+        "v": 1
+       },
+       {
+        "op": "set",
+        "stat": "chainRange",
+        "v": 40000
+       }
+      ]
+     },
+     {
+      "name": "Storm Sight",
+      "price": 250,
+      "desc": "Spots camouflaged Glims. Range +15%.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "camo",
+        "v": 1
+       },
+       {
+        "op": "mul",
+        "stat": "range",
+        "v": 11500
+       }
+      ]
+     },
+     {
+      "name": "Chain Lightning",
+      "price": 1100,
+      "desc": "Main attack becomes instant chain lightning: 6 targets, 2 damage.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "atk",
+        "v": "chain"
+       },
+       {
+        "op": "set",
+        "stat": "dtype",
+        "v": "energy"
+       },
+       {
+        "op": "set",
+        "stat": "chainN",
+        "v": 6
+       },
+       {
+        "op": "set",
+        "stat": "dmg",
+        "v": 2
+       },
+       {
+        "op": "set",
+        "stat": "interval",
+        "v": 60000
+       },
+       {
+        "op": "set",
+        "stat": "slowBp",
+        "v": 0
+       },
+       {
+        "op": "set",
+        "stat": "sparkN",
+        "v": 0
+       },
+       {
+        "op": "set",
+        "stat": "chainRange",
+        "v": 55000
+       }
+      ]
+     },
+     {
+      "name": "Tempest",
+      "price": 3000,
+      "desc": "Chain of 10, 3 damage, fires much faster.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "chainN",
+        "v": 10
+       },
+       {
+        "op": "set",
+        "stat": "dmg",
+        "v": 3
+       },
+       {
+        "op": "mul",
+        "stat": "interval",
+        "v": 6000
+       }
+      ]
+     },
+     {
+      "name": "Stormcaller",
+      "price": 5800,
+      "desc": "Chain of 18, 6 damage. Every 4 s a thunderclap smites the strongest enemy for 60.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "chainN",
+        "v": 18
+       },
+       {
+        "op": "set",
+        "stat": "dmg",
+        "v": 6
+       },
+       {
+        "op": "set",
+        "stat": "thunderInterval",
+        "v": 240
+       },
+       {
+        "op": "set",
+        "stat": "thunderDmg",
+        "v": 60
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ },
+ "wren": {
+  "name": "Wren",
+  "title": "the Lamplighter",
+  "price": 540,
+  "radius": 10,
+  "desc": "Hero. One per match. Gains XP after every round and levels up to 20.",
+  "base": {
+   "atk": "projectile",
+   "pk": "lantern",
+   "dtype": "magic",
+   "dmg": 1,
+   "pierce": 3,
+   "interval": 48000,
+   "range": 84000,
+   "speed": 600,
+   "count": 1,
+   "spread": 12
+  },
+  "levels": [
+   {
+    "level": 1,
+    "xp": 0,
+    "desc": "Lantern bolts: 1 damage, pierces 3, magic.",
+    "mods": []
+   },
+   {
+    "level": 2,
+    "xp": 100,
+    "desc": "Range +10%.",
+    "mods": [
+     {
+      "op": "mul",
+      "stat": "range",
+      "v": 11000
+     }
+    ]
+   },
+   {
+    "level": 3,
+    "xp": 230,
+    "desc": "Ability: Flare - a light orb on the strongest target: 5 damage in a wide area and reveals camouflage for good.",
+    "mods": [
+     {
+      "op": "set",
+      "stat": "flareDmg",
+      "v": 5
+     },
+     {
+      "op": "set",
+      "stat": "flareR",
+      "v": 40000
+     },
+     {
+      "op": "set",
+      "stat": "flareMax",
+      "v": 30
+     },
+     {
+      "op": "set",
+      "stat": "flareCd",
+      "v": 2400
+     }
+    ]
+   },
+   {
+    "level": 4,
+    "xp": 400,
+    "desc": "Pierce +2.",
+    "mods": [
+     {
+      "op": "add",
+      "stat": "pierce",
+      "v": 2
+     }
+    ]
+   },
+   {
+    "level": 5,
+    "xp": 600,
+    "desc": "Spots camouflaged Glims.",
+    "mods": [
+     {
+      "op": "set",
+      "stat": "camo",
+      "v": 1
+     }
+    ]
+   },
+   {
+    "level": 6,
+    "xp": 850,
+    "desc": "Fires faster.",
+    "mods": [
+     {
+      "op": "mul",
+      "stat": "interval",
+      "v": 8500
+     }
+    ]
+   },
+   {
+    "level": 7,
+    "xp": 1150,
+    "desc": "+1 damage.",
+    "mods": [
+     {
+      "op": "add",
+      "stat": "dmg",
+      "v": 1
+     }
+    ]
+   },
+   {
+    "level": 8,
+    "xp": 1500,
+    "desc": "Bolts set enemies ablaze: 1 damage per second for 3 s.",
+    "mods": [
+     {
+      "op": "set",
+      "stat": "burnDmg",
+      "v": 1
+     },
+     {
+      "op": "set",
+      "stat": "burnTicks",
+      "v": 180
+     }
+    ]
+   },
+   {
+    "level": 9,
+    "xp": 1900,
+    "desc": "Range +10%.",
+    "mods": [
+     {
+      "op": "mul",
+      "stat": "range",
+      "v": 11000
+     }
+    ]
+   },
+   {
+    "level": 10,
+    "xp": 2350,
+    "desc": "Ability: Dawnbreak - a beam of light across the whole path: 20 damage to every enemy, 300 to the Leviathan.",
+    "mods": [
+     {
+      "op": "set",
+      "stat": "dawnDmg",
+      "v": 20
+     },
+     {
+      "op": "set",
+      "stat": "dawnBoss",
+      "v": 300
+     },
+     {
+      "op": "set",
+      "stat": "dawnCd",
+      "v": 3600
+     }
+    ]
+   },
+   {
+    "level": 11,
+    "xp": 2850,
+    "desc": "Pierce +3.",
+    "mods": [
+     {
+      "op": "add",
+      "stat": "pierce",
+      "v": 3
+     }
+    ]
+   },
+   {
+    "level": 12,
+    "xp": 3400,
+    "desc": "Aura: towers within 84 px shoot 10% faster.",
+    "mods": [
+     {
+      "op": "set",
+      "stat": "buffRadius",
+      "v": 84000
+     },
+     {
+      "op": "set",
+      "stat": "buffSpeedBp",
+      "v": 1000
+     }
+    ]
+   },
+   {
+    "level": 13,
+    "xp": 4000,
+    "desc": "+1 damage.",
+    "mods": [
+     {
+      "op": "add",
+      "stat": "dmg",
+      "v": 1
+     }
+    ]
+   },
+   {
+    "level": 14,
+    "xp": 4650,
+    "desc": "Fires faster.",
+    "mods": [
+     {
+      "op": "mul",
+      "stat": "interval",
+      "v": 8500
+     }
+    ]
+   },
+   {
+    "level": 15,
+    "xp": 5300,
+    "desc": "Flare: 15 damage, cooldown 30 s.",
+    "mods": [
+     {
+      "op": "set",
+      "stat": "flareDmg",
+      "v": 15
+     },
+     {
+      "op": "set",
+      "stat": "flareCd",
+      "v": 1800
+     }
+    ]
+   },
+   {
+    "level": 16,
+    "xp": 5950,
+    "desc": "Burn deals 3 damage per second.",
+    "mods": [
+     {
+      "op": "set",
+      "stat": "burnDmg",
+      "v": 3
+     }
+    ]
+   },
+   {
+    "level": 17,
+    "xp": 6600,
+    "desc": "Aura also grants +10% range.",
+    "mods": [
+     {
+      "op": "set",
+      "stat": "buffRangeBp",
+      "v": 1000
+     }
+    ]
+   },
+   {
+    "level": 18,
+    "xp": 7200,
+    "desc": "+2 damage.",
+    "mods": [
+     {
+      "op": "add",
+      "stat": "dmg",
+      "v": 2
+     }
+    ]
+   },
+   {
+    "level": 19,
+    "xp": 7750,
+    "desc": "Fires faster.",
+    "mods": [
+     {
+      "op": "mul",
+      "stat": "interval",
+      "v": 8000
+     }
+    ]
+   },
+   {
+    "level": 20,
+    "xp": 8250,
+    "desc": "Dawnbreak: 60 damage (1200 to the Leviathan), cooldown 45 s.",
+    "mods": [
+     {
+      "op": "set",
+      "stat": "dawnDmg",
+      "v": 60
+     },
+     {
+      "op": "set",
+      "stat": "dawnBoss",
+      "v": 1200
+     },
+     {
+      "op": "set",
+      "stat": "dawnCd",
+      "v": 2700
+     }
+    ]
+   }
+  ]
+ }
+}
