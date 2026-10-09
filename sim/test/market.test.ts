@@ -36,23 +36,23 @@ describe('Daten', () => {
   });
 
   it('Einkommen je Stufe (Pfad A: 90 / 130 / 320 / 900 / 2400, Pfad B1 +20)', () => {
-    expect([0, 1, 2, 3, 4, 5].map((n) => statsOf('market', [n, 0, 0]).income)).toEqual([60, 90, 130, 320, 900, 2400]);
-    expect(statsOf('market', [0, 1, 0]).income).toBe(80);
-    expect(statsOf('market', [2, 1, 0]).income).toBe(150);
+    expect([0, 1, 2, 3, 4, 5].map((n) => statsOf('market', [n, 0, 0]).income)).toEqual([80, 120, 170, 420, 1180, 3100]);
+    expect(statsOf('market', [0, 1, 0]).income).toBe(105);
+    expect(statsOf('market', [2, 1, 0]).income).toBe(195);
   });
 });
 
 describe('Einkommen am Rundenende', () => {
-  it('Basis +60 mit Event (Betrag + Turm-ID), zusätzlich zum Rundenbonus', () => {
+  it('Basis +80 mit Event (Betrag + Turm-ID), zusätzlich zum Rundenbonus', () => {
     const g = newGame();
     const id = market(g);
     const cash0 = g.state.cash;
     const ev = clearRound(g);
     const inc = incomeEv(ev);
     expect(inc).toHaveLength(1);
-    expect(inc[0]).toMatchObject({ tower: id, round: 1, amount: 60, cash: 60, bank: 0 });
-    expect(g.state.cash).toBe(cash0 + 60 + 101 + popCash(ev)); // Einkommen + Rundenbonus 100 + Runde + Pop-Gold
-    expect(g.state.stats.income).toBe(60);
+    expect(inc[0]).toMatchObject({ tower: id, round: 1, amount: 80, cash: 80, bank: 0 });
+    expect(g.state.cash).toBe(cash0 + 80 + 101 + popCash(ev)); // Einkommen + Rundenbonus 100 + Runde + Pop-Gold
+    expect(g.state.stats.income).toBe(80);
     // Event liegt vor roundEnd
     const idxInc = ev.findIndex((e) => e.type === 'income');
     const idxEnd = ev.findIndex((e) => e.type === 'roundEnd');
@@ -64,7 +64,7 @@ describe('Einkommen am Rundenende', () => {
     const a = market(g, [3, 0, 0], 60, 200);
     const b = market(g, [0, 1, 0], 30, 240);
     const inc = incomeEv(clearRound(g));
-    expect(inc.map((e) => [e.tower, e.amount])).toEqual([[a, 320], [b, 80]]);
+    expect(inc.map((e) => [e.tower, e.amount])).toEqual([[a, 420], [b, 105]]);
     expect(g.state.towers.find((t) => t.id === a)!.pops).toBe(0);
   });
 
@@ -73,36 +73,36 @@ describe('Einkommen am Rundenende', () => {
     const id = market(g, [2, 0, 0]);
     const r = place(g, 'ranger', 60, 122);
     expect(g.marketInfo(r)).toBeNull();
-    expect(g.marketInfo(id)).toMatchObject({ income: 130, hasBank: false, bank: 0, grantCash: 0, radius: 80000 });
+    expect(g.marketInfo(id)).toMatchObject({ income: 170, hasBank: false, bank: 0, grantCash: 0, radius: 80000 });
   });
 
   it('Golden Exchange: andere Markets +10 %, er selbst nicht; zwei Golden Exchanges stapeln nicht', () => {
     const g = newGame({ mods: { startCash: 200000 } });
     const gold = market(g, [5, 0, 0], 60, 200);
     const other = market(g, [0, 0, 0], 30, 240);
-    expect(g.marketInfo(other)!.income).toBe(66);
-    expect(g.marketInfo(gold)!.income).toBe(2400 + 0);
+    expect(g.marketInfo(other)!.income).toBe(88);
+    expect(g.marketInfo(gold)!.income).toBe(3100 + 0);
     const gold2 = market(g, [5, 0, 0], 60, 250);
-    expect(g.marketInfo(other)!.income).toBe(66);
-    expect(g.marketInfo(gold)!.income).toBe(2640); // der andere Golden Exchange zählt
-    expect(g.marketInfo(gold2)!.income).toBe(2640);
+    expect(g.marketInfo(other)!.income).toBe(88);
+    expect(g.marketInfo(gold)!.income).toBe(3410); // der andere Golden Exchange zählt
+    expect(g.marketInfo(gold2)!.income).toBe(3410);
   });
 });
 
 describe('Bank', () => {
   it('Lockbox: Einnahmen und Zinsen landen im Konto, Zinsen auf das alte Konto, Deckel, Überlauf als Geld', () => {
     const g = newGame({ mods: { startCash: 200000 } });
-    const id = market(g, [3, 2, 0]); // 60 + 190 + 20 = 270? A3 = 320 (+ B1 20) = 340
+    const id = market(g, [3, 2, 0]); // A3 = 420 (+ B1 25) = 445 (Runde 13: Market-Ertrag +30 %)
     const t = g.state.towers.find((x) => x.id === id)!;
-    expect(g.marketInfo(id)).toMatchObject({ income: 340, hasBank: true, bankRateBp: 1000, bankCap: 3000 });
+    expect(g.marketInfo(id)).toMatchObject({ income: 445, hasBank: true, bankRateBp: 1000, bankCap: 3000 });
     let cash = g.state.cash;
-    let ev = clearRound(g); // Runde 1: Konto 340, Geld nur Rundenbonus
-    expect(incomeEv(ev)[0]).toMatchObject({ amount: 340, cash: 0, bank: 340 });
-    expect(t.bank).toBe(340);
+    let ev = clearRound(g); // Runde 1: Konto 445, Geld nur Rundenbonus
+    expect(incomeEv(ev)[0]).toMatchObject({ amount: 445, cash: 0, bank: 445 });
+    expect(t.bank).toBe(445);
     expect(g.state.cash - cash - popCash(ev)).toBe(101);
-    ev = clearRound(g); // Runde 2: Zinsen 34 auf 340, +340
-    expect(incomeEv(ev)[0]).toMatchObject({ amount: 340 + 34, cash: 0, bank: 714 });
-    expect(g.marketInfo(id)!.nextInterest).toBe(71);
+    ev = clearRound(g); // Runde 2: Zinsen 44 auf 445, +445
+    expect(incomeEv(ev)[0]).toMatchObject({ amount: 445 + 44, cash: 0, bank: 934 });
+    expect(g.marketInfo(id)!.nextInterest).toBe(93);
     // bis über den Deckel
     for (let i = 0; i < 6; i++) clearRound(g);
     expect(t.bank).toBe(3000);
@@ -110,7 +110,7 @@ describe('Bank', () => {
     ev = clearRound(g);
     const e = incomeEv(ev)[0];
     expect(e.bank).toBe(3000);
-    expect(e.cash).toBe(300 + 340); // Zinsen auf 3000 plus Einnahmen laufen komplett über
+    expect(e.cash).toBe(300 + 445); // Zinsen auf 3000 plus Einnahmen laufen komplett über
     expect(g.state.cash - cash - popCash(ev)).toBe(e.cash + 100 + g.state.round);
   });
 
@@ -143,11 +143,11 @@ describe('Bank', () => {
     const t = g.state.towers.find((x) => x.id === id)!;
     const spent = t.spent;
     expect(spent).toBe(1000 + 300 + 500);
-    expect(t.bank).toBe(80);
-    expect(g.sellValue(id)).toBe(Math.ceil(spent * 0.7) + 80);
+    expect(t.bank).toBe(105);
+    expect(g.sellValue(id)).toBe(Math.ceil(spent * 0.7) + 105);
     const cash = g.state.cash;
     expect(g.apply({ type: 'sell', towerId: id }).ok).toBe(true);
-    expect(g.state.cash).toBe(cash + Math.ceil(spent * 0.7) + 80);
+    expect(g.state.cash).toBe(cash + Math.ceil(spent * 0.7) + 105);
   });
 
   it('Stufen: Lantern Bank 15 % / 7.000, Treasury 20 % / 20.000', () => {
@@ -160,8 +160,8 @@ describe('Bank', () => {
     expect(g.priceOf('market')).toBe(900);
     const plain = market(g, [0, 0, 0], 60, 200);
     const bank = market(g, [0, 2, 0], 30, 240);
-    expect(g.marketInfo(plain)).toMatchObject({ income: 66, bankRateBp: 0, radius: 92000 });
-    expect(g.marketInfo(bank)).toMatchObject({ income: 88, bankRateBp: 1500 }); // (60 + 20) x 1,1
+    expect(g.marketInfo(plain)).toMatchObject({ income: 88, bankRateBp: 0, radius: 92000 });
+    expect(g.marketInfo(bank)).toMatchObject({ income: 115, bankRateBp: 1500 }); // (80 + 25) x 1,1
     expect(g.priceOf('ranger')).toBe(200); // Rabatt nur für Markets
   });
 });

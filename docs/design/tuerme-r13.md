@@ -126,3 +126,9 @@ Ast-Farben, gesperrte Knoten grau mit Schloss, Linien zeigen Voraussetzungen.
 
 Ranger 1 · Bombardier 2 · Wren 3 · Frostcaller 4 · **Longshot 5** · **Market 6** · Hard 5 · (R14: Thornweaver 7, Alchemist 9).
 Bestehende Profile über Level 5/6 bekommen die neuen Türme sofort.
+
+## Nachtrag nach Runde 13 A (Hauptsitzung)
+
+Bot-Matrix: der Market spielte seine Kosten selbst früh gebaut nur knapp wieder ein. **Ertrag +30 %:** Basis 80, A1 +40 (120),
+A2 +50 (170), A3 420, A4 1.180, A5 3.100, B1 +25. Abweichungen von A (globale Fähigkeiten, 28 Knoten, Ricochet-Details …):
+`sim/README.md` Abschnitt „Runde 13“.
