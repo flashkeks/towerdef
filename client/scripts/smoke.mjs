@@ -1,5 +1,5 @@
 // Smoke-Test (Runde 11 / P3): startet `vite preview` auf dist/ und spielt in Chromium:
-// Startbildschirm -> Match -> Turm per Mausklick platzieren -> Upgrade-Panel -> Runde starten -> Gegner laufen -> keine Konsolenfehler.
+// Startbildschirm -> Match -> Turm per Mausklick platzieren -> Upgrade-Panel -> Runde starten -> Gegner laufen -> ein paar Runden auf 3x -> keine Konsolenfehler.
 // Aufruf: npm run build && npm run smoke
 import { launch, serve, watchErrors } from './lib-serve.mjs';
 
@@ -48,6 +48,15 @@ try {
   check(true, 'Runde 1 gestartet, Gegner laufen');
   await page.waitForTimeout(2500);
   check(await page.evaluate(() => __dw.game.state.stats.leaked >= 0), 'Sim laeuft weiter');
+  // ein paar Runden auf 3x mit Auto-Start (Tempo-Knopf per Klick), dann Pause per Taste und wieder weiter
+  await page.locator('.m-speed button, .m-side button', { hasText: '3x' }).first().click();
+  await page.locator('.m-toggle').first().click();
+  await page.waitForFunction(() => __dw.game.state.round >= 4 && __dw.game.state.phase !== 'lost', null, { timeout: 60000 });
+  check(true, 'mehrere Runden auf 3x gespielt (Runde ' + (await page.evaluate(() => __dw.game.state.round)) + ')');
+  await page.keyboard.press('p');
+  const t0 = await page.evaluate(() => __dw.game.state.tick);
+  await page.waitForTimeout(600);
+  check((await page.evaluate(() => __dw.game.state.tick)) === t0, 'Pause haelt die Sim an');
   check(errors.length === 0, `keine Konsolenfehler (${errors.join(' | ')})`);
 } finally {
   await browser.close();

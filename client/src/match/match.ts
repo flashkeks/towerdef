@@ -77,6 +77,8 @@ class Match {
   private mouse: { x: number; y: number } | null = null;
   private speed = 1;
   private paused = false;
+  /** Debug: [Sim ms, Sync ms, Render ms, Schritte] je Bild */
+  readonly perf: number[][] = [];
   private readonly matchId: string;
   private acc = 0;
   private raf = 0;
@@ -352,6 +354,7 @@ class Match {
     const dtMs = Math.min(100, now - this.last);
     this.last = now;
     const g = this.game;
+    const t0 = this.opts.debug ? performance.now() : 0;
     let steps = 0;
     if (!this.paused && !this.ended) {
       this.acc += (dtMs / 1000) * TICKS_PER_S * this.speed;
@@ -366,9 +369,12 @@ class Match {
       }
       if (this.acc > cap) this.acc = 0;
     }
+    const t1 = this.opts.debug ? performance.now() : 0;
     this.r.setLatest(g.state);
     this.r.sync(g.state, this.paused ? 1 : Math.min(1, this.acc), dtMs);
+    const t2 = this.opts.debug ? performance.now() : 0;
     this.r.update(this.paused ? 0 : dtMs * 0.06 * this.speed);
+    if (this.opts.debug) this.perf.push([t1 - t0, t2 - t1, performance.now() - t2, steps]);
     this.hud(g.state);
     this.panel.update(g.state);
     if (this.placing) this.updateGhost();

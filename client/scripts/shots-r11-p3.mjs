@@ -99,6 +99,20 @@ try {
     console.log('boss', errors.length ? errors : 'ok');
     await page.close();
   }
+
+  // 4b) Boss-Banner der letzten Runde (Runde 20)
+  {
+    const { page, errors } = await open(ctx, '?debug&diff=easy&seed=5');
+    await page.addScriptTag({ content: bot });
+    await page.evaluate(() => window.__bot(19));
+    await page.evaluate(() => { __dw.game.sandbox.setCash(9000); __dw.game.apply({ type: 'autoStart', on: false }); });
+    for (let i = 0; i < 400 && (await page.evaluate(() => __dw.game.state.phase)) === 'wave'; i++) { await page.evaluate(() => __dw.match.skip(30)); }
+    await page.evaluate(() => __dw.game.apply({ type: 'startRound' }));
+    await page.waitForTimeout(700);
+    await page.screenshot({ path: `${out}/p3-boss-banner.png` });
+    console.log('boss-banner', errors.length ? errors : 'ok');
+    await page.close();
+  }
   await ctx.close();
 
   // 5) Video: Turme setzen, Runde starten, Upgrade, 2x
