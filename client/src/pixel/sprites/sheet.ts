@@ -26,7 +26,7 @@ function tile(g: CanvasRenderingContext2D, x: number, y: number, w: number, h: n
   g.fillStyle = col; g.fillRect(x, y, w, h);
 }
 
-const NAMES: Record<TowerType, string[][]> = {
+const NAMES: Record<string, string[][]> = {
   ranger: [
     ['Base', 'Sharp Tips', "Hunter's Arrows", 'Triple Shot', 'Arrowstorm', 'Sky Splitter'],
     ['Base', 'Quick Draw', 'Quicker Draw', 'Repeater', 'Volley Captain', 'Thousand Arrows'],
@@ -53,6 +53,19 @@ const NAMES: Record<TowerType, string[][]> = {
     ['Base', 'Shrapnel', 'Ricochet', 'Supply Drop', 'Elite Sniper', 'Crippling Shot'],
   ],
 };
+const NAMES14: Record<'thornweaver' | 'alchemist', string[][]> = {
+  thornweaver: [
+    ['Base', 'Hard Thorns', 'Heart of Thunder', 'Tempest', 'Storm Mother', 'Avatar of Wrath'],
+    ['Base', 'Thorn Burst', 'Vine Snare', 'Wall of Trees', 'Spirit of the Forest', 'World Tree'],
+    ['Base', 'Druidic Reach', 'Herbal Lore', "Jungle's Bounty", 'Spring Blessing', 'Grove Guardian'],
+  ],
+  alchemist: [
+    ['Base', 'Larger Potions', 'Acidic Mixture', 'Berserker Brew', 'Stronger Stimulant', 'Permanent Brew'],
+    ['Base', 'Stronger Acid', 'Perishing Potions', 'Unstable Concoction', 'Transforming Tonic', 'Total Transformation'],
+    ['Base', 'Faster Throwing', 'Acid Pool', 'Lead to Gold', 'Rubber to Gold', 'Shrink Potion'],
+  ],
+};
+Object.assign(NAMES, NAMES14);
 const MIX: Tiers[] = [[3, 2, 0], [0, 2, 4], [2, 0, 5], [4, 0, 2], [0, 3, 2], [1, 1, 1], [5, 2, 0], [2, 5, 0]];
 
 function sheetTowers(types: TowerType[]): HTMLCanvasElement {
@@ -430,7 +443,136 @@ function sheetProjR13(): HTMLCanvasElement {
   return c;
 }
 
+function sheetR14(type: 'thornweaver' | 'alchemist'): HTMLCanvasElement {
+  const K = 3, CW = 100 * K, CH = 80 * K;
+  const base = sheetPaths(type, K, CW, CH);
+  const atk: Tiers[] = [[0, 0, 0], [3, 0, 0], [0, 4, 0], [0, 0, 5], [5, 0, 0]];
+  const { c, g } = mk(Math.max(base.width, 6 * CW + 20), base.height + 4 * CH + 20);
+  g.drawImage(base, 0, 0);
+  let y = base.height - 10;
+  atk.slice(0, 4).forEach((t, k) => {
+    (['atk0', 'atk1', 'atk2', 'atk3', 'idle0', 'idle2'] as TowerFrame[]).forEach((f, i) => {
+      const x = 10 + i * CW, yy = y + k * CH;
+      tile(g, x, yy, CW - 4, CH - 4);
+      blit(g, api.towerSprite(type, t, 0, f), x + (CW - 4) / 2, yy + CH - 4 - 6 * K, K);
+      label(g, `${t.join('-')} ${f}`, x + 5, yy + 14, '#ffffff');
+    });
+  });
+  y += 4 * CH;
+  const dirsT: Tiers[] = [[3, 2, 0], [0, 5, 0]];
+  const cw = 70 * K;
+  const { c: c2, g: g2 } = mk(c.width, y + 2 * CH + 10);
+  g2.drawImage(c, 0, 0);
+  dirsT.forEach((t, k) => { for (let d = 0; d < 8; d++) {
+    const x = 10 + d * cw, yy = y + k * CH;
+    tile(g2, x, yy, cw - 4, CH - 4);
+    blit(g2, api.towerSprite(type, t, d, 'atk1'), x + (cw - 4) / 2, yy + CH - 4 - 6 * K, K);
+    label(g2, `${t.join('-')} facing ${d}`, x + 5, yy + 14, '#ffffff');
+  } });
+  return c2;
+}
+
+function sheetFxR14a(): HTMLCanvasElement {
+  const { c, g } = mk(1900, 2650);
+  let y = 10;
+  const row = (title: string, count: number, make: (f: number) => api.Sprite, k: number, cw: number, ch: number, bg = '#3e8948', foot = false): void => {
+    label(g, title, 10, y + 12, '#fff');
+    for (let f = 0; f < count; f++) {
+      tile(g, 10 + f * cw, y + 18, cw - 4, ch - 4, bg);
+      blit(g, make(f), 10 + f * cw + (cw - 4) / 2, foot ? y + 18 + ch - 4 - 10 * k : y + 18 + (ch - 4) / 2, k);
+    }
+    y += ch + 24;
+  };
+  const path = '#8a6a48';
+  // Thornweaver
+  label(g, 'Projektile: Dorn, Dorn (magic), Trank, Gold-Trank in 16 Richtungen / 16 Drehungen', 10, y + 12, '#fff');
+  (['thorn', 'thornMagic', 'potion', 'potionGold'] as const).forEach((kd, i) => { for (let d = 0; d < 16; d++) { tile(g, 10 + d * 62, y + 18 + i * 62, 58, 58); blit(g, api.projectileSprite(kd, d), 10 + d * 62 + 29, y + 18 + i * 62 + 29, 2); } });
+  y += 4 * 62 + 28;
+  label(g, 'Blitzbogen (Wolke -> 3 Ziele; gross), Frame 0..3', 10, y + 12, '#fff');
+  for (let f = 0; f < 4; f++) { tile(g, 10 + f * 330, y + 18, 326, 150, path); blit(g, api.fx.stormArc([[20, 20], [120, 90], [200, 40], [290, 110]], f, f > 1), 10 + f * 330 + 6, y + 24, 1); }
+  y += 150 + 28;
+  row('Wirbelwind 6 Frames', 6, (f) => api.fx.whirlwind(f), 3, 160, 190, path, true);
+  row('Ranken-Fessel am Gegner (Red, Brute), 4 Frames', 4, (f) => api.fx.vineSnare(f), 4, 150, 180, path, true);
+  row('Baumwand: Abnutzung 0..3 (Frame 0), waechst 0..5', 4, (f) => api.fx.treeWall(f, 0), 3, 210, 190, path, true);
+  y -= 214;
+  for (let f = 0; f < 6; f++) { tile(g, 860 + f * 170, y + 18, 166, 190, path); blit(g, api.fx.treeWallGrow(f), 860 + f * 170 + 83, y + 18 + 190 - 4 - 10 * 2, 2); }
+  y += 214;
+  label(g, 'Dornenranken-Zone r40 (4 Frames), Weltenbaum-Zone r72 (4 Frames)', 10, y + 12, '#fff');
+  for (let f = 0; f < 4; f++) { tile(g, 10 + f * 140, y + 18, 136, 136, path); blit(g, api.fx.thornZone(40, f), 10 + f * 140 + 68, y + 18 + 68, 1.5); }
+  for (let f = 0; f < 4; f++) { tile(g, 590 + f * 300, y + 18, 296, 296, path); blit(g, api.fx.worldTreeZone(72, f), 590 + f * 300 + 148, y + 18 + 148, 2); }
+  y += 330;
+  // Alchemist
+  row('Saeurespritzer r20, 5 Frames', 5, (f) => api.fx.acidSplash(20, f), 3, 170, 150, path);
+  label(g, 'Saeure-Markierung (vor Red / Brute), Pfuetze r14 / r24', 10, y + 12, '#fff');
+  for (let f = 0; f < 4; f++) { tile(g, 10 + f * 120, y + 18, 116, 116, path); blit(g, api.enemySprite('red', f), 10 + f * 120 + 58, y + 18 + 82, 3); blit(g, api.fx.acidMark(f), 10 + f * 120 + 58, y + 18 + 64, 3); }
+  for (let f = 0; f < 4; f++) { tile(g, 500 + f * 120, y + 18, 116, 116, path); blit(g, api.fx.acidPool(14, f), 500 + f * 120 + 58, y + 18 + 58, 3); }
+  for (let f = 0; f < 4; f++) { tile(g, 990 + f * 190, y + 18, 186, 116, path); blit(g, api.fx.acidPool(24, f), 990 + f * 190 + 93, y + 18 + 58, 3); }
+  y += 140;
+  row('Buff-Glanz Brew', 6, (f) => api.fx.buffGlow(f, 'brew'), 3, 190, 230, path, true);
+  row('Buff-Glanz Stimulant', 6, (f) => api.fx.buffGlow(f, 'stimulant'), 3, 190, 230, path, true);
+  row('Buff-Glanz Permanent Brew (laeuft im Kreis)', 6, (f) => api.fx.buffGlow(f, 'permanent'), 3, 190, 230, path, true);
+  return c;
+}
+
+function sheetFxR14b(): HTMLCanvasElement {
+  const { c, g } = mk(1900, 2000);
+  let y = 10;
+  const path = '#8a6a48';
+  const row = (title: string, count: number, make: (f: number) => api.Sprite, k: number, cw: number, ch: number, bg = path, foot = false): void => {
+    label(g, title, 10, y + 12, '#fff');
+    for (let f = 0; f < count; f++) {
+      tile(g, 10 + f * cw, y + 18, cw - 4, ch - 4, bg);
+      blit(g, make(f), 10 + f * cw + (cw - 4) / 2, foot ? y + 18 + ch - 4 - 8 * k : y + 18 + (ch - 4) / 2, k);
+    }
+    y += ch + 24;
+  };
+  row('Todesexplosion r24, 5 Frames', 5, (f) => api.fx.deathBlast(f, 24), 3, 170, 150);
+  row('Monster-Verwandlung, 8 Frames', 8, (f) => api.fx.monsterTransform(f), 2, 200, 190, path, true);
+  row('Schrumpf: Red / Ironshell, 6 Frames', 6, (f) => api.fx.shrink('ironshell', f), 4, 190, 200, path, true);
+  row('Schrumpf: Brute', 6, (f) => api.fx.shrink('brute', f), 4, 190, 200, path, true);
+  row('Lead to Gold, 6 Frames', 6, (f) => api.fx.goldBurst('lead', f), 4, 190, 200);
+  row('Rubber to Gold, 6 Frames', 6, (f) => api.fx.goldBurst('rubber', f), 4, 190, 200);
+  label(g, 'Monster: idle0-3, atk0-3 (rechts), klein (0.6), Blick N/S', 10, y + 12, '#fff');
+  const fr: api.TowerFrame[] = ['idle0', 'idle1', 'idle2', 'idle3', 'atk0', 'atk1', 'atk2', 'atk3'];
+  fr.forEach((f, i) => { tile(g, 10 + i * 230, y + 18, 226, 210, path); blit(g, api.monsterSprite(0, f), 10 + i * 230 + 113, y + 18 + 200, 2.4); });
+  y += 240;
+  [2, 6, 3, 5].forEach((d, i) => { tile(g, 10 + i * 230, y + 18, 226, 210, path); blit(g, api.monsterSprite(d, 'idle1'), 10 + i * 230 + 113, y + 18 + 200, 2.4); });
+  [0.6, 0.45].forEach((sc, i) => { tile(g, 940 + i * 230, y + 18, 226, 210, path); blit(g, api.monsterSprite(0, 'idle1', sc), 940 + i * 230 + 113, y + 18 + 200, 3); });
+  return c;
+}
+
+function sheetIconsR14(): HTMLCanvasElement {
+  const K = 5, S = 16 * K + 24;
+  const types: ('thornweaver' | 'alchemist')[] = ['thornweaver', 'alchemist'];
+  const { c, g } = mk(2 * (5 * S + 40) + 20, 3 * S + 220);
+  types.forEach((t, ti) => {
+    const x0 = 10 + ti * (5 * S + 40);
+    label(g, t, x0, 14, '#fee761', 'bold 13px monospace');
+    for (let p = 0; p < 3; p++) for (let n = 1; n <= 5; n++) {
+      blit(g, api.iconUpgrade(t, p as 0, n), x0 + (n - 1) * S, 24 + p * S, K);
+      label(g, NAMES[t][p][n].slice(0, 13), x0 + (n - 1) * S, 24 + p * S + 16 * K + 12, '#c0cbdc', '9px monospace');
+    }
+  });
+  const y = 3 * S + 50;
+  label(g, 'Abilities Wall of Trees / Transforming Tonic, Portraits Thornweaver / Alchemist (x4)', 10, y, '#fff');
+  (['wallOfTrees', 'transformingTonic'] as const).forEach((a, i) => blit(g, api.iconAbility(a), 10 + i * S, y + 12, K));
+  (['thornweaver', 'alchemist'] as const).forEach((t, i) => { tile(g, 200 + i * 190, y + 8, 180, 150, '#3e8948'); blit(g, api.towerPortrait(t), 200 + i * 190 + 90, y + 8 + 140, 4); });
+  return c;
+}
+
+function sheetFxR14(): HTMLCanvasElement {
+  const a = sheetFxR14a(), b = sheetFxR14b();
+  const { c, g } = mk(Math.max(a.width, b.width), a.height + b.height);
+  g.drawImage(a, 0, 0); g.drawImage(b, 0, a.height);
+  return c;
+}
+
 const sheets: Record<string, () => HTMLCanvasElement> = {
+  fxr14: sheetFxR14,
+  fxr14b: sheetFxR14b,
+  iconsr14: sheetIconsR14,
+  thornweaver: () => sheetR14('thornweaver'),
+  alchemist: () => sheetR14('alchemist'),
   zoom: sheetZoom,
   towers: () => sheetTowers(['ranger', 'bombardier', 'frostcaller']),
   tower: () => sheetTowers([(arg as TowerType) ?? 'ranger']),
