@@ -42,6 +42,11 @@ Nichts deployen ohne Ansage von Max.
 
 **Falle Smoke parallel:** Alle Agenten teilen den Smoke-Port 4173 (`--strictPort`) und `pkill -f scripts/smoke.mjs` trifft fremde Läufe. Parallel immer `SMOKE_PORT=<eigener> npm run smoke`, nie pauschal killen. Smoke schreibt die Alt-Screenshots `client/docs/r8`, `r9` jedes Mal neu: vor dem Commit zurücksetzen.
 
+**Antwort der Homelab-Seite (09.10.2026):** Alle 600 Porträts liegen auf der Preview unter `/aa/units/<id>.webp`
+(256×256, AniList/Wikipedia/Fandom, keine AA-Bilder mehr). **Groß:** `/aa/units-lg/<id>.webp` im
+**Original-Hochformat 230×345** (AniList gibt nicht mehr her, 512 px wäre hochskaliert und matschig) — für 575 IDs,
+nicht für die 25 Crossover `x_*`; `/aa/index.json` sagt je ID `lg: true/false`. Preview steht auf `aa72d10`.
+
 **Offene Fragen an die Menschen (Runde 10, Empfehlung zuerst):**
 - **„Daily Pack“ = Starter-Paket?** Eine echte Tagesbelohnung gibt es im Code nicht; P3 hat das Starter-Paket (12 Units + Crystals) als das gemeinte Paket genommen. Empfehlung: so lassen; eine echte Tagesbelohnung wäre Meta-Arbeit (Schema 4) für Runde 11. → **entschieden (Max, 09.10.2026): echte Tagesbelohnung in Runde 11.**
 - **Prüfung Homelab (09.10.2026):** `noro` → Orochimaru ist vermutlich falsch umgemünzt: Noro ist eine echte Figur aus Tokyo Ghoul (Aogiri). Rest der Umgemünzten ok.
