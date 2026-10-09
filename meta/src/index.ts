@@ -1,5 +1,8 @@
 /**
  * Duskwardens-Meta (ohne DOM): Spieler-Level, Turm-XP, Wissensbaum, Medaillen, Speicherstand.
- * Runde 11 / P0: Platzhalter; P4 baut das neue Schema (docs/design/meta.md). Alte Spielstaende werden zurueckgesetzt.
+ * Entwurf und Zahlen: docs/design/meta.md. Alte Staende (Schema != 11) werden beim Laden zurueckgesetzt.
  */
-export const SAVE_SCHEMA = 11;
+export * from './data';
+export * from './profile';
+export * from './progress';
+export * from './io';
