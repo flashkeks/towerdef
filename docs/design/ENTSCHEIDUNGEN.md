@@ -4,6 +4,13 @@ Verbindlich für alle weiteren Runden. Die beantwortete Fragenliste liegt in
 `docs/design/FRAGEN.md`. Hier steht die Auslegung, nach der gearbeitet wird.
 Änderungen nur durch die Menschen.
 
+## Nach Runde 14 (Max, 10.10.2026)
+
+Wissensbaum soll ein **schönes, zusammenhängendes Menü** sein (nicht einzelne Boxen), breiter, alle Äste ohne Scrollen; Turmbilder in der
+Leiste größer und mittig. Weiter mit **mehr Gegnern, mehr Helden, mehr Türmen** und mehr Karten (Leiter Beginner → Advanced, erste Karte
+bleibt einfach, Easy/Medium/Hard je Karte, Zusatzmodi wie „nur bestimmte Türme“). Reihenfolge Hauptsitzung: **Runde 15 Karten + Gegner + Modi**
+(`karten-gegner-r15.md`), **Runde 16 Helden + Türme**.
+
 ## Mehr Türme, keine Plattformen (Max, 09.10.2026 spät, nach Runde 12)
 
 „Sehr gut gemacht bis jetzt.“ Nächster Schritt: **mehr Türme** (gewählt: Lantern Market, Longshot, Thornweaver, Alchemist — „gerne noch
