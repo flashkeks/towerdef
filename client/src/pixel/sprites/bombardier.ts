@@ -1,10 +1,11 @@
 /** Bombardier: stämmiger Lanternfolk mit Fliegerbrille und Messingkanone. 15 Stufen sichtbar. */
-import { bolt, flame, orbit, pedestal, spark, tube } from './parts';
+import { bolt, flame, orbit, spark, tube } from './parts';
+import { drawGear, growOf, widthOf } from './gear';
 import { drawArm } from './bows';
 import type { Dir, Pose } from './pose';
 import { RAMPS, type Ramp, Surface } from './surface';
 import type { Tiers } from './types';
-import { GY, mainPath, OX, OY, pedestalKind, TH, TW, type TowerLayers } from './ranger';
+import { GY, mainPath, OX, OY, TH, TW, type TowerLayers } from './ranger';
 
 export function drawBombardier(t: Tiers, d: Dir, p: Pose): TowerLayers {
   const W = TW, H = TH;
@@ -12,14 +13,15 @@ export function drawBombardier(t: Tiers, d: Dir, p: Pose): TowerLayers {
   const [A, B, C] = t;
   const top = Math.max(A, B, C);
   const main = mainPath(t);
-  const up = p.up, G = GY, ox = OX, ph = p.ph;
-  const vest: Ramp = RAMPS.orange;
-  pedestal(s, ox, OY, pedestalKind(top, 'bombardier', t), ph, top >= 5 ? 11 : top >= 3 ? 10 : 10);
+  const gr = growOf(top), wg = widthOf(top);
+  const up = p.up + gr, G = GY, ox = OX, ph = p.ph;
+  // Stufe 5: eigene Farben (A dunkelrot, B Messing, C Stahl); davor immer die orange Weste
+  const vest: Ramp = top >= 5 ? (main === 0 ? ['plum', 'crimson', 'red'] : main === 1 ? RAMPS.brass : RAMPS.steel) : RAMPS.orange;
   if (C >= 5) {
-    // Bodenrisse am Sockel
-    s.line(ox - 8, OY - 4, ox - 4, OY - 3, 'ink'); s.line(ox - 4, OY - 3, ox - 3, OY - 5, 'ink');
-    s.line(ox + 4, OY - 4, ox + 8, OY - 2, 'ink'); s.line(ox + 6, OY - 3, ox + 8, OY - 5, 'ink');
-    s.px(ox - 5, OY - 3, 'orange'); s.px(ox + 6, OY - 3, 'orange');
+    // Bodenrisse unter den Fuessen (flach auf dem Boden, keine Plattform)
+    back.line(ox - 12, OY, ox - 6, OY + 1, 'ink'); back.line(ox - 6, OY + 1, ox - 4, OY - 1, 'ink'); back.line(ox - 9, OY, ox - 10, OY - 2, 'ink');
+    back.line(ox + 5, OY + 1, ox + 12, OY, 'ink'); back.line(ox + 8, OY, ox + 10, OY - 2, 'ink'); back.line(ox + 11, OY, ox + 14, OY + 1, 'ink');
+    back.px(ox - 7, OY + 1, 'orange'); back.px(ox + 8, OY + 1, 'orange'); back.px(ox - 5, OY, 'amber');
   }
 
   // ---- Rücken: Raketenpack (B5), Granaten-Gestell (C3+) ----
@@ -44,7 +46,7 @@ export function drawBombardier(t: Tiers, d: Dir, p: Pose): TowerLayers {
     if (B < 5) back.rect(ox - 8, G - 9 - up, 9, 1, 'bark');
   }
 
-  const sx = ox + 4, sy = G - 9 - up;
+  const sx = ox + 4 + Math.min(2, wg), sy = G - 9 - up;
   let muzzle: [number, number] = [ox + 8, G - 9];
   // Rohr liegt hinter dem Koerper (auf der Schulter), nur Haende kommen davor
   const wpn = drawBombWeapon(s, front, t, d, p, sx, sy, main);
@@ -55,9 +57,9 @@ export function drawBombardier(t: Tiers, d: Dir, p: Pose): TowerLayers {
   s.rect(ox - 5, G - 1, 4, 2, 'bark'); s.rect(ox + 1, G - 1, 4, 2, 'bark');
   s.px(ox - 5, G - 1, 'wood'); s.px(ox + 1, G - 1, 'wood');
   const yT = G - 10 - up, yB = G - 1;
-  s.poly([[ox - 5, yT], [ox + 5, yT], [ox + 6, yB], [ox - 6, yB]], (x, y) => (x <= ox - 5 ? vest[2] : x >= ox + 4 ? vest[0] : y <= yT ? vest[2] : vest[1]));
-  s.rect(ox - 5, G - 5, 11, 2, 'bark');
-  s.rect(ox - 5, G - 5, 11, 1, 'wood');
+  s.poly([[ox - 5 - wg, yT], [ox + 5 + wg, yT], [ox + 6 + wg, yB], [ox - 6 - wg, yB]], (x, y) => (x <= ox - 5 - wg ? vest[2] : x >= ox + 4 + wg ? vest[0] : y <= yT ? vest[2] : vest[1]));
+  s.rect(ox - 5 - wg, G - 5, 11 + wg * 2, 2, 'bark');
+  s.rect(ox - 5 - wg, G - 5, 11 + wg * 2, 1, 'wood');
   s.rect(ox - 1, G - 5, 3, 2, 'amber'); s.px(ox, G - 4, 'yellow');
   // Taschen + schwingende Taschenbombe am Gürtel
   s.rect(ox + 3, G - 8, 2, 2, 'bark');
@@ -81,12 +83,13 @@ export function drawBombardier(t: Tiers, d: Dir, p: Pose): TowerLayers {
     s.px(ox - 5, G - 3, 'stone'); s.px(ox - 3, G - 3, 'stone'); s.px(ox - 5, G, 'ice'); s.px(ox - 3, G, 'ice');
   }
   // Schulterpolster für A4+
-  if (A >= 4) { s.ball(sx - 1, sy, 3, 2, RAMPS.iron); s.px(sx - 2, sy - 1, 'silver'); }
+  drawGear(s, back, front, { ox, G, yT, wg, t, ph, OY });
 
   // ---- Kopf ----
   const hcx = ox, hcy = G - 15 - up;
   const mask = A >= 5;
-  s.ball(hcx, hcy, 6, 5.5, RAMPS.skin);
+  const hb = gr >= 4 ? 1 : 0;
+  s.ball(hcx, hcy, 6 + hb, 5.5 + hb, RAMPS.skin);
   // Lederkappe oben
   const capR: Ramp = B >= 5 ? RAMPS.brass : A >= 3 ? RAMPS.iron : ['ink', 'plum', 'bark'];
   s.ellipseFn(hcx, hcy - 1, 6.2, 5.7, (x, y, nx, ny) => (y < hcy - 2 ? ((-nx * 0.5 - ny * 0.7) > 0.4 ? capR[2] : (-nx * 0.5 - ny * 0.7) > -0.2 ? capR[1] : capR[0]) : null));
@@ -136,8 +139,8 @@ export function drawBombardier(t: Tiers, d: Dir, p: Pose): TowerLayers {
     for (let i = 0; i < 3; i++) if ((ph + i) % 3 === 0) bolt(front, ox + 4 + i * 3, G - 14 - i, ox + 10 + i * 4, G - 16 - i * 2, ph * 7 + i, 'white', 'ice');
   }
   if (C >= 5) {
-    for (const [x, y] of orbit(ox, OY - 4, 12, 4, 4, ph, 4)) front.px(x, y, ph % 2 ? 'amber' : 'orange');
-    for (let i = 0; i < 5; i++) front.px(ox - 12 + i * 6, OY - 5 - ((ph + i) % 3), 'stone');
+    for (const [x, y] of orbit(ox, OY - 1, 12, 3, 4, ph, 4)) front.px(x, y, ph % 2 ? 'amber' : 'orange');
+    for (let i = 0; i < 5; i++) front.px(ox - 12 + i * 6, OY - 2 - ((ph + i) % 3), 'stone');
   }
   return { fig: s, back, front, muzzle };
 }

@@ -1,6 +1,7 @@
 /** Ranger: Lanternfolk mit gruener Kapuze und Bogen. 15 Stufen sichtbar (docs/design/tuerme.md). */
 import type { PalName } from '../palette';
-import { cloud, orbit, pedestal, spark } from './parts';
+import { cloud, orbit, spark } from './parts';
+import { drawGear, growOf, mainPath, widthOf } from './gear';
 import { drawArm, drawArrow, drawBow, bowShape } from './bows';
 import type { Dir, Pose } from './pose';
 import { RAMPS, type Ramp, Surface } from './surface';
@@ -9,45 +10,30 @@ import { tube } from './parts';
 
 export interface TowerLayers { fig: Surface; back: Surface; front: Surface; muzzle: [number, number] }
 
-export const TW = 55;
-export const TH = 64;
-export const OX = 27;
-export const GY = 46; // Fuss der Figur auf dem Sockel
-export const OY = 50; // Boden (Ankerpunkt)
+// Runde 13: keine Plattform mehr. Die Figur steht auf dem Boden, Anker = Fuesse (OY), Schatten kommt separat (shadowSprite).
+export const TW = 96;
+export const TH = 80;
+export const OX = 48;
+export const GY = 70; // unterste Zeile der Schuhe
+export const OY = 71; // Boden (Ankerpunkt): eine Zeile unter den Schuhen
 
-export function pedestalKind(top: number, type: 'ranger' | 'bombardier' | 'frostcaller', t: Tiers): 'stump' | 'stone' | 'gold' | 'ice' | 'snow' {
-  if (top >= 5) return 'gold';
-  if (type === 'frostcaller' && t[0] >= 4) return 'ice';
-  if (type === 'frostcaller' && t[0] >= 3) return 'snow';
-  return top >= 3 ? 'stone' : 'stump';
-}
-
-export function mainPath(t: Tiers): number {
-  return t[0] >= t[1] && t[0] >= t[2] ? 0 : t[1] >= t[2] ? 1 : 2;
-}
+export { mainPath };
 
 export function drawRanger(t: Tiers, d: Dir, p: Pose): TowerLayers {
   const W = TW, H = TH;
   const s = new Surface(W, H), back = new Surface(W, H), front = new Surface(W, H);
   const [A, B, C] = t;
   const top = Math.max(A, B, C);
-  const up = p.up;
+  const mainP = mainPath(t);
+  const gr = growOf(top), wg = widthOf(top);
+  const up = p.up + gr;
   const G = GY, ox = OX;
   const goldArmor = B >= 5;
-  const cloak: Ramp = goldArmor ? RAMPS.gold : RAMPS.leaf;
+  // Stufe 5 hat eigene Farben: A flammenrot, B gold, C Sternenviolett
+  const cloak: Ramp = top >= 5 ? (mainP === 0 ? RAMPS.red : mainP === 1 ? RAMPS.gold : (['night', 'violet', 'orchid'] as Ramp)) : RAMPS.leaf;
   const ph = p.ph;
 
-  pedestal(s, ox, OY, pedestalKind(top, 'ranger', t), ph, top >= 5 ? 11 : top >= 3 ? 10 : 9);
-
   // ---------- Hintergrund: Umhang, Banner, Koecher, Aura ----------
-  if (A >= 5) {
-    // langer Umhang, flattert nach hinten
-    const wob = [0, 1, 2, 1][ph];
-    const yt = G - 11 - up;
-    back.poly([[ox - 4, yt], [ox + 4, yt], [ox + 6, G], [ox + 4, G + 3], [ox - 3, G + 3 - (wob & 1)], [ox - 11 - wob, G + 1], [ox - 10 - wob, G - 6], [ox - 7, G - 12 - up]], (x, y) => (x > ox + 2 || y > G ? 'plum' : x < ox - 8 ? 'crimson' : x < ox - 3 ? 'red' : 'crimson'));
-    back.line(ox - 6, G - 11 - up, ox - 10 - wob, G - 1, 'coral');
-    back.px(ox - 10 - wob, G + 1, 'plum'); back.px(ox - 7, G + 2, 'plum');
-  }
   if (B >= 4) {
     const bx = ox - 6;
     back.rect(bx, G - 28 - up, 1, 25, 'bark');
@@ -73,7 +59,7 @@ export function drawRanger(t: Tiers, d: Dir, p: Pose): TowerLayers {
   if (A >= 3) quiver(ox + 4, 1);
 
   // ---------- Waffe hinter dem Koerper (Blick nach oben) ----------
-  const sx = ox + 3, sy = G - 9 - up;
+  const sx = ox + 3 + Math.min(2, wg), sy = G - 9 - up;
   const weapon = () => drawRangerWeapon(s, front, t, d, p, sx, sy, G, up);
   let muzzle: [number, number] = [ox, G - 10];
   if (d.behind) muzzle = weapon();
@@ -83,30 +69,26 @@ export function drawRanger(t: Tiers, d: Dir, p: Pose): TowerLayers {
   s.px(ox - 4, G - 1, 'wood'); s.px(ox + 1, G - 1, 'wood');
   const yT = G - 10 - up, yB = G - 1;
   const hem = [0, 1, 1, 0][ph];
-  s.poly([[ox - 4, yT], [ox + 4, yT], [ox + 5, yB], [ox - 5, yB]], (x, y) => {
-    if (x <= ox - 4 && y < yB - 1) return cloak[2];
-    if (x >= ox + 3) return cloak[0];
+  s.poly([[ox - 4 - wg, yT], [ox + 4 + wg, yT], [ox + 5 + wg, yB], [ox - 5 - wg, yB]], (x, y) => {
+    if (x <= ox - 4 - wg && y < yB - 1) return cloak[2];
+    if (x >= ox + 3 + wg) return cloak[0];
     if (y <= yT) return cloak[2];
     return cloak[1];
   });
   // Saum
-  for (let x = ox - 5; x <= ox + 4; x++) if ((x + hem) % 2 === 0) s.px(x, yB, cloak[0]);
+  for (let x = ox - 5 - wg; x <= ox + 4 + wg; x++) if ((x + hem) % 2 === 0) s.px(x, yB, cloak[0]);
   // Guertel
   const by = G - 5;
-  s.rect(ox - 4, by, 9, 1, goldArmor ? 'rust' : 'bark');
+  s.rect(ox - 4 - wg, by, 9 + wg * 2, 1, goldArmor ? 'rust' : 'bark');
   s.px(ox, by, 'yellow');
   if (goldArmor) { s.rect(ox - 3, G - 8 - up, 7, 1, 'yellow'); s.px(ox, G - 7 - up, 'white'); s.px(ox - 1, G - 7 - up, 'white'); }
-  if (A >= 4) {
-    // Schulterpanzer
-    s.ball(sx, sy - 0.5, 3, 2, RAMPS.brass);
-    s.px(sx - 1, sy - 1, 'white');
-    s.rect(sx - 3, sy + 1, 6, 1, 'rust');
-  }
+  drawGear(s, back, front, { ox, G, yT, wg, t, ph, OY });
 
   // ---------- Kopf ----------
   const hcx = ox, hcy = G - 15 - up;
-  const hood: Ramp = goldArmor ? RAMPS.gold : RAMPS.leaf;
-  s.ball(hcx, hcy, 6, 5.5, hood);
+  const hood: Ramp = cloak;
+  const hb = gr >= 4 ? 1 : 0;
+  s.ball(hcx, hcy, 6 + hb, 5.5 + hb, hood);
   // Kapuzenspitze (zeigt nach hinten/links)
   s.px(hcx - 6, hcy - 3, hood[1]); s.px(hcx - 7, hcy - 2, hood[0]); s.px(hcx - 6, hcy - 2, hood[1]);
   if (A >= 2 && !goldArmor && B < 4) {

@@ -1,11 +1,12 @@
 /** Frostcaller: Lanternfolk mit Spitzhut, Schal und Kristallstab. 15 Stufen sichtbar. */
-import { bolt, cloud, crystal, flake, orbit, pedestal, spark, tube } from './parts';
+import { bolt, cloud, crystal, flake, orbit, spark, tube } from './parts';
+import { drawGear, FROST_PAL, growOf, widthOf } from './gear';
 import { drawArm } from './bows';
 import type { Dir, Pose } from './pose';
 import { RAMPS, type Ramp, Surface } from './surface';
 import type { Tiers } from './types';
 import { outlineSurface } from './surface';
-import { GY, mainPath, OX, OY, pedestalKind, TH, TW, type TowerLayers } from './ranger';
+import { GY, mainPath, OX, OY, TH, TW, type TowerLayers } from './ranger';
 
 export function drawFrost(t: Tiers, d: Dir, p: Pose): TowerLayers {
   const W = TW, H = TH;
@@ -15,13 +16,13 @@ export function drawFrost(t: Tiers, d: Dir, p: Pose): TowerLayers {
   const main = mainPath(t);
   const ph = p.ph;
   const float = C >= 5 ? 3 + (ph === 1 || ph === 2 ? 1 : 0) : 0;
-  const up = p.up + float;
+  const gr = growOf(top), wg = widthOf(top);
+  const up = p.up + float + gr;
   const G = GY, ox = OX;
   const armor = A >= 5;
-  const robe: Ramp = armor ? RAMPS.frost : RAMPS.navy;
+  const robe: Ramp = armor ? RAMPS.frost : C >= 5 ? (['ink', 'night', 'dusk'] as Ramp) : RAMPS.navy;
   const hat: Ramp = C >= 4 ? ['ink', 'night', 'dusk'] : armor ? RAMPS.ice : ['night', 'navy', 'sky'];
   const scarf: Ramp = A >= 1 ? RAMPS.frost : RAMPS.sand;
-  pedestal(s, ox, OY, pedestalKind(top, 'frostcaller', t), ph, top >= 5 ? 11 : top >= 3 ? 10 : 9);
 
   // ---- Hintergrund ----
   if (B >= 5) {
@@ -66,7 +67,7 @@ export function drawFrost(t: Tiers, d: Dir, p: Pose): TowerLayers {
   }
 
   // ---- Stab ----
-  const sx = ox + 5, sy = G - 3 - up + float;
+  const sx = ox + 5 + Math.min(2, wg), sy = G - 3 - up + float;
   const ux = d.ux, uy = d.uy;
   const lean = p.atk ? [0.25, 0.1, -0.05, 0.1][p.ai] : 0;
   const sp = main === 1 && B >= 4;
@@ -135,9 +136,9 @@ export function drawFrost(t: Tiers, d: Dir, p: Pose): TowerLayers {
   const yT = G - 10 - up + float, yB = G - 1 + float;
   const hem = [0, 1, 1, 0][ph];
   s.rect(ox - 4, yB, 3, 1, 'bark'); s.rect(ox + 1, yB, 3, 1, 'bark');
-  s.poly([[ox - 4, yT], [ox + 4, yT], [ox + 6, yB], [ox - 6, yB]], (x, y) => (x <= ox - 4 || (x < ox - 2 && y > yT + 3) ? robe[2] : x >= ox + 3 ? robe[0] : y <= yT ? robe[2] : robe[1]));
-  for (let x = ox - 6; x <= ox + 5; x++) if ((x + hem) % 3 === 0) s.px(x, yB, robe[0]);
-  s.rect(ox - 4, G - 5 + float, 9, 1, armor ? 'white' : 'sky');
+  s.poly([[ox - 4 - wg, yT], [ox + 4 + wg, yT], [ox + 6 + wg, yB], [ox - 6 - wg, yB]], (x, y) => (x <= ox - 4 - wg || (x < ox - 2 - wg && y > yT + 3) ? robe[2] : x >= ox + 3 + wg ? robe[0] : y <= yT ? robe[2] : robe[1]));
+  for (let x = ox - 6 - wg; x <= ox + 5 + wg; x++) if ((x + hem) % 3 === 0) s.px(x, yB, robe[0]);
+  s.rect(ox - 4 - wg, G - 5 + float, 9 + wg * 2, 1, armor ? 'white' : 'sky');
   s.px(ox, G - 5 + float, 'yellow');
   if (B >= 2) {
     // Risse im Mantel
@@ -155,6 +156,7 @@ export function drawFrost(t: Tiers, d: Dir, p: Pose): TowerLayers {
   const fl = [0, 1, 2, 1][ph];
   s.rect(ox - 6, yT + 1, 2, 5 + (fl >> 1), scarf[1]); s.px(ox - 6, yT + 5 + (fl >> 1), scarf[0]); s.px(ox - 5 - fl, yT + 6, scarf[1]);
   if (A >= 1) { s.px(ox - 4, yT + 3, 'white'); s.px(ox - 5, yT + 4, 'white'); }
+  drawGear(s, back, front, { ox, G, yT, wg, t, ph, OY, own: { wings: B >= 5 }, pal: FROST_PAL });
   // Schulter-Zapfen (B3+)
   if (B >= 3) {
     for (const sg of [-1, 1]) {
@@ -166,7 +168,8 @@ export function drawFrost(t: Tiers, d: Dir, p: Pose): TowerLayers {
 
   // ---- Kopf ----
   const hcx = ox, hcy = G - 15 - up + float;
-  s.ball(hcx, hcy, 5.5, 5, RAMPS.skin);
+  const hb = gr >= 4 ? 1 : 0;
+  s.ball(hcx, hcy, 5.5 + hb, 5 + hb, RAMPS.skin);
   if (d.eyes > 0) {
     const fx = hcx + (d.eyes === 1 ? 3 : d.ex), fy = hcy + 1 + (d.eyes === 1 ? -1 : Math.round(d.ey * 0.4));
     const eye = (x: number) => { s.rect(x, fy - 1, 2, 2, C >= 2 ? 'yellow' : 'ink'); s.px(x, fy - 1, 'white'); if (C >= 2) s.px(x + 1, fy, 'amber'); };
@@ -233,9 +236,8 @@ export function drawFrost(t: Tiers, d: Dir, p: Pose): TowerLayers {
     }
   }
   if (C >= 5) {
-    // Dauerblitze am Rand + Wolke um den Sockel
-    cloud(front, ox - 7, OY - 2, 10, false, ph + 1);
-    cloud(front, ox + 6, OY - 1, 11, false, ph);
+    // Dauerblitze am Boden rund um die Fuesse (keine Wolken-Plattform mehr)
+    for (let i = 0; i < 3; i++) if ((ph + i) % 3 !== 1) bolt(front, ox - 12 + i * 12, OY - 7, ox - 10 + i * 12 + (ph & 1), OY - 1, 21 + ph * 3 + i, 'white', 'yellow');
   }
   return { fig: s, back, front, muzzle };
 }
