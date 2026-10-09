@@ -71,7 +71,7 @@ export const QUARRY_PROPS: QuarryProp[] = [...HAND, ...scatter(lavaAt)].sort((a,
 
 export function blockers(): [number, number, number][] {
   const [bx, , bw] = raw.buildArea;
-  return QUARRY_PROPS.filter((q) => q.r > 0 && q.x - q.r < bx + bw && q.x + q.r > bx).map((q) => [q.x, q.y - 2, q.r]);
+  return QUARRY_PROPS.filter((q) => q.r > 0 && q.x - q.r < bx + bw && q.x + q.r > bx && lavaAt(q.x, q.y) > -4).map((q) => [q.x, q.y - 2, q.r]);
 }
 
 /** Funkenquellen: Orte auf der Lava (fuer `ambient.ts`). */

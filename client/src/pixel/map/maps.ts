@@ -8,6 +8,8 @@ import { meadowArt } from './compose';
 import { MAP_H, MAP_W } from './layout';
 import { paintFrostfen } from './frostfen';
 import { paintQuarry } from './quarry';
+import { ambientPoints, smokePoints } from './ambient';
+import { bayer } from './buf';
 import type { MapArt, MapId } from './types';
 
 export { MAP_IDS, type MapArt, type MapId } from './types';
@@ -33,12 +35,20 @@ export function mapArt(id: MapId): MapArt {
 }
 
 /** Alles in einen Puffer (ohne Schnee, Funken, Rauch): Boden, animierte Ebene (Bild `frame`), Deko, Dinge nach y. */
-export function composeMap(id: MapId, frame = 0): Buf {
+export function composeMap(id: MapId, frame = 0, tMs?: number): Buf {
   const art = mapArt(id);
   const out = art.ground.clone();
   out.blit(art.anim[frame % art.anim.length], 0, 0);
   out.blit(art.deco, 0, 0);
   for (const { prop, art: pa } of [...art.props].sort((a, b) => a.prop.y - b.prop.y)) out.blit(pa.buf, prop.x - pa.ax, prop.y - pa.ay);
+  if (tMs !== undefined) {
+    // Rauch und Luftteilchen (im Spiel eigene Ebenen; hier mit Raster-Deckkraft in den Puffer gedithert)
+    for (const p of [...smokePoints(art.smoke, tMs, id !== 'quarry'), ...ambientPoints(id, tMs)]) {
+      if (p.kind === 'haze') {
+        for (let y = 0; y < (p.h ?? 4); y++) for (let x = 0; x < p.w; x++) if (bayer(p.x + x, p.y + y) < p.a * 3) out.set(p.x + x, p.y + y, C.orange);
+      } else if (bayer(p.x, p.y) < p.a + 0.15) out.rect(p.x, p.y, p.w, p.w, p.c);
+    }
+  }
   return out;
 }
 

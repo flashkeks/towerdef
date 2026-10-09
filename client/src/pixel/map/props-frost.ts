@@ -311,18 +311,23 @@ function rack(): PropArt {
 }
 
 function woodpile(): PropArt {
-  const b = mk(22, 16);
-  const rows = [[2, 9, 6], [2, 9, 6], [4, 6, 5]] as const;
-  void rows;
-  for (let r = 0; r < 3; r++) for (let i = 0; i < 4 - (r === 2 ? 1 : 0); i++) {
-    const x = 3 + i * 4 + (r === 2 ? 2 : 0), y = 11 - r * 3;
-    b.disc(x + 1, y, 2, C.wood); b.disc(x + 1, y, 1, C.tan); b.set(x + 1, y, C.peach);
-    b.set(x + 2, y + 1, C.bark);
+  const b = mk(26, 18);
+  // Stapel von der Seite: drei Reihen Scheite, links die hellen Schnittflaechen mit Ring
+  for (let row = 0; row < 3; row++) {
+    const y = 12 - row * 4, off = row === 1 ? 1 : 0;
+    for (let x = 3 + off; x < 22 - (row === 2 ? 2 : 0); x++) {
+      b.set(x, y, C.tan); b.set(x, y + 1, C.wood); b.set(x, y + 2, C.bark);
+      if ((x + row * 2) % 5 === 0) { b.set(x, y, C.wood); b.set(x, y + 1, C.bark); }
+    }
+    for (let k = 0; k < 2; k++) { const x = 3 + off + k * 6; b.set(x, y, C.peach); b.set(x, y + 1, C.sand); b.set(x + 1, y, C.tan); b.set(x + 1, y + 1, C.wood); b.set(x + 1, y + 2, C.bark); }
+    b.set(2 + off, y + 1, C.bark);
   }
-  b.rect(2, 12, 18, 2, C.bark);
+  b.rect(3, 15, 19, 1, C.bark);
+  b.rect(1, 4, 1, 12, C.bark); b.rect(23, 4, 1, 12, C.bark); // Stuetzpfosten
+  b.rect(1, 4, 1, 12, C.wood);
   snowTop(b, 3, 90);
   b.outline(C.plum);
-  return { buf: b, ax: 11, ay: 13, shadow: { ox: 2, oy: 0, rx: 10, ry: 3 } };
+  return { buf: b, ax: 13, ay: 16, shadow: { ox: 3, oy: 0, rx: 12, ry: 3 } };
 }
 
 function boat(): PropArt {

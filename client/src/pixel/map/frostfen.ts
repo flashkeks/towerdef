@@ -16,9 +16,9 @@ export const FF_BRANCHES: Pt[][] = raw.paths ?? [raw.path];
 export const FF_HW: number = raw.pathHalfWidth;
 
 // ---------- Wasser: zugefrorener See, Eisschollen, Eisloch, Steg ----------
-const rawFull = frost as unknown as { water: Pt[][]; ice: Pt[][] };
-/** Grobe Umrisse aus der Sim-Datei (Agent A); der gemalte See ist ihre organische Verfeinerung (nur nach innen, nie naeher am Weg). */
-const LAKE_BASE: Pt[] = rawFull.water[0];
+const rawFull = frost as unknown as { ice: Pt[][] };
+/** Grobe Umrisse (Agent A, 16 Punkte); der gemalte See ist ihre organische Verfeinerung (nur nach innen, nie naeher am Weg). Fest eingetragen, damit gen-maps.ts wiederholbar bleibt. */
+const LAKE_BASE: Pt[] = [[44,150],[90,124],[160,114],[230,118],[300,112],[366,122],[404,148],[414,180],[404,212],[366,238],[300,248],[230,242],[160,246],[90,236],[44,210],[32,180]];  // = `water` aus Agent As frostfen.json (Fassung r15-a); die Datei traegt danach die Verfeinerung
 /** Eisschollen (bebaubar!): Polygone aus der Sim-Datei, so gemalt, wie sie liegen. */
 export const FLOES: Pt[][] = rawFull.ice;
 
@@ -65,7 +65,7 @@ const HAND: FrostProp[] = [
   P('hut', 64, 290, 1), P('rack', 108, 284), P('boat', 40, 262), P('barrel', 90, 296), P('snowman', 24, 96),
   P('lamp', 462, 200), P('lamp', 520, 254), P('lamp', 560, 182), P('lamp', 584, 250), P('lamp', 622, 200), P('lamp', 86, 270), P('lamp', 124, 96), P('lamp', 12, 232),
   // Eishuetten auf dem See, Steg mit Laternen
-  P('shanty', 128, 150, 0), P('shanty', 396, 190, 1), P('shanty', 214, 218, 1), P('shanty', 318, 140, 0),
+  P('shanty', 128, 150, 0), P('shanty', 380, 200, 1), P('shanty', 214, 218, 1), P('shanty', 318, 140, 0),
   P('lamp', 264, 216), P('lamp', 277, 232),
   // Ufer
   P('reeds', 44, 152, 0), P('reeds', 332, 252, 1), P('reeds', 400, 232, 0), P('reeds', 200, 258, 1), P('reeds', 110, 244, 0),
@@ -91,7 +91,7 @@ function scatter(): FrostProp[] {
     const x = Math.round(rnd() * (MAP_W - 6) + 3), y = Math.round(rnd() * (MAP_H - 4) + 6);
     // Dichte: Rand dicht, Mitte duenn, Wald-Flecken ueber Rauschen
     const edge = Math.min(x, MAP_W - x, y * 1.4, (MAP_H - y) * 1.4);
-    const dens = edge < 40 ? 0.95 : 0.12 + (vnoise(x, y, 70, 31) > 0.58 ? 0.6 : 0) + (edge < 90 ? 0.2 : 0);
+    const dens = edge < 40 ? 0.95 : 0.2 + (vnoise(x, y, 70, 31) > 0.55 ? 0.6 : 0) + (edge < 90 ? 0.2 : 0);
     if (rnd() > dens) continue;
     const roll = rnd();
     const kind: FrostKind = roll < 0.55 ? 'fir' : roll < 0.8 ? 'firsmall' : roll < 0.9 ? 'birch' : roll < 0.95 ? 'rock' : 'mound';
@@ -108,8 +108,9 @@ function scatter(): FrostProp[] {
 export const FROST_PROPS: FrostProp[] = (() => [...HAND, ...scatter()].sort((a, b) => a.y - b.y))();
 
 export function blockers(): [number, number, number][] {
-  const [bx, , bw] = raw.buildArea;
-  return FROST_PROPS.filter((q) => q.r > 0 && q.x - q.r < bx + bw && q.x + q.r > bx).map((q) => [q.x, q.y - 2, q.r]);
+  const [bx, bw] = raw.buildArea;
+  // was mitten im (unbebaubaren) See steht, muss die Sim nicht als Blocker kennen
+  return FROST_PROPS.filter((q) => q.r > 0 && q.x - q.r < bx + bw && q.x + q.r > bx && lakeAt(q.x, q.y) > -4).map((q) => [q.x, q.y - 2, q.r]);
 }
 
 // ------------------------------------------------------------------ Malen
@@ -236,7 +237,7 @@ export function paintFrostfen(): MapArt {
     } else if (k < 0.72) { // Funkelpunkt
       ground.set(x, y, C.white); if (r() < 0.3) ground.set(x, y, C.ice);
     } else if (k < 0.9) { // Grashalme, die aus dem Schnee ragen
-      ground.set(x, y, C.wood); ground.set(x + 1, y - 1, C.tan); ground.set(x - 1, y - 1, C.tan); ground.set(x, y - 2, C.sand);
+      ground.set(x, y, C.bark); ground.set(x + 1, y - 1, C.wood); ground.set(x - 1, y - 1, C.wood); ground.set(x, y - 2, C.tan);
     } else { // Kiesel
       ground.set(x, y, C.slate); ground.set(x + 1, y, C.stone);
     }
@@ -342,7 +343,7 @@ function pathColor(x: number, y: number, pd: number, gx: number, gy: number): nu
     if (edge < 0.4 && n > 0.86) c = C.white;
     if (n < 0.2 && edge > 0.2) c = C.slate;
     // Matsch (Erde schaut durch), nur als Sprenkel
-    if (edge < 0.6 && vnoise(x, y, 6, 33) > 0.68 && bayer(x + 1, y) < 0.3) c = bayer(x, y + 1) < 0.5 ? C.tan : C.wood;
+    if (edge < 0.55 && vnoise(x, y, 6, 33) > 0.74 && bayer(x + 1, y) < 0.22) c = C.wood;
     // Karrenspuren
     if (pd > 3.6 && pd < 5.0 && n < 0.7) c = ((x + y) & 1) === 0 ? C.slate : C.stone;
     if (edge > 0.65) c = bayer(x, y) < (edge - 0.65) * 2.6 ? C.slate : C.stone;

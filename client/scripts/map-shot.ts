@@ -2,6 +2,7 @@
 import { writeFileSync } from 'node:fs';
 import { mapArt, composeMap, mapPreview, type MapId } from '../src/pixel/map/maps';
 import { png } from './png';
+import { Buf } from '../src/pixel/map/buf';
 import { QUARRY_PROPS, lavaAt, Q_BRANCHES, Q_HW } from '../src/pixel/map/quarry';
 import { pathDistAll } from '../src/pixel/map/kit';
 import * as ff from '../src/pixel/map/frostfen';
@@ -25,5 +26,11 @@ if (what === 'check') {
 const t0 = Date.now();
 mapArt(id as MapId);
 console.log('gemalt in', Date.now() - t0, 'ms');
-const img = what === 'preview' ? mapPreview(id as MapId) : composeMap(id as MapId, Number(fr));
-writeFileSync(out, png(img.rgba(), img.w, img.h, Number(sc)));
+const img = what === 'preview' ? mapPreview(id as MapId) : composeMap(id as MapId, Number(fr), what === 'live' ? Number(fr) * 1000 + 3000 : undefined);
+let view = img;
+if (process.env.CROP) {
+  const [cx, cy, cw, ch] = process.env.CROP.split(',').map(Number);
+  view = new Buf(cw, ch);
+  for (let y = 0; y < ch; y++) for (let x = 0; x < cw; x++) view.set(x, y, img.get(cx + x, cy + y));
+}
+writeFileSync(out, png(view.rgba(), view.w, view.h, Number(sc)));
