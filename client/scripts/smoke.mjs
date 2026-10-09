@@ -16,7 +16,7 @@ try {
   await page.goto(url + '?debug');
   await page.waitForSelector('.app-play', { timeout: 20000 });
   check(true, 'Startbildschirm da');
-  await page.click('.app-diff[data-diff="easy"]');
+  await page.click('.diff[data-diff="easy"]');
   await page.click('.app-play');
   await page.waitForSelector('.m-canvas', { timeout: 20000 });
   check(true, 'Match gestartet (Canvas da)');
