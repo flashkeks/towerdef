@@ -4,9 +4,35 @@ Arbeitsauftrag: [`/run.md`](../run.md) (**Runde 11: Neustart wie Bloons TD 6 als
 Frühere Aufträge: [archiv/run-runde1.md](archiv/run-runde1.md), [archiv/run-runde2.md](archiv/run-runde2.md), [archiv/run-runde3.md](archiv/run-runde3.md), [archiv/run-runde4.md](archiv/run-runde4.md), [archiv/run-runde5.md](archiv/run-runde5.md), [archiv/run-runde6.md](archiv/run-runde6.md), [archiv/run-runde7.md](archiv/run-runde7.md), [archiv/run-runde8-verworfen.md](archiv/run-runde8-verworfen.md), [archiv/run-runde8.md](archiv/run-runde8.md), [archiv/run-runde9.md](archiv/run-runde9.md).
 
 
+## Runde 11 (Neustart wie BTD6, Vertical Slice)
+
+Letzte Aktualisierung: 2026-10-09 (P0 erledigt, P1–P3 laufen)
+
+| Paket | Inhalt | Status | Agent (Modell) | Was man jetzt sehen kann |
+|---|---|---|---|---|
+| P0 | Archiv, AA raus, Entwurf, Vertrag | **erledigt** (`d3af0ca` + Entwurf) | Hauptsitzung | Platzhalter-Bildschirm „Rebuilding“. AA-Import, 550 Units, Gacha, Banner, Evolution, Trade/Reroll, Welten/Raids/Legenden, alter Sim-Kern, alte Meta, alter Match-Client und `tools/aa-import` sind aus dem aktiven Spiel raus. **Rückweg: Commit `783865d`** (Tag `archiv/aa-runde10` lokal gesetzt; der Push des Tags wird vom Git-Proxy der Claude-Session abgelehnt, Max kann ihn auf GitHub setzen). Entwurf in `docs/design/`: `welt.md`, `tuerme.md` (3 Türme × 15 Stufen + Held Wren, alle Zahlen), `gegner.md` (7 Typen + Shade + Boss Dusk Leviathan), `runden.md` (R1–20, Einkommen), `meta.md`, `pixel-stil.md` (ENDESGA 32, 640 × 360, Text-Raster wie Kek-Game), **`schnittstelle.md` (Vertrag Sim ↔ Client, Dateibesitz)**. Gemeinsame Pixel-Basis `client/src/pixel/palette.ts` + `raster.ts` |
+| P1 | Simulator neu (Projektile mit Flugzeit, Schichten, 3 × 5 Pfade, Held, Runden, Bot) | läuft | Sonnet | – |
+| P2 | Pixel-Grafik (Türme × Stufen, Held, Gegner, Projektile, Effekte) | läuft | Sonnet | – |
+| P3 | Karte + Match-Oberfläche (BTD6-Panel) | läuft | Sonnet | – |
+| P4 | Fortschritt (Level, Turm-XP, Wissensbaum, Medaillen) | wartet | – | – |
+| P5 | Balance-Rauchtest, Abschluss | wartet | Hauptsitzung | – |
+
+**Entscheidungen der Hauptsitzung (P0), mit Empfehlung an Max unter „Offene Fragen“ am Rundenende:**
+- **Dreierbesetzung wie vorgeschlagen** (Ranger / Bombardier / Frostcaller): Einzelziel, Fläche+Panzer, Kontrolle. Eine Farm
+  bringt im 20-Runden-Slice wenig (BTD6-Farm amortisiert sich erst nach 14–23 Runden, `economy.md` § 4).
+- **Kostenkurve gestaucht** (T5 ≈ 15–20× statt 80× Basispreis), weil der Slice 20 statt 40–60 Runden hat; Begründung in `tuerme.md`.
+- **Spielfeld 640 × 360** statt 32er-Raster auf großer Karte: ×2 = 1280 × 720, ×3 = 1920 × 1080 scharf. Türme 32 × 32.
+- **60 Ticks/s** statt 20: Projektile mit Flugzeit und schnelle Schussfolgen (0,08 s) brauchen feinere Zeit.
+- **Held ab Level 3** frei (run.md ließ offen, wann), Frostcaller L4, Bombardier L2.
+- Alter Code wurde **gelöscht, nicht umgebaut**: Sim, Meta und Match-Client sind auf AA zugeschnitten; ein Neubau gegen den Vertrag
+  ist kleiner als ein Umbau. Weiterverwendet: Festkomma/PRNG/Hash/Pfad, Boot/Desktop-Sperre, Kit-Styles und Schriften, Ton-Rezepte.
+
+Plan: P1, P2, P3 parallel in lokalen Worktrees (Sonnet, max. 3), Vertrag `docs/design/schnittstelle.md`. P4 startet, sobald einer fertig ist.
+Screenshots in `client/docs/r11/`.
+
 ## Runde 10 (echte Figuren, Match-Grafik, Beschwören, Karten je Welt)
 
-Letzte Aktualisierung: 2026-10-09 (Runde 10 abgeschlossen, P5)
+Letzte Aktualisierung: 2026-10-09 (Runde 10 abgeschlossen, P5) — **überholt durch Runde 11**
 
 **Rückmeldung Max zu Runde 9 (08.10.2026):** Interface gut; Summonen „ungeil“, mehr Ton und Effekte; Daily Pack zeigt nur den ersten Gewinn; Roblox-Bilder raus, echte Bilder; echte, bekannte Namen plus Promis; im Match nur Buchstaben auf den Units, Units und Attacken brauchen Design.
 
