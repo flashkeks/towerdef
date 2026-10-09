@@ -3,9 +3,9 @@
  * Alle Funktionen sind rein: das uebergebene Profil bleibt unveraendert.
  */
 import { z } from 'zod';
-import type { Difficulty, GameOptions, HeroType, TowerType, Tiers } from '../../sim/src/types';
+import type { Difficulty, GameOptions, HeroType, PowerKey, TowerType, Tiers } from '../../sim/src/types';
 import {
-  DIFFICULTIES, DIFFICULTY_XP_BP, FREEPLAY_BP, KNOWLEDGE, LEVEL_UNLOCKS, MAX_ROUND, TIER_COST, TOWER_TYPES, WIN_BONUS_XP,
+  DIFFICULTIES, DIFFICULTY_XP_BP, EMBERS_FIRST_MEDAL, EMBERS_LEVEL_UP, EMBERS_WIN, POWER_KEYS, embersForRound, emptyInventory, powerPrice, FREEPLAY_BP, KNOWLEDGE, LEVEL_UNLOCKS, MAX_ROUND, TIER_COST, TOWER_TYPES, WIN_BONUS_XP,
   levelFromXp, nodeById, unlockLevel, xpForLevel, type LevelUnlock,
 } from './data';
 import { SEEN_MATCHES_MAX, emptyMedals, type Profile } from './profile';
@@ -33,6 +33,8 @@ export const MatchResultSchema = z.object({
   towerXp: perTowerAll.optional(),
   towerTiers: z.object({ ranger: tiers3, bombardier: tiers3, frostcaller: tiers3 }).optional(),
   towerXpGained: perTowerAll.optional(),
+  /** Runde 12: erfolgreiche Power-Einsaetze (`state.stats.powersUsed`); werden vom Inventar abgezogen. */
+  powersUsed: z.record(z.string(), nat.max(9999)).optional(),
 });
 export type MatchResult = z.infer<typeof MatchResultSchema>;
 
@@ -71,6 +73,18 @@ export interface MatchReport {
   newMedal: Difficulty | null;
   newBest: boolean;
   towerXpGained: Partial<Record<TowerType, number>>;
+  /** Runde 12: Embers aus diesem Match, Summe und Aufschluesselung. */
+  embersGained: number;
+  embers: { rounds: number; win: number; medal: number; levelUp: number };
+  /** Runde 12: Powers, die dieses Match verbraucht hat (Summe, fuer "Powers used: N"). */
+  powersUsed: number;
+}
+
+/** Embers fuer ein Match (Spezifikation: docs/design/powers.md). */
+export function matchEmbers(roundsCleared: number, difficulty: Difficulty, won: boolean, newMedal: boolean, levelUps: number): MatchReport['embers'] {
+  let rounds = 0;
+  for (let r = 1; r <= Math.min(roundsCleared, MAX_ROUND); r++) rounds += embersForRound(r);
+  return { rounds, win: won ? EMBERS_WIN[difficulty] : 0, medal: newMedal ? EMBERS_FIRST_MEDAL : 0, levelUp: levelUps * EMBERS_LEVEL_UP };
 }
 
 const hasKnow = (p: Profile, id: string): boolean => p.knowledge.includes(id);
@@ -81,7 +95,7 @@ export function applyMatch(p: Profile, resultIn: MatchResult): { profile: Profil
   if (p.seenMatches.includes(res.matchId)) {
     return {
       profile: p,
-      report: { duplicate: true, xpGained: 0, xpBefore: p.playerXp, xpAfter: p.playerXp, levelBefore: lv0.level, levelAfter: lv0.level, pointsGained: 0, unlocks: [], newMedal: null, newBest: false, towerXpGained: {} },
+      report: { duplicate: true, xpGained: 0, xpBefore: p.playerXp, xpAfter: p.playerXp, levelBefore: lv0.level, levelAfter: lv0.level, pointsGained: 0, unlocks: [], newMedal: null, newBest: false, towerXpGained: {}, embersGained: 0, embers: { rounds: 0, win: 0, medal: 0, levelUp: 0 }, powersUsed: 0 },
     };
   }
   const xpGained = matchXp(res.roundsCleared, res.difficulty, res.won);
@@ -112,8 +126,22 @@ export function applyMatch(p: Profile, resultIn: MatchResult): { profile: Profil
   const better = !prev || res.roundsCleared > prev.round || (res.roundsCleared === prev.round && res.livesLost < prev.livesLost);
   if (better) bestMap[res.map] = { ...bestMap[res.map], [res.difficulty]: { round: res.roundsCleared, livesLost: res.livesLost } };
 
+  // Embers und Inventar (Runde 12)
+  const emb = matchEmbers(res.roundsCleared, res.difficulty, res.won, newMedal !== null, lv1.level - lv0.level);
+  const embersGained = emb.rounds + emb.win + emb.medal + emb.levelUp;
+  const inventory = { ...emptyInventory(), ...p.inventory };
+  let powersUsed = 0;
+  for (const k of POWER_KEYS) {
+    const used = res.powersUsed?.[k] ?? 0;
+    if (used <= 0) continue;
+    powersUsed += used;
+    inventory[k] = Math.max(0, inventory[k] - used);
+  }
+
   const profile: Profile = {
     ...p,
+    embers: p.embers + embersGained,
+    inventory,
     playerXp,
     towerXp,
     towerTiers,
@@ -127,7 +155,7 @@ export function applyMatch(p: Profile, resultIn: MatchResult): { profile: Profil
     profile,
     report: {
       duplicate: false, xpGained, xpBefore: p.playerXp, xpAfter: playerXp, levelBefore: lv0.level, levelAfter: lv1.level,
-      pointsGained: lv1.level - lv0.level, unlocks, newMedal, newBest: better, towerXpGained,
+      pointsGained: lv1.level - lv0.level, unlocks, newMedal, newBest: better, towerXpGained, embersGained, embers: emb, powersUsed,
     },
   };
 }
@@ -154,6 +182,19 @@ export function unlockTier(p: Profile, tower: TowerType, path: 0 | 1 | 2): { ok:
   const tiers = [...p.towerTiers[tower]] as Tiers;
   tiers[path] = tier;
   return { ok: true, tier, cost, profile: { ...p, towerXp: { ...p.towerXp, [tower]: p.towerXp[tower] - cost }, towerTiers: { ...p.towerTiers, [tower]: tiers } } };
+}
+
+// ---------------------------------------------------------------- Store (Runde 12)
+
+/** Power kaufen: Preis in Embers aus `sim/data/powers.json`. Codes: `unknown-power`, `bad-count`, `not-enough-embers`. */
+export function buyPower(p: Profile, key: PowerKey, count = 1): { ok: true; profile: Profile; cost: number } | Fail {
+  if (!(POWER_KEYS as readonly string[]).includes(key)) return fail('unknown-power', 'Unknown power.');
+  if (!Number.isInteger(count) || count < 1 || count > 99) return fail('bad-count', 'Pick an amount between 1 and 99.');
+  const cost = powerPrice(key) * count;
+  if (p.embers < cost) return fail('not-enough-embers', `Needs ${cost} Embers.`);
+  const inventory = { ...emptyInventory(), ...p.inventory };
+  inventory[key] += count;
+  return { ok: true, cost, profile: { ...p, embers: p.embers - cost, inventory } };
 }
 
 // ---------------------------------------------------------------- Wissensbaum
@@ -203,10 +244,10 @@ export function unlockEverything(p: Profile): Profile {
 
 // ---------------------------------------------------------------- Optionen fuer die Sim
 
-export type MatchOptions = Required<Pick<GameOptions, 'unlocks' | 'towerXp'>> & { mods: NonNullable<GameOptions['mods']> };
+export type MatchOptions = Required<Pick<GameOptions, 'unlocks' | 'towerXp'>> & { powers: Record<PowerKey, number> } & { mods: NonNullable<GameOptions['mods']> };
 
 /**
- * `unlocks` + `towerXp` + `mods` fuer `createGame`. `towerXp` ist das Konto (Sim fuehrt es im Match, `unlockTier` im Match),
+ * `unlocks` + `towerXp` + `powers` (Inventar) + `mods` fuer `createGame`. `towerXp` ist das Konto (Sim fuehrt es im Match, `unlockTier` im Match),
  * `mods.towerXpBp` = Fast Learner. Mit "unlock everything" ist alles frei.
  */
 export function matchOptions(p: Profile): MatchOptions {
@@ -228,7 +269,7 @@ export function matchOptions(p: Profile): MatchOptions {
   if (k('cold-snap')) mods.slowDurBp = 2500;
   if (k('veteran-hero')) mods.heroStartLevel = 3;
   if (k('fast-learner')) mods.towerXpBp = 2000;
-  return { unlocks: { towers, maxTier }, towerXp: { ...p.towerXp }, mods };
+  return { unlocks: { towers, maxTier }, towerXp: { ...p.towerXp }, powers: { ...emptyInventory(), ...p.inventory }, mods };
 }
 
 export { DIFFICULTIES, KNOWLEDGE };

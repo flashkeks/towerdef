@@ -118,3 +118,33 @@ export function pathClearance(path: Path, x: number, y: number, r: number): bool
   }
   return true;
 }
+
+/**
+ * Nächster Punkt auf dem Weg zu (x, y): Fortschritt (Milli-px) und quadrierter Abstand zur Wegmitte an diesem Fortschritt.
+ * Projektion in Fließkomma (nur `+ - * /`, deterministisch), Ergebnis auf ganze Milli-px gerundet und der Abstand
+ * ganzzahlig an der gerundeten Position neu gemessen.
+ */
+export function nearestOnPath(path: Path, x: number, y: number): { progress: number; d2: number } {
+  let bestD = Infinity;
+  let bestProg = 0;
+  const pts = path.points;
+  for (let i = 1; i < pts.length; i++) {
+    const a = pts[i - 1];
+    const b = pts[i];
+    const ex = b.x - a.x;
+    const ey = b.y - a.y;
+    const len2 = ex * ex + ey * ey;
+    let t = len2 === 0 ? 0 : ((x - a.x) * ex + (y - a.y) * ey) / len2;
+    t = t < 0 ? 0 : t > 1 ? 1 : t;
+    const qx = a.x + ex * t - x;
+    const qy = a.y + ey * t - y;
+    const d = qx * qx + qy * qy;
+    if (d < bestD) {
+      bestD = d;
+      bestProg = path.cum[i - 1] + t * (path.cum[i] - path.cum[i - 1]);
+    }
+  }
+  const progress = Math.max(0, Math.min(path.length, Math.round(bestProg)));
+  const pos = positionAt(path, progress);
+  return { progress, d2: dist2(x, y, pos.x, pos.y) };
+}

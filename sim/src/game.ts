@@ -2,18 +2,18 @@
  * Duskwardens-Kern (Runde 11): deterministisch, Ganzzahl-Zustand, 60 Ticks/s.
  * Tick-Reihenfolge: siehe sim/README.md und `tick()` unten.
  */
-import { DATA, baseStats } from './data.js';
+import { DATA, POWER_KEYS, baseStats } from './data.js';
 import { dist2, isqrt } from './fixed.js';
 import { hashState } from './hash.js';
 import { getMap, pointInPolygon } from './map.js';
 import { towerXpPot, splitTowerXp } from './xp.js';
-import { positionAt, pathClearance } from './path.js';
+import { positionAt, pathClearance, nearestOnPath } from './path.js';
 import { nextInt, seedRng } from './prng.js';
 import { applyMod, pathOrder, type Mod, type Stats } from './stats.js';
 import { cosBp, rotate, sinBp } from './trig.js';
 import type {
   AbilityId, Command, CommandResult, DamageType, Difficulty, EnemyState, EnemyType, Game, GameOptions, GameState,
-  HeroType, PlaceCheck, ProjectileKind, ProjectileState, SimEvent, TargetMode, TowerState, TowerType, Tiers, UnlockPathInfo, UpgradeInfo,
+  HeroType, PlaceCheck, PowerKey, ProjectileKind, ProjectileState, RoundPreview, SimEvent, TargetMode, TowerState, TowerType, Tiers, TrapState, UnlockPathInfo, UpgradeInfo,
 } from './types.js';
 
 export const MAX_ROUND = 20;
@@ -74,6 +74,14 @@ export function createGame(opts: GameOptions): Game {
     etab[k].rbe = calc(k);
   }
 
+  const zeroPowers = (v: number): Record<PowerKey, number> => {
+    const o = {} as Record<PowerKey, number>;
+    for (const k of POWER_KEYS) o[k] = v;
+    return o;
+  };
+  const powers0 = zeroPowers(0);
+  for (const k of POWER_KEYS) powers0[k] = Math.max(0, Math.floor(opts.powers?.[k] ?? 0));
+
   const lives0 = diff.lives + (kmods.lives ?? 0);
   const S: GameState = {
     tick: 0,
@@ -98,7 +106,14 @@ export function createGame(opts: GameOptions): Game {
       pops: { ranger: 0, bombardier: 0, frostcaller: 0, wren: 0 },
       leaked: 0,
       spent: { ranger: 0, bombardier: 0, frostcaller: 0, wren: 0 },
+      powersUsed: zeroPowers(0),
     },
+    powers: powers0,
+    powerUsedRound: zeroPowers(-1),
+    traps: [],
+    warpLeft: 0,
+    oilRound: 0,
+    oilCarry: 0,
     autoStart: false,
     heroPlaced: false,
     rainLeft: 0,
@@ -249,7 +264,12 @@ export function createGame(opts: GameOptions): Game {
 
   const enemySpeed = (e: EnemyState): number => {
     const base = etab[e.type].sp;
-    return e.slowTicks > 0 ? Math.floor((base * (10000 - e.slowBp)) / 10000) : base;
+    let v = e.slowTicks > 0 ? Math.floor((base * (10000 - e.slowBp)) / 10000) : base;
+    if (S.warpLeft > 0) {
+      const bp = DATA.powers.timeWarp.params[etab[e.type].boss ? 'bossSlowBp' : 'slowBp'];
+      v = Math.floor((v * (10000 - bp)) / 10000);
+    }
+    return v;
   };
 
   /** Fortschritt eines Gegners in `ticks` Ticks (Status eingerechnet, Fortsetzung nach Stillstand). */
@@ -299,7 +319,13 @@ export function createGame(opts: GameOptions): Game {
     const d = etab[e.type];
     e.dead = true;
     e.hp = 0;
-    const cash = d.boss ? 100 : diff.popCash;
+    let cash = d.boss ? 100 : diff.popCash;
+    if (S.oilRound > 0 && S.round <= S.oilRound) {
+      // Lantern Oil: +25 % mit Bruchrest (bei 2 Gold je Schicht sonst nie ein Aufschlag)
+      const t = cash * DATA.powers.lanternOil.params.cashBp + S.oilCarry;
+      S.oilCarry = t % 10000;
+      cash += Math.floor(t / 10000);
+    }
     S.cash += cash;
     const owner = towerById(src);
     if (owner) {
@@ -706,6 +732,30 @@ export function createGame(opts: GameOptions): Game {
     emit({ type: 'leak', tick: S.tick, enemy: e.id, etype: e.type, lives: S.lives });
   }
 
+  function removeTrap(t: TrapState, reason: 'spent' | 'expired'): void {
+    S.traps = S.traps.filter((x) => x !== t);
+    emit({ type: 'trapGone', tick: S.tick, id: t.id, kind: t.kind, reason });
+  }
+
+  /** Gegner ist im Tick von `a` nach `b` (Wegfortschritt) gelaufen: Fallen in (a, b] in Wegreihenfolge auslösen. */
+  function crossTraps(e: EnemyState, a: number, b: number): void {
+    const hit = S.traps.filter((t) => t.progress > a && t.progress <= b).sort((x, y) => x.progress - y.progress || x.id - y.id);
+    for (const t of hit) {
+      if (e.dead) return;
+      if (t.kind === 'caltrops') {
+        damage(e, DATA.powers.caltrops.params.damage, 'magic', 0);
+      } else {
+        const d = etab[e.type];
+        if (d.boss || d.immuneCold || e.frozenTicks > 0) continue;
+        e.frozenTicks = DATA.powers.frostTrap.params.freezeTicks;
+        emit({ type: 'status', tick: S.tick, enemy: e.id, kind: 'freeze' });
+      }
+      t.charges--;
+      emit({ type: 'trap', tick: S.tick, id: t.id, kind: t.kind, charges: t.charges });
+      if (t.charges <= 0) removeTrap(t, 'spent');
+    }
+  }
+
   function updateEnemies(): void {
     const list = S.enemies.slice();
     for (const e of list) {
@@ -726,17 +776,22 @@ export function createGame(opts: GameOptions): Game {
         e.stunTicks--;
         continue;
       }
+      const before = e.progress;
       const f = e.frac + enemySpeed(e);
       e.progress += Math.floor(f / 1000);
       e.frac = f % 1000;
-      if (e.progress >= path.length) {
-        e.progress = path.length;
-        leak(e);
-        continue;
-      }
+      if (e.progress > path.length) e.progress = path.length;
       const pos = positionAt(path, e.progress);
       e.x = pos.x;
       e.y = pos.y;
+      if (S.traps.length && e.progress > before) {
+        crossTraps(e, before, e.progress);
+        if (e.dead) continue;
+      }
+      if (e.progress >= path.length) {
+        leak(e);
+        continue;
+      }
     }
   }
 
@@ -788,6 +843,7 @@ export function createGame(opts: GameOptions): Game {
     S.cash += bonus;
     S.roundsCleared++;
     S.activeRounds = S.activeRounds.filter((x) => x !== r);
+    for (const t of S.traps.slice()) if (t.until > 0 && t.until <= r) removeTrap(t, 'expired');
     grantHeroXp(60 + 20 * r);
     emit({ type: 'roundEnd', tick: S.tick, round: r, bonus });
     distributeTowerXp(r);
@@ -858,6 +914,7 @@ export function createGame(opts: GameOptions): Game {
     // 2. Fähigkeits-Abklingzeiten
     for (const a of S.abilities) if (!a.ready && --a.cdLeft <= 0) { a.cdLeft = 0; a.ready = true; }
     if (S.rainLeft > 0) S.rainLeft--;
+    if (S.warpLeft > 0) S.warpLeft--;
     // 3. Gegner bewegen, Status
     updateEnemies();
     rebuildGrid();
@@ -873,6 +930,10 @@ export function createGame(opts: GameOptions): Game {
   // ================= Befehle =================
 
   function canPlace(type: TowerType | HeroType, x: number, y: number): PlaceCheck {
+    return canPlaceCore(type, x, y, true);
+  }
+
+  function canPlaceCore(type: TowerType | HeroType, x: number, y: number, needCash: boolean): PlaceCheck {
     if (!isHero(type) && !TOWER_TYPES.includes(type)) return { ok: false, reason: 'unknown-tower' };
     if (opts.unlocks && !opts.unlocks.towers.includes(type)) return { ok: false, reason: 'locked' };
     if (isHero(type) && S.heroPlaced) return { ok: false, reason: 'hero-limit' };
@@ -890,7 +951,7 @@ export function createGame(opts: GameOptions): Game {
       const rr = towerDef(t.type).radius * 1000 + r;
       if (dist2(x, y, t.x, t.y) < rr * rr) return { ok: false, reason: 'overlap' };
     }
-    if (S.cash < priceOf(type)) return { ok: false, reason: 'no-cash' };
+    if (needCash && S.cash < priceOf(type)) return { ok: false, reason: 'no-cash' };
     return { ok: true };
   }
 
@@ -1013,6 +1074,151 @@ export function createGame(opts: GameOptions): Game {
     return { ok: true };
   }
 
+  /** Turm anlegen (Kasse und `place`-Event machen die Aufrufer). `spent` = Verkaufs-/XP-Grundlage. */
+  function spawnTower(type: TowerType | HeroType, x: number, y: number, spent: number, tiers: Tiers): TowerState {
+    const hero = isHero(type);
+    const lvl = hero ? Math.max(1, Math.min(20, kmods.heroStartLevel ?? 1)) : 0;
+    const t: TowerState = {
+      id: S.nextId++, type, x, y, tiers: [...tiers] as Tiers, heroLevel: lvl,
+      heroXp: hero ? DATA.hero.wren.levels[lvl - 1].xp : 0, target: 'first', facing: 0, attackTick: 0, pops: 0, spent,
+      camo: false, range: 0, cd: 0, windupLeft: 0, windupTarget: 0, shots: 0, auraCd: 0, thunderCd: 0,
+    };
+    S.towers.push(t);
+    if (hero) S.heroPlaced = true;
+    refreshTower(t);
+    return t;
+  }
+
+  // ================= Powers (Runde 12) =================
+
+  const isPowerKey = (k: unknown): k is PowerKey => typeof k === 'string' && (POWER_KEYS as readonly string[]).includes(k);
+  const num = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
+
+  /** Prüft einen Einsatz ohne etwas zu ändern. Reihenfolge der Gründe: unknown-power, no-power, used-this-round, dann Ziel/Voraussetzung. */
+  function powerCheck(power: PowerKey, xIn?: number, yIn?: number): PlaceCheck {
+    if (!isPowerKey(power)) return { ok: false, reason: 'unknown-power' };
+    if (S.powers[power] <= 0) return { ok: false, reason: 'no-power' };
+    if (S.powerUsedRound[power] === S.round) return { ok: false, reason: 'used-this-round' };
+    const d = DATA.powers[power];
+    if (power === 'heroBoost') {
+      const h = heroTower();
+      if (!h) return { ok: false, reason: 'no-hero' };
+      if (h.heroLevel >= 20) return { ok: false, reason: 'maxed' };
+    }
+    if (d.use === 'button') return { ok: true };
+    if (!num(xIn) || !num(yIn)) return { ok: false, reason: 'invalid-target' };
+    const x = Math.round(xIn), y = Math.round(yIn);
+    if (d.use === 'target') {
+      if (x < 0 || y < 0 || x > map.size[0] * 1000 || y > map.size[1] * 1000) return { ok: false, reason: 'invalid-target' };
+      return { ok: true };
+    }
+    if (d.use === 'path') {
+      const n = nearestOnPath(path, x, y);
+      if (n.d2 > map.halfWidth * map.halfWidth) return { ok: false, reason: 'not-on-path' };
+      return { ok: true };
+    }
+    return canPlaceCore(d.tower!, x, y, false);
+  }
+
+  function usePower(cmd: Extract<Command, { type: 'power' }>): CommandResult {
+    const chk = powerCheck(cmd.power, cmd.x, cmd.y);
+    if (!chk.ok) return chk;
+    const key = cmd.power;
+    const d = DATA.powers[key];
+    const x = num(cmd.x) ? Math.round(cmd.x) : undefined;
+    const y = num(cmd.y) ? Math.round(cmd.y) : undefined;
+    S.powers[key]--;
+    S.powerUsedRound[key] = S.round;
+    S.stats.powersUsed[key]++;
+    let id: number | undefined;
+    switch (key) {
+      case 'goldDrop':
+        S.cash += d.params.cash;
+        emit({ type: 'power', tick: S.tick, power: key });
+        break;
+      case 'lanternBomb': {
+        emit({ type: 'power', tick: S.tick, power: key, x, y });
+        const r = d.params.radiusPx * 1000;
+        emit({ type: 'explode', tick: S.tick, x: x!, y: y!, radius: r, kind: 'bomb' });
+        const list: { e: EnemyState; d2: number }[] = [];
+        for (const e of queryBox(x! - r - 30000, y! - r - 30000, x! + r + 30000, y! + r + 30000)) {
+          const rr = r + etab[e.type].radius;
+          const d2 = dist2(x!, y!, e.x, e.y);
+          if (d2 <= rr * rr) list.push({ e, d2 });
+        }
+        list.sort((a, b) => a.d2 - b.d2 || a.e.id - b.e.id);
+        for (const { e } of list.slice(0, d.params.maxTargets)) damage(e, etab[e.type].boss ? d.params.bossDamage : d.params.damage, 'explosive', 0);
+        break;
+      }
+      case 'caltrops':
+      case 'frostTrap': {
+        const n = nearestOnPath(path, x!, y!);
+        const pos = positionAt(path, n.progress);
+        const t: TrapState = {
+          id: S.nextId++, kind: key, progress: n.progress, x: pos.x, y: pos.y, charges: d.params.charges,
+          until: key === 'caltrops' ? S.round + d.params.extraRounds : 0,
+        };
+        S.traps.push(t);
+        id = t.id;
+        emit({ type: 'power', tick: S.tick, power: key, x: pos.x, y: pos.y });
+        break;
+      }
+      case 'timeWarp':
+        S.warpLeft = d.params.durationTicks;
+        emit({ type: 'power', tick: S.tick, power: key });
+        break;
+      case 'lanternOil':
+        S.oilRound = S.round + d.params.extraRounds;
+        emit({ type: 'power', tick: S.tick, power: key });
+        break;
+      case 'extraLives':
+        S.lives += d.params.lives;
+        emit({ type: 'power', tick: S.tick, power: key });
+        break;
+      case 'heroBoost': {
+        const h = heroTower()!;
+        const to = Math.min(20, h.heroLevel + d.params.levels);
+        emit({ type: 'power', tick: S.tick, power: key });
+        for (let l = h.heroLevel + 1; l <= to; l++) emit({ type: 'heroLevel', tick: S.tick, tower: h.id, level: l });
+        h.heroLevel = to;
+        h.heroXp = DATA.hero.wren.levels[to - 1].xp;
+        refreshTower(h);
+        id = h.id;
+        break;
+      }
+      default: {
+        // Insta-Warden: fertig ausgebauter Turm, gratis, Verkaufswert 0, ohne Prüfung der Stufen-Sperren
+        const t = spawnTower(d.tower!, x!, y!, 0, d.tiers as Tiers);
+        id = t.id;
+        emit({ type: 'power', tick: S.tick, power: key, x, y });
+        emit({ type: 'place', tick: S.tick, tower: t.id, ttype: t.type, cash: S.cash });
+      }
+    }
+    return id === undefined ? { ok: true } : { ok: true, id };
+  }
+
+  function roundPreview(r: number): RoundPreview | null {
+    if (!Number.isInteger(r) || r < 1 || r > DATA.rounds.length) return null;
+    const groups: RoundPreview['groups'] = [];
+    let rbe = 0, hasCamo = false, hasArmor = false, hasEmber = false, hasBoss = false;
+    const tree = (e: EnemyType, depth: number): void => {
+      if (etab[e].armor) hasArmor = true;
+      if (etab[e].immuneCold) hasEmber = true;
+      if (depth < 10) for (const c of etab[e].children) tree(c, depth + 1);
+    };
+    for (const g of DATA.rounds[r - 1].groups) {
+      const camo = !!g.camo;
+      const old = groups.find((x) => x.type === g.type && x.camo === camo);
+      if (old) old.n += g.n;
+      else groups.push({ type: g.type, n: g.n, camo });
+      rbe += g.n * etab[g.type].rbe;
+      if (camo) hasCamo = true;
+      if (etab[g.type].boss) hasBoss = true;
+      tree(g.type, 0);
+    }
+    return { round: r, groups, rbe, hasCamo, hasArmor, hasEmber, hasBoss };
+  }
+
   function apply(cmd: Command): CommandResult {
     if (S.phase === 'won' || S.phase === 'lost') return { ok: false, reason: 'game-over' };
     const res = applyInner(cmd);
@@ -1027,18 +1233,9 @@ export function createGame(opts: GameOptions): Game {
         const chk = canPlace(cmd.tower, x, y);
         if (!chk.ok) return chk;
         const price = priceOf(cmd.tower);
-        const hero = isHero(cmd.tower);
-        const lvl = hero ? Math.max(1, Math.min(20, kmods.heroStartLevel ?? 1)) : 0;
-        const t: TowerState = {
-          id: S.nextId++, type: cmd.tower, x, y, tiers: [0, 0, 0], heroLevel: lvl,
-          heroXp: hero ? DATA.hero.wren.levels[lvl - 1].xp : 0, target: 'first', facing: 0, attackTick: 0, pops: 0, spent: price,
-          camo: false, range: 0, cd: 0, windupLeft: 0, windupTarget: 0, shots: 0, auraCd: 0, thunderCd: 0,
-        };
+        const t = spawnTower(cmd.tower, x, y, price, [0, 0, 0]);
         S.cash -= price;
         S.stats.spent[t.type] += price;
-        S.towers.push(t);
-        if (hero) S.heroPlaced = true;
-        refreshTower(t);
         emit({ type: 'place', tick: S.tick, tower: t.id, ttype: t.type, cash: S.cash });
         return { ok: true, id: t.id };
       }
@@ -1093,6 +1290,8 @@ export function createGame(opts: GameOptions): Game {
       }
       case 'ability':
         return useAbility(cmd.ability);
+      case 'power':
+        return usePower(cmd);
       case 'startRound':
         if (S.groups.length > 0) return { ok: false, reason: 'spawning' };
         if (S.round >= MAX_ROUND) return { ok: false, reason: 'no-more-rounds' };
@@ -1123,6 +1322,8 @@ export function createGame(opts: GameOptions): Game {
     unlockInfo,
     sellValue,
     priceOf,
+    canUsePower: powerCheck,
+    roundPreview,
     sandbox: {
       spawn(type, progress = 0, camo = false) {
         const e = spawnEnemy(type, progress, camo, S.round, false);

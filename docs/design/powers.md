@@ -62,3 +62,26 @@ Verbraucht wird nur bei Erfolg. Medaillen zählen trotzdem; das Ergebnis zeigt �
   Besitz, Kaufen mit Ton/Effekt; Embers-Anzeige oben auf der Startseite und im Store. Ergebnis-Bildschirm zeigt verdiente Embers.
 - Pixel-Art für alle Powers: Icons 16 × 16 (×3), Fallen auf dem Weg (Krähenfüße, Eiskristall), Effekte (Bombe, Zeitblase,
   Goldregen, Öl-Schimmer, Herz +25, Held-Aufstieg). Palette wie immer.
+
+## Umsetzung Runde 12 (Paket A, Sim + Meta) — Abweichungen und Präzisierungen
+
+Die Namen oben gelten unverändert. Konkretisiert beziehungsweise ergänzt:
+
+**Sim**
+- `PowerKey` = `goldDrop | lanternBomb | caltrops | frostTrap | timeWarp | lanternOil | extraLives | heroBoost | instaWarden:ranger | instaWarden:bombardier | instaWarden:frostcaller`. Export `POWER_KEYS` (Anzeigereihenfolge = `DATA.powerOrder`).
+- `DATA.powers[key]` = `{ name, desc (Englisch), price (Embers), use: 'button' | 'target' | 'path' | 'place', params, tower?, tiers? }`. `use` sagt dem Client, wie eingesetzt wird: `button` (Knopf), `target` (Lantern Bomb: Ziel auf der Karte), `path` (Fallen: nur auf den Weg), `place` (Insta-Warden: wie ein Turm). Zahlen in `params` (z. B. `lanternBomb.radiusPx = 40`).
+- `state.powerUsedRound[key]` = Runde (`state.round`) des letzten Einsatzes, **-1 = nie**. Gesperrt, solange der Wert `state.round` entspricht; Runde 0 (vor dem ersten Start) zählt auch als Runde. "Art" = `PowerKey`, die drei Insta-Warden-Varianten sperren sich also nicht gegenseitig.
+- Zusätzlich zu den Gründen aus der Tabelle: `unknown-power` (Schlüssel ungültig), `maxed` (Hero Boost bei Level 20, nichts verbraucht). `invalid-target` auch bei fehlenden Koordinaten und bei Lantern Bomb außerhalb der Karte. Reihenfolge: `unknown-power`, `no-power`, `used-this-round`, `no-hero`/`maxed`, `invalid-target`, `not-on-path` bzw. Platziergründe.
+- Insta-Warden: Platziergründe ohne `no-cash` (`out-of-bounds`, `on-path`, `water`, `blocked`, `overlap`, `locked` = Turmtyp im Profil gesperrt, `unknown-tower`). Die Stufen-Sperren (`maxTier`) ignoriert er, `state.maxTier` bleibt unverändert. Weitere Ausbauten gelten wie bei jedem Turm.
+- Fallen: `state.traps[i]` hat zusätzlich `until` (Innenleben, Runde, an deren Ende die Falle verschwindet; 0 = nie). Caltrops: `until = state.round + 1` beim Legen, also gelegt in der Bauphase nach Runde r hält die Falle bis Ende von Runde r+1; Frost Trap hat kein Zeitlimit. Ladung wird je Gegner abgezogen, der die Falle **überläuft** (Wegfortschritt von vor nach hinter die Falle im selben Tick); Kinder, die an der Stelle entstehen, an der der Elter die Falle schon passiert hat, lösen sie nicht erneut aus. Frost Trap lässt Boss, Emberling und schon Eingefrorene durch (keine Ladung verbraucht). Falle liegt immer auf der Wegmitte (x/y werden auf den Weg gerastet).
+- Events: `trap { id, kind, charges }` je Ladung (Rest nach Abzug); `trapGone { id, kind, reason: 'spent' | 'expired' }`; `power { power, x?, y? }` (bei Fallen die gerasterte Position). Lantern Bomb sendet zusätzlich `explode` (`kind: 'bomb'`, `radius: 40000`), Hero Boost je Stufe `heroLevel`, Insta-Warden ein normales `place`. Gold Drop, Extra Lives, Time Warp, Lantern Oil senden nur `power`.
+- Time Warp: global, wirkt auch auf Gegner, die in den 10 s erst entstehen; multiplikativ zu anderen Verlangsamungen (`state.warpLeft` Restticks).
+- Lantern Oil: Pop-Cash +25 % mit Bruchrest (`state.oilCarry`), sonst gäbe es bei 2 Gold je Schicht nie einen Aufschlag. Aktiv, solange `state.round <= state.oilRound`; `oilRound = state.round + 1` beim Einsatz. Nur Pop-Cash, nicht Rundenbonus.
+- Lantern Bomb: Quelle ohne Turm, die Pops zählen für keinen Turm (kein Turm-XP, kein Held-XP).
+- Zusatz-API für den Client: `game.canUsePower(power, x?, y?)` (Trockenlauf, gleiche Gründe wie `apply`, ändert nichts, für Geist/Vorschau-Kreis); `game.roundPreview(r)` liefert `null` außerhalb 1..20; `hasArmor`/`hasEmber` zählen auch Nachkommen (Brute -> Ironshell + Emberling); gleiche Typ/Camo-Gruppen sind zusammengefasst; `rbe` mit Boss-HP der Schwierigkeit.
+
+**Meta**
+- Profil-Schema bleibt **11** (neue Felder mit Standardwert, kein Reset): `embers`, `inventory` (alle 11 Schlüssel), `starterPack` (Flag). Das Startpaket wird in `sanitize` (also beim Laden und beim Import) vergeben, wenn das Flag fehlt; neue Profile haben es schon.
+- `MatchResult.powersUsed?: Record<PowerKey, number>` (= `state.stats.powersUsed`), `roundsCleared`, `won`, `difficulty` wie bisher. Embers: Runden 1..min(roundsCleared, 20) (Freeplay-Runden zählen nicht), Sieg, `newMedal` (erste Medaille dieser Schwierigkeit auf der Karte), Level-Ups je +25. `MatchReport` trägt `embersGained`, `embers { rounds, win, medal, levelUp }` und `powersUsed` (Summe, für "Powers used: N").
+- `buyPower(profile, key, count = 1)` -> `{ ok, profile, cost }` oder `Fail` (`unknown-power`, `bad-count`, `not-enough-embers`). `matchOptions(profile).powers` = Kopie des Inventars.
+- Der Client muss ein Match, das in Runde 0 verlassen wird, wie bisher nicht verbuchen (dann bleibt auch das Inventar).

@@ -1,0 +1,60 @@
+{
+ "order": ["goldDrop", "lanternBomb", "caltrops", "frostTrap", "timeWarp", "lanternOil", "extraLives", "heroBoost", "instaWarden:ranger", "instaWarden:bombardier", "instaWarden:frostcaller"],
+ "powers": {
+  "goldDrop": {
+   "name": "Gold Drop", "price": 40, "use": "button",
+   "desc": "Instantly grants 500 gold.",
+   "params": { "cash": 500 }
+  },
+  "lanternBomb": {
+   "name": "Lantern Bomb", "price": 30, "use": "target",
+   "desc": "Hurl a lantern bomb: 20 damage to up to 40 foes in the blast, 100 to a boss.",
+   "params": { "radiusPx": 40, "damage": 20, "bossDamage": 100, "maxTargets": 40 }
+  },
+  "caltrops": {
+   "name": "Caltrops", "price": 25, "use": "path",
+   "desc": "Scatter caltrops on the path. They pop the next 20 layers that cross them (1 damage each), then vanish. Gone after the next round at the latest.",
+   "params": { "charges": 20, "damage": 1, "extraRounds": 1 }
+  },
+  "frostTrap": {
+   "name": "Frost Trap", "price": 30, "use": "path",
+   "desc": "Freezes the next 15 foes that cross it for 3 seconds, then vanishes. Bosses and Emberlings are immune.",
+   "params": { "charges": 15, "freezeTicks": 180 }
+  },
+  "timeWarp": {
+   "name": "Time Warp", "price": 50, "use": "button",
+   "desc": "All foes move 50% slower for 10 seconds (bosses 25%).",
+   "params": { "durationTicks": 600, "slowBp": 5000, "bossSlowBp": 2500 }
+  },
+  "lanternOil": {
+   "name": "Lantern Oil", "price": 60, "use": "button",
+   "desc": "+25% gold from pops for the rest of this round and the whole next round.",
+   "params": { "cashBp": 2500, "extraRounds": 1 }
+  },
+  "extraLives": {
+   "name": "Extra Lives", "price": 35, "use": "button",
+   "desc": "Restores 25 lives.",
+   "params": { "lives": 25 }
+  },
+  "heroBoost": {
+   "name": "Hero Boost", "price": 80, "use": "button",
+   "desc": "Wren gains 3 levels (max. 20). Requires Wren on the field.",
+   "params": { "levels": 3 }
+  },
+  "instaWarden:ranger": {
+   "name": "Insta-Warden: Ranger", "price": 150, "use": "place", "tower": "ranger", "tiers": [2, 0, 3],
+   "desc": "Place a fully built Ranger (2-0-3) for free. Ignores tier locks. Sells for nothing.",
+   "params": {}
+  },
+  "instaWarden:bombardier": {
+   "name": "Insta-Warden: Bombardier", "price": 150, "use": "place", "tower": "bombardier", "tiers": [3, 0, 1],
+   "desc": "Place a fully built Bombardier (3-0-1) for free. Ignores tier locks. Sells for nothing.",
+   "params": {}
+  },
+  "instaWarden:frostcaller": {
+   "name": "Insta-Warden: Frostcaller", "price": 150, "use": "place", "tower": "frostcaller", "tiers": [0, 2, 3],
+   "desc": "Place a fully built Frostcaller (0-2-3) for free. Ignores tier locks. Sells for nothing.",
+   "params": {}
+  }
+ }
+}
