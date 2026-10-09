@@ -1,5 +1,6 @@
 /** Projektile in 16 Richtungen (0 = rechts, gegen den Uhrzeigersinn, 22,5 Grad je Schritt). Mittelpunkt = Anker. */
 import { flake, spark } from './parts';
+import type { PalName } from '../palette';
 import { Surface } from './surface';
 import type { ProjectileKind } from './types';
 
@@ -105,6 +106,37 @@ export function projectileRaster(kind: ProjectileKind, dir16: number, spin = 0):
     case 'splinter': {
       // Splitter: winzige Metallscherbe
       L(-2, 2, 0, 'silver'); const tip = P(3); s.px(tip[0], tip[1], 'white'); const f = P(-1, 1); s.px(f[0], f[1], 'stone'); const g = P(-3); s.px(g[0], g[1], 'amber');
+      break;
+    }
+    case 'thorn': {
+      // Dorn: brauner Schaft, helle Spitze, zwei Widerhaken, gruener Federbusch
+      L(-4, 2, 0, 'bark'); L(-3, 1, 0.8, 'wood');
+      for (const w of [-1, 1]) { const f = P(-4, w); s.px(f[0], f[1], 'leaf'); const g = P(-3, w * 1.5); s.px(g[0], g[1], 'grass'); const b = P(1, w); s.px(b[0], b[1], 'silver'); }
+      const t1 = P(3); s.px(t1[0], t1[1], 'white'); const t2 = P(2); s.px(t2[0], t2[1], 'silver');
+      break;
+    }
+    case 'thornMagic': {
+      // Grove Guardian: Dorn mit Leuchtspur (magic, trifft Ironshell)
+      for (let i = 1; i <= 6; i++) { const q = P(-4 - i * 1.1, ((i * 5) % 3 - 1) * 0.5); if (i % 3 !== 0) s.px(q[0], q[1], i < 3 ? 'white' : i < 5 ? 'leaf' : 'grass'); }
+      L(-4, 2, 0, 'leaf'); L(-3, 2, 0.9, 'amber'); L(-3, 2, -0.9, 'amber');
+      for (const w of [-1, 1]) { const b = P(0, w * 1.6); s.px(b[0], b[1], 'yellow'); }
+      const t1 = P(4); s.px(t1[0], t1[1], 'white'); const t2 = P(3); s.px(t2[0], t2[1], 'yellow');
+      break;
+    }
+    case 'potion': case 'potionGold': {
+      // Flasche im Bogen: `spin` = Drehung 0..15 (22,5 Grad je Schritt), Hals zeigt in Drehrichtung
+      const gold = kind === 'potionGold';
+      const a2 = (spin / 16) * Math.PI * 2;
+      const hx = Math.cos(a2), hy = -Math.sin(a2);
+      const liq: [PalName, PalName, PalName] = gold ? ['rust', 'amber', 'yellow'] : ['grass', 'leaf', 'yellow'];
+      // Tropfspur
+      for (let i = 1; i <= 3; i++) { const q = [C - hx * (5 + i * 1.5) + (i % 2 ? 1 : -1), C - hy * (5 + i * 1.5) + 1]; s.px(q[0], q[1], i < 2 ? liq[2] : liq[0]); }
+      s.ball(C, C, 3.6, 3.6, ['stone', 'silver', 'white']);
+      s.ball(C, C, 2.8, 2.8, liq);
+      const nk = [C + hx * 4.2, C + hy * 4.2], nk2 = [C + hx * 5.8, C + hy * 5.8];
+      s.line(C + hx * 2.5, C + hy * 2.5, nk[0], nk[1], 'silver', 2); s.px(nk2[0], nk2[1], gold ? 'yellow' : 'wood'); s.px(nk2[0] + hx, nk2[1] + hy, gold ? 'amber' : 'bark');
+      s.px(C - 1, C - 1, 'white');
+      if (gold) { s.px(C + 4, C - 4, 'white'); s.px(C - 4, C + 3, 'yellow'); }
       break;
     }
     case 'lantern': {

@@ -207,7 +207,7 @@ describe('Effekte', () => {
 });
 
 describe('Icons und Schrift', () => {
-  it('75 Upgrade-Icons 16x16, alle verschieden, Stufenpunkte zaehlen mit', () => {
+  it('105 Upgrade-Icons 16x16, alle verschieden, Stufenpunkte zaehlen mit', () => {
     const seen = new Set<string>();
     for (const type of TOWER_TYPES) for (const p of [0, 1, 2] as const) for (let t = 1; t <= 5; t++) {
       const r = iconUpgradeRaster(type, p, t);
@@ -216,9 +216,9 @@ describe('Icons und Schrift', () => {
       valid(r.rows);
       seen.add(sig(r.rows));
     }
-    expect(seen.size).toBe(75);
+    expect(seen.size).toBe(105);
     for (const a of ABILITIES) { valid(iconAbilityRaster(a).rows); }
-    expect(new Set(ABILITIES.map((a) => sig(iconAbilityRaster(a).rows))).size).toBe(7);
+    expect(new Set(ABILITIES.map((a) => sig(iconAbilityRaster(a).rows))).size).toBe(9);
   });
   it('Pixel-Ziffern 3 x 5', () => {
     const r = textRaster('+120', 'yellow', null);

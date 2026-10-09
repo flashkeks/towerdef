@@ -5,6 +5,7 @@
  */
 import { explosionRaster, novaRaster, popRaster, boltLineRaster, statusRaster, puffRaster, leakRaster, arrowRainRaster, absoluteZeroRaster, flareRaster, dawnBeamRaster, bossPlateRaster, type ExplosionKind, type StatusKind, EXPLOSION_RADIUS } from '../fx/effects';
 import { coinRiseRaster, bankChestRaster, auraRingRaster, grantRaster, ricochetRaster, supplyDropRaster, focusRaster, bossMarkRaster } from '../fx/r13';
+import { acidMarkRaster, acidPoolRaster, acidSplashRaster, buffGlowRaster, deathBlastRaster, goldBurstRaster, monsterTransformRaster, shrinkRaster, stormArcRaster, thornZoneRaster, treeWallGrowRaster, treeWallRaster, vineSnareRaster, whirlwindRaster, worldTreeZoneRaster } from '../fx/r14';
 import { textRaster, textWidth } from '../font';
 import type { PalName } from '../palette';
 import { camoAlpha, rowsToCanvas, type Sprite } from './canvas';
@@ -15,7 +16,7 @@ import { bigHeartRaster, bombLanternRaster, bubbleRaster, coinRaster, emberRaste
 import type { TowerFrame } from './pose';
 import { projectileRaster } from './projectiles';
 import { Surface } from './surface';
-import { towerRaster } from './towers';
+import { monsterRaster, towerRaster } from './towers';
 import type { AbilityId, EnemyType, ProjectileKind, Tiers, TowerType } from './types';
 
 export type { Sprite, AlphaFn } from './canvas';
@@ -91,7 +92,7 @@ export function shadowSprite(w: number, h: number): Sprite {
 /** Projektil in 16 Richtungen (0 = rechts, gegen den Uhrzeigersinn). Bombe: `dir16` dreht die Lunte (Spin). Anker = Mitte. */
 export function projectileSprite(kind: ProjectileKind, dir16: number): Sprite {
   const d = ((Math.round(dir16) % 16) + 16) % 16;
-  return cached(`p|${kind}|${d}`, () => sprite(projectileRaster(kind, kind === 'bomb' ? 0 : d, kind === 'bomb' || kind === 'lantern' ? d : 0)));
+  return cached(`p|${kind}|${d}`, () => sprite(projectileRaster(kind, kind === 'bomb' || kind === 'potion' || kind === 'potionGold' ? 0 : d, kind === 'bomb' || kind === 'lantern' || kind === 'potion' || kind === 'potionGold' ? d : 0)));
 }
 
 // ---------- Icons und Portraets ----------
@@ -201,7 +202,48 @@ const focus = (frame: number): Sprite => { const f = ((Math.floor(frame) % 4) + 
 /** Boss-Markierung (rotes Fadenkreuz ueber dem Ziel, Crippling Shot), 4 Frames, Anker Mitte. */
 const bossMark = (frame: number): Sprite => { const f = ((Math.floor(frame) % 4) + 4) % 4; return cached(`bm|${f}`, () => sprite(bossMarkRaster(f))); };
 
-export const fx = { explosion, popShards, nova, boltLine, status, puff, leak, arrowRain, absoluteZero, flare, dawnBeam, bossPlate, coinRise, bankChest, auraRing, grant, ricochet, supplyDrop, focus, bossMark };
+// ---------- Effekte Runde 14: Thornweaver und Alchemist ----------
+export { ARC_FRAMES, WIND_FRAMES, SNARE_FRAMES, WALL_FRAMES, WALL_GROW_FRAMES, WALL_WEAR_STAGES, ZONE_FRAMES, SPLASH_FRAMES, MARK_ACID_FRAMES, POOL_FRAMES, BUFF_FRAMES, DEATH_BLAST_FRAMES, TRANSFORM_FRAMES, SHRINK_FRAMES, GOLD_BURST_FRAMES, SHRINK_SCALE } from '../fx/r14';
+/** Blitzbogen aus der Wolke durch Weltpunkte (Wolke, Ziel, Ziel ...), Frame 0..3, `big` = Storm Mother. Anker = Weltursprung. Nicht gecacht. */
+const stormArc = (points: [number, number][], frame = 0, big = false): Sprite => sprite(stormArcRaster(points, wrap4(frame), big));
+const wrap4 = (f: number): number => ((Math.floor(f) % 4) + 4) % 4;
+/** Wirbelwind (Tempest), Frame 0..5, Anker = Fuss. */
+const whirlwind = (frame: number): Sprite => { const f = clampF(frame, 6); return cached(`ww|${f}`, () => sprite(whirlwindRaster(f))); };
+/** Ranken-Fessel am Gegner (Vine Snare), Frame 0..3 (wiegt), Anker = Fuss des Gegners. */
+const vineSnare = (frame: number): Sprite => { const f = wrap4(frame); return cached(`vs|${f}`, () => sprite(vineSnareRaster(f))); };
+/** Baumwand auf dem Weg, `wear` 0..3 = Abnutzung, Frame 0..3 (wiegt), Anker = Fuss Mitte. */
+const treeWall = (wear: number, frame: number): Sprite => { const w = clampF(wear, 4), f = wrap4(frame); return cached(`tw|${w}|${f}`, () => sprite(treeWallRaster(w, f))); };
+/** Baumwand waechst aus dem Boden, Frame 0..5, gleiche Masse wie `treeWall`. */
+const treeWallGrow = (frame: number): Sprite => { const f = clampF(frame, 6); return cached(`twg|${f}`, () => sprite(treeWallGrowRaster(f))); };
+/** Dornenranken-Zone (Spirit of the Forest), Radius px, Frame 0..3, Anker Mitte. */
+const thornZone = (radius: number, frame: number): Sprite => { const R = Math.round(radius), f = wrap4(frame); return cached(`tz|${R}|${f}`, () => sprite(thornZoneRaster(R, f))); };
+/** Weltenbaum-Zone (World Tree), Radius px, Frame 0..3, Anker Mitte. */
+const worldTreeZone = (radius: number, frame: number): Sprite => { const R = Math.round(radius), f = wrap4(frame); return cached(`wz|${R}|${f}`, () => sprite(worldTreeZoneRaster(R, f))); };
+/** Saeurespritzer, Radius px, Frame 0..4, Anker Mitte. */
+const acidSplash = (radius: number, frame: number): Sprite => { const R = Math.round(radius), f = clampF(frame, 5); return cached(`as|${R}|${f}`, () => sprite(acidSplashRaster(R, f))); };
+/** Saeure-Markierung am Gegner, Frame 0..3, Anker = Mitte des Gegners. */
+const acidMark = (frame: number): Sprite => { const f = wrap4(frame); return cached(`am|${f}`, () => sprite(acidMarkRaster(f))); };
+/** Saeure-Pfuetze auf dem Weg, Radius px, Frame 0..3, Anker Mitte. */
+const acidPool = (radius: number, frame: number): Sprite => { const R = Math.round(radius), f = wrap4(frame); return cached(`ap|${R}|${f}`, () => sprite(acidPoolRaster(R, f))); };
+/** Buff-Glanz am Turm (Trank getrunken), Frame 0..5, Anker = Fuss. 'permanent' laeuft im Kreis (Permanent Brew). */
+const buffGlow = (frame: number, kind: 'brew' | 'stimulant' | 'permanent' = 'brew'): Sprite => { const f = clampF(frame, 6); return cached(`bg|${kind}|${f}`, () => sprite(buffGlowRaster(f, kind))); };
+/** Gruenliche Todesexplosion (Unstable Concoction), Frame 0..4, Radius px, Anker Mitte. */
+const deathBlast = (frame: number, radius = 24): Sprite => { const R = Math.round(radius), f = clampF(frame, 5); return cached(`db14|${R}|${f}`, () => sprite(deathBlastRaster(f, R))); };
+/** Monster-Verwandlung: Rauchwolke, Monster waechst, Frame 0..7, Anker = Fuss. */
+const monsterTransform = (frame: number): Sprite => { const f = clampF(frame, 8); return cached(`mt|${f}`, () => sprite(monsterTransformRaster(f))); };
+/** Schrumpf-Effekt: Gegner schrumpft zu Red Glim, Frame 0..5 (5 = Red Glim), Anker = Fuss. */
+const shrink = (etype: EnemyType, frame: number): Sprite => { const f = clampF(frame, 6); return cached(`sk|${etype}|${f}`, () => sprite(shrinkRaster(etype, f))); };
+/** Goldmuenzen: 'lead' (Lead to Gold) oder 'rubber' (Rubber to Gold), Frame 0..5, Anker = Mitte des Gegners. */
+const goldBurst = (kind: 'lead' | 'rubber', frame: number): Sprite => { const f = clampF(frame, 6); return cached(`gb|${kind}|${f}`, () => sprite(goldBurstRaster(kind, f))); };
+export { stormArc, whirlwind, vineSnare, treeWall, treeWallGrow, thornZone, worldTreeZone, acidSplash, acidMark, acidPool, buffGlow, deathBlast, monsterTransform, shrink, goldBurst };
+
+/** Monster-Form des Alchemisten (Transforming Tonic): 84 x 76, Anker = Fuss. facing 0..7, Frame idle0-3 / atk0-3. `scale` < 1: kleine Fassung fuer verwaltete Tuerme (Total Transformation, z. B. 0.6). */
+export function monsterSprite(facing: number, frame: TowerFrame, scale = 1): Sprite {
+  const f = ((Math.round(facing) % 8) + 8) % 8, k = Math.round(scale * 100);
+  return cached(`mon|${f}|${frame}|${k}`, () => sprite(monsterRaster(f, frame, k / 100)));
+}
+
+export const fx = { stormArc, whirlwind, vineSnare, treeWall, treeWallGrow, thornZone, worldTreeZone, acidSplash, acidMark, acidPool, buffGlow, deathBlast, monsterTransform, shrink, goldBurst, explosion, popShards, nova, boltLine, status, puff, leak, arrowRain, absoluteZero, flare, dawnBeam, bossPlate, coinRise, bankChest, auraRing, grant, ricochet, supplyDrop, focus, bossMark };
 export { coinRise, bankChest, auraRing, grant as grantFx, ricochet, supplyDrop, focus as focusFx, bossMark };
 export { explosion, popShards, nova, boltLine, status as statusFx, puff, leak as leakFx, arrowRain as arrowRainFx, absoluteZero as absoluteZeroFx, flare as flareFx, dawnBeam, bossPlate };
 
