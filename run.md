@@ -1,23 +1,20 @@
-# run.md — Runde 13: Lantern Market, Longshot, großer Wissensbaum, Figuren ohne Plattform
+# run.md — Runde 14: Thornweaver, Alchemist, größerer Wissensbaum
 
 Du arbeitest in `flashkeks/towerdef` auf **`dev`**. Kein PR, kein Deploy.
 
 ## 0. Kaltstart
-„Duskwardens“: Web-Tower-Defense wie Bloons TD 6, nur intern. `sim/` (deterministischer Kern), `meta/` (Profil, ohne DOM),
-`client/` (Vite + PixiJS v8, Pixel-Art im Code). Lies: `docs/design/ENTSCHEIDUNGEN.md` (oben), **`docs/design/tuerme-r13.md`
-(Spezifikation dieser Runde)**, `tuerme.md` (Regeln + Nachträge), `schnittstelle.md`, `pixel-stil.md`, `powers.md`, `docs/STATUS.md`.
-Vorrunden: `docs/archiv/run-runde11.md`, `run-runde12.md`. Später: Runde 14 (Thornweaver, Alchemist), Issues #3–#5.
+„Duskwardens“: Web-Tower-Defense wie Bloons TD 6, nur intern. `sim/`, `meta/`, `client/` (Vite + PixiJS v8, Pixel-Art im Code).
+Lies: `docs/design/ENTSCHEIDUNGEN.md` (oben), **`docs/design/tuerme-r13.md` (Abschnitte 3, 4, „Runde 14 …“ = Spezifikation)**,
+`tuerme.md`, `schnittstelle.md`, `pixel-stil.md`, `docs/STATUS.md`. Vorrunde: `docs/archiv/run-runde13.md`. Später: Issues #3–#6.
 
 ## 1. Regeln
-Subagenten nur Sonnet, max. 3, Zwischenstand alle 30 min committen, nach Nutzungslimit neuen Sonnet-Agenten auf denselben Worktree.
-Vor jedem Merge: Tests + tsc in sim/meta/client, `npm run build`, `npm run smoke`, Bot-Matrix (`cd sim && npm run matrix`) um die neuen
-Türme ergänzt. Screenshots in `client/docs/r13/`.
+Subagenten nur Sonnet, max. 3, Zwischenstand alle 30 min, nach Limit neuer Sonnet-Agent auf denselben Worktree. Vor dem Merge:
+Tests + tsc in sim/meta/client, build, smoke, Bot-Matrix mit den neuen Türmen. Screenshots `client/docs/r14/`.
+Figuren **ohne Plattform**, Stufen deutlich sichtbar (Stufe 3 neue Silhouette, 4 Rüstung/Leuchten, 5 Verwandlung).
 
 ## 2. Pakete
-- **A — Sim + Meta:** Market (Einkommen, Bank, Auren, Grant), Longshot (Karten-Reichweite, schnelles Projektil, Fähigkeiten, Markierung),
-  Wissensbaum 30 Knoten + Punkte aus Medaillen, Freischalt-Level, Bot-Strategien + Matrix.
-- **B — Pixel:** **alle Plattformen/Sockel weg** (nur Schatten), die drei alten Türme mit **deutlicheren Stufen** (Größe, Farbe, Ausrüstung,
-  T3 neue Silhouette, T4 Rüstung/Leuchten, T5 Verwandlung), Market und Longshot komplett (15 Stufen, Richtungen, Idle/Angriff, Icons,
-  Projektile/Effekte: Münzflug, Mündungsfeuer, Kiste, Markierung).
-- **C — Client:** Einbau Market/Longshot (Turm-Leiste, Panel, Bank-Knopf „Withdraw“, Auren-Ringe, Fähigkeiten), Wissensbaum-Bildschirm
-  für 30 Knoten / 5 Äste, Screenshots, Smoke.
+- **A — Sim + Meta:** Thornweaver, Alchemist (alle Stufen, Fähigkeiten, Ranken/Pfützen/Tränke), 12 neue Wissensknoten, Freischalt-Level,
+  Bot-Strategien + Matrix.
+- **B — Pixel:** beide Türme komplett (15 Stufen, Richtungen, Idle/Angriff, Icons, Projektile/Effekte: Dornen, Blitz, Ranken, Baumwand,
+  Wirbelwind, Trank-Bogen, Säurespritzer, Pfützen, Monster-Verwandlung, Schrumpf-Trank).
+- **C — Client:** Einbau beider Türme, Wissensbaum-Bildschirm **größer** + 40 Knoten, Screenshots, Smoke.

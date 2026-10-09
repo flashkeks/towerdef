@@ -132,3 +132,19 @@ Bestehende Profile über Level 5/6 bekommen die neuen Türme sofort.
 Bot-Matrix: der Market spielte seine Kosten selbst früh gebaut nur knapp wieder ein. **Ertrag +30 %:** Basis 80, A1 +40 (120),
 A2 +50 (170), A3 420, A4 1.180, A5 3.100, B1 +25. Abweichungen von A (globale Fähigkeiten, 28 Knoten, Ricochet-Details …):
 `sim/README.md` Abschnitt „Runde 13“.
+
+## Runde 14 — Wissensbaum-Erweiterung (Max: „ein bisschen größer skaliert und ein bisschen mehr“)
+
+Darstellung **größer** (Knoten größer, Schrift lesbarer, Baum nutzt die Bildschirmhöhe; scrollen erlaubt). Neue Knoten (+12 → 40):
+
+| Ast | Neue Knoten (Kosten) |
+|---|---|
+| Economy | Investor: Market-Basis −10 % (2) · Pop Bonus: Pop-Gold +5 % (3) |
+| Primary | Sharper Arrows: Ranger +1 Pierce (2) · Fused Shells: Bombardier-Splitter +2 (2) · Icicle Edge: Frostcaller +1 Schaden auf Eingefrorene (3) |
+| Specialists | Deep Roots: Thornweaver +10 % Reichweite (1) · Bountiful Grove: Jungle's Bounty +50 Gold (2) · Potent Brews: Alchemist-Tränke +25 % Dauer (1) · Midas Hands: Lead to Gold +20 (2) · Field Medic: +1 Leben je Runde (2) |
+| Wardens | Sturdy Gate: einmal je Match wird ein Leck verhindert (3) |
+| Powers | Ember Rush: +1 Ember je Runde (2) |
+
+## Runde 14 — Freischalt-Level
+
+Thornweaver L7, Alchemist L9.
