@@ -50,6 +50,12 @@ export const matchStrings = {
   'reason.maxed': 'Already maxed',
   'reason.hero': 'Heroes level up on their own',
   'reason.not-ready': 'Not ready yet',
+  'reason.cooldown': 'Still recharging',
+  'reason.no-ability': 'Ability not unlocked yet',
+  'reason.no-target': 'No target in range',
+  'reason.spawning': 'The round is still spawning',
+  'reason.no-more-rounds': 'No more rounds',
+  'reason.no-tower': 'That tower is gone',
   'reason.game-over': 'The match is over',
   'reason.unknown': "That didn't work",
 

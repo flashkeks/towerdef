@@ -71,6 +71,7 @@ export class Renderer {
   private ghostOk = true;
   private selectedId: number | null = null;
   private latest: GameState | null = null;
+  private heroCast = 0;
   /** Anzeige-Zeit in Millisekunden (nur fuer Idle-Animationen) */
   private now = 0;
   private canvasEl!: HTMLCanvasElement;
@@ -290,6 +291,7 @@ export class Renderer {
   private towerSpr(t: TowerState): Spr {
     const atk = t.attackTick;
     const frame = (atk > 0 ? (atk < 4 ? 'atk0' : atk < 6 ? 'atk1' : atk < 11 ? 'atk2' : 'atk3') : `idle${(Math.floor(this.now / 166) + t.id) & 3}`) as TowerFrame;
+    if (t.type === 'wren' && this.now < this.heroCast) return heroSprite(t.heroLevel, t.facing, this.heroCast - this.now > 150 ? 'cast0' : 'cast1');
     return t.type === 'wren' ? heroSprite(t.heroLevel, t.facing, frame as HeroFrame) : towerSprite(t.type, t.tiers, t.facing, frame);
   }
 
@@ -482,7 +484,7 @@ export class Renderer {
         if (t) { fx.ring(m(t.x), m(t.y), 4, 30, C.yellow, 20); fx.burst(m(t.x), m(t.y) - 16, [C.yellow, C.white, C.amber], 16, 1.8, 2, -0.02, 30); fx.float(m(t.x), m(t.y) - 44, 'LEVEL UP', C.yellow, 50, 0.3); }
         break;
       }
-      case 'ability': this.abilityFx(ev.id, ev.x, ev.y); break;
+      case 'ability': if (ev.id === 'flare' || ev.id === 'dawnbreak') this.heroCast = this.now + 300; this.abilityFx(ev.id, ev.x, ev.y); break;
       case 'roundEnd': if (ev.bonus) fx.float(320, 28, `+${ev.bonus}`, C.yellow, 50, 0.3); break;
       case 'bossStage': {
         const p = this.enemyPos(ev.enemy);
