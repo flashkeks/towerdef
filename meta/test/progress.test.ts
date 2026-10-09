@@ -64,7 +64,7 @@ describe('Match anwenden', () => {
     expect(applyMatch(u, full).profile.towerTiers).toEqual(p.towerTiers);
   });
   it('Startguthaben 100 je Turm (genau Stufe 1)', () => {
-    expect(newProfile().towerXp).toEqual({ ranger: 100, bombardier: 100, frostcaller: 100, longshot: 100, market: 100 });
+    expect(newProfile().towerXp).toEqual({ ranger: 100, bombardier: 100, frostcaller: 100, longshot: 100, market: 100, thornweaver: 100, alchemist: 100 });
   });
   it('alte 11er-Profile (Startguthaben 250) bleiben gueltig und werden nicht zurueckgesetzt', () => {
     const old = { ...newProfile(), towerXp: { ranger: 250, bombardier: 250, frostcaller: 250, longshot: 0, market: 0, thornweaver: 0, alchemist: 0 } };

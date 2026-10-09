@@ -1,4 +1,4 @@
-/** Runde 13: Wissensbaum mit 28 Knoten, Punkte aus Medaillen, Freischalt-Level, Migration, Store/Embers/XP-Knoten. */
+/** Runde 13: Wissensbaum (Runde 14: 40 Knoten, 77 Punkte), Punkte aus Medaillen, Freischalt-Level, Migration, Store/Embers/XP-Knoten. */
 import { describe, expect, it } from 'vitest';
 import { createGame } from '../../sim/src/index';
 import {
@@ -13,13 +13,13 @@ const res = (o: Partial<MatchResult> = {}): MatchResult => ({
 });
 
 describe('Wissensbaum: Struktur', () => {
-  it('28 Knoten in 5 Ästen, Summe 52 Punkte, Kosten 1-3, eindeutige IDs', () => {
-    expect(KNOWLEDGE).toHaveLength(28);
-    expect(new Set(KNOWLEDGE.map((n) => n.id)).size).toBe(28);
-    expect(KNOWLEDGE.reduce((s, n) => s + n.cost, 0)).toBe(52);
+  it('40 Knoten in 5 Ästen (R13: 28/52, R14: +12/+25), Summe 77 Punkte, Kosten 1-3, eindeutige IDs', () => {
+    expect(KNOWLEDGE).toHaveLength(40);
+    expect(new Set(KNOWLEDGE.map((n) => n.id)).size).toBe(40);
+    expect(KNOWLEDGE.reduce((s, n) => s + n.cost, 0)).toBe(77);
     expect(BRANCHES).toEqual(['economy', 'primary', 'specialists', 'wardens', 'powers']);
     const per = Object.fromEntries(BRANCHES.map((b) => [b, KNOWLEDGE.filter((n) => n.branch === b).length]));
-    expect(per).toEqual({ economy: 6, primary: 7, specialists: 4, wardens: 7, powers: 4 });
+    expect(per).toEqual({ economy: 8, primary: 10, specialists: 9, wardens: 8, powers: 5 });
     for (const n of KNOWLEDGE) {
       expect(n.cost).toBeGreaterThanOrEqual(1);
       expect(n.cost).toBeLessThanOrEqual(3);
@@ -88,7 +88,7 @@ describe('Freischalt-Level und Migration', () => {
   it('Longshot ab 5, Market ab 6', () => {
     expect(unlockLevel('longshot')).toBe(5);
     expect(unlockLevel('market')).toBe(6);
-    expect(LEVEL_UNLOCKS.filter((u) => u.kind === 'tower').map((u) => u.id)).toEqual(['bombardier', 'frostcaller', 'longshot', 'market']);
+    expect(LEVEL_UNLOCKS.filter((u) => u.kind === 'tower').map((u) => u.id)).toEqual(['bombardier', 'frostcaller', 'longshot', 'market', 'thornweaver', 'alchemist']);
     expect(isTowerUnlocked(withLevel(4), 'longshot')).toBe(false);
     expect(isTowerUnlocked(withLevel(5), 'longshot')).toBe(true);
     expect(isTowerUnlocked(withLevel(5), 'market')).toBe(false);
@@ -102,12 +102,12 @@ describe('Freischalt-Level und Migration', () => {
 
   it('Profil aus Runde 12 (ohne longshot/market) lädt ohne Reset, bekommt Startwerte, alles andere bleibt', () => {
     const old = JSON.parse(JSON.stringify({ ...withLevel(7), embers: 40, knowledge: ['head-start'] }));
-    for (const k of ['towerXp', 'towerTiers']) { delete old[k].longshot; delete old[k].market; }
+    for (const k of ['towerXp', 'towerTiers']) { delete old[k].longshot; delete old[k].market; delete old[k].thornweaver; delete old[k].alchemist; }
     old.towerXp.ranger = 333;
     old.towerTiers.ranger = [2, 0, 1];
     const r = loadProfile(old);
     expect(r.reset).toBe(false);
-    expect(r.profile.towerXp).toEqual({ ranger: 333, bombardier: 100, frostcaller: 100, longshot: 100, market: 100 });
+    expect(r.profile.towerXp).toEqual({ ranger: 333, bombardier: 100, frostcaller: 100, longshot: 100, market: 100, thornweaver: 100, alchemist: 100 });
     expect(r.profile.towerTiers.ranger).toEqual([2, 0, 1]);
     expect(r.profile.towerTiers.longshot).toEqual([0, 0, 0]);
     expect(r.profile.knowledge).toEqual(['head-start']);
@@ -117,8 +117,8 @@ describe('Freischalt-Level und Migration', () => {
     expect(o.unlocks.maxTier.market).toEqual([0, 0, 0]);
   });
 
-  it('neue Profile: Startguthaben 100 für alle fünf Türme; Match-Ergebnis ohne neue Typen lässt sie unverändert', () => {
-    expect(newProfile().towerXp).toEqual({ ranger: 100, bombardier: 100, frostcaller: 100, longshot: 100, market: 100 });
+  it('neue Profile: Startguthaben 100 für alle sieben Türme; Match-Ergebnis ohne neue Typen lässt sie unverändert', () => {
+    expect(newProfile().towerXp).toEqual({ ranger: 100, bombardier: 100, frostcaller: 100, longshot: 100, market: 100, thornweaver: 100, alchemist: 100 });
     const r = applyMatch(newProfile(), res({ towerXp: { ranger: 200, bombardier: 100, frostcaller: 100 } as never }));
     expect(r.profile.towerXp.ranger).toBe(200);
     expect(r.profile.towerXp.longshot).toBe(0); // Sim meldet 0 Konto bei fehlendem Schlüssel
@@ -137,11 +137,11 @@ describe('Freischalt-Level und Migration', () => {
     expect(out.profile.towerXp.longshot).toBe(0);
   });
 
-  it('unlockEverything öffnet alle fünf Türme', () => {
+  it('unlockEverything öffnet alle sieben Türme', () => {
     const p = unlockEverything(newProfile());
-    expect(TOWER_TYPES).toHaveLength(5);
+    expect(TOWER_TYPES).toHaveLength(7);
     expect(p.towerTiers.market).toEqual([5, 5, 5]);
-    expect(matchOptions(p).unlocks.towers).toHaveLength(6);
+    expect(matchOptions(p).unlocks.towers).toHaveLength(8);
     for (const n of KNOWLEDGE) expect(n.cost).toBeLessThanOrEqual(3);
     expect(knowledgePoints(p).free).toBeGreaterThanOrEqual(29);
   });
@@ -200,7 +200,7 @@ describe('Matches: Scholar, Ember Pouch, Starter Kit; Store: Bulk Buyer', () => 
     expect(matchXp(20, 'medium', true, 1000)).toBe(3267);
   });
   it('Ember Pouch +10 % Embers (abgerundet auf die Summe), eigene Zeile im Bericht', () => {
-    expect(matchEmbers(20, 'medium', true, false, 0, 1000)).toEqual({ rounds: 54, win: 30, medal: 0, levelUp: 0, pouch: 8 });
+    expect(matchEmbers(20, 'medium', true, false, 0, 1000)).toEqual({ rounds: 54, win: 30, medal: 0, levelUp: 0, pouch: 8, rush: 0 });
     const lv = withLevel(30, { ...newProfile(), medals: { meadow: { easy: true, medium: true, hard: true } } });
     const a = applyMatch(lv, res({ matchId: 'a' }));
     const b = applyMatch(know(lv, 'ember-pouch'), res({ matchId: 'b' }));
