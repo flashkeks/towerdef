@@ -6,7 +6,7 @@
 import frost from '../../../../sim/data/maps/frostfen.json';
 import { bayer, Buf, C, fbm, hash2, rng, shadeIdx, vnoise } from './buf';
 import { MAP_H, MAP_W } from './layout';
-import { closedSpline, Field, pathDistAll, pathField, polySdf, simplify, walk, type Pt } from './kit';
+import { closedSpline, Field, inPoly, pathDistAll, pathField, polySdf, simplify, walk, type Pt } from './kit';
 import { frostArt, type FrostKind } from './props-frost';
 import type { MapArt, MapLight, PlacedArt } from './types';
 
@@ -15,12 +15,36 @@ const raw = frost as unknown as { path: Pt[]; paths?: Pt[][]; pathHalfWidth: num
 export const FF_BRANCHES: Pt[][] = raw.paths ?? [raw.path];
 export const FF_HW: number = raw.pathHalfWidth;
 
-// ---------- Wasser: zugefrorener See, Eisloch, Steg ----------
-export const LAKE_CTRL: Pt[] = [[150, 172], [172, 128], [236, 104], [316, 110], [372, 138], [392, 188], [368, 236], [304, 262], [224, 258], [166, 228]];
-export const LAKE: Pt[] = closedSpline(LAKE_CTRL, 4);
-const HOLE_CTRL: Pt[] = [[262, 196], [276, 186], [298, 186], [314, 196], [308, 210], [286, 214], [268, 209]];
+// ---------- Wasser: zugefrorener See, Eisschollen, Eisloch, Steg ----------
+const rawFull = frost as unknown as { water: Pt[][]; ice: Pt[][] };
+/** Grobe Umrisse aus der Sim-Datei (Agent A); der gemalte See ist ihre organische Verfeinerung (nur nach innen, nie naeher am Weg). */
+const LAKE_BASE: Pt[] = rawFull.water[0];
+/** Eisschollen (bebaubar!): Polygone aus der Sim-Datei, so gemalt, wie sie liegen. */
+export const FLOES: Pt[][] = rawFull.ice;
+
+function organic(base: Pt[]): Pt[] {
+  const cx = base.reduce((s, p) => s + p[0], 0) / base.length, cy = base.reduce((s, p) => s + p[1], 0) / base.length;
+  const out: Pt[] = [];
+  const inward = (p: Pt, d: number): Pt => {
+    const dx = cx - p[0], dy = cy - p[1], l = Math.hypot(dx, dy) || 1;
+    return [Math.round(p[0] + (dx / l) * d), Math.round(p[1] + (dy / l) * d)];
+  };
+  base.forEach((p, i) => {
+    const q = base[(i + 1) % base.length];
+    out.push(inward(p, 3 + (p[0] > 380 ? 5 : 0) + hash2(i, 1, 61) * 3));
+    // Zwischenpunkte: Buchten und Landzungen, nur nach innen
+    const n = Math.max(1, Math.round(Math.hypot(q[0] - p[0], q[1] - p[1]) / 22));
+    for (let k = 1; k <= n; k++) {
+      const t = k / (n + 1), m: Pt = [p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t];
+      out.push(inward(m, 3 + hash2(i, k, 62) * 9 + (m[0] > 380 ? 4 : 0)));
+    }
+  });
+  return out;
+}
+export const LAKE: Pt[] = closedSpline(organic(LAKE_BASE), 4);
+const HOLE_CTRL: Pt[] = [[296, 228], [308, 221], [326, 220], [340, 227], [334, 237], [316, 240], [300, 236]];
 export const HOLE: Pt[] = closedSpline(HOLE_CTRL, 3);
-export const PIER = { x: 288, y0: 213, y1: 270 };
+export const PIER = { x: 270, y0: 217, y1: 250 };
 
 export function waterPolygons(): Pt[][] {
   return [simplify(LAKE, 3)];
@@ -35,30 +59,33 @@ export const FROST_R: Record<FrostKind, number> = {
 const P = (kind: FrostKind, x: number, y: number, v = 0): FrostProp => ({ kind, x, y, v, r: FROST_R[kind] });
 
 const HAND: FrostProp[] = [
-  // Fischerdorf im Westen
-  P('hut', 80, 152, 0), P('hut', 106, 250, 1), P('rack', 44, 200), P('woodpile', 38, 134), P('snowman', 116, 192),
-  P('crate', 100, 166), P('barrel', 108, 170), P('barrel', 62, 168), P('sign', 132, 98), P('boat', 146, 226),
-  P('lamp', 100, 134), P('lamp', 64, 214), P('lamp', 126, 230), P('lamp', 60, 104), P('stump', 30, 250), P('mound', 70, 190, 0),
-  // Eishuetten auf dem See, Steg mit Laterne
-  P('shanty', 226, 164, 0), P('shanty', 344, 160, 1), P('shanty', 238, 236, 1),
-  P('lamp', 281, 212), P('lamp', 296, 232),
+  // Fischerdorf im Ostpocket (zwischen den Wegen) und am Westrand
+  P('hut', 480, 232, 0), P('woodpile', 450, 214), P('snowman', 508, 276), P('rack', 474, 288), P('crate', 502, 214), P('barrel', 510, 220),
+  P('hut', 570, 214, 1), P('woodpile', 572, 262), P('barrel', 556, 244), P('sign', 567, 166),
+  P('hut', 64, 290, 1), P('rack', 108, 284), P('boat', 40, 262), P('barrel', 90, 296), P('snowman', 24, 96),
+  P('lamp', 462, 200), P('lamp', 520, 254), P('lamp', 560, 182), P('lamp', 584, 250), P('lamp', 622, 200), P('lamp', 86, 270), P('lamp', 124, 96), P('lamp', 12, 232),
+  // Eishuetten auf dem See, Steg mit Laternen
+  P('shanty', 128, 150, 0), P('shanty', 396, 190, 1), P('shanty', 214, 218, 1), P('shanty', 318, 140, 0),
+  P('lamp', 264, 216), P('lamp', 277, 232),
   // Ufer
-  P('reeds', 154, 190, 0), P('reeds', 330, 266, 1), P('reeds', 376, 232, 0), P('reeds', 200, 266, 1),
-  P('icerock', 164, 124, 0), P('icerock', 382, 150, 1), P('icerock', 352, 260, 0), P('rock', 214, 280, 0), P('boulder', 396, 120, 0),
-  // Osten
-  P('tent', 506, 290, 0), P('hut', 486, 236, 0), P('lamp', 520, 268), P('lamp', 468, 212), P('barrel', 504, 262), P('woodpile', 556, 226),
-  P('snowman', 616, 150), P('lamp', 560, 150), P('lamp', 618, 200), P('rack', 428, 118), P('sign', 440, 222),
-  // Wegrand
-  P('rock', 330, 80), P('boulder', 440, 330), P('rock', 220, 330), P('rock', 360, 290), P('birch', 410, 276, 0), P('birch', 188, 300, 1),
+  P('reeds', 44, 152, 0), P('reeds', 332, 252, 1), P('reeds', 400, 232, 0), P('reeds', 200, 258, 1), P('reeds', 110, 244, 0),
+  P('icerock', 60, 118, 0), P('icerock', 396, 118, 1), P('icerock', 360, 250, 0), P('rock', 232, 266, 0), P('boulder', 380, 86, 0), P('boulder', 22, 276, 0),
+  // Tail im Osten, Wegrand
+  P('tent', 631, 226, 0), P('snowman', 620, 112), P('lamp', 520, 110), P('rock', 330, 100), P('rock', 330, 276), P('rock', 360, 296),
+  P('birch', 400, 282, 0), P('birch', 188, 270, 1), P('birch', 210, 100, 1), P('stump', 30, 80), P('stump', 506, 140),
 ];
+
+const lakeSdf = polySdf([LAKE]);
+/** Abstand zum See in px: < 0 im See (zugefrorener See = Sim-Wasser). */
+export const lakeAt = (x: number, y: number): number => lakeSdf[Math.max(0, Math.min(MAP_H - 1, y | 0)) * MAP_W + Math.max(0, Math.min(MAP_W - 1, x | 0))];
+/** Punkt in einer Eisscholle (bebaubar)? */
+export const onFloe = (x: number, y: number): boolean => FLOES.some((f) => inPoly(x, y, f));
 
 /** Streuwald: Tannen und Birken, die weder Weg noch See noch andere Dinge beruehren (fester Seed). */
 function scatter(): FrostProp[] {
   const rnd = rng(15091);
   const out: FrostProp[] = [];
   const all = (): FrostProp[] => [...HAND, ...out];
-  const lakeSdf = polySdf([LAKE]);
-  const lakeAt = (x: number, y: number): number => lakeSdf[Math.max(0, Math.min(MAP_H - 1, y | 0)) * MAP_W + Math.max(0, Math.min(MAP_W - 1, x | 0))];
   const tries = 9000;
   for (let i = 0; i < tries && out.length < 150; i++) {
     const x = Math.round(rnd() * (MAP_W - 6) + 3), y = Math.round(rnd() * (MAP_H - 4) + 6);
@@ -71,7 +98,7 @@ function scatter(): FrostProp[] {
     const v = Math.floor(rnd() * (kind === 'fir' ? 3 : 2));
     const r = FROST_R[kind];
     if (pathDistAll(FF_BRANCHES, x, y - 2) < FF_HW + r + 5) continue;
-    if (kind !== 'mound' && lakeAt(x, y) < r + 6) continue;
+    if (lakeAt(x, y) < r + 6) continue;
     if (all().some((q) => Math.hypot(q.x - x, (q.y - y) * 1.3) < Math.max(q.r, r) * 1.9 + 4)) continue;
     // Tannen nicht mitten in den Wiesen des Dorfs: nur dort, wo der Wald dicht ist oder die Dichte es erlaubt
     out.push(P(kind, x, y, v));
@@ -155,6 +182,7 @@ export function paintFrostfen(): MapArt {
   const ground = new Buf(W, H);
   const lake = new Field(polySdf([LAKE]));
   const hole = new Field(polySdf([HOLE]));
+  const floe = new Field(polySdf(FLOES.map((f) => closedSpline(f, 3))));
   const pf = pathField(FF_BRANCHES);
   const HW = FF_HW;
 
@@ -172,6 +200,14 @@ export function paintFrostfen(): MapArt {
       const lit = -(gx * 0.6 + gy * 0.8); // > 0: Ufer oben links
       let c = iceColor(x, y, -ld, lit);
       if (hole.at(x, y) < 0) c = holeBase(x, y, -hole.at(x, y));
+      const fl = floe.at(x, y);
+      if (fl < 0) c = floeTop(x, y, -fl, lit);
+      else {
+        let k = 0;
+        for (let t = 1; t <= 3 && !k; t++) if (floe.at(x, y - t) < 0) k = t;
+        if (k) c = k === 1 ? C.silver : k === 2 ? (bayer(x, y) < 0.5 ? C.ice : C.sky) : C.sky;
+        else if (floe.at(x - 2, y - 5) < 0 && bayer(x, y) < 0.75) c = shadeIdx(c);
+      }
       ground.set(x, y, c);
       continue;
     }
@@ -208,12 +244,13 @@ export function paintFrostfen(): MapArt {
 
   // 3) Spuren: von jeder Huette zum Steg und zu den Eishuetten, dazu auf dem Weg (in pathColor)
   const trails: Pt[][] = [
-    [[80, 160], [84, 190], [110, 214], [150, 238], [220, 270], [284, 272]],
-    [[106, 258], [140, 268], [220, 276], [284, 276]],
-    [[226, 172], [250, 212], [284, 250]],
-    [[344, 168], [320, 212], [292, 250]],
-    [[238, 244], [262, 262], [286, 268]],
-    [[486, 244], [470, 270], [440, 300]],
+    [[480, 240], [440, 262], [420, 296], [396, 318]],
+    [[570, 222], [520, 236], [492, 240]],
+    [[64, 298], [90, 276], [140, 256], [200, 252], [270, 252]],
+    [[128, 158], [150, 190], [220, 232], [270, 248]],
+    [[214, 226], [244, 240], [270, 250]],
+    [[396, 198], [372, 220], [330, 238], [276, 252]],
+    [[318, 148], [300, 176], [284, 214], [274, 240]],
   ];
   for (const t of trails) {
     walk(t, 6.5).forEach((p, i) => {
@@ -225,7 +262,7 @@ export function paintFrostfen(): MapArt {
     });
   }
   // Angellocher: dunkles Loch mit Eisrand neben jeder Eishuette
-  for (const [fx, fy] of [[246, 170], [334, 168], [230, 244], [262, 150], [300, 244]] as const) {
+  for (const [fx, fy] of [[142, 158], [410, 196], [228, 226], [332, 150], [180, 184], [60, 190]] as const) {
     if (lake.at(fx, fy) > -4) continue;
     ground.ellipse(fx, fy, 3, 1.6, C.white);
     ground.ellipse(fx, fy, 2, 1, C.night);
@@ -287,7 +324,7 @@ export function paintFrostfen(): MapArt {
 
   const deco = new Buf(W, H);
   paintPier(deco, lake);
-  const anim = Array.from({ length: ANIM_FRAMES }, (_, f) => paintIceAnim(f, lake, hole));
+  const anim = Array.from({ length: ANIM_FRAMES }, (_, f) => paintIceAnim(f, lake, hole, floe));
   return { id: 'frostfen', name: 'Frostfen Crossing', ground, anim, animMs: 140, deco, props, lights, smoke };
 }
 
@@ -318,6 +355,19 @@ function pathColor(x: number, y: number, pd: number, gx: number, gy: number): nu
   // Lippe / Schneewall
   if (pd <= FF_HW + 0.9) return lit > 0.25 ? C.white : lit > -0.25 ? C.silver : C.stone;
   return lit > 0.1 ? (bayer(x, y) < 0.5 ? C.white : snowTone(x, y)) : bayer(x, y) < 0.7 ? C.stone : snowTone(x, y);
+}
+
+/** Eisscholle (bebaubar): dick, mit Schnee bestaeubt, heller Rand auf der Lichtseite. */
+function floeTop(x: number, y: number, dep: number, lit: number): number {
+  const k = bayer(x, y);
+  if (dep < 1.6) return lit < 0 ? C.white : k < 0.5 ? C.silver : C.stone;
+  if (dep < 3.2) return k < 0.5 ? C.white : C.ice;
+  let c = snowTone(x, y);
+  if (c === C.stone) c = C.silver;
+  if (vnoise(x, y, 5, 12) > 0.7 && k < 0.3) c = C.ice;
+  const cr = hash2(Math.floor(x / 11), Math.floor(y / 11), 44);
+  if (cr > 0.93 && ((x * 3 + y * 5) % 9) < 1) c = C.sky;
+  return c;
 }
 
 /** Eisloch (Grundton): dunkles offenes Wasser, am Rand duenne Eisschicht. */
@@ -362,29 +412,36 @@ function paintPier(d: Buf, lake: Field): void {
 }
 
 // ---------- Animierte Ebene: Glitzern, Eisloch, Schollen ----------
-function paintIceAnim(f: number, lake: Field, hole: Field): Buf {
+function paintIceAnim(f: number, lake: Field, hole: Field, floe: Field): Buf {
   const b = new Buf(MAP_W, MAP_H);
   const r = rng(4242);
+  const onIce = (x: number, y: number): boolean => lake.at(x, y) < -3 && hole.at(x, y) > 4 && floe.at(x, y) > 3;
   // Glitzerpunkte: feste Orte, Phase 0..7; Stern nur auf dem Hoehepunkt
-  for (let i = 0; i < 170; i++) {
-    const x = Math.floor(160 + r() * 230), y = Math.floor(104 + r() * 160), ph = Math.floor(r() * ANIM_FRAMES), big = r() < 0.3;
-    if (lake.at(x, y) > -3 || hole.at(x, y) < 4) continue;
+  for (let i = 0; i < 260; i++) {
+    const x = Math.floor(30 + r() * 386), y = Math.floor(110 + r() * 142), ph = Math.floor(r() * ANIM_FRAMES), big = r() < 0.3;
+    if (!onIce(x, y)) continue;
     const k = (f - ph + ANIM_FRAMES) % ANIM_FRAMES;
     if (k === 0) {
       b.set(x, y, C.white);
       if (big) { b.set(x - 1, y, C.ice); b.set(x + 1, y, C.ice); b.set(x, y - 1, C.ice); b.set(x, y + 1, C.ice); }
     } else if (k === 1 || k === ANIM_FRAMES - 1) b.set(x, y, big ? C.ice : C.silver);
   }
+  // Glitzern auf den Schollen (weisser Reif blitzt)
+  for (let i = 0; i < 40; i++) {
+    const x = Math.floor(90 + r() * 290), y = Math.floor(140 + r() * 84), ph = Math.floor(r() * ANIM_FRAMES);
+    if (floe.at(x, y) > -4) continue;
+    if ((f - ph + ANIM_FRAMES) % ANIM_FRAMES === 0) { b.set(x, y, C.white); b.set(x + 1, y, C.ice); b.set(x, y + 1, C.ice); }
+  }
   // Streifenglanz: ein heller Streifen wandert langsam ueber den See
   const sweep = (f / ANIM_FRAMES) * 120;
-  for (let y = 104; y < 266; y++) for (let x = 150; x < 394; x++) {
-    if (lake.at(x, y) > -3 || hole.at(x, y) < 4) continue;
+  for (let y = 110; y < 252; y++) for (let x = 30; x < 416; x++) {
+    if (!onIce(x, y)) continue;
     const dd = ((x + y * 0.8 - 150 - sweep * 4 + 480) % 480);
     if (dd < 5 && bayer(x, y) < 0.35 && vnoise(x, y, 8, 3) > 0.45) b.set(x, y, dd < 2 ? C.white : C.ice);
   }
   // Eisloch: Ringwellen, Funkeln, Schollen im Wasser
-  const [hx, hy] = [288, 200];
-  for (let y = 180; y < 220; y++) for (let x = 255; x < 322; x++) {
+  const [hx, hy] = [318, 230];
+  for (let y = 214; y < 246; y++) for (let x = 288; x < 350; x++) {
     const hd = -hole.at(x, y);
     if (hd < 2.6) continue;
     const d = Math.hypot((x - hx) / 1.7, y - hy);
@@ -393,7 +450,7 @@ function paintIceAnim(f: number, lake: Field, hole: Field): Buf {
     else if (ring < 0.4 && hd > 4) b.set(x, y, C.ice);
     if (hash2(x + f * 13, y + f * 7, 33) > 0.992) b.set(x, y, C.white);
   }
-  const floes: [number, number, number, number][] = [[272, 198, 6, 3], [296, 204, 5, 3], [284, 192, 4, 2], [304, 195, 4, 2]];
+  const floes: [number, number, number, number][] = [[307, 230, 5, 3], [329, 233, 4, 2], [319, 225, 3, 2], [337, 228, 3, 2]];
   floes.forEach(([fx, fy, rx, ry], i) => {
     const bob = Math.round(Math.sin(((f + i * 2) / ANIM_FRAMES) * Math.PI * 2) * 0.9);
     const dx = Math.round(Math.sin(((f + i * 3) / ANIM_FRAMES) * Math.PI * 2) * 1.2);
