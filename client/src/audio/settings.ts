@@ -4,7 +4,7 @@
  * Reine Funktionen, in Node testbar; `engine.ts` liest und schreibt nur ueber sie.
  */
 export interface AudioSettings { musicVol: number; sfxVol: number }
-export const DEFAULT_AUDIO: AudioSettings = { musicVol: 0.5, sfxVol: 0.7 };
+export const DEFAULT_AUDIO: AudioSettings = { musicVol: 0.5, sfxVol: 0.6 };
 export const AUDIO_KEY = 'dw.audio';
 
 const clamp01 = (v: unknown, fallback: number): number => (typeof v === 'number' && Number.isFinite(v) ? Math.max(0, Math.min(1, v)) : fallback);

@@ -15,6 +15,38 @@ import { tierButton, type TierBtn } from './tier-button';
 import { ABILITY_TEXT, PATH_COLORS, TARGET_TEXT } from './tower-text';
 import { copyCanvas, uiIcon } from './ui-icons';
 
+/** Platz fuer den Turm in der Buehne (px): Stufen-Kuerzel oben, Targeting unten bleiben frei. */
+const FIG_W = 300, FIG_H = 100;
+
+/** Rand ohne Pixel abschneiden und ganzzahlig so gross zeigen, wie es in die Buehne passt (1..4x). */
+export function fitFigure(src: HTMLCanvasElement, maxW: number, maxH: number): HTMLCanvasElement {
+  const c = document.createElement('canvas');
+  const box = opaqueBox(src);
+  c.width = box.w; c.height = box.h;
+  c.getContext('2d')!.drawImage(src, box.x, box.y, box.w, box.h, 0, 0, box.w, box.h);
+  const sc = figureScale(box.w, box.h, maxW, maxH);
+  c.style.width = `${box.w * sc}px`;
+  c.style.height = `${box.h * sc}px`;
+  c.className = 'px-ic';
+  return c;
+}
+
+/** Ganzzahliger Massstab (1..4), bei dem w x h in maxW x maxH passt. Reine Funktion. */
+export function figureScale(w: number, h: number, maxW: number, maxH: number): number {
+  return Math.max(1, Math.min(4, Math.floor(maxW / Math.max(1, w)), Math.floor(maxH / Math.max(1, h))));
+}
+
+function opaqueBox(src: HTMLCanvasElement): { x: number; y: number; w: number; h: number } {
+  const w = src.width, hh = src.height;
+  try {
+    const d = src.getContext('2d')!.getImageData(0, 0, w, hh).data;
+    let x0 = w, y0 = hh, x1 = -1, y1 = -1;
+    for (let y = 0; y < hh; y++) for (let x = 0; x < w; x++) if (d[(y * w + x) * 4 + 3] > 8) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+    if (x1 >= 0) return { x: x0, y: y0, w: x1 - x0 + 1, h: y1 - y0 + 1 };
+  } catch { /* Canvas nicht lesbar: ganzes Bild */ }
+  return { x: 0, y: 0, w, h: hh };
+}
+
 const MODES: TargetMode[] = ['first', 'last', 'strong', 'close'];
 
 export interface PanelCallbacks {
@@ -140,7 +172,7 @@ export class Panel {
     const stage = h('div', 'ps-stage');
     const spr = towerSprite(ty, tw.tiers, 0, 'idle0');
     const fig = h('div', 'ps-fig');
-    fig.append(copyCanvas(spr.canvas, 3));
+    fig.append(fitFigure(spr.canvas, FIG_W, FIG_H));
     const label = `${tw.tiers.join(' - ')}${tw.camo ? '  ' + t('panel.camo') : ''}`;
     const mi = MODES.indexOf(tw.target);
     const arrow = (dir: -1 | 1): HTMLButtonElement => {
