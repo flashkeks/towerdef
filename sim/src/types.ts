@@ -11,6 +11,10 @@ export type TargetMode = 'first' | 'last' | 'strong' | 'close';
 export type Tiers = [number, number, number];
 export type AbilityId = 'arrowRain' | 'absoluteZero' | 'flare' | 'dawnbreak';
 export type DamageType = 'sharp' | 'cold' | 'explosive' | 'energy' | 'magic';
+export type PowerKey =
+  | 'goldDrop' | 'lanternBomb' | 'caltrops' | 'frostTrap' | 'timeWarp' | 'lanternOil' | 'extraLives' | 'heroBoost'
+  | 'instaWarden:ranger' | 'instaWarden:bombardier' | 'instaWarden:frostcaller';
+export type TrapKind = 'caltrops' | 'frostTrap';
 export type ProjectileKind = 'arrow' | 'bigArrow' | 'bolt' | 'starBolt' | 'bomb' | 'frag' | 'frost' | 'shard' | 'lantern';
 
 export interface GameOptions {
@@ -24,6 +28,8 @@ export interface GameOptions {
    * Das Konto lebt im Match in `state.towerXp`; das Endkonto geht zurück ins Profil.
    */
   towerXp?: Record<TowerType, number>;
+  /** Power-Inventar aus dem Profil (Runde 12). Fehlt = keine Powers. Fehlende Schlüssel zählen als 0. */
+  powers?: Partial<Record<PowerKey, number>>;
   /** Wissensbaum (P4), alles optional, Standard 0. Bedeutung: siehe sim/README.md. */
   mods?: {
     startCash?: number;
@@ -47,6 +53,8 @@ export type Command =
   | { type: 'sell'; towerId: number }
   | { type: 'target'; towerId: number; mode: TargetMode }
   | { type: 'ability'; ability: AbilityId }
+  /** Runde 12: Power einsetzen. `x`/`y` (Milli-px) nur bei Ziel-Powers (Lantern Bomb, Fallen, Insta-Warden). */
+  | { type: 'power'; power: PowerKey; x?: number; y?: number }
   | { type: 'startRound' }
   | { type: 'autoStart'; on: boolean };
 
@@ -174,6 +182,35 @@ export interface ProjectileState {
   sub: number;
 }
 
+/** Falle auf dem Weg (Runde 12). `x`/`y` liegen auf der Wegmitte bei `progress`. */
+export interface TrapState {
+  id: number;
+  kind: TrapKind;
+  /** Milli-px auf dem Weg. */
+  progress: number;
+  x: number;
+  y: number;
+  /** Verbleibende Ladungen. */
+  charges: number;
+  /** Innenleben: Falle verschwindet am Ende dieser Runde (0 = nie). */
+  until: number;
+}
+
+/** Vorschau einer Runde (`Game.roundPreview`). */
+export interface RoundPreview {
+  round: number;
+  /** Gleiche Typ/Camo-Gruppen zusammengefasst, Reihenfolge des ersten Auftretens. */
+  groups: { type: EnemyType; n: number; camo: boolean }[];
+  /** Summe der RBE aller Gegner der Runde (Hülle + Kinder, Boss-HP der Schwierigkeit). */
+  rbe: number;
+  hasCamo: boolean;
+  /** Ein Gegner oder ein Nachkomme (Brute -> Ironshell) trägt Panzer. */
+  hasArmor: boolean;
+  /** Ein Gegner oder ein Nachkomme ist Emberling (kälteimmun). */
+  hasEmber: boolean;
+  hasBoss: boolean;
+}
+
 export type AbilityState = { id: AbilityId; ready: boolean; cdLeft: number; cdTotal: number };
 
 export interface GameState {
@@ -195,8 +232,26 @@ export interface GameState {
   maxTier: Record<TowerType, Tiers>;
   /** Pops (ohne Held) je Typ seit dem letzten Rundenende; Grundlage der Topf-Aufteilung. */
   roundPops: Record<TowerType, number>;
-  stats: { pops: Record<TowerType | HeroType, number>; leaked: number; spent: Record<string, number> };
+  stats: {
+    pops: Record<TowerType | HeroType, number>;
+    leaked: number;
+    spent: Record<string, number>;
+    /** Runde 12: erfolgreiche Einsätze je Power in diesem Match. */
+    powersUsed: Record<PowerKey, number>;
+  };
+  /** Runde 12: Restbestand je Power (Start = `GameOptions.powers`). */
+  powers: Record<PowerKey, number>;
+  /** Runde 12: je Power die Runde (`state.round`) des letzten Einsatzes, -1 = nie. Gesperrt, solange sie `state.round` entspricht. */
+  powerUsedRound: Record<PowerKey, number>;
+  /** Runde 12: Fallen auf dem Weg, aufsteigende id. */
+  traps: TrapState[];
   // --- Innenleben ---
+  /** Time Warp: Restticks. */
+  warpLeft: number;
+  /** Lantern Oil: aktiv, solange `state.round <= oilRound` (0 = nie benutzt). */
+  oilRound: number;
+  /** Lantern Oil: Rest der Prozentrechnung in Basispunkten (0..9999). */
+  oilCarry: number;
   autoStart: boolean;
   heroPlaced: boolean;
   rainLeft: number;
@@ -226,6 +281,9 @@ export type SimEvent =
   | { type: 'towerXp'; tick: number; round: number; pot: number; gains: Partial<Record<TowerType, number>> }
   | { type: 'heroLevel'; tick: number; tower: number; level: number }
   | { type: 'ability'; tick: number; id: AbilityId; x?: number; y?: number }
+  | { type: 'power'; tick: number; power: PowerKey; x?: number; y?: number }
+  | { type: 'trap'; tick: number; id: number; kind: TrapKind; charges: number }
+  | { type: 'trapGone'; tick: number; id: number; kind: TrapKind; reason: 'spent' | 'expired' }
   | { type: 'roundStart'; tick: number; round: number }
   | { type: 'roundEnd'; tick: number; round: number; bonus: number }
   | { type: 'bossStage'; tick: number; enemy: number; stage: number }
@@ -243,6 +301,10 @@ export interface Game {
   unlockInfo(type: TowerType): UnlockPathInfo[];
   sellValue(towerId: number): number;
   priceOf(type: TowerType | HeroType): number;
+  /** Runde 12: Trockenlauf von `{ type: 'power' }` (ändert nichts) für Vorschau-Kreis/Geist. Liefert dieselben Gründe wie `apply`. */
+  canUsePower(power: PowerKey, x?: number, y?: number): PlaceCheck;
+  /** Runde 12: Vorschau der Runde `r` (1..20), sonst null. */
+  roundPreview(r: number): RoundPreview | null;
   /** Nur für Tests/Sandbox: Gegner direkt setzen, Schaden direkt zufügen. Ändert den Zustand wie ein normaler Eingriff (deterministisch). */
   readonly sandbox: {
     spawn(type: EnemyType, progress?: number, camo?: boolean): number;
