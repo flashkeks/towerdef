@@ -5,16 +5,17 @@
 import { z } from 'zod';
 import type { Difficulty, GameOptions, HeroType, PowerKey, TowerType, Tiers } from '../../sim/src/types';
 import {
-  DIFFICULTIES, DIFFICULTY_XP_BP, EMBERS_FIRST_MEDAL, EMBERS_LEVEL_UP, EMBERS_WIN, POWER_KEYS, embersForRound, emptyInventory, powerPrice, FREEPLAY_BP, KNOWLEDGE, LEVEL_UNLOCKS, MAX_ROUND, TIER_COST, TOWER_TYPES, WIN_BONUS_XP,
+  BULK_BUYER_BP, DIFFICULTIES, DIFFICULTY_XP_BP, EMBERS_FIRST_MEDAL, EMBERS_LEVEL_UP, EMBERS_WIN, POWER_KEYS, embersForRound, emptyInventory, powerPrice, FREEPLAY_BP, KNOWLEDGE, LEVEL_UNLOCKS, MAX_ROUND, TIER_COST, TOWER_TYPES, WIN_BONUS_XP,
   levelFromXp, nodeById, unlockLevel, xpForLevel, type LevelUnlock,
 } from './data';
-import { SEEN_MATCHES_MAX, emptyMedals, type Profile } from './profile';
+import { SEEN_MATCHES_MAX, emptyMedals, medalCount, type Profile } from './profile';
 
 const nat = z.number().int().min(0);
 const tierNum = z.number().int().min(0).max(5);
 const tiers3 = z.tuple([tierNum, tierNum, tierNum]);
-const perTowerAll = z.object({ ranger: nat, bombardier: nat, frostcaller: nat });
-const perTowerNat = z.object({ ranger: nat.optional(), bombardier: nat.optional(), frostcaller: nat.optional(), wren: nat.optional() });
+/** Runde 13: `longshot`/`market` duerfen in aelteren Ergebnissen fehlen (zaehlen als 0 bzw. unveraendert). */
+const perTowerAll = z.object({ ranger: nat, bombardier: nat, frostcaller: nat, longshot: nat.default(0), market: nat.default(0) });
+const perTowerNat = z.object({ ranger: nat.optional(), bombardier: nat.optional(), frostcaller: nat.optional(), longshot: nat.optional(), market: nat.optional(), wren: nat.optional() });
 /** Was das Match meldet (P3 liefert es). */
 export const MatchResultSchema = z.object({
   matchId: z.string().min(1),
@@ -31,12 +32,13 @@ export const MatchResultSchema = z.object({
    * Fehlen sie (altes Format / Match ohne XP-System), bleibt das Turm-Profil unveraendert.
    */
   towerXp: perTowerAll.optional(),
-  towerTiers: z.object({ ranger: tiers3, bombardier: tiers3, frostcaller: tiers3 }).optional(),
+  towerTiers: z.object({ ranger: tiers3, bombardier: tiers3, frostcaller: tiers3, longshot: tiers3.default([0, 0, 0]), market: tiers3.default([0, 0, 0]) }).optional(),
   towerXpGained: perTowerAll.optional(),
   /** Runde 12: erfolgreiche Power-Einsaetze (`state.stats.powersUsed`); werden vom Inventar abgezogen. */
   powersUsed: z.record(z.string(), nat.max(9999)).optional(),
 });
-export type MatchResult = z.infer<typeof MatchResultSchema>;
+/** Eingabeform: Felder mit Vorgabe (Runde 13: `longshot`/`market`) duerfen fehlen. */
+export type MatchResult = z.input<typeof MatchResultSchema>;
 
 export const playerLevel = (p: Profile): number => levelFromXp(p.playerXp).level;
 
@@ -49,14 +51,14 @@ export function isDifficultyUnlocked(p: Profile, d: Difficulty): boolean {
 
 // ---------------------------------------------------------------- Match-XP
 
-export function matchXp(roundsCleared: number, difficulty: Difficulty, won: boolean): number {
+export function matchXp(roundsCleared: number, difficulty: Difficulty, won: boolean, extraBp = 0): number {
   let base = 0;
   for (let r = 1; r <= roundsCleared; r++) {
     const v = 20 + 10 * r;
     base += r > MAX_ROUND ? Math.floor((v * FREEPLAY_BP) / 10000) : v;
   }
   if (won) base += WIN_BONUS_XP;
-  return Math.round((base * DIFFICULTY_XP_BP[difficulty]) / 10000);
+  return Math.round((base * DIFFICULTY_XP_BP[difficulty] * (10000 + extraBp)) / 100_000_000);
 }
 
 export interface MatchReport {
@@ -75,19 +77,27 @@ export interface MatchReport {
   towerXpGained: Partial<Record<TowerType, number>>;
   /** Runde 12: Embers aus diesem Match, Summe und Aufschluesselung. */
   embersGained: number;
-  embers: { rounds: number; win: number; medal: number; levelUp: number };
+  embers: { rounds: number; win: number; medal: number; levelUp: number; pouch: number };
   /** Runde 12: Powers, die dieses Match verbraucht hat (Summe, fuer "Powers used: N"). */
   powersUsed: number;
 }
 
 /** Embers fuer ein Match (Spezifikation: docs/design/powers.md). */
-export function matchEmbers(roundsCleared: number, difficulty: Difficulty, won: boolean, newMedal: boolean, levelUps: number): MatchReport['embers'] {
+export function matchEmbers(roundsCleared: number, difficulty: Difficulty, won: boolean, newMedal: boolean, levelUps: number, pouchBp = 0): MatchReport['embers'] {
   let rounds = 0;
   for (let r = 1; r <= Math.min(roundsCleared, MAX_ROUND); r++) rounds += embersForRound(r);
-  return { rounds, win: won ? EMBERS_WIN[difficulty] : 0, medal: newMedal ? EMBERS_FIRST_MEDAL : 0, levelUp: levelUps * EMBERS_LEVEL_UP };
+  const win = won ? EMBERS_WIN[difficulty] : 0;
+  const medal = newMedal ? EMBERS_FIRST_MEDAL : 0;
+  const levelUp = levelUps * EMBERS_LEVEL_UP;
+  // Ember Pouch (Runde 13): Zuschlag auf die Summe, abgerundet
+  return { rounds, win, medal, levelUp, pouch: Math.floor(((rounds + win + medal + levelUp) * pouchBp) / 10000) };
 }
 
 const hasKnow = (p: Profile, id: string): boolean => p.knowledge.includes(id);
+/** Scholar: +10 % Spieler-XP. Ember Pouch: +10 % Embers. Starter Kit: 1 Gold Drop gratis je Match. */
+export const SCHOLAR_BP = 1000;
+export const EMBER_POUCH_BP = 1000;
+export const STARTER_KIT_GOLD_DROPS = 1;
 
 export function applyMatch(p: Profile, resultIn: MatchResult): { profile: Profile; report: MatchReport } {
   const res = MatchResultSchema.parse(resultIn);
@@ -95,10 +105,10 @@ export function applyMatch(p: Profile, resultIn: MatchResult): { profile: Profil
   if (p.seenMatches.includes(res.matchId)) {
     return {
       profile: p,
-      report: { duplicate: true, xpGained: 0, xpBefore: p.playerXp, xpAfter: p.playerXp, levelBefore: lv0.level, levelAfter: lv0.level, pointsGained: 0, unlocks: [], newMedal: null, newBest: false, towerXpGained: {}, embersGained: 0, embers: { rounds: 0, win: 0, medal: 0, levelUp: 0 }, powersUsed: 0 },
+      report: { duplicate: true, xpGained: 0, xpBefore: p.playerXp, xpAfter: p.playerXp, levelBefore: lv0.level, levelAfter: lv0.level, pointsGained: 0, unlocks: [], newMedal: null, newBest: false, towerXpGained: {}, embersGained: 0, embers: { rounds: 0, win: 0, medal: 0, levelUp: 0, pouch: 0 }, powersUsed: 0 },
     };
   }
-  const xpGained = matchXp(res.roundsCleared, res.difficulty, res.won);
+  const xpGained = matchXp(res.roundsCleared, res.difficulty, res.won, hasKnow(p, 'scholar') ? SCHOLAR_BP : 0);
   const playerXp = p.playerXp + xpGained;
   const lv1 = levelFromXp(playerXp);
   const unlocks = LEVEL_UNLOCKS.filter((u) => u.level > lv0.level && u.level <= lv1.level);
@@ -127,15 +137,17 @@ export function applyMatch(p: Profile, resultIn: MatchResult): { profile: Profil
   if (better) bestMap[res.map] = { ...bestMap[res.map], [res.difficulty]: { round: res.roundsCleared, livesLost: res.livesLost } };
 
   // Embers und Inventar (Runde 12)
-  const emb = matchEmbers(res.roundsCleared, res.difficulty, res.won, newMedal !== null, lv1.level - lv0.level);
-  const embersGained = emb.rounds + emb.win + emb.medal + emb.levelUp;
+  const emb = matchEmbers(res.roundsCleared, res.difficulty, res.won, newMedal !== null, lv1.level - lv0.level, hasKnow(p, 'ember-pouch') ? EMBER_POUCH_BP : 0);
+  const embersGained = emb.rounds + emb.win + emb.medal + emb.levelUp + emb.pouch;
   const inventory = { ...emptyInventory(), ...p.inventory };
   let powersUsed = 0;
   for (const k of POWER_KEYS) {
     const used = res.powersUsed?.[k] ?? 0;
     if (used <= 0) continue;
     powersUsed += used;
-    inventory[k] = Math.max(0, inventory[k] - used);
+    // Starter Kit: das erste Gold Drop des Matches kam gratis dazu, nur der Rest geht vom Inventar ab
+    const free = k === 'goldDrop' && hasKnow(p, 'starter-kit') ? STARTER_KIT_GOLD_DROPS : 0;
+    inventory[k] = Math.max(0, inventory[k] - Math.max(0, used - free));
   }
 
   const profile: Profile = {
@@ -186,11 +198,15 @@ export function unlockTier(p: Profile, tower: TowerType, path: 0 | 1 | 2): { ok:
 
 // ---------------------------------------------------------------- Store (Runde 12)
 
+/** Preis einer Power fuer dieses Profil (Bulk Buyer: -10 %, aufgerundet). */
+export const powerCost = (p: Profile, key: PowerKey): number =>
+  hasKnow(p, 'bulk-buyer') ? Math.ceil((powerPrice(key) * (10000 - BULK_BUYER_BP)) / 10000) : powerPrice(key);
+
 /** Power kaufen: Preis in Embers aus `sim/data/powers.json`. Codes: `unknown-power`, `bad-count`, `not-enough-embers`. */
 export function buyPower(p: Profile, key: PowerKey, count = 1): { ok: true; profile: Profile; cost: number } | Fail {
   if (!(POWER_KEYS as readonly string[]).includes(key)) return fail('unknown-power', 'Unknown power.');
   if (!Number.isInteger(count) || count < 1 || count > 99) return fail('bad-count', 'Pick an amount between 1 and 99.');
-  const cost = powerPrice(key) * count;
+  const cost = powerCost(p, key) * count;
   if (p.embers < cost) return fail('not-enough-embers', `Needs ${cost} Embers.`);
   const inventory = { ...emptyInventory(), ...p.inventory };
   inventory[key] += count;
@@ -200,7 +216,8 @@ export function buyPower(p: Profile, key: PowerKey, count = 1): { ok: true; prof
 // ---------------------------------------------------------------- Wissensbaum
 
 export function knowledgePoints(p: Profile): { total: number; spent: number; free: number } {
-  const total = playerLevel(p) - 1;
+  // Runde 13: ein Punkt je Level-Up und einer je erster Medaille
+  const total = playerLevel(p) - 1 + medalCount(p);
   const spent = p.knowledge.reduce((s, id) => s + (nodeById(id)?.cost ?? 0), 0);
   return { total, spent, free: total - spent };
 }
@@ -232,13 +249,13 @@ export function resetKnowledge(p: Profile): Profile {
  */
 export function unlockEverything(p: Profile): Profile {
   const maxed: Tiers = [5, 5, 5];
-  const xp = Math.max(p.playerXp, xpForLevel(15));
+  const xp = Math.max(p.playerXp, xpForLevel(30));
   const full = TIER_COST.reduce((s, c) => s + c, 0) * 3;
   return {
     ...p,
     playerXp: xp,
-    towerTiers: { ranger: [...maxed], bombardier: [...maxed], frostcaller: [...maxed] },
-    towerXp: { ranger: full, bombardier: full, frostcaller: full },
+    towerTiers: Object.fromEntries(TOWER_TYPES.map((t) => [t, [...maxed]])) as Record<TowerType, Tiers>,
+    towerXp: Object.fromEntries(TOWER_TYPES.map((t) => [t, full])) as Record<TowerType, number>,
   };
 }
 
@@ -259,8 +276,10 @@ export function matchOptions(p: Profile): MatchOptions {
 
   const k = (id: string): boolean => hasKnow(p, id);
   const mods: MatchOptions['mods'] = {};
-  if (k('head-start')) mods.startCash = 100;
-  if (k('extra-lives')) mods.lives = 10;
+  mods.startCash = (k('head-start') ? 100 : 0) + (k('big-head-start') ? 200 : 0);
+  if (!mods.startCash) delete mods.startCash;
+  mods.lives = (k('extra-lives') ? 10 : 0) + (k('thick-walls') ? 15 : 0);
+  if (!mods.lives) delete mods.lives;
   if (k('better-deals')) mods.sellBp = 7500;
   if (k('lantern-tax')) mods.earlyBonus = 20;
   if (k('cheaper-basics')) mods.t1DiscountBp = 1000;
@@ -268,7 +287,23 @@ export function matchOptions(p: Profile): MatchOptions {
   if (k('bigger-barrels')) mods.radiusBp = 1000;
   if (k('cold-snap')) mods.slowDurBp = 2500;
   if (k('veteran-hero')) mods.heroStartLevel = 3;
+  if (k('legendary')) mods.heroStartLevel = 5;
   if (k('fast-learner')) mods.towerXpBp = 2000;
+  // Runde 13
+  if (k('veteran-primaries')) mods.t2DiscountBp = 1000;
+  const tempo: Partial<Record<TowerType, number>> = {};
+  if (k('quick-hands')) { tempo.ranger = 500; tempo.bombardier = 500; }
+  if (k('steady-aim')) tempo.longshot = 1000;
+  if (Object.keys(tempo).length) mods.tempoBp = tempo;
+  if (k('deep-freeze')) mods.freezeAddTicks = 30;
+  if (k('market-savvy')) mods.marketBp = 1000;
+  if (k('compound-interest')) mods.bankRateBp = 500;
+  if (k('supply-lines')) mods.supplyBonus = 200;
+  if (k('wide-aura')) mods.marketRadiusBp = 1500;
+  if (k('bulk-orders')) mods.marketPriceBp = 1000;
+  if (k('hero-training')) mods.heroXpBp = 1500;
+  if (k('spare-pocket')) mods.powerUses = 2;
+  if (k('starter-kit')) mods.freePowers = { goldDrop: STARTER_KIT_GOLD_DROPS };
   return { unlocks: { towers, maxTier }, towerXp: { ...p.towerXp }, powers: { ...emptyInventory(), ...p.inventory }, mods };
 }
 
