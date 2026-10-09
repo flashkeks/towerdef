@@ -2,6 +2,7 @@
 export const fmt = (n: number): string => n.toLocaleString('en-US');
 
 export const S = {
+  store: { title: 'Store', embersTip: 'Embers: earned every round, spent on powers in the Store.' },
   title: 'DUSKWARDENS',
   resetNotice: {
     title: 'Fresh start',
@@ -16,6 +17,7 @@ export const S = {
     towers: 'Towers',
     knowledge: 'Knowledge',
     settings: 'Settings',
+    store: 'Store',
     points: (n: number): string => `${n} point${n === 1 ? '' : 's'} to spend`,
     pickDifficulty: 'Difficulty',
     lockedAt: (n: number): string => `Level ${n}`,
@@ -55,6 +57,11 @@ export const S = {
     skip: 'Skip',
     duplicate: 'This match was already counted.',
     noTowerXp: 'No tower got XP this match.',
+    embers: 'Embers earned',
+    embersFrom: { rounds: 'Rounds cleared', win: 'Victory', medal: 'First medal', levelUp: 'Level up' },
+    powersUsed: 'Powers used',
+    powersNone: 'No powers used',
+    embersTotal: 'Total',
   },
   knowledge: {
     title: 'Knowledge',

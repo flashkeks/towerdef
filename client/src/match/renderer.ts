@@ -12,9 +12,11 @@ import { PAL } from '../pixel/palette';
 import { type EnemyState, type EnemyType, type GameState, type ProjectileState, type SimEvent, type TowerState } from '../sim';
 import { FxLayer, FRAMES } from './fx';
 import { footMilli } from './info';
-import { discSprite, enemySprite, fx as P2, heroSprite, projectileSprite, ringSprite, shadowSprite, heroMuzzle, towerMuzzle, towerSprite, type HeroFrame, type Spr, type TowerFrame } from './sprites';
+import { TRAP_W, bigHeart, bombLantern, bubbleSprite, coinSprite, trapSprite, discSprite, enemySprite, fx as P2, heroSprite, projectileSprite, ringSprite, shadowSprite, heroMuzzle, towerMuzzle, towerSprite, type HeroFrame, type Spr, type TowerFrame } from './sprites';
 import { tex } from './textures';
 import { PATH } from '../pixel/map/layout';
+import { TRAP_CHARGES, trapPieces } from '../powers/info';
+import type { PowerKey, TrapState } from '../sim';
 
 export const VIEW_W = 640;
 export const VIEW_H = 360;
@@ -27,7 +29,8 @@ const SHARD_COL: Record<EnemyType, number[]> = {
 };
 
 interface TowerView { spr: Sprite; shadow: Sprite; key: string; drop: number; up: number; tiers: string }
-interface EnemyView { spr: Sprite; shadow: Sprite; key: string; px: number; py: number; cx: number; cy: number; flash: number; flip: boolean; bar?: Sprite; barBg?: Sprite }
+interface EnemyView { bub?: Sprite; spr: Sprite; shadow: Sprite; key: string; px: number; py: number; cx: number; cy: number; flash: number; flip: boolean; bar?: Sprite; barBg?: Sprite }
+interface TrapView { spr: Sprite; x: number; y: number; kind: 'caltrops' | 'frostTrap'; key: string; drop: number }
 interface ProjView { spr: Sprite; shadow?: Sprite; key: string; px: number; py: number; cx: number; cy: number }
 
 const shadowTex = (w: number, h: number): Texture => tex(shadowSprite(w, h).canvas);
@@ -45,6 +48,7 @@ export class Renderer {
   app!: Application;
   fx!: FxLayer;
   private mapC = new Container();
+  private trapC = new Container();
   private shadowC = new Container();
   private worldC = new Container();
   private projC = new Container();
@@ -55,6 +59,10 @@ export class Renderer {
   private towers = new Map<number, TowerView>();
   private enemies = new Map<number, EnemyView>();
   private projs = new Map<number, ProjView>();
+  private traps = new Map<number, TrapView>();
+  private aimSpr = new Sprite();
+  private aimOn = false;
+  private warpSpr = new Sprite(Texture.WHITE);
   private lastTick = -1;
   private flashSpr!: Sprite;
   private mill!: Sprite;
@@ -85,7 +93,7 @@ export class Renderer {
     this.canvasEl.className = 'm-canvas';
     host.prepend(this.canvasEl);
     const st = this.app.stage;
-    st.addChild(this.mapC, this.shadowC, this.worldC, this.projC, this.fxHost, this.lightC, this.uiC);
+    st.addChild(this.mapC, this.trapC, this.shadowC, this.worldC, this.projC, this.fxHost, this.lightC, this.uiC);
     this.worldC.sortableChildren = true;
     this.buildMap();
     this.flashSpr = new Sprite(Texture.WHITE);
@@ -93,6 +101,9 @@ export class Renderer {
     this.fx = new FxLayer(this.flashSpr);
     this.fxHost.addChild(this.fx.node, this.flashSpr);
     for (const s of [this.selRing, this.rangeDisc, this.rangeRing, this.ghostShadow, this.ghost]) { s.visible = false; this.uiC.addChild(s); }
+    this.aimSpr.visible = false; this.uiC.addChild(this.aimSpr);
+    this.warpSpr.width = VIEW_W; this.warpSpr.height = VIEW_H; this.warpSpr.tint = hex(C.sky); this.warpSpr.alpha = 0; this.warpSpr.visible = false;
+    this.lightC.addChild(this.warpSpr);
     this.uiC.children.forEach((c) => ((c as Sprite).roundPixels = true));
   }
 
@@ -177,6 +188,8 @@ export class Renderer {
       for (const v of m.values()) { v.spr.destroy(); v.shadow?.destroy(); }
       m.clear();
     }
+    for (const v of this.traps.values()) v.spr.destroy();
+    this.traps.clear();
     this.fx.clear();
     this.lastTick = -1;
   }
@@ -201,6 +214,32 @@ export class Renderer {
     this.ghostShadow.alpha = 1;
     this.ghostShadow.position.set(x - 9, y - 3);
     this.showRange(x, y, g.range, g.ok ? C.white : C.red, 'ghost');
+  }
+
+  /** Zielvorschau fuer Powers: Bombe (Radius-Kreis), Falle (Sprite auf dem Weg, gruen = gueltig, rot = nicht). */
+  setAim(a: { kind: 'bomb' | 'caltrops' | 'frostTrap'; x: number; y: number; r?: number; ok: boolean } | null): void {
+    if (!a) {
+      if (this.aimOn) { this.aimSpr.visible = false; this.hideRange('ghost'); this.aimOn = false; }
+      return;
+    }
+    this.aimOn = true;
+    const x = Math.round(a.x), y = Math.round(a.y);
+    const col = a.ok ? C.leaf : C.red;
+    if (a.kind === 'bomb') {
+      const sp = bombLantern(Math.floor(this.now / 160));
+      this.aimSpr.texture = tex(sp.canvas);
+      this.aimSpr.position.set(x - sp.ax, y - sp.ay - 3);
+      this.aimSpr.tint = a.ok ? 0xffffff : hex(C.coral);
+      this.showRange(x, y, a.r ?? 40, a.ok ? C.orange : C.red, 'ghost');
+    } else {
+      const sp = trapSprite(a.kind, a.kind === 'caltrops' ? 6 : 5, Math.floor(this.now / 300));
+      this.aimSpr.texture = tex(sp.canvas);
+      this.aimSpr.position.set(x - sp.ax, y - sp.ay);
+      this.aimSpr.tint = a.ok ? hex(C.leaf) : hex(C.coral);
+      this.showRange(x, y, 10, col, 'ghost');
+    }
+    this.aimSpr.alpha = 0.85;
+    this.aimSpr.visible = true;
   }
 
   private rangeOwner: 'ghost' | 'sel' | null = null;
@@ -236,12 +275,21 @@ export class Renderer {
 
     const seenE = new Set<number>();
     for (const e of state.enemies) { seenE.add(e.id); this.syncEnemy(e, newTick, alpha); }
-    for (const [id, v] of this.enemies) if (!seenE.has(id)) { v.spr.destroy(); v.shadow.destroy(); v.bar?.destroy(); v.barBg?.destroy(); this.enemies.delete(id); }
+    for (const [id, v] of this.enemies) if (!seenE.has(id)) { v.spr.destroy(); v.shadow.destroy(); v.bar?.destroy(); v.barBg?.destroy(); v.bub?.destroy(); this.enemies.delete(id); }
 
     const seenP = new Set<number>();
     for (const p of state.projectiles) { seenP.add(p.id); this.syncProj(p, newTick, alpha); }
     for (const [id, v] of this.projs) if (!seenP.has(id)) { v.spr.destroy(); v.shadow?.destroy(); this.projs.delete(id); }
 
+    // Fallen auf dem Weg: Zacken/Kristalle nehmen mit den Ladungen ab
+    const seenTr = new Set<number>();
+    for (const tr of state.traps) { seenTr.add(tr.id); this.syncTrap(tr); }
+    for (const [id, v] of this.traps) if (!seenTr.has(id)) { v.spr.destroy(); this.traps.delete(id); }
+    // Zeitblase: blaue Toenung, solange Time Warp laeuft (sanftes Ein- und Ausblenden)
+    const wl = state.warpLeft;
+    this.warpSpr.visible = wl > 0 || this.warpSpr.alpha > 0.01;
+    const wt = wl > 0 ? 0.3 * Math.min(1, wl / 40) : 0;
+    this.warpSpr.alpha += Math.sign(wt - this.warpSpr.alpha) * Math.min(Math.abs(wt - this.warpSpr.alpha), 0.04);
     // Auswahl: Ring + Reichweite
     const sel = this.selectedId == null ? null : state.towers.find((t) => t.id === this.selectedId) ?? null;
     if (sel) {
@@ -256,6 +304,24 @@ export class Renderer {
       this.hideRange('sel');
     }
     this.animateMap();
+  }
+
+  private syncTrap(t: TrapState): void {
+    const slots = t.kind === 'caltrops' ? 6 : 5;
+    const pieces = trapPieces(t.charges, TRAP_CHARGES[t.kind], slots);
+    const fr = t.kind === 'frostTrap' ? Math.floor(this.now / 380) & 1 : 0;
+    let v = this.traps.get(t.id);
+    if (!v) {
+      const spr = new Sprite();
+      this.trapC.addChild(spr);
+      v = { spr, x: t.x / 1000, y: t.y / 1000, kind: t.kind, key: '', drop: 8 };
+      this.traps.set(t.id, v);
+    }
+    const sp = trapSprite(t.kind, pieces, fr);
+    v.spr.texture = tex(sp.canvas);
+    let dy = 0;
+    if (v.drop > 0) { dy = -Math.round(Math.sin((v.drop / 8) * Math.PI * 0.5) * 14); v.drop -= 0.5; }
+    v.spr.position.set(Math.round(v.x) - sp.ax, Math.round(v.y) - sp.ay + dy);
   }
 
   private animateMap(): void {
@@ -341,6 +407,13 @@ export class Renderer {
     v.spr.zIndex = y + (e.type === 'leviathan' ? 40 : 0);
     v.spr.alpha = camo ? 0.55 + 0.2 * Math.sin(this.now / 90 + e.id) : 1;
     v.spr.tint = e.frozenTicks > 0 ? hex(C.ice) : e.stunTicks > 0 ? hex(C.yellow) : e.slowBp > 0 && e.slowTicks > 0 ? hex(C.silver) : 0xffffff;
+    if (this.latest && this.latest.warpLeft > 0) {
+      if (!v.bub) { v.bub = new Sprite(); this.fxHost.addChild(v.bub); }
+      const bs = bubbleSprite(Math.floor(this.now / 200) + e.id, e.type === 'leviathan' ? 22 : e.type === 'brute' ? 11 : 8);
+      v.bub.texture = tex(bs.canvas);
+      v.bub.position.set(x - bs.ax, y - bs.ay - (e.type === 'leviathan' ? 14 : 5));
+      v.bub.alpha = 0.9;
+    } else if (v.bub) { v.bub.destroy(); v.bub = undefined; }
     const sw = e.type === 'leviathan' ? 40 : e.type === 'brute' ? 16 : 9, sh = e.type === 'leviathan' ? 10 : e.type === 'brute' ? 5 : 3;
     v.shadow.texture = shadowTex(sw, sh);
     v.shadow.alpha = e.type === 'leviathan' ? 0.8 : 1;
@@ -495,6 +568,24 @@ export class Renderer {
         break;
       }
       case 'ability': if (ev.id === 'flare' || ev.id === 'dawnbreak') this.heroCast = this.now + 300; this.abilityFx(ev.id, ev.x, ev.y); break;
+      case 'power': this.powerFx(ev.power, ev.x, ev.y); break;
+      case 'trap': {
+        const v = this.traps.get(ev.id);
+        if (v) {
+          if (ev.kind === 'caltrops') fx.burst(v.x, v.y - 2, [C.silver, C.stone, C.white], 4, 1.4, 1, 0.06, 12);
+          else fx.burst(v.x, v.y - 4, [C.ice, C.white, C.sky], 5, 1.2, 1, 0.03, 16);
+        }
+        break;
+      }
+      case 'trapGone': {
+        const v = this.traps.get(ev.id);
+        if (v) {
+          fx.puff(v.x, v.y, null);
+          fx.burst(v.x, v.y - 4, ev.kind === 'caltrops' ? [C.silver, C.stone, C.sand] : [C.ice, C.white, C.sky], 10, 1.6, 2, 0.05, 22);
+          fx.float(v.x, v.y - 12, ev.reason === 'spent' ? 'SPENT' : 'GONE', ev.kind === 'caltrops' ? C.silver : C.ice, 26, 0.3);
+        }
+        break;
+      }
       case 'roundEnd': if (ev.bonus) fx.float(320, 28, `+${ev.bonus}`, C.yellow, 50, 0.3); break;
       case 'bossStage': {
         const p = this.enemyPos(ev.enemy);
@@ -506,6 +597,97 @@ export class Renderer {
         break;
       }
       default: break;
+    }
+  }
+
+  /** Effekte der Powers (Runde 12). Bombe: die Sim sendet zusaetzlich `explode`, hier kommen nur Ring und Wackeln dazu. */
+  private powerFx(key: PowerKey, x?: number, y?: number): void {
+    const fx = this.fx;
+    const m = (v: number): number => v / 1000;
+    const px = x === undefined ? 320 : m(x), py = y === undefined ? 180 : m(y);
+    switch (key) {
+      case 'goldDrop': {
+        fx.flash(C.yellow, 0.14);
+        fx.float(320, 60, '+500', C.yellow, 70, 0.25);
+        fx.custom(80, (node) => {
+          const coins = Array.from({ length: 34 }, (_, i) => {
+            const sp = new Sprite(); node.addChild(sp);
+            return { sp, x: 20 + R() * 600, y: -8 - R() * 90, vy: 2.2 + R() * 2.4, ph: i * 3 };
+          });
+          return (age) => {
+            for (const c of coins) {
+              const yy = c.y + c.vy * age;
+              const s = coinSprite(Math.floor((age + c.ph) / 4));
+              c.sp.texture = tex(s.canvas);
+              c.sp.position.set(Math.round(c.x) - s.ax, Math.round(yy) - s.ay);
+              c.sp.visible = yy < 366;
+            }
+          };
+        });
+        break;
+      }
+      case 'lanternBomb':
+        fx.ring(px, py, 4, 40, C.orange, 12);
+        fx.ring(px, py, 2, 26, C.yellow, 9);
+        fx.shake.t = 10; fx.shake.amp = 1;
+        break;
+      case 'caltrops': case 'frostTrap':
+        fx.puff(px, py, null);
+        fx.ring(px, py, 3, 14, key === 'caltrops' ? C.silver : C.ice, 10);
+        break;
+      case 'timeWarp': {
+        fx.flash(C.sky, 0.22);
+        fx.float(320, 52, 'TIME WARP', C.ice, 70, 0.15);
+        fx.custom(38, (node) => {
+          const sp = new Sprite(); node.addChild(sp);
+          const sp2 = new Sprite(); node.addChild(sp2);
+          return (age) => {
+            const r = 12 + age * 5;
+            const a = bubbleSprite(Math.floor(age / 4), Math.min(190, r)), b = bubbleSprite(Math.floor(age / 4) + 2, Math.min(190, Math.max(8, r - 34)));
+            sp.texture = tex(a.canvas); sp.position.set(320 - a.ax, 180 - a.ay);
+            sp2.texture = tex(b.canvas); sp2.position.set(320 - b.ax, 180 - b.ay);
+            sp.alpha = Math.max(0, 1 - age / 38); sp2.alpha = sp.alpha;
+          };
+        });
+        break;
+      }
+      case 'lanternOil':
+        fx.flash(C.yellow, 0.12);
+        fx.float(86, 34, 'OIL +25%', C.amber, 70, 0.2);
+        fx.burst(44, 26, [C.amber, C.yellow, C.orange], 14, 1.2, 2, 0.05, 30);
+        break;
+      case 'extraLives':
+        fx.flash(C.red, 0.1);
+        fx.float(70, 34, '+25', C.coral, 70, 0.25);
+        fx.custom(70, (node) => {
+          const hs = Array.from({ length: 8 }, (_, i) => { const sp = new Sprite(); node.addChild(sp); return { sp, x: 60 + i * 74 + R() * 20, y: 380 + R() * 40, d: i * 3 }; });
+          return (age) => {
+            const hs0 = bigHeart();
+            for (const hh of hs) {
+              const a = Math.max(0, age - hh.d);
+              hh.sp.texture = tex(hs0.canvas);
+              hh.sp.position.set(Math.round(hh.x + Math.sin(a / 6 + hh.d) * 4) - hs0.ax, Math.round(hh.y - a * 4.2) - hs0.ay);
+              hh.sp.visible = a > 0;
+            }
+          };
+        });
+        break;
+      case 'heroBoost': {
+        const t = this.latest?.towers.find((q) => q.type === 'wren');
+        if (t) {
+          this.heroCast = this.now + 300;
+          fx.ring(m(t.x), m(t.y), 4, 40, C.leaf, 22);
+          fx.ring(m(t.x), m(t.y), 2, 24, C.yellow, 16);
+          fx.burst(m(t.x), m(t.y) - 16, [C.leaf, C.yellow, C.white], 22, 2, 2, -0.03, 34);
+          fx.float(m(t.x), m(t.y) - 52, 'HERO BOOST', C.leaf, 60, 0.3);
+        }
+        break;
+      }
+      default: // Insta-Warden: Landung mit goldenem Ring
+        fx.ring(px, py, 3, 30, C.amber, 16);
+        fx.burst(px, py - 6, [C.amber, C.yellow, C.white], 18, 1.8, 2, 0.04, 28);
+        fx.float(px, py - 44, 'INSTA-WARDEN', C.yellow, 54, 0.3);
+        fx.shake.t = 8; fx.shake.amp = 1;
     }
   }
 

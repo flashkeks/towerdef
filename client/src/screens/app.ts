@@ -16,6 +16,7 @@ import { noticeView } from './notice';
 import { resultView } from './result';
 import { setPalette } from './px';
 import { settingsView } from './settings';
+import { storeView } from './store';
 import { towersView } from './towers';
 import type { Ctx, MenuTheme, Route, SoundId, View } from './types';
 import type { VolumeApi } from '../audio/settings';
@@ -100,6 +101,7 @@ export async function runApp(root: HTMLElement, opts: AppOptions): Promise<AppHa
         case 'home': return mount(homeView(ctx));
         case 'knowledge': return mount(knowledgeView(ctx));
         case 'towers': return mount(towersView(ctx, r.tower), 'march');
+        case 'store': return mount(storeView(ctx), 'bazaar');
         case 'settings': return mount(settingsView(ctx));
         case 'notice': return mount(noticeView(ctx));
         case 'result': return mount(resultView(ctx, r.info));
@@ -116,7 +118,7 @@ export async function runApp(root: HTMLElement, opts: AppOptions): Promise<AppHa
     const map = MAP_IDS[0];
     const before = store.profile;
     const mo = matchOptions(before);
-    const startOpts: MatchStartOptions = { map, difficulty, unlocks: mo.unlocks, towerXp: mo.towerXp, mods: mo.mods, lockInfo: lockInfo(before) };
+    const startOpts: MatchStartOptions = { map, difficulty, unlocks: mo.unlocks, towerXp: mo.towerXp, mods: mo.mods, powers: mo.powers, lockInfo: lockInfo(before) };
     view?.dispose?.();
     view = null;
     let outcome;
@@ -131,14 +133,16 @@ export async function runApp(root: HTMLElement, opts: AppOptions): Promise<AppHa
     // Das Match darf die Huelle ersetzt haben: wieder einhaengen
     root.replaceChildren(shell);
     const res = toMetaResult(outcome, { matchId: newId(), map, startLives: startLives(difficulty, mo.mods) });
-    if (outcome.quit && res.roundsCleared === 0) return ctx.go({ name: 'home' });
+    const usedAny = Object.values(outcome.powersUsed ?? {}).some((n) => (n ?? 0) > 0);
+    // Verlassen in Runde 0 zaehlt nicht - ausser, es wurde eine Power eingesetzt (sonst gaebe es Gratis-Powers durch Verlassen)
+    if (outcome.quit && res.roundsCleared === 0 && !usedAny) return ctx.go({ name: 'home' });
     const { profile, report } = applyMatch(store.profile, res);
     await store.update(profile);
     ctx.go({
       name: 'result',
       info: {
         won: outcome.won, quit: !!outcome.quit, round: outcome.round, difficulty, report,
-        towerXpBefore: { ...before.towerXp }, towerXpAfter: { ...profile.towerXp }, livesLost: res.livesLost,
+        towerXpBefore: { ...before.towerXp }, towerXpAfter: { ...profile.towerXp }, livesLost: res.livesLost, powersUsed: outcome.powersUsed, embersBefore: before.embers, embersAfter: profile.embers,
       },
     });
   }

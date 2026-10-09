@@ -193,7 +193,7 @@ export class AudioEngine {
       }
       case 'pop': this.play(ev.etype === 'brute' || ev.etype === 'leviathan' ? 'pop.big' : 'pop', 1, 0.9 + Math.random() * 0.4); break;
       case 'blocked': this.play('tink', 1, rnd()); break;
-      case 'explode': this.play(ev.kind === 'quake' ? 'quake' : ev.kind === 'mini' ? 'explode.mini' : 'explode', 1, rnd()); break;
+      case 'explode': this.play(ev.kind === 'bomb' && ev.radius === 40000 ? 'power.bomb' : ev.kind === 'quake' ? 'quake' : ev.kind === 'mini' ? 'explode.mini' : 'explode', 1, rnd()); break;
       case 'nova': this.play('nova'); break;
       case 'status': if (ev.kind === 'freeze') this.play('freeze', 0.5); break;
       case 'leak': this.play('leak'); break;
@@ -202,6 +202,14 @@ export class AudioEngine {
       case 'sell': this.play('sell'); break;
       case 'heroLevel': this.play('levelup'); break;
       case 'ability': this.play(ev.id === 'flare' ? 'flare' : 'ability'); break;
+      case 'power': {
+        const k = ev.power;
+        this.play(k === 'goldDrop' ? 'power.gold' : k === 'lanternBomb' ? 'power.throw' : k === 'caltrops' ? 'power.trap' : k === 'frostTrap' ? 'power.trapFrost' : k === 'timeWarp' ? 'power.warp'
+          : k === 'lanternOil' ? 'power.oil' : k === 'extraLives' ? 'power.heart' : k === 'heroBoost' ? 'power.hero' : 'power.insta');
+        break;
+      }
+      case 'trap': this.play(ev.kind === 'frostTrap' ? 'power.trapFreeze' : 'power.trapHit', 1, rnd()); break;
+      case 'trapGone': this.play(ev.kind === 'frostTrap' ? 'power.trapFrost' : 'power.trap', 0.6); break;
       case 'roundStart': this.play(ev.round === 20 ? 'boss' : 'roundStart'); break;
       case 'roundEnd': this.play('roundEnd'); break;
       case 'bossStage': this.play('bossPlate'); break;

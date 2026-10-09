@@ -108,16 +108,19 @@ export function powerIconRaster(id: PowerIconId): { rows: string[]; ax: number; 
 
 // ---------------------------------------------------------------- Embers (Glutstueck)
 
-/** Glutstueck: dunkler Brocken mit glimmenden Rissen und einer kleinen Flamme. 16 x 16, ohne Tafel. */
+/** Glutstueck (Embers): glimmender Kohlebrocken, oben gelb-orange gluehend, unten dunkel mit Rissen, Funken ringsum. 16 x 16, ohne Tafel. */
 export function emberRaster(frame = 0): { rows: string[]; ax: number; ay: number } {
   const s = new Surface(16, 16);
-  s.poly([[3, 9], [5, 5], [9, 4], [13, 6], [14, 10], [11, 14], [6, 14], [3, 12]], (x, y) => (x + y < 14 ? 'bark' : x + y < 19 ? 'plum' : 'night'));
-  s.poly([[3, 9], [5, 5], [9, 4], [8, 7], [5, 9]], 'wood');
-  // glimmende Risse
-  s.line(6, 8, 9, 10, 'orange'); s.line(9, 10, 12, 9, 'orange'); s.line(8, 11, 8, 13, 'red');
-  s.px(7, 9, 'yellow'); s.px(10, 10, 'yellow'); s.px(8, 12, 'amber'); s.px(5, 11, 'red'); s.px(12, 7, 'orange');
-  flame(s, 9, 4, 4, frame, 'orange', 'amber', 'yellow');
-  if (frame % 2) s.px(5, 2, 'yellow'); else s.px(12, 3, 'amber');
+  const body: [number, number][] = [[2, 9], [4, 5], [8, 3], [12, 5], [14, 9], [12, 13], [7, 14], [3, 13]];
+  s.poly(body, (x, y) => (y < 7 ? 'yellow' : y < 9 ? 'amber' : y < 11 ? 'orange' : y < 13 ? 'red' : 'crimson'));
+  // dunkle Kruste mit Rissen (Glut scheint durch)
+  for (const [x, y] of [[3, 8], [4, 7], [5, 6], [9, 6], [10, 7], [11, 9], [12, 8], [6, 9], [7, 10], [9, 10], [5, 11], [8, 12], [10, 12], [11, 11], [7, 7], [8, 8], [4, 10], [3, 11], [12, 11]] as [number, number][]) s.px(x, y, y < 8 ? 'bark' : 'plum');
+  s.line(5, 6, 6, 8, 'plum'); s.line(10, 6, 9, 8, 'bark');
+  s.px(7, 5, 'white'); s.px(8, 4, 'white'); s.px(6, 5, 'yellow');
+  // Funken
+  const sp: [number, number][] = frame % 2 ? [[2, 3], [13, 2], [14, 6]] : [[3, 2], [12, 3], [1, 6]];
+  for (const [x, y] of sp) s.px(x, y, 'yellow');
+  s.px(frame % 2 ? 8 : 9, 1, 'orange');
   const o = outlineSurface(s);
   return { rows: o.toRows(), ax: 0, ay: 0 };
 }
@@ -164,7 +167,7 @@ export function merchantRaster(frame = 0): { rows: string[]; ax: number; ay: num
 
 export const TRAP_W = 26, TRAP_H = 14;
 const CAL_SLOTS: [number, number][] = [[6, 9], [13, 6], [20, 9], [9, 4], [17, 11], [13, 11]];
-const FROST_SLOTS: [number, number, number][] = [[13, 9, 6], [7, 9, 4], [19, 9, 4], [10, 11, 3], [16, 11, 3]];
+const FROST_SLOTS: [number, number, number][] = [[13, 9, 6], [7, 9, 4], [19, 9, 4], [4, 11, 3], [22, 11, 3]];
 
 /** Falle in Weltgroesse. `pieces` = sichtbare Zacken/Kristalle (nimmt mit den Ladungen ab), `frame` 0/1 laesst Eis blinken. Anker = Mitte. */
 export function trapRaster(kind: 'caltrops' | 'frostTrap', pieces: number, frame = 0): { rows: string[]; ax: number; ay: number } {

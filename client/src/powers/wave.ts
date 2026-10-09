@@ -1,16 +1,8 @@
 /** Wave-Reiter (Runde 12): Vorschau der naechsten Runde als reines Datenmodell (Sim: `game.roundPreview(r)`). */
 
-export type EnemyKind = 'red' | 'blue' | 'green' | 'gold' | 'ironshell' | 'ember' | 'brute' | 'leviathan';
-
-export interface RoundPreview {
-  round: number;
-  groups: { type: EnemyKind; n: number; camo: boolean }[];
-  rbe: number;
-  hasCamo: boolean;
-  hasArmor: boolean;
-  hasEmber: boolean;
-  hasBoss: boolean;
-}
+import type { EnemyType, RoundPreview } from '../sim';
+export type { RoundPreview };
+export type EnemyKind = EnemyType;
 
 export type Warning = 'camo' | 'armor' | 'ember' | 'boss';
 export const WARNING_TEXT: Record<Warning, { name: string; tip: string }> = {

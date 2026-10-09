@@ -7,6 +7,9 @@ import { MAP_NAMES, MAX_ROUND, TIER_COST, TOWER_TYPES, levelFromXp, type LevelUn
 import { heroPortrait, towerPortrait } from '../pixel/sprites';
 import { h, setText } from '../ui/dom';
 import { MEDAL_OF, icon, medal } from './icons';
+import { emberIcon, iconPower, type PowerIconId } from '../pixel/sprites';
+import { baseOf, type PowerKey } from '../powers/info';
+import { embersChip } from './store';
 import { bar, cv, ptext, reducedMotion } from './px';
 import { S, fmt } from './text';
 import type { Ctx, ResultInfo, View } from './types';
@@ -117,6 +120,31 @@ export function resultView(ctx: Ctx, info: ResultInfo): View {
     }
   };
 
+  // ---- Embers und verbrauchte Powers (Runde 12)
+  const eCard = h('section', 'card embers-card');
+  eCard.append(h('div', 'h2', S.result.embers));
+  const eTotal = h('div', 'em-total');
+  const eGain = h('div', 'em-gain num', '+0');
+  const eChip = embersChip(info.embersBefore);
+  eTotal.append(cv(emberIcon(0), 4), eGain, eChip.el);
+  const eLines = h('div', 'em-lines');
+  const parts: [string, number][] = [[S.result.embersFrom.rounds, r.embers?.rounds ?? 0], [S.result.embersFrom.win, r.embers?.win ?? 0], [S.result.embersFrom.medal, r.embers?.medal ?? 0], [S.result.embersFrom.levelUp, r.embers?.levelUp ?? 0]];
+  for (const [label, n] of parts) { const z = n === 0 ? ' zero' : ''; eLines.append(h('span', z.trim(), label), h('span', `num${z}`, `+${n}`)); }
+  eCard.append(eTotal, eLines);
+  const used = Object.entries(info.powersUsed ?? {}).filter(([, n]) => (n ?? 0) > 0) as [PowerKey, number][];
+  const usedBox = h('div', 'pw-used');
+  usedBox.dataset.used = String(r.powersUsed ?? 0);
+  usedBox.append(h('span', '', used.length ? S.result.powersUsed : S.result.powersNone));
+  if (used.length) {
+    usedBox.append(h('span', 'num', String(r.powersUsed ?? used.reduce((a, [, n]) => a + n, 0))));
+    const ic = h('div', 'pw-icons');
+    for (const [k, n] of used) { const w = h('span', 'pw-ic1'); w.title = `${k} x${n}`; w.append(cv(iconPower(baseOf(k) as PowerIconId), 2)); ic.append(w); }
+    usedBox.append(ic);
+  }
+  eCard.append(usedBox);
+  const rightCol = h('div', 'res-col');
+  rightCol.append(tCard, eCard);
+
   // ---- Knoepfe
   const btns = h('div', 'res-btns');
   const again = h('button', 'btn-big play');
@@ -135,7 +163,7 @@ export function resultView(ctx: Ctx, info: ResultInfo): View {
   }
 
   const body = h('div', 'res-body');
-  body.append(xpCard, tCard);
+  body.append(xpCard, rightCol);
   el.append(head, body, btns, skipBtn);
   el.onclick = (e) => { if (e.target === el) skip = true; };
 
@@ -178,6 +206,20 @@ export function resultView(ctx: Ctx, info: ResultInfo): View {
       await new Promise<void>((res) => requestAnimationFrame(() => res()));
     }
     for (const k of rows) showTower(k, 1);
+    // Embers zaehlen hoch (animiert, mit Tick-Ton)
+    const gained = r.embersGained ?? 0;
+    if (gained > 0) {
+      const steps = fast || skip ? 1 : Math.min(24, gained);
+      for (let i = 1; i <= steps; i++) {
+        if (dead) return;
+        const v = Math.round((gained * i) / steps);
+        eGain.textContent = `+${fmt(v)}`;
+        eChip.set(info.embersBefore + v, false);
+        if (steps > 1) { ctx.sound('ember'); await wait(36); }
+      }
+    }
+    eGain.textContent = `+${fmt(gained)}`;
+    eChip.set(info.embersAfter, false);
     if (r.pointsGained > 0) { addPoints(r.pointsGained); }
     el.dataset.done = '1';
   };

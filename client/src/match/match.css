@@ -20,7 +20,7 @@ kbd { font: 700 10px var(--font-num); background: var(--ink); color: var(--silve
 .pxbox { background: var(--night); border: 3px solid var(--ink); box-shadow: inset 0 0 0 2px var(--dusk), inset 0 -5px 0 0 rgba(0,0,0,.22); }
 
 /* ---- oben ---- */
-.m-top { height: 52px; display: flex; align-items: center; gap: 22px; padding: 0 18px; flex: none; z-index: 5; }
+.m-top { position: relative; height: 52px; display: flex; align-items: center; gap: 22px; padding: 0 18px; flex: none; z-index: 30; }
 .m-stat { display: flex; align-items: center; gap: 8px; font-size: 26px; line-height: 1; text-shadow: 0 2px 0 var(--ink); }
 .m-stat.lives b { color: #ff8a90; }
 .m-stat.cash b { color: var(--yellow); }
@@ -240,3 +240,64 @@ kbd { font: 700 10px var(--font-num); background: var(--ink); color: var(--silve
 .cf-no { background: var(--crimson); box-shadow: inset 0 3px 0 rgba(255,255,255,.2), inset 0 -5px 0 rgba(0,0,0,.28); }
 .cf-no:hover { background: var(--red); }
 .cf-btns kbd { text-shadow: none; opacity: .85; }
+
+/* ---- Reiter in der rechten Leiste (Runde 12) ---- */
+.m-tabs { display: flex; gap: 0; flex: none; }
+.m-tab { position: relative; flex: 1; font: 800 14px var(--font-num); letter-spacing: .06em; text-transform: uppercase; color: var(--stone); background: var(--ink); border: 3px solid var(--ink); border-bottom: 0; padding: 7px 0 6px; margin-right: -3px; box-shadow: inset 0 0 0 2px var(--dusk); }
+.m-tab:hover { color: #fff; }
+.m-tab.on { color: var(--ink); background: var(--amber); box-shadow: inset 0 3px 0 rgba(255,255,255,.35); }
+.m-tab-badge { font-style: normal; position: absolute; top: -10px; right: 2px; min-width: 18px; padding: 0 4px; font-size: 12px; line-height: 16px; background: var(--leaf); color: var(--ink); border: 2px solid var(--ink); }
+.m-tab-badge:empty { display: none; }
+.m-panes { flex: 1; min-height: 0; overflow-y: auto; border-top: 3px solid var(--amber); padding-top: 8px; }
+.m-pane { display: flex; flex-direction: column; gap: 8px; }
+
+/* Powers */
+.pw-list { display: flex; flex-direction: column; gap: 6px; }
+.pw-slot { position: relative; display: flex; align-items: center; gap: 8px; text-align: left; color: #fff; background: var(--dusk); border: 3px solid var(--ink); padding: 4px 8px 4px 4px; box-shadow: inset 0 -4px 0 rgba(0,0,0,.3); }
+.pw-slot:hover:not(.st-empty):not(.st-used) { background: #46507a; }
+.pw-slot.armed { box-shadow: inset 0 0 0 3px var(--yellow); background: #46507a; }
+.pw-ic { width: 38px; height: 38px; flex: none; display: flex; align-items: center; justify-content: center; background: var(--ink); border: 2px solid var(--ink); }
+.pw-t { flex: 1; min-width: 0; }
+.pw-n { font: 700 14px/1.1 var(--font-num); letter-spacing: .03em; }
+.pw-h { font: 600 11px var(--font-num); color: var(--silver); letter-spacing: .04em; margin-top: 2px; }
+.pw-count { font-size: 18px; color: var(--yellow); }
+.pw-slot.st-ready .pw-h { color: var(--leaf); }
+.pw-slot.st-used, .pw-slot.st-needhero { opacity: .55; filter: grayscale(.8); cursor: not-allowed; }
+.pw-slot.st-empty { opacity: .6; background: #2a2f4a; }
+.pw-slot.st-empty .pw-count { color: var(--stone); }
+.pw-slot.st-empty .pw-h { color: var(--amber); }
+.pw-slot.st-empty .pw-ic canvas { filter: grayscale(.7); }
+.pw-foot { font: 600 11px var(--font-num); letter-spacing: .06em; color: var(--stone); text-align: center; padding: 2px 0; }
+
+/* Wave */
+.wv { display: flex; flex-direction: column; gap: 8px; }
+.wv-head { display: flex; align-items: baseline; justify-content: space-between; border-bottom: 2px solid var(--dusk); padding-bottom: 4px; }
+.wv-title { font: 800 22px var(--font-num); letter-spacing: .06em; text-transform: uppercase; color: var(--yellow); text-shadow: 2px 2px 0 var(--ink); }
+.wv-sub { font: 700 11px var(--font-num); letter-spacing: .16em; text-transform: uppercase; color: var(--stone); }
+.wv-warns { display: flex; flex-wrap: wrap; gap: 5px; }
+.wv-warn { display: flex; align-items: center; gap: 5px; font: 800 12px var(--font-num); letter-spacing: .08em; text-transform: uppercase; background: var(--ink); border: 2px solid var(--amber); padding: 2px 7px 2px 5px; color: var(--yellow); }
+.wv-warn.w-camo { border-color: var(--leaf); color: var(--leaf); }
+.wv-warn.w-armor { border-color: var(--stone); color: var(--silver); }
+.wv-warn.w-ember { border-color: var(--orange, #f77622); color: #f9a35a; }
+.wv-warn.w-boss { border-color: var(--red); color: #ff8a90; }
+.wv-list { display: flex; flex-direction: column; gap: 4px; }
+.wv-row { display: flex; align-items: center; gap: 8px; background: var(--dusk); border: 3px solid var(--ink); padding: 2px 8px 2px 4px; box-shadow: inset 0 -3px 0 rgba(0,0,0,.28); }
+.wv-art { width: 48px; height: 44px; flex: none; display: flex; align-items: center; justify-content: center; background: radial-gradient(circle at 50% 80%, #46507a, var(--night)); border: 2px solid var(--ink); overflow: hidden; }
+.wv-art canvas { max-width: 46px; max-height: 42px; }
+.wv-name { flex: 1; font: 700 14px var(--font-num); letter-spacing: .03em; min-width: 0; }
+.wv-tag { color: var(--leaf); font-size: 11px; text-transform: uppercase; }
+.wv-n { font-size: 22px; color: var(--yellow); }
+.wv-foot { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; font: 600 12px var(--font-num); letter-spacing: .06em; color: var(--silver); background: var(--ink); border: 2px solid var(--dusk); padding: 4px 8px; }
+.wv-foot .wv-rbe { margin-left: auto; color: var(--stone); text-transform: uppercase; }
+.wv-foot b { font-size: 16px; color: var(--yellow); }
+.wv-none { padding: 24px 8px; text-align: center; font: 700 15px var(--font-num); letter-spacing: .1em; text-transform: uppercase; color: var(--stone); }
+
+/* Anzeige-Effekte (Powers) */
+.m-stat.cash.oil b { animation: m-oil 1.1s steps(6) infinite; }
+.m-stat.cash.oil { filter: drop-shadow(0 0 4px rgba(254,231,97,.7)); }
+@keyframes m-oil { 0%, 100% { color: var(--yellow); } 40% { color: #fff; text-shadow: 0 0 6px #fee761; } 70% { color: var(--amber); } }
+.m-stat.pulse-gain b { animation: m-gainpop .5s steps(5); }
+.m-stat.pulse-life b { animation: m-lifepop .6s steps(6); }
+@keyframes m-gainpop { 30% { transform: scale(1.35); color: #fff; } }
+@keyframes m-lifepop { 30% { transform: scale(1.4); color: #fff; } 60% { color: #7bd88f; } }
+.m-aim { position: absolute; left: 50%; top: 10px; transform: translateX(-50%); z-index: 8; pointer-events: none; font: 700 15px var(--font-num); letter-spacing: .08em; text-transform: uppercase; background: var(--ink); color: var(--yellow); border: 3px solid var(--amber); padding: 4px 14px; }

@@ -1,4 +1,4 @@
-import type { Difficulty, TowerType } from '../../../sim/src/types';
+import type { Difficulty, PowerKey, TowerType } from '../../../sim/src/types';
 import type { MatchReport, Profile } from '../meta';
 import type { MetaStore } from '../meta/store';
 import type { VolumeApi } from '../audio/settings';
@@ -17,12 +17,18 @@ export interface ResultInfo {
   towerXpBefore: Record<TowerType, number>;
   towerXpAfter: Record<TowerType, number>;
   livesLost: number;
+  /** Embers vor und nach dem Match (Anzeige, Runde 12) */
+  /** Erfolgreiche Power-Einsaetze dieses Matches (Anzeige "Powers used") */
+  powersUsed?: Partial<Record<PowerKey, number>>;
+  embersBefore: number;
+  embersAfter: number;
 }
 
 export type Route =
   | { name: 'home' }
   | { name: 'knowledge' }
   | { name: 'towers'; tower?: TowerType }
+  | { name: 'store' }
   | { name: 'settings' }
   | { name: 'notice' }
   | { name: 'result'; info: ResultInfo };

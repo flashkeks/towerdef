@@ -4,10 +4,8 @@
  * Spezifikation: docs/design/powers.md. Ein Test haelt die Preise gegen `DATA.powers`.
  */
 
-/** Inventar-/Befehlsschluessel. Insta-Warden liegt je Variante getrennt (`instaWarden:ranger` ...). */
-export type PowerKey =
-  | 'goldDrop' | 'lanternBomb' | 'caltrops' | 'frostTrap' | 'timeWarp' | 'lanternOil' | 'extraLives' | 'heroBoost'
-  | 'instaWarden:ranger' | 'instaWarden:bombardier' | 'instaWarden:frostcaller';
+import { DATA, type PowerKey } from '../sim';
+export type { PowerKey };
 
 export type InstaVariant = 'ranger' | 'bombardier' | 'frostcaller';
 export const INSTA_VARIANTS: readonly InstaVariant[] = ['ranger', 'bombardier', 'frostcaller'];
@@ -34,17 +32,18 @@ export interface PowerInfo {
 
 export const POWER_IDS: readonly PowerId[] = ['goldDrop', 'lanternBomb', 'caltrops', 'frostTrap', 'timeWarp', 'lanternOil', 'extraLives', 'heroBoost', 'instaWarden'];
 
-export const POWERS: Record<PowerId, PowerInfo> = {
-  goldDrop: { id: 'goldDrop', name: 'Gold Drop', price: 40, target: 'button', desc: 'A purse of 500 gold, right now.' },
-  lanternBomb: { id: 'lanternBomb', name: 'Lantern Bomb', price: 30, target: 'point', desc: 'Hurl a lantern bomb: blast radius 40, hits up to 40 enemies. Bosses take big damage.' },
-  caltrops: { id: 'caltrops', name: 'Caltrops', price: 25, target: 'path', desc: 'Spikes on the path. Pop the next 20 layers, then gone.' },
-  frostTrap: { id: 'frostTrap', name: 'Frost Trap', price: 30, target: 'path', desc: 'Freezes the next 15 enemies that cross it for 3 s. Not bosses.' },
-  timeWarp: { id: 'timeWarp', name: 'Time Warp', price: 50, target: 'button', desc: 'All enemies move 50% slower for 10 s (bosses 25%).' },
-  lanternOil: { id: 'lanternOil', name: 'Lantern Oil', price: 60, target: 'button', desc: '+25% pop cash for the rest of this round and the whole next one.' },
-  extraLives: { id: 'extraLives', name: 'Extra Lives', price: 35, target: 'button', desc: '+25 lives.' },
-  heroBoost: { id: 'heroBoost', name: 'Hero Boost', price: 80, target: 'button', desc: 'Wren gains 3 levels (max 20). Needs Wren on the field.', needsHero: true },
-  instaWarden: { id: 'instaWarden', name: 'Insta-Warden', price: 150, target: 'place', desc: 'A fully upgraded tower, placed for free. Pick the build when you buy.' },
-};
+const TARGET_OF = { button: 'button', target: 'point', path: 'path', place: 'place' } as const;
+/** Anzeigedaten je Basis-Power, aus `DATA.powers` (Preis, Text, Einsatzart kommen aus den Daten der Sim). */
+export const POWERS: Record<PowerId, PowerInfo> = Object.fromEntries(POWER_IDS.map((id) => {
+  const d = DATA.powers[(id === 'instaWarden' ? 'instaWarden:ranger' : id) as PowerKey];
+  return [id, {
+    id, name: id === 'instaWarden' ? 'Insta-Warden' : d.name, price: d.price, target: TARGET_OF[d.use],
+    desc: id === 'instaWarden' ? 'A fully upgraded tower, placed for free. Pick the build when you buy.' : d.desc, needsHero: id === 'heroBoost',
+  }];
+})) as Record<PowerId, PowerInfo>;
+
+/** Preis eines Schluessels (Embers) */
+export const priceOf = (k: PowerKey): number => DATA.powers[k].price;
 
 export const keyOf = (id: PowerId, variant?: InstaVariant): PowerKey => (id === 'instaWarden' ? `instaWarden:${variant ?? 'ranger'}` : id) as PowerKey;
 export const baseOf = (k: PowerKey): PowerId => (k.startsWith('instaWarden') ? 'instaWarden' : (k as PowerId));
@@ -83,7 +82,7 @@ export interface PowerSlot {
 
 export interface SlotCtx {
   inventory: Partial<Record<PowerKey, number>>;
-  /** je Art die Runde des letzten Einsatzes (`state.powerUsedRound`) */
+  /** je Art die Runde des letzten Einsatzes (`state.powerUsedRound`, -1 = nie) */
   usedRound: Partial<Record<PowerKey, number>>;
   round: number;
   heroPlaced: boolean;
@@ -98,7 +97,7 @@ export function powerSlots(c: SlotCtx): PowerSlot[] {
   const make = (key: PowerKey): PowerSlot => {
     const id = baseOf(key), info = POWERS[id];
     const count = Math.max(0, Math.floor(c.inventory[key] ?? 0));
-    const used = c.usedRound[key] === c.round && c.round > 0;
+    const used = c.usedRound[key] === c.round;
     const state: SlotState = count <= 0 ? 'empty' : used ? 'used' : info.needsHero && !c.heroPlaced ? 'needhero' : 'ready';
     return { key, id, variant: variantOf(key), name: displayName(key), count, state, target: info.target, desc: info.desc };
   };
