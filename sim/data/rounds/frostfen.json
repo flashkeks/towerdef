@@ -23,5 +23,5 @@
  {"round":22,"groups":[{"type":"gloomship","n":2,"gapMs":6000,"startMs":0},{"type":"ironshell","n":24,"gapMs":500,"startMs":4000}]},
  {"round":23,"groups":[{"type":"brute","n":30,"gapMs":600,"startMs":0},{"type":"ember","n":24,"gapMs":500,"startMs":4000,"camo":true}]},
  {"round":24,"groups":[{"type":"gloomship","n":2,"gapMs":6000,"startMs":0},{"type":"crystal","n":12,"gapMs":1000,"startMs":6000}]},
- {"round":25,"groups":[{"type":"wyrm","n":1,"gapMs":0,"startMs":0},{"type":"gloomship","n":2,"gapMs":8000,"startMs":12000},{"type":"frostling","n":24,"gapMs":600,"startMs":20000}]}
+ {"round":25,"groups":[{"type":"wyrm","n":1,"gapMs":0,"startMs":0},{"type":"frostling","n":16,"gapMs":700,"startMs":20000}]}
 ]
