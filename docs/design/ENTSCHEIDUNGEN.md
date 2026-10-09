@@ -4,6 +4,14 @@ Verbindlich für alle weiteren Runden. Die beantwortete Fragenliste liegt in
 `docs/design/FRAGEN.md`. Hier steht die Auslegung, nach der gearbeitet wird.
 Änderungen nur durch die Menschen.
 
+## Mehr Türme, keine Plattformen (Max, 09.10.2026 spät, nach Runde 12)
+
+„Sehr gut gemacht bis jetzt.“ Nächster Schritt: **mehr Türme** (gewählt: Lantern Market, Longshot, Thornweaver, Alchemist — „gerne noch
+mehr“, gern verteilt auf mehrere Runden) und **mehr Wissensbaum**. **Keine Plattform unter den Figuren** („finde ich gar nicht so geil“),
+und Upgrades dürfen die Figuren **noch deutlicher verändern**. Feinschliff davor: Turmbild im Panel ragt raus, Upgrade-Knöpfe hübscher und
+mittig, Effekt-Sounds leiser (Basis-Türme leise, hohe Stufen dürfen krass sein), Startseiten-Musik heller/fröhlicher.
+Entwurf: `tuerme-r13.md` (Runde 13 Market + Longshot + Wissensbaum 30 Knoten, Runde 14 Thornweaver + Alchemist), Vorrat `ideen-tuerme.md`.
+
 ## Turm-XP und Freischalten (Max, 09.10.2026 abends, nach dem ersten Spiel mit Runde 11)
 
 „Genau so habe ich mir das vorgestellt.“ Änderungen:

@@ -1,25 +1,23 @@
-# run.md — Runde 12: Reiter, Embers, Store und Powers
+# run.md — Runde 13: Lantern Market, Longshot, großer Wissensbaum, Figuren ohne Plattform
 
 Du arbeitest in `flashkeks/towerdef` auf **`dev`**. Kein PR, kein Deploy.
 
 ## 0. Kaltstart
-„Duskwardens“: Web-Tower-Defense wie Bloons TD 6, nur intern. `sim/` (deterministischer Kern, 60 Ticks/s, Milli-px),
-`meta/` (Profil, Level, Turm-XP, Wissensbaum, ohne DOM), `client/` (Vite + PixiJS v8, Pixel-Art im Code).
-Lies: `docs/design/ENTSCHEIDUNGEN.md` (oben), `docs/design/powers.md` (**Spezifikation dieser Runde**),
-`docs/design/schnittstelle.md`, `docs/design/pixel-stil.md`, `docs/STATUS.md` (Runde 11/11b/11c).
-Vorrunde: `docs/archiv/run-runde11.md`. Offene spätere Themen: GitHub-Issues #3–#5.
+„Duskwardens“: Web-Tower-Defense wie Bloons TD 6, nur intern. `sim/` (deterministischer Kern), `meta/` (Profil, ohne DOM),
+`client/` (Vite + PixiJS v8, Pixel-Art im Code). Lies: `docs/design/ENTSCHEIDUNGEN.md` (oben), **`docs/design/tuerme-r13.md`
+(Spezifikation dieser Runde)**, `tuerme.md` (Regeln + Nachträge), `schnittstelle.md`, `pixel-stil.md`, `powers.md`, `docs/STATUS.md`.
+Vorrunden: `docs/archiv/run-runde11.md`, `run-runde12.md`. Später: Runde 14 (Thornweaver, Alchemist), Issues #3–#5.
 
 ## 1. Regeln
-Subagenten nur Sonnet, max. 3, Zwischenstand spätestens alle 30 min committen, nach Nutzungslimit neuen Sonnet-Agenten auf
-denselben Worktree setzen (nicht per SendMessage fortsetzen). Vor jedem Merge: Tests + tsc in sim/meta/client, `npm run build`,
-`npm run smoke`. Screenshots in `client/docs/r12/`.
+Subagenten nur Sonnet, max. 3, Zwischenstand alle 30 min committen, nach Nutzungslimit neuen Sonnet-Agenten auf denselben Worktree.
+Vor jedem Merge: Tests + tsc in sim/meta/client, `npm run build`, `npm run smoke`, Bot-Matrix (`cd sim && npm run matrix`) um die neuen
+Türme ergänzt. Screenshots in `client/docs/r13/`.
 
 ## 2. Pakete
-- **A — Sim + Meta**: Powers als Befehl inkl. Fallen, Wellen-Vorschau, Embers/Inventar/Store-Logik, Startpaket, Tests.
-- **B — Client**: Reiter Towers/Powers/Wave, Einsatz der Powers im Match, Store auf der Hauptseite, Embers-Anzeige, Pixel-Art
-  aller Powers, Ergebnis mit Embers, Smoke, Screenshots.
-- **Abschluss (Hauptsitzung)**: Merge, Bot-Matrix bleibt unverändert (Powers sind optional), STATUS „Runde 12“.
-
-## 3. Ziel
-Max sieht rechts drei Reiter, kann nach jeder Partie Embers ausgeben, im Match eine Lantern Bomb werfen oder eine Frost Trap
-legen, und weiß vor jeder Runde, was kommt.
+- **A — Sim + Meta:** Market (Einkommen, Bank, Auren, Grant), Longshot (Karten-Reichweite, schnelles Projektil, Fähigkeiten, Markierung),
+  Wissensbaum 30 Knoten + Punkte aus Medaillen, Freischalt-Level, Bot-Strategien + Matrix.
+- **B — Pixel:** **alle Plattformen/Sockel weg** (nur Schatten), die drei alten Türme mit **deutlicheren Stufen** (Größe, Farbe, Ausrüstung,
+  T3 neue Silhouette, T4 Rüstung/Leuchten, T5 Verwandlung), Market und Longshot komplett (15 Stufen, Richtungen, Idle/Angriff, Icons,
+  Projektile/Effekte: Münzflug, Mündungsfeuer, Kiste, Markierung).
+- **C — Client:** Einbau Market/Longshot (Turm-Leiste, Panel, Bank-Knopf „Withdraw“, Auren-Ringe, Fähigkeiten), Wissensbaum-Bildschirm
+  für 30 Knoten / 5 Äste, Screenshots, Smoke.
