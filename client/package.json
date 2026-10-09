@@ -3,24 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Duskwardens Client M1: Vite + PixiJS v8, Sim laeuft im Browser, kein Server.",
+  "description": "Duskwardens Client: Vite + PixiJS v8, Sim laeuft im Browser, kein Server. Runde 11: Pixel-Art im Code.",
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "smoke": "node scripts/smoke.mjs",
-    "assets": "node scripts/gen-sprites.mjs && node scripts/build-atlas.mjs",
-    "shots:p4": "node scripts/shots-p4.mjs",
-    "replay-check": "node scripts/replay-check.mjs",
-    "perf": "node scripts/perf.mjs",
-    "shots:p5": "node scripts/shots-p5.mjs",
-    "audio-check": "node scripts/audio-check.mjs",
-    "ability-check": "node scripts/ability-check.mjs",
-    "perf:r10": "node scripts/perf-r10.mjs",
-    "shots:r10-p2": "node scripts/shots-r10-p2.mjs",
-    "audio-check:r10": "node scripts/audio-check-r10.mjs"
+    "smoke": "node scripts/smoke.mjs"
   },
   "dependencies": {
     "pixi.js": "^8.22.0",

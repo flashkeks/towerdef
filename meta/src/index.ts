@@ -1,32 +1,5 @@
-/** Oeffentliche Schnittstelle von `towerdef-meta`. Dateigrenzen und Besitzer: meta/README.md. */
-export * from './result';
-export * from './env';
-export * from './util';
-export * from './catalog';
-export * from './profile';
-export * from './ledger';
-export * from './migrate';
-export * from './io';
-export * from './idempotency';
-export * from './team';
-export * from './stars';
-export * from './progression';
-export * from './gacha';
-export * from './banner-math';
-export * from './banner-view';
-export * from './shop';
-export * from './rewards';
-export * from './leveling';
-export * from './starter';
-export * from './unit-mods';
-export * from './verify';
-export * from './views';
-export * from './worlds';
-export * from './world-view';
-export * from './evolution';
-export * from './inventory';
-export * from './materials';
-export * from './mode-catalog';
-export * from './modes';
-export * from './raid-shop';
-export * from './traits';
+/**
+ * Duskwardens-Meta (ohne DOM): Spieler-Level, Turm-XP, Wissensbaum, Medaillen, Speicherstand.
+ * Runde 11 / P0: Platzhalter; P4 baut das neue Schema (docs/design/meta.md). Alte Spielstaende werden zurueckgesetzt.
+ */
+export const SAVE_SCHEMA = 11;

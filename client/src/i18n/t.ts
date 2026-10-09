@@ -1,8 +1,7 @@
-import { abilityStrings } from './abilities';
 import { en, type StringKey } from './en';
 
-/** Alle Texte: die zentrale Datei plus die Texte der Fähigkeiten (Runde 9 / P1). */
-const all: Record<string, string> = { ...en, ...abilityStrings };
+/** Alle Texte aus der zentralen Datei. */
+const all: Record<string, string> = { ...en };
 
 export type Params = Record<string, string | number>;
 

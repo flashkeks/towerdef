@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Duskwardens Meta-Schicht: Profil, Ledger, Gacha, Belohnungen. Reine Funktionen ohne DOM, laeuft im Browser (LocalBackend) und spaeter auf dem Server.",
+  "description": "Duskwardens Meta-Schicht: Spieler-Level, Turm-XP, Wissensbaum, Medaillen, Speicherstand. Reine Funktionen ohne DOM.",
   "scripts": {
     "test": "vitest run",
     "typecheck": "tsc --noEmit"

@@ -2,7 +2,6 @@
  * Klang-Rezepte (alles eigen, zur Laufzeit synthetisiert, sfxr-artig): Oszillator oder Rauschen, Frequenzlauf, Huellkurve.
  * Reine Daten; `engine.ts` baut daraus Audio-Knoten. Mehrere Stimmen je Klang werden uebereinander gelegt.
  */
-import type { BaseSoundId, SoundId } from './logic';
 import { MATCH_RECIPES } from './recipes-match';
 
 export interface Voice {
@@ -25,7 +24,7 @@ export interface Voice {
   vibSemi?: number;
 }
 
-const BASE_RECIPES: Record<BaseSoundId, Voice[]> = {
+const BASE_RECIPES: Record<string, Voice[]> = {
   place: [
     { wave: 'square', f0: 220, f1: 330, dur: 0.09, vol: 0.22, lp: 2400 },
     { wave: 'noise', f0: 900, f1: 300, dur: 0.07, vol: 0.2, delay: 0.0 },
@@ -157,9 +156,9 @@ const BASE_RECIPES: Record<BaseSoundId, Voice[]> = {
 };
 
 /** Alle Klaenge: Grundsatz (diese Datei) plus Match-Ton (`recipes-match.ts`). */
-export const RECIPES: Record<SoundId, Voice[]> = { ...BASE_RECIPES, ...MATCH_RECIPES };
+export const RECIPES: Record<string, Voice[]> = { ...BASE_RECIPES, ...MATCH_RECIPES };
 
-export const SOUND_IDS = Object.keys(RECIPES) as SoundId[];
+export const SOUND_IDS = Object.keys(RECIPES) as string[];
 
 /** Musik: a-Moll, 8 Takte, 84 BPM. Halbtoene relativ zu A2 (110 Hz). Bass je Takt, Arpeggio je Takt (Achtel). */
 export const MUSIC = {

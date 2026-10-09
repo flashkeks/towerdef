@@ -2,10 +2,9 @@
  * Klang-Rezepte des Matches (Runde 10 / P2), reine Daten wie `recipes.ts`: Schuesse je Element (dezent, kurz), Krit, Faehigkeits-Ansage, Boss-Tod.
  * Eigene Synthese, keine Dateien. Spaeter tauschbare Dateien: siehe Wunschliste in STATUS (`client/public/sfx/`).
  */
-import type { MatchSoundId } from './logic-match';
 import type { Voice } from './recipes';
 
-export const MATCH_RECIPES: Record<MatchSoundId, Voice[]> = {
+export const MATCH_RECIPES: Record<string, Voice[]> = {
   'hit.fire': [
     { wave: 'noise', f0: 2600, f1: 500, dur: 0.17, vol: 0.15, attack: 0.02 },
     { wave: 'sawtooth', f0: 280, f1: 120, dur: 0.12, vol: 0.07, lp: 900 },

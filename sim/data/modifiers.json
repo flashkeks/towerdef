@@ -1,8 +1,0 @@
-{
-  "ref": "recommendations §4 (Modifier-Tabelle), §10",
-  "_comment": "Kein Camo im MVP (§4). Commander bewusst nicht enthalten (später).",
-  "shield": { "ref": "§4 Shield n: jede Schadensinstanz entfernt 1 Stack", "maxStacks": 10 },
-  "regen": { "ref": "§4 Regen 2 %/s (Rate in economy.json); Bleed/Poison stoppen sie", "stoppedBy": ["bleed", "wither"] },
-  "armored": { "ref": "§4 Armored +80 Rüstung", "armorBonus": 80 },
-  "fast": { "ref": "§4 Fast Speed x1,3", "speedBp": 13000 }
-}
