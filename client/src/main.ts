@@ -1,10 +1,11 @@
 /**
- * Spiel-Bundle (nach bestandener Desktop-Pruefung aus boot.ts geladen).
- * Runde 11 / P0: Platzhalter, bis P3 die neue Match-Oberflaeche einhaengt.
+ * Spiel-Bundle (nach bestandener Desktop-Pruefung aus boot.ts geladen): startet die App-Huelle
+ * (Startbildschirm -> Match -> Ergebnis, `app/app.ts`).
  */
 import './ui/kit/fonts.css';
 import './ui/kit/tokens.css';
-import { t } from './i18n/t';
+import './ui/kit/kit.css';
+import { runApp } from './app/app';
 
 export interface GameHandle {
   setBlocked(blocked: boolean): void;
@@ -12,13 +13,6 @@ export interface GameHandle {
 
 export async function startGame(root: HTMLElement): Promise<GameHandle> {
   root.innerHTML = '';
-  const box = document.createElement('div');
-  box.className = 'wip';
-  const h1 = document.createElement('h1');
-  h1.textContent = t('wip.title');
-  const p = document.createElement('p');
-  p.textContent = t('wip.text', { title: t('game.title') });
-  box.append(h1, p);
-  root.append(box);
+  void runApp(root);
   return { setBlocked: () => undefined };
 }
