@@ -16,10 +16,10 @@ export interface PropArt {
   hook?: { x: number; y: number };
 }
 
-type Tones = { dark: number; mid: number; light: number; hi?: number };
+export type Tones = { dark: number; mid: number; light: number; hi?: number };
 
 /** Scheibe mit Licht von oben links: drei Toene, am Uebergang gedithert. */
-function shadedDisc(b: Buf, cx: number, cy: number, rx: number, ry: number, t: Tones, seed = 1, rough = 0.18): void {
+export function shadedDisc(b: Buf, cx: number, cy: number, rx: number, ry: number, t: Tones, seed = 1, rough = 0.18): void {
   b.each(cx, cy, rx, ry, (x, y) => {
     const nx = (x - cx) / rx, ny = (y - cy) / ry;
     const lit = -(nx * 0.5 + ny * 0.85) + (hash2(x, y, seed) - 0.5) * rough + (bayer(x, y) - 0.5) * 0.3;
@@ -28,7 +28,7 @@ function shadedDisc(b: Buf, cx: number, cy: number, rx: number, ry: number, t: T
 }
 
 /** Dunkle Unterkante (Selbstschatten) an allen Pixeln, unter denen nichts liegt. */
-function rimBottom(b: Buf, col: number, depth = 1): void {
+export function rimBottom(b: Buf, col: number, depth = 1): void {
   const hits: [number, number][] = [];
   for (let y = 0; y < b.h; y++) for (let x = 0; x < b.w; x++) {
     if (!b.get(x, y)) continue;
@@ -39,7 +39,7 @@ function rimBottom(b: Buf, col: number, depth = 1): void {
   for (const [x, y] of hits) b.set(x, y, col);
 }
 
-function sparkle(b: Buf, n: number, from: number[], to: number, seed: number, area?: (x: number, y: number) => boolean): void {
+export function sparkle(b: Buf, n: number, from: number[], to: number, seed: number, area?: (x: number, y: number) => boolean): void {
   const r = rng(seed);
   let tries = 0;
   while (n > 0 && tries++ < 400) {
@@ -48,7 +48,7 @@ function sparkle(b: Buf, n: number, from: number[], to: number, seed: number, ar
   }
 }
 
-const mk = (w: number, h: number): Buf => new Buf(w, h);
+export const mk = (w: number, h: number): Buf => new Buf(w, h);
 
 // ------------------------------------------------------------------ Baeume
 function oak(v: number): PropArt {
