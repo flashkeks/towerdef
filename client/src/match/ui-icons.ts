@@ -17,6 +17,11 @@ const ROWS: Record<string, Rows> = {
   sword: ['....kk', '...kwk', '..kwk.', 'k.kwk.', '.kwk..', '.kk...', 'kek...'],
   auto: ['.kkkk..', 'k.bbbk.', 'k.....k', 'k....kb', '.kkkk.b', '....kbb', '.....k.'],
   bolt: ['...kkk.', '..kyyk.', '.kyyk..', 'kyyyyyk', '..kyyk.', '.kyk...', '.kk....'],
+  ember: ['.y...y.', '.kkkkk.', 'kyyayyk', 'kayokak', 'kopoprk', '.krprk.', '..kkk..'],
+  shield: ['kkkkkkk', 'ktwtttk', 'kttttlk', 'kttttlk', '.ktllk.', '..klk..', '...k...'],
+  flame: ['...k...', '..kok..', '.korok.', '.koyok.', 'koyyyok', '.koyok.', '..kkk..'],
+  camo: ['.kkkkk.', 'kgdgdgk', 'kdgkgdk', 'kgdgdgk', '.kkkkk.'],
+  skull: ['.kkkkk.', 'kwwwwwk', 'kwkwkwk', 'kwwwwwk', '.kwkwk.', '.kkkkk.'],
   x: ['k...k', '.k.k.', '..k..', '.k.k.', 'k...k'],
 };
 

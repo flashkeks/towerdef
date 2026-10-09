@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createGame, DATA } from '../../sim/src/index';
 import {
+  POWER_KEYS, buyPower, canonicalJson, checksum, embersForRound, matchEmbers, powerPrice,
   applyMatch, buyNode, exportProfile, importProfile, knowledgePoints, levelFromXp, loadProfile, matchOptions, matchXp, newProfile,
   resetKnowledge, tierCost, unlockEverything, unlockTier, xpForLevel, type MatchResult, type Profile,
 } from '../src/index';
@@ -258,5 +259,143 @@ describe('matchOptions gegen die echte Sim', () => {
       expect(third.ok).toBe(false);
       if (!third.ok) expect(third.reason).toBe('locked');
     }
+  });
+});
+
+describe('Embers, Inventar und Store (Runde 12)', () => {
+  it('neues Profil: Startpaket 100 Embers + 1 Gold Drop + 1 Lantern Bomb, Flag gesetzt', () => {
+    const p = newProfile();
+    expect(p.embers).toBe(100);
+    expect(p.starterPack).toBe(true);
+    expect(p.inventory.goldDrop).toBe(1);
+    expect(p.inventory.lanternBomb).toBe(1);
+    expect(Object.values(p.inventory).reduce((a, b) => a + b, 0)).toBe(2);
+    expect(Object.keys(p.inventory).sort()).toEqual([...POWER_KEYS].sort());
+  });
+
+  it('bestehendes 11er-Profil ohne die Felder wird migriert: nichts zurückgesetzt, Startpaket genau einmal', () => {
+    const old = { ...newProfile('2026-10-01T00:00:00.000Z'), playerXp: 5000, matchesWon: 3, knowledge: [] as string[], towerTiers: { ranger: [2, 0, 1], bombardier: [0, 0, 0], frostcaller: [0, 0, 0] } } as Record<string, unknown>;
+    delete old.embers;
+    delete old.inventory;
+    delete old.starterPack;
+    const r = loadProfile(old);
+    expect(r.reset).toBe(false);
+    expect(r.profile.playerXp).toBe(5000);
+    expect(r.profile.matchesWon).toBe(3);
+    expect(r.profile.towerTiers.ranger).toEqual([2, 0, 1]);
+    expect(r.profile.embers).toBe(100);
+    expect(r.profile.inventory.goldDrop).toBe(1);
+    expect(r.profile.inventory.lanternBomb).toBe(1);
+    expect(r.profile.starterPack).toBe(true);
+    // zweites Laden vergibt nichts mehr
+    const again = loadProfile(JSON.parse(JSON.stringify(r.profile)));
+    expect(again.profile.embers).toBe(100);
+    expect(again.profile.inventory).toEqual(r.profile.inventory);
+    // Profil mit Embers, aber ohne Flag: bekommt das Paket additiv
+    const some = loadProfile({ ...old, embers: 7 });
+    expect(some.profile.embers).toBe(107);
+  });
+
+  it('Export/Import eines alten Stands ohne die Felder funktioniert und migriert', () => {
+    const old = { ...newProfile() } as Record<string, unknown>;
+    delete old.embers; delete old.inventory; delete old.starterPack;
+    const text = JSON.stringify({ format: 'duskwardens-save', formatVersion: 11, exportedAt: 'x', checksum: checksum(canonicalJson(old)), profile: old });
+    const r = importProfile(text);
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.profile.embers).toBe(100);
+    const rt = importProfile(exportProfile(newProfile(), 'x'));
+    expect(rt.ok && rt.profile.embers).toBe(100);
+  });
+
+  it('Embers: Runden 1 + floor(r/5), R1-20 zusammen 54', () => {
+    expect(embersForRound(1)).toBe(1);
+    expect(embersForRound(5)).toBe(2);
+    expect(embersForRound(20)).toBe(5);
+    expect(matchEmbers(20, 'medium', false, false, 0).rounds).toBe(54);
+    expect(matchEmbers(25, 'medium', false, false, 0).rounds).toBe(54); // Freeplay zählt nicht
+    expect(matchEmbers(0, 'easy', false, false, 0).rounds).toBe(0);
+  });
+
+  it('Embers: Sieg 20/30/50, erste Medaille +50, Level-Up +25 je Level', () => {
+    expect(matchEmbers(20, 'easy', true, false, 0)).toEqual({ rounds: 54, win: 20, medal: 0, levelUp: 0 });
+    expect(matchEmbers(20, 'medium', true, false, 0).win).toBe(30);
+    expect(matchEmbers(20, 'hard', true, true, 2)).toEqual({ rounds: 54, win: 50, medal: 50, levelUp: 50 });
+    expect(matchEmbers(10, 'hard', false, false, 0).win).toBe(0);
+  });
+
+  it('applyMatch: Medium-Sieg, erste Medaille und Level-Ups ergeben Embers im Bericht und Profil', () => {
+    const { profile, report } = applyMatch(newProfile(), res());
+    const lvUps = report.levelAfter - report.levelBefore;
+    expect(lvUps).toBeGreaterThan(0);
+    expect(report.embers).toEqual({ rounds: 54, win: 30, medal: 50, levelUp: 25 * lvUps });
+    expect(report.embersGained).toBe(54 + 30 + 50 + 25 * lvUps);
+    expect(profile.embers).toBe(100 + report.embersGained);
+    // zweiter Sieg gleicher Schwierigkeit: keine Medaille mehr
+    const second = applyMatch(profile, res({ matchId: 'm2' }));
+    expect(second.report.embers.medal).toBe(0);
+  });
+
+  it('applyMatch: Niederlage gibt Embers für die geschafften Runden', () => {
+    const { profile, report } = applyMatch(newProfile(), res({ won: false, roundsCleared: 7, difficulty: 'hard' }));
+    expect(report.embers.rounds).toBe(1 + 1 + 1 + 1 + 2 + 2 + 2);
+    expect(report.embers.win).toBe(0);
+    expect(report.embers.medal).toBe(0);
+    expect(profile.embers).toBe(100 + report.embersGained);
+  });
+
+  it('applyMatch: powersUsed werden vom Inventar abgezogen (nie unter 0), Summe im Bericht', () => {
+    const p0 = { ...newProfile(), inventory: { ...newProfile().inventory, goldDrop: 3, frostTrap: 1 } };
+    const { profile, report } = applyMatch(p0, res({ powersUsed: { goldDrop: 2, frostTrap: 5, lanternBomb: 1 } }));
+    expect(profile.inventory.goldDrop).toBe(1);
+    expect(profile.inventory.frostTrap).toBe(0);
+    expect(profile.inventory.lanternBomb).toBe(0);
+    expect(report.powersUsed).toBe(8);
+  });
+
+  it('applyMatch ist idempotent je matchId (Embers und Inventar nur einmal)', () => {
+    const p0 = { ...newProfile(), inventory: { ...newProfile().inventory, goldDrop: 3 } };
+    const a = applyMatch(p0, res({ powersUsed: { goldDrop: 1 } }));
+    const b = applyMatch(a.profile, res({ powersUsed: { goldDrop: 1 } }));
+    expect(b.report.duplicate).toBe(true);
+    expect(b.report.embersGained).toBe(0);
+    expect(b.profile).toBe(a.profile);
+    expect(a.profile.inventory.goldDrop).toBe(2);
+  });
+
+  it('buyPower: Preis aus den Sim-Daten, Embers runter, Inventar rauf; Fehlerfälle', () => {
+    const p = { ...newProfile(), embers: 100 };
+    const r = buyPower(p, 'lanternBomb');
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.cost).toBe(DATA.powers.lanternBomb.price);
+    expect(r.profile.embers).toBe(70);
+    expect(r.profile.inventory.lanternBomb).toBe(2);
+    expect(p.embers).toBe(100); // rein
+    const three = buyPower(p, 'caltrops', 3);
+    expect(three.ok && three.profile.embers).toBe(25);
+    expect(buyPower({ ...p, embers: 149 }, 'instaWarden:ranger')).toMatchObject({ ok: false, code: 'not-enough-embers' });
+    expect(buyPower({ ...p, embers: 150 }, 'instaWarden:frostcaller')).toMatchObject({ ok: true });
+    expect(buyPower(p, 'nope' as never)).toMatchObject({ ok: false, code: 'unknown-power' });
+    expect(buyPower(p, 'goldDrop', 0)).toMatchObject({ ok: false, code: 'bad-count' });
+  });
+
+  it('Preise: kein Power kostet mehr als ein paar Partien, alle Schlüssel im Profil', () => {
+    for (const k of POWER_KEYS) expect(powerPrice(k)).toBe(DATA.powers[k].price);
+  });
+
+  it('matchOptions liefert das Inventar als powers und die Sim nimmt es an', () => {
+    const p = { ...newProfile(), inventory: { ...newProfile().inventory, goldDrop: 2, 'instaWarden:ranger': 1 } };
+    const o = matchOptions(p);
+    expect(o.powers.goldDrop).toBe(2);
+    expect(o.powers['instaWarden:ranger']).toBe(1);
+    expect(Object.keys(o.powers)).toHaveLength(POWER_KEYS.length);
+    o.powers.goldDrop = 99; // Kopie
+    expect(p.inventory.goldDrop).toBe(2);
+    const g = createGame({ map: 'meadow', difficulty: 'medium', seed: 1, ...matchOptions(p) });
+    expect(g.state.powers.goldDrop).toBe(2);
+    const cash = g.state.cash;
+    expect(g.apply({ type: 'power', power: 'goldDrop' }).ok).toBe(true);
+    expect(g.state.cash).toBe(cash + 500);
+    expect(g.state.stats.powersUsed.goldDrop).toBe(1);
   });
 });

@@ -7,9 +7,10 @@ import enemiesJson from '../data/enemies.json';
 import roundsJson from '../data/rounds.json';
 import difficultiesJson from '../data/difficulties.json';
 import xpJson from '../data/xp.json';
+import powersJson from '../data/powers.json';
 import meadowJson from '../data/maps/meadow.json';
 import { STAT_DEFAULTS, type Mod, type Stats } from './stats.js';
-import type { Difficulty, EnemyType, HeroType, TowerType } from './types.js';
+import type { Difficulty, EnemyType, HeroType, PowerKey, TowerType } from './types.js';
 
 const statKey = z.string().refine((k) => k in STAT_DEFAULTS, { message: 'unbekannter Kennwert' });
 const modSchema = z.object({
@@ -102,6 +103,24 @@ const diffSchema = z.object({
 const xpSchema = z.object({ potBase: z.number().int().nonnegative(), potPerRound: z.number().int().nonnegative(), unlockCost: z.array(z.number().int().positive()).length(5) });
 const difficultiesSchema = z.object({ easy: diffSchema, medium: diffSchema, hard: diffSchema });
 
+const POWER_KEYS = [
+  'goldDrop', 'lanternBomb', 'caltrops', 'frostTrap', 'timeWarp', 'lanternOil', 'extraLives', 'heroBoost',
+  'instaWarden:ranger', 'instaWarden:bombardier', 'instaWarden:frostcaller',
+] as const;
+const powerKeySchema = z.enum(POWER_KEYS);
+/** Power (Runde 12): `use` sagt dem Client, wie sie eingesetzt wird; Zahlen stehen in `params`. */
+const powerSchema = z.object({
+  name: z.string().min(1),
+  desc: z.string().min(1),
+  /** Embers im Store. */
+  price: z.number().int().positive(),
+  use: z.enum(['button', 'target', 'path', 'place']),
+  params: z.record(z.string(), z.number().int()),
+  tower: z.enum(['ranger', 'bombardier', 'frostcaller']).optional(),
+  tiers: z.tuple([z.number().int(), z.number().int(), z.number().int()]).optional(),
+});
+const powersSchema = z.object({ order: z.array(powerKeySchema).length(POWER_KEYS.length), powers: z.record(powerKeySchema, powerSchema) });
+
 const pt = z.tuple([z.number(), z.number()]);
 const mapSchema = z.object({
   id: z.string(),
@@ -119,6 +138,7 @@ export type HeroData = z.infer<typeof heroSchema>;
 export type EnemyData = z.infer<typeof enemySchema>;
 export type RoundData = z.infer<typeof roundsSchema>[number];
 export type DifficultyData = z.infer<typeof diffSchema>;
+export type PowerData = z.infer<typeof powerSchema>;
 export type MapFile = z.infer<typeof mapSchema>;
 
 export interface GameData {
@@ -129,6 +149,9 @@ export interface GameData {
   rounds: RoundData[];
   difficulties: Record<Difficulty, DifficultyData>;
   xp: z.infer<typeof xpSchema>;
+  /** Powers (Runde 12), Reihenfolge der Anzeige in `powerOrder`. */
+  powers: Record<PowerKey, PowerData>;
+  powerOrder: PowerKey[];
   maps: Record<string, MapFile>;
   /** RBE des ganzen Baums je Typ (Hülle + Kinder), mit HP aus enemies.json. */
   rbe: Record<EnemyType, number>;
@@ -145,6 +168,13 @@ function load(): GameData {
   const difficulties = difficultiesSchema.parse(difficultiesJson);
   const meadow = mapSchema.parse(meadowJson);
   const xp = xpSchema.parse(xpJson);
+  const pw = powersSchema.parse(powersJson);
+  for (const k of POWER_KEYS) check(!!pw.powers[k], `Power ${k} fehlt`);
+  check(new Set(pw.order).size === POWER_KEYS.length, 'Power-Reihenfolge nicht eindeutig');
+  for (const k of POWER_KEYS) {
+    const d = pw.powers[k];
+    if (d.use === 'place') check(!!d.tower && !!d.tiers && k === `instaWarden:${d.tower}`, `${k}: Turm/Stufen fehlen`);
+  }
   for (let i = 1; i < 5; i++) check(xp.unlockCost[i] > xp.unlockCost[i - 1], 'Freischaltkosten nicht steigend');
 
   for (const e of ENEMY_TYPES) check(!!enemies[e], `Gegner ${e} fehlt`);
@@ -187,11 +217,14 @@ function load(): GameData {
     rounds,
     difficulties,
     xp,
+    powers: pw.powers as Record<PowerKey, PowerData>,
+    powerOrder: pw.order,
     maps: { meadow },
     rbe,
   };
 }
 
+export { POWER_KEYS };
 export const DATA: GameData = load();
 
 export function baseStats(base: Record<string, number | string>): Stats {

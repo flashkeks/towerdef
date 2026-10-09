@@ -81,6 +81,45 @@ try {
   await page.waitForTimeout(600);
   check((await page.evaluate(() => __dw.game.state.tick)) === t0, 'Pause haelt die Sim an');
   check(errors.length === 0, `keine Konsolenfehler (${errors.join(' | ')})`);
+
+  // ---- Runde 12: Store, Reiter, Powers, Lautstaerke
+  const p2 = await browser.newPage({ viewport: { width: 1280, height: 720 } });
+  const err2 = watchErrors(p2);
+  await p2.goto(url + '?debug');
+  await p2.waitForSelector('.app-play', { timeout: 20000 });
+  await p2.click('.navbtn:has-text("Store")');
+  await p2.waitForSelector('.scard');
+  check(await p2.locator('.scard').count() === 9, 'Store zeigt neun Karten');
+  const e0 = Number(await p2.textContent('.chip.embers .ember-n'));
+  check(e0 >= 100, `Embers-Anzeige im Store (${e0})`);
+  await p2.click('.scard[data-power="goldDrop"] .sc-buy');
+  await p2.waitForFunction((n) => Number(document.querySelector('.chip.embers .ember-n').textContent) === n, e0 - 40, { timeout: 3000 });
+  check((await p2.textContent('.scard[data-power="goldDrop"] .sc-owned')).includes('2'), 'Gold Drop gekauft (Owned: 2, Embers -40)');
+  await p2.click('.scard[data-power="instaWarden"] .sc-var[data-variant="bombardier"]');
+  check(await p2.locator('.scard[data-power="instaWarden"] .sc-var.on[data-variant="bombardier"]').count() === 1, 'Insta-Warden: Variante waehlbar');
+  await p2.click('.subtop .btn-small');
+  await p2.waitForSelector('.app-play');
+  await p2.click('.diff[data-diff="easy"]');
+  await p2.click('.app-play');
+  await p2.waitForSelector('.m-canvas', { timeout: 20000 });
+  check(await p2.locator('.m-tab').count() === 3, 'drei Reiter (Towers, Powers, Wave)');
+  await p2.click('.m-tab[data-tab="powers"]');
+  await p2.waitForSelector('.pw-slot[data-power="goldDrop"].st-ready');
+  const cash0 = await p2.evaluate(() => __dw.game.state.cash);
+  await p2.click('.pw-slot[data-power="goldDrop"]');
+  await p2.waitForFunction((c) => __dw.game.state.cash >= c + 500, cash0, { timeout: 3000 });
+  check(true, 'Powers-Reiter: Gold Drop eingesetzt (+500 Gold)');
+  await p2.waitForSelector('.pw-slot[data-power="goldDrop"].st-used', { timeout: 3000 });
+  check(true, 'Gold Drop danach ausgegraut (Used this round)');
+  await p2.keyboard.press('Tab');
+  await p2.waitForSelector('.wv-row');
+  check(await p2.locator('.m-pane-wave:not(.hidden) .wv-title').textContent() === 'Round 1', 'Tab oeffnet Wave-Reiter mit Vorschau Runde 1');
+  await p2.keyboard.press('Tab');
+  check(await p2.locator('.m-pane-towers:not(.hidden)').count() === 1, 'Tab wechselt reihum zurueck zu Towers');
+  await p2.click('.m-vol .vol-btn');
+  await p2.waitForSelector('.vol-pop:not(.hidden) .vol-row[data-kind="music"]');
+  check(await p2.locator('.vol-row').count() === 2, 'Lautstaerke-Pop-over: Musik und Effekte getrennt');
+  check(err2.length === 0, `keine Konsolenfehler in Store/Powers (${err2.join(' | ')})`);
 } finally {
   await browser.close();
   stop();

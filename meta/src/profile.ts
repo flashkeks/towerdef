@@ -3,8 +3,8 @@
  * Reine Funktionen, kein DOM. Ganzzahlen ueberall.
  */
 import { z } from 'zod';
-import type { Difficulty, TowerType, Tiers } from '../../sim/src/types';
-import { KNOWLEDGE, STARTER_TOWER_XP, levelFromXp, nodeById } from './data';
+import type { Difficulty, PowerKey, TowerType, Tiers } from '../../sim/src/types';
+import { KNOWLEDGE, POWER_KEYS, STARTER_PACK, STARTER_TOWER_XP, emptyInventory, levelFromXp, nodeById } from './data';
 
 export const SAVE_SCHEMA = 11;
 export const SEEN_MATCHES_MAX = 100;
@@ -15,6 +15,7 @@ const tiers3 = z.tuple([tierNum, tierNum, tierNum]);
 const perTower = <T extends z.ZodType>(s: T) => z.object({ ranger: s, bombardier: s, frostcaller: s });
 const medalSet = z.object({ easy: z.boolean(), medium: z.boolean(), hard: z.boolean() });
 const best = z.object({ round: nat, livesLost: nat });
+const inventorySchema = z.object(Object.fromEntries(POWER_KEYS.map((k) => [k, nat.default(0)]))) as unknown as z.ZodType<Record<PowerKey, number>>;
 const bestSet = z.object({ easy: best.optional(), medium: best.optional(), hard: best.optional() });
 
 export const ProfileSchema = z.object({
@@ -33,6 +34,12 @@ export const ProfileSchema = z.object({
   matchesPlayed: nat,
   matchesWon: nat,
   showResetNotice: z.boolean(),
+  /** Runde 12: Sonderwaehrung. Alte 11er-Staende ohne das Feld starten bei 0 und bekommen das Startpaket (`sanitize`). */
+  embers: nat.default(0),
+  /** Runde 12: Powers im Besitz (Verbrauchsgut). Fehlende Schluessel zaehlen als 0. */
+  inventory: inventorySchema.default(() => emptyInventory()),
+  /** Runde 12: Startpaket (100 Embers + 1 Gold Drop + 1 Lantern Bomb) schon vergeben. */
+  starterPack: z.boolean().default(false),
   settings: z.object({ volume: z.number().int().min(0).max(100), unlockAll: z.boolean() }),
 });
 export type Profile = z.infer<typeof ProfileSchema>;
@@ -52,6 +59,9 @@ export function newProfile(now = new Date(0).toISOString()): Profile {
     matchesPlayed: 0,
     matchesWon: 0,
     showResetNotice: false,
+    embers: STARTER_PACK.embers,
+    inventory: { ...emptyInventory(), ...STARTER_PACK.powers },
+    starterPack: true,
     settings: { volume: 70, unlockAll: false },
   };
 }
@@ -89,5 +99,13 @@ export function sanitize(p: Profile): Profile {
   const owned = KNOWLEDGE.filter((n) => bought.has(n.id));
   const spent = owned.reduce((s, n) => s + n.cost, 0);
   const knowledge = spent > levelFromXp(p.playerXp).level - 1 ? [] : owned.map((n) => n.id);
-  return { ...p, knowledge };
+  return grantStarterPack({ ...p, knowledge });
+}
+
+/** Startpaket genau einmal (Flag `starterPack`): bestehende 11er-Profile bekommen es beim Laden, nichts wird zurueckgesetzt. */
+export function grantStarterPack(p: Profile): Profile {
+  if (p.starterPack) return p;
+  const inventory = { ...emptyInventory(), ...p.inventory };
+  for (const [k, n] of Object.entries(STARTER_PACK.powers) as [PowerKey, number][]) inventory[k] += n;
+  return { ...p, embers: p.embers + STARTER_PACK.embers, inventory, starterPack: true };
 }

@@ -150,3 +150,16 @@ wenn Max es zu stark findet. (2) Mehrere billige Türme desselben Typs gewinnen 
 - Brute-Tempo 130 statt 160; R17 14 und R19 22 Brutes; Hard `speedBp` 10000 und `bossHp` 400.
 - Regel-Tests laufen auf der Testkarte `bare` (meadow ohne Wasser/Blocker, `test/setup.ts`), Bot-Läufe auf `meadow`.
 - Matrix aller sinnvollen Aufstellungen: `npm run matrix` (`MATRIX_SEEDS`, `MATRIX_DIFFS`); die Sim ist deterministisch, Seeds ändern derzeit nichts am Ergebnis.
+
+## Runde 12: Powers
+
+Verbrauchs-Items, im Match per Befehl `{ type: 'power', power, x?, y? }` eingesetzt. Spezifikation und Abweichungen: `docs/design/powers.md`, Daten: `sim/data/powers.json` (`DATA.powers`, `DATA.powerOrder`, `POWER_KEYS`).
+
+- **Zustand:** `state.powers` (Restbestand aus `GameOptions.powers`), `state.powerUsedRound` (Runde des letzten Einsatzes, -1 = nie; je Art ein Einsatz je Runde), `state.traps`, `state.stats.powersUsed`; Innenleben `warpLeft`, `oilRound`, `oilCarry`. Alles Ganzzahlen, im Hash.
+- **Befehl:** Gründe `unknown-power`, `no-power`, `used-this-round`, `no-hero`, `maxed`, `invalid-target`, `not-on-path`, dazu die Platziergründe beim Insta-Warden. Verbraucht wird nur bei Erfolg. `game.canUsePower(...)` ist der Trockenlauf.
+- **Sofort:** Gold Drop (+500), Extra Lives (+25), Hero Boost (+3 Level, XP auf die Schwelle, `heroLevel`-Events), Lantern Bomb (Explosion 40 px, 20 Schaden `explosive` an den nächsten 40, Boss 100; Quelle 0, keine Turm-Pops).
+- **Zeitlich:** Time Warp (`warpLeft` = 600 Ticks, -50 % Tempo, Boss -25 %, wirkt in `enemySpeed`), Lantern Oil (Pop-Cash +25 % mit Bruchrest bis Ende der nächsten Runde).
+- **Fallen:** Objekte auf der Wegmitte (`nearestOnPath` in `path.ts`). In `updateEnemies` prüft `crossTraps`, ob der Wegfortschritt eines Gegners im Tick eine Falle überquert (`before < falle.progress <= neu`), in Wegreihenfolge. Caltrops: 1 `magic`-Schaden und 1 Ladung je Gegner (20 Ladungen, laufen am Ende der nächsten Runde ab). Frost Trap: friert 180 Ticks ein (15 Ladungen), Boss/Emberling/Eingefrorene lassen sie unberührt. Events `trap`, `trapGone`.
+- **Insta-Warden:** `spawnTower` mit fertigen Stufen, `spent = 0` (Verkaufswert 0), ohne Kosten und ohne Stufen-Sperre.
+- **Vorschau:** `game.roundPreview(r)` -> `{ round, groups, rbe, hasCamo, hasArmor, hasEmber, hasBoss }`.
+- Tests: `test/powers.test.ts` (Daten, Bestand/Sperre, jede Power, Fallen-Kollision, Insta-Varianten, Vorschau, Determinismus).

@@ -3,18 +3,22 @@
  * Renderer, Ton und HUD weiter und nimmt Eingaben entgegen. Keine Spielregeln hier: alles entscheidet `Game`.
  * Einstieg fuer die App: `startMatch(root, opts) -> Promise<MatchResult>`.
  */
-import { createGame, DATA, MAX_ROUND, type AbilityId, type CommandResult, type Difficulty, type Game, type GameOptions, type GameState, type HeroType, type SimEvent, type TargetMode, type Tiers, type TowerType } from '../sim';
+import { createGame, DATA, MAX_ROUND, type AbilityId, type PowerKey, type CommandResult, type Difficulty, type Game, type GameOptions, type GameState, type HeroType, type SimEvent, type TargetMode, type Tiers, type TowerType } from '../sim';
 import { audio } from '../audio/engine';
 import { t } from '../i18n/t';
 import { h, setClass, setText } from '../ui/dom';
 import { baseRangePx, displayName, footMilli, isHero } from './info';
 import { Confirm } from './confirm';
 import { Panel } from './panel';
+import { SideTabs } from './side-tabs';
+import { PATH, PATH_HW } from '../pixel/map/layout';
+import { displayName as powerName, slotUsable, trapSpot, type PowerSlot } from '../powers/info';
 import { UnlockMenu } from './unlock-menu';
 import { Renderer } from './renderer';
 import { iconUpgrade, heroPortrait, towerPortrait, heroSprite, towerSprite } from './sprites';
 import { ABILITY_TEXT, HERO_TYPES, HOTKEY, ROLE, TOWER_TYPES } from './tower-text';
 import { copyCanvas, uiIcon } from './ui-icons';
+import { volumeButton } from '../ui/volume';
 import './match.css';
 
 export interface StartOptions {
@@ -25,6 +29,8 @@ export interface StartOptions {
   mods?: GameOptions['mods'];
   /** Turm-XP-Konto aus dem Profil (Runde 11b); fehlt = kein XP-System im Match. */
   towerXp?: GameOptions['towerXp'];
+  /** Power-Inventar aus dem Profil (Runde 12) */
+  powers?: GameOptions['powers'];
   /** Text fuer gesperrte Tuerme, z. B. { bombardier: 'Unlocks at level 2' } (P4 liefert die Zahlen) */
   lockInfo?: Partial<Record<TowerType | HeroType, string>>;
   /** nur fuer Pruef-Skripte: Zugriff auf Game/Renderer unter window.__dw */
@@ -44,6 +50,8 @@ export interface MatchResult {
   towerXp: Record<TowerType, number>;
   towerTiers: Record<TowerType, Tiers>;
   towerXpGained: Record<TowerType, number>;
+  /** erfolgreiche Power-Einsaetze (`state.stats.powersUsed`), Meta zieht sie vom Inventar ab */
+  powersUsed: Partial<Record<PowerKey, number>>;
   /** jede gekaufte Stufe in Reihenfolge */
   upgrades: { tower: TowerType | HeroType; path: number; tier: number }[];
   ticks: number;
@@ -55,7 +63,7 @@ const KEYS_ABILITY = ['1', '2', '3'];
 
 export async function startMatch(root: HTMLElement, opts: StartOptions): Promise<MatchResult> {
   const seed = opts.seed ?? (Math.floor(Math.random() * 2 ** 31) | 0);
-  const game = createGame({ map: opts.map ?? 'meadow', difficulty: opts.difficulty, seed, unlocks: opts.unlocks, towerXp: opts.towerXp, mods: opts.mods });
+  const game = createGame({ map: opts.map ?? 'meadow', difficulty: opts.difficulty, seed, unlocks: opts.unlocks, towerXp: opts.towerXp, mods: opts.mods, powers: opts.powers });
   const m = new Match(root, game, { ...opts, seed });
   await m.init();
   return m.done;
@@ -74,6 +82,11 @@ class Match {
   private unlockMenu: UnlockMenu;
   private confirm = new Confirm();
   private abBar = h('div', 'm-abilities');
+  private tabs: SideTabs;
+  private aim: { key: PowerKey; use: 'point' | 'path' | 'place' } | null = null;
+  private aimEl = h('div', 'm-aim hidden');
+  private cashBox = h('div', 'm-stat cash');
+  private livesBox = h('div', 'm-stat lives');
   private cards = new Map<TowerType | HeroType, HTMLElement>();
   private livesEl = h('b', 'num', '0');
   private cashEl = h('b', 'num', '0');
@@ -82,7 +95,7 @@ class Match {
   private speedBtns: HTMLButtonElement[] = [];
   private autoBtn = h('button', 'm-toggle');
   private pauseBtn = h('button', 'm-icon-btn');
-  private muteBtn = h('button', 'm-icon-btn');
+  private vol = volumeButton(audio.volumeApi, (m) => uiIcon(m ? 'mute' : 'sound', 2), 'm-vol');
   private placing: (TowerType | HeroType) | null = null;
   private mouse: { x: number; y: number } | null = null;
   private speed = 1;
@@ -114,6 +127,7 @@ class Match {
       openUnlock: (ty) => this.unlockMenu.show(ty),
       askUnlock: (ty, p) => this.askUnlock(ty, p),
     });
+    this.tabs = new SideTabs(game, { pick: (slot) => this.pickPower(slot) });
     this.unlockMenu = new UnlockMenu(game, {
       unlock: (ty, p) => this.unlockTier(ty, p),
       close: () => this.unlockMenu.show(null),
@@ -124,12 +138,12 @@ class Match {
     this.buildDom();
     this.root.replaceChildren(this.el);
     await this.r.init(this.board);
-    this.board.append(this.toasts, this.bannerEl, this.abBar, this.panel.el, this.unlockMenu.el, this.confirm.el, this.overlay);
+    this.board.append(this.toasts, this.bannerEl, this.aimEl, this.abBar, this.panel.el, this.unlockMenu.el, this.confirm.el, this.overlay);
     this.ro = new ResizeObserver(() => this.fit());
     this.ro.observe(this.board);
     this.fit();
     audio.attach();
-    audio.setMusic(true);
+    audio.setTheme('match');
     window.addEventListener('keydown', this.keyHandler);
     this.bindBoard();
     if (this.opts.debug) (window as unknown as { __dw: unknown }).__dw = { game: this.game, r: this.r, match: this, audio, DATA };
@@ -145,29 +159,27 @@ class Match {
   // ------------------------------------------------------------------ DOM
   private buildDom(): void {
     const top = h('div', 'm-top pxbox');
-    const lives = h('div', 'm-stat lives');
+    const lives = this.livesBox;
     lives.append(uiIcon('heart', 3), this.livesEl);
-    const cash = h('div', 'm-stat cash');
+    const cash = this.cashBox;
     cash.append(uiIcon('coin', 3), this.cashEl);
     const map = h('div', 'm-mapname', 'Lanternfall Meadow');
-    this.muteBtn.append(uiIcon(audio.muted ? 'mute' : 'sound', 2));
-    this.muteBtn.title = t('match.mute') + ' (M)';
-    this.muteBtn.onclick = () => this.toggleMute();
     this.pauseBtn.append(uiIcon('pause', 2));
     this.pauseBtn.title = t('match.pause') + ' (P)';
     this.pauseBtn.onclick = () => this.setPaused(!this.paused);
-    top.append(lives, cash, this.roundEl, h('div', 'grow'), map, this.muteBtn, this.pauseBtn);
+    top.append(lives, cash, this.roundEl, h('div', 'grow'), map, this.vol.el, this.pauseBtn);
 
     const side = h('aside', 'm-side pxbox');
-    side.append(h('div', 'm-side-h', t('match.towers')));
+    const tw = this.tabs.towers;
+    tw.append(h('div', 'm-side-h', t('match.towers')));
     const list = h('div', 'm-cards');
     for (const ty of TOWER_TYPES) list.append(this.card(ty));
-    side.append(list);
-    side.append(h('div', 'm-side-h', t('match.hero')));
+    tw.append(list);
+    tw.append(h('div', 'm-side-h', t('match.hero')));
     const hl = h('div', 'm-cards');
     for (const ty of HERO_TYPES) hl.append(this.card(ty));
-    side.append(hl);
-    side.append(h('div', 'grow'));
+    tw.append(hl);
+    side.append(this.tabs.bar, this.tabs.panes);
     // Start, Tempo, Auto
     this.startBtn.append(uiIcon('play', 3), h('span', '', t('match.start')), h('kbd', '', 'Space'));
     this.startBtn.onclick = () => this.startRound();
@@ -295,11 +307,76 @@ class Match {
     }
   }
   private toggleMute(): void {
-    const mu = audio.toggleMute();
-    this.muteBtn.replaceChildren(uiIcon(mu ? 'mute' : 'sound', 2));
+    audio.toggleQuiet();
+    this.vol.refresh();
+  }
+
+  // ------------------------------------------------------------------ Powers (Runde 12)
+  /** Platte im Powers-Reiter angeklickt: Knopf-Powers sofort, Ziel-Powers wechseln in den Zielmodus. */
+  private pickPower(slot: PowerSlot): void {
+    if (this.ended) return;
+    if (!slotUsable(slot)) {
+      this.toast(t(slot.state === 'empty' ? 'reason.no-power' : slot.state === 'used' ? 'reason.used-this-round' : 'reason.no-hero'));
+      audio.play('error');
+      return;
+    }
+    if (slot.target === 'button') { this.cancelAim(); this.usePower(slot.key); return; }
+    if (this.aim?.key === slot.key) { this.cancelAim(); return; }
+    this.beginPlace(null);
+    this.select(null);
+    this.aim = { key: slot.key, use: slot.target === 'point' ? 'point' : slot.target === 'path' ? 'path' : 'place' };
+    this.tabs.armed = slot.key;
+    this.aimEl.textContent = t(slot.target === 'point' ? 'powers.aimBomb' : slot.target === 'path' ? 'powers.aimPath' : 'powers.aimPlace');
+    this.aimEl.classList.remove('hidden');
+    audio.play('click');
+    this.updateGhost();
+  }
+
+  private usePower(key: PowerKey, x?: number, y?: number): CommandResult {
+    const res = this.game.apply({ type: 'power', power: key, x, y });
+    if (!res.ok) this.report(res);
+    return res;
+  }
+
+  private cancelAim(): void {
+    if (!this.aim) return;
+    this.aim = null;
+    this.tabs.armed = null;
+    this.aimEl.classList.add('hidden');
+    this.r.setAim(null);
+    this.r.setGhost(null);
+  }
+
+  /** Geist/Vorschau im Zielmodus (Trockenlauf `canUsePower`, gleiche Gruende wie der echte Befehl). */
+  private updateAim(): void {
+    const a = this.aim;
+    if (!a) return;
+    if (!this.mouse) { this.r.setAim(null); this.r.setGhost(null); return; }
+    const x = Math.round(this.mouse.x), y = Math.round(this.mouse.y);
+    const chk = this.game.canUsePower(a.key, x * 1000, y * 1000);
+    if (a.use === 'point') {
+      this.r.setGhost(null);
+      this.r.setAim({ kind: 'bomb', x, y, r: DATA.powers.lanternBomb.params.radiusPx as number, ok: chk.ok });
+    } else if (a.use === 'path') {
+      this.r.setGhost(null);
+      const sp = trapSpot(PATH, PATH_HW, x, y);
+      this.r.setAim({ kind: a.key as 'caltrops' | 'frostTrap', x: chk.ok ? sp.x : x, y: chk.ok ? sp.y : y, ok: chk.ok });
+    } else {
+      this.r.setAim(null);
+      const ty = DATA.powers[a.key].tower as TowerType;
+      this.r.setGhost({ x, y, spr: towerSprite(ty, (DATA.powers[a.key].tiers ?? [0, 0, 0]) as Tiers, 6, 'idle0'), range: baseRangePx(ty), foot: footMilli(ty) / 1000, ok: chk.ok });
+    }
+    this.lastGhostReason = chk.ok ? null : chk.reason;
+  }
+
+  private pulse(el: HTMLElement, cls: string): void {
+    el.classList.remove(cls);
+    void el.offsetWidth;
+    el.classList.add(cls);
   }
 
   private beginPlace(ty: TowerType | HeroType | null): void {
+    if (ty) this.cancelAim();
     if (ty && this.opts.unlocks && !this.opts.unlocks.towers.includes(ty)) { this.toast(this.opts.lockInfo?.[ty] ?? t('match.locked')); audio.play('error'); return; }
     this.placing = this.placing === ty ? null : ty;
     if (this.placing) { this.select(null); this.toast(t('match.placeHint')); }
@@ -312,7 +389,7 @@ class Match {
     this.r.select(id);
     const tw = id == null ? null : this.game.state.towers.find((q) => q.id === id);
     this.panel.show(tw ? tw.id : null, tw ? tw.x / 1000 : 0);
-    if (id != null) { this.placing = null; for (const c of this.cards.values()) setClass(c, 'sel', false); this.r.setGhost(null); }
+    if (id != null) { this.cancelAim(); this.placing = null; for (const c of this.cards.values()) setClass(c, 'sel', false); this.r.setGhost(null); }
   }
 
   private towerAt(x: number, y: number): number | null {
@@ -326,6 +403,7 @@ class Match {
   }
 
   private updateGhost(): void {
+    if (this.aim) { this.updateAim(); return; }
     if (!this.placing || !this.mouse) { this.r.setGhost(null); return; }
     const ty = this.placing;
     const x = Math.round(this.mouse.x), y = Math.round(this.mouse.y);
@@ -345,12 +423,18 @@ class Match {
       cv.style.cursor = this.placing ? 'none' : this.hoverTower != null ? 'pointer' : 'default';
       this.updateGhost();
     });
-    cv.addEventListener('pointerleave', () => { this.mouse = null; this.r.setGhost(null); });
-    cv.addEventListener('contextmenu', (e) => { e.preventDefault(); if (this.placing) this.beginPlace(null); else this.select(null); });
+    cv.addEventListener('pointerleave', () => { this.mouse = null; this.r.setGhost(null); this.r.setAim(null); });
+    cv.addEventListener('contextmenu', (e) => { e.preventDefault(); if (this.aim) this.cancelAim(); else if (this.placing) this.beginPlace(null); else this.select(null); });
     cv.addEventListener('pointerdown', (e) => {
       if (e.button !== 0) return;
       const p = this.r.toMap(e.clientX, e.clientY);
       this.mouse = p;
+      if (this.aim) {
+        const key = this.aim.key;
+        const res = this.usePower(key, Math.round(p.x) * 1000, Math.round(p.y) * 1000);
+        if (res.ok && !e.shiftKey) this.cancelAim(); else this.updateAim();
+        return;
+      }
       if (this.placing) {
         const ty = this.placing;
         const res = this.game.apply({ type: 'place', tower: ty, x: Math.round(p.x) * 1000, y: Math.round(p.y) * 1000 });
@@ -371,9 +455,11 @@ class Match {
       if (k === 'Enter' || k === 'Escape' || k.toLowerCase() === 'y' || k.toLowerCase() === 'n') { e.preventDefault(); this.confirm.answer(k === 'Enter' || k.toLowerCase() === 'y'); }
       return;
     }
+    if (k === 'Escape' && this.aim) { this.cancelAim(); return; }
     if (k === 'Escape' && this.unlockMenu.open) { this.unlockMenu.show(null); return; }
     if (k === 'Escape') { if (this.placing) this.beginPlace(null); else if (sel != null) this.select(null); else this.setPaused(!this.paused); return; }
     if (this.paused) return;
+    if (k === 'Tab') { e.preventDefault(); this.tabs.cycle(e.shiftKey ? -1 : 1); return; }
     const lower = k.toLowerCase();
     const ty = [...TOWER_TYPES, ...HERO_TYPES].find((q) => HOTKEY[q].toLowerCase() === lower);
     if (ty) { this.beginPlace(ty); return; }
@@ -434,6 +520,7 @@ class Match {
     if (this.opts.debug) this.perf.push([t1 - t0, t2 - t1, performance.now() - t2, steps]);
     this.hud(g.state);
     this.panel.update(g.state);
+    this.tabs.update(g.state);
     this.unlockMenu.update(g.state);
     if (this.placing) this.updateGhost();
   }
@@ -463,6 +550,11 @@ class Match {
         break;
       }
       case 'unlockTier': this.toast(t('unlock.bought', { name: DATA.towers[ev.tower].paths[ev.path].tiers[ev.tier - 1].name }), 'gain'); break;
+      case 'power':
+        if (ev.power === 'goldDrop') this.pulse(this.cashBox, 'pulse-gain');
+        else if (ev.power === 'extraLives') this.pulse(this.livesBox, 'pulse-life');
+        this.toast(powerName(ev.power), 'gain');
+        break;
       case 'gameOver': this.onGameOver(ev.result === 'won'); break;
       default: break;
     }
@@ -486,6 +578,7 @@ class Match {
     setText(this.roundEl, t('match.round', { n: Math.max(st.round, 0), max: MAX_ROUND }));
     this.startBtn.disabled = this.ended;
     setClass(this.autoBtn, 'on', st.autoStart);
+    setClass(this.cashBox, 'oil', st.oilRound > 0 && st.round <= st.oilRound);
     setClass(this.startBtn, 'wave', st.phase === 'wave');
     for (const [ty, c] of this.cards) {
       const price = this.game.priceOf(ty);
@@ -520,7 +613,8 @@ class Match {
     cancelAnimationFrame(this.raf);
     window.removeEventListener('keydown', this.keyHandler);
     this.ro?.disconnect();
-    audio.setMusic(false);
+    this.vol.close();
+    audio.setTheme(null);
     const st = this.game.state;
     const result: MatchResult = {
       matchId: this.matchId,
@@ -533,6 +627,7 @@ class Match {
       towerXp: { ...st.towerXp },
       towerTiers: { ranger: [...st.maxTier.ranger], bombardier: [...st.maxTier.bombardier], frostcaller: [...st.maxTier.frostcaller] },
       towerXpGained: { ...st.towerXpGained },
+      powersUsed: { ...st.stats.powersUsed },
       upgrades: this.upgrades,
       ticks: st.tick,
       quit,

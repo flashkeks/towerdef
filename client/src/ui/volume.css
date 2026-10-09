@@ -1,0 +1,20 @@
+/* Lautstaerke-Regler (Runde 12): Pixel-Look in Palette ENDESGA 32, gilt in Match und Menues (eigene Farbwerte, keine Abhaengigkeit von .m-root) */
+.vol-wrap { position: relative; display: inline-flex; }
+.vol-btn { background: #3a4466; border: 3px solid #181425; padding: 4px 8px; box-shadow: inset 0 -3px 0 rgba(0,0,0,.3); cursor: pointer; border-radius: 0; line-height: 0; }
+.vol-btn:hover { background: #5a6988; }
+.vol-pop { position: absolute; top: calc(100% + 6px); right: 0; z-index: 60; width: 270px; padding: 10px 12px 12px; background: #262b44; border: 3px solid #181425; box-shadow: inset 0 0 0 2px #3a4466, 0 6px 0 rgba(0,0,0,.35); color: #fff; }
+.vol-pop.hidden { display: none; }
+.vol-pop-h { font: 700 12px var(--font-num, 'Rajdhani', sans-serif); letter-spacing: .2em; text-transform: uppercase; color: #feae34; border-bottom: 2px solid #3a4466; padding-bottom: 3px; margin-bottom: 8px; }
+.vol-panel { display: flex; flex-direction: column; gap: 10px; }
+.vol-row { display: grid; grid-template-columns: 1fr auto; gap: 3px 10px; align-items: center; }
+.vol-name { font: 700 14px var(--font-num, 'Rajdhani', sans-serif); letter-spacing: .06em; color: #c0cbdc; text-transform: uppercase; }
+.vol-val { font: 700 14px var(--font-num, 'Rajdhani', sans-serif); color: #fee761; min-width: 40px; text-align: right; }
+.vol-row.off .vol-val { color: #8b9bb4; }
+.vol-slider { grid-column: 1 / -1; -webkit-appearance: none; appearance: none; width: 100%; height: 16px; margin: 0; cursor: pointer; background: transparent; }
+.vol-slider::-webkit-slider-runnable-track { height: 10px; background: linear-gradient(90deg, #63c74d var(--fill, 50%), #181425 var(--fill, 50%)); border: 2px solid #181425; box-shadow: 0 0 0 2px #3a4466; }
+.vol-slider::-moz-range-track { height: 6px; background: #181425; border: 2px solid #181425; box-shadow: 0 0 0 2px #3a4466; }
+.vol-slider::-moz-range-progress { height: 6px; background: #63c74d; }
+.vol-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 18px; margin-top: -6px; background: #feae34; border: 2px solid #181425; border-radius: 0; box-shadow: inset 2px 2px 0 #fee761; }
+.vol-slider::-moz-range-thumb { width: 10px; height: 14px; background: #feae34; border: 2px solid #181425; border-radius: 0; }
+.vol-row.off .vol-slider::-webkit-slider-thumb { background: #8b9bb4; box-shadow: inset 2px 2px 0 #c0cbdc; }
+.vol-slider:focus-visible { outline: 2px solid #fee761; outline-offset: 2px; }

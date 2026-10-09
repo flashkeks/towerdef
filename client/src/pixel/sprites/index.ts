@@ -10,6 +10,7 @@ import { camoAlpha, rowsToCanvas, type Sprite } from './canvas';
 import { enemyRaster, type EnemyOpts } from './enemies';
 import { heroRaster, type HeroFrame } from './hero';
 import { iconAbilityRaster, iconUpgradeRaster } from './icons';
+import { bigHeartRaster, bombLanternRaster, bubbleRaster, coinRaster, emberRaster, merchantRaster, powerIconRaster, trapRaster, type PowerIconId } from './powers';
 import type { TowerFrame } from './pose';
 import { projectileRaster } from './projectiles';
 import { Surface } from './surface';
@@ -183,4 +184,43 @@ export { explosion, popShards, nova, boltLine, status as statusFx, puff, leak as
 /** Text (Ziffern, + - . , / % x k und Grossbuchstaben) in der 3 x 5-Pixelschrift mit Umriss; Anker = Mitte unten. */
 export function pixelText(text: string, color: PalName = 'white', outline: PalName | null = 'ink'): Sprite {
   return cached(`tx|${text}|${color}|${outline}`, () => sprite(textRaster(text, color, outline)));
+}
+
+// ---------- Powers, Embers, Haendler (Runde 12) ----------
+
+export type { PowerIconId } from './powers';
+export { POWER_ICON_IDS, POWER_COLOR, TRAP_W, TRAP_H } from './powers';
+/** Power-Icon 16 x 16 (Tafel in Power-Farbe), ohne Anker. */
+export function iconPower(id: PowerIconId): Sprite {
+  return cached(`ipw|${id}`, () => sprite(powerIconRaster(id)));
+}
+/** Embers-Symbol (Glutstueck) 16 x 16, 2 Flammenbilder. */
+export function emberIcon(frame = 0): Sprite {
+  const f = frame & 1;
+  return cached(`emb|${f}`, () => sprite(emberRaster(f)));
+}
+/** Haendler fuer den Store, 40 x 44, Anker Fuss unten Mitte, 2 Atem-Bilder. */
+export function merchantSprite(frame = 0): Sprite {
+  const f = frame & 1;
+  return cached(`mer|${f}`, () => sprite(merchantRaster(f)));
+}
+/** Falle auf dem Weg, Anker Mitte. `pieces` = sichtbare Zacken/Kristalle. */
+export function trapSprite(kind: 'caltrops' | 'frostTrap', pieces: number, frame = 0): Sprite {
+  const f = frame & 1;
+  return cached(`trap|${kind}|${pieces}|${f}`, () => sprite(trapRaster(kind, pieces, f)));
+}
+export function coinSprite(frame: number): Sprite {
+  const f = ((Math.floor(frame) % 4) + 4) % 4;
+  return cached(`coin|${f}`, () => sprite(coinRaster(f)));
+}
+export function bigHeart(): Sprite {
+  return cached('bheart', () => sprite(bigHeartRaster()));
+}
+export function bubbleSprite(frame: number, r: number): Sprite {
+  const f = ((Math.floor(frame) % 4) + 4) % 4, rr = Math.round(r);
+  return cached(`bub|${rr}|${f}`, () => sprite(bubbleRaster(f, rr)));
+}
+export function bombLantern(frame = 0): Sprite {
+  const f = frame & 1;
+  return cached(`bomblan|${f}`, () => sprite(bombLanternRaster(f)));
 }

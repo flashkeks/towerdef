@@ -1,5 +1,6 @@
 /** Einstellungen: Lautstaerke, Developer-Schalter, Export/Import, Profil loeschen (mit Bestaetigung). */
 import { downloadText, pickTextFile } from '../meta/store';
+import { volumePanel } from '../ui/volume';
 import { h } from '../ui/dom';
 import { icon } from './icons';
 import { topBar } from './knowledge';
@@ -13,19 +14,9 @@ export function settingsView(ctx: Ctx): View {
   el.append(topBar(ctx, S.settings.title));
   const box = h('div', 'set-box');
 
-  // Lautstaerke
-  const vol = h('section', 'card set-row');
-  const vl = h('label', 'set-l', S.settings.volume);
-  const slider = h('input', 'slider') as HTMLInputElement;
-  slider.type = 'range';
-  slider.min = '0';
-  slider.max = '100';
-  slider.step = '5';
-  slider.value = String(p.settings.volume);
-  const vv = h('span', 'num set-v', `${p.settings.volume}`);
-  slider.oninput = () => { vv.textContent = slider.value; ctx.setVolume(Number(slider.value)); };
-  slider.onchange = () => { ctx.sound('click'); void ctx.update({ ...ctx.store.profile, settings: { ...ctx.store.profile.settings, volume: Number(slider.value) } }); };
-  vol.append(vl, slider, vv);
+  // Lautstaerke: Musik und Effekte getrennt
+  const vol = h('section', 'card set-vol');
+  vol.append(h('div', 'h2', S.settings.volume), volumePanel(ctx.audio, { onCommit: (k) => { if (k === 'sfx') ctx.sound('click'); } }));
 
   // Developer
   const dev = h('section', 'card set-row');
@@ -55,7 +46,7 @@ export function settingsView(ctx: Ctx): View {
     const text = await pickTextFile();
     if (text === null) return;
     const r = await ctx.store.importJson(text);
-    if (r.ok) { msg.textContent = S.settings.importDone; msg.className = 'set-msg ok'; ctx.setVolume(ctx.store.profile.settings.volume); ctx.go({ name: 'settings' }); }
+    if (r.ok) { msg.textContent = S.settings.importDone; msg.className = 'set-msg ok'; ctx.go({ name: 'settings' }); }
     else { ctx.sound('error'); msg.textContent = S.settings.importFail(r.message); msg.className = 'set-msg bad'; }
   };
   const btns = h('div', 'set-btns');
@@ -72,7 +63,7 @@ export function settingsView(ctx: Ctx): View {
     const yes = h('button', 'btn-small danger', S.settings.wipeYes);
     const no = h('button', 'btn-small', S.settings.wipeNo);
     no.onclick = () => dlg.remove();
-    yes.onclick = async () => { await ctx.store.wipe(); ctx.setVolume(ctx.store.profile.settings.volume); dlg.remove(); ctx.go({ name: 'home' }); };
+    yes.onclick = async () => { await ctx.store.wipe(); dlg.remove(); ctx.go({ name: 'home' }); };
     const row = h('div', 'set-btns');
     row.append(no, yes);
     inner.append(cv(icon('flame'), 5), h('div', 'modal-t', S.settings.wipeAsk), h('div', 'modal-d', S.settings.wipeText), row);

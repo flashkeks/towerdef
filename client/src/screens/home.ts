@@ -9,6 +9,7 @@ import { h, setClass } from '../ui/dom';
 import { MEDAL_OF, icon, medal } from './icons';
 import { bar, cv, ptext } from './px';
 import { meadowScene } from './scene';
+import { embersChip } from './store';
 import { S, fmt } from './text';
 import type { Ctx, View } from './types';
 
@@ -63,7 +64,9 @@ export function homeView(ctx: Ctx): View {
     chip.onclick = () => { ctx.sound('click'); ctx.go({ name: 'knowledge' }); };
     head.append(chip);
   }
-  top.append(logo, head);
+  const embers = embersChip(p.embers);
+  embers.el.classList.add('home-embers');
+  top.append(logo, embers.el, head);
 
   // ---- Mitte: Karte links, Schwierigkeit rechts
   const mid = h('div', 'mid');
@@ -130,6 +133,7 @@ export function homeView(ctx: Ctx): View {
   nav.append(
     mk(S.home.towers, 'bolt', readyUnlocks(p), () => ctx.go({ name: 'towers' })),
     mk(S.home.knowledge, 'book', pts, () => ctx.go({ name: 'knowledge' })),
+    mk(S.home.store, 'tag', 0, () => ctx.go({ name: 'store' })),
     mk(S.home.settings, 'gear', 0, () => ctx.go({ name: 'settings' })),
   );
   const line = h('div', 'lineup');

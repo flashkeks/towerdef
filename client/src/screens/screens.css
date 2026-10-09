@@ -278,3 +278,61 @@ canvas.pop { animation: pop-in 0.5s steps(6) both; }
 }
 .ttier.veiled .ttier-n { color: var(--p-silver); letter-spacing: .14em; }
 .ttier.veiled .ttier-d { font-style: italic; opacity: .8; }
+
+/* ---- Lautstaerke (Runde 12) ---- */
+.scr-vol { position: fixed; top: 12px; right: 14px; z-index: 40; }
+.set-vol { display: flex; flex-direction: column; gap: 10px; }
+.set-vol .vol-panel { max-width: 520px; }
+.set-vol .vol-name { font-size: 16px; }
+.set-vol .vol-val { font-size: 16px; }
+
+/* ---- Embers und Store (Runde 12) ---- */
+.home .top, .subtop { padding-right: 64px; }
+.chip.embers { color: var(--p-yellow); gap: 8px; box-shadow: 0 -3px 0 0 var(--p-orange), 0 3px 0 0 var(--p-orange), -3px 0 0 0 var(--p-orange), 3px 0 0 0 var(--p-orange); }
+.chip.embers.big { font-size: 26px; padding: 4px 16px; }
+.home-embers { margin-left: auto; margin-right: 10px; }
+.store .shop { display: flex; gap: 26px; align-items: flex-start; }
+.stall { flex: none; width: 300px; display: flex; flex-direction: column; align-items: stretch; margin-top: 4px; }
+.awning { height: 44px; background: repeating-linear-gradient(90deg, var(--p-crimson) 0 30px, var(--p-sand) 30px 60px); box-shadow: 0 -4px 0 0 var(--p-ink), -4px 0 0 0 var(--p-ink), 4px 0 0 0 var(--p-ink), inset 0 -8px 0 0 rgba(24, 20, 37, 0.35); position: relative; margin: 0 4px; }
+.awning::after { content: ''; position: absolute; left: 0; right: 0; bottom: -10px; height: 10px; background: repeating-linear-gradient(90deg, var(--p-crimson) 0 15px, transparent 15px 30px, var(--p-sand) 30px 45px, transparent 45px 60px); }
+.merchant { position: relative; height: 330px; margin: 0 4px; padding-top: 18px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; background: linear-gradient(180deg, var(--p-plum) 0%, var(--p-night) 100%); box-shadow: -4px 0 0 0 var(--p-ink), 4px 0 0 0 var(--p-ink), 0 4px 0 0 var(--p-ink), inset 0 0 0 4px var(--p-dusk); }
+.merchant::before { content: ''; position: absolute; left: 22px; top: 40px; width: 30px; height: 30px; background: var(--p-yellow); box-shadow: 0 0 0 4px var(--p-amber), 0 0 24px 8px rgba(254, 231, 97, 0.35); opacity: 0.85; }
+.merchant-art { margin-bottom: 38px; }
+.counter-front { position: absolute; left: 0; right: 0; bottom: 0; height: 40px; background: var(--p-wood); box-shadow: inset 0 6px 0 0 var(--p-tan), inset 0 -8px 0 0 var(--p-bark); }
+.speech { position: absolute; top: 12px; left: 62px; right: 14px; padding: 8px 10px; background: var(--p-white); color: var(--p-ink); font-size: 15px; font-weight: 700; line-height: 1.2; box-shadow: 0 -3px 0 0 var(--p-ink), 0 3px 0 0 var(--p-ink), -3px 0 0 0 var(--p-ink), 3px 0 0 0 var(--p-ink); z-index: 2; }
+.store .cards { flex: 1; display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 16px; }
+.scard { display: flex; flex-direction: column; gap: 8px; padding: 12px 14px 12px; background: var(--p-night); margin: 4px; box-shadow: 0 -4px 0 0 var(--p-ink), 0 4px 0 0 var(--p-ink), -4px 0 0 0 var(--p-ink), 4px 0 0 0 var(--p-ink), inset 0 4px 0 0 var(--p-dusk), inset 4px 0 0 0 var(--p-dusk), inset 0 -4px 0 0 var(--p-ink), inset -4px 0 0 0 var(--p-ink); }
+.scard.bought { animation: sc-bought 0.7s steps(7); }
+@keyframes sc-bought { 0% { background: var(--p-grass); transform: translateY(-4px); } 100% { background: var(--p-night); } }
+.sc-head { display: flex; align-items: center; gap: 12px; }
+.sc-name { font-size: 22px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: var(--p-yellow); text-shadow: 2px 2px 0 var(--p-ink); }
+.sc-desc { flex: 1; color: var(--p-silver); font-size: 15px; font-weight: 500; line-height: 1.25; min-height: 56px; }
+.sc-variants { display: flex; gap: 6px; }
+.sc-var { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 0; padding: 3px 2px; background: var(--p-dusk); box-shadow: 0 -3px 0 0 var(--p-ink), 0 3px 0 0 var(--p-ink), -3px 0 0 0 var(--p-ink), 3px 0 0 0 var(--p-ink); margin: 3px; line-height: 1.1; }
+.sc-var .v-n { font-size: 13px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; }
+.sc-var .v-t { font-size: 15px; color: var(--p-peach); }
+.sc-var .v-o { font-size: 12px; color: var(--p-stone); }
+.sc-var.on { background: var(--p-sky); box-shadow: 0 -3px 0 0 var(--p-ink), 0 3px 0 0 var(--p-ink), -3px 0 0 0 var(--p-ink), 3px 0 0 0 var(--p-ink), inset 0 0 0 3px var(--p-yellow); }
+.sc-var.on .v-n, .sc-var.on .v-t, .sc-var.on .v-o { color: #fff; }
+.sc-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.sc-owned { font-size: 18px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--p-leaf); }
+.sc-buy { display: flex; align-items: center; gap: 8px; padding: 6px 16px; margin: 3px; background: var(--p-grass); font-size: 22px; font-weight: 800; color: var(--p-yellow); box-shadow: 0 -3px 0 0 var(--p-ink), 0 3px 0 0 var(--p-ink), -3px 0 0 0 var(--p-ink), 3px 0 0 0 var(--p-ink), inset 0 3px 0 0 var(--p-leaf), inset 0 -4px 0 0 var(--p-pine); }
+.sc-buy-l { font-size: 18px; letter-spacing: 0.1em; text-transform: uppercase; color: #fff; }
+.sc-buy:hover { background: var(--p-leaf); }
+.sc-buy:active { transform: translateY(2px); }
+.scard.poor .sc-buy { background: var(--p-dusk); color: #ff8a90; box-shadow: 0 -3px 0 0 var(--p-ink), 0 3px 0 0 var(--p-ink), -3px 0 0 0 var(--p-ink), 3px 0 0 0 var(--p-ink), inset 0 3px 0 0 var(--p-slate), inset 0 -4px 0 0 var(--p-night); }
+.scard.poor .sc-buy-l { color: var(--p-stone); }
+.sc-need { flex-basis: 100%; text-align: right; color: #ff8a90; font-size: 14px; letter-spacing: 0.05em; }
+@media (max-width: 1100px) { .store .shop { flex-direction: column; } .stall { width: 100%; } }
+
+/* Ergebnis: Embers */
+.embers-card { display: flex; flex-direction: column; gap: 6px; }
+.em-total { display: flex; align-items: center; gap: 12px; }
+.em-gain { font-size: 34px; font-weight: 800; color: var(--p-yellow); text-shadow: 3px 3px 0 var(--p-ink); }
+.em-lines { display: grid; grid-template-columns: 1fr auto; gap: 2px 18px; font-size: 16px; color: var(--p-silver); max-width: 340px; }
+.em-lines .num { color: var(--p-yellow); text-align: right; }
+.em-lines .zero { opacity: 0.4; }
+.pw-used { margin-top: 8px; display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--p-silver); }
+.pw-used .num { color: var(--p-yellow); font-size: 24px; }
+.pw-icons { display: flex; gap: 4px; flex-wrap: wrap; }
+.res-col { display: flex; flex-direction: column; gap: 14px; }
