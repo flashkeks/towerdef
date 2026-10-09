@@ -5,7 +5,7 @@
 import type { Difficulty, HeroType, PowerKey, TowerType } from '../../sim/src/types';
 import { DATA, POWER_KEYS } from '../../sim/src/data';
 
-export const TOWER_TYPES: readonly TowerType[] = ['ranger', 'bombardier', 'frostcaller', 'longshot', 'market'];
+export const TOWER_TYPES: readonly TowerType[] = ['ranger', 'bombardier', 'frostcaller', 'longshot', 'market', 'thornweaver', 'alchemist'];
 export const DIFFICULTIES: readonly Difficulty[] = ['easy', 'medium', 'hard'];
 export const MAP_IDS: readonly string[] = ['meadow'];
 export const MAP_NAMES: Record<string, string> = { meadow: 'Lanternfall Meadow' };
@@ -65,6 +65,8 @@ export const LEVEL_UNLOCKS: readonly LevelUnlock[] = [
   { level: 5, kind: 'difficulty', id: 'hard', title: 'Hard difficulty', text: 'Faster Glims, tougher bosses, bigger medals.' },
   { level: 5, kind: 'tower', id: 'longshot', title: 'Longshot', text: 'Sniper that sees the whole map. Slow, heavy shots.' },
   { level: 6, kind: 'tower', id: 'market', title: 'Lantern Market', text: 'Does not attack. Pays gold every round, banks interest, or buffs nearby towers.' },
+  { level: 7, kind: 'tower', id: 'thornweaver', title: 'Thornweaver', text: 'Nature caster. Thorn fans, chain lightning, vines and a wall of trees.' },
+  { level: 9, kind: 'tower', id: 'alchemist', title: 'Alchemist', text: 'Lobs acid, brews buffs for nearby towers, turns lead into gold.' },
 ];
 /** Level, ab dem Turm/Held/Schwierigkeit offen ist; fehlt = von Anfang an. */
 export function unlockLevel(id: string): number {
@@ -89,8 +91,8 @@ export interface KnowledgeNode {
 const node = (id: string, branch: Branch, name: string, cost: number, desc: string, requires: string[], col: number, row: number): KnowledgeNode =>
   ({ id, branch, name, cost, desc, requires, col, row });
 /**
- * Wissensbaum Runde 13 (docs/design/tuerme-r13.md): 28 Knoten in 5 Aesten, Summe 52 Punkte. Die 10 alten Knoten behalten ID und Wirkung
- * (Ast `towers` heisst jetzt `primary`). "Field Medic" (Specialists) kommt mit Runde 14. Reihenfolge: Voraussetzungen stehen vor den Folgeknoten.
+ * Wissensbaum Runde 13/14 (docs/design/tuerme-r13.md): 40 Knoten in 5 Aesten, Summe 77 Punkte (Runde 13: 28 Knoten / 52 Punkte, Runde 14: +12). Die 10 alten Knoten
+ * behalten ID und Wirkung (Ast `towers` heisst jetzt `primary`). Reihenfolge: Voraussetzungen stehen vor den Folgeknoten.
  */
 export const KNOWLEDGE: readonly KnowledgeNode[] = [
   node('head-start', 'economy', 'Head Start', 1, 'Start every match with 100 extra gold.', [], 0, 0),
@@ -99,6 +101,8 @@ export const KNOWLEDGE: readonly KnowledgeNode[] = [
   node('big-head-start', 'economy', 'Big Head Start', 2, 'Start every match with 200 more gold.', ['lantern-tax'], 0, 3),
   node('market-savvy', 'economy', 'Market Savvy', 2, 'Lantern Markets earn 10% more gold.', ['big-head-start'], 0, 4),
   node('compound-interest', 'economy', 'Compound Interest', 3, 'Market banks pay 5 points more interest.', ['market-savvy'], 0, 5),
+  node('investor', 'economy', 'Investor', 2, 'Lantern Markets cost another 10% less to build.', ['market-savvy'], 1, 4),
+  node('pop-bonus', 'economy', 'Pop Bonus', 3, 'Popping a Glim pays 5% more gold.', ['investor'], 1, 5),
   node('sharp-eyes', 'primary', 'Sharp Eyes', 1, 'Rangers see 8% farther.', [], 0, 0),
   node('bigger-barrels', 'primary', 'Bigger Barrels', 1, 'Explosions are 10% wider.', [], 1, 0),
   node('cold-snap', 'primary', 'Cold Snap', 1, 'Frostcaller slows last 25% longer.', [], 2, 0),
@@ -106,10 +110,18 @@ export const KNOWLEDGE: readonly KnowledgeNode[] = [
   node('quick-hands', 'primary', 'Quick Hands', 2, 'Rangers and Bombardiers attack 5% faster.', ['cheaper-basics'], 1, 2),
   node('deep-freeze', 'primary', 'Deep Freeze', 2, 'Absolute Zero freezes 0.5 s longer.', ['quick-hands'], 1, 3),
   node('veteran-primaries', 'primary', 'Veteran Primaries', 3, 'Tier 2 upgrades of Ranger, Bombardier and Frostcaller cost 10% less.', ['deep-freeze'], 1, 4),
+  node('sharper-arrows', 'primary', 'Sharper Arrows', 2, 'Rangers pierce 1 more enemy.', ['sharp-eyes'], 0, 1),
+  node('icicle-edge', 'primary', 'Icicle Edge', 3, 'Frostcaller hits deal 1 more damage to frozen enemies.', ['cold-snap'], 2, 1),
+  node('fused-shells', 'primary', 'Fused Shells', 2, 'Bombardier bombs throw 2 more splinters.', ['veteran-primaries'], 1, 5),
   node('steady-aim', 'specialists', 'Steady Aim', 1, 'Longshots attack 10% faster.', [], 0, 0),
   node('supply-lines', 'specialists', 'Supply Lines', 2, 'Supply Drop crates hold 200 more gold.', ['steady-aim'], 0, 1),
   node('wide-aura', 'specialists', 'Wide Aura', 1, 'Lantern Market auras reach 15% farther.', ['supply-lines'], 0, 2),
   node('bulk-orders', 'specialists', 'Bulk Orders', 2, 'Lantern Markets cost 10% less to build.', ['wide-aura'], 0, 3),
+  node('field-medic', 'specialists', 'Field Medic', 2, 'Regain 1 life at the end of every round.', ['bulk-orders'], 0, 4),
+  node('deep-roots', 'specialists', 'Deep Roots', 1, 'Thornweavers reach 10% farther.', [], 1, 0),
+  node('bountiful-grove', 'specialists', 'Bountiful Grove', 2, "Jungle's Bounty pays 50 more gold each round.", ['deep-roots'], 1, 1),
+  node('potent-brews', 'specialists', 'Potent Brews', 1, 'Alchemist buff potions last 25% longer.', [], 2, 0),
+  node('midas-hands', 'specialists', 'Midas Hands', 2, 'Lead to Gold pays 20 more gold per Ironshell.', ['potent-brews'], 2, 1),
   node('extra-lives', 'wardens', 'Extra Lives', 1, 'Start every match with 10 more lives.', [], 0, 0),
   node('veteran-hero', 'wardens', 'Veteran Hero', 2, 'Wren starts at level 3.', ['extra-lives'], 0, 1),
   node('fast-learner', 'wardens', 'Fast Learner', 2, 'Towers earn 20% more Tower XP.', ['extra-lives'], 1, 1),
@@ -117,8 +129,10 @@ export const KNOWLEDGE: readonly KnowledgeNode[] = [
   node('hero-training', 'wardens', 'Hero Training', 2, 'Wren earns 15% more hero XP.', ['thick-walls'], 0, 3),
   node('legendary', 'wardens', 'Legendary', 3, 'Wren starts at level 5.', ['hero-training'], 0, 4),
   node('scholar', 'wardens', 'Scholar', 2, 'Matches give 10% more player XP.', ['legendary'], 0, 5),
+  node('sturdy-gate', 'wardens', 'Sturdy Gate', 3, 'Once per match the gate stops one leak.', ['thick-walls'], 1, 2),
   node('ember-pouch', 'powers', 'Ember Pouch', 1, 'Matches give 10% more Embers.', [], 0, 0),
   node('bulk-buyer', 'powers', 'Bulk Buyer', 2, 'Powers cost 10% less in the Store.', ['ember-pouch'], 0, 1),
+  node('ember-rush', 'powers', 'Ember Rush', 2, 'Earn 1 extra Ember for every round you clear.', ['ember-pouch'], 1, 1),
   node('spare-pocket', 'powers', 'Spare Pocket', 3, 'Use each Power twice per round instead of once.', ['bulk-buyer'], 0, 2),
   node('starter-kit', 'powers', 'Starter Kit', 3, 'Every match starts with one free Gold Drop.', ['spare-pocket'], 0, 3),
 ];

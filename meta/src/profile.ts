@@ -12,9 +12,9 @@ export const SEEN_MATCHES_MAX = 100;
 const nat = z.number().int().min(0);
 const tierNum = z.number().int().min(0).max(5);
 const tiers3 = z.tuple([tierNum, tierNum, tierNum]);
-/** Runde 13: `longshot` und `market` fehlen in Staenden bis Runde 12 und bekommen ihren Startwert (Migration, nichts wird zurueckgesetzt). */
+/** Runde 13/14: `longshot`, `market`, `thornweaver`, `alchemist` fehlen in aelteren Staenden und bekommen ihren Startwert (Migration, nichts wird zurueckgesetzt). */
 const perTower = <T extends z.ZodType>(s: T, fresh: () => z.output<T>) =>
-  z.object({ ranger: s, bombardier: s, frostcaller: s, longshot: s.default(fresh as never), market: s.default(fresh as never) });
+  z.object({ ranger: s, bombardier: s, frostcaller: s, longshot: s.default(fresh as never), market: s.default(fresh as never), thornweaver: s.default(fresh as never), alchemist: s.default(fresh as never) });
 const medalSet = z.object({ easy: z.boolean(), medium: z.boolean(), hard: z.boolean() });
 const best = z.object({ round: nat, livesLost: nat });
 const inventorySchema = z.object(Object.fromEntries(POWER_KEYS.map((k) => [k, nat.default(0)]))) as unknown as z.ZodType<Record<PowerKey, number>>;
@@ -47,7 +47,7 @@ export const ProfileSchema = z.object({
 export type Profile = z.infer<typeof ProfileSchema>;
 
 export function newProfile(now = new Date(0).toISOString()): Profile {
-  const per = <T>(v: () => T): Record<TowerType, T> => ({ ranger: v(), bombardier: v(), frostcaller: v(), longshot: v(), market: v() });
+  const per = <T>(v: () => T): Record<TowerType, T> => ({ ranger: v(), bombardier: v(), frostcaller: v(), longshot: v(), market: v(), thornweaver: v(), alchemist: v() });
   return {
     schema: SAVE_SCHEMA,
     createdAt: now,
