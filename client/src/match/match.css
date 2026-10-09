@@ -56,7 +56,7 @@ kbd { font: 700 10px var(--font-num); background: var(--ink); color: var(--silve
 .m-start:disabled { opacity: .5; }
 .m-start.wave { background: var(--sky); }
 .m-start.small { font-size: 18px; padding: 8px 20px; }
-.m-start kbd { position: absolute; right: 5px; top: 4px; opacity: .8; }
+.m-start kbd { position: static; margin-left: 2px; opacity: .85; }
 .m-speed { display: flex; gap: 6px; }
 .m-speed-b { flex: 1; font: 700 16px var(--font-num); background: var(--dusk); color: var(--silver); border: 3px solid var(--ink); padding: 5px 0; box-shadow: inset 0 -3px 0 rgba(0,0,0,.3); }
 .m-speed-b.on { background: var(--amber); color: var(--ink); }

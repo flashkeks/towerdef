@@ -10,7 +10,7 @@ import { h, setClass, setText } from '../ui/dom';
 import { baseRangePx, displayName, footMilli, isHero } from './info';
 import { Panel } from './panel';
 import { Renderer } from './renderer';
-import { heroSprite, towerSprite } from './sprites';
+import { heroPortrait, towerPortrait, heroSprite, towerSprite } from './sprites';
 import { ABILITY_TEXT, HERO_TYPES, HOTKEY, ROLE, TOWER_TYPES } from './tower-text';
 import { copyCanvas, uiIcon } from './ui-icons';
 import './match.css';
@@ -172,7 +172,7 @@ class Match {
 
   private card(ty: TowerType | HeroType): HTMLElement {
     const c = h('button', 'm-card');
-    const spr = isHero(ty) ? heroSprite(1, 6, 'idle0') : towerSprite(ty, [0, 0, 0], 6, 'idle0');
+    const spr = isHero(ty) ? heroPortrait() : towerPortrait(ty);
     const port = h('div', 'm-port');
     port.append(copyCanvas(spr.canvas, 2));
     const txt = h('div', 'm-card-t');

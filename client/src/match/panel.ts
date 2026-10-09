@@ -4,11 +4,11 @@
  * Held: Level, XP-Balken, Faehigkeiten. Dazu Targeting-Umschalter, Verkaufen mit Wert, Pops-Zaehler.
  * Das Panel entscheidet nichts: es fragt `game.upgradeInfo` und schickt Kommandos ueber die Callbacks.
  */
-import { DATA, round5, type Game, type GameOptions, type GameState, type TargetMode, type TowerState, type UpgradeInfo } from '../sim';
+import { DATA, round5, type Game, type GameOptions, type GameState, type TargetMode, type TowerState, type TowerType, type UpgradeInfo } from '../sim';
 import { h, setText } from '../ui/dom';
 import { t } from '../i18n/t';
 import { displayName, isHero } from './info';
-import { towerSprite, heroSprite, iconUpgrade } from './sprites';
+import { heroPortrait, iconUpgrade, towerPortrait } from './sprites';
 import { ABILITY_TEXT, PATH_COLORS, TARGET_TEXT } from './tower-text';
 import { copyCanvas, uiIcon } from './ui-icons';
 
@@ -84,7 +84,7 @@ export class Panel {
     const hero = isHero(tw.type);
     // Kopf
     const head = h('div', 'p-head');
-    const spr = hero ? heroSprite(tw.heroLevel, 0, 'idle0') : towerSprite(tw.type, tw.tiers, 0, 'idle0');
+    const spr = hero ? heroPortrait() : towerPortrait(tw.type as TowerType);
     const port = h('div', 'p-port');
     port.append(copyCanvas(spr.canvas, 2));
     const nm = h('div', 'p-name');
@@ -136,7 +136,8 @@ export class Panel {
 
   private buildPaths(tw: TowerState, infos: UpgradeInfo[]): void {
     if (isHero(tw.type)) return;
-    const data = DATA.towers[tw.type];
+    const ty = tw.type;
+    const data = DATA.towers[ty];
     const cols = h('div', 'p-cols');
     this.defaultDesc = '';
     const maxTier = this.opts.unlocks?.maxTier[tw.type];
@@ -156,12 +157,12 @@ export class Panel {
         if (isNext && !info.canBuy && info.reason === 'no-cash') row.classList.add('poor');
         if (!owned && closed) row.classList.add('closed');
         if (!owned && !closed && (xpLocked || (isNext && info.reason === 'locked'))) row.classList.add('xplock');
-        const ic = iconUpgrade(tw.type, p, i + 1);
+        const ic = iconUpgrade(ty, p, i + 1);
         const icBox = h('div', 'p-ic');
         icBox.append(copyCanvas(ic.canvas, 2));
         const txt = h('div', 'p-tx');
         txt.append(h('div', 'p-tn', td.name));
-        const price = this.tierPrice(tw.type, p, i, info);
+        const price = this.tierPrice(ty, p, i, info);
         const st = h('div', 'p-ts');
         if (owned) { st.append(uiIcon('check', 2), h('span', '', t('panel.owned'))); }
         else if (closed) st.append(h('span', 'closed-t', t('panel.pathClosed')));

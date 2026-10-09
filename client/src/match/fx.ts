@@ -1,18 +1,19 @@
 /**
- * Effekte aus Sim-Events (Runde 11 / P3): Partikel, Explosionen, Ringe, Blitzlinien, schwebende Zahlen.
- * Alles in ganzen Pixeln der 640 x 360-Karte. Effekte sind reine Anzeige und lesen nie in den Sim-Zustand hinein.
+ * Effekte aus Sim-Events (Runde 11 / P3): P2-Effektsprites (Explosion, Platzen, Nova, Status, Puffs, Faehigkeiten) plus
+ * kleine Partikel und schwebende Zahlen. Alles in ganzen Pixeln der 640 x 360-Karte; reine Anzeige, liest nie in die Sim hinein.
  */
 import { Container, Sprite, Texture } from 'pixi.js';
-import { Buf, C, NAME_OF, rng } from '../pixel/map/buf';
-import { PAL } from '../pixel/palette';
-import { explosionSprite, ringSprite } from './sprites';
-import { pixText } from './pixfont';
+import { C, NAME_OF, rng } from '../pixel/map/buf';
+import { PAL, type PalName } from '../pixel/palette';
+import type { EnemyType } from '../sim';
+import { fx as P2, ringSprite, pixelText, EXPLOSION_FRAMES, POP_FRAMES, NOVA_FRAMES, PUFF_FRAMES, FLARE_FRAMES, ZERO_FRAMES, BEAM_FRAMES, PLATE_FRAMES, STATUS_FRAMES, type Spr } from './sprites';
 import { tex } from './textures';
 
 export interface Fx { age: number; life: number; node: Container; update(dt: number): void }
 
 const hex = (c: number): number => parseInt(PAL[NAME_OF(c)].slice(1), 16);
 const R = rng(1234);
+const PER = 3; // Ticks je Effekt-Bild (20 fps)
 
 export class FxLayer {
   readonly node = new Container();
@@ -51,6 +52,28 @@ export class FxLayer {
     this.flashNode.alpha = a;
   }
 
+  /** Sprite-Animation: frames Bilder, je PER Ticks, an Weltposition; `get` liefert das Bild. */
+  anim(x: number, y: number, frames: number, get: (f: number) => Spr, opts: { per?: number; loop?: number; follow?: () => { x: number; y: number } | null; alpha?: number } = {}): Fx {
+    const per = opts.per ?? PER, loops = opts.loop ?? 1;
+    const node = new Container();
+    const s = new Sprite();
+    node.addChild(s);
+    const fx: Fx = {
+      age: 0, life: frames * per * loops, node,
+      update: () => {
+        const f = Math.floor(fx.age / per) % frames;
+        const sp = get(f);
+        let px = x, py = y;
+        if (opts.follow) { const p = opts.follow(); if (!p) { fx.age = fx.life; return; } px = p.x; py = p.y; }
+        s.texture = tex(sp.canvas);
+        s.position.set(Math.round(px) - sp.ax, Math.round(py) - sp.ay);
+        if (opts.alpha !== undefined) s.alpha = opts.alpha;
+      },
+    };
+    fx.update(0);
+    return this.add(fx);
+  }
+
   /** Funken/Scherben: n kleine Quadrate in den angegebenen Farben, mit Schwerkraft. */
   burst(x: number, y: number, cols: number[], n: number, speed = 1.4, size = 2, gravity = 0.06, life = 22): void {
     const node = new Container();
@@ -75,25 +98,22 @@ export class FxLayer {
     });
   }
 
-  explosion(x: number, y: number, radius: number, kind: string): void {
-    const node = new Container();
-    const s = new Sprite();
-    s.anchor.set(0, 0);
-    node.addChild(s);
-    const frames = 5, per = 3;
-    const fx: Fx = {
-      age: 0, life: frames * per, node,
-      update: (dt) => {
-        void dt;
-        const f = Math.min(frames - 1, Math.floor(fx.age / per));
-        const sp = explosionSprite(f, radius * (kind === 'mini' ? 1 : 1));
-        s.texture = tex(sp.canvas);
-        s.position.set(Math.round(x) - sp.ax, Math.round(y) - sp.ay);
-      },
-    };
-    fx.update(0);
-    this.add(fx);
-    if (kind !== 'mini') this.burst(x, y, [C.amber, C.orange, C.stone], 8, 1.8, 2, 0.05, 18);
+  explosion(x: number, y: number, radius: number, kind: 'bomb' | 'mini' | 'star' | 'quake'): void {
+    this.anim(x, y, EXPLOSION_FRAMES, (f) => P2.explosion(kind, f, Math.max(6, Math.round(radius))));
+    if (kind === 'bomb' || kind === 'star') this.burst(x, y, [C.amber, C.orange, C.stone], 6, 1.8, 2, 0.05, 18);
+  }
+
+  pop(x: number, y: number, etype: EnemyType): void {
+    this.anim(x, y, POP_FRAMES, (f) => P2.popShards(etype, f));
+  }
+
+  nova(x: number, y: number, radius: number): void {
+    this.anim(x, y, NOVA_FRAMES, (f) => P2.nova(f, Math.max(8, Math.round(radius))), { per: 4 });
+  }
+
+  /** Dust/Funken beim Kauf (path null) bzw. Upgrade (Pfadfarbe) */
+  puff(x: number, y: number, path: number | null): void {
+    this.anim(x, y, PUFF_FRAMES, (f) => P2.puff(f, path), { per: 2 });
   }
 
   ring(x: number, y: number, r0: number, r1: number, col: number, life = 14): void {
@@ -115,56 +135,45 @@ export class FxLayer {
     this.add(fx);
   }
 
-  /** Blitzlinie ueber mehrere Punkte (Pixel-Linien mit Zickzack), kurz sichtbar. */
-  bolt(points: [number, number][], col = C.yellow): void {
+  /** Blitzkette: Pixel-Linie durch die Punkte (Weltkoordinaten), zwei wechselnde Bilder. */
+  bolt(points: [number, number][]): void {
     if (points.length < 2) return;
-    const xs = points.map((p) => p[0]), ys = points.map((p) => p[1]);
-    const x0 = Math.floor(Math.min(...xs)) - 4, y0 = Math.floor(Math.min(...ys)) - 4;
-    const w = Math.ceil(Math.max(...xs)) - x0 + 5, h = Math.ceil(Math.max(...ys)) - y0 + 5;
-    const make = (): Buf => {
-      const b = new Buf(Math.max(1, w), Math.max(1, h));
-      for (let i = 1; i < points.length; i++) {
-        const [ax, ay] = points[i - 1], [bx, by] = points[i];
-        const segs = Math.max(2, Math.round(Math.hypot(bx - ax, by - ay) / 6));
-        let px = ax, py = ay;
-        for (let k = 1; k <= segs; k++) {
-          const t = k / segs;
-          const nx = ax + (bx - ax) * t + (k < segs ? (R() - 0.5) * 6 : 0), ny = ay + (by - ay) * t + (k < segs ? (R() - 0.5) * 6 : 0);
-          b.line(px - x0, py - y0, nx - x0, ny - y0, C.white);
-          b.set(px - x0 + 1, py - y0, col); b.set(px - x0 - 1, py - y0, col);
-          px = nx; py = ny;
-        }
-      }
-      return b;
-    };
-    const frames = [make().toCanvas(), make().toCanvas()];
+    const frames = [P2.boltLine(points, 0), P2.boltLine(points, 1)];
     const node = new Container();
-    const s = new Sprite(tex(frames[0]));
-    s.position.set(x0, y0);
+    const s = new Sprite(tex(frames[0].canvas));
     node.addChild(s);
-    this.add({ age: 0, life: 9, node, update: function () { s.texture = tex(frames[Math.floor(this.age / 2) % 2]); s.alpha = this.age > 6 ? 0.5 : 1; } });
+    this.add({
+      age: 0, life: 9, node,
+      update: function () {
+        const sp = frames[Math.floor(this.age / 2) % 2];
+        s.texture = tex(sp.canvas);
+        s.position.set(-sp.ax, -sp.ay);
+        s.alpha = this.age > 6 ? 0.5 : 1;
+      },
+    });
   }
 
-  /** Schwebender Text (Pixelschrift), steigt auf und blendet aus. */
+  /** Schwebender Text (Pixelschrift von P2), steigt auf und blendet aus. */
   float(x: number, y: number, text: string, col: number, life = 40, rise = 0.35): void {
-    const t = pixText(text, col);
+    const t = pixelText(text, NAME_OF(col) as PalName);
     const s = new Sprite(tex(t.canvas));
     const node = new Container();
     node.addChild(s);
-    const px = Math.round(x - t.w / 2);
     this.add({
       age: 0, life, node,
       update: function () {
-        s.position.set(px, Math.round(y - this.age * rise));
+        s.position.set(Math.round(x) - t.ax, Math.round(y - this.age * rise) - t.ay);
         if (this.age > life * 0.6) s.alpha = 1 - (this.age - life * 0.6) / (life * 0.4);
       },
     });
   }
 
-  /** Beliebiger Sprite fuer eine feste Zeit (z. B. Staubwolke) mit eigener Updatefunktion */
+  /** Freies Gebilde mit eigener Updatefunktion */
   custom(life: number, init: (node: Container) => (age: number) => void): void {
     const node = new Container();
     const upd = init(node);
     this.add({ age: 0, life, node, update: function () { upd(this.age); } });
   }
 }
+
+export const FRAMES = { FLARE_FRAMES, ZERO_FRAMES, BEAM_FRAMES, PLATE_FRAMES, STATUS_FRAMES, PER };

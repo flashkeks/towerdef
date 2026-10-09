@@ -10,9 +10,9 @@ import { meadowArt } from '../pixel/map/compose';
 import { flagFrame, MILL_STEPS, WATER_FRAMES, windmillBlades } from '../pixel/map/paint';
 import { PAL } from '../pixel/palette';
 import { type EnemyState, type EnemyType, type GameState, type ProjectileState, type SimEvent, type TowerState } from '../sim';
-import { FxLayer } from './fx';
+import { FxLayer, FRAMES } from './fx';
 import { footMilli } from './info';
-import { enemySprite, explosionSprite, heroSprite, projectileSprite, ringSprite, towerSprite, type Spr } from './sprites';
+import { discSprite, enemySprite, fx as P2, heroSprite, projectileSprite, ringSprite, shadowSprite, heroMuzzle, towerMuzzle, towerSprite, type HeroFrame, type Spr, type TowerFrame } from './sprites';
 import { tex } from './textures';
 import { PATH } from '../pixel/map/layout';
 
@@ -26,22 +26,11 @@ const SHARD_COL: Record<EnemyType, number[]> = {
   ironshell: [C.stone, C.silver, C.slate], ember: [C.orange, C.yellow, C.red], brute: [C.slate, C.dusk, C.stone], leviathan: [C.navy, C.stone, C.sky],
 };
 
-interface TowerView { spr: Sprite; shadow: Sprite; key: string; drop: number; up: number }
-interface EnemyView { spr: Sprite; shadow: Sprite; key: string; px: number; py: number; cx: number; cy: number; flash: number; bar?: Sprite; barBg?: Sprite }
+interface TowerView { spr: Sprite; shadow: Sprite; key: string; drop: number; up: number; tiers: string }
+interface EnemyView { spr: Sprite; shadow: Sprite; key: string; px: number; py: number; cx: number; cy: number; flash: number; flip: boolean; bar?: Sprite; barBg?: Sprite }
 interface ProjView { spr: Sprite; shadow?: Sprite; key: string; px: number; py: number; cx: number; cy: number }
 
-function shadowCanvas(rx: number, ry: number): HTMLCanvasElement {
-  const b = new Buf(rx * 2 + 3, ry * 2 + 3);
-  b.ellipse(rx + 1, ry + 1, rx, ry, C.ink);
-  return b.toCanvas();
-}
-const shadows = new Map<string, HTMLCanvasElement>();
-const shadowTex = (rx: number, ry: number): Texture => {
-  const k = `${rx}x${ry}`;
-  let c = shadows.get(k);
-  if (!c) { c = shadowCanvas(rx, ry); shadows.set(k, c); }
-  return tex(c);
-};
+const shadowTex = (w: number, h: number): Texture => tex(shadowSprite(w, h).canvas);
 
 function glowCanvas(r: number, col: number): HTMLCanvasElement {
   const b = new Buf(r * 2 + 1, r * 2 + 1);
@@ -207,9 +196,9 @@ export class Renderer {
     this.ghost.position.set(x - g.spr.ax, y - g.spr.ay);
     this.ghost.alpha = 0.72;
     this.ghost.tint = g.ok ? 0xffffff : hex(C.coral);
-    this.ghostShadow.texture = shadowTex(g.foot, Math.max(2, Math.round(g.foot * 0.45)));
-    this.ghostShadow.alpha = 0.35;
-    this.ghostShadow.position.set(x - g.foot - 1, y - Math.round(g.foot * 0.45) - 1);
+    this.ghostShadow.texture = shadowTex(16, 5);
+    this.ghostShadow.alpha = 1;
+    this.ghostShadow.position.set(x - 9, y - 3);
     this.showRange(x, y, g.range, g.ok ? C.white : C.red, 'ghost');
   }
 
@@ -300,19 +289,19 @@ export class Renderer {
 
   private towerSpr(t: TowerState): Spr {
     const atk = t.attackTick;
-    const frame = atk > 0 ? (atk < 4 ? 'atk0' : atk < 6 ? 'atk1' : atk < 11 ? 'atk2' : 'atk3') : `idle${(Math.floor(this.now / 166) + t.id) & 3}`;
-    return t.type === 'wren' ? heroSprite(t.heroLevel, t.facing, frame) : towerSprite(t.type, t.tiers, t.facing, frame);
+    const frame = (atk > 0 ? (atk < 4 ? 'atk0' : atk < 6 ? 'atk1' : atk < 11 ? 'atk2' : 'atk3') : `idle${(Math.floor(this.now / 166) + t.id) & 3}`) as TowerFrame;
+    return t.type === 'wren' ? heroSprite(t.heroLevel, t.facing, frame as HeroFrame) : towerSprite(t.type, t.tiers, t.facing, frame);
   }
 
   private syncTower(t: TowerState): void {
     let v = this.towers.get(t.id);
     const x = Math.round(t.x / 1000), y = Math.round(t.y / 1000);
     if (!v) {
-      const shadow = new Sprite(shadowTex(footMilli(t.type) / 1000 | 0, 4));
+      const shadow = new Sprite(shadowTex(16, 5));
       this.shadowC.addChild(shadow);
       const spr = new Sprite();
       this.worldC.addChild(spr);
-      v = { spr, shadow, key: '', drop: 8, up: 0 };
+      v = { spr, shadow, key: '', drop: 8, up: 0, tiers: t.tiers.join('') };
       this.towers.set(t.id, v);
     }
     const s = this.towerSpr(t);
@@ -323,10 +312,7 @@ export class Renderer {
     if (v.up > 0) { dx = v.up % 2 < 1 ? 0 : 0; v.up -= 0.5; dy -= v.up > 3 ? 2 : v.up > 0 ? 1 : 0; }
     v.spr.position.set(x - s.ax + dx, y - s.ay + dy);
     v.spr.zIndex = y;
-    const rx = Math.round(footMilli(t.type) / 1000);
-    v.shadow.texture = shadowTex(rx + 2, Math.max(2, Math.round(rx * 0.45)));
-    v.shadow.alpha = 0.35;
-    v.shadow.position.set(x - rx - 3, y - Math.round(rx * 0.45) - 1);
+    v.shadow.position.set(x - 9, y - 3);
   }
 
   private syncEnemy(e: EnemyState, newTick: boolean, alpha: number): void {
@@ -337,26 +323,26 @@ export class Renderer {
       this.shadowC.addChild(shadow);
       const spr = new Sprite();
       this.worldC.addChild(spr);
-      v = { spr, shadow, key: '', px: cx, py: cy, cx, cy, flash: 0 };
+      v = { spr, shadow, key: '', px: cx, py: cy, cx, cy, flash: 0, flip: false };
       this.enemies.set(e.id, v);
     } else if (newTick) {
+      if (Math.abs(cx - v.cx) > 0.001) v.flip = cx < v.cx;
       v.px = v.cx; v.py = v.cy; v.cx = cx; v.cy = cy;
     }
     const x = Math.round(v.px + (v.cx - v.px) * alpha), y = Math.round(v.py + (v.cy - v.py) * alpha);
     const hitFlash = this.now < v.flash;
     const fr = (Math.floor(this.now / (e.type === 'gold' ? 110 : 170)) + e.id) & 3;
     const camo = e.camo && !e.revealed;
-    const s = enemySprite(e.type, fr, { camo: e.camo, damageStage: e.damageStage, hitFlash });
+    const s = enemySprite(e.type, fr, { camo: e.camo, damageStage: e.damageStage, hitFlash, flip: v.flip });
     v.spr.texture = tex(s.canvas);
     v.spr.position.set(x - s.ax, y - s.ay + (e.type === 'leviathan' ? Math.round(Math.sin(this.now / 400) * 2) - 8 : 0));
     v.spr.zIndex = y + (e.type === 'leviathan' ? 40 : 0);
     v.spr.alpha = camo ? 0.55 + 0.2 * Math.sin(this.now / 90 + e.id) : 1;
     v.spr.tint = e.frozenTicks > 0 ? hex(C.ice) : e.stunTicks > 0 ? hex(C.yellow) : e.slowBp > 0 && e.slowTicks > 0 ? hex(C.silver) : 0xffffff;
-    const big = e.type === 'leviathan' ? 3 : e.type === 'brute' ? 1 : 0;
-    const rx = e.type === 'leviathan' ? 20 : e.type === 'brute' ? 8 : e.type === 'ironshell' ? 6 : 5;
-    v.shadow.texture = shadowTex(rx, 2 + big);
-    v.shadow.alpha = 0.3;
-    v.shadow.position.set(x - rx - 1, y + (e.type === 'leviathan' ? 8 : 1) - 2 - big);
+    const sw = e.type === 'leviathan' ? 40 : e.type === 'brute' ? 16 : 9, sh = e.type === 'leviathan' ? 10 : e.type === 'brute' ? 5 : 3;
+    v.shadow.texture = shadowTex(sw, sh);
+    v.shadow.alpha = e.type === 'leviathan' ? 0.8 : 1;
+    v.shadow.position.set(x - sw / 2 - 1, y - sh / 2 - 1 + (e.type === 'leviathan' ? 8 : 0));
     if (e.type === 'leviathan' || (e.type === 'brute' && e.hp < e.maxHp)) {
       if (!v.bar) {
         v.barBg = new Sprite(Texture.WHITE); v.barBg.tint = hex(C.ink); v.barBg.height = 4;
@@ -378,7 +364,7 @@ export class Renderer {
       const spr = new Sprite();
       this.projC.addChild(spr);
       v = { spr, key: '', px: cx, py: cy, cx, cy };
-      if (p.kind === 'bomb') { v.shadow = new Sprite(shadowTex(3, 1)); v.shadow.alpha = 0.4; this.shadowC.addChild(v.shadow); }
+      if (p.kind === 'bomb') { v.shadow = new Sprite(shadowTex(7, 3)); this.shadowC.addChild(v.shadow); }
       this.projs.set(p.id, v);
     } else if (newTick) {
       v.px = v.cx; v.py = v.cy; v.cx = cx; v.cy = cy;
@@ -388,11 +374,12 @@ export class Renderer {
     if (p.arc) lift = Math.sin((Math.min(10000, p.arc.t) / 10000) * Math.PI) * 26;
     const ang = Math.atan2(-p.vy, p.vx);
     const dir16 = ((Math.round((ang / (Math.PI * 2)) * 16) % 16) + 16) % 16;
-    const s = projectileSprite(p.kind, p.kind === 'bomb' ? 0 : dir16);
+    const s = projectileSprite(p.kind, p.kind === 'bomb' ? Math.floor(this.now / 70) & 15 : dir16);
     v.spr.texture = tex(s.canvas);
     v.spr.position.set(Math.round(gx) - s.ax, Math.round(gy - lift) - s.ay);
     v.spr.zIndex = 0;
     if (v.shadow) v.shadow.position.set(Math.round(gx) - 4, Math.round(gy) - 2);
+    v.spr.zIndex = 100000;
   }
 
   /** Zustand fuer Event-Effekte (Turmposition beim Abschuss usw.) */
@@ -413,9 +400,9 @@ export class Renderer {
       case 'fire': {
         const t = this.latest?.towers.find((q) => q.id === ev.tower);
         if (t) {
-          const a = (t.facing * Math.PI) / 4;
+          const mz = t.type === 'wren' ? heroMuzzle(t.heroLevel, t.facing) : towerMuzzle(t.type, t.tiers, t.facing);
           const col = t.type === 'bombardier' ? [C.orange, C.stone, C.yellow] : t.type === 'frostcaller' ? [C.ice, C.white] : t.type === 'wren' ? [C.yellow, C.amber] : [C.sand, C.white];
-          fx.burst(m(t.x) + Math.cos(a) * 10, m(t.y) - 12 - Math.sin(a) * 7, col, 3, 0.9, 1, 0.02, 8);
+          fx.burst(m(t.x) + mz.x, m(t.y) + mz.y, col, 3, 0.9, 1, 0.02, 8);
         }
         break;
       }
@@ -423,68 +410,76 @@ export class Renderer {
         const x = m(ev.x), y = m(ev.y);
         const e = this.enemies.get(ev.enemy);
         if (e) e.flash = this.now + 90;
-        fx.burst(x, y, [C.white, C.yellow], 3, 1.1, 1, 0.03, 8);
-        if (ev.dmg >= 5) fx.float(x, y - 8, String(ev.dmg), C.white, 26, 0.5);
+        fx.burst(x, y - 3, [C.white, C.yellow], 3, 1.1, 1, 0.03, 8);
+        if (ev.dmg >= 5) fx.float(x, y - 12, String(ev.dmg), C.white, 26, 0.5);
         break;
       }
       case 'blocked': {
-        fx.burst(m(ev.x), m(ev.y), [C.silver, C.stone], 4, 1.4, 1, 0.05, 10);
-        fx.float(m(ev.x), m(ev.y) - 8, ev.reason === 'armor' ? 'TINK' : 'IMMUNE', C.silver, 22, 0.3);
+        fx.burst(m(ev.x), m(ev.y) - 3, [C.silver, C.stone], 4, 1.4, 1, 0.05, 10);
+        fx.float(m(ev.x), m(ev.y) - 12, ev.reason === 'armor' ? 'TINK' : 'IMMUNE', C.silver, 22, 0.3);
         break;
       }
       case 'pop': {
         const x = m(ev.x), y = m(ev.y);
-        fx.burst(x, y, SHARD_COL[ev.etype], ev.etype === 'brute' || ev.etype === 'leviathan' ? 14 : 8, 1.6, 2, 0.07, 22);
-        fx.ring(x, y, 2, ev.etype === 'brute' ? 12 : 8, C.white, 8);
-        if (ev.cash >= 3) fx.float(x, y - 6, `+${ev.cash}`, C.yellow, 30, 0.4);
+        fx.pop(x, y - 4, ev.etype);
+        if (ev.etype === 'brute' || ev.etype === 'leviathan') fx.burst(x, y - 6, SHARD_COL[ev.etype], 12, 1.8, 2, 0.07, 22);
+        if (ev.cash >= 3) fx.float(x, y - 14, `+${ev.cash}`, C.yellow, 30, 0.4);
         break;
       }
       case 'explode': {
         const r = m(ev.radius);
         fx.explosion(m(ev.x), m(ev.y), r, ev.kind);
-        if (ev.kind === 'quake') { fx.shake.t = 14; fx.shake.amp = 2; fx.ring(m(ev.x), m(ev.y), 4, r, C.tan, 18); }
+        if (ev.kind === 'quake') { fx.shake.t = 14; fx.shake.amp = 2; }
         else if (ev.kind === 'star') { fx.shake.t = 8; fx.shake.amp = 1; }
         break;
       }
-      case 'nova': fx.ring(m(ev.x), m(ev.y), 3, m(ev.radius), C.ice, 14); fx.burst(m(ev.x), m(ev.y), [C.ice, C.white, C.sky], 8, 1.4, 2, 0.04, 16); break;
-      case 'chain': fx.bolt(ev.points.map(([x, y]) => [m(x), m(y)] as [number, number]), C.yellow); break;
+      case 'nova': fx.nova(m(ev.x), m(ev.y), m(ev.radius)); break;
+      case 'chain': fx.bolt(ev.points.map(([x, y]) => [m(x), m(y)] as [number, number])); break;
       case 'status': {
-        const p = this.enemyPos(ev.enemy);
-        if (!p) break;
-        if (ev.kind === 'freeze') fx.burst(p.x, p.y - 4, [C.ice, C.white], 6, 1, 1, 0.02, 14);
-        else if (ev.kind === 'stun') fx.burst(p.x, p.y - 10, [C.yellow], 3, 0.6, 1, 0, 14);
-        else if (ev.kind === 'reveal') fx.burst(p.x, p.y - 4, [C.yellow, C.white], 5, 0.8, 1, -0.01, 16);
+        const id = ev.enemy;
+        const e = this.enemies.get(id);
+        if (!e) break;
+        const kind = ev.kind;
+        const etype = this.latest?.enemies.find((q) => q.id === id)?.type ?? 'red';
+        const dur = kind === 'freeze' ? 60 : kind === 'stun' ? 30 : kind === 'burn' ? 36 : kind === 'reveal' ? 20 : 16;
+        fx.anim(0, 0, FRAMES.STATUS_FRAMES, (f) => P2.status(kind, f, etype), {
+          per: 4, loop: Math.max(1, Math.round(dur / (FRAMES.STATUS_FRAMES * 4))),
+          follow: () => { const v = this.enemies.get(id); return v ? { x: v.cx, y: v.cy - (kind === 'freeze' ? 6 : etype === 'leviathan' ? 40 : etype === 'brute' ? 24 : 16) } : null; },
+        });
         break;
       }
       case 'leak': {
-        fx.shake.t = 10; fx.shake.amp = 2; fx.flash(C.red, 0.35);
-        fx.float(626, 150, `-${ev.lives}`, C.red, 40, 0.5);
+        fx.shake.t = 10; fx.shake.amp = 2; fx.flash(C.red, 0.3);
+        fx.anim(628, 160, 6, (f) => P2.leak(f), { per: 3 });
+        fx.float(618, 140, `-${ev.lives}`, C.red, 40, 0.5);
         break;
       }
       case 'place': {
         const t = this.latest?.towers.find((q) => q.id === ev.tower);
-        if (t) { fx.burst(m(t.x), m(t.y), [C.sand, C.tan, C.peach], 10, 1.2, 2, 0.05, 16); fx.ring(m(t.x), m(t.y), 2, 14, C.white, 10); }
+        if (t) fx.puff(m(t.x), m(t.y) - 4, null);
         break;
       }
       case 'upgrade': {
         const t = this.latest?.towers.find((q) => q.id === ev.tower);
         const v = this.towers.get(ev.tower);
-        if (v) v.up = 6;
+        const prev = v?.tiers ?? '000';
+        const path = ev.tiers.findIndex((x, i) => x > Number(prev[i]));
+        if (v) { v.up = 6; v.tiers = ev.tiers.join(''); }
         if (t) {
-          fx.burst(m(t.x), m(t.y) - 10, [C.yellow, C.amber, C.white], 12, 1.5, 2, -0.01, 22);
-          fx.ring(m(t.x), m(t.y), 3, 18, C.yellow, 12);
-          fx.float(m(t.x), m(t.y) - 30, 'UP!', C.yellow, 30, 0.4);
+          fx.puff(m(t.x), m(t.y) - 4, path >= 0 ? path : null);
+          fx.ring(m(t.x), m(t.y), 3, 20, C.yellow, 12);
+          fx.float(m(t.x), m(t.y) - 38, 'UP!', C.yellow, 30, 0.4);
         }
         break;
       }
       case 'sell': {
         const t = this.latest?.towers.find((q) => q.id === ev.tower);
-        if (t) { fx.burst(m(t.x), m(t.y) - 6, [C.amber, C.yellow], 10, 1.4, 2, 0.06, 22); fx.float(m(t.x), m(t.y) - 16, `+${ev.cash}`, C.yellow, 36, 0.4); }
+        if (t) { fx.puff(m(t.x), m(t.y) - 4, null); fx.burst(m(t.x), m(t.y) - 10, [C.amber, C.yellow], 10, 1.4, 2, 0.06, 22); fx.float(m(t.x), m(t.y) - 26, `+${ev.cash}`, C.yellow, 36, 0.4); }
         break;
       }
       case 'heroLevel': {
         const t = this.latest?.towers.find((q) => q.id === ev.tower);
-        if (t) { fx.ring(m(t.x), m(t.y), 4, 30, C.yellow, 20); fx.burst(m(t.x), m(t.y) - 12, [C.yellow, C.white, C.amber], 16, 1.8, 2, -0.02, 30); fx.float(m(t.x), m(t.y) - 34, 'LEVEL UP', C.yellow, 50, 0.3); }
+        if (t) { fx.ring(m(t.x), m(t.y), 4, 30, C.yellow, 20); fx.burst(m(t.x), m(t.y) - 16, [C.yellow, C.white, C.amber], 16, 1.8, 2, -0.02, 30); fx.float(m(t.x), m(t.y) - 44, 'LEVEL UP', C.yellow, 50, 0.3); }
         break;
       }
       case 'ability': this.abilityFx(ev.id, ev.x, ev.y); break;
@@ -492,7 +487,10 @@ export class Renderer {
       case 'bossStage': {
         const p = this.enemyPos(ev.enemy);
         fx.shake.t = 16; fx.shake.amp = 2; fx.flash(C.white, 0.35);
-        if (p) fx.burst(p.x, p.y - 12, [C.slate, C.stone, C.silver, C.navy], 18, 2.2, 3, 0.08, 28);
+        if (p) {
+          fx.anim(p.x, p.y - 20, FRAMES.PLATE_FRAMES, (f) => P2.bossPlate(f, ev.stage % 2 ? 1 : -1), { per: 3 });
+          fx.burst(p.x, p.y - 20, [C.slate, C.stone, C.silver, C.navy], 14, 2.2, 3, 0.08, 28);
+        }
         break;
       }
       default: break;
@@ -502,29 +500,28 @@ export class Renderer {
   private abilityFx(id: string, x?: number, y?: number): void {
     const fx = this.fx;
     if (id === 'arrowRain') {
-      fx.flash(C.leaf, 0.12);
-      fx.custom(150, (node) => {
-        const arrows = Array.from({ length: 60 }, () => {
-          const s = new Sprite(Texture.WHITE); s.width = 1; s.height = 5; s.tint = hex(C.sand); node.addChild(s);
-          return { s, x: R() * VIEW_W, y: -R() * 340, v: 3 + R() * 2 };
-        });
-        return (age) => { for (const a of arrows) { const yy = a.y + age * a.v * 2.4; a.s.position.set(Math.round(a.x), Math.round(yy)); a.s.visible = yy > 0 && yy < VIEW_H; } };
-      });
+      fx.flash(C.leaf, 0.1);
+      // um jeden Ranger faellt Pfeilregen, solange die Sim den Regen laufen laesst
+      for (const t of this.latest?.towers ?? []) {
+        if (t.type !== 'ranger') continue;
+        fx.anim(t.x / 1000, t.y / 1000, 6, (f) => P2.arrowRain(f, Math.round(t.range / 1000)), { per: 3, loop: 40 });
+      }
     } else if (id === 'absoluteZero') {
-      fx.flash(C.white, 0.7);
-      fx.ring(320, 180, 10, 420, C.ice, 40);
-      fx.burst(320, 180, [C.ice, C.white, C.sky], 40, 4, 2, 0.02, 40);
+      fx.flash(C.white, 0.6);
+      fx.anim(0, 0, FRAMES.ZERO_FRAMES, (f) => P2.absoluteZero(f), { per: 4, loop: 1 });
+      fx.anim(0, 0, 1, () => P2.absoluteZero(7), { per: 1, loop: 1 });
     } else if (id === 'flare') {
-      fx.flash(C.yellow, 0.4);
-      if (x !== undefined && y !== undefined) { fx.ring(x / 1000, y / 1000, 4, 40, C.yellow, 18); fx.burst(x / 1000, y / 1000, [C.yellow, C.white, C.amber], 24, 2.4, 2, 0.01, 30); }
+      fx.flash(C.yellow, 0.35);
+      if (x !== undefined && y !== undefined) fx.anim(x / 1000, y / 1000, FRAMES.FLARE_FRAMES, (f) => P2.flare(f, 40), { per: 4 });
     } else if (id === 'dawnbreak') {
-      fx.flash(C.yellow, 0.6);
-      fx.custom(40, (node) => {
-        const b = new Buf(VIEW_W, VIEW_H);
-        for (let i = 1; i < PATH.length; i++) for (let o = -3; o <= 3; o++) b.line(PATH[i - 1][0] + o * (PATH[i][1] === PATH[i - 1][1] ? 0 : 1), PATH[i - 1][1] + o * (PATH[i][1] === PATH[i - 1][1] ? 1 : 0), PATH[i][0] + o * (PATH[i][1] === PATH[i - 1][1] ? 0 : 1), PATH[i][1] + o * (PATH[i][1] === PATH[i - 1][1] ? 1 : 0), Math.abs(o) < 2 ? C.white : C.yellow);
-        const s = new Sprite(tex(b.toCanvas())); node.addChild(s);
-        return (age) => { s.alpha = Math.max(0, 1 - age / 40); };
-      });
+      fx.flash(C.yellow, 0.55);
+      for (let i = 1; i < PATH.length; i++) {
+        const [ax, ay] = PATH[i - 1], [bx, by] = PATH[i];
+        const vert = ax === bx;
+        const len = Math.abs(vert ? by - ay : bx - ax);
+        const sx = Math.min(ax, bx), sy = Math.min(ay, by);
+        fx.anim(sx, sy, FRAMES.BEAM_FRAMES, (f) => P2.dawnBeam(len, f, vert), { per: 3, loop: 4 });
+      }
     }
   }
 
@@ -538,17 +535,3 @@ export class Renderer {
   }
 }
 
-const discCache = new Map<string, Spr>();
-function discSprite(r: number, col: number): Spr {
-  const k = `${r}:${col}`;
-  let s = discCache.get(k);
-  if (!s) {
-    const S = r * 2 + 3;
-    const b = new Buf(S, S);
-    b.disc(S >> 1, S >> 1, r, col);
-    s = { canvas: b.toCanvas(), ax: S >> 1, ay: S >> 1 };
-    discCache.set(k, s);
-  }
-  return s;
-}
-void explosionSprite;

@@ -10,7 +10,7 @@ import { startMatch, type MatchResult, type StartOptions } from '../match/match'
 import { displayName } from '../match/info';
 import { HERO_TYPES, TOWER_TYPES } from '../match/tower-text';
 import { audio } from '../audio/engine';
-import { towerSprite, heroSprite } from '../match/sprites';
+import { heroPortrait, towerPortrait } from '../match/sprites';
 import { copyCanvas, uiIcon } from '../match/ui-icons';
 import './app.css';
 
@@ -33,7 +33,7 @@ export function startScreen(root: HTMLElement): Promise<Difficulty> {
     // Figuren
     const crew = h('div', 'app-crew');
     for (const ty of [...TOWER_TYPES, ...HERO_TYPES]) {
-      const s = ty === 'wren' ? heroSprite(1, 6, 'idle0') : towerSprite(ty, [0, 0, 0], 6, 'idle0');
+      const s = ty === 'wren' ? heroPortrait() : towerPortrait(ty);
       const c = h('div', 'app-crew-i');
       c.append(copyCanvas(s.canvas, 3), h('span', '', displayName(ty)));
       crew.append(c);
@@ -69,7 +69,7 @@ export function resultScreen(root: HTMLElement, r: MatchResult): Promise<'again'
     box.append(h('div', 'app-title', t(r.won ? 'result.title.won' : 'result.title.lost')), h('div', 'app-map', t('result.round', { n: r.round })));
     const pops = h('div', 'app-pops');
     for (const ty of [...TOWER_TYPES, ...HERO_TYPES]) {
-      const s = ty === 'wren' ? heroSprite(1, 6, 'idle0') : towerSprite(ty, [0, 0, 0], 6, 'idle0');
+      const s = ty === 'wren' ? heroPortrait() : towerPortrait(ty);
       const c = h('div', 'app-crew-i');
       c.append(copyCanvas(s.canvas, 2), h('span', '', displayName(ty)), h('b', 'num', String(r.pops[ty] ?? 0)));
       pops.append(c);

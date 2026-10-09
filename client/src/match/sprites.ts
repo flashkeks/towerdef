@@ -1,6 +1,10 @@
 /**
- * Adapter zwischen Renderer/UI und den Sprite-Quellen. Heute: Platzhalter (`placeholder-sprites.ts`).
- * Sobald P2 `pixel/sprites/index.ts` liefert, werden die Funktionen hier auf deren Signaturen umgebogen.
+ * Adapter zwischen Renderer/UI und den Sprite-Quellen. Die Figuren, Projektile, Icons und Effekte kommen von P2
+ * (`pixel/sprites/index.ts`); Ringe/Scheiben (Reichweite, Auswahl) zeichnet `rings.ts`.
  */
-export type { Spr } from './placeholder-sprites';
-export { towerSprite, heroSprite, enemySprite, projectileSprite, iconUpgrade, explosionSprite, ringSprite } from './placeholder-sprites';
+export type { Sprite as Spr, TowerFrame, HeroFrame } from '../pixel/sprites';
+export {
+  towerSprite, heroSprite, enemySprite, projectileSprite, iconUpgrade, iconAbility, towerMuzzle, heroMuzzle, towerPortrait, heroPortrait,
+  shadowSprite, fx, pixelText, EXPLOSION_FRAMES, NOVA_FRAMES, POP_FRAMES, PUFF_FRAMES, PLATE_FRAMES, FLARE_FRAMES, ZERO_FRAMES, BEAM_FRAMES, STATUS_FRAMES,
+} from '../pixel/sprites';
+export { ringSprite, discSprite } from './rings';
