@@ -19,17 +19,17 @@ function playRound1(g: Game) {
 }
 
 describe('Topf je Runde', () => {
-  it('(10 + 6 x Runde) x Schwierigkeit; Summe R1-20 Medium = 1.606', () => {
-    expect(towerXpPot(1, 'easy')).toBe(16);
-    expect(towerXpPot(1, 'medium')).toBe(17); // 16 x 1,1 = 17,6 -> 17
-    expect(towerXpPot(10, 'hard')).toBe(84);
+  it('(8 + 5 x Runde) x Schwierigkeit (Max: XP etwas runter); Summe R1-20 Medium ≈ 1.330', () => {
+    expect(towerXpPot(1, 'easy')).toBe(13);
+    expect(towerXpPot(1, 'medium')).toBe(14); // 13 x 1,1 = 14,3 -> 14
+    expect(towerXpPot(10, 'hard')).toBe(69); // 58 x 1,2 = 69,6
     let sum = 0;
     for (let r = 1; r <= 20; r++) sum += towerXpPot(r, 'medium');
-    expect(sum).toBeGreaterThan(1590);
-    expect(sum).toBeLessThanOrEqual(1606);
+    expect(sum).toBeGreaterThan(1310);
+    expect(sum).toBeLessThanOrEqual(1331);
   });
   it('Fast Learner (+20 %) hebt den Topf', () => {
-    expect(towerXpPot(10, 'medium', 2000)).toBe(Math.floor((70 * 11000 * 12000) / 1e8));
+    expect(towerXpPot(10, 'medium', 2000)).toBe(Math.floor((58 * 11000 * 12000) / 1e8));
     expect(towerXpPot(10, 'medium', 2000)).toBeGreaterThan(towerXpPot(10, 'medium'));
   });
 });

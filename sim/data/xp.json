@@ -1,6 +1,6 @@
 {
- "potBase": 10,
- "potPerRound": 6,
+ "potBase": 8,
+ "potPerRound": 5,
  "unlockCost": [
   100,
   250,

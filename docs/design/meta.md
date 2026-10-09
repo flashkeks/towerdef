@@ -68,7 +68,7 @@ Zurücksetzen des Baums: kostenlos, gibt alle Punkte zurück (Slice, später ggf
 ## Nachtrag Runde 11b (Max, 09.10.2026 abends) — gilt vor „Turm-XP“ oben
 
 **Turm-XP entsteht im Match, am Ende jeder Runde** (nicht mehr 1 XP je Pop + 20 je Kauf am Matchende):
-- Topf je Runde: `XP_r = (10 + 6 × Runde) × Schwierigkeit` (Easy 1,0 / Medium 1,1 / Hard 1,2). Summe R1–20 Medium ≈ 1.610.
+- Topf je Runde: `XP_r = (8 + 5 × Runde) × Schwierigkeit` (Easy 1,0 / Medium 1,1 / Hard 1,2). Summe R1–20 Medium ≈ 1.330 (Max 09.10.: nach erster Messung 10 + 6 × Runde ≈ 15 % runter).
 - Aufteilung auf die Turmtypen, die in der Runde standen: **50 % nach investiertem Geld** (Summe `spent` aller Türme dieses Typs
   / Summe aller Türme, ohne Held) und **50 % nach Schichten, die der Typ in dieser Runde geknackt hat**. Beispiel 10 Ranger
   (3.000) + 1 Bombardier (10.000), Pops 50/50: Ranger 0,5 × 23 % + 0,5 × 50 % ≈ 37 %, Bombardier ≈ 63 %; macht der Bombardier
