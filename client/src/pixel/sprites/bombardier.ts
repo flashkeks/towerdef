@@ -57,8 +57,14 @@ export function drawBombardier(t: Tiers, d: Dir, p: Pose): TowerLayers {
   s.rect(ox - 5, G - 5, 11, 2, 'bark');
   s.rect(ox - 5, G - 5, 11, 1, 'wood');
   s.rect(ox - 1, G - 5, 3, 2, 'amber'); s.px(ox, G - 4, 'yellow');
-  // Taschen
+  // Taschen + schwingende Taschenbombe am Gürtel
   s.rect(ox + 3, G - 8, 2, 2, 'bark');
+  {
+    const sw = [0, 1, 1, 0][ph];
+    s.line(ox - 4, G - 4, ox - 5 - sw, G - 3, 'tan');
+    s.ball(ox - 5 - sw, G - 2, 1.6, 1.6, ['ink', 'night', 'dusk']);
+    s.px(ox - 5 - sw, G - 4 + (ph === 3 ? 0 : 0), ph % 2 ? 'yellow' : 'orange');
+  }
   if (B >= 3) {
     // Patronengurt schräg über der Brust
     for (let i = 0; i < 9; i++) {

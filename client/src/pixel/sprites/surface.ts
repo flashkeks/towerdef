@@ -124,6 +124,16 @@ export class Surface {
   ellipse(cx: number, cy: number, rx: number, ry: number, c: Pix): this {
     return this.ellipseFn(cx, cy, rx, ry, () => c);
   }
+  /** Loescht eine gefuellte Ellipse (macht Ringe, Aushoehlungen). */
+  erase(cx: number, cy: number, rx: number, ry: number): this {
+    const x0 = Math.floor(cx - rx - 1), x1 = Math.ceil(cx + rx + 1), y0 = Math.floor(cy - ry - 1), y1 = Math.ceil(cy + ry + 1);
+    for (let y = y0; y <= y1; y++)
+      for (let x = x0; x <= x1; x++) {
+        const nx = (x + 0.5 - cx) / rx, ny = (y + 0.5 - cy) / ry;
+        if (nx * nx + ny * ny <= 1 && this.inb(x, y)) this.g[y * this.w + x] = null;
+      }
+    return this;
+  }
   /** Ellipse mit Licht von oben links (3 Toene). `hi` setzt einen weissen Glanzpunkt. */
   ball(cx: number, cy: number, rx: number, ry: number, ramp: Ramp, hi = false): this {
     this.ellipseFn(cx, cy, rx, ry, (_x, _y, nx, ny) => {
