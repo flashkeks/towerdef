@@ -1,6 +1,6 @@
 # Status (global)
 
-Arbeitsauftrag: [`/run.md`](../run.md) (**Runde 11: Neustart wie Bloons TD 6 als Vertical Slice — abgeschlossen 09.10.2026**, Bericht unten; Runde 12 wartet auf Max' Rückmeldung). **Verbindlich zuerst:** [design/ENTSCHEIDUNGEN.md](design/ENTSCHEIDUNGEN.md), Abschnitt „Neustart als BTD6-artiges Spiel (09.10.2026)“, dann [games/btd6/](games/btd6/) und [design/schnittstelle.md](design/schnittstelle.md). **Jede Sitzung liest danach diese Datei.**
+Arbeitsauftrag: [`/run.md`](../run.md) (**Runde 12: Reiter, Embers, Store und Powers** — Spezifikation [design/powers.md](design/powers.md)). Runde 11 (+11b Turm-XP im Match, +11c BTD6-Panel) abgeschlossen, Bericht unten, Auftrag in [archiv/run-runde11.md](archiv/run-runde11.md). **Verbindlich zuerst:** [design/ENTSCHEIDUNGEN.md](design/ENTSCHEIDUNGEN.md), dann [design/schnittstelle.md](design/schnittstelle.md). **Jede Sitzung liest danach diese Datei.**
 Frühere Aufträge: [archiv/run-runde1.md](archiv/run-runde1.md), [archiv/run-runde2.md](archiv/run-runde2.md), [archiv/run-runde3.md](archiv/run-runde3.md), [archiv/run-runde4.md](archiv/run-runde4.md), [archiv/run-runde5.md](archiv/run-runde5.md), [archiv/run-runde6.md](archiv/run-runde6.md), [archiv/run-runde7.md](archiv/run-runde7.md), [archiv/run-runde8-verworfen.md](archiv/run-runde8-verworfen.md), [archiv/run-runde8.md](archiv/run-runde8.md), [archiv/run-runde9.md](archiv/run-runde9.md).
 
 
