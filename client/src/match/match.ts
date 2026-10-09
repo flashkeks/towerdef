@@ -15,6 +15,7 @@ import { Renderer } from './renderer';
 import { iconUpgrade, heroPortrait, towerPortrait, heroSprite, towerSprite } from './sprites';
 import { ABILITY_TEXT, HERO_TYPES, HOTKEY, ROLE, TOWER_TYPES } from './tower-text';
 import { copyCanvas, uiIcon } from './ui-icons';
+import { volumeButton } from '../ui/volume';
 import './match.css';
 
 export interface StartOptions {
@@ -82,7 +83,7 @@ class Match {
   private speedBtns: HTMLButtonElement[] = [];
   private autoBtn = h('button', 'm-toggle');
   private pauseBtn = h('button', 'm-icon-btn');
-  private muteBtn = h('button', 'm-icon-btn');
+  private vol = volumeButton(audio.volumeApi, (m) => uiIcon(m ? 'mute' : 'sound', 2), 'm-vol');
   private placing: (TowerType | HeroType) | null = null;
   private mouse: { x: number; y: number } | null = null;
   private speed = 1;
@@ -129,7 +130,7 @@ class Match {
     this.ro.observe(this.board);
     this.fit();
     audio.attach();
-    audio.setMusic(true);
+    audio.setTheme('match');
     window.addEventListener('keydown', this.keyHandler);
     this.bindBoard();
     if (this.opts.debug) (window as unknown as { __dw: unknown }).__dw = { game: this.game, r: this.r, match: this, audio, DATA };
@@ -150,13 +151,10 @@ class Match {
     const cash = h('div', 'm-stat cash');
     cash.append(uiIcon('coin', 3), this.cashEl);
     const map = h('div', 'm-mapname', 'Lanternfall Meadow');
-    this.muteBtn.append(uiIcon(audio.muted ? 'mute' : 'sound', 2));
-    this.muteBtn.title = t('match.mute') + ' (M)';
-    this.muteBtn.onclick = () => this.toggleMute();
     this.pauseBtn.append(uiIcon('pause', 2));
     this.pauseBtn.title = t('match.pause') + ' (P)';
     this.pauseBtn.onclick = () => this.setPaused(!this.paused);
-    top.append(lives, cash, this.roundEl, h('div', 'grow'), map, this.muteBtn, this.pauseBtn);
+    top.append(lives, cash, this.roundEl, h('div', 'grow'), map, this.vol.el, this.pauseBtn);
 
     const side = h('aside', 'm-side pxbox');
     side.append(h('div', 'm-side-h', t('match.towers')));
@@ -295,8 +293,8 @@ class Match {
     }
   }
   private toggleMute(): void {
-    const mu = audio.toggleMute();
-    this.muteBtn.replaceChildren(uiIcon(mu ? 'mute' : 'sound', 2));
+    audio.toggleQuiet();
+    this.vol.refresh();
   }
 
   private beginPlace(ty: TowerType | HeroType | null): void {
@@ -520,7 +518,8 @@ class Match {
     cancelAnimationFrame(this.raf);
     window.removeEventListener('keydown', this.keyHandler);
     this.ro?.disconnect();
-    audio.setMusic(false);
+    this.vol.close();
+    audio.setTheme(null);
     const st = this.game.state;
     const result: MatchResult = {
       matchId: this.matchId,

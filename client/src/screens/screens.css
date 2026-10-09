@@ -278,3 +278,10 @@ canvas.pop { animation: pop-in 0.5s steps(6) both; }
 }
 .ttier.veiled .ttier-n { color: var(--p-silver); letter-spacing: .14em; }
 .ttier.veiled .ttier-d { font-style: italic; opacity: .8; }
+
+/* ---- Lautstaerke (Runde 12) ---- */
+.scr-vol { position: fixed; top: 12px; right: 14px; z-index: 40; }
+.set-vol { display: flex; flex-direction: column; gap: 10px; }
+.set-vol .vol-panel { max-width: 520px; }
+.set-vol .vol-name { font-size: 16px; }
+.set-vol .vol-val { font-size: 16px; }

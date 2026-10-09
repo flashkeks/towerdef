@@ -8,6 +8,8 @@ import { applyMatch, isTowerUnlocked, matchOptions, unlockLevel, MAP_IDS, TOWER_
 import { openStore, type MetaStore } from '../meta/store';
 import { startLives, toMetaResult, type MatchStartOptions, type StartMatch } from '../meta/types';
 import { h } from '../ui/dom';
+import { volumeButton } from '../ui/volume';
+import { uiIcon } from '../match/ui-icons';
 import { homeView } from './home';
 import { knowledgeView } from './knowledge';
 import { noticeView } from './notice';
@@ -15,7 +17,8 @@ import { resultView } from './result';
 import { setPalette } from './px';
 import { settingsView } from './settings';
 import { towersView } from './towers';
-import type { Ctx, Route, SoundId, View } from './types';
+import type { Ctx, MenuTheme, Route, SoundId, View } from './types';
+import type { VolumeApi } from '../audio/settings';
 import './screens.css';
 
 export interface AppOptions {
@@ -24,8 +27,12 @@ export interface AppOptions {
   store?: MetaStore;
   /** Ton der Oberflaeche; fehlt = still. */
   sound?: (id: SoundId) => void;
-  /** Lautstaerke 0..100 (Einstellungen und beim Start). */
-  setVolume?: (v: number) => void;
+  /** Lautstaerke-Regler (Musik/Effekte getrennt); fehlt = Attrappe im Arbeitsspeicher. */
+  audio?: VolumeApi;
+  /** Altes Profil-Volume (0..100) als Vorgabe, falls noch keine Lautstaerke gespeichert ist. */
+  adoptLegacyVolume?: (pct: number) => void;
+  /** Menue-Musik: Stimmung je Bildschirm (null = aus). */
+  theme?: (t: MenuTheme | null) => void;
   /** Erster Bildschirm (Bilder, Tests). */
   initial?: Route;
   /** Match-ID-Quelle; Standard: Zufall. Doppelt verbuchen verhindert `applyMatch` ueber diese ID. */
@@ -35,6 +42,13 @@ export interface AppOptions {
 export interface AppHandle {
   ctx: Ctx;
   go(r: Route): void;
+}
+
+/** Attrappe ohne Ton (Tests, Bilder ohne Engine). */
+function memoryVolume(): VolumeApi {
+  const v = { music: 50, sfx: 70 };
+  let quiet = false;
+  return { get: () => ({ ...v }), set: (k, p) => { v[k] = p; }, toggleQuiet: () => (quiet = !quiet), get quiet() { return quiet; } };
 }
 
 const randomId = (): string => {
@@ -51,19 +65,24 @@ export function lockInfo(p: Profile): MatchStartOptions['lockInfo'] {
 export async function runApp(root: HTMLElement, opts: AppOptions): Promise<AppHandle> {
   const store = opts.store ?? (await openStore());
   const sound = opts.sound ?? ((): void => undefined);
-  const setVolume = opts.setVolume ?? ((): void => undefined);
+  const audio = opts.audio ?? memoryVolume();
+  const theme = opts.theme ?? ((): void => undefined);
   const newId = opts.newMatchId ?? randomId;
-  setVolume(store.profile.settings.volume);
+  opts.adoptLegacyVolume?.(store.profile.settings.volume);
 
   const shell = h('div', 'dw-screens');
   setPalette(shell);
+  // Lautsprecher mit Pop-over (Musik/Effekte getrennt), auf allen Menue-Bildschirmen oben rechts
+  const speaker = volumeButton(audio, (m) => uiIcon(m ? 'mute' : 'sound', 2), 'scr-vol');
   let view: View | null = null;
   let playing = false;
 
-  const mount = (v: View): void => {
+  const mount = (v: View, th: MenuTheme = 'dusk'): void => {
+    theme(th);
     view?.dispose?.();
     view = v;
-    shell.replaceChildren(v.el);
+    speaker.close();
+    shell.replaceChildren(v.el, speaker.el);
     shell.scrollTop = 0;
   };
 
@@ -72,7 +91,7 @@ export async function runApp(root: HTMLElement, opts: AppOptions): Promise<AppHa
     store,
     difficulty: 'medium',
     sound,
-    setVolume,
+    audio,
     async update(p) {
       await store.update(p);
     },
@@ -80,7 +99,7 @@ export async function runApp(root: HTMLElement, opts: AppOptions): Promise<AppHa
       switch (r.name) {
         case 'home': return mount(homeView(ctx));
         case 'knowledge': return mount(knowledgeView(ctx));
-        case 'towers': return mount(towersView(ctx, r.tower));
+        case 'towers': return mount(towersView(ctx, r.tower), 'march');
         case 'settings': return mount(settingsView(ctx));
         case 'notice': return mount(noticeView(ctx));
         case 'result': return mount(resultView(ctx, r.info));

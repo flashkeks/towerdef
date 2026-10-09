@@ -5,36 +5,46 @@
  */
 import { MUSIC, RECIPES, type Voice } from './recipes';
 import { R11_RECIPES } from './recipes-r11';
+import { R12_RECIPES } from './recipes-r12';
+import { MENU_THEMES, type MenuThemeId, type MusicTheme } from './recipes-ui';
+import { AUDIO_KEY, fromPct, migrateAudio, toPct, type AudioSettings, type VolumeApi } from './settings';
 import type { SimEvent, TowerState } from '../sim';
 
 const MAX_VOICES = 26;
-const KEY = 'dw.audio';
 type Ctor = typeof AudioContext;
 
 /** Mindestabstand je Klang in ms (gegen Matsch bei Massenpops) */
-const MIN_GAP: Record<string, number> = { pop: 28, tink: 60, 'shoot.ranger': 35, 'shoot.volley': 60, 'shoot.frost': 50, 'shoot.chain': 70, 'explode.mini': 50, 'pop.big': 80, 'shoot.hero': 40 };
+const MIN_GAP: Record<string, number> = { pop: 28, tink: 60, 'shoot.ranger': 35, 'shoot.volley': 60, 'shoot.frost': 50, 'shoot.chain': 70, 'explode.mini': 50, 'pop.big': 80, 'shoot.hero': 40, 'power.trapHit': 45, 'embers.count': 40 };
 
-interface Settings { vol: number; muted: boolean; music: boolean }
-
-function load(): Settings {
+function load(): { s: AudioSettings; stored: boolean } {
   try {
-    const raw = localStorage.getItem(KEY);
-    if (raw) return { vol: 0.7, muted: false, music: true, ...(JSON.parse(raw) as Partial<Settings>) };
+    const raw = localStorage.getItem(AUDIO_KEY);
+    if (raw) { const m = migrateAudio(JSON.parse(raw)); return { s: m.settings, stored: m.stored }; }
   } catch { /* ohne Speicher */ }
-  return { vol: 0.7, muted: false, music: true };
+  return { s: migrateAudio(null).settings, stored: false };
 }
+
+/** Musik-Stimmung: Match oder eine der Menue-Stimmungen (`MENU_THEMES`). */
+export type MusicId = 'match' | MenuThemeId;
+const MATCH_THEME: MusicTheme = { bpm: MUSIC.bpm, rootHz: MUSIC.rootHz, bass: MUSIC.bass, chords: MUSIC.chords, pattern: MUSIC.pattern, arpWave: 'square', arpVol: 0.012, arpLp: 1400, arpOct: 12, padVol: 0 };
+const themeOf = (id: MusicId): MusicTheme => (id === 'match' ? MATCH_THEME : MENU_THEMES[id]);
 
 export class AudioEngine {
   private ctx: AudioContext | null = null;
   private master: GainNode | null = null;
+  private sfxBus: GainNode | null = null;
+  private musicBus: GainNode | null = null;
+  /** Kurz-Stumm (Taste M), nicht gespeichert */
+  quiet = false;
   private noise: AudioBuffer | null = null;
   private voices = 0;
   private last = new Map<string, number>();
-  private s: Settings = load();
+  private loaded = load();
+  private s: AudioSettings = this.loaded.s;
+  private theme: MusicId | null = null;
   private musicTimer: ReturnType<typeof setInterval> | null = null;
   private musicNext = 0;
   private musicStep = 0;
-  private musicOn = false;
   readonly log: string[] = [];
   private bound = false;
   private onUnlock = (): void => this.unlock();
@@ -53,13 +63,36 @@ export class AudioEngine {
     this.stopMusic();
   }
 
-  get volume(): number { return this.s.vol; }
-  get muted(): boolean { return this.s.muted; }
-  setVolume(v: number): void { this.s.vol = Math.max(0, Math.min(1, v)); this.apply(); this.save(); }
-  toggleMute(): boolean { this.s.muted = !this.s.muted; this.apply(); this.save(); return this.s.muted; }
-  private save(): void { try { localStorage.setItem(KEY, JSON.stringify(this.s)); } catch { /* egal */ } }
+  get musicVol(): number { return this.s.musicVol; }
+  get sfxVol(): number { return this.s.sfxVol; }
+  /** Gab es schon gespeicherte Einstellungen? (sonst darf das alte Profil-Volume als Vorgabe dienen) */
+  get hasSaved(): boolean { return this.loaded.stored; }
+  setMusicVol(v: number): void { this.s.musicVol = Math.max(0, Math.min(1, v)); this.loaded.stored = true; this.apply(); this.save(); }
+  setSfxVol(v: number): void { this.s.sfxVol = Math.max(0, Math.min(1, v)); this.loaded.stored = true; this.apply(); this.save(); }
+  /** Vorgabe aus dem alten Profil (0..100), nur wenn noch nichts gespeichert ist. */
+  adoptLegacy(pct: number): void {
+    if (this.loaded.stored) return;
+    this.s = { musicVol: fromPct(pct) * 0.7, sfxVol: fromPct(pct) };
+    this.apply();
+  }
+  toggleQuiet(): boolean { this.quiet = !this.quiet; this.apply(); return this.quiet; }
+  /** Zeiger fuer die Regler in Match, Menues und Einstellungen. */
+  readonly volumeApi: VolumeApi = (() => {
+    const self = this;
+    return {
+      get: () => ({ music: toPct(self.s.musicVol), sfx: toPct(self.s.sfxVol) }),
+      set: (kind: 'music' | 'sfx', pct: number) => (kind === 'music' ? self.setMusicVol(fromPct(pct)) : self.setSfxVol(fromPct(pct))),
+      toggleQuiet: () => self.toggleQuiet(),
+      get quiet() { return self.quiet; },
+    };
+  })();
+  private save(): void { try { localStorage.setItem(AUDIO_KEY, JSON.stringify(this.s)); } catch { /* egal */ } }
   private apply(): void {
-    if (this.master && this.ctx) this.master.gain.setTargetAtTime(this.s.muted ? 0 : this.s.vol * 0.9, this.ctx.currentTime, 0.02);
+    if (!this.ctx || !this.master || !this.sfxBus || !this.musicBus) return;
+    const t = this.ctx.currentTime;
+    this.master.gain.setTargetAtTime(this.quiet ? 0 : 0.9, t, 0.02);
+    this.sfxBus.gain.setTargetAtTime(this.s.sfxVol, t, 0.02);
+    this.musicBus.gain.setTargetAtTime(this.s.musicVol, t, 0.05);
   }
 
   private unlock(): void {
@@ -69,6 +102,10 @@ export class AudioEngine {
       try { this.ctx = new AC(); } catch { return; }
       const ctx = this.ctx;
       this.master = ctx.createGain();
+      this.sfxBus = ctx.createGain();
+      this.musicBus = ctx.createGain();
+      this.sfxBus.connect(this.master);
+      this.musicBus.connect(this.master);
       const lim = ctx.createDynamicsCompressor();
       lim.threshold.value = -12; lim.knee.value = 8; lim.ratio.value = 8; lim.attack.value = 0.003; lim.release.value = 0.12;
       this.master.connect(lim);
@@ -78,7 +115,7 @@ export class AudioEngine {
       let seed = 1234567;
       for (let i = 0; i < d.length; i++) { seed = (seed * 1664525 + 1013904223) >>> 0; d[i] = seed / 0x80000000 - 1; }
       this.apply();
-      if (this.musicOn) this.startMusic();
+      if (this.theme) this.startMusic();
     }
     if (this.ctx.state === 'suspended') void this.ctx.resume();
   }
@@ -87,12 +124,12 @@ export class AudioEngine {
     this.log.push(id);
     if (this.log.length > 60) this.log.shift();
     const ctx = this.ctx;
-    if (!ctx || !this.master || this.s.muted || ctx.state !== 'running') return;
+    if (!ctx || !this.sfxBus || this.s.sfxVol <= 0 || ctx.state !== 'running') return;
     const now = performance.now();
     const gap = MIN_GAP[id];
     if (gap && now - (this.last.get(id) ?? -1e9) < gap) return;
     this.last.set(id, now);
-    const rec = R11_RECIPES[id] ?? RECIPES[id];
+    const rec = R12_RECIPES[id] ?? R11_RECIPES[id] ?? RECIPES[id];
     if (!rec) return;
     const t0 = ctx.currentTime + 0.005;
     for (const v of rec) this.voice(v, t0, gain, rate);
@@ -100,7 +137,7 @@ export class AudioEngine {
 
   private voice(v: Voice, t0: number, gain: number, rate: number): void {
     const ctx = this.ctx;
-    if (!ctx || !this.master || this.voices >= MAX_VOICES) return;
+    if (!ctx || !this.sfxBus || this.voices >= MAX_VOICES) return;
     const start = t0 + (v.delay ?? 0), end = start + v.dur;
     const env = ctx.createGain();
     env.gain.setValueAtTime(0.0001, start);
@@ -132,7 +169,7 @@ export class AudioEngine {
       o.start(start);
       src = o;
     }
-    env.connect(this.master);
+    env.connect(this.sfxBus);
     src.stop(end + 0.03);
     this.voices++;
     src.onended = () => { this.voices--; env.disconnect(); };
@@ -173,13 +210,18 @@ export class AudioEngine {
     }
   }
 
-  // ---------------------------------------------------------------- leise Musik (a-Moll-Loop aus MUSIC)
-  setMusic(on: boolean): void {
-    this.musicOn = on && this.s.music;
-    if (this.musicOn) this.startMusic(); else this.stopMusic();
+  // ---------------------------------------------------------------- Musik (Match und Menues, ueber den Musik-Bus)
+  /** Stimmung wechseln (null = aus). Gleiche Stimmung laeuft einfach weiter. */
+  setTheme(id: MusicId | null): void {
+    if (id === this.theme && (id === null || this.musicTimer)) return;
+    this.theme = id;
+    this.stopMusic();
+    if (id) this.startMusic();
   }
+  /** Altes Schalter-API: an = Match-Musik, aus = still. */
+  setMusic(on: boolean): void { this.setTheme(on ? 'match' : null); }
   private startMusic(): void {
-    if (this.musicTimer || !this.ctx) return;
+    if (this.musicTimer || !this.ctx || !this.theme) return;
     this.musicNext = this.ctx.currentTime + 0.2;
     this.musicStep = 0;
     this.musicTimer = setInterval(() => this.schedule(), 120);
@@ -190,26 +232,31 @@ export class AudioEngine {
   }
   private schedule(): void {
     const ctx = this.ctx;
-    if (!ctx || ctx.state !== 'running') return;
-    const eighth = 60 / MUSIC.bpm / 2;
+    if (!ctx || ctx.state !== 'running' || !this.theme) return;
+    const th = themeOf(this.theme);
+    const eighth = 60 / th.bpm / 2;
+    const bars = th.bass.length;
     while (this.musicNext < ctx.currentTime + 0.5) {
-      const bar = Math.floor(this.musicStep / 8) % MUSIC.bass.length, i = this.musicStep % 8;
-      const hz = (semi: number): number => MUSIC.rootHz * Math.pow(2, semi / 12);
-      if (i === 0) this.tone('triangle', hz(MUSIC.bass[bar]), this.musicNext, eighth * 7.5, 0.05, 500);
-      this.tone('square', hz(MUSIC.bass[bar] + MUSIC.chords[bar][MUSIC.pattern[i]] + 12), this.musicNext, eighth * 0.9, 0.012, 1400);
+      const bar = Math.floor(this.musicStep / 8) % bars, i = this.musicStep % 8;
+      const hz = (semi: number): number => th.rootHz * Math.pow(2, semi / 12);
+      if (i === 0) {
+        this.tone('triangle', hz(th.bass[bar]), this.musicNext, eighth * 7.5, 0.05, 500);
+        if (th.padVol > 0) for (const c of th.chords[bar].slice(0, 3)) this.tone('sine', hz(th.bass[bar] + c + 12), this.musicNext, eighth * 7.8, th.padVol * 0.45, 900, 0.5);
+      }
+      this.tone(th.arpWave, hz(th.bass[bar] + th.chords[bar][th.pattern[i]] + th.arpOct), this.musicNext, eighth * 0.9, th.arpVol, th.arpLp);
       this.musicNext += eighth;
-      this.musicStep = (this.musicStep + 1) % (MUSIC.bass.length * 8);
+      this.musicStep = (this.musicStep + 1) % (bars * 8);
     }
   }
-  private tone(wave: OscillatorType, hz: number, start: number, dur: number, vol: number, lp: number): void {
+  private tone(wave: OscillatorType, hz: number, start: number, dur: number, vol: number, lp: number, attack = 0.02): void {
     const ctx = this.ctx;
-    if (!ctx || !this.master) return;
+    if (!ctx || !this.musicBus) return;
     const o = ctx.createOscillator(), f = ctx.createBiquadFilter(), env = ctx.createGain();
     o.type = wave; o.frequency.value = hz; f.type = 'lowpass'; f.frequency.value = lp;
     env.gain.setValueAtTime(0.0001, start);
-    env.gain.linearRampToValueAtTime(vol, start + 0.02);
+    env.gain.linearRampToValueAtTime(vol, start + attack);
     env.gain.exponentialRampToValueAtTime(0.0001, start + dur);
-    o.connect(f); f.connect(env); env.connect(this.master);
+    o.connect(f); f.connect(env); env.connect(this.musicBus);
     o.start(start); o.stop(start + dur + 0.03);
     o.onended = () => env.disconnect();
   }

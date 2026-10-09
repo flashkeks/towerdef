@@ -18,7 +18,7 @@ export interface GameHandle {
   setBlocked(blocked: boolean): void;
 }
 
-const SOUND: Record<SoundId, string> = { click: 'ui.click', buy: 'ui.buy', unlock: 'ui.unlock', levelup: 'ui.levelup', error: 'ui.bad', xp: 'ui.tick' };
+const SOUND: Record<SoundId, string> = { click: 'ui.click', buy: 'ui.buy', unlock: 'ui.unlock', levelup: 'ui.levelup', error: 'ui.bad', xp: 'ui.tick', storeBuy: 'store.buy', ember: 'embers.count' };
 
 export async function startGame(root: HTMLElement): Promise<GameHandle> {
   root.innerHTML = '';
@@ -35,7 +35,9 @@ export async function startGame(root: HTMLElement): Promise<GameHandle> {
     store,
     startMatch: (r, o) => startMatch(r, { ...o, debug: q.has('debug') || hooks, seed: q.has('seed') ? Number(q.get('seed')) : undefined }),
     sound: (id) => audio.play(SOUND[id]),
-    setVolume: (v) => audio.setVolume(v / 100),
+    audio: audio.volumeApi,
+    adoptLegacyVolume: (pct) => audio.adoptLegacy(pct),
+    theme: (th) => audio.setTheme(th),
   });
   return { setBlocked: () => undefined };
 }
