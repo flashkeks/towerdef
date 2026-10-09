@@ -29,14 +29,14 @@ const P = (kind: QuarryKind, x: number, y: number, v = 0): QuarryProp => ({ kind
 
 const HAND: QuarryProp[] = [
   // Nordwest
-  P('mine', 60, 100), P('lamp', 30, 104), P('lamp', 92, 104), P('cart', 124, 100), P('ore', 156, 98), P('crystal', 172, 96, 0), P('tnt', 18, 92), P('barrel', 28, 90),
+  P('mine', 60, 100), P('lamp', 30, 104), P('lamp', 92, 104), P('cart', 94, 114), P('ore', 156, 98), P('crystal', 172, 96, 0), P('tnt', 18, 92), P('barrel', 28, 90),
   P('rock', 40, 44), P('rock', 150, 44),
   // West
-  P('crystal', 24, 150, 1), P('scaffold', 70, 150), P('rock', 100, 226), P('crystal', 100, 190, 2), P('boulder', 22, 236), P('lamp', 100, 150),
+  P('crystal', 24, 150, 1), P('scaffold', 64, 170), P('rock', 100, 226), P('crystal', 100, 190, 2), P('boulder', 22, 236), P('lamp', 100, 150),
   P('dead', 24, 188, 0), P('brazier', 112, 214), P('pickaxe', 56, 244), P('bones', 14, 126),
   // Mitte oben
   P('crane', 262, 92), P('crystal', 340, 40, 1), P('boulder', 280, 34), P('rock', 372, 90), P('ore', 330, 104), P('lamp', 320, 82), P('brazier', 250, 40), P('spire', 410, 20),
-  P('crystal', 410, 100, 2), P('rock', 430, 140), P('tnt', 336, 140), P('barrel', 346, 144), P('sign', 316, 132), P('dead', 400, 60, 1), P('rock', 270, 150), P('spire', 250, 150, 1),
+  P('crystal', 410, 100, 2), P('rock', 430, 140), P('tnt', 330, 126), P('barrel', 342, 128), P('sign', 316, 150), P('dead', 400, 60, 1), P('rock', 270, 150), P('spire', 250, 150, 1),
   // Mitte
   P('scaffold', 284, 226), P('rock', 252, 220), P('crystal', 404, 214, 0), P('lamp', 356, 200), P('boulder', 430, 226), P('cart', 380, 142), P('crystal', 252, 206, 1),
   // Sued
@@ -95,7 +95,7 @@ function rockTone(x: number, y: number): number {
   const L = rockLevel(x, y);
   const [dark, light] = LEVEL_TONES[Math.max(0, Math.min(4, L - 0))];
   const n = vnoise(x, y, 5, 3) * 0.5 + hash2(x, y, 4) * 0.5;
-  let c = n > 0.55 + (bayer(x, y) - 0.5) * 0.3 ? light : dark;
+  let c = n > 0.64 + (bayer(x, y) - 0.5) * 0.3 ? light : dark;
   // Klippenkante: oben/links hell, darunter Schatten
   const below = rockLevel(x, y + 2), above = rockLevel(x, y - 3), right = rockLevel(x + 2, y), left = rockLevel(x - 3, y);
   if (below < L || right < L) c = bayer(x, y) < 0.7 ? C.stone : C.silver;
@@ -139,11 +139,13 @@ function lavaColor(x: number, y: number, dep: number, f: number): number {
   if (b > 2.15 && dep > 3.5) return b > 2.45 ? (bayer(x, y) < 0.6 ? C.plum : C.night) : bayer(x + 1, y) < 0.6 ? C.crimson : C.rust;
   // helle Adern dort, wo das Feld durch null geht (wie Zellgrenzen aus Magma)
   if (Math.abs(a - 0.1 + n * 0.3) < 0.055 && dep > 2) return bayer(x, y) < 0.55 ? C.yellow : C.amber;
-  const t = a * 0.7 + n * 0.6 + (bayer(x, y) - 0.5) * 0.3 - (dep < 3.5 ? (3.5 - dep) * 0.12 : 0);
-  if (t > 0.55) return C.amber;
-  if (t > 0.12) return C.orange;
-  if (t > -0.28) return bayer(x + 1, y + 1) < 0.5 ? C.orange : C.red;
-  return t > -0.5 ? C.red : C.crimson;
+  const deepPool = vnoise(x, y, 38, 17); // grosse, tiefere (dunklere) Becken
+  const t = a * 0.7 + n * 0.6 + (bayer(x, y) - 0.5) * 0.3 - (dep < 3.5 ? (3.5 - dep) * 0.12 : 0) - (deepPool - 0.45) * 0.9;
+  if (t > 0.75) return C.amber;
+  if (t > 0.32) return bayer(x, y + 1) < 0.35 ? C.amber : C.orange;
+  if (t > -0.08) return C.orange;
+  if (t > -0.32) return bayer(x + 1, y + 1) < 0.5 ? C.orange : C.red;
+  return t > -0.55 ? C.red : bayer(x, y) < 0.5 ? C.crimson : C.red;
 }
 
 export function paintQuarry(): MapArt {
@@ -289,34 +291,35 @@ function paintLavaAnim(f: number, lava: Field): Buf {
 }
 
 // ---------- Schienen ----------
+/** Gleise (Lorenschienen): Stollen -> Wagen, Wagen im Mittelteil. Endpuffer als Holzbock. */
+export const RAILS: Pt[][] = [
+  [[60, 104], [60, 114], [112, 114]],
+  [[336, 143], [420, 143]],
+];
 function paintRails(d: Buf, lava: Field, pf: Field): void {
-  const rails: Pt[][] = [
-    [[84, 118], [84, 126], [112, 126], [112, 132]],
-    [[330, 196], [330, 206], [380, 206]],
-  ];
-  void rails;
-  const lines: Pt[][] = [
-    [[40, 118], [40, 130], [116, 130]],
-    [[300, 150], [300, 164], [262, 164], [262, 202], [290, 202]],
-    [[456, 262], [500, 262], [540, 276], [610, 276]],
-  ];
-  for (const line of lines) {
-    const pts = walk(line, 1);
-    for (const p of pts) {
-      if (lava.at(p.x, p.y) < 5 || pf.at(p.x, p.y) < Q_HW + 4) continue;
+  for (const line of RAILS) {
+    // Schwellen (quer), alle 4 px
+    walk(line, 4, 1).forEach((p) => {
+      if (lava.at(p.x, p.y) < 5 || pf.at(p.x, p.y) < Q_HW + 2) return;
       const nx = -p.dy, ny = p.dx;
-      // Schienen (zwei Linien), oben hell
-      for (const s of [-3, 3]) { d.set(Math.round(p.x + nx * s), Math.round(p.y + ny * s), C.stone); d.set(Math.round(p.x + nx * s), Math.round(p.y + ny * s) + 1, C.slate); }
-    }
-    walk(line, 5, 2).forEach((p) => {
-      if (lava.at(p.x, p.y) < 5 || pf.at(p.x, p.y) < Q_HW + 4) return;
-      const nx = -p.dy, ny = p.dx;
-      for (let s = -4; s <= 4; s++) {
-        if (Math.abs(s) === 3) continue;
+      for (let s = -5; s <= 5; s++) {
         const x = Math.round(p.x + nx * s), y = Math.round(p.y + ny * s);
-        d.set(x, y, Math.abs(s) === 4 ? C.bark : C.wood);
+        d.set(x, y, Math.abs(s) >= 4 ? C.bark : s < 0 ? C.wood : C.bark);
       }
     });
+    // Schienen: zwei helle Linien, unten ein dunkler Saum
+    for (const s of [-3, 3]) {
+      const poly: Pt[] = line.map(([x, y], i) => {
+        const [x0, y0] = line[Math.max(0, i - 1)], [x1, y1] = line[Math.min(line.length - 1, i + 1)];
+        const l = Math.hypot(x1 - x0, y1 - y0) || 1;
+        return [x - ((y1 - y0) / l) * s, y + ((x1 - x0) / l) * s] as Pt;
+      });
+      for (const p of walk(poly, 1)) {
+        if (lava.at(p.x, p.y) < 5 || pf.at(p.x, p.y) < Q_HW + 2) continue;
+        d.set(Math.round(p.x), Math.round(p.y), C.silver);
+        d.set(Math.round(p.x), Math.round(p.y) + 1, C.slate);
+      }
+    }
   }
 }
 

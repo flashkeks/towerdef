@@ -44,7 +44,7 @@ function organic(base: Pt[]): Pt[] {
 export const LAKE: Pt[] = closedSpline(organic(LAKE_BASE), 4);
 const HOLE_CTRL: Pt[] = [[296, 228], [308, 221], [326, 220], [340, 227], [334, 237], [316, 240], [300, 236]];
 export const HOLE: Pt[] = closedSpline(HOLE_CTRL, 3);
-export const PIER = { x: 270, y0: 217, y1: 250 };
+export const PIER = { x: 270, y0: 216, y1: 254 };
 
 export function waterPolygons(): Pt[][] {
   return [simplify(LAKE, 3)];
@@ -66,12 +66,13 @@ const HAND: FrostProp[] = [
   P('lamp', 462, 200), P('lamp', 520, 254), P('lamp', 560, 182), P('lamp', 584, 250), P('lamp', 622, 200), P('lamp', 86, 270), P('lamp', 124, 96), P('lamp', 12, 232),
   // Eishuetten auf dem See, Steg mit Laternen
   P('shanty', 128, 150, 0), P('shanty', 380, 200, 1), P('shanty', 214, 218, 1), P('shanty', 318, 140, 0),
-  P('lamp', 264, 216), P('lamp', 277, 232),
+  P('lamp', 266, 222), P('lamp', 275, 240),
   // Ufer
   P('reeds', 44, 152, 0), P('reeds', 332, 252, 1), P('reeds', 400, 232, 0), P('reeds', 200, 258, 1), P('reeds', 110, 244, 0),
   P('icerock', 60, 118, 0), P('icerock', 396, 118, 1), P('icerock', 360, 250, 0), P('rock', 232, 266, 0), P('boulder', 380, 86, 0), P('boulder', 22, 276, 0),
   // Tail im Osten, Wegrand
   P('tent', 631, 226, 0), P('snowman', 620, 112), P('lamp', 520, 110), P('rock', 330, 100), P('rock', 330, 276), P('rock', 360, 296),
+  P('lamp', 20, 62), P('sign', 40, 62), P('lamp', 20, 300), P('sign', 40, 300), P('snowman', 330, 90), P('birch', 352, 96, 0), P('firsmall', 204, 98, 0), P('rock', 372, 100), P('woodpile', 96, 80), P('crate', 240, 98),
   P('birch', 400, 282, 0), P('birch', 188, 270, 1), P('birch', 210, 100, 1), P('stump', 30, 80), P('stump', 506, 140),
 ];
 
@@ -99,6 +100,7 @@ function scatter(): FrostProp[] {
     const r = FROST_R[kind];
     if (pathDistAll(FF_BRANCHES, x, y - 2) < FF_HW + r + 5) continue;
     if (lakeAt(x, y) < r + 6) continue;
+    if (x > 244 && x < 300 && y > 238 && y < 290) continue; // Zugang zum Steg bleibt frei
     if (all().some((q) => Math.hypot(q.x - x, (q.y - y) * 1.3) < Math.max(q.r, r) * 1.9 + 4)) continue;
     // Tannen nicht mitten in den Wiesen des Dorfs: nur dort, wo der Wald dicht ist oder die Dichte es erlaubt
     out.push(P(kind, x, y, v));
@@ -346,7 +348,7 @@ function pathColor(x: number, y: number, pd: number, gx: number, gy: number): nu
     if (edge < 0.55 && vnoise(x, y, 6, 33) > 0.74 && bayer(x + 1, y) < 0.22) c = C.wood;
     // Karrenspuren
     if (pd > 3.6 && pd < 5.0 && n < 0.7) c = ((x + y) & 1) === 0 ? C.slate : C.stone;
-    if (edge > 0.65) c = bayer(x, y) < (edge - 0.65) * 2.6 ? C.slate : C.stone;
+    if (edge > 0.65) c = hash2(x, y, 55) < (edge - 0.65) * 2.2 ? C.slate : c;
     // Raender: Schneewall (hell auf der Lichtseite, Schatten sonst)
     if (edge > 0.88) c = lit > 0 ? (bayer(x, y) < 0.7 ? C.white : C.silver) : bayer(x + 1, y) < 0.65 ? C.slate : C.stone;
     const hs = hash2(x, y, 5);
@@ -382,7 +384,7 @@ function holeBase(x: number, y: number, dep: number): number {
 // ---------- Steg ----------
 function paintPier(d: Buf, lake: Field): void {
   const { x, y0, y1 } = PIER;
-  const x0 = x - 4, x1 = x + 4;
+  const x0 = x - 6, x1 = x + 6;
   // Schatten auf dem Eis (rechts, leicht nach unten)
   for (let yy = y0 + 3; yy <= y1 + 3; yy++) for (let xx = x1 + 1; xx <= x1 + 4; xx++) if (lake.at(xx, yy) < 0 && bayer(xx, yy) < 0.75 - (xx - x1) * 0.12) d.set(xx, yy, C.navy);
   // Bohlen (quer zur Gehrichtung = waagrechte Reihen)
