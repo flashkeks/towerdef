@@ -4,10 +4,10 @@ import { drawArm } from './bows';
 import type { Dir, Pose } from './pose';
 import { RAMPS, type Ramp, Surface } from './surface';
 import type { Tiers } from './types';
-import { GY, mainPath, OX, OY, pedestalKind, type TowerLayers } from './ranger';
+import { GY, mainPath, OX, OY, pedestalKind, TH, TW, type TowerLayers } from './ranger';
 
 export function drawBombardier(t: Tiers, d: Dir, p: Pose): TowerLayers {
-  const W = 55, H = 56;
+  const W = TW, H = TH;
   const s = new Surface(W, H), back = new Surface(W, H), front = new Surface(W, H);
   const [A, B, C] = t;
   const top = Math.max(A, B, C);
@@ -46,8 +46,10 @@ export function drawBombardier(t: Tiers, d: Dir, p: Pose): TowerLayers {
 
   const sx = ox + 4, sy = G - 9 - up;
   let muzzle: [number, number] = [ox + 8, G - 9];
-  const weapon = () => drawBombWeapon(s, front, t, d, p, sx, sy, main);
-  if (d.behind) muzzle = weapon();
+  // Rohr liegt hinter dem Koerper (auf der Schulter), nur Haende kommen davor
+  const wpn = drawBombWeapon(s, front, t, d, p, sx, sy, main);
+  muzzle = wpn.muzzle;
+  if (d.behind) wpn.hands();
 
   // ---- Körper ----
   s.rect(ox - 5, G - 1, 4, 2, 'bark'); s.rect(ox + 1, G - 1, 4, 2, 'bark');
@@ -86,7 +88,7 @@ export function drawBombardier(t: Tiers, d: Dir, p: Pose): TowerLayers {
   const mask = A >= 5;
   s.ball(hcx, hcy, 6, 5.5, RAMPS.skin);
   // Lederkappe oben
-  const capR: Ramp = B >= 5 ? RAMPS.brass : A >= 3 ? RAMPS.iron : RAMPS.wood;
+  const capR: Ramp = B >= 5 ? RAMPS.brass : A >= 3 ? RAMPS.iron : ['ink', 'plum', 'bark'];
   s.ellipseFn(hcx, hcy - 1, 6.2, 5.7, (x, y, nx, ny) => (y < hcy - 2 ? ((-nx * 0.5 - ny * 0.7) > 0.4 ? capR[2] : (-nx * 0.5 - ny * 0.7) > -0.2 ? capR[1] : capR[0]) : null));
   s.rect(hcx - 6, hcy - 2, 13, 1, capR[0]);
   // Ohrenklappen
@@ -119,7 +121,7 @@ export function drawBombardier(t: Tiers, d: Dir, p: Pose): TowerLayers {
       s.rect(fx - 1, fy - 2, 4, 4, 'rust'); s.rect(fx, fy - 1, 2, 2, 'ice'); s.px(fx, fy - 1, 'white');
     }
   }
-  if (!d.behind) muzzle = weapon();
+  if (!d.behind) wpn.hands();
 
   // ---- Aura / Effekte ----
   if (A >= 4) {
@@ -140,7 +142,7 @@ export function drawBombardier(t: Tiers, d: Dir, p: Pose): TowerLayers {
   return { fig: s, back, front, muzzle };
 }
 
-function drawBombWeapon(s: Surface, front: Surface, t: Tiers, d: Dir, p: Pose, sx: number, sy: number, main: number): [number, number] {
+function drawBombWeapon(s: Surface, front: Surface, t: Tiers, d: Dir, p: Pose, sx: number, sy: number, main: number): { muzzle: [number, number]; hands: () => void } {
   const [A, B, C] = t;
   const ux = d.ux, uy = d.uy;
   const ax = ux * 0.95, ay = uy * 0.8;
@@ -151,7 +153,7 @@ function drawBombWeapon(s: Surface, front: Surface, t: Tiers, d: Dir, p: Pose, s
   const mortar = main === 0 && A === 4;
   const hammer = main === 2 && C >= 5;
   const drum = main === 1 && B >= 4;
-  const sleeve = 'orange' as const;
+  const sleeve = 'bark' as const;
   const rec = p.recoil;
 
   if (mortar) {
@@ -163,17 +165,21 @@ function drawBombWeapon(s: Surface, front: Surface, t: Tiers, d: Dir, p: Pose, s
     s.rect(bx + 2, by - 15, 5, 2, 'slate'); s.rect(bx + 2, by - 15, 5, 1, 'silver');
     s.rect(bx + 3, by - 16, 3, 1, 'night');
     s.px(bx + 4, by - 8, 'amber'); s.px(bx + 3, by - 5, 'amber');
-    drawArm(s, { sx: sx - 1, sy, hx: bx - 2, hy: by - 3, sleeve, skin: 'skin', roll: 1 });
-    drawArm(s, { sx: sx - 7, sy, hx: bx - 4, hy: by - 1, sleeve, skin: 'skin', roll: 1 });
     if (p.flash) { spark(front, bx + 4, by - 19, 'yellow', true); front.ball(bx + 4, by - 21, 3, 2, RAMPS.stone); }
-    return [bx + 4, by - 18];
+    return {
+      muzzle: [bx + 4, by - 18],
+      hands: () => {
+        drawArm(s, { sx: sx - 1, sy, hx: bx - 2, hy: by - 3, sleeve, skin: 'skin', roll: 1 });
+        drawArm(s, { sx: sx - 7, sy, hx: bx - 4, hy: by - 1, sleeve, skin: 'skin', roll: 1 });
+      },
+    };
   }
 
-  let L = 9 + (B >= 2 ? 3 : 0), w = 4 + (A >= 2 ? 1 : 0);
-  let ramp: Ramp = RAMPS.brass;
+  let L = 10 + (B >= 2 ? 3 : 0), w = 5 + (A >= 2 ? 1 : 0);
+  let ramp: Ramp = ['night', 'dusk', 'slate'];
   if (keg) { L = 12; w = 8; ramp = RAMPS.wood; }
   if (hammer) { L = 12; w = 6; ramp = RAMPS.iron; }
-  if (C >= 4 && main === 2) ramp = RAMPS.brass;
+  if (C >= 4 && main === 2) ramp = ['night', 'slate', 'stone'];
   if (drum) { L = 11; w = 3; ramp = RAMPS.iron; }
   if (main === 0 && A === 3) { w = 5; }
   const x0 = sx + ax * 0 - ax * rec * 0.6 - (keg ? ax * 1 : 0), y0 = sy + ay * 0 - ay * rec * 0.5 - 1;
@@ -186,7 +192,6 @@ function drawBombWeapon(s: Surface, front: Surface, t: Tiers, d: Dir, p: Pose, s
     const [rx, ry] = aimN(2);
     drawArm(s, { sx: sx - 6, sy: sy + 1, hx: Math.round(rx), hy: Math.round(ry + 2), sleeve, skin: 'skin', roll: 1 });
   };
-  if (!d.behind) arms();
 
   // zweites Rohr (B3)
   if (B >= 3 && !drum) {
@@ -232,10 +237,10 @@ function drawBombWeapon(s: Surface, front: Surface, t: Tiers, d: Dir, p: Pose, s
     // Messingringe an Mündung und Mitte
     for (const f of [0.15, 0.55, 0.95]) {
       const cx = x0 + (x1 - x0) * f, cy = y0 + (y1 - y0) * f;
-      const bw = w + 1;
-      tube(s, cx - nx * bw * 0.5, cy - ny * bw * 0.5, cx + nx * bw * 0.5, cy + ny * bw * 0.5, 1.3, f > 0.9 ? RAMPS.brass : RAMPS.iron);
+      const bw = w + 1.5;
+      tube(s, cx - nx * bw * 0.5, cy - ny * bw * 0.5, cx + nx * bw * 0.5, cy + ny * bw * 0.5, 1.6, RAMPS.brass);
     }
-    s.ball(x0 - ax * 0.5, y0 - ay * 0.5, w * 0.55, w * 0.55, RAMPS.brass);
+    s.ball(x0 - ax * 0.5, y0 - ay * 0.5, w * 0.6, w * 0.6, ['rust', 'amber', 'yellow']);
     // Mündungsloch
     s.px(x1 + ax * 0.8, y1 + ay * 0.8, 'ink');
     if (main === 0 && A === 3) {
@@ -246,7 +251,6 @@ function drawBombWeapon(s: Surface, front: Surface, t: Tiers, d: Dir, p: Pose, s
       s.px(tipx, tipy, 'white');
     }
   }
-  if (d.behind) arms();
   // Zubehör am Rohr
   if (A >= 1 && !keg && !mortar && !(main === 0 && A === 3)) {
     // dicke Bombe in der Mündung
@@ -292,6 +296,6 @@ function drawBombWeapon(s: Surface, front: Surface, t: Tiers, d: Dir, p: Pose, s
     front.ball(mxp + ax * 2, myp + ay * 2 - 3, 2, 2, RAMPS.stone);
     front.px(mxp + ax * 4, myp + ay * 4 - 5, 'silver');
   }
-  return [Math.round(mxp), Math.round(myp)];
+  return { muzzle: [Math.round(mxp), Math.round(myp)], hands: arms };
 }
 function ph(p: Pose): number { return p.ph; }

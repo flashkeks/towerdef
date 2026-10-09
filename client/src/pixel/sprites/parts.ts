@@ -1,6 +1,6 @@
 /** Wiederverwendbare Bauteile fuer Tuerme, Held und Effekte (alles ganze Pixel, nur Palette). */
 import type { PalName } from '../palette';
-import { irnd, RAMPS, type Ramp, Surface } from './surface';
+import { irnd, outlineSurface, RAMPS, type Ramp, Surface } from './surface';
 
 /** Licht kommt von oben links. */
 export const LIGHT = { x: -0.55, y: -0.75 };
@@ -119,18 +119,26 @@ export function crystal(s: Surface, x: number, y: number, h: number, ramp: Ramp 
   s.px(x - 1, y - h * 0.4, 'white');
 }
 
-/** Kleine Wolke (Breite w), unten flach. */
+/** Wolke (Breite w) mit eigenem Umriss, unten flach; `dark` = Gewitterwolke. (x, y) = Mitte der Unterkante. */
 export function cloud(s: Surface, x: number, y: number, w: number, dark: boolean, ph = 0): void {
   const r: Ramp = dark ? ['night', 'dusk', 'slate'] : ['stone', 'silver', 'white'];
-  const n = Math.max(2, Math.round(w / 4));
+  const H = Math.round(w * 0.6) + 4;
+  const t = new Surface(w + 8, H + 4);
+  const base = H + 1;
+  const n = Math.max(3, Math.round(w / 4.5));
   for (let i = 0; i < n; i++) {
-    const cx = x - w / 2 + (i + 0.5) * (w / n);
-    const rr = 2.2 + (i % 2 === 0 ? 0.8 : 0) + (i === (n >> 1) ? 0.6 : 0);
-    s.ball(cx, y - rr + 1 - (i % 2), rr + 0.4, rr, r);
+    const u = n === 1 ? 0.5 : i / (n - 1);
+    const bump = Math.sin(u * Math.PI);
+    const rr = 2.4 + bump * (w / 5.5) + (i % 2 ? 0.4 : 0);
+    const cx = 4 + 2 + u * (w - 4);
+    t.ball(cx, base - rr - 0.5, rr + 0.6, rr, r);
   }
-  s.rect(x - w / 2 + 1, y, w - 2, 1, r[0]);
-  s.rect(x - w / 2 + 2, y - 1, w - 4, 1, r[1]);
-  if (dark && ph % 2 === 0) s.px(x + ((ph >> 1) ? 2 : -2), y - 2, 'yellow');
+  t.rect(5, base - 2, w - 2, 3, r[1]);
+  t.rect(5, base, w - 2, 1, r[0]);
+  t.rect(5, base - 2, w - 2, 1, r[1]);
+  if (dark && ph % 2 === 0) { t.px(5 + ((ph >> 1) ? w - 5 : 3), base - 3, 'yellow'); t.px(6 + ((ph >> 1) ? w - 8 : 6), base - 5, 'white'); }
+  const o = outlineSurface(t, 'ink');
+  s.blit(o, Math.round(x - (w + 8) / 2), Math.round(y - base));
 }
 
 /** Zackiger Blitz von (x0,y0) nach (x1,y1), deterministisch ueber `seed`. */
@@ -154,12 +162,13 @@ export function bolt(s: Surface, x0: number, y0: number, x1: number, y1: number,
 }
 
 /** Pfeil (gerade, Winkel ueber Einheitsvektor): Schaft + Spitze + Federn. */
-export function arrowAt(s: Surface, tx: number, ty: number, ux: number, uy: number, len: number, o: { tip?: PalName; shaft?: PalName; fletch?: PalName | null; head?: boolean } = {}): void {
+export function arrowAt(s: Surface, tx: number, ty: number, ux: number, uy: number, len: number, o: { tip?: PalName; shaft?: PalName; fletch?: PalName | null; head?: boolean; barbs?: boolean } = {}): void {
   const hx = tx + ux * len, hy = ty + uy * len;
   s.line(tx, ty, hx, hy, o.shaft ?? 'sand');
   if (o.head !== false) {
     s.px(hx, hy, o.tip ?? 'silver');
     s.px(hx - ux * 1, hy - uy * 1, o.tip ?? 'silver');
+    if (o.barbs) { const nx = -uy, ny = ux; s.px(hx - ux * 1 + nx, hy - uy * 1 + ny, o.tip ?? 'silver'); s.px(hx - ux * 1 - nx, hy - uy * 1 - ny, o.tip ?? 'silver'); }
   }
   if (o.fletch) {
     const nx = -uy, ny = ux;

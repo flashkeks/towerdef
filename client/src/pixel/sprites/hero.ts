@@ -2,7 +2,7 @@
 import { drawArm } from './bows';
 import { flame, orbit, pedestal, spark, tube } from './parts';
 import { dirOf, poseOf, type Dir, type Pose, type TowerFrame } from './pose';
-import { GY, OX, OY, type TowerLayers } from './ranger';
+import { GY, OX, OY, TH, TW, type TowerLayers } from './ranger';
 import { outlineSurface, RAMPS, Surface } from './surface';
 
 export type HeroFrame = TowerFrame | 'cast0' | 'cast1';
@@ -35,7 +35,7 @@ function lantern(s: Surface, front: Surface, x: number, y: number, size: number,
 }
 
 export function drawWren(level: number, d: Dir, p: Pose, cast: number): TowerLayers {
-  const W = 55, H = 56;
+  const W = TW, H = TH;
   const s = new Surface(W, H), back = new Surface(W, H), front = new Surface(W, H);
   const stage = heroStage(level);
   const ph = p.ph, up = p.up;
@@ -46,8 +46,8 @@ export function drawWren(level: number, d: Dir, p: Pose, cast: number): TowerLay
   if (stage >= 1) {
     const wob = [0, 1, 1, 0][ph];
     const len = stage >= 2 ? 3 : 1;
-    back.poly([[ox - 4, G - 10 - up], [ox + 4, G - 10 - up], [ox + 6, G - 2], [ox + 3 + wob, G + len], [ox - 3, G + len + 1 - wob], [ox - 8 - wob, G - 3 + len]], (x) => (x < ox - 4 ? 'plum' : x > ox + 3 ? 'plum' : 'crimson'));
-    back.line(ox - 5, G - 8 - up, ox - 7 - wob, G - 3 + len, 'red');
+    back.poly([[ox - 4, G - 11 - up], [ox + 4, G - 11 - up], [ox + 6, G - 2], [ox + 4, G + len + 1], [ox - 3, G + len + 2 - wob], [ox - 11 - wob, G + len], [ox - 10 - wob, G - 6], [ox - 7, G - 12 - up]], (x, y) => (x > ox + 2 || y > G ? 'plum' : x < ox - 7 ? 'crimson' : 'red'));
+    back.line(ox - 6, G - 11 - up, ox - 10 - wob, G + len - 1, 'coral');
     back.rect(ox - 4, G - 10 - up, 9, 1, 'amber');
   }
   // Haarzopf hinten
@@ -91,7 +91,7 @@ export function drawWren(level: number, d: Dir, p: Pose, cast: number): TowerLay
   const hcx = ox, hcy = G - 15 - up;
   s.ball(hcx, hcy, 5.5, 5, RAMPS.skin);
   // Haare: Kappe + Seitenstraehnen
-  s.ellipseFn(hcx, hcy - 1.5, 6.2, 5, (x, y, nx, ny) => (y < hcy - 2 ? ((-nx * 0.5 - ny * 0.7) > 0.3 ? 'yellow' : 'amber') : null));
+  s.ellipseFn(hcx, hcy - 1.5, 6.2, 5, (x, y, nx, ny) => (y < hcy - 2 ? ((-nx * 0.5 - ny * 0.7) > 0.3 ? 'amber' : 'orange') : null));
   s.rect(hcx - 6, hcy - 2, 2, 5, 'amber'); s.rect(hcx + 5, hcy - 2, 2, 4, 'orange');
   s.px(hcx - 6, hcy - 2, 'yellow');
   // Pony
@@ -144,7 +144,7 @@ export function heroRaster(level: number, facing: number, frame: HeroFrame): { r
   const p = poseOf(cast >= 0 ? 'idle0' : (frame as TowerFrame));
   if (cast >= 0) { p.ph = cast * 2; p.up = cast; }
   const L = drawWren(level, d, p, cast);
-  const out = new Surface(55, 56);
+  const out = new Surface(TW, TH);
   out.blit(L.back); out.blit(outlineSurface(L.fig)); out.blit(L.front);
   const fin = d.flip ? out.flipX() : out;
   return { rows: fin.toRows(), ax: OX, ay: OY, mx: (d.flip ? 2 * OX - L.muzzle[0] : L.muzzle[0]) - OX, my: L.muzzle[1] - OY };

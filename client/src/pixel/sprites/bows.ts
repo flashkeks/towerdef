@@ -65,23 +65,26 @@ export function drawBow(s: Surface, o: BowOpts): { nock: [number, number] } {
 }
 
 export interface ArmOpts { sx: number; sy: number; hx: number; hy: number; sleeve: PalName; skin: PalName; roll: number; hand?: boolean }
-/** Arm als Linie: Aermel bis `roll` (0..1), dann Haut; Hand am Ende. */
+/** Arm: 2 px dick (oben hell, unten dunkel), Aermel bis `roll` (0..1), dann Haut; Hand am Ende (2 x 2). */
 export function drawArm(s: Surface, o: ArmOpts): void {
   const n = Math.max(1, Math.round(Math.hypot(o.hx - o.sx, o.hy - o.sy)));
+  const dark: Record<string, PalName> = { grass: 'pine', orange: 'rust', violet: 'night', navy: 'night', amber: 'rust', leaf: 'grass', bark: 'plum' };
   for (let i = 0; i <= n; i++) {
     const t = i / n;
     const x = o.sx + (o.hx - o.sx) * t, y = o.sy + (o.hy - o.sy) * t;
-    s.px(x, y, t < o.roll ? o.sleeve : o.skin);
+    const sl = t < o.roll;
+    s.px(x, y, sl ? o.sleeve : o.skin);
+    s.px(x, y + 1, sl ? (dark[o.sleeve] ?? o.sleeve) : 'tan');
   }
   if (o.hand !== false) {
-    s.px(o.hx, o.hy, o.skin);
-    s.px(o.hx + 1, o.hy, o.skin);
-    s.px(o.hx, o.hy + 1, 'tan');
+    s.rect(Math.round(o.hx), Math.round(o.hy), 2, 2, o.skin);
+    s.px(o.hx, o.hy, 'peach');
+    s.px(o.hx + 1, o.hy + 1, 'tan');
   }
 }
 
-export function drawArrow(s: Surface, tx: number, ty: number, ux: number, uy: number, len: number, o: { tip: PalName; fletch: PalName | null; shaft?: PalName }): void {
+export function drawArrow(s: Surface, tx: number, ty: number, ux: number, uy: number, len: number, o: { tip: PalName; fletch: PalName | null; shaft?: PalName; barbs?: boolean }): void {
   const vy = uy * 0.85;
   const l = Math.hypot(ux, vy) || 1;
-  arrowAt(s, tx, ty, ux / l, vy / l, len, { tip: o.tip, fletch: o.fletch, shaft: o.shaft ?? 'sand' });
+  arrowAt(s, tx, ty, ux / l, vy / l, len, { tip: o.tip, fletch: o.fletch, shaft: o.shaft ?? 'sand', barbs: o.barbs });
 }
