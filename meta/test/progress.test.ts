@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { createGame } from '../../sim/src/index';
+import { createGame, DATA } from '../../sim/src/index';
 import {
   applyMatch, buyNode, exportProfile, importProfile, knowledgePoints, levelFromXp, loadProfile, matchOptions, matchXp, newProfile,
-  resetKnowledge, unlockEverything, unlockTier, xpForLevel, type MatchResult, type Profile,
+  resetKnowledge, tierCost, unlockEverything, unlockTier, xpForLevel, type MatchResult, type Profile,
 } from '../src/index';
 
 const res = (o: Partial<MatchResult> = {}): MatchResult => ({
-  matchId: 'm1', map: 'meadow', difficulty: 'medium', won: true, roundsCleared: 20, livesLost: 3, pops: { ranger: 400, bombardier: 100 }, tierBuys: { ranger: 4 }, ...o,
+  matchId: 'm1', map: 'meadow', difficulty: 'medium', won: true, roundsCleared: 20, livesLost: 3, pops: { ranger: 400, bombardier: 100 }, ...o,
 });
 const withXp = (xp: number, p: Profile = newProfile()): Profile => ({ ...p, playerXp: xp });
 
@@ -39,13 +39,54 @@ describe('Match anwenden', () => {
     expect(profile.medals.meadow.medium).toBe(true);
     expect(profile.best.meadow.medium).toEqual({ round: 20, livesLost: 3 });
   });
-  it('Turm-XP: Pops + 20 je Stufe, Fast Learner +20 %', () => {
+  it('Turm-XP: Endkonto und Endstufen kommen aus dem Match, Bericht zeigt towerXpGained', () => {
+    const a = applyMatch(newProfile(), res({
+      towerXp: { ranger: 480, bombardier: 20, frostcaller: 100 }, towerXpGained: { ranger: 480, bombardier: 120, frostcaller: 0 },
+      towerTiers: { ranger: [1, 0, 2], bombardier: [0, 0, 0], frostcaller: [0, 0, 0] },
+    }));
+    expect(a.profile.towerXp).toEqual({ ranger: 480, bombardier: 20, frostcaller: 100 });
+    expect(a.profile.towerTiers.ranger).toEqual([1, 0, 2]);
+    expect(a.report.towerXpGained).toEqual({ ranger: 480, bombardier: 120 });
+  });
+  it('Turm-XP: ohne Felder im Ergebnis bleibt das Turm-Profil unveraendert (keine Pops-Formel mehr)', () => {
     const a = applyMatch(newProfile(), res());
-    expect(a.report.towerXpGained).toEqual({ ranger: 480, bombardier: 100 });
-    expect(a.profile.towerXp.ranger).toBe(250 + 480);
-    let p = withXp(xpForLevel(4), newProfile());
-    p = { ...p, knowledge: ['extra-lives', 'fast-learner'] };
-    expect(applyMatch(p, res()).report.towerXpGained.ranger).toBe(576);
+    expect(a.profile.towerXp).toEqual(newProfile().towerXp);
+    expect(a.profile.towerTiers).toEqual(newProfile().towerTiers);
+    expect(a.report.towerXpGained).toEqual({});
+  });
+  it('Stufen sinken nie; mit "unlock everything" bleiben sie unangetastet', () => {
+    const p: Profile = { ...newProfile(), towerTiers: { ranger: [3, 0, 0], bombardier: [0, 0, 0], frostcaller: [0, 0, 0] } };
+    const r = res({ towerXp: { ranger: 0, bombardier: 0, frostcaller: 0 }, towerTiers: { ranger: [1, 2, 0], bombardier: [0, 0, 0], frostcaller: [0, 0, 0] } });
+    expect(applyMatch(p, r).profile.towerTiers.ranger).toEqual([3, 2, 0]);
+    const u: Profile = { ...p, settings: { ...p.settings, unlockAll: true } };
+    const full = res({ towerTiers: { ranger: [5, 5, 5], bombardier: [5, 5, 5], frostcaller: [5, 5, 5] } });
+    expect(applyMatch(u, full).profile.towerTiers).toEqual(p.towerTiers);
+  });
+  it('Startguthaben 100 je Turm (genau Stufe 1)', () => {
+    expect(newProfile().towerXp).toEqual({ ranger: 100, bombardier: 100, frostcaller: 100 });
+  });
+  it('alte 11er-Profile (Startguthaben 250) bleiben gueltig und werden nicht zurueckgesetzt', () => {
+    const old = { ...newProfile(), towerXp: { ranger: 250, bombardier: 250, frostcaller: 250 } };
+    const l = loadProfile(JSON.parse(JSON.stringify(old)));
+    expect(l.reset).toBe(false);
+    expect(l.profile.towerXp.ranger).toBe(250);
+  });
+  it('Ende-zu-Ende mit der Sim: matchOptions -> createGame -> Runde 1 -> applyMatch', () => {
+    const p0 = newProfile();
+    const mo = matchOptions(p0);
+    const g = createGame({ map: 'meadow', difficulty: 'medium', seed: 1, ...mo });
+    let spot = { x: 0, y: 0 };
+    for (let y = 20; y < 340 && !spot.x; y += 20) for (let x = 20; x < 620 && !spot.x; x += 20) if (g.canPlace('ranger', x * 1000, y * 1000).ok) spot = { x: x * 1000, y: y * 1000 };
+    g.apply({ type: 'place', tower: 'ranger', ...spot });
+    expect(g.apply({ type: 'unlockTier', tower: 'ranger', path: 0 }).ok).toBe(true);
+    g.apply({ type: 'startRound' });
+    for (let i = 0; i < 60 * 120 && g.state.roundsCleared < 1; i++) g.step();
+    const S = g.state;
+    expect(S.towerXpGained.ranger).toBeGreaterThan(0);
+    const { profile, report } = applyMatch(p0, res({ matchId: 'e2e', roundsCleared: 1, won: false, towerXp: S.towerXp, towerTiers: S.maxTier, towerXpGained: S.towerXpGained }));
+    expect(profile.towerTiers.ranger).toEqual([1, 0, 0]);
+    expect(profile.towerXp.ranger).toBe(100 - 100 + S.towerXpGained.ranger);
+    expect(report.towerXpGained.ranger).toBe(S.towerXpGained.ranger);
   });
   it('Niederlage: keine Medaille, Bestleistung nur wenn besser', () => {
     const a = applyMatch(newProfile(), res({ won: false, roundsCleared: 8, matchId: 'a' }));
@@ -66,11 +107,14 @@ describe('Match anwenden', () => {
 });
 
 describe('Turm-Stufen', () => {
-  it('der Reihe nach, kostet XP, Stufe 1 mit Startguthaben', () => {
+  it('Kosten stimmen mit den Sim-Daten ueberein (eine Wahrheit: sim/data/xp.json)', () => {
+    expect([1, 2, 3, 4, 5].map(tierCost)).toEqual([...DATA.xp.unlockCost]);
+  });
+  it('der Reihe nach, kostet XP, Stufe 1 genau mit dem Startguthaben', () => {
     const p = newProfile();
     const a = unlockTier(p, 'ranger', 0);
     expect(a.ok && a.profile.towerTiers.ranger).toEqual([1, 0, 0]);
-    expect(a.ok && a.profile.towerXp.ranger).toBe(150);
+    expect(a.ok && a.profile.towerXp.ranger).toBe(0);
     const b = unlockTier(a.ok ? a.profile : p, 'ranger', 0);
     expect(b.ok).toBe(false);
     expect(!b.ok && b.code).toBe('not-enough-xp');
@@ -136,6 +180,14 @@ describe('matchOptions', () => {
     expect(o.unlocks.towers).toEqual(['ranger', 'bombardier', 'frostcaller', 'wren']);
     expect(o.unlocks.maxTier.ranger).toEqual([2, 0, 1]);
     expect(o.mods).toEqual({ startCash: 100, lives: 10, heroStartLevel: 3 });
+  });
+  it('liefert das Turm-XP-Konto; Fast Learner setzt mods.towerXpBp', () => {
+    const p: Profile = { ...withXp(xpForLevel(4)), knowledge: ['extra-lives', 'fast-learner'], towerXp: { ranger: 120, bombardier: 5, frostcaller: 0 } };
+    const o = matchOptions(p);
+    expect(o.towerXp).toEqual({ ranger: 120, bombardier: 5, frostcaller: 0 });
+    expect(o.towerXp).not.toBe(p.towerXp);
+    expect(o.mods.towerXpBp).toBe(2000);
+    expect(matchOptions(newProfile()).mods.towerXpBp).toBeUndefined();
   });
   it('unlock everything', () => {
     const o = matchOptions({ ...newProfile(), settings: { volume: 50, unlockAll: true } });

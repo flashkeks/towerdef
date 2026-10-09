@@ -14,7 +14,7 @@ const DEFAULTS = [
 
 function fmt(r: BotResult, ms: number): string {
   const pops = Object.entries(r.pops).filter(([, v]) => v > 0).map(([k, v]) => `${k} ${v}`).join(', ');
-  return `${r.result.toUpperCase().padEnd(7)} Runde ${String(r.round).padStart(2)} Leben ${String(r.lives).padStart(3)} Geld ${String(r.cash).padStart(5)} Held L${r.heroLevel} | Pops: ${pops} | ${r.difficulty} | ${ms} ms | ${r.strategy}`;
+  return `${r.result.toUpperCase().padEnd(7)} Runde ${String(r.round).padStart(2)} Leben ${String(r.lives).padStart(3)} Geld ${String(r.cash).padStart(5)} Held L${r.heroLevel} | Pops: ${pops} | XP ${r.towerXpGained.ranger}/${r.towerXpGained.bombardier}/${r.towerXpGained.frostcaller} | ${r.difficulty} | ${ms} ms | ${r.strategy}`;
 }
 
 const [, , stratArg, diffArg, seedArg] = process.argv;
@@ -23,7 +23,7 @@ const diffs: Difficulty[] = diffArg ? [diffArg as Difficulty] : ['easy', 'medium
 for (const s of strategies) {
   for (const d of diffs) {
     const t0 = Date.now();
-    const r = runBot(parseStrategy(s), { difficulty: d, seed: Number(seedArg ?? 1) });
+    const r = runBot(parseStrategy(s), { difficulty: d, seed: Number(seedArg ?? 1), towerXp: { ranger: 0, bombardier: 0, frostcaller: 0 } });
     console.log(fmt(r, Date.now() - t0));
   }
 }
