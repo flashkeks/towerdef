@@ -16,13 +16,13 @@ describe('Platzieren', () => {
     expect(g.canPlace('wren', 300000, 170000)).toEqual({ ok: false, reason: 'hero-limit' });
     const poor = newGame({ mods: { startCash: -600 } });
     expect(poor.canPlace('ranger', 60000, 122000)).toEqual({ ok: false, reason: 'no-cash' });
-    const locked = createGame({ map: 'meadow', difficulty: 'medium', seed: 1, unlocks: { towers: ['ranger'], maxTier: { ranger: [2, 2, 2], bombardier: [0, 0, 0], frostcaller: [0, 0, 0] } } });
+    const locked = createGame({ map: 'bare', difficulty: 'medium', seed: 1, unlocks: { towers: ['ranger'], maxTier: { ranger: [2, 2, 2], bombardier: [0, 0, 0], frostcaller: [0, 0, 0] } } });
     expect(locked.canPlace('bombardier', 60000, 122000)).toEqual({ ok: false, reason: 'locked' });
     expect(locked.canPlace('wren', 60000, 122000)).toEqual({ ok: false, reason: 'locked' });
   });
 
   it('Befehl place schlägt mit demselben Grund fehl, Geld wird abgebucht', () => {
-    const g = createGame({ map: 'meadow', difficulty: 'medium', seed: 1 });
+    const g = createGame({ map: 'bare', difficulty: 'medium', seed: 1 });
     expect(g.apply({ type: 'place', tower: 'ranger', x: 60000, y: 92000 })).toEqual({ ok: false, reason: 'on-path' });
     const r = g.apply({ type: 'place', tower: 'ranger', x: 60000, y: 122000 });
     expect(r.ok).toBe(true);
@@ -83,7 +83,7 @@ describe('Preise und Verkauf', () => {
   });
 
   it('Wissensbaum: Startgeld, Leben, T1-Rabatt', () => {
-    const g = createGame({ map: 'meadow', difficulty: 'medium', seed: 1, mods: { startCash: 100, lives: 25, t1DiscountBp: 1000 } });
+    const g = createGame({ map: 'bare', difficulty: 'medium', seed: 1, mods: { startCash: 100, lives: 25, t1DiscountBp: 1000 } });
     expect(g.state.cash).toBe(750);
     expect(g.state.lives).toBe(175);
     const id = place(g, 'ranger');
@@ -95,7 +95,7 @@ describe('Preise und Verkauf', () => {
   });
 
   it('Wissensbaum: Reichweite und Radius', () => {
-    const g = createGame({ map: 'meadow', difficulty: 'medium', seed: 1, mods: { rangeBp: { ranger: 1000 } } });
+    const g = createGame({ map: 'bare', difficulty: 'medium', seed: 1, mods: { rangeBp: { ranger: 1000 } } });
     const id = place(g, 'ranger');
     expect(g.state.towers.find((t) => t.id === id)!.range).toBe(74800);
   });
@@ -125,7 +125,7 @@ describe('Crosspath und Freischaltung', () => {
   });
 
   it('Stufen nur der Reihe nach, kein Geld = no-cash', () => {
-    const g = createGame({ map: 'meadow', difficulty: 'medium', seed: 1 });
+    const g = createGame({ map: 'bare', difficulty: 'medium', seed: 1 });
     const id = place(g, 'ranger');
     expect(g.apply({ type: 'upgrade', towerId: id, path: 0 }).ok).toBe(true);
     expect(g.apply({ type: 'upgrade', towerId: id, path: 0 }).ok).toBe(true); // 120 + 180 = 300 (650-200 = 450 -> 150 übrig)
@@ -135,7 +135,7 @@ describe('Crosspath und Freischaltung', () => {
 
   it('opts.unlocks.maxTier sperrt Stufen mit Grund locked', () => {
     const g = createGame({
-      map: 'meadow', difficulty: 'medium', seed: 1, mods: { startCash: 100000 },
+      map: 'bare', difficulty: 'medium', seed: 1, mods: { startCash: 100000 },
       unlocks: { towers: ['ranger', 'wren'], maxTier: { ranger: [2, 0, 1], bombardier: [0, 0, 0], frostcaller: [0, 0, 0] } },
     });
     const id = place(g, 'ranger');

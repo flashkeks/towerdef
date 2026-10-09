@@ -1,7 +1,8 @@
 import { en, type StringKey } from './en';
+import { matchStrings } from './match';
 
 /** Alle Texte aus der zentralen Datei. */
-const all: Record<string, string> = { ...en };
+const all: Record<string, string> = { ...en, ...matchStrings };
 
 export type Params = Record<string, string | number>;
 
