@@ -2,7 +2,8 @@
  * Feste Zahlen des Fortschritts (docs/design/meta.md). Reine Daten, kein Zustand.
  * Spielersichtbare Texte sind Englisch.
  */
-import type { Difficulty, HeroType, TowerType } from '../../sim/src/types';
+import type { Difficulty, HeroType, PowerKey, TowerType } from '../../sim/src/types';
+import { DATA, POWER_KEYS } from '../../sim/src/data';
 
 export const TOWER_TYPES: readonly TowerType[] = ['ranger', 'bombardier', 'frostcaller'];
 export const DIFFICULTIES: readonly Difficulty[] = ['easy', 'medium', 'hard'];
@@ -95,3 +96,21 @@ export const KNOWLEDGE: readonly KnowledgeNode[] = [
 ];
 export const BRANCH_NAMES: Record<Branch, string> = { economy: 'Economy', towers: 'Towers', wardens: 'Wardens' };
 export const nodeById = (id: string): KnowledgeNode | undefined => KNOWLEDGE.find((n) => n.id === id);
+
+// ---------------------------------------------------------------- Embers und Powers (Runde 12, docs/design/powers.md)
+
+export { POWER_KEYS };
+export const emptyInventory = (): Record<PowerKey, number> => Object.fromEntries(POWER_KEYS.map((k) => [k, 0])) as Record<PowerKey, number>;
+/** Preis einer Power in Embers (aus `sim/data/powers.json`). */
+export const powerPrice = (k: PowerKey): number => DATA.powers[k].price;
+
+/** Embers je geschaffter Runde: 1 + Runde / 5 (abgerundet). Runden ueber `MAX_ROUND` (Freeplay) zaehlen nicht. */
+export const embersForRound = (r: number): number => 1 + Math.floor(r / 5);
+/** Embers fuer einen Sieg. */
+export const EMBERS_WIN: Record<Difficulty, number> = { easy: 20, medium: 30, hard: 50 };
+/** Embers fuer die erste Medaille einer Schwierigkeit (je Karte). */
+export const EMBERS_FIRST_MEDAL = 50;
+/** Embers je Spieler-Level-Up. */
+export const EMBERS_LEVEL_UP = 25;
+/** Einmaliges Startpaket fuer neue und bestehende Profile. */
+export const STARTER_PACK: { embers: number; powers: Partial<Record<PowerKey, number>> } = { embers: 100, powers: { goldDrop: 1, lanternBomb: 1 } };
