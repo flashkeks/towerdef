@@ -179,9 +179,13 @@ describe('Wirkung der Knoten in matchOptions', () => {
     expect(g.state.cash).toBe(650 + 300);
     expect(g.state.lives).toBe(150 + 25);
     expect(g.state.powers.goldDrop).toBe(2); // Startpaket 1 + Starter Kit 1
-    const base = createGame({ map: 'meadow', difficulty: 'medium', seed: 1, mods: { startCash: 5000, heroStartLevel: 5 } });
-    base.apply({ type: 'place', tower: 'wren', x: 200000, y: 170000 });
-    expect(base.state.towers[0].heroLevel).toBe(5);
+    // Legendary: Wren startet auf Level 5
+    let placed = false;
+    for (let y = 20000; y < 340000 && !placed; y += 20000) {
+      for (let x = 20000; x < 600000 && !placed; x += 20000) placed = g.apply({ type: 'place', tower: 'wren', x, y }).ok;
+    }
+    expect(placed).toBe(true);
+    expect(g.state.towers[0].heroLevel).toBe(5);
   });
 });
 
