@@ -46,8 +46,8 @@ export function drawWren(level: number, d: Dir, p: Pose, cast: number): TowerLay
   if (stage >= 1) {
     const wob = [0, 1, 1, 0][ph];
     const len = stage >= 2 ? 3 : 1;
-    back.poly([[ox - 4, G - 10 - up], [ox + 4, G - 10 - up], [ox + 6, G - 2], [ox + 3 + wob, G + len], [ox - 3, G + len + 1 - wob], [ox - 8 - wob, G - 3 + len]], (x) => (x < ox - 4 ? 'plum' : x > ox + 3 ? 'plum' : 'crimson'));
-    back.line(ox - 5, G - 8 - up, ox - 7 - wob, G - 3 + len, 'red');
+    back.poly([[ox - 4, G - 11 - up], [ox + 4, G - 11 - up], [ox + 6, G - 2], [ox + 4, G + len + 1], [ox - 3, G + len + 2 - wob], [ox - 11 - wob, G + len], [ox - 10 - wob, G - 6], [ox - 7, G - 12 - up]], (x, y) => (x > ox + 2 || y > G ? 'plum' : x < ox - 7 ? 'crimson' : 'red'));
+    back.line(ox - 6, G - 11 - up, ox - 10 - wob, G + len - 1, 'coral');
     back.rect(ox - 4, G - 10 - up, 9, 1, 'amber');
   }
   // Haarzopf hinten
@@ -91,7 +91,7 @@ export function drawWren(level: number, d: Dir, p: Pose, cast: number): TowerLay
   const hcx = ox, hcy = G - 15 - up;
   s.ball(hcx, hcy, 5.5, 5, RAMPS.skin);
   // Haare: Kappe + Seitenstraehnen
-  s.ellipseFn(hcx, hcy - 1.5, 6.2, 5, (x, y, nx, ny) => (y < hcy - 2 ? ((-nx * 0.5 - ny * 0.7) > 0.3 ? 'yellow' : 'amber') : null));
+  s.ellipseFn(hcx, hcy - 1.5, 6.2, 5, (x, y, nx, ny) => (y < hcy - 2 ? ((-nx * 0.5 - ny * 0.7) > 0.3 ? 'amber' : 'orange') : null));
   s.rect(hcx - 6, hcy - 2, 2, 5, 'amber'); s.rect(hcx + 5, hcy - 2, 2, 4, 'orange');
   s.px(hcx - 6, hcy - 2, 'yellow');
   // Pony

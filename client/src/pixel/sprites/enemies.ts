@@ -232,7 +232,7 @@ function drawLeviathan(f: number, fallen: number, s: Surface): void {
   plates.forEach((pl, i) => {
     const gone = i < fallen;
     if (gone) {
-      s.poly(pl.pts, (x, y) => (((x + y + f) % 4 === 0) ? 'magenta' : (x + y) % 3 === 0 ? 'orchid' : 'violet'));
+      s.poly(pl.pts, (x, y) => ((x * 3 + y * 5 + f) % 13 === 0 ? 'magenta' : y < pl.pts[0][1] + 5 ? 'orchid' : 'violet'));
       s.line(pl.pts[0][0], pl.pts[0][1], pl.pts[2][0], pl.pts[2][1], 'plum');
       for (const r of pl.rivets) s.px(r[0], r[1], 'ink');
     } else {
