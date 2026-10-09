@@ -11,7 +11,8 @@ import type { Difficulty } from '../src/types.js';
  * `{H}` darin wird mit Held zu `h`, sonst leer. Tuerme nach Index in `text` (ohne `hero`).
  */
 interface Combo { label: string; text: string; script?: string }
-const MARKET_TOWERS = 'ranger 0-0-0 + ranger 0-2-4 + bombardier 0-0-0 + bombardier 4-2-0 + market 2-2-0';
+const BASE = 'ranger 0-0-0 + ranger 0-2-4 + bombardier 0-0-0 + bombardier 4-2-0';
+const UP = 'u1C u3A u1C u3A u1C u3A u1C u3A u1B u3B u1B u3B';
 const COMBOS: Combo[] = [
   { label: 'Ranger + Bombardier', text: 'ranger 0-0-0 + ranger 0-2-4 + bombardier 0-0-0 + bombardier 4-2-0' },
   { label: 'Ranger + Frostcaller', text: 'ranger 0-0-0 + ranger 0-2-4 + frostcaller 0-0-0 + frostcaller 2-0-4' },
@@ -24,19 +25,12 @@ const COMBOS: Combo[] = [
   { label: 'Ranger + Longshot 0-3-3', text: 'ranger 0-0-0 + ranger 0-2-4 + longshot 0-0-0 + longshot 0-3-3' },
   { label: 'Bombardier + Longshot 4-2-0', text: 'bombardier 0-0-0 + bombardier 4-2-0 + longshot 0-0-0 + longshot 4-2-0' },
   { label: 'nur Longshot', text: 'longshot 0-0-0 + longshot 0-0-0 + longshot 4-2-0 + longshot 0-2-4' },
-  { label: 'Ranger + Bombardier, kein Market', text: 'ranger 0-0-0 + ranger 0-2-4 + bombardier 0-0-0 + bombardier 4-2-0' },
-  {
-    label: 'Ranger + Bombardier + Market 2-2-0 frueh (Bau nach dem ersten Ranger)', text: MARKET_TOWERS,
-    script: 'p0 p4 u4A u4B u4A u4B {H} p2 p1 p3 u1C u3A u1C u3A u1C u3A u1C u3A u1B u3B u1B u3B',
-  },
-  {
-    label: 'Ranger + Bombardier + Market 2-2-0 spaet (nach allen Upgrades)', text: MARKET_TOWERS,
-    script: 'p0 p2 p1 p3 {H} u1C u3A u1C u3A u1C u3A u1C u3A u1B u3B u1B u3B p4 u4A u4B u4A u4B',
-  },
-  {
-    label: 'Ranger + Bombardier + Market 0-0-5 Aura frueh', text: 'ranger 0-0-0 + ranger 0-2-4 + bombardier 0-0-0 + bombardier 4-2-0 + market 0-0-3',
-    script: 'p0 p2 p1 p3 p4 u4C u4C u4C {H} u1C u3A u1C u3A u1C u3A u1C u3A u1B u3B u1B u3B',
-  },
+  // Market: Reihenfolge ist das Thema. Index 0-3 = Ranger/Bombardier wie oben, 4 = Market.
+  { label: 'Ranger + Bombardier + Market 1-0-0 frueh (R4, nach Grundstock + 3 Upgrades)', text: `${BASE} + market 1-0-0`, script: 'p0 p2 p1 p3 {H} u1C u3A u1C p4 u4A u3A u1C u3A u1C u3A u1B u3B u1B u3B' },
+  { label: 'Ranger + Bombardier + Market 2-2-0 mitte (nach 6 Upgrades)', text: `${BASE} + market 2-2-0`, script: 'p0 p2 p1 p3 {H} u1C u3A u1C u3A u1C u3A p4 u4A u4B u4A u4B u1C u3A u1B u3B u1B u3B' },
+  { label: 'Ranger + Bombardier + Market 2-2-0 spaet (nach allen Upgrades)', text: `${BASE} + market 2-2-0`, script: `p0 p2 p1 p3 {H} ${UP} p4 u4A u4B u4A u4B` },
+  { label: 'Ranger + Bombardier + Market 0-4-0 Grant mitte', text: `${BASE} + market 0-4-0`, script: 'p0 p2 p1 p3 {H} u1C u3A u1C u3A u1C u3A p4 u4B u4B u4B u4B u1C u3A u1B u3B u1B u3B' },
+  { label: 'Ranger + Bombardier + Market 0-0-3 Drum Hall frueh', text: `${BASE} + market 0-0-3`, script: 'p0 p2 p1 p3 {H} u1C u3A u1C u3A p4 u4C u4C u4C u1C u3A u1C u3A u1B u3B u1B u3B' },
 ];
 const seeds = (process.env.MATRIX_SEEDS ?? '1,2,3').split(',').map(Number);
 const diffs = (process.env.MATRIX_DIFFS ?? 'easy,medium,hard').split(',') as Difficulty[];

@@ -295,6 +295,8 @@ export interface GameState {
     powersUsed: Record<PowerKey, number>;
     /** Runde 13: Summe des Market-Einkommens (inkl. Zinsen) in diesem Match. */
     income: number;
+    /** Runde 13: Gold aus den Fähigkeiten Grant und Supply Drop. */
+    abilityCash: number;
   };
   /** Runde 12: Restbestand je Power (Start = `GameOptions.powers`). */
   powers: Record<PowerKey, number>;

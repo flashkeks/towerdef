@@ -163,3 +163,51 @@ Verbrauchs-Items, im Match per Befehl `{ type: 'power', power, x?, y? }` eingese
 - **Insta-Warden:** `spawnTower` mit fertigen Stufen, `spent = 0` (Verkaufswert 0), ohne Kosten und ohne Stufen-Sperre.
 - **Vorschau:** `game.roundPreview(r)` -> `{ round, groups, rbe, hasCamo, hasArmor, hasEmber, hasBoss }`.
 - Tests: `test/powers.test.ts` (Daten, Bestand/Sperre, jede Power, Fallen-Kollision, Insta-Varianten, Vorschau, Determinismus).
+
+## Runde 13: Lantern Market, Longshot, größerer Wissensbaum
+
+Spezifikation: `docs/design/tuerme-r13.md`, Vertrag: `docs/design/schnittstelle.md` „Ergänzung Runde 13“. Daten: `data/towers.json` (`longshot`, `market`), Stats in `src/stats.ts`. Tests: `test/market.test.ts`, `test/longshot.test.ts`, `test/r13mods.test.ts`. 173 Tests.
+
+**Lantern Market (`market`).** `atk: 'none'`; `range` = Wirkradius der Auren (80 px, `TowerState.range`). Einkommen (`income`, additiv über die Pfade: 60 + A + B1) wird in `endRound(r)` ausgezahlt, **vor** Wren-XP und Turm-XP, je Runde einzeln (Überlappung zahlt je beendeter Runde). Reihenfolge je Market: Betrag = `income × (10000 + marketBp + goldenBp) / 10000` (Golden Exchange = höchster `goldenBp` unter den *anderen* Markets, nicht gestapelt). Mit Bank (`bankOn`): `Konto + Zinsen(altes Konto, Satz = bankRateBp + Compound Interest) + Einnahmen`, gedeckelt auf `bankCap`; **was über den Deckel geht, wird als Geld ausgezahlt** (Event `income.cash`), nichts verfällt. `withdraw` zahlt das Konto aus, Verkauf zahlt es mit (`sellValue` enthält es). Konto zählt nicht als Geld.
+**Auren (Pfad C)** wirken auf alle anderen Türme (inkl. Wren, nicht auf Markets selbst) im Radius, Mitte zu Mitte. Je Feld zählt der stärkste Wert aller Markets (`auraOf`): Reichweite (additiv zur Helden-Aura; Longshot ignoriert sie), Erkennung (`t.camo` wird jeden Tick neu gesetzt), Tempo (additiv zu Helden-Aura, Elite, Wissensbaum), Armory (`sharp` wird `magic` und +1 Pierce, nur Projektile), +1 Schaden (Projektil, Bombe, Kettenblitz, bei der Berechnung des Schusses), Upgrade-Rabatt (nach Cheaper Basics/Veteran Primaries, vor der 5er-Rundung). Grant: globale Fähigkeit `grant` (Summe über alle Markets mit Grant Office, Abklingzeit 90 s).
+
+**Longshot (`longshot`).** `range` 1.000.000 Milli-px = `GLOBAL_RANGE` (exportiert aus `game.ts`): `pickTarget` geht dann über `state.enemies` statt über das Raster, Reichweiten-Auren gelten nicht. Projektil `snipe` 3.000 px/s = 50.000 Milli-px je Tick, Lebensdauer 30 Ticks; Treffer wie bei jedem Projektil per Sweep beim Fliegen (nie im Tick des Abschusses). Pfad A: `set dmg`/`dtype`, `bonusBrute`/`bonusBoss` (gelten wie überall: Boss bekommt beide), Lanternbreaker `hitStunBoss` (30 Ticks). Pfad B: Intervall-Faktoren, B5 `set 7200` + `max dmg 4`; **Focus** = globale Fähigkeit, `focusLeft`, Tempo ×2 für alle Longshots (480 Ticks, 3600 Abklingzeit). Pfad C: Shrapnel (`fragOnHit`, 3 Splitter an der Trefferstelle, ohne den Getroffenen), Ricochet (`ricochet()`: sofort bis zu 2 weitere Gegner im Umkreis 60 px, je Sprung 1 Schaden weniger, mindestens 1, ohne Bonus, Event `ricochet`), **Supply Drop** (globale Fähigkeit, jeder Longshot mit C3 liefert seine Kiste), Elite Sniper (`eliteBp` +40 % Tempo für alle Longshots, größter Wert gilt; `eliteStrong`: Brute vor Boss), **Crippling Shot** (Nicht-Boss −50 % für 120 Ticks; Boss bekommt `markTicks` 180 / `markBp` 2000 *statt* Verlangsamung; `damage()` rechnet die Markierung nach Brittle Ice als `+ (Schaden × bp + 5000) / 10000`).
+
+**Turm-XP.** `XP_TOWER_TYPES` (`src/xp.ts`) hat fünf Typen, Rest-Reihenfolge ranger, bombardier, frostcaller, longshot, market. Market hat keine Pops und bekommt damit nur den Geld-Anteil. `GameOptions.towerXp`/`unlocks.maxTier` sind `Partial`: fehlende Typen = Konto 0 bzw. Stufen `[0,0,0]` (die Meta füllt sie immer).
+
+**Neue Wissensbaum-Mods** (`GameOptions.mods`): `t2DiscountBp`, `tempoBp`, `freezeAddTicks`, `marketBp`, `bankRateBp`, `supplyBonus`, `marketRadiusBp`, `marketPriceBp` (nur Kaufpreis des Markets), `heroXpBp`, `powerUses`, `freePowers`. Spare Pocket: `state.powerUses` zählt die Einsätze der Runde `powerUsedRound`.
+
+**Bot und Matrix.** `parseStrategy` kennt `longshot`/`market`. Support-Türme (Longshot, Market) stehen abseits des Wegs (Market mit Pfad C mittig zwischen den Türmen). Der Bot hebt Banken nur ab, wenn der nächste Kauf sonst nicht klappt; Grant und Supply Drop löst er sofort aus, Focus bei ≥ 6 Gegnern oder Boss. `BotResult.income` / `abilityCash`. Die Matrix hat Zeilen mit festem `script` (Market früh/mitte/spät), `{H}` = Held-Kauf.
+
+### Abweichungen und Auslegungen Runde 13
+
+| Was | Entwurf | Jetzt | Grund |
+|---|---|---|---|
+| Bank-Deckel | „max. 3.000“ | Überlauf wird als Geld ausgezahlt | nichts soll verfallen; ein volles Konto zahlt dann Zinsen + Einnahmen jede Runde |
+| Fähigkeiten Grant / Supply Drop | je Turm | global, mehrere Türme addieren, gemeinsame Abklingzeit | wie Arrow Rain; gleichwertig zu je einer Fähigkeit je Turm |
+| Elite Sniper „Strong bevorzugt Brutes“ | unklar | Brute-Rang 9, über dem Boss (8), nur wenn der Longshot Elite hat | sonst ändert sich nichts (Brute steht schon über Ironshell) |
+| Lanternbreaker-Taumeln | 0,5 s | 30 Ticks nur gegen den Boss; die Boss-Hülle (300/400 HP) fällt aber schon durch den Schuss (80 + 10 + 500) | Zahlen laut Entwurf; Taumeln wirkt nur, wenn der Boss mehr Hülle hat |
+| Ricochet | „je −1 Schaden“ | −1 je Sprung, Mindestschaden 1, kein Brute-/Boss-Bonus, Sprungweite 60 px | Sprungweite war offen |
+| Wissensbaum | 30 Knoten | **28** (ohne Field Medic; Summe 52 statt ≈ 55 Punkte) | Tabelle ergibt 29 Einträge, Field Medic kommt mit Runde 14 |
+| Veteran Primaries | T2 −10 % | nur Ranger/Bombardier/Frostcaller; Cheaper Basics (T1) gilt für alle Türme | Name „Primaries“ |
+| Thick Walls | +15 Leben | +15 zusätzlich zu Extra Lives (+10) = 25 | beide im selben Ast |
+| Scholar, Ember Pouch, Bulk Buyer, Starter Kit | Mods an die Sim | Scholar/Ember Pouch/Bulk Buyer sind reine Meta-Wirkungen (`applyMatch`, `buyPower`); Starter Kit = `mods.freePowers` + Abzug im Inventar | Spieler-XP, Embers und Store kennt die Sim nicht |
+
+### Rauchtest und Matrix (Seeds 1-3, `npm run matrix`)
+
+Stand dieses Commits, Zeilen der neuen Aufstellungen (Ø Leben bei Sieg, sonst Ø Runde):
+
+| Aufstellung | Held | easy | medium | hard |
+|---|---|---|---|---|
+| Ranger + Bombardier (Referenz) | ja / nein | 200 L / 200 L | 150 L / 100 L | 65 L / R18 |
+| Ranger + Longshot 4-2-0 | ja / nein | 200 L / 82 L | 78 L / R18 | R17 / R10 |
+| Ranger + Longshot 0-3-3 | ja / nein | 200 L / 189 L | 149 L / 129 L | 82 L / R18 |
+| Bombardier + Longshot 4-2-0 | ja / nein | 200 L / 200 L | 98 L / 22 L | R18 / R13 |
+| nur Longshot (4 Stück) | ja / nein | 165 L / R18,7 | 60 L / R18 | R13,7 / R10,7 |
+| + Market 1-0-0 früh (R4) | ja / nein | 200 L / 164 L | 150 L / R16 | R20 / R12 |
+| + Market 2-2-0 mitte | ja / nein | 200 L / 153 L | 106 L / R15 | R18 / R13 |
+| + Market 2-2-0 spät | ja / nein | 200 L / 171 L | 150 L / R20 | R20 / R13 |
+| + Market 0-4-0 Grant mitte | ja / nein | 136 L / R17 | R20 / R15 | R18 / R13 |
+| + Market 0-0-3 Drum Hall früh | ja / nein | 200 L / 134 L | 146 L / R15 | R16 / R12 |
+
+Befunde: (1) Longshot-Kombinationen schaffen Medium **mit** Held (Ranger + Longshot 0-3-3 sogar ohne und auf Hard mit Held); Pops je 1.000 Gold liegen bei 425-640 (Bombardier/Frostcaller 555-565, Ranger 200-400): kein Turm um mehr als 2×. (2) Market in 20 Runden: A1 früh bringt 1.050 Einnahmen für 1.400 Gold (Medium), A2 1.450 für 2.000: Gold-Turm lohnt nur bei Bau in den ersten Runden und selbst dann ≈ ausgeglichen; später Bau kostet Leben (mitte 106 L statt 150 L). Grant mitte frisst 9.300 Gold und verliert gegen die Referenz. (3) Der Bot setzt Market-Pfad C nicht gezielt ein (Aura nützt erst mit mehreren ausgebauten Türmen, 15.000 Gold für Lantern Capital sind bis R20 kaum erreichbar).

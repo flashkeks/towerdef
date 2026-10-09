@@ -109,6 +109,7 @@ export function createGame(opts: GameOptions): Game {
       spent: { ...perTower(() => 0), wren: 0 },
       powersUsed: zeroPowers(0),
       income: 0,
+      abilityCash: 0,
     },
     powers: powers0,
     powerUsedRound: zeroPowers(-1),
@@ -1198,6 +1199,7 @@ export function createGame(opts: GameOptions): Game {
         }
       }
       S.cash += total;
+      S.stats.abilityCash += total;
       emit({ type: 'ability', tick: S.tick, id, x: at?.x, y: at?.y, cash: total });
     } else if (id === 'grant') {
       let total = 0;
@@ -1210,6 +1212,7 @@ export function createGame(opts: GameOptions): Game {
         }
       }
       S.cash += total;
+      S.stats.abilityCash += total;
       emit({ type: 'ability', tick: S.tick, id, x: at?.x, y: at?.y, cash: total });
     } else {
       const h = heroTower();

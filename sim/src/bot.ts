@@ -56,6 +56,8 @@ export interface BotResult {
   towerXpGained: Record<TowerType, number>;
   /** Market-Einkommen (Runde 13) inklusive Zinsen, ohne Grant/Supply Drop. */
   income: number;
+  /** Gold aus Grant und Supply Drop. */
+  abilityCash: number;
   hash: string;
 }
 
@@ -277,6 +279,7 @@ export function runBot(strategy: Strategy, opts: Partial<GameOptions> & { diffic
     heroLevel: hero?.heroLevel ?? 0,
     towerXpGained: { ...S.towerXpGained },
     income: S.stats.income,
+    abilityCash: S.stats.abilityCash,
     hash: game.hash(),
   };
 }
