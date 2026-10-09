@@ -1,226 +1,196 @@
-# run.md — Runde 10: Echte Figuren, echte Bilder, und das Match sieht aus wie ein Spiel
+# run.md — Runde 11: Neustart wie Bloons TD 6, als Vertical Slice in Pixel-Art
 
 Du arbeitest in `flashkeks/towerdef` auf dem Branch **`dev`**. Commit und Push nach jedem Paket.
 Kein neuer Branch nach außen, kein Pull Request, außer Max verlangt es.
-
-> Diese Datei ersetzt den ersten Runde-10-Auftrag (`docs/archiv/run-runde10-alt.md`), der nie lief.
-> Grund: Max hat Runde 9 am 08.10.2026 gespielt, Rückmeldung siehe Abschnitt 2.
-> **Welten 11–22 sind auf Runde 11 verschoben**, Look geht vor Masse.
 
 ---
 
 ## 0. Kaltstart: Wenn du dieses Projekt noch nicht kennst
 
-**Was das ist:** „Duskwardens“, ein Web-Tower-Defense im Stil und Umfang von **Anime Adventures (AA,
-Roblox)**. Gebaut von Max und Plori, **nur intern** (hinter Cloudflare Access). Läuft komplett im
-Browser: deterministischer Simulator in TypeScript (`sim/`), Meta-Logik ohne DOM (`meta/`: Gacha,
-Level, Evolution, Traits, Belohnungen, Speicherstand), Client mit Vite + PixiJS v8 (`client/`).
-Speicherstand liegt lokal im Browser (IndexedDB); ein Server kommt später (M2).
+**Was das ist:** „Duskwardens“, ein Web-Tower-Defense von Max und Plori, **nur intern** (hinter Cloudflare
+Access). Läuft komplett im Browser: deterministischer Simulator in TypeScript (`sim/`), Meta-Logik ohne DOM
+(`meta/`: Fortschritt, Freischaltungen, Speicherstand), Client mit Vite + PixiJS v8 (`client/`).
+Speicherstand lokal im Browser (IndexedDB).
+
+**Was gerade passiert:** Runde 4–10 haben ein Anime-Adventures-Klon gebaut (550 importierte Units, Gacha,
+AniList-Bilder). Max hat Runde 10 gespielt und **neu entschieden (09.10.2026): wir bauen das Spiel wie
+Bloons TD 6** — wenige, durchdachte Türme mit Upgrade-Pfaden, alles in **eigener Pixel-Art**, viel zum
+Freischalten. Anime-Figuren sind **nicht** mehr Pflicht; eigene Figuren sind ausdrücklich erwünscht.
+Diese Runde baut davon einen **Vertical Slice**: wenig Inhalt, aber in der Qualität des fertigen Spiels.
 
 **Lies in dieser Reihenfolge, bevor du etwas tust:**
-1. `docs/design/ENTSCHEIDUNGEN.md` — verbindlich. **Ganz oben „Look-Wechsel 08.10.2026“**, dann
-   „Kurswechsel 07.10.2026“. Beide schlagen alles, was weiter unten steht.
-2. `docs/STATUS.md` — Stand, Pakettabellen, offene Fragen (mit Max' Antworten).
-3. `docs/aa-import/` — `format.md` (Unit-Datenformat), `neue-unit.md`, `welten.md`, `massstab.md`,
-   `report.md`, `unsupported.md`.
-4. Diese Datei.
+1. `docs/design/ENTSCHEIDUNGEN.md` — **ganz oben „Neustart als BTD6-artiges Spiel (09.10.2026)“**. Das schlägt
+   alles darunter (Look-Wechsel, Kurswechsel, AA-Import sind überholt).
+2. `docs/games/btd6/` — **die Recherche, an die wir uns halten**: `overview.md`, `mechanics.md` (Crosspath,
+   Targeting, Angriffszyklus, Status), `units.md` (26 Türme, Werte, Rollen, Helden), `economy.md`
+   (Einkommen, Kostenkurve, Verkauf), `enemies-waves.md` (Gegner-Schichten, RBE, Rundenliste),
+   `meta.md` (Level, Freischaltung, Knowledge), `design-lessons.md` (11 Lehren — gelten).
+3. `docs/STATUS.md`, dann diese Datei.
 
-Rohdaten aus der AA-Recherche: `docs/anime-adventures/data/` (561 Units, 1.098 Angriffe, 22 Effekte,
-Evolutionen, Traits, Banner, Bosse, Welten, Legend Stages, Raids, Waves). Importer: `npm run aa-import`.
-
-**Stand nach Runde 9** (`70854b0`, seit 08.10.2026 auf der Preview): 550 AA-Units (542 voll),
-Fähigkeiten mit Auto-Schalter, Beschwörungen, Zweitangriffe; 25 Crossover-Figuren mit eigenem Banner;
-10 Welten × 6 Acts + Infinite; 8 Legend Stages, 11 Raids mit Raid-Shop; alle Bildschirme außerhalb des
-Matches im neuen Look. Spielstand Schema 3.
-Tests: sim 381, meta 168, client 252, Smoke 323 Prüfungen.
+Max' Replay vom 09.10.: `docs/balancing/playtests/2026-10-09-max-normal-loss.json` (altes Regelwerk, nur als
+Beleg für die Probleme: Schaden vor Animation, 40× Stärkeunterschied).
 
 **Wer was macht:**
-- **Du** baust und testest. **Du deployst nie.**
-- Die **Homelab-Seite** (andere Claude-Session im Repo `flashkeks/homelab`, Doku dort unter
-  `websites/towerdef/README.md`) baut die Preview `https://duskwardens.flashkeks.com` aus `dev` auf
-  Ansage von Max und **holt alle Bilder** auf `edge` (AniList, Wikipedia, Fandom sind aus deiner
-  Umgebung gesperrt). Ausgeliefert unter `/aa/units/<id>.webp`, Liste in `/aa/index.json`. Lokal und in
-  deinen Screenshots siehst du nur die Ersatzkarten. Das ist normal.
-- Du lieferst der Homelab-Seite **Daten**: welches Bild zu welcher Unit gehört (Manifest, P1).
+- **Du** entwirfst, baust und testest. **Du deployst nie.**
+- Die **Homelab-Seite** (andere Claude-Session, Repo `flashkeks/homelab`, `websites/towerdef/README.md`)
+  baut die Preview `https://duskwardens.flashkeks.com` aus `dev` auf Ansage von Max.
+- **Keine Fremdbilder** mehr für Türme, Gegner, Karte: alles wird **im Code gezeichnet** (Abschnitt 3).
 
 ---
 
 ## 1. Arbeitsweise und Budget
 
-- Subagenten **immer `model: "sonnet"`**. **Nie Opus.** Mechanisches darf `"haiku"` sein.
-  Höchstens **3 Agenten gleichzeitig**.
-- **Nutzungslimit kommt vor** (Runde 8 zweimal, Runde 9 einmal):
-  - Jeder Agent committet **spätestens alle 30 Minuten** einen Zwischenstand (`wip:` ist ok).
-  - Nach einem Limit: Agenten **fortsetzen** (SendMessage), **nicht neu starten**.
-  - Fertige Pakete **sofort** nach `dev` mergen und pushen.
-- **Jedes Paket endet mit Screenshots** in `client/docs/r10/` und einer Zeile in STATUS: „Was man
-  jetzt sehen kann“.
-- **Keine Balance-Messreihen.** Bots nur als Rauchtest.
+- Subagenten **immer `model: "sonnet"`**, auch beim Fortsetzen per SendMessage (Runde 10 lief dabei
+  versehentlich auf Opus ins Wochenlimit — beim Fortsetzen das Modell ausdrücklich mitgeben). **Nie Opus.**
+  Mechanisches darf `"haiku"` sein. Höchstens **3 Agenten gleichzeitig**.
+- **Nutzungslimit kommt vor.** WIP-Commit spätestens alle 30 min; nach Limit **fortsetzen, nicht neu starten**;
+  fertige Pakete sofort mergen.
+- **Jedes Paket endet mit Screenshots** in `client/docs/r11/` (und wo Bewegung zählt: kurze GIF/WebM aus dem
+  Screenshot-Skript) und einer Zeile in STATUS: „Was man jetzt sehen kann“.
 - Vor jedem Merge: Tests + Typecheck in `sim/`, `meta/`, `client/`, `npm run build`, `npm run smoke`.
+- **Balance diesmal ernst, aber begrenzt:** Werte werden je Turm **entworfen** (Tabelle mit Begründung), dann
+  per Bot-Lauf geprüft (Abschnitt 4, P5). Keine Messreihen über Stunden.
 
 ---
 
-## 2. Was Max nach Runde 9 gesagt hat (08.10.2026, sinngemäß)
+## 2. Ziel dieser Runde (sichtbar)
 
-- „Deutlich besser als die ersten Versuche. Das Interface finde ich gut.“
-- **„Das Summonen sieht echt ungeil aus.“** Allgemein **mehr Soundeffekte, mehr visuelle Effekte.**
-- **Daily Pack:** man sieht nur den ersten Gewinn, man kann sich nicht durchklicken. „Die
-  Interaktionen funktionieren noch nicht so ganz, oder es fehlen welche.“
-- **Die Bilder sind 1:1 von AA, das sind alles Roblox-Charaktere. Sieht scheiße aus.** Eigene bzw.
-  echte Bilder der Figuren aus dem Netz.
-- **Viele Figuren sind bescheuert benannt.** Echte Anime-Charaktere, am besten bekannte. Und bekannte
-  Personen („Donald Trump oder so“). „Denkt euch was aus.“
-- **Im Match** stehen auf platzierten Units nur Buchstaben. Units brauchen ein Design, **Attacken
-  auch.** „Da fehlt noch ordentlich was.“
+Max öffnet die Preview und spielt **eine wunderschöne Pixel-Karte, 20 Runden, mit 3 Türmen und 1 Helden**,
+jeder Turm mit **3 Pfaden × 5 Stufen**, und jede gekaufte Stufe **sieht man am Turm**. Treffer landen,
+wenn das Projektil ankommt. Nach dem Match steigt sein Spieler-Level, Türme sammeln XP und schalten
+Upgrades frei, es gibt einen kleinen Wissensbaum. Er soll sagen: **„So ist es geil, davon mehr.“**
 
-Daraus die Ziele dieser Runde:
-1. **Jede Unit ist eine echte, bekannte Figur** mit echtem Namen und Serie, dazu ein Promi-Banner.
-2. **Das Match sieht aus wie ein Spiel:** Figuren statt Buchstaben, Angriffe mit Grafik, Treffer,
-   Tod, Fähigkeit, Ton.
-3. **Beschwören ist ein Höhepunkt**, Mehrfach-Ergebnisse lassen sich durchklicken, überall Ton und
-   Rückmeldung.
+Was **nicht** in diese Runde gehört: weitere Türme, Gacha, mehrere Karten, Koop, Server.
 
 ---
 
-## 3. Arbeitspakete
+## 3. Leitplanken für Inhalt und Grafik
 
-Parallel: **P1, P2, P3** (je ein Agent). P4 startet, sobald einer davon fertig ist.
+### Welt und Figuren (eigene, du entscheidest)
+- Name bleibt **Duskwardens**: Wächter einer Stadt am Rand der Dämmerung gegen Kreaturen aus dem Zwielicht.
+  Ausgestalten darfst du frei (in `docs/design/welt.md`, kurz). Ton: hell, verspielt, lesbar wie BTD6 —
+  nicht düster-matschig.
+- **Gegner mit Schichten wie Bloons** (BTD6-Kern, siehe `enemies-waves.md`): ein Treffer knackt eine Hülle,
+  darunter kommt die nächste, kleinere Form (sichtbar!). Dazu RBE als eine Zahl für Rundenstärke. Für den
+  Slice: **5–7 Gegnertypen** inkl. schnell, gepanzert (braucht Explosion o. ä.), getarnt (braucht
+  Erkennung), Flieger optional, **ein Boss in Runde 20** (großer Gegner mit Hülle, wie ein MOAB).
+- **3 Türme, je eine klare Rolle** (Vorschlag, Namen/Figuren frei):
+  1. **Schütze** (billig, Einzelziel, wie Dart): Pfade z. B. Durchschlag / Schussrate / Reichweite+Tarnung.
+  2. **Bombardier** (Fläche, knackt Panzer, wie Bomb): Pfade z. B. Explosion größer / Splitter / Betäubung.
+  3. **Frostmagier** (Kontrolle, wie Ice/Wizard): Pfade z. B. Verlangsamen / Einfrieren+Schaden / Blitz.
+  Wenn du eine bessere Dreierbesetzung siehst (z. B. Farm statt Magier, weil Ökonomie wichtiger ist):
+  begründen in STATUS, dann machen.
+- **1 Held** (wie BTD6: einmal pro Match, Level 1–20 durch XP im Match, bei bestimmten Leveln
+  Fähigkeiten, zwei aktive Fähigkeiten mit Abklingzeit). Eigene Figur.
+- **Crosspath wie BTD6:** ein Pfad bis 5, ein zweiter bis 2, der dritte 0.
+- **Kostenkurve wie BTD6** (`design-lessons.md` Lehre 4): grob T1 0,6×, T3 3,3×, T4 12×, T5 80× Basispreis.
+  **Einkommen wie BTD6** (Lehre 2): Pop-Cash, Rundenbonus 100 + Runde, Verkauf 70 %.
+- **Faustregel gegen Runde-10-Fehler:** Kein Turm darf bei gleichem Geldeinsatz mehr als ~2× den
+  Schaden eines anderen machen, außer gegen seine Spezialität. Für jede Stufe: Kosten, DPS, Pierce,
+  Reichweite, Effekt in einer Tabelle (`docs/design/tuerme.md`).
 
-### P0 — Status (Hauptsitzung, zuerst)
-- `docs/STATUS.md`: Runde-10-Tabelle, Runde 9 abgeschlossen, Max' Rückmeldung (Abschnitt 2) als
-  Kurzzeile.
-- **Raid-Units aus dem Banner-Pool** (Entscheidung Max, Runde 9): wie AA `hideFromBanner`, Test dazu;
-  wer sie schon gezogen hat, **behält** sie.
+### Pixel-Art im Code (wie im Kek-Game)
+- Max' Vorbild ist das **Kek-Game** (`flashkeks/snake`, `public/pfx.js`, `public/bfx.js`, `public/afx.js`):
+  dort sind alle Figuren, Gegner, Bosse und Karten als **Pixel-Sprites im Code** gezeichnet (Paletten-
+  Raster bzw. Zeichenbefehle → Canvas/Textur), dazu ein **Pixel-Render-Pass** (grob rendern, scharf
+  hochskalieren, Text scharf drüber). Wenn du Leserechte auf das Repo bekommst, schau es dir an; sonst
+  nach dieser Beschreibung.
+- **Ein Stilsystem, bevor du Sprites malst** (`docs/design/pixel-stil.md`): Grundraster (z. B. 32×32 für
+  Türme, 16–24 für kleine Gegner, ×3 hochskaliert), **feste Palette** (~32 Farben), Umriss-Regel, Licht von
+  oben links, Schattenwurf, wie Animationen aufgebaut sind (Idle 2–4 Frames, Angriff 3–5 Frames, Treffer-Blitz).
+- **Upgrade-Stufen sichtbar:** Sprites aus Teilen zusammensetzen (Basis + Pfad-Teile je Stufe: Helm,
+  Waffe, Umhang, Aura …), damit 3 Türme × 15 Stufen nicht 45 Einzelbilder brauchen, aber jede Stufe
+  unterscheidbar ist. Stufe 5 darf groß und spektakulär sein.
+- **Projektile und Effekte ebenfalls Pixel** (Pfeil mit Schweif, Bombenbogen + Explosion, Eisstrahl/Splitter,
+  Blitz). Gegner-Schichten platzen sichtbar auf.
+- **Die Karte muss schön sein** (Max: „sieht wirklich scheiße aus“): handgebaute Pixel-Karte mit Weg, Rand,
+  Gras-Variationen, Wasser mit Animation, Bäume, Häuser der Stadt, Licht/Schatten, kleine Bewegung
+  (Fahnen, Glühwürmchen, Wasser). Vorbild-Qualität: BTD6-Karten, nur in Pixel.
+- Das Interface aus Runde 9/10 (Lobby, Menüs, Ton) bleibt die Basis; es soll zur Pixel-Welt passen
+  (Pixel-Rahmen/Schrift, wo es hilft), muss aber nicht komplett neu.
 
-### P1 — Echte Figuren (ein Agent; `tools/aa-import/`, `sim/data/`, `client/public/aa/manifest.json`, Texte)
-Ziel: In Sammlung, Banner, Team, Match steht überall ein echter Name, und für jede Unit weiß die
-Homelab-Seite, welches Bild sie holen soll. **Werte, Angriffe, Kits bleiben unverändert** (nur
-Name, Serie, Bild ändern sich). IDs bleiben stabil (Spielstände!).
+---
 
-1. **Zuordnungstabelle** `docs/aa-import/figuren.json` (eine Zeile je Unit, auch Evolutionen):
-   `{ id, aaName, name, series, form?, anilistQuery, note? }`.
-   - `name` = echter Name, wie Fans ihn kennen (Englisch/Romaji wie auf AniList: „Kakashi Hatake“,
-     „Monkey D. Luffy“, „Satoru Gojo“). `series` = Serie („Naruto“, „One Piece“).
-   - `form` für Formen derselben Figur („Super Saiyan Blue“, „Gear 5“, „Mugetsu“) — Anzeige
-     „Son Goku (Super Saiyan Blue)“.
-   - Die AA-Parodienamen (`nameRR`, `nameLegacy`, z. B. „Carrot“ = Goku, „Copy Ninja“ = Kakashi,
-     „Joykid“ = Luffy) und die Unit-ID helfen bei der Zuordnung. Du kennst die Serien; nimm dein
-     Wissen. Wo du unsicher bist: `note: "unsicher"`, nicht raten und verstecken.
-   - **Unbekannte/generische Units** (z. B. `aot_generic`, `britannia_soldier`, Wesen ohne echte
-     Vorlage): auf eine **bekannte Figur derselben Serie** umstellen, die noch nicht im Bestand ist
-     (Rolle passend: Fernkämpfer bleibt Fernkämpfer). `note: "umgemünzt von …"`.
-   - **Dubletten** (zwei Units = dieselbe Figur, gleiche Form): eine davon umstellen wie oben.
-2. **Anzeige:** Name + darunter Serie (klein) in Karte, Detail, Banner, Ergebnis, Match-Panel.
-   AA-Namen nur noch in den Daten, nicht mehr sichtbar. Suche/Filter in der Sammlung nach Serie.
-3. **Bild-Manifest** `client/public/aa/manifest.json` je Unit um `name`, `series`, `anilistQuery`
-   (z. B. `"Kakashi Hatake"`) ergänzen; `source: "anilist"` statt `"aa"`. Das Feld `wiki` bleibt nur
-   als Rückfall stehen. Der Client zeigt weiter `/aa/units/<id>.webp`, wenn die ID in `/aa/index.json`
-   steht — **daran ändert sich nichts**, die Homelab-Seite tauscht nur die Dateien aus.
-4. **Promi-Banner „Legends of Earth“** (neu, wie das Crossover-Banner, `source: "custom"`,
-   `imageQuery` = Wikipedia-Seitentitel). Vorschlag der Homelab-Seite, 25 Figuren; Kits aus den
-   vorhandenen Bausteinen (22 Effekte, 5 Angriffsformen, Fähigkeiten), **nur Daten**, mit Witz,
-   nicht beleidigend. Austauschen erlaubt, wenn dir Besseres einfällt (in STATUS begründen):
+## 4. Arbeitspakete
 
-   | Seltenheit | Figuren (Idee für Fähigkeit) |
-   |---|---|
-   | Secret | Donald Trump („Tariff“: Gegner langsamer + zahlen Gold), Elon Musk (Rakete, ganze Bahn), Arnold Schwarzenegger („I'll be back“: steht einmal wieder auf) |
-   | Mythic | Dwayne „The Rock“ Johnson, Bruce Lee, Albert Einstein (Zeit verlangsamen), Napoleon Bonaparte (Buff für Nachbarn), Angela Merkel (Raute: Schild für alle) |
-   | Legendary | Barack Obama, Mark Zuckerberg, Jeff Bezos (Gold-Bonus), Snoop Dogg, Gordon Ramsay (Feuer), Cristiano Ronaldo, Lionel Messi |
-   | Epic | MrBeast (Gold-Regen), PewDiePie, Taylor Swift, Jackie Chan, Bill Gates |
-   | Rare | Dieter Bohlen, Knossi, MontanaBlack, Steve Irwin |
+Reihenfolge: **P0** zuerst, dann **P1, P2, P3 parallel**, **P4** sobald einer frei ist, **P5** zum Schluss.
 
-5. **Sichtbar:** Sammlung nach Serie gefiltert (Naruto, One Piece, Dragon Ball), ein Banner, das
-   Promi-Banner, Unit-Detail mit echtem Namen.
-6. **Sobald `figuren.json` und das Manifest stehen: sofort pushen** und in STATUS unter „Für die
-   Homelab-Seite“ melden („Manifest mit anilistQuery steht, Commit X“). Die Homelab-Seite holt dann
-   die Bilder, **ohne auf das Rundenende zu warten**. Die restlichen P1-Punkte danach.
+### P0 — Aufräumen und Entwurf (Hauptsitzung)
+1. **Archiv:** Git-Tag `archiv/aa-runde10` auf den aktuellen Stand, pushen. Dann AA-Import, die 550 Units,
+   Banner, Gacha-Ziehung, Evolution, Trade/Reroll, Crossover/Promis, `client/public/aa/` aus dem
+   **aktiven** Spiel entfernen (Code und Tests, die nur dafür da waren). `docs/anime-adventures/` bleibt
+   als Recherche liegen. Lieber gründlich entfernen als totes Zeug mitschleppen.
+2. **Speicherstand:** neues Schema; alte Spielstände werden **zurückgesetzt** (Max weiß das: „wir löschen
+   alle Summons und alles“), mit einmaligem Hinweis-Bildschirm.
+3. **Entwurf** in `docs/design/`: `welt.md` (kurz), `tuerme.md` (3 Türme × 15 Stufen + Held, alle Zahlen),
+   `gegner.md` (Schichten, RBE, Boss), `runden.md` (Runde 1–20 fest, nach BTD6-Muster), `meta.md`
+   (Abschnitt P4). Zahlen mit Begründung aus `docs/games/btd6/`. **Nicht auf Max warten** — er will
+   Ergebnisse sehen; Entscheidungen, bei denen du unsicher bist, mit Empfehlung in STATUS.
+4. STATUS: Runde-11-Tabelle.
 
-### P2 — Das Match (ein Agent, nur `client/`)
-Ziel: Ein Screenshot aus dem Match sieht aus wie aus einem fertigen Spiel.
-- **Units auf dem Feld:** Porträt-Figur statt Kreis mit Buchstaben — rund oder als Karte mit
-  Seltenheits-Ring/-Rahmen, Schatten, leichtes Wippen im Stand, **Blickrichtung zum Ziel**,
-  Stufen-Pips, Element-Symbol. Ohne Bild: gestaltete Ersatzfigur (Silhouette + Serienfarbe), nie
-  nackte Initialen. Platzieren: Vorschau mit Reichweitenkreis, Aufsetz-Effekt + Ton.
-- **Angriffe mit Grafik**, abhängig von **Angriffsform** (Einzel, Kreis, Kegel, Linie, ganze Bahn)
-  und **Element** (`damageType`: physical, fire, water, lightning, …):
-  Hieb-Bogen für Nahkampf, Projektil mit Schweif für Fernkampf, Strahl für Linie, Druckwelle für
-  Kreis, Fächer für Kegel; Farbe und Partikel je Element. Rückstoß/Aufleuchten der Unit beim Angriff.
-- **Treffer und Tod:** Schadenszahlen (Krit größer/gelb), Treffer-Funken, Gegner blinkt, Tod mit
-  kurzer Auflösung + Münz-Effekt. **Fähigkeit:** Ganzbild-Ansage mit Porträt (Schnitt wie in Gacha-
-  Spielen), Bildschirmruckeln bei großen Treffern (abschaltbar).
-- **Gegner:** gestaltete Figur je Gegner-Typ (Silhouette, Farbe, Größe nach Typ), HP-Balken im neuen
-  Stil, Bosse groß mit Namensbanner und Auftritts-Effekt. (Gegner-Bilder kommen später.)
-- **Ton im Match:** Platzieren, Upgrade, Verkaufen, Angriff je Element (dezent, nicht jeder Schuss
-  laut), Treffer, Tod, Boss-Auftritt, Welle startet, Sieg, Niederlage. Lautstärke-Regler gibt es schon
-  (sonst einbauen).
-- **Leistung:** 60 FPS bei 80 Gegnern + 30 Units auf 1920×1080 halten (Partikel begrenzen, Pools).
-- **Sichtbar:** Match-Screenshots mit vielen Units (Nahkampf, Fernkampf, Fläche), Fähigkeit-Ansage,
-  Boss; ein kurzes Video oder GIF, falls dein Screenshot-Skript das kann.
+### P1 — Simulator (ein Agent, `sim/`)
+- **Projektile mit Flugzeit:** Schaden zählt erst beim Auftreffen (Max: „Schaden kommt, bevor die Attacke
+  ankommt“). Deterministisch, Ziel kann vorher sterben → Projektil fliegt weiter/verfällt wie in BTD6
+  (`mechanics.md` § 3). Sofort-Treffer nur, wo es sichtbar sofort ist (Blitz, Strahl).
+- **Gegner-Schichten** mit Kindern, RBE, Eigenschaften (Panzer, Tarnung, schnell), Boss mit Hülle.
+- **3 Pfade × 5 Stufen**, Crosspath-Regel, Targeting-Modi (First/Last/Strong/Close), Verkauf 70 %.
+- **Held:** XP im Match, Level 1–20, zwei Fähigkeiten.
+- **Runden 1–20** als Daten, Einkommen nach BTD6.
+- Tests für alles davon; alte AA-spezifische Tests raus.
 
-### P3 — Beschwören, Pakete, Rückmeldung (ein Agent, `client/` + ggf. `meta/`)
-- **Beschwören neu:** Aufbau-Animation (Portal/Riss, Licht sammelt sich), **Farbe verrät die
-  Seltenheit** vorab (Blau → Lila → Gold → Regenbogen für Secret), Ruckeln + Partikelexplosion,
-  große Enthüllung mit Porträt, Name, Serie, Seltenheit, „NEW“-Stempel; Shiny mit Glitzer. Eigener
-  Ton je Stufe, Secret/Mythic mit besonderem Stinger. **Überspringen** per Klick/Taste jederzeit.
-- **Mehrfach-Ergebnisse** (10er-Zug, Daily Pack, Raid-Belohnungen, Meilensteine, Shop-Pakete):
-  Karten liegen verdeckt, **einzeln aufdecken per Klick**, „Alle aufdecken“, danach **Übersicht aller
-  Gewinne** (Raster), höchste Seltenheit zuletzt. Heute sieht man nur den ersten — das ist ein Fehler,
-  Test dazu.
-- **Interaktions-Durchgang:** alle Knöpfe, die etwas öffnen/abholen/kaufen (Daily, Shop, Raid-Shop,
-  Meilensteine, Evolution, Level-Up, Einstellungen, Import/Export) einmal durchklicken (Smoke-Skript
-  erweitern): reagiert jeder sichtbar (Animation, Ton, Ergebnis)? Fehlendes nachrüsten, Liste in STATUS.
-- **Ton und Effekte im Menü:** Hover/Klick, Währung erhalten (Zähler läuft hoch), Level-Up, Evolution,
-  Freischaltung; dezente Hintergrundmusik je Bildschirm (abschaltbar).
-- **Sichtbar:** Screenshot-Serie eines 10er-Zugs (Aufbau, Enthüllung, Übersicht), Daily Pack
-  durchgeklickt.
+### P2 — Pixel-Grafik (ein Agent, `client/`)
+- Stilsystem aus Abschnitt 3 umsetzen (Palette, Raster, Render-Pass), dann: 3 Türme mit allen 15 Stufen
+  sichtbar, Held mit Leveln, alle Gegner inkl. Aufplatzen der Schichten, Boss, Projektile, Effekte.
+- Animationen: Idle, Angriff (im Takt des Simulators, Projektil startet beim Abschuss-Frame), Treffer.
+- **Sichtbar:** Sprite-Bogen aller Türme × Stufen (ein Bild), GIF von Angriffen, Gegner-Platzen.
 
-### Ton und Grafik-Material (gilt für P2/P3)
-- Freie Packs sind erlaubt (Lizenz egal, Herkunft in `ATTRIBUTIONS.md`). Gute Quellen: **Kenney**
-  (kenney.nl, CC0: Interface/Impact/RPG Sounds, Particle Pack), OpenGameArt, freesound (CC0).
-- **Ist der Download aus deiner Umgebung gesperrt:** Wunschliste mit direkten URLs in STATUS unter
-  „Für die Homelab-Seite“; die Homelab-Seite lädt sie und committet sie nach `client/public/sfx/`
-  bzw. `client/public/fx/`. Bis dahin: Töne per WebAudio synthetisieren, Effekte per Pixi-Grafik.
-- Nichts davon blockiert das Paket: erst bauen mit Ersatz, Dateien tauschen sich später aus.
+### P3 — Karte und Match-Oberfläche (ein Agent, `client/` + `sim/data/`)
+- Die **eine schöne Karte** (Abschnitt 3), Pfad passend zur Simulator-Karte, Platzierungsflächen, Wasser
+  (darf unbebaubar sein).
+- **Upgrade-Panel wie BTD6:** drei Pfade nebeneinander, je 5 Stufen mit Pixel-Icon, Preis, gesperrt durch
+  Crosspath sichtbar, „noch nicht freigeschaltet (Turm-XP)“ sichtbar. Targeting, Verkaufen.
+- Turm-Leiste rechts mit Preisen, Held-Platz, Runden-Start/Tempo, Leben/Geld oben.
+- **Sichtbar:** leere Karte, Karte im Kampf Runde 15+, Upgrade-Panel.
 
-### P4 — Karten-Grafik je Welt (ein Agent, sobald P1, P2 oder P3 frei ist; `client/` + `sim/data/worlds/`)
-- Jede der 10 Welten bekommt ein **Kartenthema** (Boden, Pfad, Deko, Hintergrund, Lichtstimmung) als
-  Daten. Pfad mit Rand und Tiefe, Platzierungszonen beim Setzen deutlich, sonst dezent. Kein
-  Raster-Look mehr. Umsetzung frei (gemalte Kacheln per Code, Texturen, freie Packs wie oben).
-- **Sichtbar:** je Welt ein Screenshot der leeren Karte + einer mitten im Kampf.
+### P4 — Fortschritt und Freischaltungen (ein Agent, `meta/` + `client/`)
+Max: „ordentliche Leveling-Funktionen, ganz viel Zeug, was man freischalten kann“. Nach BTD6 (`meta.md`):
+- **Spieler-Level** aus Match-XP; schaltet Türme frei (Slice: Turm 1 ab Start, 2 ab L2, 3 ab L4) und den Helden.
+- **Turm-XP:** jeder Turm sammelt XP, wenn er benutzt wird; damit werden Upgrade-Stufen freigeschaltet
+  (wie BTD6). Stufe 5 braucht spürbar viel.
+- **Wissensbaum** (wie Monkey Knowledge): Punkte aus Level-Ups, 8–12 Knoten (Startgeld, Verkaufsquote,
+  Reichweite einer Klasse, Held-Start-Level …).
+- **Medaillen je Karte/Schwierigkeit** (Easy/Medium/Hard, später mehr), Anzeige auf der Kartenwahl.
+- Gacha (nur Helden/Skins) **kommt später**, nicht in diesem Slice.
+- **Sichtbar:** Ergebnis-Bildschirm mit XP-Balken, Freischalt-Moment, Wissensbaum, Turm-Detail mit XP.
 
-### P5 — Abschluss (Hauptsitzung)
-Screenshots, `docs/STATUS.md` Kurzbericht:
+### P5 — Balance-Prüfung und Abschluss (Hauptsitzung)
+- Bot-Läufe als Rauchtest: jede sinnvolle 2-Turm-Kombination schafft Runde 20 auf Medium mit vernünftigem
+  Spiel; kein einzelner Turm schafft alles allein; Boss braucht Vorbereitung. Ergebnis als kleine Tabelle.
+- Screenshots + GIFs, `docs/STATUS.md` Kurzbericht:
 
 ```text
-STATUS — Runde 10
+STATUS — Runde 11 (Vertical Slice)
 Was man jetzt sehen kann (5 Zeilen):
-Figuren: echte Namen (Zahl), umgemünzt (Zahl + Liste), unsicher (Liste), Promi-Banner:
-Match: Units / Angriffe / Treffer / Ton — was neu ist:
-Beschwören + Mehrfach-Ergebnisse:
-Interaktions-Durchgang: was fehlte, was nachgerüstet ist:
-Für die Homelab-Seite (Manifest-Commit, Asset-URLs):
-Vorschlag Runde 11: 3–5 Sätze (gesetzt: Welten 11–22; Kandidaten: Gegner-Bilder, Server/Konto M2)
+Türme + Held (Namen, Rollen, je ein Satz zu den 3 Pfaden):
+Gegner, Runden, Boss:
+Fortschritt: Level, Turm-XP, Wissensbaum, Medaillen:
+Balance-Rauchtest (Tabelle):
+Was rausgeflogen ist (AA, Gacha …), Archiv-Tag:
+Offene Fragen an Max (mit Empfehlung):
+Vorschlag Runde 12 (3–5 Sätze):
 Agenten (Anzahl, Modell), Limits erreicht wie oft:
-Commits:
+Commits / Tests:
 ```
 
 ---
 
-## 4. Bilder
-
-- Units: `/aa/units/<id>.webp` (256×256). Die Homelab-Seite **ersetzt** die Roblox-Bilder durch
-  AniList-Bilder (bzw. Wikipedia für Promis/Crossover), Grundlage ist dein Manifest aus P1.
-  Pfad und `/aa/index.json` bleiben gleich, am Client ändert sich nichts.
-- Großes Porträt für Enthüllung und Detail: wenn du größer als 256 px brauchst, sag es in STATUS
-  (z. B. `/aa/units-lg/<id>.webp`, 512 px), die Homelab-Seite legt es dazu.
-- Gegner-Bilder: nicht in dieser Runde.
-
 ## 5. Was du nicht tust
 
 - **Nichts deployen.** Keine Domain, kein Tunnel, kein Server.
-- Keine Balance-Messreihen, kein Opus.
-- Werte/Kits der AA-Units nicht anfassen (nur Name, Serie, Bild).
+- Kein Opus, keine Messreihen über Stunden.
+- Keine Fremdbilder, keine AniList/AA-Bilder.
+- Nicht mehr als 3 Türme + 1 Held + 1 Karte — Qualität vor Menge, das ist der ganze Punkt.
 - `ENTSCHEIDUNGEN.md` nicht ändern; Fragen an die Menschen in STATUS unter „Offene Fragen“.
 
-> Ziel: Max öffnet das Spiel und sieht Goku, Luffy, Gojo und Donald Trump statt Roblox-Klötzen, das
-> Beschwören knallt, und ein Screenshot aus dem Match sieht aus wie aus einem fertigen Spiel.
+> Ziel: Ein GIF aus dem Match sieht aus wie aus einem fertigen Pixel-Spiel, jede Upgrade-Stufe ist ein kleiner
+> Glücksmoment, und Max sagt „davon mehr“.
