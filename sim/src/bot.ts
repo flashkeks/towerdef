@@ -8,7 +8,7 @@
  * sobald das Geld reicht. Plätze: viel Wegabdeckung in Reichweite. Fähigkeiten bei Bereitschaft und Bedarf.
  */
 import { DATA } from './data.js';
-import { createGame } from './game.js';
+import { GLOBAL_RANGE, createGame } from './game.js';
 import { getMap } from './map.js';
 import type { Difficulty, Game, GameOptions, HeroType, TargetMode, Tiers, TowerType } from './types.js';
 
@@ -54,6 +54,8 @@ export interface BotResult {
   heroLevel: number;
   /** Im Match verdiente Turm-XP je Typ (nur mit `towerXp` in den Optionen, sonst 0). */
   towerXpGained: Record<TowerType, number>;
+  /** Market-Einkommen (Runde 13) inklusive Zinsen, ohne Grant/Supply Drop. */
+  income: number;
   hash: string;
 }
 
@@ -108,15 +110,33 @@ export function createBot(game: Game, mapId: string, strategy: Strategy): Bot {
 
   function bestSpot(type: TowerType | HeroType): { x: number; y: number } | null {
     const def = type === 'wren' ? DATA.hero.wren : DATA.towers[type];
-    const range = Math.floor(((def.base.range as number) * 12) / 10);
+    const baseRange = (def.base.range as number | undefined) ?? 60000;
+    // Longshot (ganze Karte) und Market (kein Angriff) sollen gute Wegplätze nicht belegen: abseits des Wegs, der Market
+    // mit Aura-Pfad C mitten zwischen den Türmen.
+    const support = baseRange >= GLOBAL_RANGE || type === 'market';
+    const auraMarket = type === 'market' && strategy.towers.some((p) => p.type === 'market' && p.tiers[2] > 0);
+    const range = Math.floor((baseRange * 12) / 10);
     const r2 = range * range;
     let best: { x: number; y: number } | null = null;
-    let bestScore = -1;
+    let bestScore = -Infinity;
     for (let y = 14000; y <= 350000; y += 12000) {
       for (let x = 14000; x <= 600000; x += 12000) {
         const c = game.canPlace(type, x, y);
         if (!c.ok && c.reason !== 'no-cash') continue;
         let score = 0;
+        if (support) {
+          // weit weg vom Weg (dicht am Weg liegt der Platz für Angreifer); Aura-Market: möglichst viele Türme im Radius
+          let near = 0;
+          for (let i = 0; i < coarse.length; i++) {
+            const dx = coarse[i].x - x, dy = coarse[i].y - y;
+            const d2 = dx * dx + dy * dy;
+            if (d2 <= (auraMarket ? 80000 * 80000 : 46000 * 46000)) near++;
+          }
+          score = auraMarket ? near : -near;
+          if (auraMarket) for (const t of S.towers) if (t.type !== 'market' && (t.x - x) ** 2 + (t.y - y) ** 2 <= 80000 * 80000) score += 1000;
+          if (score > bestScore) { bestScore = score; best = { x, y }; }
+          continue;
+        }
         for (let i = 0; i < coarse.length; i++) {
           const dx = coarse[i].x - x, dy = coarse[i].y - y;
           if (dx * dx + dy * dy <= r2) score += covered[i] ? 0.35 : 1;
@@ -127,7 +147,7 @@ export function createBot(game: Game, mapId: string, strategy: Strategy): Bot {
         }
       }
     }
-    if (best) {
+    if (best && !support) {
       for (let i = 0; i < coarse.length; i++) {
         const dx = coarse[i].x - best.x, dy = coarse[i].y - best.y;
         if (dx * dx + dy * dy <= r2) covered[i] = 1;
@@ -136,12 +156,24 @@ export function createBot(game: Game, mapId: string, strategy: Strategy): Bot {
     return best;
   }
 
+  /** Bank-Inhalte abheben, wenn der nächste Kauf sonst nicht klappt, mit Bank aber schon (sonst bleibt das Geld verzinst liegen). */
+  function fund(price: number): boolean {
+    if (S.cash >= price) return true;
+    const banks = S.towers.filter((t) => t.type === 'market' && t.bank > 0);
+    if (S.cash + banks.reduce((a, t) => a + t.bank, 0) < price) return false;
+    for (const t of banks) {
+      game.apply({ type: 'withdraw', towerId: t.id });
+      if (S.cash >= price) break;
+    }
+    return S.cash >= price;
+  }
+
   function buy(): void {
     while (next < steps.length) {
       const st = steps[next];
       if (st.kind === 'place' || st.kind === 'hero') {
         const type: TowerType | HeroType = st.kind === 'hero' ? 'wren' : strategy.towers[st.plan].type;
-        if (S.cash < game.priceOf(type)) return;
+        if (!fund(game.priceOf(type))) return;
         const spot = bestSpot(type);
         if (!spot) {
           next++;
@@ -166,7 +198,14 @@ export function createBot(game: Game, mapId: string, strategy: Strategy): Bot {
           next++;
           continue;
         }
-        if (!info.canBuy) return;
+        if (!info.canBuy) {
+          if (info.reason === 'no-cash' && fund(info.price)) {
+            game.apply({ type: 'upgrade', towerId: id, path: st.path });
+            next++;
+            continue;
+          }
+          return;
+        }
         game.apply({ type: 'upgrade', towerId: id, path: st.path });
         next++;
       }
@@ -174,6 +213,8 @@ export function createBot(game: Game, mapId: string, strategy: Strategy): Bot {
   }
 
   function abilities(): void {
+    // Geld-Fähigkeiten (Grant, Supply Drop) sofort einsetzen: Gold früher ist Gold wert, es gibt nichts zu sparen
+    for (const a of S.abilities) if (a.ready && (a.id === 'grant' || a.id === 'supplyDrop')) game.apply({ type: 'ability', ability: a.id });
     if (S.enemies.length === 0) return;
     let boss = false;
     let hidden = false;
@@ -190,6 +231,9 @@ export function createBot(game: Game, mapId: string, strategy: Strategy): Bot {
         case 'absoluteZero': use = n >= 20 || boss; break;
         case 'flare': use = n >= 6 || hidden; break;
         case 'dawnbreak': use = n >= 25 || boss; break;
+        case 'focus': use = n >= 6 || boss; break;
+        case 'supplyDrop': use = true; break;
+        case 'grant': use = true; break;
       }
       if (use) game.apply({ type: 'ability', ability: a.id });
     }
@@ -232,6 +276,7 @@ export function runBot(strategy: Strategy, opts: Partial<GameOptions> & { diffic
     leaked: S.stats.leaked,
     heroLevel: hero?.heroLevel ?? 0,
     towerXpGained: { ...S.towerXpGained },
+    income: S.stats.income,
     hash: game.hash(),
   };
 }
@@ -245,7 +290,7 @@ export function parseStrategy(text: string): Strategy {
       hero = true;
       continue;
     }
-    const m = /^(ranger|bombardier|frostcaller)\s+(\d)-(\d)-(\d)(?:@(first|last|strong|close))?$/.exec(part);
+    const m = /^(ranger|bombardier|frostcaller|longshot|market)\s+(\d)-(\d)-(\d)(?:@(first|last|strong|close))?$/.exec(part);
     if (!m) throw new Error(`Strategie nicht lesbar: "${part}"`);
     towers.push({ type: m[1] as TowerType, tiers: [Number(m[2]), Number(m[3]), Number(m[4])], target: m[5] as TargetMode | undefined });
   }
