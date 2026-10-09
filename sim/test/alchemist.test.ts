@@ -37,8 +37,8 @@ describe('Daten', () => {
     expect(d.paths[2].tiers.map((t) => t.name)).toEqual(['Faster Throwing', 'Acid Pool', 'Lead to Gold', 'Rubber to Gold', 'Shrink Potion']);
   });
 
-  it('Basis: Splash 18 px auf bis zu 12, Schaden 1, Säure 1/s für 2 s (magic), Intervall 2 s, Reichweite 64 px', () => {
-    expect(statsOf('alchemist', [0, 0, 0])).toMatchObject({ atk: 'potion', dtype: 'magic', dmg: 1, radius: 18000, maxT: 12, burnDmg: 1, burnTicks: 120, interval: 120000, range: 64000 });
+  it('Basis: Splash 18 px auf bis zu 12, Schaden 1, Säure 1/s für 2 s (magic), Intervall 1,5 s (Runde 14 nach Matrix, Entwurf 2,0 s), Reichweite 64 px', () => {
+    expect(statsOf('alchemist', [0, 0, 0])).toMatchObject({ atk: 'potion', dtype: 'magic', dmg: 1, radius: 18000, maxT: 12, burnDmg: 1, burnTicks: 120, interval: 90000, range: 64000 });
   });
 
   it('Pfade: Radius, Säure, Boni, Buff-Werte, Intervall', () => {
@@ -56,7 +56,7 @@ describe('Daten', () => {
     expect(b[4]).toMatchObject({ tonicDur: 1200, tonicCd: 3600 });
     expect(b[5].tonicOthers).toBe(5);
     const c = [0, 1, 2, 3, 4, 5].map((n) => statsOf('alchemist', [0, 0, n]));
-    expect(c[1].interval).toBe(90000);
+    expect(c[1].interval).toBe(67500);
     expect([c[2].poolN, c[3].leadGold, c[4].rubberTicks, c[5].shrinkEvery]).toEqual([20, 40, 1800, 180]);
   });
 });
@@ -107,7 +107,7 @@ describe('Trank im Bogen', () => {
   it('Säure: 1 Schaden/s für 2 s (magic); Acidic Mixture 2/s, Stronger Acid 3/s', () => {
     for (const [tiers, per] of [[[0, 0, 0], 1], [[2, 0, 0], 2], [[0, 1, 0], 3]] as [Tiers, number][]) {
       const g = newGame();
-      alch(g, tiers);
+      const al = alch(g, tiers);
       const boss = g.sandbox.spawn('brute', 90000);
       E(g, boss).hp = E(g, boss).maxHp = 1000; // übersteht die Säure
       let t0 = 0;
@@ -116,7 +116,7 @@ describe('Trank im Bogen', () => {
         g.step();
         const e = g.drainEvents();
         ev.push(...e);
-        if (!t0 && of(e, 'status').some((s) => s.kind === 'acid')) t0 = g.state.tick;
+        if (!t0 && of(e, 'status').some((s) => s.kind === 'acid')) { t0 = g.state.tick; g.apply({ type: 'sell', towerId: al }); } // keine zweite Ladung auffrischen
         if (t0 && g.state.tick - t0 > 125) break;
       }
       const dots = of(ev, 'hit').filter((h) => h.enemy === boss && h.tick > t0 && h.dmg === per && h.dtype === 'magic');
@@ -313,7 +313,7 @@ describe('Pfad C: Pfütze, Gold, Shrink', () => {
     const a = alch(g, [0, 0, 1]);
     g.sandbox.spawn('leviathan', 90000);
     const w = of(run(g, 400), 'windup').filter((x) => x.tower === a);
-    expect(Math.abs(w[1].tick - w[0].tick - 90)).toBeLessThanOrEqual(1);
+    expect(Math.abs(w[1].tick - w[0].tick - 67.5)).toBeLessThanOrEqual(1);
   });
 
   it('Acid Pool: Pfütze auf dem Weg, 1 Schaden alle 0,5 s, 20 Treffer, dann weg', () => {

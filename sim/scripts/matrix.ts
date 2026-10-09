@@ -31,6 +31,15 @@ const COMBOS: Combo[] = [
   { label: 'Ranger + Bombardier + Market 2-2-0 spaet (nach allen Upgrades)', text: `${BASE} + market 2-2-0`, script: `p0 p2 p1 p3 {H} ${UP} p4 u4A u4B u4A u4B` },
   { label: 'Ranger + Bombardier + Market 0-4-0 Grant mitte', text: `${BASE} + market 0-4-0`, script: 'p0 p2 p1 p3 {H} u1C u3A u1C u3A u1C u3A p4 u4B u4B u4B u4B u1C u3A u1B u3B u1B u3B' },
   { label: 'Ranger + Bombardier + Market 0-0-3 Drum Hall frueh', text: `${BASE} + market 0-0-3`, script: 'p0 p2 p1 p3 {H} u1C u3A u1C u3A p4 u4C u4C u4C u1C u3A u1C u3A u1B u3B u1B u3B' },
+  // Runde 14
+  { label: 'Ranger + Thornweaver 4-2-0 (Storm)', text: 'ranger 0-0-0 + ranger 0-2-4 + thornweaver 0-0-0 + thornweaver 4-2-0' },
+  { label: 'Ranger + Thornweaver 0-4-2 (Wild)', text: 'ranger 0-0-0 + ranger 0-2-4 + thornweaver 0-0-0 + thornweaver 0-4-2' },
+  { label: 'Bombardier + Thornweaver 0-2-4 (Grove)', text: 'bombardier 0-0-0 + bombardier 4-2-0 + thornweaver 0-0-0 + thornweaver 0-2-4' },
+  { label: 'nur Thornweaver', text: 'thornweaver 0-0-0 + thornweaver 0-0-0 + thornweaver 4-2-0 + thornweaver 0-4-2' },
+  { label: 'Ranger + Alchemist 4-0-2 (Brews)', text: 'ranger 0-0-0 + ranger 0-2-4 + alchemist 0-0-0 + alchemist 4-0-2' },
+  { label: 'Bombardier + Alchemist 0-4-2 (Tonic)', text: 'bombardier 0-0-0 + bombardier 4-2-0 + alchemist 0-0-0 + alchemist 0-4-2' },
+  { label: 'Ranger + Bombardier + Alchemist 3-0-3', text: `${BASE} + alchemist 3-0-3`, script: `p0 p2 p1 p3 {H} ${UP} p4 u4A u4A u4A u4C u4C u4C` },
+  { label: 'nur Alchemist', text: 'alchemist 0-0-0 + alchemist 0-0-0 + alchemist 4-2-0 + alchemist 0-4-2' },
 ];
 const seeds = (process.env.MATRIX_SEEDS ?? '1,2,3').split(',').map(Number);
 const diffs = (process.env.MATRIX_DIFFS ?? 'easy,medium,hard').split(',') as Difficulty[];
@@ -52,3 +61,23 @@ for (const { label, text, script } of COMBOS) {
   }
 }
 console.log(rows.join('\n'));
+
+// Pops je 1.000 Gold (nur Turmkosten), Medium, Einzeltuerme voll ausgebaut: Faustregel "kein Turm um mehr als 2x"
+if (process.env.MATRIX_POPS !== '0') {
+  const SOLO: Record<string, string> = {
+    ranger: 'ranger 0-0-0 + ranger 0-0-0 + ranger 0-2-4 + ranger 0-2-4',
+    bombardier: 'bombardier 0-0-0 + bombardier 0-0-0 + bombardier 4-2-0 + bombardier 0-2-4',
+    frostcaller: 'frostcaller 0-0-0 + frostcaller 0-0-0 + frostcaller 2-0-4 + frostcaller 0-2-4',
+    longshot: 'longshot 0-0-0 + longshot 0-0-0 + longshot 4-2-0 + longshot 0-2-4',
+    thornweaver: 'thornweaver 0-0-0 + thornweaver 0-0-0 + thornweaver 4-2-0 + thornweaver 0-4-2',
+    alchemist: 'alchemist 0-0-0 + alchemist 0-0-0 + alchemist 4-2-0 + alchemist 0-4-2',
+  };
+  const out: string[] = ['', '| Turm (4 Stueck, Medium) | Pops je 1.000 Gold | Ø Runde |', '|---|---|---|'];
+  for (const [k, text] of Object.entries(SOLO)) {
+    const rs = seeds.map((seed) => runBot(parseStrategy(text), { difficulty: 'medium', seed }));
+    const per = rs.reduce((a, r) => a + ((r.pops[k] ?? 0) / Math.max(1, r.spent[k] ?? 1)) * 1000, 0) / rs.length;
+    const avgR = rs.reduce((a, r) => a + r.round, 0) / rs.length;
+    out.push(`| ${k} | ${Math.round(per)} | ${avgR.toFixed(1)} |`);
+  }
+  console.log(out.join('\n'));
+}

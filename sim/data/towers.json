@@ -1951,7 +1951,7 @@
    "flight": 36,
    "burnDmg": 1,
    "burnTicks": 120,
-   "interval": 120000,
+   "interval": 90000,
    "range": 64000
   },
   "paths": [
