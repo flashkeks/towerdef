@@ -62,6 +62,10 @@ describe('Neue Wissensknoten', () => {
     const slots = new Set(KNOWLEDGE.map((n) => `${n.branch}:${n.col}:${n.row}`));
     expect(slots.size).toBe(KNOWLEDGE.length);
   });
+  it('Jeder Knoten steht in einer tieferen Zeile als seine Voraussetzungen (Linien laufen nach unten)', () => {
+    const bad = KNOWLEDGE.flatMap((n) => n.requires.filter((r) => n.row <= nodeById(r)!.row).map((r) => `${n.id}(${n.row}) nach ${r}(${nodeById(r)!.row})`));
+    expect(bad).toEqual([]);
+  });
   it('Mods aus den neuen Knoten', () => {
     const all = (...ids: string[]) => matchOptions(know(withLevel(40), ...ids)).mods;
     expect(all('deep-roots').rangeBp).toEqual({ thornweaver: 1000 });

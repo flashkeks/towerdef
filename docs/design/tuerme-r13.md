@@ -148,3 +148,7 @@ Darstellung **größer** (Knoten größer, Schrift lesbarer, Baum nutzt die Bild
 ## Runde 14 — Freischalt-Level
 
 Thornweaver L7, Alchemist L9.
+
+## Nachtrag nach Runde 14 A (Hauptsitzung)
+
+Bot-Matrix: vier Alchemisten allein kamen auf Medium nur bis R7. **Basisintervall 1,5 s statt 2,0 s** (R9, Pops je 1.000 Gold 257 statt 223; Ranger 628). Thornweaver 388 liegt innerhalb der 2×-Faustregel. Weitere Abweichungen: `sim/README.md` Abschnitt „Runde 14“.

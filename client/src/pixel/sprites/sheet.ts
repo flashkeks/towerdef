@@ -27,6 +27,8 @@ function tile(g: CanvasRenderingContext2D, x: number, y: number, w: number, h: n
 }
 
 const NAMES: Record<TowerType, string[][]> = {
+  thornweaver: [['Base'], ['Base'], ['Base']], // Platzhalter bis Agent B
+  alchemist: [['Base'], ['Base'], ['Base']],
   ranger: [
     ['Base', 'Sharp Tips', "Hunter's Arrows", 'Triple Shot', 'Arrowstorm', 'Sky Splitter'],
     ['Base', 'Quick Draw', 'Quicker Draw', 'Repeater', 'Volley Captain', 'Thousand Arrows'],

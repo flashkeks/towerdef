@@ -61,6 +61,8 @@ type Draw = (s: Surface) => void;
 const SKULL = (s: Surface, x: number, y: number) => { s.rect(x, y, 5, 4, 'white'); s.rect(x + 1, y + 4, 3, 1, 'white'); s.px(x + 1, y + 1, 'ink'); s.px(x + 3, y + 1, 'ink'); s.px(x + 2, y + 3, 'ink'); };
 
 const DRAW: Record<TowerType, Draw[][]> = {
+  thornweaver: [[], [], []], // Platzhalter bis Agent B
+  alchemist: [[], [], []],
   ranger: [
     // A Volley
     [
@@ -199,7 +201,7 @@ export function iconUpgradeRaster(type: TowerType, path: 0 | 1 | 2, tier: number
   const s = new Surface(ICON, ICON);
   panel(s, PATH_ACCENT[path], t);
   const d = new Surface(ICON, ICON);
-  DRAW[type][path][t - 1](d);
+  DRAW[type][path][t - 1]?.(d);
   // Piktogramm nur in der oberen Flaeche (ueber den Pips)
   d.mask((x, y) => y < 13 && x >= 0 && x < 16);
   s.blit(d);
@@ -207,6 +209,8 @@ export function iconUpgradeRaster(type: TowerType, path: 0 | 1 | 2, tier: number
 }
 
 const ABIL: Record<AbilityId, Draw> = {
+  wallOfTrees: (s) => { s.rect(3, 3, 10, 10, 'amber'); }, // Platzhalter bis Agent B
+  tonic: (s) => { s.rect(5, 3, 6, 10, 'sky'); },
   arrowRain: (s) => { for (const [x, y] of [[3, 3], [7, 1], [11, 4], [5, 7], [9, 8], [13, 9]]) { s.line(x, y, x, y + 4, 'yellow'); s.px(x, y + 5, 'white'); s.px(x - 1, y, 'red'); s.px(x + 1, y, 'red'); } s.rect(1, 12, 14, 1, 'amber'); },
   absoluteZero: (s) => { snowI(s, 8, 8, 6, 'ice'); s.ring(8, 8, 7, 7, 'white'); s.px(8, 8, 'white'); },
   flare: (s) => { s.ball(8, 8, 4, 4, ['yellow', 'white', 'white']); for (let i = 0; i < 8; i++) { const a = (i / 8) * 6.28; s.line(8 + Math.cos(a) * 5.5, 8 + Math.sin(a) * 5.5, 8 + Math.cos(a) * 7.5, 8 + Math.sin(a) * 7.5, i % 2 ? 'amber' : 'yellow'); } },
@@ -218,7 +222,7 @@ const ABIL: Record<AbilityId, Draw> = {
 
 export function iconAbilityRaster(id: AbilityId): { rows: string[]; ax: number; ay: number } {
   const s = new Surface(ICON, ICON);
-  const col: PalName = { arrowRain: 'amber', absoluteZero: 'sky', flare: 'yellow', dawnbreak: 'orange', grant: 'yellow', focus: 'red', supplyDrop: 'sky' }[id] as PalName;
+  const col: PalName = { arrowRain: 'amber', absoluteZero: 'sky', flare: 'yellow', dawnbreak: 'orange', grant: 'yellow', focus: 'red', supplyDrop: 'sky', wallOfTrees: 'amber', tonic: 'sky' }[id] as PalName;
   s.rect(0, 0, 16, 16, 'night'); s.rect(0, 0, 16, 1, col); s.rect(0, 0, 1, 16, col); s.rect(0, 15, 16, 1, 'ink'); s.rect(15, 0, 1, 16, 'ink');
   for (const [x, y] of [[0, 0], [15, 0], [0, 15], [15, 15]]) s.px(x, y, null);
   const d = new Surface(16, 16);

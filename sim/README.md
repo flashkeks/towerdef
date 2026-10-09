@@ -211,3 +211,47 @@ Stand dieses Commits, Zeilen der neuen Aufstellungen (Ø Leben bei Sieg, sonst �
 | + Market 0-0-3 Drum Hall früh | ja / nein | 200 L / 134 L | 146 L / R15 | R16 / R12 |
 
 Befunde: (1) Longshot-Kombinationen schaffen Medium **mit** Held (Ranger + Longshot 0-3-3 sogar ohne und auf Hard mit Held); Pops je 1.000 Gold liegen bei 425-640 (Bombardier/Frostcaller 555-565, Ranger 200-400): kein Turm um mehr als 2×. (2) Market in 20 Runden: A1 früh bringt 1.050 Einnahmen für 1.400 Gold (Medium), A2 1.450 für 2.000: Gold-Turm lohnt nur bei Bau in den ersten Runden und selbst dann ≈ ausgeglichen; später Bau kostet Leben (mitte 106 L statt 150 L). Grant mitte frisst 9.300 Gold und verliert gegen die Referenz. (3) Der Bot setzt Market-Pfad C nicht gezielt ein (Aura nützt erst mit mehreren ausgebauten Türmen, 15.000 Gold für Lantern Capital sind bis R20 kaum erreichbar).
+
+## Runde 14: Thornweaver, Alchemist, Wissensbaum-Mods
+
+Spezifikation: `docs/design/tuerme-r13.md` (Abschnitte 3, 4, „Runde 14“), Vertrag: `docs/design/schnittstelle.md` „Ergänzung Runde 14“. Daten: `data/towers.json` (`thornweaver`, `alchemist`, je 15 Stufen), Stats in `src/stats.ts`, Mechanik in `game.ts` (Block „Runde 14: Thornweaver und Alchemist“). Tests: `test/thornweaver.test.ts`, `test/alchemist.test.ts`, `test/r14mods.test.ts`. 227 Tests.
+
+**Thornweaver (`thornweaver`).** Projektil `thorn` (450 px/s), Fächer 5 (Spread 12°) bzw. 8 rundum mit Thorn Burst. Pfad A: Pierce, Kettenblitz (`chain`-Event, Takt 2,3 s, Ziele 4/8/15, Schaden 2/3/6, `energy`), Wirbelwind (Takt 4 s, Rückstoß 40 px Wegfortschritt, nie Boss), Avatar (+1 Schaden je 25 Gegner auf der Karte, höchstens +10). Pfad B: Vine Snare (alle 3 s der vorderste freie Nicht-Boss 1,5 s fest, setzt `stunTicks`), **Wall of Trees** (globale Fähigkeit `wallOfTrees`: Wand am Ende des vom Turm erreichten Wegstücks, 6 px davor, schluckt 150 RBE, Abklingzeit 45 s, ungenutzt 40 s Lebensdauer; Boss läuft durch), Ranken-Zone (Radius = Reichweite, 1 Schaden/s an alles darin, auch Boss; World Tree 5/s, Radius ×2, +100 Gold je Runde). Pfad C: Reichweite, Camo, Jungle's Bounty (+150 Gold, +2 Leben je Runde), Spring Blessing (andere Türme im Radius +15 % Tempo, wirkt zusätzlich zu Trank/Auren), Grove Guardian (`magic`, +3).
+
+**Alchemist (`alchemist`).** Trank im Bogen (`potion`, Flugzeit 36 Ticks, Treffer erst bei Ankunft, zielt auf die Position, an der das Ziel ankommt), Spritzer Radius 18 px auf bis zu 12 Gegner, Säure als DoT (1/s, 2 Treffer, `magic`). Pfad A: Radius, Acidic Mixture (Säure 2/s, +1 Ironshell/Brute), **Berserker Brew** (alle 6 s Trank auf den Turm im Radius mit dem kürzesten Rest; Märkte bekommen keinen), Stimulant, Permanent Brew (alle Türme im Radius dauerhaft, keine Würfe). Pfad B: Säure 3/s, Perishing Potions, Unstable Concoction (markiert, Explosion beim Tod, 24 px / 4), **Transforming Tonic** (globale Fähigkeit `tonic`: 20 s Monster-Form, alle 12 Ticks 6 Schaden = 30/s auf das stärkste Ziel in Reichweite, Abklingzeit 60 s), Total Transformation (+5 nächste Türme, nie Markets). Pfad C: Faster Throwing, Säurepfützen (20 Treffer, 1 Schaden je 0,5 s, 30 s ohne Treffer weg, in der Nähe aufgefrischt statt verdoppelt), Lead to Gold (+40 je geknacktem Ironshell), Rubber to Gold (30 s +1 Gold je Schicht, Kinder erben), Shrink Potion (alle 3 s der stärkste Nicht-Boss in Reichweite wird Red Glim; abgetragene Schichten zahlen wie Pops; ein Geschrumpfter leckt höchstens 1 Leben).
+
+**Wissensbaum-Mods** (`GameOptions.mods`): `popCashBp` (Bruchrest `popCarry`), `pierceAdd`, `fragAdd` (nur Türme, die schon Splitter werfen), `icicleDmg`, `bountyGold`, `brewDurBp`, `leadGoldAdd`, `roundLives`, `gate` (`gateLeft`, Event `gate`), dazu `rangeBp.thornweaver`.
+
+**Bot.** `parseStrategy` kennt `thornweaver`/`alchemist`; Fähigkeiten: `wallOfTrees` bei ≥ 10 Gegnern oder Boss, `tonic` bei ≥ 15 oder Boss. `BotResult.groveGold/healed/bountyGold`. `scripts/matrix.ts` hat acht neue Zeilen plus eine Pops-je-1.000-Gold-Tabelle für Einzeltürme (`MATRIX_POPS=0` schaltet sie ab).
+
+### Abweichungen und Auslegungen Runde 14
+
+| Was | Entwurf | Jetzt | Grund |
+|---|---|---|---|
+| Alchemist-Basisintervall | 2,0 s | **1,5 s** | Matrix: 4 Alchemisten allein kamen auf Medium nur bis R7 (Pops je 1.000 Gold 223 gegen 628 beim Ranger); mit 1,5 s R9 / 257. Faster Throwing (× 0,75) wirkt darauf: 1,125 s |
+| Fähigkeiten `wallOfTrees` / `tonic` | je Turm | global wie Arrow Rain, eine Abklingzeit, wirkt an allen passenden Türmen | einheitlich mit Runde 13; `wallOfTrees` ohne Weg in Reichweite: `no-target` |
+| Wall of Trees schluckt | „150 RBE“ | Kapazität 150 RBE je Wand; Schichten zahlen wie Pops (`wallEat.cash`), Boss läuft durch | Boss darf nicht gestoppt werden |
+| Shrink Potion | „wird zu Red Glim“ | gleiche Id und Position, Schichten zahlen wie Pops, höchstens 1 Leben Leck | sonst wäre Shrink Gold-Quelle und Leck-Multiplikator |
+| Permanent Brew | „dauerhaft auf allen Türmen im Radius“ | wirkt über `Game.buffOf`, nicht in `TowerState.buff*`; `brew`-Event nur beim ersten Mal je Turm (`ticks: 0`) | UI braucht ein Signal, kein Dauerfeuer |
+| Spring Blessing | +15 % Tempo | als `groveSpeedBp` getrennt von Trank-Tempo (`TowerBuff`), beides additiv | Anzeige beider Quellen |
+| Avatar of Wrath | +1 je 25 Gegner | zählt alle lebenden, schon erschienenen Gegner (`state.enemies`), Deckel +10 | Entwurf unklar |
+| Field Medic | im Wissensbaum | `mods.roundLives` bei Rundenende, Event `heal` mit `tower: 0` | kein Turm als Quelle |
+| Wissensbaum-Zeilen | – | Voraussetzungen immer in früherer Zeile (Investor Zeile 5, Pop Bonus 6, Sturdy Gate Zeile 3) | Linien laufen nach unten, Layout-Test |
+| Gate (Sturdy Gate) | „ein Leck verhindert“ | der Gegner verschwindet ohne Leben-Abzug, Event `gate` | einfachste Lesart |
+
+### Bot-Matrix Runde 14 (Seeds 1-3, `npm run matrix`)
+
+Zeilen der neuen Aufstellungen (Ø Leben bei Sieg, sonst Ø Runde):
+
+| Aufstellung | Held | easy | medium | hard |
+|---|---|---|---|---|
+| Ranger + Thornweaver 4-2-0 (Storm) | ja / nein | 200 L / 182 L | 150 L / 13 L | 24 L / R15 |
+| Ranger + Thornweaver 0-4-2 (Wild) | ja / nein | 200 L / 196 L | 146 L / 85 L | 31 L / R15 |
+| Bombardier + Thornweaver 0-2-4 (Grove) | ja / nein | 214 L / 53 L | R20 / R16 | R16 / R14 |
+| nur Thornweaver (4 Stück) | ja / nein | R20 / R15 | R17 / R14 | R15 / R14 |
+| Ranger + Alchemist 4-0-2 (Brews) | ja / nein | 200 L / 188 L | 137 L / 69 L | R20 / R18 |
+| Bombardier + Alchemist 0-4-2 (Tonic) | ja / nein | 200 L / 197 L | 122 L / R20 | R12 / R12 |
+| Ranger + Bombardier + Alchemist 3-0-3 | ja / nein | 200 L / 171 L | 150 L / 12 L | 9 L / R13 |
+| nur Alchemist (4 Stück) | ja / nein | 100 L / R20 | R9 / R9 | R7 / R7 |
+
+Pops je 1.000 Gold (vier Türme voll ausgebaut, Medium): Ranger 628, Longshot 460, Frostcaller 454, Bombardier 410, **Thornweaver 388**, **Alchemist 257**. Faustregel „kein Turm um mehr als 2×“: Thornweaver liegt mit 1,6× innerhalb, der Alchemist mit 2,4× knapp außerhalb, aber der Alchemist ist ein Unterstützer — seine Wirkung (Berserker/Permanent Brew, Tonic, Gold) zählt der Pops-Wert nicht: Ranger + Bombardier + Alchemist 3-0-3 gewinnt Hard mit Held (3/3, aber nur 9 L; die Referenz Ranger + Bombardier hält 65 L) und Medium ohne Held mit 12 L (Referenz 100 L): die Buffs gleichen die Kosten des Alchemisten also noch nicht ganz aus. Befunde: (1) Thornweaver trägt Hard mit Held (Storm/Wild neben Ranger), ist allein aber kein Siegturm (R14-17); (2) Alchemist allein ist bewusst schwach (R9 Medium), erst Brews/Tonic neben Basistürmen lohnen; (3) Bombardier + Thornweaver Grove verliert gegen die Referenz — Grove (Gold/Leben/Tempo-Aura) ist ein Wirtschaftspfad, der Bot nutzt ihn nur halb. Offen für die Hauptsitzung: ob der Alchemist-Pops-Wert (2,4×) per Radius +10 % oder Säure 2/s auf Stufe 0 noch angehoben werden soll.
