@@ -48,7 +48,7 @@ describe('Store-Karten', () => {
 
 describe('Lautstaerke: alte Einstellungen werden uebernommen', () => {
   it('nichts gespeichert -> Vorgaben, nicht "stored"', () => {
-    expect(migrateAudio(null)).toEqual({ settings: { musicVol: 0.5, sfxVol: 0.7 }, stored: false });
+    expect(migrateAudio(null)).toEqual({ settings: { musicVol: 0.5, sfxVol: 0.6 }, stored: false });
     expect(migrateAudio({}).stored).toBe(false);
     expect(migrateAudio('quatsch').stored).toBe(false);
   });

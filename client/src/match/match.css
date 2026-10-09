@@ -164,8 +164,9 @@ kbd { font: 700 10px var(--font-num); background: var(--ink); color: var(--silve
 .ps-head .p-title { flex: 1; font-size: 26px; text-align: center; padding-left: 30px; text-shadow: 0 2px 0 var(--ink); }
 .ps-head .p-pops { font-size: 18px; }
 .ps-head .p-close { align-self: center; }
-.ps-stage { position: relative; height: 140px; border: 3px solid var(--ink); background: radial-gradient(ellipse at 50% 85%, #2a6db0 0%, #1d3f6e 55%, #172a4f 100%); box-shadow: inset 0 0 0 2px var(--sky); overflow: hidden; }
-.ps-fig { position: absolute; left: 0; right: 0; bottom: 26px; display: flex; justify-content: center; align-items: flex-end; height: 110px; }
+.ps-stage { position: relative; height: 172px; border: 3px solid var(--ink); background: radial-gradient(ellipse at 50% 85%, #2a6db0 0%, #1d3f6e 55%, #172a4f 100%); box-shadow: inset 0 0 0 2px var(--sky); overflow: hidden; }
+.ps-fig { position: absolute; left: 0; right: 0; top: 24px; bottom: 38px; display: flex; justify-content: center; align-items: center; }
+.ps-fig canvas { display: block; }
 .ps-tiers { position: absolute; top: 5px; left: 8px; font: 700 12px var(--font-num); letter-spacing: .12em; color: var(--silver); text-shadow: 1px 1px 0 var(--ink); }
 .ps-target { position: absolute; left: 50px; right: 50px; bottom: 4px; text-align: center; font: 800 20px var(--font-num); letter-spacing: .1em; text-transform: uppercase; color: #fff; text-shadow: 2px 2px 0 var(--ink), -1px 0 0 var(--ink); }
 .ps-arrow { position: absolute; bottom: 3px; width: 34px; height: 30px; background: var(--ink); border: 0; padding: 0; opacity: .9; }
@@ -176,27 +177,29 @@ kbd { font: 700 10px var(--font-num); background: var(--ink); color: var(--silve
 .ps-arrow:hover { background: var(--dusk); }
 .ps-arrow:hover.l::after { border-right-color: #fff; } .ps-arrow:hover.r::after { border-left-color: #fff; }
 .ps-rows { display: flex; flex-direction: column; gap: 6px; }
-.ps-row { display: flex; gap: 6px; height: 106px; }
-.ps-own { flex: 1 1 0; min-width: 0; display: flex; gap: 6px; padding: 5px 6px; background: #2a2640; border: 3px solid var(--ink); box-shadow: inset 0 0 0 2px #3a3358; }
-.ps-pips { display: flex; flex-direction: column-reverse; justify-content: space-between; gap: 2px; flex: none; padding: 0; }
-.ps-pips i { display: block; width: 16px; height: 16px; background: #171428; border: 2px solid var(--ink); box-shadow: inset 0 0 0 2px #4a4670; }
+.ps-row { display: flex; gap: 6px; height: 122px; }
+.ps-row canvas.px-ic { display: block; }
+.ps-own { flex: 1 1 0; min-width: 0; display: flex; align-items: stretch; gap: 8px; padding: 6px 8px; background: #2a2640; border: 3px solid var(--ink); box-shadow: inset 0 0 0 2px #3a3358, inset 0 -4px 0 rgba(0,0,0,.25); }
+.ps-pips { display: flex; flex-direction: column-reverse; justify-content: space-between; align-self: center; height: 88px; flex: none; padding: 0; }
+.ps-pips i { display: block; width: 14px; height: 14px; background: #171428; border: 2px solid var(--ink); box-shadow: inset 0 0 0 2px #4a4670; }
 .ps-pips i.on { background: var(--pc); box-shadow: inset 2px 2px 0 rgba(255,255,255,.45), inset -2px -2px 0 rgba(0,0,0,.3); }
-.ps-own-b { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 2px; }
-.ps-own-ic { width: 40px; height: 40px; }
+.ps-own-b { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 3px; }
+.ps-own-ic { width: 46px; height: 46px; }
 .ps-own-n { font: 700 13px/1.1 var(--font-num); letter-spacing: .02em; color: #fff; }
 .ps-own-n.none { font-size: 14px; color: var(--stone); letter-spacing: .06em; text-transform: uppercase; }
-.ps-own-s { font: 800 12px var(--font-num); letter-spacing: .08em; color: var(--leaf); text-transform: uppercase; text-shadow: 1px 1px 0 var(--ink); }
+.ps-own-s { font: 800 11px var(--font-num); letter-spacing: .1em; color: var(--leaf); text-transform: uppercase; text-shadow: 1px 1px 0 var(--ink); }
 
-.ps-next { flex: 1.25 1 0; min-width: 0; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; padding: 3px 6px; color: #fff; text-align: center; border: 3px solid var(--ink); background: var(--dusk); box-shadow: inset 0 3px 0 rgba(255,255,255,.18), inset 0 -5px 0 rgba(0,0,0,.28); }
-.pn-ic { width: 52px; height: 52px; }
-.pn-name { font: 800 13px/1.05 var(--font-num); letter-spacing: .03em; text-shadow: 1px 1px 0 var(--ink); max-width: 100%; }
-.pn-price { display: flex; align-items: center; gap: 4px; font: 800 17px var(--font-num); text-shadow: 1px 1px 0 var(--ink); }
-.pn-need { font: 700 10px var(--font-num); letter-spacing: .04em; text-transform: uppercase; color: #ff9aa0; }
+.ps-next { flex: 1.35 1 0; min-width: 0; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 5px 6px 7px; color: #fff; text-align: center; border: 3px solid var(--ink); background: var(--dusk); box-shadow: inset 0 3px 0 rgba(255,255,255,.18), inset 0 -6px 0 rgba(0,0,0,.28), 0 3px 0 var(--ink); margin-bottom: 3px; }
+.pn-ic { width: 54px; height: 54px; flex: none; margin: 0; }
+.pn-name { font: 800 14px/1.05 var(--font-num); letter-spacing: .03em; text-shadow: 1px 1px 0 var(--ink); max-width: 100%; flex: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pn-price { display: inline-flex; align-items: center; justify-content: center; gap: 5px; flex: none; min-width: 76px; padding: 1px 9px 2px; font: 800 17px/1.15 var(--font-num); text-shadow: 1px 1px 0 var(--ink); background: rgba(24,20,37,.6); border: 2px solid var(--ink); }
+.pn-price .px-ic { flex: none; }
+.pn-need { flex: none; font: 700 10px var(--font-num); letter-spacing: .04em; text-transform: uppercase; color: #ff9aa0; }
 .pn-state { font: 800 17px var(--font-num); letter-spacing: .06em; text-transform: uppercase; text-shadow: 2px 2px 0 var(--ink); }
-.ps-next .p-ic { background: rgba(24,20,37,.55); }
+.ps-next .p-ic { background: rgba(24,20,37,.6); border-width: 3px; }
 
 /* kaufbar: gruen, Preis in Gold */
-.ps-next.k-buy { background: var(--grass); box-shadow: inset 0 3px 0 rgba(255,255,255,.28), inset 0 -5px 0 rgba(0,0,0,.3); cursor: pointer; }
+.ps-next.k-buy { background: var(--grass); box-shadow: inset 0 3px 0 rgba(255,255,255,.28), inset 0 -5px 0 rgba(0,0,0,.3), 0 3px 0 var(--ink); cursor: pointer; }
 .ps-next.k-buy .pn-price { color: var(--yellow); }
 .ps-next.k-buy:hover { background: var(--leaf); }
 .ps-next.k-buy:active { transform: translateY(2px); }
@@ -205,15 +208,16 @@ kbd { font: 700 10px var(--font-num); background: var(--ink); color: var(--silve
 .ps-next.k-poor .pn-price { color: #ff6f77; }
 .ps-next.k-poor .px-ic, .ps-next.k-poor .pn-name { opacity: .85; }
 /* nicht freigeschaltet: Turm-XP; genug = Amber, zu wenig = grau */
-.ps-next.k-unlock { background: #8a5a14; box-shadow: inset 0 0 0 3px var(--amber), inset 0 -5px 0 rgba(0,0,0,.3); cursor: pointer; animation: m-pulse 1s steps(2) infinite; }
+.ps-next.k-unlock { background: #8a5a14; box-shadow: inset 0 0 0 3px var(--amber), inset 0 -5px 0 rgba(0,0,0,.3), 0 3px 0 var(--ink); cursor: pointer; animation: m-pulse 1s steps(2) infinite; }
 .ps-next.k-unlock .pn-price { color: var(--yellow); }
 .ps-next.k-unlock:hover { background: #a56d1a; }
-.ps-next.k-needxp .pn-ic { width: 38px; height: 38px; }
+.ps-next.k-needxp .pn-ic { width: 40px; height: 40px; }
+.ps-next.k-needxp { gap: 2px; }
 .ps-next.k-needxp { background: #3a3f55; cursor: not-allowed; }
 .ps-next.k-needxp .pn-price { color: var(--stone); }
 .ps-next.k-needxp .px-ic { filter: grayscale(.7); }
 .ps-next.k-needxp .pn-name { color: var(--silver); }
-.ps-next.k-closed, .ps-next.k-maxed { background: #2b2d42; cursor: default; box-shadow: inset 0 -5px 0 rgba(0,0,0,.28); }
+.ps-next.k-closed, .ps-next.k-maxed { background: #2b2d42; cursor: default; box-shadow: inset 0 -5px 0 rgba(0,0,0,.28), 0 3px 0 var(--ink); }
 .ps-next.k-closed .pn-state { color: #ff8a90; }
 .ps-next.k-maxed .pn-state { color: var(--yellow); }
 .ps-row[data-kind="closed"] .ps-own { opacity: .6; }

@@ -14,6 +14,8 @@ Frühere Aufträge: [archiv/run-runde1.md](archiv/run-runde1.md), [archiv/run-ru
 Tests: sim 128, meta 42, client 89; tsc, build, smoke grün. Bot-Matrix Medium unverändert (Powers sind optional, der Bot nutzt sie nicht).
 Bekannt: Lantern Bomb hat keine Flugzeit (Explosion sofort an der Zielstelle); Bomben-Ton wird am Radius erkannt.
 
+**Runde 12b (Feinschliff nach Playtest, 09.10.2026):** Turm-Sprite in der Panel-Buehne zugeschnitten, ganzzahlig skaliert und mittig (nichts mehr abgeschnitten); Stufen-Knoepfe neu gesetzt (Icon -> Name -> Preis-Plakette, zentriert, gleiche Hoehen, Schatten, sechs Zustaende); Turm-Sounds nach hoechster Stufe (0-2: x0,4, 3: 0,65, 4: 0,8, 5: 1,1; `audio/tower-vol.ts`) mit Rate-Limit je Turmtyp und Summen-Deckel, Aufprall nach naechstem Turm, Standard-Effekte 60 %; Menue-Musik `dusk` hell, C-Dur, 108 BPM, Glockenspiel-Melodie. Bilder `client/docs/r12/polish-panel.png`, `polish-knoepfe.png`, Skript `client/scripts/shots-r12b.mjs`.
+
 ## Runde 11 (Neustart wie BTD6, Vertical Slice)
 
 Letzte Aktualisierung: 2026-10-09 (**Runde 11 abgeschlossen**, P5)

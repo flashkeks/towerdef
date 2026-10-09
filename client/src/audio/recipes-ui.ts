@@ -185,14 +185,38 @@ export interface MusicTheme {
   arpOct: number;
   /** weiche Flaeche pro Takt: Lautstaerke */
   padVol: number;
+  /** Optional (Runde 12b): Melodie je Takt, 8 Achtel, Halbtoene ueber `rootHz` (null = Pause) */
+  lead?: readonly (readonly (number | null)[])[];
+  leadWave?: OscillatorType;
+  leadVol?: number;
+  leadLp?: number;
+  /** Bass: Wellenform, Lautstaerke, Tiefpass; `bounce` = zweiter Basston (Quinte) auf Achtel 4 */
+  bassWave?: OscillatorType;
+  bassVol?: number;
+  bassLp?: number;
+  bounce?: boolean;
+  /** leises Hi-Hat auf den Achtel-Zwischenschlaegen: Lautstaerke (0 = aus) */
+  hatVol?: number;
 }
 
 const ARP = [0, 1, 2, 3, 2, 1, 2, 3] as const;
 
 /** Je Bildschirm eine Stimmung. Alle ruhig, in D bzw. F, 60 bis 76 BPM. */
 export const MENU_THEMES = {
-  /** Lobby, Einstellungen, Credits: warm und weit */
-  dusk: { bpm: 66, rootHz: 98, bass: [0, -5, -3, -7], chords: [[0, 7, 12, 16], [0, 7, 12, 15], [0, 7, 12, 14], [0, 7, 11, 14]], pattern: ARP, arpWave: 'triangle', arpVol: 0.05, arpLp: 1400, arpOct: 12, padVol: 0.08 },
+  /** Lobby, Einstellungen, Credits (Runde 12b): hell, Dur, beschwingt. C-Dur I-V-vi-IV, 108 BPM, Glockenspiel-Melodie ueber leichtem Bass */
+  dusk: {
+    bpm: 108, rootHz: 261.6, bass: [0, -5, -3, -7],
+    chords: [[0, 4, 7, 12], [0, 4, 7, 11], [0, 3, 7, 12], [0, 4, 7, 12]],
+    pattern: ARP, arpWave: 'sine', arpVol: 0.012, arpLp: 3200, arpOct: 12, padVol: 0.03,
+    lead: [
+      [16, null, 19, 16, 24, null, 19, 16],
+      [14, null, 19, 14, 23, null, 19, 14],
+      [16, null, 21, 16, 24, null, 21, 19],
+      [17, 21, 24, 21, 17, null, 19, null],
+    ],
+    leadWave: 'square', leadVol: 0.03, leadLp: 3600,
+    bassWave: 'triangle', bassVol: 0.04, bassLp: 700, bounce: true, hatVol: 0.012,
+  },
   /** Summon: geheimnisvoll, langsam, hohe Glocken */
   arcane: { bpm: 56, rootHz: 87.3, bass: [0, -2, -4, -5], chords: [[0, 7, 12, 15], [0, 6, 12, 15], [0, 7, 11, 15], [0, 7, 10, 14]], pattern: [0, 2, 1, 3, 2, 3, 1, 2], arpWave: 'sine', arpVol: 0.07, arpLp: 3200, arpOct: 24, padVol: 0.1 },
   /** Welt, Stage, Units, Team: etwas Schwung */

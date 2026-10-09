@@ -8,6 +8,7 @@ import { R11_RECIPES } from './recipes-r11';
 import { R12_RECIPES } from './recipes-r12';
 import { MENU_THEMES, type MenuThemeId, type MusicTheme } from './recipes-ui';
 import { AUDIO_KEY, fromPct, migrateAudio, toPct, type AudioSettings, type VolumeApi } from './settings';
+import { commitHit, towerGapMs, towerLoudness, towerPitch, topTier, windowGain, type Hit } from './tower-vol';
 import type { SimEvent, TowerState } from '../sim';
 
 const MAX_VOICES = 26;
@@ -39,6 +40,8 @@ export class AudioEngine {
   private noise: AudioBuffer | null = null;
   private voices = 0;
   private last = new Map<string, number>();
+  /** angenommene Turm-Klaenge im Gleitfenster (Lautstaerke-Summe deckeln) */
+  private recent: Hit[] = [];
   private loaded = load();
   private s: AudioSettings = this.loaded.s;
   private theme: MusicId | null = null;
@@ -120,6 +123,18 @@ export class AudioEngine {
     if (this.ctx.state === 'suspended') void this.ctx.resume();
   }
 
+  /** Turm-Klang: Pegel nach hoechster Stufe, Mindestabstand je Schluessel und Summenbegrenzung. */
+  playTower(id: string, key: string, top: number, rate = 1, base = 1): void {
+    const now = performance.now();
+    const k = `${key}`;
+    if (now - (this.last.get(k) ?? -1e9) < towerGapMs(top)) return;
+    const g = windowGain(this.recent, now, base * towerLoudness(top));
+    if (g <= 0) return;
+    this.last.set(k, now);
+    commitHit(this.recent, now, g);
+    this.play(id, g, rate * towerPitch(top));
+  }
+
   play(id: string, gain = 1, rate = 1): void {
     this.log.push(id);
     if (this.log.length > 60) this.log.shift();
@@ -181,19 +196,28 @@ export class AudioEngine {
     switch (ev.type) {
       case 'fire': {
         const t = towers.find((q) => q.id === ev.tower);
-        if (ev.kind === 'chain') this.play('shoot.chain', 1, rnd());
-        else if (!t) this.play('shoot.ranger');
-        else if (t.type === 'bombardier') this.play('shoot.bomb', 1, rnd());
-        else if (t.type === 'frostcaller') this.play('shoot.frost', 1, rnd());
-        else if (t.type === 'wren') this.play('shoot.hero', 1, rnd());
-        else if (ev.kind === 'bigArrow' || ev.kind === 'bolt' || ev.kind === 'starBolt') this.play('shoot.ballista', 1, rnd());
-        else if (t.tiers[0] >= 3) this.play('shoot.volley', 1, rnd());
-        else this.play('shoot.ranger', 1, rnd());
+        const top = t ? topTier(t.tiers) : 0;
+        if (ev.kind === 'chain') this.playTower('shoot.chain', 'fire.chain', top, rnd());
+        else if (!t) this.playTower('shoot.ranger', 'fire.ranger', 0, rnd());
+        else if (t.type === 'bombardier') this.playTower('shoot.bomb', 'fire.bombardier', top, rnd());
+        else if (t.type === 'frostcaller') this.playTower('shoot.frost', 'fire.frostcaller', top, rnd());
+        else if (t.type === 'wren') this.play('shoot.hero', 0.6, rnd());
+        else if (ev.kind === 'bigArrow' || ev.kind === 'bolt' || ev.kind === 'starBolt') this.playTower('shoot.ballista', `fire.${t.type}`, top, rnd());
+        else if (t.tiers[0] >= 3) this.playTower('shoot.volley', `fire.${t.type}`, top, rnd());
+        else this.playTower('shoot.ranger', `fire.${t.type}`, top, rnd());
         break;
       }
       case 'pop': this.play(ev.etype === 'brute' || ev.etype === 'leviathan' ? 'pop.big' : 'pop', 1, 0.9 + Math.random() * 0.4); break;
       case 'blocked': this.play('tink', 1, rnd()); break;
-      case 'explode': this.play(ev.kind === 'bomb' && ev.radius === 40000 ? 'power.bomb' : ev.kind === 'quake' ? 'quake' : ev.kind === 'mini' ? 'explode.mini' : 'explode', 1, rnd()); break;
+      case 'explode': {
+        if (ev.kind === 'bomb' && ev.radius === 40000) { this.play('power.bomb', 1, rnd()); break; }
+        const id = ev.kind === 'quake' ? 'quake' : ev.kind === 'mini' ? 'explode.mini' : 'explode';
+        // Aufprall so laut wie der naechste Turm es verdient (Sim-Event hat keine Turm-ID)
+        let best: TowerState | null = null, bd = Infinity;
+        for (const q of towers) { if (q.type === 'wren') continue; const d = (q.x - ev.x) ** 2 + (q.y - ev.y) ** 2; if (d < bd) { bd = d; best = q; } }
+        this.playTower(id, `hit.${id}`, best ? topTier(best.tiers) : 0, rnd());
+        break;
+      }
       case 'nova': this.play('nova'); break;
       case 'status': if (ev.kind === 'freeze') this.play('freeze', 0.5); break;
       case 'leak': this.play('leak'); break;
@@ -248,13 +272,29 @@ export class AudioEngine {
       const bar = Math.floor(this.musicStep / 8) % bars, i = this.musicStep % 8;
       const hz = (semi: number): number => th.rootHz * Math.pow(2, semi / 12);
       if (i === 0) {
-        this.tone('triangle', hz(th.bass[bar]), this.musicNext, eighth * 7.5, 0.05, 500);
+        this.tone(th.bassWave ?? 'triangle', hz(th.bass[bar]), this.musicNext, th.bounce ? eighth * 3.6 : eighth * 7.5, th.bassVol ?? 0.05, th.bassLp ?? 500);
         if (th.padVol > 0) for (const c of th.chords[bar].slice(0, 3)) this.tone('sine', hz(th.bass[bar] + c + 12), this.musicNext, eighth * 7.8, th.padVol * 0.45, 900, 0.5);
       }
+      if (th.bounce && i === 4) this.tone(th.bassWave ?? 'triangle', hz(th.bass[bar] + 7), this.musicNext, eighth * 3.2, (th.bassVol ?? 0.05) * 0.8, th.bassLp ?? 500);
+      const ln = th.lead?.[bar]?.[i];
+      if (ln != null) this.tone(th.leadWave ?? 'triangle', hz(ln), this.musicNext, eighth * 1.6, th.leadVol ?? 0.03, th.leadLp ?? 3000, 0.008);
+      if (th.hatVol && i % 2 === 1) this.hat(this.musicNext, th.hatVol);
       this.tone(th.arpWave, hz(th.bass[bar] + th.chords[bar][th.pattern[i]] + th.arpOct), this.musicNext, eighth * 0.9, th.arpVol, th.arpLp);
       this.musicNext += eighth;
       this.musicStep = (this.musicStep + 1) % (bars * 8);
     }
+  }
+  /** Leises Hi-Hat: kurzer Rauschklick durch einen Hochpass. */
+  private hat(start: number, vol: number): void {
+    const ctx = this.ctx;
+    if (!ctx || !this.musicBus || !this.noise) return;
+    const n = ctx.createBufferSource(), f = ctx.createBiquadFilter(), env = ctx.createGain();
+    n.buffer = this.noise; n.loop = true; f.type = 'highpass'; f.frequency.value = 6500;
+    env.gain.setValueAtTime(vol, start);
+    env.gain.exponentialRampToValueAtTime(0.0001, start + 0.05);
+    n.connect(f); f.connect(env); env.connect(this.musicBus);
+    n.start(start, Math.random() * 0.5); n.stop(start + 0.07);
+    n.onended = () => env.disconnect();
   }
   private tone(wave: OscillatorType, hz: number, start: number, dur: number, vol: number, lp: number, attack = 0.02): void {
     const ctx = this.ctx;
