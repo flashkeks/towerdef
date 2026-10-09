@@ -7,7 +7,7 @@ describe('meta store', () => {
   it('frischer Store: Profil ohne Reset-Hinweis, update + Export/Import', async () => {
     const s = await openStore({ memoryOnly: true });
     expect(s.profile.showResetNotice).toBe(false);
-    const { profile } = applyMatch(s.profile, { matchId: 'x', map: 'meadow', difficulty: 'easy', won: true, roundsCleared: 20, livesLost: 0, pops: { ranger: 10 }, tierBuys: {} });
+    const { profile } = applyMatch(s.profile, { matchId: 'x', map: 'meadow', difficulty: 'easy', won: true, roundsCleared: 20, livesLost: 0, pops: { ranger: 10 }, towerXp: { ranger: 100, bombardier: 100, frostcaller: 100 } });
     await s.update(profile);
     const json = s.exportJson();
     await s.wipe();

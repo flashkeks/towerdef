@@ -37,9 +37,12 @@ export interface GameOptions {
   seed: number;
   /** Was das Profil freigeschaltet hat (P4). Fehlt = alles frei (Tests, Sandbox). */
   unlocks?: { towers: (TowerType | HeroType)[]; maxTier: Record<TowerType, Tiers> };
+  /** Turm-XP-Konto aus dem Profil (Runde 11b). Fehlt = kein XP-System (keine Verteilung, `unlockTier` -> 'no-xp'). */
+  towerXp?: Record<TowerType, number>;
   /** Wissensbaum (P4), alles optional, Standard 0. */
   mods?: { startCash?: number; lives?: number; sellBp?: number; earlyBonus?: number; t1DiscountBp?: number;
-           rangeBp?: Partial<Record<TowerType, number>>; radiusBp?: number; slowDurBp?: number; heroStartLevel?: number };
+           rangeBp?: Partial<Record<TowerType, number>>; radiusBp?: number; slowDurBp?: number; heroStartLevel?: number;
+           towerXpBp?: number /* Fast Learner: 2000 = +20 % auf den Turm-XP-Topf */ };
 }
 
 export function createGame(opts: GameOptions): Game;
@@ -53,7 +56,8 @@ export interface Game {
   hash(): string;
   // Lese-Helfer für UI und Bots:
   canPlace(type: TowerType | HeroType, x: number, y: number): PlaceCheck;  // { ok: true } | { ok: false, reason }
-  upgradeInfo(towerId: number): UpgradeInfo[];          // je Pfad: nächste Stufe, Preis, gesperrt-Grund
+  upgradeInfo(towerId: number): UpgradeInfo[];          // je Pfad: nächste Stufe, Preis, gesperrt-Grund, + unlocked / unlockCost / revealed (11b)
+  unlockInfo(type: TowerType): UnlockPathInfo[];        // Freischalt-Menü (11b): 3 Pfade x 5 Stufen, revealed/unlocked/cost; name/desc leer wenn verdeckt
   sellValue(towerId: number): number;
   priceOf(type: TowerType | HeroType): number;          // mit Schwierigkeit
 }
@@ -61,13 +65,14 @@ export interface Game {
 export type Command =
   | { type: 'place'; tower: TowerType | HeroType; x: number; y: number }
   | { type: 'upgrade'; towerId: number; path: 0 | 1 | 2 }
+  | { type: 'unlockTier'; tower: TowerType; path: 0 | 1 | 2 }   // 11b: nächste Stufe des Pfads für Turm-XP freischalten (Crosspath egal)
   | { type: 'sell'; towerId: number }
   | { type: 'target'; towerId: number; mode: TargetMode }
   | { type: 'ability'; ability: AbilityId }            // 'arrowRain' | 'absoluteZero' | 'flare' | 'dawnbreak'
   | { type: 'startRound' }
   | { type: 'autoStart'; on: boolean };
 
-export type CommandResult = { ok: true; id?: number } | { ok: false; reason: string };  // reason = Schlüssel, z. B. 'no-cash', 'on-path', 'crosspath', 'locked'
+export type CommandResult = { ok: true; id?: number } | { ok: false; reason: string };  // reason = Schlüssel, z. B. 'no-cash', 'on-path', 'crosspath', 'locked'; `unlockTier`: 'no-xp' | 'maxed' | 'locked'
 
 export interface GameState {
   tick: number;
@@ -80,6 +85,11 @@ export interface GameState {
   projectiles: ProjectileState[];
   abilities: { id: AbilityId; ready: boolean; cdLeft: number; cdTotal: number }[];
   stats: { pops: Record<TowerType | HeroType, number>; leaked: number; spent: Record<string, number> };
+  /** 11b: Turm-XP-Konto im Match, im Match Verdientes (Summe der `towerXp`-Events), freigeschaltete Stufe je Pfad, Pops (ohne Held) seit dem letzten Rundenende. */
+  towerXp: Record<TowerType, number>;
+  towerXpGained: Record<TowerType, number>;
+  maxTier: Record<TowerType, Tiers>;
+  roundPops: Record<TowerType, number>;
 }
 
 export interface TowerState {
@@ -134,6 +144,8 @@ Alle mit `tick`. Client spielt Animation/Effekt/Ton daraus, **nie** aus geratene
 | `status` | enemy, kind | 'slow' / 'stun' / 'freeze' / 'burn' / 'reveal' |
 | `leak` | enemy, etype, lives | Gegner am Tor |
 | `place` / `upgrade` / `sell` | tower, type, tiers?, cash? | Bau-Aktionen |
+| `towerXp` | round, pot, gains: Partial<Record<TowerType, number>> | 11b: Rundenende, Topf und Anteile je Turmtyp (Summe = pot); fehlt ohne `GameOptions.towerXp` und wenn niemand etwas investiert/geknackt hat |
+| `unlockTier` | tower, path, tier, cost, xp | 11b: Stufe freigeschaltet, `xp` = Rest des Kontos |
 | `heroLevel` | tower, level | Held steigt auf |
 | `ability` | id, x?, y? | Fähigkeit ausgelöst |
 | `roundStart` / `roundEnd` | round, bonus? | |

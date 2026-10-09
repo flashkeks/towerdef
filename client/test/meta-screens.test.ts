@@ -12,11 +12,15 @@ const outcome = (o: Partial<MatchOutcome> = {}): MatchOutcome => ({
 const ctx = { matchId: 'id-1', map: 'meadow', startLives: 150 };
 
 describe('MatchOutcome -> MatchResult', () => {
-  it('Niederlage in Runde 12 = 11 Runden geschafft, Leben und Stufen je Turm', () => {
+  it('Niederlage in Runde 12 = 11 Runden geschafft, Leben verloren, Turm-XP-Felder aus dem Match werden durchgereicht', () => {
     const r = toMetaResult(outcome(), ctx);
     expect(r.roundsCleared).toBe(11);
     expect(r.livesLost).toBe(50);
-    expect(r.tierBuys).toEqual({ ranger: 2, bombardier: 1 });
+    expect(r.towerXp).toBeUndefined();
+    const full = toMetaResult(outcome({ towerXp: { ranger: 5, bombardier: 0, frostcaller: 9 }, towerTiers: { ranger: [1, 0, 0], bombardier: [0, 0, 0], frostcaller: [0, 0, 0] }, towerXpGained: { ranger: 40, bombardier: 0, frostcaller: 9 } }), ctx);
+    expect(full.towerXp).toEqual({ ranger: 5, bombardier: 0, frostcaller: 9 });
+    expect(full.towerTiers?.ranger).toEqual([1, 0, 0]);
+    expect(full.towerXpGained?.ranger).toBe(40);
     expect(r.pops).toEqual({ ranger: 500, wren: 200 });
     expect(r.matchId).toBe('id-1');
   });
@@ -40,10 +44,10 @@ describe('MatchOutcome -> MatchResult', () => {
 
 describe('Bildschirm-Logik', () => {
   it('readyUnlocks zaehlt freischaltbare Stufen aus dem Vorrat (billigste zuerst)', () => {
-    const p: Profile = newProfile(); // Startguthaben 250 je Turm, nur Ranger frei
-    expect(readyUnlocks(p)).toBe(2); // 100 + 100 (Stufe 1 zweier Pfade); Rest 50
+    const p: Profile = newProfile(); // Startguthaben 100 je Turm, nur Ranger frei
+    expect(readyUnlocks(p)).toBe(1); // genau Stufe 1 eines Pfads
     expect(readyUnlocks({ ...p, towerXp: { ...p.towerXp, ranger: 99 } })).toBe(0);
-    expect(readyUnlocks({ ...p, playerXp: xpForLevel(4) })).toBe(6);
+    expect(readyUnlocks({ ...p, playerXp: xpForLevel(4) })).toBe(3);
     expect(readyUnlocks({ ...p, settings: { ...p.settings, unlockAll: true } })).toBe(0);
   });
   it('legalTiers: Hauptpfad voll, ein Nebenpfad bis 2, der dritte 0', () => {

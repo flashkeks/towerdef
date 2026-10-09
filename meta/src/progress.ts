@@ -6,11 +6,14 @@ import { z } from 'zod';
 import type { Difficulty, GameOptions, HeroType, TowerType, Tiers } from '../../sim/src/types';
 import {
   DIFFICULTIES, DIFFICULTY_XP_BP, FREEPLAY_BP, KNOWLEDGE, LEVEL_UNLOCKS, MAX_ROUND, TIER_COST, TOWER_TYPES, WIN_BONUS_XP,
-  XP_PER_POP, XP_PER_TIER_BOUGHT, levelFromXp, nodeById, unlockLevel, xpForLevel, type LevelUnlock,
+  levelFromXp, nodeById, unlockLevel, xpForLevel, type LevelUnlock,
 } from './data';
 import { SEEN_MATCHES_MAX, emptyMedals, type Profile } from './profile';
 
 const nat = z.number().int().min(0);
+const tierNum = z.number().int().min(0).max(5);
+const tiers3 = z.tuple([tierNum, tierNum, tierNum]);
+const perTowerAll = z.object({ ranger: nat, bombardier: nat, frostcaller: nat });
 const perTowerNat = z.object({ ranger: nat.optional(), bombardier: nat.optional(), frostcaller: nat.optional(), wren: nat.optional() });
 /** Was das Match meldet (P3 liefert es). */
 export const MatchResultSchema = z.object({
@@ -23,8 +26,13 @@ export const MatchResultSchema = z.object({
   livesLost: nat.max(9999),
   /** Geknackte Schichten je Turmtyp (state.stats.pops). */
   pops: perTowerNat,
-  /** Im Match gekaufte Stufen je Turmtyp (Anzahl Upgrade-Kaeufe). */
-  tierBuys: perTowerNat,
+  /**
+   * Turm-XP aus dem Match (Runde 11b): Endkonto, Endstufen (`state.maxTier`) und die im Match verdienten XP (`state.towerXpGained`).
+   * Fehlen sie (altes Format / Match ohne XP-System), bleibt das Turm-Profil unveraendert.
+   */
+  towerXp: perTowerAll.optional(),
+  towerTiers: z.object({ ranger: tiers3, bombardier: tiers3, frostcaller: tiers3 }).optional(),
+  towerXpGained: perTowerAll.optional(),
 });
 export type MatchResult = z.infer<typeof MatchResultSchema>;
 
@@ -81,17 +89,16 @@ export function applyMatch(p: Profile, resultIn: MatchResult): { profile: Profil
   const lv1 = levelFromXp(playerXp);
   const unlocks = LEVEL_UNLOCKS.filter((u) => u.level > lv0.level && u.level <= lv1.level);
 
+  // Turm-XP und Stufen: Endstand aus dem Match (Sim fuehrt Konto und Freischaltungen). Stufen sinken nie; mit "unlock everything"
+  // (alles im Match frei) bleiben die echten Stufen unangetastet.
   const towerXp = { ...p.towerXp };
+  const towerTiers = { ...p.towerTiers };
   const towerXpGained: Partial<Record<TowerType, number>> = {};
-  const bonusBp = hasKnow(p, 'fast-learner') ? 12000 : 10000;
-  for (const t of TOWER_TYPES) {
-    const raw = (res.pops[t] ?? 0) * XP_PER_POP + (res.tierBuys[t] ?? 0) * XP_PER_TIER_BOUGHT;
-    const gain = Math.floor((raw * bonusBp) / 10000);
-    if (gain > 0) {
-      towerXp[t] += gain;
-      towerXpGained[t] = gain;
-    }
+  if (res.towerXp) for (const t of TOWER_TYPES) towerXp[t] = res.towerXp[t];
+  if (res.towerTiers && !p.settings.unlockAll) {
+    for (const t of TOWER_TYPES) towerTiers[t] = p.towerTiers[t].map((v, i) => Math.max(v, res.towerTiers![t][i])) as Tiers;
   }
+  if (res.towerXpGained) for (const t of TOWER_TYPES) if (res.towerXpGained[t] > 0) towerXpGained[t] = res.towerXpGained[t];
 
   const medals = { ...p.medals };
   let newMedal: Difficulty | null = null;
@@ -109,6 +116,7 @@ export function applyMatch(p: Profile, resultIn: MatchResult): { profile: Profil
     ...p,
     playerXp,
     towerXp,
+    towerTiers,
     medals,
     best: bestMap,
     seenMatches: [...p.seenMatches, res.matchId].slice(-SEEN_MATCHES_MAX),
@@ -195,9 +203,12 @@ export function unlockEverything(p: Profile): Profile {
 
 // ---------------------------------------------------------------- Optionen fuer die Sim
 
-export type MatchOptions = Required<Pick<GameOptions, 'unlocks'>> & { mods: NonNullable<GameOptions['mods']> };
+export type MatchOptions = Required<Pick<GameOptions, 'unlocks' | 'towerXp'>> & { mods: NonNullable<GameOptions['mods']> };
 
-/** `unlocks` + `mods` fuer `createGame`. Mit "unlock everything" ist alles frei. */
+/**
+ * `unlocks` + `towerXp` + `mods` fuer `createGame`. `towerXp` ist das Konto (Sim fuehrt es im Match, `unlockTier` im Match),
+ * `mods.towerXpBp` = Fast Learner. Mit "unlock everything" ist alles frei.
+ */
 export function matchOptions(p: Profile): MatchOptions {
   const all = p.settings.unlockAll;
   const towers: (TowerType | HeroType)[] = [...TOWER_TYPES.filter((t) => isTowerUnlocked(p, t))];
@@ -216,7 +227,8 @@ export function matchOptions(p: Profile): MatchOptions {
   if (k('bigger-barrels')) mods.radiusBp = 1000;
   if (k('cold-snap')) mods.slowDurBp = 2500;
   if (k('veteran-hero')) mods.heroStartLevel = 3;
-  return { unlocks: { towers, maxTier }, mods };
+  if (k('fast-learner')) mods.towerXpBp = 2000;
+  return { unlocks: { towers, maxTier }, towerXp: { ...p.towerXp }, mods };
 }
 
 export { DIFFICULTIES, KNOWLEDGE };

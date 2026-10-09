@@ -9,6 +9,7 @@ import { t } from '../i18n/t';
 import { h, setClass, setText } from '../ui/dom';
 import { baseRangePx, displayName, footMilli, isHero } from './info';
 import { Panel } from './panel';
+import { UnlockMenu } from './unlock-menu';
 import { Renderer } from './renderer';
 import { heroPortrait, towerPortrait, heroSprite, towerSprite } from './sprites';
 import { ABILITY_TEXT, HERO_TYPES, HOTKEY, ROLE, TOWER_TYPES } from './tower-text';
@@ -21,6 +22,8 @@ export interface StartOptions {
   seed?: number;
   unlocks?: GameOptions['unlocks'];
   mods?: GameOptions['mods'];
+  /** Turm-XP-Konto aus dem Profil (Runde 11b); fehlt = kein XP-System im Match. */
+  towerXp?: GameOptions['towerXp'];
   /** Text fuer gesperrte Tuerme, z. B. { bombardier: 'Unlocks at level 2' } (P4 liefert die Zahlen) */
   lockInfo?: Partial<Record<TowerType | HeroType, string>>;
   /** nur fuer Pruef-Skripte: Zugriff auf Game/Renderer unter window.__dw */
@@ -36,6 +39,10 @@ export interface MatchResult {
   seed: number;
   livesLeft: number;
   pops: Record<TowerType | HeroType, number>;
+  /** Endkonto Turm-XP (`state.towerXp`), Endstufen (`state.maxTier`) und im Match verdiente XP (`state.towerXpGained`) fuer die Meta */
+  towerXp: Record<TowerType, number>;
+  towerTiers: Record<TowerType, Tiers>;
+  towerXpGained: Record<TowerType, number>;
   /** jede gekaufte Stufe in Reihenfolge */
   upgrades: { tower: TowerType | HeroType; path: number; tier: number }[];
   ticks: number;
@@ -47,7 +54,7 @@ const KEYS_ABILITY = ['1', '2', '3'];
 
 export async function startMatch(root: HTMLElement, opts: StartOptions): Promise<MatchResult> {
   const seed = opts.seed ?? (Math.floor(Math.random() * 2 ** 31) | 0);
-  const game = createGame({ map: opts.map ?? 'meadow', difficulty: opts.difficulty, seed, unlocks: opts.unlocks, mods: opts.mods });
+  const game = createGame({ map: opts.map ?? 'meadow', difficulty: opts.difficulty, seed, unlocks: opts.unlocks, towerXp: opts.towerXp, mods: opts.mods });
   const m = new Match(root, game, { ...opts, seed });
   await m.init();
   return m.done;
@@ -63,6 +70,7 @@ class Match {
   private bannerEl = h('div', 'm-banner');
   private overlay = h('div', 'm-overlay hidden');
   private panel: Panel;
+  private unlockMenu: UnlockMenu;
   private abBar = h('div', 'm-abilities');
   private cards = new Map<TowerType | HeroType, HTMLElement>();
   private livesEl = h('b', 'num', '0');
@@ -101,6 +109,11 @@ class Match {
       target: (id, mode: TargetMode) => { this.game.apply({ type: 'target', towerId: id, mode }); audio.play('click'); },
       close: () => this.select(null),
       toast: (s) => this.toast(s),
+      openUnlock: (ty) => this.unlockMenu.show(ty),
+    });
+    this.unlockMenu = new UnlockMenu(game, {
+      unlock: (ty, p) => this.unlockTier(ty, p),
+      close: () => this.unlockMenu.show(null),
     });
   }
 
@@ -108,7 +121,7 @@ class Match {
     this.buildDom();
     this.root.replaceChildren(this.el);
     await this.r.init(this.board);
-    this.board.append(this.toasts, this.bannerEl, this.abBar, this.panel.el, this.overlay);
+    this.board.append(this.toasts, this.bannerEl, this.abBar, this.panel.el, this.unlockMenu.el, this.overlay);
     this.ro = new ResizeObserver(() => this.fit());
     this.ro.observe(this.board);
     this.fit();
@@ -205,8 +218,15 @@ class Match {
     if (!res.ok) { this.toast(t(`reason.${res.reason}`) === `reason.${res.reason}` ? t('reason.unknown') : t(`reason.${res.reason}`)); audio.play('error'); }
   }
 
-  toast(msg: string): void {
-    const d = h('div', 'm-toast', msg);
+  /** Freischalten im Match (Runde 11b): Befehl an die Sim, Ton, Meldung. */
+  private unlockTier(ty: TowerType, path: 0 | 1 | 2): void {
+    const res = this.game.apply({ type: 'unlockTier', tower: ty, path });
+    if (!res.ok) { this.report(res); return; }
+    audio.play('ui.unlock');
+  }
+
+  toast(msg: string, cls = ''): void {
+    const d = h('div', `m-toast${cls ? ' ' + cls : ''}`, msg);
     this.toasts.append(d);
     setTimeout(() => d.classList.add('out'), 1500);
     setTimeout(() => d.remove(), 2000);
@@ -315,6 +335,7 @@ class Match {
     if (e.ctrlKey || e.metaKey || e.altKey || this.ended) return;
     const k = e.key;
     const sel = this.panel.selected;
+    if (k === 'Escape' && this.unlockMenu.open) { this.unlockMenu.show(null); return; }
     if (k === 'Escape') { if (this.placing) this.beginPlace(null); else if (sel != null) this.select(null); else this.setPaused(!this.paused); return; }
     if (this.paused) return;
     const lower = k.toLowerCase();
@@ -343,7 +364,7 @@ class Match {
       for (const ev of this.game.drainEvents()) {
         if (ev.type === 'upgrade') this.onEvent(ev);
         else if (ev.type === 'place') this.tiersSeen.set(ev.tower, [0, 0, 0]);
-        else if (ev.type === 'gameOver') this.onEvent(ev);
+        else if (ev.type === 'gameOver' || ev.type === 'towerXp') this.onEvent(ev);
       }
     }
   }
@@ -377,6 +398,7 @@ class Match {
     if (this.opts.debug) this.perf.push([t1 - t0, t2 - t1, performance.now() - t2, steps]);
     this.hud(g.state);
     this.panel.update(g.state);
+    this.unlockMenu.update(g.state);
     if (this.placing) this.updateGhost();
   }
 
@@ -395,6 +417,16 @@ class Match {
         break;
       }
       case 'place': this.tiersSeen.set(ev.tower, [0, 0, 0]); break;
+      case 'towerXp': {
+        // Rundenende: kurze Anzeige je Turmtyp mit dem Anteil
+        for (const ty of TOWER_TYPES) {
+          const n = ev.gains[ty];
+          if (n) this.toast(t('unlock.xpGain', { n, name: displayName(ty) }), 'gain');
+        }
+        audio.play('ui.tick');
+        break;
+      }
+      case 'unlockTier': this.toast(t('unlock.bought', { name: DATA.towers[ev.tower].paths[ev.path].tiers[ev.tier - 1].name }), 'gain'); break;
       case 'gameOver': this.onGameOver(ev.result === 'won'); break;
       default: break;
     }
@@ -462,6 +494,9 @@ class Match {
       seed: this.opts.seed,
       livesLeft: st.lives,
       pops: { ...st.stats.pops },
+      towerXp: { ...st.towerXp },
+      towerTiers: { ranger: [...st.maxTier.ranger], bombardier: [...st.maxTier.bombardier], frostcaller: [...st.maxTier.frostcaller] },
+      towerXpGained: { ...st.towerXpGained },
       upgrades: this.upgrades,
       ticks: st.tick,
       quit,

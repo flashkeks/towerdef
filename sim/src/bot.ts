@@ -52,6 +52,8 @@ export interface BotResult {
   spent: Record<string, number>;
   leaked: number;
   heroLevel: number;
+  /** Im Match verdiente Turm-XP je Typ (nur mit `towerXp` in den Optionen, sonst 0). */
+  towerXpGained: Record<TowerType, number>;
   hash: string;
 }
 
@@ -229,6 +231,7 @@ export function runBot(strategy: Strategy, opts: Partial<GameOptions> & { diffic
     spent: { ...S.stats.spent },
     leaked: S.stats.leaked,
     heroLevel: hero?.heroLevel ?? 0,
+    towerXpGained: { ...S.towerXpGained },
     hash: game.hash(),
   };
 }

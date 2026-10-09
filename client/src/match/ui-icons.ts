@@ -16,6 +16,7 @@ const ROWS: Record<string, Rows> = {
   star: ['...k...', '..kyk..', 'kkkykkk', 'kyyyyyk', '.kyyyk.', '.kyk.yk', '.k...k.'],
   sword: ['....kk', '...kwk', '..kwk.', 'k.kwk.', '.kwk..', '.kk...', 'kek...'],
   auto: ['.kkkk..', 'k.bbbk.', 'k.....k', 'k....kb', '.kkkk.b', '....kbb', '.....k.'],
+  bolt: ['...kkk.', '..kyyk.', '.kyyk..', 'kyyyyyk', '..kyyk.', '.kyk...', '.kk....'],
   x: ['k...k', '.k.k.', '..k..', '.k.k.', 'k...k'],
 };
 

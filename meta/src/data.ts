@@ -12,11 +12,11 @@ export const MAX_ROUND = 20;
 
 /** Turm-XP-Kosten je Stufe 1..5 (Index 0 = Stufe 1). */
 export const TIER_COST: readonly number[] = [100, 250, 900, 2500, 8000];
-/** Turm-XP je gekaufter Stufe im Match, je geknackter Schicht 1. */
-export const XP_PER_TIER_BOUGHT = 20;
-export const XP_PER_POP = 1;
-/** Start-Turm-XP je Turm, damit die erste Partie nicht komplett ohne Upgrades beginnt (Abweichung vom Entwurf, siehe Bericht). */
-export const STARTER_TOWER_XP = 250;
+/**
+ * Start-Turm-XP je Turm: genau Stufe 1 eines Pfads (Runde 11b, vorher 250). Turm-XP entsteht im Match (Sim, `sim/src/xp.ts`:
+ * Topf je Runde, verteilt nach Geld und Pops); das Profil uebernimmt nur das Endkonto.
+ */
+export const STARTER_TOWER_XP = 100;
 
 export const DIFFICULTY_XP_BP: Record<Difficulty, number> = { easy: 10000, medium: 11000, hard: 12000 };
 export const WIN_BONUS_XP = 200;

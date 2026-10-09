@@ -1,6 +1,7 @@
 /**
  * Upgrade-Panel wie BTD6 (Runde 11 / P3): drei Pfade nebeneinander, je 5 Stufen mit Pixel-Icon, Name, Preis, Kaufknopf.
- * Gesperrt durch Crosspath ("Path closed") oder Turm-XP ("Unlock with Tower XP") ist sichtbar, zu wenig Geld rot.
+ * Gesperrt durch Crosspath ("Path closed") oder Turm-XP ("Unlock") ist sichtbar, zu wenig Geld rot. Stufen, deren Vorgaenger nicht
+ * freigeschaltet ist, sind verdeckt ("???", Runde 11b). Knopf "Unlock" oeffnet das Freischalt-Menue des Turmtyps.
  * Held: Level, XP-Balken, Faehigkeiten. Dazu Targeting-Umschalter, Verkaufen mit Wert, Pops-Zaehler.
  * Das Panel entscheidet nichts: es fragt `game.upgradeInfo` und schickt Kommandos ueber die Callbacks.
  */
@@ -20,6 +21,7 @@ export interface PanelCallbacks {
   target(towerId: number, mode: TargetMode): void;
   close(): void;
   toast(msg: string): void;
+  openUnlock(type: TowerType): void;
 }
 
 export class Panel {
@@ -53,7 +55,8 @@ export class Panel {
     if (!tw) { this.show(null); this.cb.close(); return; }
     const infos = this.game.upgradeInfo(tw.id);
     const sell = this.game.sellValue(tw.id);
-    const sig = JSON.stringify([tw.tiers, tw.target, tw.heroLevel, tw.camo, infos.map((i) => [i.next, i.price, i.canBuy, i.reason]), sell, isHero(tw.type) ? state.abilities.map((a) => [a.id, a.ready]) : 0]);
+    const hero = isHero(tw.type);
+    const sig = JSON.stringify([tw.tiers, tw.target, tw.heroLevel, tw.camo, infos.map((i) => [i.next, i.price, i.canBuy, i.reason, i.revealed]), sell, hero ? 0 : [state.maxTier[tw.type as TowerType], state.towerXp[tw.type as TowerType]], isHero(tw.type) ? state.abilities.map((a) => [a.id, a.ready]) : 0]);
     if (sig !== this.sig) {
       this.sig = sig;
       this.build(tw, infos, sell, state);
@@ -123,7 +126,16 @@ export class Panel {
     const sellB = h('button', 'p-sell');
     sellB.append(h('span', 'lbl', t('panel.sell')), uiIcon('coin', 2), h('b', 'num', String(sell)));
     sellB.onclick = () => this.cb.sell(tw.id);
-    if (!hero) foot.append(sellB);
+    if (!hero) {
+      const ty = tw.type as TowerType;
+      const xp = state.towerXp[ty];
+      const ready = this.game.unlockInfo(ty).some((pi) => pi.next != null && pi.reason == null);
+      const ub = h('button', `p-unlock${ready ? ' ready' : ''}`);
+      ub.append(uiIcon('bolt', 2), h('span', 'lbl', t('panel.unlock')), h('b', 'num', `${xp} XP`));
+      ub.title = t('panel.towerXp');
+      ub.onclick = () => this.cb.openUnlock(ty);
+      foot.append(ub, sellB);
+    }
     el.append(foot);
   }
 
@@ -140,7 +152,7 @@ export class Panel {
     const data = DATA.towers[ty];
     const cols = h('div', 'p-cols');
     this.defaultDesc = '';
-    const maxTier = this.opts.unlocks?.maxTier[tw.type];
+    const maxTier = this.game.state.maxTier[ty];
     infos.forEach((info) => {
       const p = info.path;
       const col = h('div', 'p-col');
@@ -151,32 +163,34 @@ export class Panel {
         const td = data.paths[p].tiers[i];
         const owned = i < info.current;
         const isNext = info.next === i + 1;
-        const xpLocked = !!maxTier && i + 1 > maxTier[p];
+        const xpLocked = i + 1 > maxTier[p];
+        // verdeckt: Stufe 1 immer sichtbar, sonst erst wenn die Stufe davor freigeschaltet ist
+        const revealed = i === 0 || maxTier[p] >= i;
         const row = h('button', 'p-tier');
         row.dataset.state = owned ? 'owned' : isNext ? (info.canBuy ? 'buy' : info.reason ?? 'no') : 'future';
         if (isNext && !info.canBuy && info.reason === 'no-cash') row.classList.add('poor');
         if (!owned && closed) row.classList.add('closed');
         if (!owned && !closed && (xpLocked || (isNext && info.reason === 'locked'))) row.classList.add('xplock');
-        const ic = iconUpgrade(ty, p, i + 1);
+        if (!revealed) row.classList.add('hiddenTier');
         const icBox = h('div', 'p-ic');
-        icBox.append(copyCanvas(ic.canvas, 2));
+        icBox.append(revealed ? copyCanvas(iconUpgrade(ty, p, i + 1).canvas, 2) : uiIcon('lock', 3));
         const txt = h('div', 'p-tx');
-        txt.append(h('div', 'p-tn', td.name));
+        txt.append(h('div', 'p-tn', revealed ? td.name : t('panel.hidden')));
         const price = this.tierPrice(ty, p, i, info);
         const st = h('div', 'p-ts');
         if (owned) { st.append(uiIcon('check', 2), h('span', '', t('panel.owned'))); }
         else if (closed) st.append(h('span', 'closed-t', t('panel.pathClosed')));
-        else if (row.classList.contains('xplock')) { st.append(uiIcon('lock', 2), h('span', 'xp-t', t('panel.unlockXp'))); }
+        else if (row.classList.contains('xplock')) { st.append(uiIcon('bolt', 2), h('span', 'xp-t', t('panel.unlock'))); }
         else { st.append(uiIcon('coin', 2), h('b', 'num', String(price))); }
         txt.append(st);
         row.append(icBox, txt);
-        row.onmouseenter = () => { if (this.descBox) this.descBox.textContent = `${td.name}: ${td.desc}`; };
+        row.onmouseenter = () => { if (this.descBox) this.descBox.textContent = revealed ? `${td.name}: ${td.desc}` : t('panel.hiddenHint'); };
         row.onmouseleave = () => { if (this.descBox) this.descBox.textContent = this.defaultDesc; };
         row.onclick = () => {
           if (owned) return;
           if (isNext && info.canBuy) this.cb.upgrade(tw.id, p);
           else if (closed) this.cb.toast(t('reason.crosspath'));
-          else if (row.classList.contains('xplock')) this.cb.toast(t('panel.unlockXp'));
+          else if (row.classList.contains('xplock')) this.cb.openUnlock(ty);
           else if (isNext) this.cb.toast(t(`reason.${info.reason ?? 'unknown'}`));
         };
         if (isNext) row.classList.add('next');
@@ -185,8 +199,8 @@ export class Panel {
       cols.append(col);
     });
     // Beschreibung der naechsten kaufbaren Stufe als Standard
-    const nx = infos.find((i) => i.canBuy) ?? infos.find((i) => i.next != null && !i.reason?.startsWith('cross'));
-    if (nx && nx.next) this.defaultDesc = `${nx.name}: ${nx.desc}`;
+    const nx = infos.find((i) => i.canBuy) ?? infos.find((i) => i.next != null && !i.reason?.startsWith('cross') && i.revealed);
+    if (nx && nx.next && nx.revealed) this.defaultDesc = `${nx.name}: ${nx.desc}`;
     this.el.append(cols);
   }
 

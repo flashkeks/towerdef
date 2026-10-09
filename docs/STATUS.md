@@ -64,6 +64,7 @@ Commits / Tests: sim 79, meta 23, client 54 Tests, tsc in allen drei, build, smo
 Lesart: Jede Zweier-Kombination schafft Medium mit Held (B + F ohne Held scheitert am Boss = „Boss braucht Vorbereitung“). Kein Einzelturm schafft Medium ohne Held, keiner schafft Hard. Hard braucht Held + passende Kombination. Vor P5 (1 Gold je Schicht) verlor **jede** Aufstellung ohne Held auf Medium in R15–17, und Wren trug Einzeltürme durch Hard. Der Bot ist schlichter als ein Mensch (feste Reihenfolge, keine Umstellung), echte Spieler sollten es leichter haben.
 
 **Offene Fragen an Max (mit Empfehlung):**
+0. *(Runde 11b hat Punkt 2 unten überholt: Start-Turm-XP 100, Turm-XP kommt im Match.)*
 1. **T5-Preise gestaucht** (≈ 15–20× statt 80× Basispreis), sonst wäre in 20 Runden nie ein T5 bezahlbar. Empfehlung: so lassen, mit 2 Gold je Schicht ist ein T5 ab ~R15 erreichbar.
 2. **Erste Partie ist schwer:** Ein neues Profil hat nur den Ranger und 250 Turm-XP je Turm (eine Handvoll Stufen). Easy gewinnt man damit eher nicht beim ersten Mal; nach 1–2 Partien sind Bombardier/Wren da. Empfehlung: so lassen (BTD6-Gefühl), zum Testen der hohen Stufen **Settings → „Developer: unlock everything“** oder `?debug`.
 3. **Freeplay** (R21+) fehlt. Empfehlung: in Runde 12, zusammen mit der zweiten Karte.
@@ -71,6 +72,31 @@ Lesart: Jede Zweier-Kombination schafft Medium mit Held (B + F ohne Held scheite
 **Vorschlag Runde 12:** Max spielt den Slice und sagt, was fehlt. Danach: eine vierte Turmklasse (Support/Farm, damit Ökonomie eine Entscheidung wird), eine zweite Karte (Winter oder Sumpf) und Freeplay ab R21. Gesichter/Ausdruck der Figuren nachschärfen (P2-Schwäche), kleine Effekte (Nova, Eisblock) feiner. Gacha für Helden/Skins erst danach.
 
 **Bekannt:** Echte Bildrate auf GPU ungemessen (headless SwiftShader ≈ 12 fps, Sim+Sync+Render im Code ≈ 9 ms je Bild bei 126 Gegnern). Boss-Banner kommt beim Rundenstart von R20, nicht beim Auftauchen des Bosses.
+
+### Runde 11b (09.10.2026 abends): Turm-XP im Match, Freischalten im Match, verdeckte Stufen
+
+Anlass: Max' erstes Spiel — eine 3-Minuten-Partie hat alle drei Ranger-Pfade auf Stufe 3 gebracht (`ENTSCHEIDUNGEN.md`, oberster Abschnitt; Spezifikation `meta.md` „Nachtrag Runde 11b“).
+
+**Was man jetzt sieht:**
+- **Rundenende:** kurzer Toast je Turmtyp („+13 Ranger XP“, `b-runde-ende.png`). Der Topf je Runde ist `(10 + 6 × Runde) × 1,1` (Medium), halb nach investiertem Geld, halb nach Pops des Typs.
+- **Turm anklicken → Knopf „Unlock“** (zeigt das XP-Konto des Typs, pulsiert, wenn etwas bezahlbar ist) → **Freischalt-Menü** mit 3 Pfaden × 5 Stufen: freigeschaltete Stufen abgehakt, die nächste mit Text, Kosten und Kaufknopf, alle weiteren „???“ mit Schloss und nur den XP-Kosten (`b-unlock-menue.png`). Ton beim Freischalten, Toast „Unlocked …“.
+- **Upgrade-Panel:** nicht freigeschaltete Stufen zeigen „Unlock“ (Klick öffnet das Menü), Stufen nach einer nicht freigeschalteten sind „???“ mit Schloss und ohne Beschreibung (`b-upgrade-verdeckt.png`). Crosspath wie BTD6 (5-2-0), Freischalten ist davon unabhängig.
+- **Turm-Detail** (außerhalb des Matches): verdeckte Stufen ebenfalls „???“, auch ohne Sprite-Vorschau. **Ergebnis:** zeigt die im Match verdienten Turm-XP je Typ (`b-ergebnis-xp.png`). Startguthaben jetzt 100 je Turm; alte Profile bleiben gültig.
+
+**Technik:** Sim führt Konto und Freischaltungen (`GameOptions.towerXp`, `state.towerXp/towerXpGained/maxTier`, Befehl `unlockTier`, Events `towerXp`/`unlockTier`, `Game.unlockInfo`); Meta übernimmt das Endkonto und die Endstufen aus dem Match (`applyMatch`, idempotent); Details in `sim/README.md`, `meta/README.md`, `docs/design/schnittstelle.md`. Tests: sim 101, meta 30, client 54, alles grün.
+
+**Rechnung, volle Medium-Partie (R1–20, Bot, Seed 1, `npm run bot`):** der Topf summiert sich auf ≈ 1.606 XP je Partie über alle Typen. Der Haupt-Turm bekommt davon:
+
+| Aufstellung (Medium, Held) | Ranger / Bombardier / Frostcaller |
+|---|---|
+| ranger + ranger (T3-Pfade) + bombardier + bombardier 4-2-0 | 452 / 1.146 / 0 |
+| ranger + ranger 0-4-2 + frostcaller + frostcaller 2-4-0 | 584 / 0 / 1.014 |
+| ranger + ranger 0-2-4 + bombardier | 1.238 / 360 / 0 |
+| ranger + ranger + frostcaller + bombardier | 944 / 285 / 226 |
+
+Heißt: ein Haupt-Turm bringt ≈ 950–1.250 XP je Partie (Ziel war 800–1.100, wer fast nur einen Typ spielt, liegt oben drüber, ein Mischbau mit klarem Hauptturm trifft die Spanne). Mit 100 Startguthaben: ein T3 je Partie, T4 (2.500) nach ~3 Partien, T5 (8.000) nach ~8–10. Wer bewusst mehr Spreizung will, dreht `potPerRound` in `sim/data/xp.json` (eine Zahl, Tests prüfen nur die Summenregeln).
+
+**Kleinigkeiten:** `.m-toast` bekommt `flex: none` (gestapelte Toasts wurden gequetscht), neue Prüfhilfe `?hooks` (siehe `client/docs/r11/p4-fortschritt.md`), `scripts/shots-r11-b.mjs`.
 
 ## Runde 10 (echte Figuren, Match-Grafik, Beschwören, Karten je Welt)
 

@@ -6,13 +6,14 @@ import { DATA, baseStats } from './data.js';
 import { dist2, isqrt } from './fixed.js';
 import { hashState } from './hash.js';
 import { getMap, pointInPolygon } from './map.js';
+import { towerXpPot, splitTowerXp } from './xp.js';
 import { positionAt, pathClearance } from './path.js';
 import { nextInt, seedRng } from './prng.js';
 import { applyMod, pathOrder, type Mod, type Stats } from './stats.js';
 import { cosBp, rotate, sinBp } from './trig.js';
 import type {
   AbilityId, Command, CommandResult, DamageType, Difficulty, EnemyState, EnemyType, Game, GameOptions, GameState,
-  HeroType, PlaceCheck, ProjectileKind, ProjectileState, SimEvent, TargetMode, TowerState, TowerType, Tiers, UpgradeInfo,
+  HeroType, PlaceCheck, ProjectileKind, ProjectileState, SimEvent, TargetMode, TowerState, TowerType, Tiers, UnlockPathInfo, UpgradeInfo,
 } from './types.js';
 
 export const MAX_ROUND = 20;
@@ -85,6 +86,14 @@ export function createGame(opts: GameOptions): Game {
     enemies: [],
     projectiles: [],
     abilities: [],
+    towerXp: opts.towerXp ? { ranger: opts.towerXp.ranger, bombardier: opts.towerXp.bombardier, frostcaller: opts.towerXp.frostcaller } : { ranger: 0, bombardier: 0, frostcaller: 0 },
+    towerXpGained: { ranger: 0, bombardier: 0, frostcaller: 0 },
+    maxTier: {
+      ranger: opts.unlocks ? [...opts.unlocks.maxTier.ranger] : [5, 5, 5],
+      bombardier: opts.unlocks ? [...opts.unlocks.maxTier.bombardier] : [5, 5, 5],
+      frostcaller: opts.unlocks ? [...opts.unlocks.maxTier.frostcaller] : [5, 5, 5],
+    },
+    roundPops: { ranger: 0, bombardier: 0, frostcaller: 0 },
     stats: {
       pops: { ranger: 0, bombardier: 0, frostcaller: 0, wren: 0 },
       leaked: 0,
@@ -296,6 +305,7 @@ export function createGame(opts: GameOptions): Game {
     if (owner) {
       owner.pops++;
       S.stats.pops[owner.type]++;
+      if (!isHero(owner.type)) S.roundPops[owner.type]++;
     }
     const kids: EnemyState[] = [];
     const n = d.children.length;
@@ -780,6 +790,35 @@ export function createGame(opts: GameOptions): Game {
     S.activeRounds = S.activeRounds.filter((x) => x !== r);
     grantHeroXp(60 + 20 * r);
     emit({ type: 'roundEnd', tick: S.tick, round: r, bonus });
+    distributeTowerXp(r);
+  }
+
+  /**
+   * Turm-XP-Topf am Rundenende (Runde 11b): (potBase + potPerRound x Runde) x Schwierigkeit x Fast Learner, ganzzahlig.
+   * Je Typ (ohne Held): 50 % nach investiertem Geld der stehenden Türme, 50 % nach den Pops seit dem letzten Rundenende.
+   * Fehlt eine Hälfte (nichts investiert / nichts geknackt), geht der ganze Topf nach der anderen. Rest nach der Rundung
+   * an den Typ mit dem größten Anteil (Gleichstand: Reihenfolge ranger, bombardier, frostcaller).
+   */
+  function distributeTowerXp(r: number): void {
+    if (!opts.towerXp) return;
+    const spent = { ranger: 0, bombardier: 0, frostcaller: 0 };
+    for (const t of S.towers) if (!isHero(t.type)) spent[t.type] += t.spent;
+    const pops = S.roundPops;
+    const spentTot = spent.ranger + spent.bombardier + spent.frostcaller;
+    const popsTot = pops.ranger + pops.bombardier + pops.frostcaller;
+    S.roundPops = { ranger: 0, bombardier: 0, frostcaller: 0 };
+    if (spentTot === 0 && popsTot === 0) return;
+    const pot = towerXpPot(r, opts.difficulty, kmods.towerXpBp ?? 0);
+    const split = splitTowerXp(pot, spent, pops);
+    const out: Partial<Record<TowerType, number>> = {};
+    for (const t of TOWER_TYPES) {
+      if (split[t] <= 0) continue;
+      out[t] = split[t];
+      S.towerXp[t] += split[t];
+      S.towerXpGained[t] += split[t];
+    }
+    if (pot <= 0) return;
+    emit({ type: 'towerXp', tick: S.tick, round: r, pot, gains: out });
   }
 
   /** Tote Gegner aus der Liste nehmen (nach jedem Tick und nach jedem Befehl). */
@@ -868,7 +907,7 @@ export function createGame(opts: GameOptions): Game {
     const nt = t.tiers.slice() as Tiers;
     nt[path_]++;
     if (!tiersAllowed(nt)) return 'crosspath';
-    if (opts.unlocks && opts.unlocks.maxTier[t.type][path_] < nt[path_]) return 'locked';
+    if (S.maxTier[t.type as TowerType][path_] < nt[path_]) return 'locked';
     if (S.cash < price) return 'no-cash';
     return undefined;
   }
@@ -879,11 +918,42 @@ export function createGame(opts: GameOptions): Game {
     const d = DATA.towers[t.type];
     return ([0, 1, 2] as const).map((p) => {
       const cur = t.tiers[p];
-      if (cur >= 5) return { path: p, current: cur, next: null, name: '', desc: '', price: 0, canBuy: false, reason: 'maxed' };
+      const unlocked = S.maxTier[t.type as TowerType][p];
+      if (cur >= 5) return { path: p, current: cur, next: null, name: '', desc: '', price: 0, unlocked, unlockCost: 0, revealed: true, canBuy: false, reason: 'maxed' };
       const tier = d.paths[p].tiers[cur];
       const price = upgradePrice(t.type as TowerType, p, cur + 1);
       const reason = upgradeBlock(t, p, price);
-      return { path: p, current: cur, next: cur + 1, name: tier.name, desc: tier.desc, price, canBuy: reason === undefined, ...(reason ? { reason } : {}) };
+      const revealed = cur + 1 === 1 || unlocked >= cur;
+      return {
+        path: p, current: cur, next: cur + 1, name: revealed ? tier.name : '', desc: revealed ? tier.desc : '', price, unlocked,
+        unlockCost: unlocked > cur ? 0 : DATA.xp.unlockCost[cur], revealed, canBuy: reason === undefined, ...(reason ? { reason } : {}),
+      };
+    });
+  }
+
+  /** Freischalt-Menü: je Pfad 5 Stufen, Text nur für sichtbare Stufen (Stufe 1 und die nach einer freigeschalteten). */
+  function unlockInfo(type: TowerType): UnlockPathInfo[] {
+    const d = DATA.towers[type];
+    if (!d) return [];
+    const towerFree = !opts.unlocks || opts.unlocks.towers.includes(type);
+    return ([0, 1, 2] as const).map((p) => {
+      const unlocked = S.maxTier[type][p];
+      const next = unlocked >= 5 ? null : unlocked + 1;
+      let reason: string | undefined;
+      if (next === null) reason = 'maxed';
+      else if (!towerFree) reason = 'locked';
+      else if (S.towerXp[type] < DATA.xp.unlockCost[next - 1]) reason = 'no-xp';
+      return {
+        path: p,
+        name: d.paths[p].name,
+        unlocked,
+        next,
+        ...(reason ? { reason } : {}),
+        tiers: d.paths[p].tiers.map((tier, i) => {
+          const revealed = i === 0 || unlocked >= i;
+          return { tier: i + 1, revealed, unlocked: unlocked >= i + 1, name: revealed ? tier.name : '', desc: revealed ? tier.desc : '', cost: DATA.xp.unlockCost[i] };
+        }),
+      };
     });
   }
 
@@ -989,6 +1059,19 @@ export function createGame(opts: GameOptions): Game {
         emit({ type: 'upgrade', tick: S.tick, tower: t.id, ttype: t.type, tiers: [...t.tiers] as Tiers, cash: S.cash });
         return { ok: true, id: t.id };
       }
+      case 'unlockTier': {
+        if (!TOWER_TYPES.includes(cmd.tower)) return { ok: false, reason: 'unknown-tower' };
+        if (![0, 1, 2].includes(cmd.path)) return { ok: false, reason: 'bad-path' };
+        const cur = S.maxTier[cmd.tower][cmd.path];
+        if (cur >= 5) return { ok: false, reason: 'maxed' };
+        if (opts.unlocks && !opts.unlocks.towers.includes(cmd.tower)) return { ok: false, reason: 'locked' };
+        const cost = DATA.xp.unlockCost[cur];
+        if (!opts.towerXp || S.towerXp[cmd.tower] < cost) return { ok: false, reason: 'no-xp' };
+        S.towerXp[cmd.tower] -= cost;
+        S.maxTier[cmd.tower][cmd.path] = cur + 1;
+        emit({ type: 'unlockTier', tick: S.tick, tower: cmd.tower, path: cmd.path, tier: cur + 1, cost, xp: S.towerXp[cmd.tower] });
+        return { ok: true };
+      }
       case 'sell': {
         const t = towerById(cmd.towerId);
         if (!t) return { ok: false, reason: 'no-tower' };
@@ -1037,6 +1120,7 @@ export function createGame(opts: GameOptions): Game {
     hash: () => hashState(S),
     canPlace,
     upgradeInfo,
+    unlockInfo,
     sellValue,
     priceOf,
     sandbox: {

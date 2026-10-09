@@ -99,7 +99,10 @@ export function resultView(ctx: Ctx, info: ResultInfo): View {
 
   const showTower = (k: (typeof rows)[number], f: number): void => {
     const gained = r.towerXpGained[k.t] ?? 0;
-    const xp = Math.round(info.towerXpBefore[k.t] + (info.towerXpAfter[k.t] - info.towerXpBefore[k.t]) * f);
+    // Die Sim fuehrt das Konto im Match (Freischalten zieht XP ab): Balken laufen vom Stand vor den Rundengewinnen zum Endkonto.
+    const end = info.towerXpAfter[k.t];
+    const start = Math.max(0, end - gained);
+    const xp = Math.round(start + (end - start) * f);
     setText(k.gain, gained ? `+${fmt(Math.round(gained * f))}` : '');
     const cost = nextCost(p.towerTiers[k.t]);
     if (p.settings.unlockAll || cost === null) {

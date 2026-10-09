@@ -5,7 +5,8 @@
   "speedBp": 7500,
   "bossHp": 200,
   "startCash": 650,
-  "popCash": 2
+  "popCash": 2,
+  "towerXpBp": 10000
  },
  "medium": {
   "lives": 150,
@@ -13,7 +14,8 @@
   "speedBp": 8500,
   "bossHp": 300,
   "startCash": 650,
-  "popCash": 2
+  "popCash": 2,
+  "towerXpBp": 11000
  },
  "hard": {
   "lives": 100,
@@ -21,6 +23,7 @@
   "speedBp": 10000,
   "bossHp": 400,
   "startCash": 650,
-  "popCash": 2
+  "popCash": 2,
+  "towerXpBp": 12000
  }
 }

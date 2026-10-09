@@ -93,14 +93,16 @@ export function towersView(ctx: Ctx, tower?: TowerType): View {
       const isNext = tiers[pi] === ti;
       const cost = tierCost(n);
       const afford = p.towerXp[t] >= cost;
+      // verdeckt (Runde 11b): Text erst, wenn die Stufe davor freigeschaltet ist (Stufe 1 immer)
+      const revealed = ti === 0 || tiers[pi] >= ti;
       const can = unlockedTower && isNext && afford && !all;
-      const cell = h('div', `ttier ${done ? 'done' : isNext ? 'next' : 'later'} ${can ? 'can' : ''} ${lastUnlocked === `${t}${pi}${n}` ? 'fresh' : ''}`);
+      const cell = h('div', `ttier ${done ? 'done' : isNext ? 'next' : 'later'} ${can ? 'can' : ''} ${revealed ? '' : 'veiled'} ${lastUnlocked === `${t}${pi}${n}` ? 'fresh' : ''}`);
       cell.tabIndex = 0;
-      cell.append(cv(iconUpgrade(t, pi as 0 | 1 | 2, n), 3, done || isNext ? '' : 'dim'));
+      cell.append(revealed ? cv(iconUpgrade(t, pi as 0 | 1 | 2, n), 3, done || isNext ? '' : 'dim') : cv(icon('lock'), 3, 'dim'));
       const txt = h('div', 'ttier-txt');
-      txt.append(h('div', 'ttier-n', tier.name), h('div', 'ttier-d', tier.desc));
+      txt.append(h('div', 'ttier-n', revealed ? tier.name : S.towers.hidden), h('div', 'ttier-d', revealed ? tier.desc : S.towers.hiddenHint));
       const meta = h('div', 'ttier-m num');
-      meta.append(h('span', 'tier-tag', S.towers.tier(n)), h('span', 'muted', S.towers.price(tier.price)));
+      meta.append(h('span', 'tier-tag', S.towers.tier(n)), h('span', 'muted', revealed ? S.towers.price(tier.price) : `${fmt(cost)} XP`));
       txt.append(meta);
       cell.append(txt);
       if (done) {
@@ -126,6 +128,7 @@ export function towersView(ctx: Ctx, tower?: TowerType): View {
         cell.append(act);
       }
       const preview = (): void => {
+        if (!revealed) return;
         const hi = [...tiers] as Tiers;
         hi[pi] = n;
         shown = n > 2 ? ([0, 0, 0].map((_, i) => (i === pi ? n : 0)) as Tiers) : legalTiers(hi);
