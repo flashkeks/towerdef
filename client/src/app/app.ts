@@ -93,6 +93,11 @@ export async function runApp(root: HTMLElement): Promise<void> {
   for (;;) {
     const difficulty = quick && DIFFS.includes(quick) ? quick : await startScreen(root);
     const opts: StartOptions = { difficulty, debug: q.has('debug'), seed: q.has('seed') ? Number(q.get('seed')) : undefined };
+    // Pruefhilfe: ?lock zeigt die Sperren (P4 liefert im echten Spiel Freischaltungen und Texte)
+    if (q.has('lock')) {
+      opts.unlocks = { towers: ['ranger'], maxTier: { ranger: [3, 2, 0], bombardier: [0, 0, 0], frostcaller: [0, 0, 0] } };
+      opts.lockInfo = { bombardier: t('match.unlockLevel', { n: 2 }), frostcaller: t('match.unlockLevel', { n: 4 }), wren: t('match.unlockLevel', { n: 3 }) };
+    }
     quick = null;
     const res = await startMatch(root, opts);
     if (res.quit) continue;

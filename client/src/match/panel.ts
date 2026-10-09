@@ -123,7 +123,7 @@ export class Panel {
     const sellB = h('button', 'p-sell');
     sellB.append(h('span', 'lbl', t('panel.sell')), uiIcon('coin', 2), h('b', 'num', String(sell)));
     sellB.onclick = () => this.cb.sell(tw.id);
-    foot.append(sellB);
+    if (!hero) foot.append(sellB);
     el.append(foot);
   }
 
