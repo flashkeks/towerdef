@@ -553,7 +553,7 @@ export class Renderer {
     v.spr.position.set(x - s.ax, y - s.ay + (e.type === 'leviathan' ? Math.round(Math.sin(this.now / 400) * 2) - 8 : 0));
     v.spr.zIndex = y + (e.type === 'leviathan' ? 40 : 0);
     v.spr.alpha = camo ? 0.55 + 0.2 * Math.sin(this.now / 90 + e.id) : 1;
-    v.spr.tint = e.frozenTicks > 0 ? hex(C.ice) : e.vineTicks > 0 ? hex(C.leaf) : e.stunTicks > 0 ? hex(C.yellow) : e.goldTicks > 0 ? hex(C.sand) : e.slowBp > 0 && e.slowTicks > 0 ? hex(C.silver) : 0xffffff;
+    v.spr.tint = e.frozenTicks > 0 ? hex(C.ice) : e.vineTicks > 0 ? 0xffffff : e.stunTicks > 0 ? hex(C.yellow) : e.goldTicks > 0 ? hex(C.sand) : e.slowBp > 0 && e.slowTicks > 0 ? hex(C.silver) : 0xffffff;
     if (this.latest && this.latest.warpLeft > 0) {
       if (!v.bub) { v.bub = new Sprite(); this.fxHost.addChild(v.bub); }
       const bs = bubbleSprite(Math.floor(this.now / 200) + e.id, e.type === 'leviathan' ? 22 : e.type === 'brute' ? 11 : 8);

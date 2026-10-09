@@ -6,6 +6,16 @@ Frühere Aufträge: [archiv/run-runde1.md](archiv/run-runde1.md), [archiv/run-ru
 
 **Runde 13 C (Client-Einbau, 09.10.2026):** Turm-Leiste mit fuenf Tuermen (T = Longshot, Z = Market, B = Withdraw), Market im Match (Aura-Ring statt Schussring, Faehnchen an Tuermen in der Aura, Muenzflug zur Geldanzeige, Bank mit Withdraw im Panel), Longshot (kein Ring, Muendungsblitz/Rueckstoss, Ricochet, Boss-Markierung, Focus/Supply Drop/Grant mit Icons), Wissensbaum fuer 28 Knoten in 5 Aesten (`screens/knowledge-layout.ts`), Projektile starten am Muendungspunkt, Menue ohne Musik, AudioContext ab dem ersten Klick, Mix Effekte x0,7 / Musik x0,8. Tests `client/test/r13-match.test.ts`, Bilder `client/docs/r13/c-*.png`, Skript `client/scripts/shots-r13-c.mjs`.
 
+**Runde 14 C (Client-Einbau, 09.10.2026):** Thornweaver und Alchemist im Match und in den Menues.
+- **Turm-Leiste:** sieben Tuerme + Wren als Kacheln in zwei Spalten bei <= 860 px Hoehe (1280 x 720 ohne Scrollen); D = Thornweaver, A = Alchemist, **Auto-Start jetzt auf G** (A war belegt). Gesperrt: "Unlocks at level 7/9".
+- **Darstellung** (`match/renderer.ts`, `match/r14.ts`): Dornen/Traenke als Projektile (Trank im Bogen mit Schatten), Blitzboegen aus der Wolke (`chain` des Thornweavers), Wirbelwind, Ranken-Fessel am Gegner (solange `vineTicks`), Baumwand aus `state.walls` mit Wachstum und vier Abnutzungsstufen, Ranken-/Weltenbaum-Zone dauerhaft unter dem Turm (`TowerState.zone`), Saeurespritzer/-Markierung, Pfuetzen aus `state.puddles`, Buff-Glanz am Turm (`Game.buffOf`: brew/stimulant/permanent), Monster-Form (Verwandlung, voller Alchemist, 0,6 fuer Total Transformation), Schrumpfen, Lead-/Rubber-Gold, Bounty-Zahlen, Heart bei `heal`, Gate-Effekt am Tor. Panel zeigt aktive Buffs ("Potion and blessing"), Monster-Restzeit.
+- **Wall of Trees / Tonic:** Die Sim setzt die Wand selbst (Faehigkeit ohne Zielpunkt, `no-target` ohne Weg in Reichweite); der Knopf in der Faehigkeiten-Leiste genuegt, keine Zielvorschau noetig.
+- **Toene:** `audio/recipes-r14.ts`, `audio/r14-map.ts`; Schuesse laufen ueber `tower-vol` (leise bei Stufe 0-2, Mindestabstand), Zone nur bei Treffern.
+- **Wissensbaum:** 40 Knoten, Knoten 120 x 108 (vorher 96 x 76), Schrift 16 px, Kosten 22 px, **Aeste brechen in zwei Zeilen um** (`knowledge-layout.ts`, `maxW`), Seite scrollt senkrecht (nie waagerecht), Kopfleiste klebt oben, Scrollstand bleibt nach einem Kauf, Legende in der freien Ecke, zwoelf neue Icons (`leaf`, `flask`, `shield`, `cross` neu).
+- **Menues:** Namen/Pfade der neuen Tuerme (Storm/Wild/Grove, Brews/Unstable/Gold), Startseite mit acht Karten, Turm-Detail mit sieben Reitern (umbrechend) und angepasstem Massstab fuer grosse Stufen; Freischalt-Karten L7/L9 im Ergebnis kommen aus `meta` (`LEVEL_UNLOCKS`).
+- **Pruefhilfe:** `?level=N` (mit `?debug`/`?hooks`) setzt das Spieler-Level.
+- Tests `client/test/r14-match.test.ts`, `r14-knowledge.test.ts` (+ `r13-match` angepasst), Smoke Runde 14 (`scripts/smoke.mjs`), Bilder `client/docs/r14/c-*.png`, Skript `client/scripts/shots-r14-c.mjs`.
+
 ## Runde 13 (Lantern Market, Longshot, Wissensbaum 28 Knoten, Figuren ohne Plattform) — abgeschlossen 09.10.2026
 
 | Paket | Agent | Was man sieht |

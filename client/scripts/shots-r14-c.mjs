@@ -68,7 +68,7 @@ async function freezeOn(page, src, timeout = 40000) {
     const r = __dw.r;
     if (!r.__wrapped) {
       const o = r.handle.bind(r);
-      r.handle = (ev) => { o(ev); if (window.__trig && window.__trig(ev, __dw.game.state)) { __dw.match.speed = 0; window.__trig = null; window.__frz = true; } };
+      r.handle = (ev) => { o(ev); window.__last = ev; if (window.__trig && window.__trig(ev, __dw.game.state)) { __dw.match.speed = 0; window.__trig = null; window.__frz = true; } };
       r.__wrapped = true;
     }
     window.__frz = false;
@@ -145,13 +145,25 @@ try {
     await shot(page, 'c-thornweaver');
     await shotZoom(page, 'c-thornweaver-zoom', 190, 250);
     await resume(page);
-    await freezeOn(page, "ev.type === 'vine'");
-    await shot(page, 'c-thornweaver-vine');
     info('state', JSON.stringify(await page.evaluate(() => ({ walls: __dw.game.state.walls.length, vines: __dw.game.state.enemies.filter((e) => e.vineTicks > 0).length, zones: __dw.game.state.towers.filter((t) => t.zone > 0).length }))));
-    await resume(page);
     await clickTower(page, w);
     await page.waitForTimeout(400);
     await shot(page, 'c-thornweaver-panel');
+    await page.close();
+  }
+
+
+  // 3b) Ranken-Fessel (Vine Snare): ein Thornweaver allein, Ironshells sind gegen Dornen immun und bleiben stehen
+  if (want('vine')) {
+    const page = await open(ctx);
+    await startMatch(page);
+    await rich(page);
+    await placeAt(page, 'thornweaver', 200, 228, [0, 2, 0]);
+    await spawnMix(page, ['ironshell', 'ironshell', 'brute', 'ironshell', 'ironshell'], 330000, 6000);
+    await freezeOn(page, "ev.type === 'vine' && st.enemies.some((e) => e.vineTicks > 0)");
+    const q = await page.evaluate(() => { const e = __dw.game.state.enemies.find((n) => n.vineTicks > 0); return [e.x / 1000, e.y / 1000, e.vineTicks]; });
+    info('vine', JSON.stringify(q));
+    await shotZoom(page, 'c-vine-zoom', q[0], q[1], 150, 100);
     await page.close();
   }
 
@@ -236,6 +248,25 @@ try {
     await page.waitForTimeout(100);
     await shot(page, 'c-match');
     await page.close();
+  }
+
+  // 8) Startseite, Turm-Detail, Ergebnis mit Freischalt-Karten L7/L9
+  if (want('menue')) {
+    const page = await open(ctx, '?hooks&level=6&seed=7');
+    await page.evaluate(() => { document.querySelector('.dw-screens').scrollTop = 99999; });
+    await page.waitForTimeout(200);
+    await shot(page, 'c-start-gesperrt');
+    await page.close();
+    const p2 = await open(ctx, '?debug&level=12&seed=7');
+    await p2.click('.navbtn:nth-child(1)');
+    await p2.waitForSelector('.tab');
+    await p2.locator('.tab', { hasText: 'Thornweaver' }).click();
+    await p2.waitForTimeout(400);
+    await shot(p2, 'c-turm-thornweaver');
+    await p2.locator('.tab', { hasText: 'Alchemist' }).click();
+    await p2.waitForTimeout(400);
+    await shot(p2, 'c-turm-alchemist');
+    await p2.close();
   }
   stop();
 } catch (e) {

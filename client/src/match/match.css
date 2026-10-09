@@ -374,7 +374,12 @@ kbd { font: 700 10px var(--font-num); background: var(--ink); color: var(--silve
   .m-cards .m-card-n { font-size: 13px; letter-spacing: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .m-cards .m-card-p { justify-content: center; font-size: 15px; }
   .m-cards .m-key { position: absolute; top: 3px; right: 3px; }
-  .m-cards .m-lock { font-size: 10px; line-height: 1.1; padding: 2px; }
+  .m-cards .m-lock { font-size: 11px; line-height: 1.1; padding: 2px; }
   .m-cards .m-lock .px-ic { display: none; }
 }
 .ps-stage.buffed .ps-fig { transform: translateX(-62px); }
+
+/* gesperrte Karten: Figur und Text grau, der Hinweis "Unlocks at level N" bleibt gut lesbar */
+.m-card.locked { filter: none; }
+.m-card.locked .m-port, .m-card.locked .m-card-t, .m-card.locked .m-key { filter: grayscale(.9) brightness(.7); }
+.m-lock { background: rgba(24, 20, 37, .5); color: #fff; font-weight: 800; text-shadow: 1px 1px 0 #181425; }
