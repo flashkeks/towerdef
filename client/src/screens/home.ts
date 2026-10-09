@@ -97,6 +97,7 @@ export function homeView(ctx: Ctx): View {
   for (const d of DIFFICULTIES) {
     const ok = isDifficultyUnlocked(p, d);
     const b = h('button', 'diff');
+    b.dataset.diff = d;
     b.disabled = !ok;
     b.append(cv(medal(MEDAL_OF[d], medals[d]), 2), h('div', 'diff-t', S.home.difficulty[d]), h('div', 'diff-s', ok ? S.home.diffText[d] : ''));
     if (!ok) {
@@ -110,7 +111,7 @@ export function homeView(ctx: Ctx): View {
   }
   if (!isDifficultyUnlocked(p, ctx.difficulty)) ctx.difficulty = 'medium';
   setClass(btns[ctx.difficulty], 'sel', true);
-  const play = h('button', 'btn-big play');
+  const play = h('button', 'btn-big play app-play');
   play.append(ptext(S.home.play, 4, 'white'), cv(icon('arrow'), 3));
   play.onclick = () => { ctx.sound('click'); ctx.play(ctx.difficulty); };
   side.append(list, play);
