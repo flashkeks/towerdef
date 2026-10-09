@@ -58,7 +58,7 @@ describe('Daten', () => {
   it('Runden: Pop-Cash (Schichten) wie runden.md', () => {
     const cash = [20, 35, 45, 70, 94, 110, 170, 152, 186, 240, 162, 286, 260, 366, 312, 424, 506, 576, 724, 606];
     // Schichten je Runde (Cash = Schichten x popCash 2), Boss-Hülle 100: brute 19, leviathan 176 (Boss-Hülle 100 + 4 Brutes)
-    const per = { red: 1, blue: 2, green: 3, gold: 4, ironshell: 9, ember: 9, brute: 19, leviathan: 176 };
+    const per: Record<string, number> = { red: 1, blue: 2, green: 3, gold: 4, ironshell: 9, ember: 9, brute: 19, leviathan: 176 };
     const got = DATA.rounds.map((r) => r.groups.reduce((a, g) => a + g.n * per[g.type], 0));
     expect(got).toEqual(cash);
   });

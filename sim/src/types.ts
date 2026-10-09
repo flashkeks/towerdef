@@ -5,7 +5,12 @@
 
 export type TowerType = 'ranger' | 'bombardier' | 'frostcaller' | 'longshot' | 'market' | 'thornweaver' | 'alchemist';
 export type HeroType = 'wren';
-export type EnemyType = 'red' | 'blue' | 'green' | 'gold' | 'ironshell' | 'ember' | 'brute' | 'leviathan';
+export type EnemyType =
+  | 'red' | 'blue' | 'green' | 'gold' | 'ironshell' | 'ember' | 'brute' | 'leviathan'
+  // Runde 15
+  | 'pink' | 'frostling' | 'crystal' | 'gloomship' | 'wyrm' | 'colossus';
+/** Runde 15: Spielmodi (Zusatzmodi je Karte). `standard` = normales Spiel. */
+export type ModeId = 'standard' | 'primary-only' | 'specialists-only' | 'no-hero' | 'half-cash' | 'deflation';
 export type Difficulty = 'easy' | 'medium' | 'hard';
 export type TargetMode = 'first' | 'last' | 'strong' | 'close';
 export type Tiers = [number, number, number];
@@ -21,6 +26,8 @@ export interface GameOptions {
   map: string;
   difficulty: Difficulty;
   seed: number;
+  /** Runde 15: Spielmodus (Standard `standard`). Regeln: sim/README.md "Runde 15". */
+  mode?: ModeId;
   /** Was das Profil freigeschaltet hat (P4). Fehlt = alles frei (Tests, Sandbox). */
   unlocks?: { towers: (TowerType | HeroType)[]; maxTier: Partial<Record<TowerType, Tiers>> };
   /**
@@ -188,6 +195,8 @@ export interface TowerState {
   buffSpeedBp: number;
   /** Transforming Tonic: Restticks der Monster-Form (0 = normal). */
   monsterTicks: number;
+  /** Runde 15: Frost Wyrm hat den Turm eingefroren, Restticks (0 = nicht eingefroren): der Turm tut nichts. */
+  frozen: number;
   // --- Innenleben Runde 14 ---
   zapCd: number;
   whirlCd: number;
@@ -203,6 +212,8 @@ export interface WallState {
   owner: number;
   /** Milli-px auf dem Weg. */
   progress: number;
+  /** Runde 15: Ast (-1 = gemeinsamer Wegteil). */
+  branch: number;
   x: number;
   y: number;
   /** Noch freie RBE (Kapazität 150). */
@@ -216,6 +227,8 @@ export interface PuddleState {
   id: number;
   owner: number;
   progress: number;
+  /** Runde 15: Ast (-1 = gemeinsamer Wegteil). */
+  branch: number;
   x: number;
   y: number;
   /** Radius in Milli-px. */
@@ -259,6 +272,19 @@ export interface EnemyState {
   /** Runde 13: Boss-Markierung (Crippling Shot): Restticks und Zusatzschaden aus allen Quellen in Basispunkten. */
   markTicks: number;
   markBp: number;
+  // --- Runde 15 ---
+  /** Ast der Karte (0 bei Karten mit einem Weg). `progress` zaehlt auf jedem Ast ab dessen Start; Aeste einer Karte sind gleich lang. */
+  branch: number;
+  /** Merkmal Fortified: Huelle doppelt (Ironshell, Brute, Crystal, Blimps, Bosse). Kinder erben. */
+  fortified: boolean;
+  /** Merkmal Regrow ("Bloom"): hoechster Typ, bis zu dem die Schichten nachwachsen (null = kein Regrow). Kinder erben. */
+  regrowTo: EnemyType | null;
+  /** Regrow: Restticks bis zur naechsten nachgewachsenen Schicht. */
+  regrowTicks: number;
+  /** Lava-Stampfer des Ember Colossus: Restticks mit +50 % Tempo. */
+  hasteTicks: number;
+  /** Boss-Faehigkeit (Frosthauch des Frost Wyrm): Restticks bis zum naechsten Einsatz. */
+  bossCd: number;
   dead: boolean;
 }
 
@@ -293,6 +319,8 @@ export interface TrapState {
   y: number;
   /** Verbleibende Ladungen. */
   charges: number;
+  /** Runde 15: Ast, auf dem die Falle liegt (-1 = gemeinsamer Wegteil, wirkt auf alle Aeste). */
+  branch: number;
   /** Innenleben: Falle verschwindet am Ende dieser Runde (0 = nie). */
   until: number;
 }
@@ -301,7 +329,7 @@ export interface TrapState {
 export interface RoundPreview {
   round: number;
   /** Gleiche Typ/Camo-Gruppen zusammengefasst, Reihenfolge des ersten Auftretens. */
-  groups: { type: EnemyType; n: number; camo: boolean }[];
+  groups: { type: EnemyType; n: number; camo: boolean; regrow: boolean; fortified: boolean }[];
   /** Summe der RBE aller Gegner der Runde (Hülle + Kinder, Boss-HP der Schwierigkeit). */
   rbe: number;
   hasCamo: boolean;
@@ -310,6 +338,12 @@ export interface RoundPreview {
   /** Ein Gegner oder ein Nachkomme ist Emberling (kälteimmun). */
   hasEmber: boolean;
   hasBoss: boolean;
+  /** Runde 15: ein Gegner oder Nachkomme ist explosions-immun (Frostling). */
+  hasFrostling: boolean;
+  /** Runde 15: Blimp (Gloomship) in der Runde. */
+  hasBlimp: boolean;
+  hasRegrow: boolean;
+  hasFortified: boolean;
 }
 
 /** Aktuelle Market-Kennwerte (`Game.marketInfo`). */
@@ -401,6 +435,10 @@ export interface GameState {
   gateLeft: number;
   /** Runde 14: Bruchrest von Pop Bonus (0..9999). */
   popCarry: number;
+  /** Runde 15: Half Cash, Bruchrest der Halbierung (0 oder 1). */
+  halfCarry: number;
+  /** Runde 15: Runde vor der ersten Runde des Matches (0; Deflation: letzte Runde - 11). */
+  baseRound: number;
   // --- Innenleben ---
   /** Time Warp: Restticks. */
   warpLeft: number;
@@ -416,7 +454,7 @@ export interface GameState {
   nextId: number;
   rng: number[];
   /** Laufende Spawn-Gruppen. */
-  groups: { round: number; type: EnemyType; camo: boolean; left: number; next: number; gap: number }[];
+  groups: { round: number; type: EnemyType; camo: boolean; regrow: boolean; fortified: boolean; /** Ast oder -1 = abwechselnd */ lane: number; /** schon gespawnte Gegner */ spawned: number; left: number; next: number; gap: number }[];
   /** Gestartete, noch nicht beendete Runden. */
   activeRounds: number[];
 }
@@ -425,7 +463,7 @@ export type SimEvent =
   | { type: 'windup'; tick: number; tower: number; target: number }
   | { type: 'fire'; tick: number; tower: number; projectile?: number; kind: ProjectileKind | 'chain' }
   | { type: 'hit'; tick: number; enemy: number; tower: number; dmg: number; dtype: DamageType; x: number; y: number }
-  | { type: 'blocked'; tick: number; enemy: number; x: number; y: number; reason: 'armor' | 'immune' }
+  | { type: 'blocked'; tick: number; enemy: number; x: number; y: number; reason: 'armor' | 'immune' | 'explosion' }
   | { type: 'pop'; tick: number; enemy: number; etype: EnemyType; x: number; y: number; children: number[]; cash: number }
   | { type: 'explode'; tick: number; x: number; y: number; radius: number; kind: 'bomb' | 'mini' | 'star' | 'quake' | 'acid' | 'unstable' }
   | { type: 'nova'; tick: number; x: number; y: number; radius: number }
@@ -476,10 +514,33 @@ export type SimEvent =
   | { type: 'roundStart'; tick: number; round: number }
   | { type: 'roundEnd'; tick: number; round: number; bonus: number }
   | { type: 'bossStage'; tick: number; enemy: number; stage: number }
+  /** Runde 15: Frost Wyrm haucht (alle 8 s): Radius in Milli-px, `towers` = eingefrorene Tuerme (ohne Wirkung auf Bereits-Eingefrorene mitgezaehlt). */
+  | { type: 'bossBreath'; tick: number; enemy: number; etype: EnemyType; x: number; y: number; radius: number; ticks: number; towers: number[] }
+  | { type: 'towerFrozen'; tick: number; tower: number; ticks: number; source: number }
+  /** Runde 15: Frost Wyrm spuckt `n` Frostlinge (bei 66 % und 33 %); `ids` = neue Gegner. */
+  | { type: 'bossSpit'; tick: number; enemy: number; x: number; y: number; ids: number[] }
+  /** Runde 15: Lava-Stampfer des Ember Colossus (bei jeder Platte): `enemies` = beschleunigte Gegner im Radius. */
+  | { type: 'stomp'; tick: number; enemy: number; x: number; y: number; radius: number; ticks: number; enemies: number[] }
+  /** Runde 15: Regrow, `enemy` wurde von `from` zu `to` (gleiche Id). */
+  | { type: 'regrow'; tick: number; enemy: number; from: EnemyType; to: EnemyType; x: number; y: number }
   | { type: 'gameOver'; tick: number; result: 'won' | 'lost'; round: number };
+
+/** Runde 15: Rahmendaten des Matches (aendern sich nicht). */
+export interface GameInfo {
+  map: string;
+  mode: ModeId;
+  difficulty: Difficulty;
+  /** Letzte Runde dieser Karte (Meadow 20, Frostfen 25, Quarry 30); Sieg nach dieser Runde. */
+  maxRound: number;
+  /** Runde vor der ersten Runde des Matches (0; Deflation: maxRound - 11). */
+  baseRound: number;
+  /** Anzahl der Wegaeste der Karte (Frostfen 2, sonst 1). */
+  branches: number;
+}
 
 export interface Game {
   readonly state: GameState;
+  readonly info: GameInfo;
   apply(cmd: Command): CommandResult;
   step(ticks?: number): void;
   drainEvents(): SimEvent[];
@@ -499,11 +560,11 @@ export interface Game {
   priceOf(type: TowerType | HeroType): number;
   /** Runde 12: Trockenlauf von `{ type: 'power' }` (ändert nichts) für Vorschau-Kreis/Geist. Liefert dieselben Gründe wie `apply`. */
   canUsePower(power: PowerKey, x?: number, y?: number): PlaceCheck;
-  /** Runde 12: Vorschau der Runde `r` (1..20), sonst null. */
+  /** Runde 12: Vorschau der Runde `r` (1..`info.maxRound`), sonst null. */
   roundPreview(r: number): RoundPreview | null;
   /** Nur für Tests/Sandbox: Gegner direkt setzen, Schaden direkt zufügen. Ändert den Zustand wie ein normaler Eingriff (deterministisch). */
   readonly sandbox: {
-    spawn(type: EnemyType, progress?: number, camo?: boolean): number;
+    spawn(type: EnemyType, progress?: number, camo?: boolean, branch?: number): number;
     hurt(enemyId: number, amount: number, dtype?: DamageType): boolean;
     setCash(cash: number): void;
   };

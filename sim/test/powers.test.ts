@@ -311,7 +311,7 @@ describe('Powers: Insta-Warden', () => {
 describe('Powers: Vorschau', () => {
   it('Runde 1 und Randfälle', () => {
     const g = newGame();
-    expect(g.roundPreview(1)).toEqual({ round: 1, groups: [{ type: 'red', n: 20, camo: false }], rbe: 20, hasCamo: false, hasArmor: false, hasEmber: false, hasBoss: false });
+    expect(g.roundPreview(1)).toEqual({ round: 1, groups: [{ type: 'red', n: 20, camo: false, regrow: false, fortified: false }], rbe: 20, hasCamo: false, hasArmor: false, hasEmber: false, hasBoss: false, hasFrostling: false, hasBlimp: false, hasRegrow: false, hasFortified: false });
     expect(g.roundPreview(0)).toBeNull();
     expect(g.roundPreview(21)).toBeNull();
   });

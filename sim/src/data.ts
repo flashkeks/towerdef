@@ -4,11 +4,15 @@
 import { z } from 'zod';
 import towersJson from '../data/towers.json';
 import enemiesJson from '../data/enemies.json';
-import roundsJson from '../data/rounds.json';
+import roundsMeadowJson from '../data/rounds/meadow.json';
+import roundsFrostfenJson from '../data/rounds/frostfen.json';
+import roundsQuarryJson from '../data/rounds/quarry.json';
 import difficultiesJson from '../data/difficulties.json';
 import xpJson from '../data/xp.json';
 import powersJson from '../data/powers.json';
 import meadowJson from '../data/maps/meadow.json';
+import frostfenJson from '../data/maps/frostfen.json';
+import quarryJson from '../data/maps/quarry.json';
 import { STAT_DEFAULTS, type Mod, type Stats } from './stats.js';
 import type { Difficulty, EnemyType, HeroType, PowerKey, TowerType } from './types.js';
 
@@ -60,7 +64,7 @@ const towersSchema = z.object({
   wren: heroSchema,
 });
 
-const ENEMY_TYPES = ['red', 'blue', 'green', 'gold', 'ironshell', 'ember', 'brute', 'leviathan'] as const;
+const ENEMY_TYPES = ['red', 'blue', 'green', 'gold', 'ironshell', 'ember', 'brute', 'leviathan', 'pink', 'frostling', 'crystal', 'gloomship', 'wyrm', 'colossus'] as const;
 const enemyTypeSchema = z.enum(ENEMY_TYPES);
 const enemySchema = z.object({
   name: z.string(),
@@ -72,25 +76,37 @@ const enemySchema = z.object({
   immuneCold: z.boolean().optional(),
   boss: z.boolean().optional(),
   stages: z.array(z.number().int()).optional(),
+  // --- Runde 15 ---
+  /** Blimp (MOAB-Klasse): kein Einfrieren, Verlangsamung halb, Schaden geht nicht an die Kinder. Bosse zaehlen immer als Blimp. */
+  blimp: z.boolean().optional(),
+  /** Explosions-immun (Frostling): `explosive`-Schaden prallt ab. */
+  immuneExplosive: z.boolean().optional(),
+  /** Betaeubungs-immun (Ember Colossus). */
+  immuneStun: z.boolean().optional(),
+  /** Huelle zaehlt beim Merkmal Fortified doppelt. */
+  heavy: z.boolean().optional(),
+  /** Pop-Gold fuer die Huelle (statt Pop-Cash je Schicht): Blimp 50, Boss 100/150. */
+  hullCash: z.number().int().positive().optional(),
+  /** Boss-Huelle je Schwierigkeit (fehlt: `bossHp` aus difficulties.json). */
+  bossHp: z.object({ easy: z.number().int().positive(), medium: z.number().int().positive(), hard: z.number().int().positive() }).optional(),
 });
 const enemiesSchema = z.record(enemyTypeSchema, enemySchema);
 
-const roundsSchema = z
-  .array(
-    z.object({
-      round: z.number().int().positive(),
-      groups: z.array(
-        z.object({
-          type: enemyTypeSchema,
-          n: z.number().int().positive(),
-          gapMs: z.number().int().nonnegative(),
-          startMs: z.number().int().nonnegative(),
-          camo: z.boolean().optional(),
-        }),
-      ),
-    }),
-  )
-  .length(20);
+const roundGroupSchema = z.object({
+  type: enemyTypeSchema,
+  n: z.number().int().positive(),
+  gapMs: z.number().int().nonnegative(),
+  startMs: z.number().int().nonnegative(),
+  camo: z.boolean().optional(),
+  /** Runde 15: Merkmal Regrow ("Bloom"), Kinder erben. */
+  regrow: z.boolean().optional(),
+  /** Runde 15: Merkmal Fortified, Kinder erben. */
+  fortified: z.boolean().optional(),
+  /** Runde 15: Wegast, auf dem die Gruppe laeuft (0, 1 ...). Fehlt = abwechselnd (Gegner 1 auf Ast 0, 2 auf Ast 1 ...). */
+  lane: z.number().int().nonnegative().optional(),
+});
+const roundsSchema = (n: number) =>
+  z.array(z.object({ round: z.number().int().positive(), groups: z.array(roundGroupSchema) })).length(n);
 
 const diffSchema = z.object({
   lives: z.number().int().positive(),
@@ -130,9 +146,18 @@ const mapSchema = z.object({
   id: z.string(),
   name: z.string(),
   size: pt,
+  /** Hauptweg (Ast 0). */
   path: z.array(pt).min(2),
+  /** Runde 15: alle Aeste (Frostfen: zwei, die sich vereinen); `paths[0]` ist `path`. Fehlt = ein Weg. */
+  paths: z.array(z.array(pt).min(2)).min(1).optional(),
   pathHalfWidth: z.number().positive(),
   water: z.array(z.array(pt).min(3)),
+  /** Runde 15: Lava (nicht bebaubar). */
+  lava: z.array(z.array(pt).min(3)).default([]),
+  /** Runde 15: Eisschollen (nur Optik, bebaubar wie das Ufer, liegen auf Wasser). */
+  ice: z.array(z.array(pt).min(3)).default([]),
+  /** Runde 15: Bruecken ueber Lava (nur Optik): Strecken auf dem Weg. */
+  bridges: z.array(z.tuple([pt, pt])).default([]),
   blockers: z.array(z.tuple([z.number(), z.number(), z.number()])),
   buildArea: z.tuple([z.number(), z.number(), z.number(), z.number()]),
 });
@@ -140,7 +165,7 @@ const mapSchema = z.object({
 export type TowerData = z.infer<typeof towerSchema>;
 export type HeroData = z.infer<typeof heroSchema>;
 export type EnemyData = z.infer<typeof enemySchema>;
-export type RoundData = z.infer<typeof roundsSchema>[number];
+export type RoundData = z.infer<ReturnType<typeof roundsSchema>>[number];
 export type DifficultyData = z.infer<typeof diffSchema>;
 export type PowerData = z.infer<typeof powerSchema>;
 export type MapFile = z.infer<typeof mapSchema>;
@@ -149,8 +174,10 @@ export interface GameData {
   towers: Record<TowerType, TowerData>;
   hero: Record<HeroType, HeroData>;
   enemies: Record<EnemyType, EnemyData>;
-  /** Index = Runde - 1. */
+  /** Index = Runde - 1. Runden der Karte `meadow` (Kurzform fuer `roundsByMap.meadow`). */
   rounds: RoundData[];
+  /** Runde 15: Rundenliste je Karte (Meadow 20, Frostfen 25, Quarry 30). Unbekannte Karten (Testkarten) nutzen die Meadow-Liste. */
+  roundsByMap: Record<string, RoundData[]>;
   difficulties: Record<Difficulty, DifficultyData>;
   xp: z.infer<typeof xpSchema>;
   /** Powers (Runde 12), Reihenfolge der Anzeige in `powerOrder`. */
@@ -170,9 +197,10 @@ function check(cond: boolean, msg: string): void {
 function load(): GameData {
   const t = towersSchema.parse(towersJson);
   const enemies = enemiesSchema.parse(enemiesJson) as Record<EnemyType, EnemyData>;
-  const rounds = roundsSchema.parse(roundsJson);
+  const rounds = roundsSchema(20).parse(roundsMeadowJson);
+  const roundsByMap = { meadow: rounds, frostfen: roundsSchema(25).parse(roundsFrostfenJson), quarry: roundsSchema(30).parse(roundsQuarryJson) };
   const difficulties = difficultiesSchema.parse(difficultiesJson);
-  const meadow = mapSchema.parse(meadowJson);
+  const maps = { meadow: mapSchema.parse(meadowJson), frostfen: mapSchema.parse(frostfenJson), quarry: mapSchema.parse(quarryJson) };
   const xp = xpSchema.parse(xpJson);
   const pw = powersSchema.parse(powersJson);
   for (const k of POWER_KEYS) check(!!pw.powers[k], `Power ${k} fehlt`);
@@ -184,7 +212,10 @@ function load(): GameData {
   for (let i = 1; i < 5; i++) check(xp.unlockCost[i] > xp.unlockCost[i - 1], 'Freischaltkosten nicht steigend');
 
   for (const e of ENEMY_TYPES) check(!!enemies[e], `Gegner ${e} fehlt`);
-  rounds.forEach((r, i) => check(r.round === i + 1, `Runde ${i + 1} falsch nummeriert`));
+  for (const [m, list] of Object.entries(roundsByMap)) list.forEach((r, i) => check(r.round === i + 1, `${m}: Runde ${i + 1} falsch nummeriert`));
+  for (const m of Object.values(maps)) {
+    if (m.paths) check(JSON.stringify(m.paths[0]) === JSON.stringify(m.path), `${m.id}: paths[0] ist nicht path`);
+  }
   for (const k of ALL_TOWERS) {
     for (const p of t[k].paths) {
       let last = 0;
@@ -221,11 +252,12 @@ function load(): GameData {
     hero: { wren: t.wren },
     enemies,
     rounds,
+    roundsByMap,
     difficulties,
     xp,
     powers: pw.powers as Record<PowerKey, PowerData>,
     powerOrder: pw.order,
-    maps: { meadow },
+    maps,
     rbe,
   };
 }
