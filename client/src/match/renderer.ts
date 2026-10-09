@@ -395,6 +395,16 @@ export class Renderer {
     return e ? { x: e.cx, y: e.cy } : null;
   }
 
+  /** Freischalten am gewaehlten Turm (Runde 11c): goldener Ring, Funken, "UNLOCKED". */
+  unlockFx(towerId: number): void {
+    const t = this.latest?.towers.find((q) => q.id === towerId);
+    if (!t) return;
+    const m = (v: number): number => v / 1000;
+    this.fx.ring(m(t.x), m(t.y), 3, 24, C.amber, 16);
+    this.fx.burst(m(t.x), m(t.y) - 12, [C.amber, C.yellow, C.white], 14, 1.6, 2, -0.02, 26);
+    this.fx.float(m(t.x), m(t.y) - 38, 'UNLOCKED', C.yellow, 44, 0.3);
+  }
+
   handle(ev: SimEvent): void {
     const fx = this.fx;
     const m = (v: number): number => v / 1000;

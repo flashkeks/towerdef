@@ -1,15 +1,17 @@
 /**
- * Upgrade-Panel wie BTD6 (Runde 11 / P3): drei Pfade nebeneinander, je 5 Stufen mit Pixel-Icon, Name, Preis, Kaufknopf.
- * Gesperrt durch Crosspath ("Path closed") oder Turm-XP ("Unlock") ist sichtbar, zu wenig Geld rot. Stufen, deren Vorgaenger nicht
- * freigeschaltet ist, sind verdeckt ("???", Runde 11b). Knopf "Unlock" oeffnet das Freischalt-Menue des Turmtyps.
- * Held: Level, XP-Balken, Faehigkeiten. Dazu Targeting-Umschalter, Verkaufen mit Wert, Pops-Zaehler.
+ * Turm-Panel wie BTD6 (Runde 11c, schlank): je Pfad EINE Zeile. Links fuenf Punkte (gekauft = in Pfadfarbe) und die zuletzt
+ * gekaufte Stufe, rechts ein grosser Knopf nur fuer die NAECHSTE Stufe (Zustaende: `tier-button.ts`). Nicht freigeschaltete
+ * Stufen zeigen die Turm-XP; Klick -> Bestaetigung (Callback `askUnlock`), danach steht der Goldpreis im Knopf. Die 3 x 5
+ * Uebersicht bleibt im Freischalt-Menue ("All upgrades").
+ * Held: Level, XP-Balken, Faehigkeiten (Aufbau wie in Runde 11), dazu Targeting, Verkaufen, Pops.
  * Das Panel entscheidet nichts: es fragt `game.upgradeInfo` und schickt Kommandos ueber die Callbacks.
  */
-import { DATA, round5, type Game, type GameOptions, type GameState, type TargetMode, type TowerState, type TowerType, type UpgradeInfo } from '../sim';
+import { DATA, type Game, type GameOptions, type GameState, type TargetMode, type TowerState, type TowerType, type UpgradeInfo } from '../sim';
 import { h, setText } from '../ui/dom';
 import { t } from '../i18n/t';
 import { displayName, isHero } from './info';
-import { heroPortrait, iconUpgrade, towerPortrait } from './sprites';
+import { heroPortrait, iconUpgrade, towerSprite } from './sprites';
+import { tierButton, type TierBtn } from './tier-button';
 import { ABILITY_TEXT, PATH_COLORS, TARGET_TEXT } from './tower-text';
 import { copyCanvas, uiIcon } from './ui-icons';
 
@@ -22,6 +24,8 @@ export interface PanelCallbacks {
   close(): void;
   toast(msg: string): void;
   openUnlock(type: TowerType): void;
+  /** Nicht freigeschaltete Stufe angeklickt (Turm-XP reichen): Bestaetigung zeigen. */
+  askUnlock(type: TowerType, path: 0 | 1 | 2): void;
 }
 
 export class Panel {
@@ -33,6 +37,9 @@ export class Panel {
   private xpText: HTMLElement | null = null;
   private descBox: HTMLElement | null = null;
   private defaultDesc = '';
+  /** Worauf die Maus zeigt (ueberlebt den Neuaufbau): 'next' = Knopf rechts, 'own' = Stufe links */
+  private hover: { path: number; which: 'next' | 'own' } | null = null;
+  private descs = new Map<string, string>();
   private side: 'left' | 'right' = 'right';
 
   constructor(private readonly game: Game, private readonly opts: GameOptions, private readonly cb: PanelCallbacks) {}
@@ -42,10 +49,20 @@ export class Panel {
   show(id: number | null, towerX = 0): void {
     this.towerId = id;
     this.sig = '';
+    this.hover = null;
     this.el.classList.toggle('hidden', id == null);
     // gegenueber dem Turm andocken
     this.side = towerX > 320 ? 'left' : 'right';
     this.el.dataset.side = this.side;
+  }
+
+  /** Knopf-Zustand eines Pfads fuer Hotkeys und Panel (gleiche Quelle). */
+  buttonFor(towerId: number, path: 0 | 1 | 2): { btn: TierBtn; info: UpgradeInfo; type: TowerType } | null {
+    const tw = this.game.state.towers.find((q) => q.id === towerId);
+    if (!tw || isHero(tw.type)) return null;
+    const info = this.game.upgradeInfo(towerId)[path];
+    if (!info) return null;
+    return { btn: tierButton(info, this.game.state.towerXp[tw.type as TowerType]), info, type: tw.type as TowerType };
   }
 
   /** Jeden Frame: baut nur neu, wenn sich etwas Sichtbares geaendert hat. */
@@ -56,14 +73,15 @@ export class Panel {
     const infos = this.game.upgradeInfo(tw.id);
     const sell = this.game.sellValue(tw.id);
     const hero = isHero(tw.type);
-    const sig = JSON.stringify([tw.tiers, tw.target, tw.heroLevel, tw.camo, infos.map((i) => [i.next, i.price, i.canBuy, i.reason, i.revealed]), sell, hero ? 0 : [state.maxTier[tw.type as TowerType], state.towerXp[tw.type as TowerType]], isHero(tw.type) ? state.abilities.map((a) => [a.id, a.ready]) : 0]);
+    const xp = hero ? 0 : state.towerXp[tw.type as TowerType];
+    const sig = JSON.stringify([tw.tiers, tw.target, tw.heroLevel, tw.camo, infos.map((i) => [i.next, i.price, i.canBuy, i.reason, i.revealed, i.unlocked, i.unlockCost, tierButton(i, xp).kind]), sell, xp, hero ? state.abilities.map((a) => [a.id, a.ready]) : 0]);
     if (sig !== this.sig) {
       this.sig = sig;
       this.build(tw, infos, sell, state);
     }
     if (this.popsEl) setText(this.popsEl, String(tw.pops));
-    if (isHero(tw.type) && this.xpFill) this.updateXp(tw);
-    if (isHero(tw.type)) this.updateCooldowns(state);
+    if (hero && this.xpFill) this.updateXp(tw);
+    if (hero) this.updateCooldowns(state);
   }
 
   private updateXp(tw: TowerState): void {
@@ -81,19 +99,170 @@ export class Panel {
     }
   }
 
+  private setDesc(text: string): void {
+    if (this.descBox) this.descBox.textContent = text;
+  }
+
+  private sellButton(tw: TowerState, sell: number): HTMLButtonElement {
+    const sellB = h('button', 'p-sell');
+    sellB.append(h('span', 'lbl', t('panel.sell')), uiIcon('coin', 2), h('b', 'num', String(sell)));
+    sellB.onclick = () => this.cb.sell(tw.id);
+    return sellB;
+  }
+
   private build(tw: TowerState, infos: UpgradeInfo[], sell: number, state: GameState): void {
+    this.el.replaceChildren();
+    this.popsEl = this.xpFill = this.xpText = this.descBox = null;
+    this.el.classList.toggle('slim', !isHero(tw.type));
+    if (isHero(tw.type)) this.buildHeroPanel(tw, sell, state);
+    else this.buildTowerPanel(tw, infos, sell, state);
+  }
+
+  // ------------------------------------------------------------------ Turm (schlank)
+  private buildTowerPanel(tw: TowerState, infos: UpgradeInfo[], sell: number, state: GameState): void {
     const el = this.el;
-    el.replaceChildren();
-    const hero = isHero(tw.type);
-    // Kopf
+    const ty = tw.type as TowerType;
+    const xp = state.towerXp[ty];
+    // Kopf: Name, Pops, Schliessen
+    const head = h('div', 'ps-head');
+    head.append(h('div', 'p-title', displayName(ty)));
+    const pops = h('div', 'p-pops');
+    pops.append(uiIcon('sword', 2), h('span', 'lbl', t('panel.pops')));
+    this.popsEl = h('b', 'num', String(tw.pops));
+    pops.append(this.popsEl);
+    const close = h('button', 'p-close', 'x');
+    close.title = t('panel.close');
+    close.onclick = () => this.cb.close();
+    head.append(pops, close);
+    el.append(head);
+
+    // Buehne: Sprite gross in der aktuellen Stufe, Targeting mit Pfeilen
+    const stage = h('div', 'ps-stage');
+    const spr = towerSprite(ty, tw.tiers, 0, 'idle0');
+    const fig = h('div', 'ps-fig');
+    fig.append(copyCanvas(spr.canvas, 3));
+    const label = `${tw.tiers.join(' - ')}${tw.camo ? '  ' + t('panel.camo') : ''}`;
+    const mi = MODES.indexOf(tw.target);
+    const arrow = (dir: -1 | 1): HTMLButtonElement => {
+      const b = h('button', `ps-arrow ${dir < 0 ? 'l' : 'r'}`);
+      b.title = t('panel.target');
+      b.setAttribute('aria-label', `${t('panel.target')} ${dir < 0 ? '<' : '>'}`);
+      b.onclick = () => this.cb.target(tw.id, MODES[(mi + dir + MODES.length) % MODES.length]);
+      return b;
+    };
+    const tg = h('div', 'ps-target', TARGET_TEXT[tw.target]);
+    stage.append(fig, h('div', 'ps-tiers', label), arrow(-1), arrow(1), tg);
+    el.append(stage);
+
+    // drei Pfadzeilen
+    const data = DATA.towers[ty];
+    this.descs.clear();
+    const rows = h('div', 'ps-rows');
+    for (const info of infos) {
+      const p = info.path;
+      const btn = tierButton(info, xp);
+      const pd = data.paths[p];
+      const row = h('div', 'ps-row');
+      row.style.setProperty('--pc', PATH_COLORS[p]);
+      row.dataset.path = String(p);
+      row.dataset.kind = btn.kind;
+
+      // links: Punkte + zuletzt gekaufte Stufe
+      const own = h('div', 'ps-own');
+      const pips = h('div', 'ps-pips');
+      for (let i = 0; i < 5; i++) pips.append(h('i', i < info.current ? 'on' : ''));
+      own.append(pips);
+      const ob = h('div', 'ps-own-b');
+      if (info.current > 0) {
+        const last = pd.tiers[info.current - 1];
+        ob.append(h('div', 'ps-own-ic p-ic'), h('div', 'ps-own-n', last.name), h('div', 'ps-own-s', t('panel.owned')));
+        ob.firstElementChild!.append(copyCanvas(iconUpgrade(ty, p, info.current).canvas, 2));
+        this.descs.set(`${p}|own`, `${last.name}: ${last.desc}`);
+      } else {
+        ob.append(h('div', 'ps-own-n none', t('panel.notUpgraded')));
+        this.descs.set(`${p}|own`, pd.name);
+      }
+      own.append(ob);
+      own.onmouseenter = () => { this.hover = { path: p, which: 'own' }; this.setDesc(this.descFor(p, 'own')); };
+      own.onmouseleave = () => { this.hover = null; this.setDesc(this.defaultDesc); };
+
+      // rechts: der grosse Knopf
+      const nb = h('button', `ps-next k-${btn.kind}`);
+      nb.dataset.kind = btn.kind;
+      nb.disabled = false;
+      nb.setAttribute('aria-disabled', btn.clickable ? 'false' : 'true');
+      this.fillNext(nb, ty, p, info, btn);
+      nb.onmouseenter = () => { this.hover = { path: p, which: 'next' }; this.setDesc(this.descFor(p, 'next')); };
+      nb.onmouseleave = () => { this.hover = null; this.setDesc(this.defaultDesc); };
+      nb.onclick = () => {
+        if (btn.kind === 'buy') this.cb.upgrade(tw.id, p);
+        else if (btn.kind === 'unlock') this.cb.askUnlock(ty, p);
+        else if (btn.kind === 'needxp') this.cb.toast(t('panel.needXp', { n: btn.xpMissing }));
+        else if (btn.kind === 'closed') this.cb.toast(t('reason.crosspath'));
+        else if (btn.kind === 'poor') this.cb.toast(t('reason.no-cash'));
+      };
+      row.append(own, nb);
+      rows.append(row);
+    }
+    el.append(rows);
+
+    // Infozeile
+    this.defaultDesc = t('panel.hoverHint');
+    this.descBox = h('div', 'p-desc ps-desc', this.defaultDesc);
+    el.append(this.descBox);
+    if (this.hover) this.setDesc(this.descFor(this.hover.path, this.hover.which));
+
+    // Fuss: Verkaufen, alle Stufen
+    const foot = h('div', 'p-foot');
+    const ready = this.game.unlockInfo(ty).some((pi) => pi.next != null && pi.reason == null);
+    const ub = h('button', `p-unlock${ready ? ' ready' : ''}`);
+    ub.append(uiIcon('bolt', 2), h('span', 'lbl', t('panel.allUpgrades')), h('b', 'num', `${xp} XP`));
+    ub.title = t('panel.towerXp');
+    ub.onclick = () => this.cb.openUnlock(ty);
+    foot.append(ub, this.sellButton(tw, sell));
+    el.append(foot);
+  }
+
+  private descFor(path: number, which: 'next' | 'own'): string {
+    return this.descs.get(`${path}|${which}`) ?? this.defaultDesc;
+  }
+
+  /** Inhalt des grossen Knopfs je Zustand; legt auch den Hover-Text der naechsten Stufe ab. */
+  private fillNext(nb: HTMLElement, ty: TowerType, p: 0 | 1 | 2, info: UpgradeInfo, btn: TierBtn): void {
+    const pd = DATA.towers[ty].paths[p];
+    const key = `${p}|next`;
+    if (btn.kind === 'maxed') {
+      nb.append(h('div', 'pn-state', t('panel.maxed')));
+      this.descs.set(key, `${pd.name}: ${t('panel.maxedHint')}`);
+      return;
+    }
+    if (btn.kind === 'closed') {
+      nb.append(h('div', 'pn-state', t('panel.pathClosed')));
+      this.descs.set(key, t('panel.closedHint'));
+      return;
+    }
+    const ic = h('div', 'pn-ic p-ic');
+    ic.append(btn.hidden ? uiIcon('lock', 3) : copyCanvas(iconUpgrade(ty, p, btn.tier).canvas, btn.kind === 'needxp' ? 2 : 3));
+    nb.append(ic);
+    nb.append(h('div', 'pn-name', btn.hidden ? t('panel.hidden') : info.name));
+    const st = h('div', 'pn-price');
+    if (btn.kind === 'buy' || btn.kind === 'poor') st.append(uiIcon('coin', 2), h('b', 'num', String(btn.price)));
+    else st.append(uiIcon('bolt', 2), h('b', 'num', `${btn.xpCost} XP`));
+    nb.append(st);
+    if (btn.kind === 'needxp') nb.append(h('div', 'pn-need', t('panel.needXp', { n: btn.xpMissing })));
+    let desc = btn.hidden ? t('panel.hiddenHint') : `${info.name}: ${info.desc}`;
+    if (btn.kind === 'unlock') desc += `  [${t('panel.clickUnlock')}]`;
+    this.descs.set(key, desc);
+  }
+
+  // ------------------------------------------------------------------ Held (wie Runde 11)
+  private buildHeroPanel(tw: TowerState, sell: number, state: GameState): void {
+    const el = this.el;
     const head = h('div', 'p-head');
-    const spr = hero ? heroPortrait() : towerPortrait(tw.type as TowerType);
     const port = h('div', 'p-port');
-    port.append(copyCanvas(spr.canvas, 2));
+    port.append(copyCanvas(heroPortrait().canvas, 2));
     const nm = h('div', 'p-name');
-    nm.append(h('div', 'p-title', displayName(tw.type)));
-    if (hero) nm.append(h('div', 'p-sub', t('panel.level', { n: tw.heroLevel })));
-    else nm.append(h('div', 'p-sub', `${tw.tiers.join(' - ')}${tw.camo ? '  ' + t('panel.camo') : ''}`));
+    nm.append(h('div', 'p-title', displayName(tw.type)), h('div', 'p-sub', t('panel.level', { n: tw.heroLevel })));
     const pops = h('div', 'p-pops');
     pops.append(uiIcon('sword', 2), h('span', 'lbl', t('panel.pops')));
     this.popsEl = h('b', 'num', String(tw.pops));
@@ -104,7 +273,6 @@ export class Panel {
     head.append(port, nm, pops, close);
     el.append(head);
 
-    // Targeting
     const trow = h('div', 'p-target');
     trow.append(h('span', 'lbl', t('panel.target')));
     const seg = h('div', 'seg');
@@ -116,92 +284,12 @@ export class Panel {
     trow.append(seg);
     el.append(trow);
 
-    if (hero) this.buildHero(tw, state);
-    else this.buildPaths(tw, infos);
-
-    // Beschreibung + Verkauf
+    this.buildHero(tw, state);
     this.descBox = h('div', 'p-desc', this.defaultDesc);
     el.append(this.descBox);
     const foot = h('div', 'p-foot');
-    const sellB = h('button', 'p-sell');
-    sellB.append(h('span', 'lbl', t('panel.sell')), uiIcon('coin', 2), h('b', 'num', String(sell)));
-    sellB.onclick = () => this.cb.sell(tw.id);
-    if (!hero) {
-      const ty = tw.type as TowerType;
-      const xp = state.towerXp[ty];
-      const ready = this.game.unlockInfo(ty).some((pi) => pi.next != null && pi.reason == null);
-      const ub = h('button', `p-unlock${ready ? ' ready' : ''}`);
-      ub.append(uiIcon('bolt', 2), h('span', 'lbl', t('panel.unlock')), h('b', 'num', `${xp} XP`));
-      ub.title = t('panel.towerXp');
-      ub.onclick = () => this.cb.openUnlock(ty);
-      foot.append(ub, sellB);
-    }
+    foot.append(this.sellButton(tw, sell));
     el.append(foot);
-  }
-
-  private tierPrice(type: TowerState['type'], path: number, tierIdx: number, info: UpgradeInfo): number {
-    if (info.next === tierIdx + 1) return info.price;
-    if (isHero(type)) return 0;
-    const base = DATA.towers[type];
-    return round5(base.paths[path].tiers[tierIdx].price, DATA.difficulties[this.opts.difficulty].priceBp);
-  }
-
-  private buildPaths(tw: TowerState, infos: UpgradeInfo[]): void {
-    if (isHero(tw.type)) return;
-    const ty = tw.type;
-    const data = DATA.towers[ty];
-    const cols = h('div', 'p-cols');
-    this.defaultDesc = '';
-    const maxTier = this.game.state.maxTier[ty];
-    infos.forEach((info) => {
-      const p = info.path;
-      const col = h('div', 'p-col');
-      col.style.setProperty('--pc', PATH_COLORS[p]);
-      col.append(h('div', 'p-col-h', data.paths[p].name));
-      const closed = info.reason === 'crosspath';
-      for (let i = 0; i < 5; i++) {
-        const td = data.paths[p].tiers[i];
-        const owned = i < info.current;
-        const isNext = info.next === i + 1;
-        const xpLocked = i + 1 > maxTier[p];
-        // verdeckt: Stufe 1 immer sichtbar, sonst erst wenn die Stufe davor freigeschaltet ist
-        const revealed = i === 0 || maxTier[p] >= i;
-        const row = h('button', 'p-tier');
-        row.dataset.state = owned ? 'owned' : isNext ? (info.canBuy ? 'buy' : info.reason ?? 'no') : 'future';
-        if (isNext && !info.canBuy && info.reason === 'no-cash') row.classList.add('poor');
-        if (!owned && closed) row.classList.add('closed');
-        if (!owned && !closed && (xpLocked || (isNext && info.reason === 'locked'))) row.classList.add('xplock');
-        if (!revealed) row.classList.add('hiddenTier');
-        const icBox = h('div', 'p-ic');
-        icBox.append(revealed ? copyCanvas(iconUpgrade(ty, p, i + 1).canvas, 2) : uiIcon('lock', 3));
-        const txt = h('div', 'p-tx');
-        txt.append(h('div', 'p-tn', revealed ? td.name : t('panel.hidden')));
-        const price = this.tierPrice(ty, p, i, info);
-        const st = h('div', 'p-ts');
-        if (owned) { st.append(uiIcon('check', 2), h('span', '', t('panel.owned'))); }
-        else if (closed) st.append(h('span', 'closed-t', t('panel.pathClosed')));
-        else if (row.classList.contains('xplock')) { st.append(uiIcon('bolt', 2), h('span', 'xp-t', t('panel.unlock'))); }
-        else { st.append(uiIcon('coin', 2), h('b', 'num', String(price))); }
-        txt.append(st);
-        row.append(icBox, txt);
-        row.onmouseenter = () => { if (this.descBox) this.descBox.textContent = revealed ? `${td.name}: ${td.desc}` : t('panel.hiddenHint'); };
-        row.onmouseleave = () => { if (this.descBox) this.descBox.textContent = this.defaultDesc; };
-        row.onclick = () => {
-          if (owned) return;
-          if (isNext && info.canBuy) this.cb.upgrade(tw.id, p);
-          else if (closed) this.cb.toast(t('reason.crosspath'));
-          else if (row.classList.contains('xplock')) this.cb.openUnlock(ty);
-          else if (isNext) this.cb.toast(t(`reason.${info.reason ?? 'unknown'}`));
-        };
-        if (isNext) row.classList.add('next');
-        col.append(row);
-      }
-      cols.append(col);
-    });
-    // Beschreibung der naechsten kaufbaren Stufe als Standard
-    const nx = infos.find((i) => i.canBuy) ?? infos.find((i) => i.next != null && !i.reason?.startsWith('cross') && i.revealed);
-    if (nx && nx.next && nx.revealed) this.defaultDesc = `${nx.name}: ${nx.desc}`;
-    this.el.append(cols);
   }
 
   private buildHero(tw: TowerState, state: GameState): void {
@@ -217,12 +305,10 @@ export class Panel {
     // Faehigkeiten
     const abs = h('div', 'p-abs');
     abs.append(h('div', 'lbl', t('panel.ability')));
-    const keyOf = (id: string): string => String(['arrowRain', 'absoluteZero', 'flare', 'dawnbreak'].indexOf(id) + 1);
     for (const a of state.abilities.filter((q) => q.id === 'flare' || q.id === 'dawnbreak')) {
       const b = h('div', 'ab-card');
       b.dataset.ab = a.id;
       b.append(h('b', '', ABILITY_TEXT[a.id].name), h('span', 'small', ABILITY_TEXT[a.id].desc), h('div', 'cd'));
-      void keyOf;
       abs.append(b);
     }
     if (!abs.querySelector('.ab-card')) abs.append(h('span', 'small muted', lv.filter((l) => /Ability/.test(l.desc)).map((l) => `Level ${l.level}: ${l.desc.replace(/^Ability: /, '').split(' - ')[0]}`).join('   ')));

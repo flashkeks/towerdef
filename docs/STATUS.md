@@ -98,6 +98,19 @@ Heißt: ein Haupt-Turm bringt ≈ 950–1.250 XP je Partie (Ziel war 800–1.100
 
 **Kleinigkeiten:** `.m-toast` bekommt `flex: none` (gestapelte Toasts wurden gequetscht), neue Prüfhilfe `?hooks` (siehe `client/docs/r11/p4-fortschritt.md`), `scripts/shots-r11-b.mjs`.
 
+### Runde 11c (09.10.2026): schlankes Turm-Panel wie BTD6
+
+**Wunsch Max:** Das Freischalt-Menü (3 × 5) bleibt, aber das Panel am Turm zeigt nicht mehr alles. Auf eine nicht freigeschaltete Stufe soll man direkt klicken können (Pop-up „Wirklich freischalten?“), danach direkt kaufen. Wie BTD6: je Pfad nur die kaufbare Stufe, links nur Punkte.
+
+**Was steht (nur Client, Sim/Meta unverändert):**
+- **Turm-Panel** (`client/src/match/panel.ts`, CSS `.ps-*`): Kopf mit Name/Pops, Bühne mit dem Turm in der aktuellen Stufe und Targeting als ◀ First ▶; **drei Zeilen, je Pfad eine**: links fünf Punkte (gekauft = Pfadfarbe) plus zuletzt gekaufte Stufe („Owned“) bzw. „Not upgraded“, rechts **ein großer Knopf nur für die nächste Stufe**. Unten Verkaufen mit Wert und „All upgrades“ (öffnet das Freischalt-Menü, zeigt Turm-XP). Hover über Knopf oder Stufe zeigt die Beschreibung in der Infozeile. Held-Panel unverändert.
+- **Knopf-Zustände** als reine Funktion `client/src/match/tier-button.ts` (`tierButton(info, towerXp)`): `buy` (grün, Goldpreis, Klick kauft), `poor` (Preis rot, nicht klickbar), `unlock` (Amber, „N XP“, Klick -> Pop-up), `needxp` (grau, „Need N more XP“), `closed` („Path closed“), `maxed` („Maxed“). Reihenfolge wie in der Sim: voll, Crosspath, Freischaltung, Geld. Die nächste Stufe ist nie verdeckt, sobald die davor freigeschaltet ist (Test gegen die echte Sim); „???“ bleibt als Rückfall (`hidden`).
+- **Pop-up** (`client/src/match/confirm.ts`): „Unlock *Name* for N Tower XP?“, Yes/No, Enter/Esc (auch Y/N); Ja -> `unlockTier`, Ton `ui.unlock`, Effekt am Turm (Ring, Funken, „UNLOCKED“, `Renderer.unlockFx`), der Knopf zeigt danach sofort den Goldpreis.
+- **Hotkeys** `,` `.` `/` kaufen die nächste Stufe des Pfads; ist sie nicht freigeschaltet, öffnet sich dasselbe Pop-up (zu wenig XP: Toast „Need N more XP“).
+- **Tests:** `client/test/match-tierbutton.test.ts` (alle Zustände, Ablauf gegen die Sim, Sichtbarkeit der nächsten Stufe, 5-2-0). Smoke kauft über den Panel-Knopf, per Taste und schaltet per Pop-up frei.
+- **Bilder:** `client/docs/r11/c-panel.png` (2-0-1: kaufbar / zu / freischaltbar), `c-panel-zustaende.png` (3-0-0: zu wenig XP / Geld fehlt / freischaltbar), `c-unlock-popup.png`, `c-panel-maxed.png` (5-2-0). Skript `client/scripts/shots-r11-c.mjs`.
+- **Falle:** `scripts/shots-r11-b.mjs` greift noch auf die alten Selektoren `.p-col`/`.p-tier` des Panels zu und läuft nur für das Freischalt-Menü (`.um-*`) weiter, nicht mehr für das Panel.
+
 ## Runde 10 (echte Figuren, Match-Grafik, Beschwören, Karten je Welt)
 
 Letzte Aktualisierung: 2026-10-09 (Runde 10 abgeschlossen, P5) — **überholt durch Runde 11**
