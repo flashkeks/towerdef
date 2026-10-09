@@ -31,6 +31,7 @@ export async function startGame(root: HTMLElement): Promise<GameHandle> {
     await store.update({ ...p, settings: { ...p.settings, unlockAll: true } });
   }
   if (hooks && !test) await store.update({ ...newProfile(), playerXp: xpForLevel(4) });
+  if (q.has('debug')) (window as unknown as { __audio: unknown }).__audio = audio;
   audio.attach(); // AudioContext schon beim ersten Klick/Tastendruck im Menue entsperren
   void runApp(root, {
     store,

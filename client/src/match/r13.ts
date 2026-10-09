@@ -67,7 +67,7 @@ export interface MarketLines {
 
 /** Texte fuers Market-Panel aus `Game.marketInfo`. `fill` = Fuellstand des Kontos 0..1. */
 export function marketLines(m: MarketInfo): MarketLines {
-  const out: MarketLines = { income: `+${m.income} gold each round` };
+  const out: MarketLines = { income: `+${m.income} per round` };
   if (m.hasBank) {
     out.bank = {
       balance: String(m.bank),

@@ -188,10 +188,12 @@ export class Panel {
       return b;
     };
     const tg = h('div', 'ps-target', TARGET_TEXT[tw.target]);
-    stage.append(fig, h('div', 'ps-tiers', label), arrow(-1), arrow(1), tg);
-    el.append(stage);
+    stage.append(fig, h('div', 'ps-tiers', label));
+    if (tw.type !== 'market') stage.append(arrow(-1), arrow(1), tg);
+    // Runde 13: Market-Konto, Longshot-Reichweite und Aura-Boni liegen in der Buehne (kein zusaetzliches Gewicht im Panel)
     const extra = this.infoBox(tw);
-    if (extra) el.append(extra);
+    if (extra) { stage.append(extra); stage.classList.add(tw.type === 'market' ? 'market' : 'tagged'); }
+    el.append(stage);
 
     // drei Pfadzeilen
     const data = DATA.towers[ty];

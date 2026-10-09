@@ -120,6 +120,65 @@ try {
   await p2.waitForSelector('.vol-pop:not(.hidden) .vol-row[data-kind="music"]');
   check(await p2.locator('.vol-row').count() === 2, 'Lautstaerke-Pop-over: Musik und Effekte getrennt');
   check(err2.length === 0, `keine Konsolenfehler in Store/Powers (${err2.join(' | ')})`);
+
+  // ---- Runde 13: Longshot und Market im Match, Wissensbaum, Menue-Ton
+  const p3 = await browser.newPage({ viewport: { width: 1280, height: 720 } });
+  const err3 = watchErrors(p3);
+  await p3.goto(url + '?debug');
+  await p3.waitForSelector('.app-play', { timeout: 20000 });
+  // Menue-Ton: schon der erste Klick im Hauptmenue entsperrt den AudioContext (vorher blieb alles stumm bis nach einem Match)
+  check(await p3.evaluate(() => __audio.ctxState) === null, 'Audio vor dem ersten Klick noch nicht entsperrt');
+  await p3.click('.navbtn:has-text("Knowledge")');
+  await p3.waitForSelector('.knode');
+  check(await p3.evaluate(() => __audio.ctxState) !== null, 'erster Klick im Menue erzeugt den AudioContext');
+  check(await p3.evaluate(() => __audio.log.includes('ui.click')), 'Klick-Ton im Menue ausgeloest');
+  check(await p3.locator('.knode').count() === 28, 'Wissensbaum zeigt 28 Knoten');
+  check(await p3.locator('.kbranch').count() === 5, 'Wissensbaum zeigt fuenf Aeste');
+  check(await p3.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth), 'Wissensbaum bei 1280 x 720 ohne Quer-Scrollen');
+  check(await p3.evaluate(() => __audio.musicTimer === null), 'Menue ohne Musik (kein Musik-Timer)');
+  await p3.click('.subtop .btn-small');
+  await p3.waitForSelector('.app-play');
+  await p3.click('.diff[data-diff="easy"]');
+  await p3.click('.app-play');
+  await p3.waitForSelector('.m-canvas', { timeout: 20000 });
+  check(await p3.locator('.m-card').count() === 6, 'Turm-Leiste: fuenf Tuerme und der Held');
+  check((await p3.locator('.m-card .m-card-n').allTextContents()).slice(3, 5).join('|') === 'Longshot|Lantern Market', 'Longshot und Lantern Market in der Leiste');
+  const rect3 = await p3.evaluate(() => { const r = document.querySelector('.m-canvas').getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height }; });
+  const at3 = (mx, my) => [rect3.x + (mx / 640) * rect3.w, rect3.y + (my / 360) * rect3.h];
+  await p3.evaluate(() => __dw.game.sandbox.setCash(9000));
+  const spot = (ty, x, y) => p3.evaluate(([t, xx, yy]) => { let b = null, bd = 1e9; for (let py = 20; py < 345; py += 4) for (let px = 20; px < 625; px += 4) { const d = Math.hypot(px - xx, py - yy); if (d < bd && __dw.game.canPlace(t, px * 1000, py * 1000).ok) { bd = d; b = [px, py]; } } return b; }, [ty, x, y]);
+  const sl = await spot('longshot', 150, 150);
+  await p3.keyboard.press('t');
+  await p3.mouse.move(...at3(...sl));
+  await p3.mouse.click(...at3(...sl));
+  await p3.waitForFunction(() => __dw.game.state.towers.some((t) => t.type === 'longshot'), null, { timeout: 3000 });
+  check(true, 'Longshot per Taste T und Klick platziert');
+  const sm = await spot('market', 230, 190);
+  await p3.keyboard.press('z');
+  await p3.mouse.move(...at3(...sm));
+  await p3.waitForTimeout(150);
+  check(await p3.evaluate(() => __dw.r.rangeRing.visible === false && __dw.r.auraSpr.visible === true), 'Market-Geist zeigt Aura statt Reichweitenring');
+  await p3.mouse.click(...at3(...sm));
+  await p3.waitForFunction(() => __dw.game.state.towers.some((t) => t.type === 'market'), null, { timeout: 3000 });
+  await p3.waitForFunction(() => document.querySelector('.m-panel:not(.hidden) .ps-info')?.textContent.includes('per round'), null, { timeout: 3000 });
+  check(true, 'Market-Panel zeigt den Ertrag je Runde');
+  // Bank (B2) kaufen, Runde spielen, Ertrag sichtbar, Withdraw
+  await p3.evaluate(() => { const g = __dw.game; const m = g.state.towers.find((t) => t.type === 'market'); g.apply({ type: 'upgrade', towerId: m.id, path: 1 }); g.apply({ type: 'upgrade', towerId: m.id, path: 1 }); });
+  const cashBefore = await p3.evaluate(() => __dw.game.state.cash);
+  await p3.evaluate(() => { __dw.game.apply({ type: 'startRound' }); __dw.match.skip(60 * 45); });
+  check(await p3.evaluate(() => __dw.game.state.stats.income > 0), 'Market-Ertrag nach der Runde (stats.income > 0)');
+  await p3.waitForSelector('.pi-withdraw');
+  check((await p3.textContent('.m-panel .pi-withdraw')).includes('Withdraw'), 'Bank: Withdraw-Knopf im Panel');
+  const bank = await p3.evaluate(() => __dw.game.state.towers.find((t) => t.type === 'market').bank);
+  const cash1 = await p3.evaluate(() => __dw.game.state.cash);
+  if (bank > 0) {
+    await p3.click('.pi-withdraw');
+    await p3.waitForFunction((c) => __dw.game.state.cash >= c + 1, cash1, { timeout: 3000 });
+    check(true, `Withdraw hebt die Bank ab (+${bank})`);
+  } else check(false, 'Bank hatte nach einer Runde nichts');
+  void cashBefore;
+  await p3.waitForTimeout(400);
+  check(err3.length === 0, `keine Konsolenfehler mit Longshot/Market/Wissensbaum (${err3.join(' | ')})`);
 } finally {
   await browser.close();
   stop();

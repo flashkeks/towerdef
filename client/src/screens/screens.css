@@ -175,14 +175,14 @@ canvas.pop { animation: pop-in 0.5s steps(6) both; }
 /* ---- Wissensbaum ---- */
 .ktree { display: flex; justify-content: center; gap: 14px; align-items: flex-start; }
 .kbranch { --bc: var(--p-amber); background: var(--p-night); padding: 12px 12px 14px; margin: 4px; box-shadow: 0 -4px 0 0 var(--p-ink), 0 4px 0 0 var(--p-ink), -4px 0 0 0 var(--p-ink), 4px 0 0 0 var(--p-ink), inset 0 4px 0 0 var(--bc), inset 0 -4px 0 0 var(--p-ink); }
-.kbranch-t { text-align: center; font: 800 18px 'Rajdhani', sans-serif; letter-spacing: 0.2em; text-transform: uppercase; margin: 0 0 10px; color: var(--bc); height: 30px; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1; }
+.kbranch-t { text-align: center; font: 800 18px 'Rajdhani', sans-serif; letter-spacing: 0.12em; text-transform: uppercase; margin: 0 0 8px; color: var(--bc); height: 30px; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1; }
 .kbranch-c { font-size: 12px; letter-spacing: 0.1em; color: var(--p-stone); margin-top: 2px; }
 .kbranch.economy { --bc: var(--p-yellow); }
 .kbranch.primary { --bc: var(--p-ice); }
 .kbranch.specialists { --bc: var(--p-leaf); }
 .kbranch.wardens { --bc: var(--p-coral); }
 .kbranch.powers { --bc: var(--p-orchid, var(--p-violet)); }
-.kfield { position: relative; }
+.kfield { position: relative; margin: 0 auto; }
 .klines { position: absolute; inset: 0; pointer-events: none; shape-rendering: crispEdges; }
 .kline { fill: none; stroke: var(--p-dusk); stroke-width: 6; }
 .kline.on { stroke: var(--bc); }

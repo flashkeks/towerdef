@@ -308,16 +308,23 @@ kbd { font: 700 10px var(--font-num); background: var(--ink); color: var(--silve
 
 /* ---- Runde 13: fuenf Turmkarten, Market-/Longshot-Infos, Faehigkeiten mit Icon ---- */
 .m-cards { gap: 5px; }
-.m-card { min-height: 60px; padding: 3px 6px 3px 3px; gap: 6px; }
+.m-port { width: 60px; height: 54px; }
+.m-card { min-height: 58px; padding: 3px 6px 3px 3px; gap: 6px; }
 .m-card .m-port { transform-origin: left center; }
 .m-card-n { font-size: 15px; }
 .m-card-r { font-size: 10px; margin: 0 0 2px; }
 .m-card-p { font-size: 16px; }
 .m-lock { font-size: 11px; }
-.ps-info { display: flex; flex-direction: column; gap: 4px; padding: 6px 8px; background: var(--ink); border: 2px solid var(--dusk); font: 600 13px var(--font-ui); color: var(--silver); }
+.m-panel > * { flex-shrink: 0; }
+.ps-info { position: absolute; z-index: 2; display: flex; flex-direction: column; gap: 4px; font: 600 13px var(--font-ui); color: var(--silver); }
+.ps-stage.market .ps-fig { right: 64%; }
+.ps-stage.market .ps-info { left: 37%; right: 6px; top: 26px; bottom: 6px; padding: 6px 8px; background: rgba(14,16,28,.88); border: 2px solid var(--dusk); justify-content: center; }
+.ps-stage.tagged .ps-info { right: 6px; top: 6px; align-items: flex-end; max-width: 55%; }
+.ps-stage.tagged .pi-aura { justify-content: flex-end; }
+.ps-stage.tagged .pi-line { background: rgba(14,16,28,.85); padding: 2px 6px; }
 .pi-line { display: flex; align-items: center; gap: 6px; }
 .pi-k { color: var(--stone); text-transform: uppercase; letter-spacing: .08em; font: 700 11px var(--font-num); }
-.pi-v { color: var(--yellow); font-size: 16px; }
+.pi-v { color: var(--yellow); font-size: 15px; }
 .pi-range { color: var(--ice); font: 700 12px var(--font-num); letter-spacing: .08em; text-transform: uppercase; }
 .pi-sub { font-size: 12px; color: var(--stone); }
 .pi-bank { display: flex; flex-direction: column; gap: 3px; }
@@ -338,3 +345,5 @@ kbd { font: 700 10px var(--font-num); background: var(--ink); color: var(--silve
 .ab-btn > * { position: relative; z-index: 1; }
 .ab-btn > .cd { position: absolute; }
 .ab-btn > .ab-t, .ab-btn > kbd { position: absolute; }
+.m-pane > *, .m-cards > * { flex-shrink: 0; }
+.m-card-r { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

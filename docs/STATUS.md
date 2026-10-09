@@ -4,6 +4,8 @@ Arbeitsauftrag: [`/run.md`](../run.md) (**Runde 12: Reiter, Embers, Store und Po
 Frühere Aufträge: [archiv/run-runde1.md](archiv/run-runde1.md), [archiv/run-runde2.md](archiv/run-runde2.md), [archiv/run-runde3.md](archiv/run-runde3.md), [archiv/run-runde4.md](archiv/run-runde4.md), [archiv/run-runde5.md](archiv/run-runde5.md), [archiv/run-runde6.md](archiv/run-runde6.md), [archiv/run-runde7.md](archiv/run-runde7.md), [archiv/run-runde8-verworfen.md](archiv/run-runde8-verworfen.md), [archiv/run-runde8.md](archiv/run-runde8.md), [archiv/run-runde9.md](archiv/run-runde9.md).
 
 
+**Runde 13 C (Client-Einbau, 09.10.2026):** Turm-Leiste mit fuenf Tuermen (T = Longshot, Z = Market, B = Withdraw), Market im Match (Aura-Ring statt Schussring, Faehnchen an Tuermen in der Aura, Muenzflug zur Geldanzeige, Bank mit Withdraw im Panel), Longshot (kein Ring, Muendungsblitz/Rueckstoss, Ricochet, Boss-Markierung, Focus/Supply Drop/Grant mit Icons), Wissensbaum fuer 28 Knoten in 5 Aesten (`screens/knowledge-layout.ts`), Projektile starten am Muendungspunkt, Menue ohne Musik, AudioContext ab dem ersten Klick, Mix Effekte x0,7 / Musik x0,8. Tests `client/test/r13-match.test.ts`, Bilder `client/docs/r13/c-*.png`, Skript `client/scripts/shots-r13-c.mjs`.
+
 ## Runde 12 (Reiter, Embers, Store, Powers) — abgeschlossen 09.10.2026
 
 | Paket | Inhalt | Agent | Was man sieht |

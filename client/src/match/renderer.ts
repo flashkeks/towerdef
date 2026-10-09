@@ -275,6 +275,11 @@ export class Renderer {
       // Market: kein Schussring, sondern der Aura-Ring in Pfadfarbe (Pixel-Effekt von Agent B), Bild wechselt in `animateMap`
       this.auraAt = { x, y, r: rr, bad: col === C.red };
       this.auraSpr.visible = true;
+      const disc = discSprite(rr, col === C.red ? C.red : C.yellow);
+      this.rangeDisc.texture = tex(disc.canvas);
+      this.rangeDisc.position.set(x - disc.ax, y - disc.ay);
+      this.rangeDisc.alpha = col === C.red ? 0.22 : 0.13;
+      this.rangeDisc.visible = true;
       this.drawAura();
       return;
     }

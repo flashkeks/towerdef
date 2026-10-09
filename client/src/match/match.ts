@@ -226,7 +226,7 @@ class Match {
     const c = h('button', 'm-card');
     const spr = isHero(ty) ? heroPortrait() : towerPortrait(ty);
     const port = h('div', 'm-port');
-    port.append(copyCanvas(spr.canvas, 2));
+    port.append(copyCanvas(spr.canvas, spr.canvas.height * 2 <= 52 && spr.canvas.width * 2 <= 58 ? 2 : 1));
     const txt = h('div', 'm-card-t');
     txt.append(h('div', 'm-card-n', displayName(ty)), h('div', 'm-card-r', ROLE[ty]));
     const price = h('div', 'm-card-p');
