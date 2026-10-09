@@ -6,7 +6,7 @@ Frühere Aufträge: [archiv/run-runde1.md](archiv/run-runde1.md), [archiv/run-ru
 
 ## Runde 10 (echte Figuren, Match-Grafik, Beschwören, Karten je Welt)
 
-Letzte Aktualisierung: 2026-10-08 (Runde 10 läuft, P0 erledigt)
+Letzte Aktualisierung: 2026-10-09 (Runde 10 abgeschlossen, P5)
 
 **Rückmeldung Max zu Runde 9 (08.10.2026):** Interface gut; Summonen „ungeil“, mehr Ton und Effekte; Daily Pack zeigt nur den ersten Gewinn; Roblox-Bilder raus, echte Bilder; echte, bekannte Namen plus Promis; im Match nur Buchstaben auf den Units, Units und Attacken brauchen Design.
 
@@ -16,8 +16,8 @@ Letzte Aktualisierung: 2026-10-08 (Runde 10 läuft, P0 erledigt)
 | P1 | Echte Figuren: `figuren.json`, Manifest mit `anilistQuery`, Anzeige Name + Serie, Promi-Banner „Legends of Earth“ | **erledigt** (Phase A `6bf8594`, Phase B Merge `82cb512`) | 4 × Sonnet (2 am Limit) | **Echte Namen überall** (Karte, Detail, Banner, Enthüllung, Match-Panel/Cut-in, Ergebnis, Team), Serie klein darunter, Formen als „Son Goku (Super Saiyan Blue)“; AA-Namen nur noch in den Daten. **Sammlung nach Serie filterbar** (Naruto, One Piece, Dragon Ball, Legends of Earth …). **Banner „Legends of Earth“** (25 Promis, Pool `legends`, nur dort ziehbar, Featured The Rock; Kits nur aus vorhandenen Bausteinen, Spec `tools/aa-import/legends-spec.ts`, Prüfung `npm run legends:check`): Secret Trump (Tariff: Gegner langsamer + 500 Gold), Musk (Rocket Launch), Schwarzenegger (I'll Be Back: ruft einen T-800); Mythic The Rock, Bruce Lee, Einstein (Time Dilation), Napoleon, Merkel (Rhombus Stability: Buff Schaden/Reichweite statt Schild); Legendary Obama, Zuckerberg, Bezos, Snoop Dogg, Gordon Ramsay, Ronaldo, Messi; Epic MrBeast (Gold Rain), PewDiePie, Taylor Swift, Jackie Chan, Bill Gates; Rare Dieter Bohlen, Knossi, MontanaBlack, Steve Irwin, **Bud Spencer** (25. Figur, die Tabelle in run.md hatte 24). Screenshots `client/docs/r10/p1-*.png`. sim 390, meta 173, client 297 Tests, Smoke 363 grün |
 | P2 | Match: Porträt-Figuren, Angriffs-Grafik je Form × Element, Treffer/Tod, Fähigkeits-Ansage, Gegner-Figuren, Ton | **erledigt** (Merge `4fbf968`) | 3 × Sonnet (2 am Limit) | **Units als Porträt-Figuren** (Bild aus `/aa/units/<id>.webp`, sonst gestaltete Ersatzfigur) mit Seltenheits-Ring, Schatten, Wippen, Blickrichtung, Stufen-Pips, Element-Symbol; Platzier-Vorschau mit Reichweitenkreis + Aufsetz-Effekt; **Angriffs-Grafik je Form × Element** (Hieb-Bogen, Projektil mit Schweif, Strahl, Druckwelle, Fächer, Bahn), Rückstoß/Aufleuchten; Schadenszahlen (Krit groß/gelb), Funken, Blinken, Tod mit Münzen; **Fähigkeits-Cut-in** mit Porträt; Bildschirmruckeln (in Settings abschaltbar); Gegner als gestaltete Figuren je Typ, Boss mit Namensbanner und Auftritt; **Match-Ton** (synthetisch, optional echte Dateien über `/sfx/index.json`), gemeinsamer Lautstärkepfad mit P3-Menü-Ton. Leistung: ca. 1,7 ms JS je Frame bei 30 Units + 80 Gegnern (Budget 16,7 ms), Partikel gedeckelt; **echte 60 FPS nur auf GPU prüfbar** (Headless-SwiftShader ≈ 4 fps, auch vor Runde 10). Screenshots `client/docs/r10/p2-*.png`, Asset-Wunschliste `client/docs/r10/p2-assets-wunschliste.md`. client 293 Tests, Smoke 363 grün |
 | P3 | Beschwören neu, Mehrfach-Ergebnisse durchklickbar, Interaktions-Durchgang, Menü-Ton | **erledigt** (Merge `ceac233`) | 2 × Sonnet (1 am Limit) | **Beschwören** als Portal/Riss, Farbe steigt vorab Blau → Lila → Gold → Regenbogen, Ruckeln, Funken, Durchbruch, große Enthüllung mit Name/Serie/„NEW“, Shiny-Glitzer, Ton je Stufe, überspringbar. **Mehrfach-Ergebnisse** (10er-Zug, Starter-Paket, Match-/Raid-Belohnung, Kristall-Shop, Raid-Shop-Unit) liegen verdeckt, 1 Klick = 1 Karte, „Reveal all“, dann Übersicht (höchste Seltenheit zuletzt). Ursache „nur der erste Gewinn“: jeder Klick beendete die ganze Animation; das Starter-Paket lief gar nicht durch einen Enthüllungs-Bildschirm (Test `client/test/r10-p3-reveal.test.ts` + Smoke). **Interaktions-Durchgang** (Smoke `interactionCase`, 49 Knöpfe, alle mit Reaktion + Ton); nachgerüstet: Paket-Bildschirm fürs Starter-Paket, „Open rewards“ nach Match/Raid, Kristall-Shop- und Raid-Shop-Enthüllung, Stempel für Level-Up/Evolution/Freischaltung, Hover/Klick-Ton überall, Toasts mit Ton, hochlaufende Zähler, Menü-Musik (4 Stimmungen, Schalter in Settings). Alles per WebAudio/Canvas, Packs optional (Wunschliste unten). Screenshots `client/docs/r10/p3-*.png`. client 252 → 271 Tests, Smoke grün (363 Prüfungen) |
-| P4 | Karten-Grafik je Welt | wartet (startet, sobald P1/P2/P3 frei) | 1 × Sonnet | – |
-| P5 | Abschluss | offen | Hauptsitzung | – |
+| P4 | Karten-Grafik je Welt | **erledigt** (Merge `cb8c45c`) | 2 × Sonnet (1 am Limit) | Jede der 10 Welten hat ein **gemaltes Kartenbild** aus Daten (`theme.board` in `sim/data/worlds/*.json`, nur Darstellung; Hash-Test je Welt mit/ohne `board` gleich): Boden mit Muster, Terrassen mit Wand und Schlagschatten, Pfad mit Randstein/Schatten/Leuchtlinie, 17 Deko-Arten, Spawn-Portal, Basis-Schrein, Licht + Vignette, Schwebeteilchen (Schnee, Glut, Sporen, Irrlichter; aus bei `prefers-reduced-motion`). Kein Raster-Look mehr. Einmal je Welt/Auflösung in eine Textur gemalt (100–300 ms), pro Frame nur 20–40 Ambient-Sprites. Einhängepunkt nur `game/map-layer.ts` (neu `board-art.ts`, `board-ambient.ts`); Atlas-Bodenkacheln werden nicht mehr gezeichnet (`atlas.ts` toter Code). Platzierungszonen beim Setzen: bisherige Rechteck-Füllung (`overlay-layer.ts`) unverändert. Screenshots `client/docs/r10/p4-<welt>-{leer,setzen,kampf}.png` |
+| P5 | Abschluss | **erledigt** | Hauptsitzung | Merges P1A → P3 → P2 → P1B → P4 (nur P1B/P2/P4 mit Konflikten, von den Agenten selbst aufgelöst: `audio/engine.ts`, `reveal.ts`, `settings.ts`, `smoke.mjs`, README). Endstand-Smoke 363 grün; Screenshots P2/P3/P4 auf dem Endstand neu erzeugt (vorher noch AA-Namen, weil vor dem P1-Merge aufgenommen). Kurzbericht unten |
 
 Plan: P1, P2, P3 parallel in lokalen Worktrees (max. 3 Agenten, nur Sonnet, Zwischenstand spätestens alle 30 min), P1 liefert zuerst `figuren.json` + Manifest (sofort nach `dev`, Meldung unten), P4 danach. Screenshots in `client/docs/r10/`.
 
@@ -49,6 +49,52 @@ Nichts deployen ohne Ansage von Max.
 
 **P1 Phase A in Zahlen:** 575 Zeilen in `docs/aa-import/figuren.json` (550 AA + 25 Crossover), 288 verschiedene echte Figuren hinter den 550 AA-Units (Formen über `form`), keine Dubletten außer Escanor Tag/Nacht (zwei Formen). **Umgemünzt 23 Units** (13 Zielfiguren): Tatara → Ayato Kirishima (Tokyo Ghoul, Serie sicher); ohne erkennbare AA-Vorlage und deshalb auf bekannte Figuren beliebiger Serien gesetzt (`note: unsicher`): Rokuhira → Gintoki Sakata, Osaragi → Spike Spiegel, Noro → Orochimaru, Gaku → Senku Ishigami, Boxxo → Tony Tony Chopper, Honey → Makima, Starlia → Rei Ayanami, Giselle → Mikasa Ackerman, Sato → Sung Jinwoo, Geten → Lyon Vastia, Izumi → Shinobu Kocho, Isharmla → Rem (ausgeblendet). **Weitere unsichere:** `yuma`(+evolved) = Yuma Kuga?, `gogeta_failed` (Benennung), `nokotan` (evtl. zu obskur). Markennamen: Zivilname angezeigt, Marke im Query (Kuzan/Aokiji, Sakazuki/Akainu, Enji Todoroki/Endeavor, Keigo Takami/Hawks, Chizome Akaguro/Stain, Nagato/Pain).
 
+
+## Kurzbericht Runde 10 (P5, 09.10.2026)
+
+```text
+STATUS — Runde 10
+Was man jetzt sehen kann (5 Zeilen):
+  1. Echte Namen + Serie überall (Son Goku (Super Saiyan 3), Kakashi Hatake, Osamu Dazai …), Sammlung nach Serie
+     filterbar, Banner „Legends of Earth“ mit 25 Promis (p1-collection-*, p1-banner-legends, p1-legends-pull10*)
+  2. Match: Porträt-Figuren mit Seltenheits-Ring, Pips, Element; Angriffs-Grafik je Form × Element, Schadenszahlen,
+     Tod mit Münzen, Fähigkeits-Cut-in, Boss-Banner, Match-Ton (p2-match-mix-*, p2-ability-cutin, p2-boss-*)
+  3. Beschwören als Portal mit Seltenheits-Farbe, verdeckte Karten einzeln aufdecken, Übersicht (p3-10pull-0…6, p3-secret-*)
+  4. Jede Welt mit eigenem gemalten Kartenbild statt Raster (p4-<welt>-leer/-kampf, 10 Welten)
+  5. Hover-/Klick-Ton, hochlaufende Zähler, Stempel für Level-Up/Evolution/Freischaltung, Menü-Musik (p3-levelup, p3-settings-menu-music)
+Figuren: echte Namen 550 AA-Units → 288 echte Figuren (Formen über `form`) + 25 Crossover + 25 Promis = 600 Manifest-Einträge;
+  umgemünzt 23 (Tatara → Ayato Kirishima; ohne erkennbare Vorlage: Rokuhira → Gintoki Sakata, Osaragi → Spike Spiegel,
+  Noro → Orochimaru, Gaku → Senku Ishigami, Boxxo → Tony Tony Chopper, Honey → Makima, Starlia → Rei Ayanami,
+  Giselle → Mikasa Ackerman, Sato → Sung Jinwoo, Geten → Lyon Vastia, Izumi → Shinobu Kocho, Isharmla → Rem, je mit Evo);
+  unsicher 25 (die 21 Umgemünzten ohne Vorlage + yuma(+evolved), gogeta_failed, nokotan);
+  Promi-Banner „Legends of Earth“: 3 Secret (Trump, Musk, Schwarzenegger), 5 Mythic, 7 Legendary, 5 Epic, 5 Rare
+  (+ Bud Spencer als 25.), Featured The Rock; Raid-Units nicht mehr im Banner (P0)
+Match: Units / Angriffe / Treffer / Ton — was neu ist: Porträt-Figuren statt Initialen-Kreis (lokal Ersatzfigur, mit Bild
+  das AniList-Porträt), Platzier-Vorschau + Aufsetz-Effekt, Hieb/Projektil/Strahl/Druckwelle/Fächer/Bahn je Element,
+  Krit-Zahlen, Funken, Blinken, Münz-Tod, Cut-in, abschaltbares Ruckeln, Gegner-Figuren je Typ, Boss-Banner,
+  synthetischer Match-Ton (echte Dateien optional über /sfx/index.json). 60 FPS nur auf echter GPU prüfbar:
+  JS ≈ 1,7 ms/Frame bei 30 Units + 80 Gegnern (Budget 16,7 ms)
+Beschwören + Mehrfach-Ergebnisse: Portal/Riss, Farbe vorab Blau → Lila → Gold → Regenbogen, Ruckeln, Durchbruch,
+  Enthüllung mit Name/Serie/NEW, Shiny-Glitzer (Anzeige fertig, Daten fehlen), Ton je Stufe, überspringbar;
+  10er-Zug, Starter-Paket, Match-/Raid-Belohnung, Kristall-/Raid-Shop: 1 Klick = 1 Karte, Reveal all, Übersicht
+Interaktions-Durchgang: 49 Knöpfe, alle mit Reaktion + Ton (Smoke `interactionCase`); fehlte: Paket-Bildschirm
+  fürs Starter-Paket (Ursache „nur der erste Gewinn“), Belohnungs-Enthüllung nach Match/Raid, Shop-Enthüllungen,
+  Level-Up-/Evolutions-/Freischalt-Stempel, Hover/Klick-Ton, Toast-Ton, Zähler, Menü-Musik — alles nachgerüstet
+Für die Homelab-Seite: Manifest mit anilistQuery seit 6bf8594 (jetzt 600 Einträge, Stand cb8c45c), 25 neue
+  imageQuery (Wikipedia) für Legends; Asset-Wunschlisten P2/P3 oben (Kenney/OGA/freesound, alles optional);
+  /aa/units-lg/<id>.webp (512 px) für die große Enthüllungskarte wäre schön
+Vorschlag Runde 11: Welten 11–22 als Daten (gesetzt), damit die Legend Stages ihre echte Welt bekommen. Gegner-Bilder
+  bzw. -Figuren mit eigenem Look je Welt-Roster und die Platzierungszonen beim Setzen im neuen Stil. Shiny als
+  Drop-Chance und eine echte Tagesbelohnung (Meta, Schema 4), falls Max das will. Unit-Leiste im Match: Abzeichen
+  überdecken den Namen, aufräumen. Danach Server/Konto (M2) vorbereiten.
+Agenten (Anzahl, Modell), Limits erreicht wie oft: 11 × Sonnet (P1 4, P2 3, P3 2, P4 2), 6 davon am Limit abgebrochen und
+  per neuem Sonnet-Agenten mit Übernahme fortgesetzt; 3 Limits (Sitzung 15:4x UTC, Woche 16:4x bei den versehentlich
+  per SendMessage auf Opus fortgesetzten Agenten, Sitzung ca. 18:00–21:40 UTC). Opus lief nur in diesem einen
+  Fortsetzungsversuch (Falle oben)
+Commits: siehe `git log 0e5ca37..dev` (≈ 60, davon 9 Merges)
+Tests: sim 393, meta 173 (+1 übersprungen), client 302; Smoke 363 Prüfungen grün auf 1280×720, 1920×1080, 2560×1440
+  (+ Rand-/Modi-/Mobil-Fälle); aa-import:check grün, legends:check grün; crossover:check „veraltet“ (nur Feld series, bekannt)
+```
 
 ## Runde 9 (Fähigkeiten, 10 Welten, Legend/Raids, Interface)
 
