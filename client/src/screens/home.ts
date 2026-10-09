@@ -139,7 +139,7 @@ export function homeView(ctx: Ctx): View {
   const line = h('div', 'lineup');
   line.append(h('div', 'h2', S.home.lineup));
   const crew = h('div', 'crew');
-  const names: Record<string, string> = { ranger: 'Ranger', bombardier: 'Bombardier', frostcaller: 'Frostcaller', wren: 'Wren' };
+  const names: Record<string, string> = { ranger: 'Ranger', bombardier: 'Bombardier', frostcaller: 'Frostcaller', longshot: 'Longshot', market: 'Lantern Market', wren: 'Wren' };
   for (const id of [...TOWER_TYPES, 'wren'] as (TowerType | HeroType)[]) {
     const ok = isTowerUnlocked(p, id);
     const c = h('div', `crew-i ${ok ? '' : 'locked'}`);

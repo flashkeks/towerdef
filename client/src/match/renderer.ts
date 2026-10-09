@@ -9,7 +9,8 @@ import { Buf, C, NAME_OF, bayer, rng } from '../pixel/map/buf';
 import { meadowArt } from '../pixel/map/compose';
 import { flagFrame, MILL_STEPS, WATER_FRAMES, windmillBlades } from '../pixel/map/paint';
 import { PAL } from '../pixel/palette';
-import { type EnemyState, type EnemyType, type GameState, type ProjectileState, type SimEvent, type TowerState } from '../sim';
+import { type EnemyState, type EnemyType, type GameState, type ProjectileState, type SimEvent, type TowerAura, type TowerState } from '../sim';
+import { rangeView, coinCount, coinDelay, coinPath, hasAura, isMarked, projectileLook, type RangeView } from './r13';
 import { FxLayer, FRAMES } from './fx';
 import { footMilli } from './info';
 import { TRAP_W, bigHeart, bombLantern, bubbleSprite, coinSprite, trapSprite, discSprite, enemySprite, fx as P2, heroSprite, projectileSprite, ringSprite, shadowSprite, heroMuzzle, towerMuzzle, towerSprite, type HeroFrame, type Spr, type TowerFrame } from './sprites';
@@ -28,10 +29,10 @@ const SHARD_COL: Record<EnemyType, number[]> = {
   ironshell: [C.stone, C.silver, C.slate], ember: [C.orange, C.yellow, C.red], brute: [C.slate, C.dusk, C.stone], leviathan: [C.navy, C.stone, C.sky],
 };
 
-interface TowerView { spr: Sprite; shadow: Sprite; key: string; drop: number; up: number; tiers: string }
-interface EnemyView { bub?: Sprite; spr: Sprite; shadow: Sprite; key: string; px: number; py: number; cx: number; cy: number; flash: number; flip: boolean; bar?: Sprite; barBg?: Sprite }
+interface TowerView { spr: Sprite; shadow: Sprite; key: string; drop: number; up: number; tiers: string; kick: number; flag?: Sprite }
+interface EnemyView { bub?: Sprite; mark?: Sprite; spr: Sprite; shadow: Sprite; key: string; px: number; py: number; cx: number; cy: number; flash: number; flip: boolean; bar?: Sprite; barBg?: Sprite }
 interface TrapView { spr: Sprite; x: number; y: number; kind: 'caltrops' | 'frostTrap'; key: string; drop: number }
-interface ProjView { spr: Sprite; shadow?: Sprite; key: string; px: number; py: number; cx: number; cy: number }
+interface ProjView { spr: Sprite; shadow?: Sprite; key: string; px: number; py: number; cx: number; cy: number; mx: number; my: number }
 
 const shadowTex = (w: number, h: number): Texture => tex(shadowSprite(w, h).canvas);
 
@@ -43,6 +44,23 @@ function glowCanvas(r: number, col: number): HTMLCanvasElement {
   }
   return b.toCanvas();
 }
+
+/** Faehnchen fuer Tuerme in einer Market-Aura (7 x 10, 2 Wehbilder): Stange, goldener Wimpel, Glanzpunkt. */
+function pennantCanvas(frame: number): HTMLCanvasElement {
+  const b = new Buf(8, 11);
+  b.rect(1, 1, 1, 9, C.stone);
+  b.set(1, 0, C.yellow);
+  b.set(1, 10, C.ink); b.set(2, 10, C.ink);
+  const len = frame ? 4 : 5;
+  b.rect(2, 1, len, 3, C.amber);
+  b.rect(2, 1, len, 1, C.yellow);
+  b.set(2 + len - 1, 3, C.orange);
+  if (frame) b.set(2 + len, 2, C.amber);
+  b.set(3, 2, C.white);
+  b.outline(C.ink);
+  return b.toCanvas();
+}
+const PENNANTS = [0, 1].map((f) => pennantCanvas(f));
 
 export class Renderer {
   app!: Application;
@@ -74,6 +92,11 @@ export class Renderer {
   private selRing = new Sprite();
   private rangeDisc = new Sprite();
   private rangeRing = new Sprite();
+  private auraSpr = new Sprite();
+  private auraProbe: ((id: number) => TowerAura) | null = null;
+  private auraOf = new Map<number, boolean>();
+  /** Ziel der Muenzfluege (Kartenpixel), vom Match gesetzt: Mitte der Geldanzeige */
+  cashTarget = { x: 24, y: 2 };
   private ghost = new Sprite();
   private ghostShadow = new Sprite();
   private ghostOk = true;
@@ -100,7 +123,7 @@ export class Renderer {
     this.flashSpr.width = VIEW_W; this.flashSpr.height = VIEW_H; this.flashSpr.alpha = 0;
     this.fx = new FxLayer(this.flashSpr);
     this.fxHost.addChild(this.fx.node, this.flashSpr);
-    for (const s of [this.selRing, this.rangeDisc, this.rangeRing, this.ghostShadow, this.ghost]) { s.visible = false; this.uiC.addChild(s); }
+    for (const s of [this.selRing, this.rangeDisc, this.rangeRing, this.auraSpr, this.ghostShadow, this.ghost]) { s.visible = false; this.uiC.addChild(s); }
     this.aimSpr.visible = false; this.uiC.addChild(this.aimSpr);
     this.warpSpr.width = VIEW_W; this.warpSpr.height = VIEW_H; this.warpSpr.tint = hex(C.sky); this.warpSpr.alpha = 0; this.warpSpr.visible = false;
     this.lightC.addChild(this.warpSpr);
@@ -200,7 +223,7 @@ export class Renderer {
   }
 
   /** Geist beim Platzieren: Turm-Sprite, Fussabdruck, Reichweite (rot, wenn ungueltig). */
-  setGhost(g: { x: number; y: number; spr: Spr; range: number; foot: number; ok: boolean } | null): void {
+  setGhost(g: { x: number; y: number; spr: Spr; view: RangeView; foot: number; ok: boolean } | null): void {
     const show = !!g;
     this.ghost.visible = this.ghostShadow.visible = show;
     this.ghostOk = g?.ok ?? true;
@@ -213,7 +236,7 @@ export class Renderer {
     this.ghostShadow.texture = shadowTex(16, 5);
     this.ghostShadow.alpha = 1;
     this.ghostShadow.position.set(x - 9, y - 3);
-    this.showRange(x, y, g.range, g.ok ? C.white : C.red, 'ghost');
+    this.showRange(x, y, g.view, g.ok ? C.white : C.red, 'ghost');
   }
 
   /** Zielvorschau fuer Powers: Bombe (Radius-Kreis), Falle (Sprite auf dem Weg, gruen = gueltig, rot = nicht). */
@@ -230,22 +253,36 @@ export class Renderer {
       this.aimSpr.texture = tex(sp.canvas);
       this.aimSpr.position.set(x - sp.ax, y - sp.ay - 3);
       this.aimSpr.tint = a.ok ? 0xffffff : hex(C.coral);
-      this.showRange(x, y, a.r ?? 40, a.ok ? C.orange : C.red, 'ghost');
+      this.showRange(x, y, { kind: 'ring', r: a.r ?? 40 }, a.ok ? C.orange : C.red, 'ghost');
     } else {
       const sp = trapSprite(a.kind, a.kind === 'caltrops' ? 6 : 5, Math.floor(this.now / 300));
       this.aimSpr.texture = tex(sp.canvas);
       this.aimSpr.position.set(x - sp.ax, y - sp.ay);
       this.aimSpr.tint = a.ok ? hex(C.leaf) : hex(C.coral);
-      this.showRange(x, y, 10, col, 'ghost');
+      this.showRange(x, y, { kind: 'ring', r: 10 }, col, 'ghost');
     }
     this.aimSpr.alpha = 0.85;
     this.aimSpr.visible = true;
   }
 
   private rangeOwner: 'ghost' | 'sel' | null = null;
-  private showRange(x: number, y: number, r: number, col: number, owner: 'ghost' | 'sel'): void {
+  private showRange(x: number, y: number, view: RangeView, col: number, owner: 'ghost' | 'sel'): void {
     this.rangeOwner = owner;
-    const rr = Math.round(r);
+    this.rangeRing.visible = this.rangeDisc.visible = this.auraSpr.visible = false;
+    if (view.kind === 'none') return;
+    const rr = Math.round(view.r);
+    if (view.kind === 'aura') {
+      // Market: kein Schussring, sondern der Aura-Ring in Pfadfarbe (Pixel-Effekt von Agent B), Bild wechselt in `animateMap`
+      this.auraAt = { x, y, r: rr, bad: col === C.red };
+      this.auraSpr.visible = true;
+      const disc = discSprite(rr, col === C.red ? C.red : C.yellow);
+      this.rangeDisc.texture = tex(disc.canvas);
+      this.rangeDisc.position.set(x - disc.ax, y - disc.ay);
+      this.rangeDisc.alpha = col === C.red ? 0.22 : 0.13;
+      this.rangeDisc.visible = true;
+      this.drawAura();
+      return;
+    }
     const ring = ringSprite(rr, col);
     this.rangeRing.texture = tex(ring.canvas);
     this.rangeRing.position.set(x - ring.ax, y - ring.ay);
@@ -256,9 +293,19 @@ export class Renderer {
     this.rangeDisc.alpha = col === C.red ? 0.28 : 0.16;
     this.rangeDisc.visible = true;
   }
+  private auraAt: { x: number; y: number; r: number; bad: boolean } | null = null;
+  private drawAura(): void {
+    const a = this.auraAt;
+    if (!a || !this.auraSpr.visible) return;
+    const sp = P2.auraRing(Math.min(150, a.r), Math.floor(this.now / 140), 2);
+    this.auraSpr.texture = tex(sp.canvas);
+    this.auraSpr.position.set(a.x - sp.ax, a.y - sp.ay);
+    this.auraSpr.tint = a.bad ? hex(C.coral) : 0xffffff;
+  }
   private hideRange(owner: 'ghost' | 'sel'): void {
     if (this.rangeOwner !== owner) return;
-    this.rangeRing.visible = this.rangeDisc.visible = false;
+    this.rangeRing.visible = this.rangeDisc.visible = this.auraSpr.visible = false;
+    this.auraAt = null;
     this.rangeOwner = null;
   }
 
@@ -271,11 +318,14 @@ export class Renderer {
     this.lastTick = state.tick;
     const seenT = new Set<number>();
     for (const t of state.towers) { seenT.add(t.id); this.syncTower(t); }
-    for (const [id, v] of this.towers) if (!seenT.has(id)) { v.spr.destroy(); v.shadow.destroy(); this.towers.delete(id); }
+    for (const [id, v] of this.towers) if (!seenT.has(id)) { v.spr.destroy(); v.shadow.destroy(); v.flag?.destroy(); this.towers.delete(id); this.auraOf.delete(id); }
+    if (this.auraProbe && (newTick && state.tick % 12 === 0 || this.auraOf.size !== state.towers.length)) {
+      for (const t of state.towers) this.auraOf.set(t.id, t.type !== 'market' && hasAura(this.auraProbe(t.id)));
+    }
 
     const seenE = new Set<number>();
     for (const e of state.enemies) { seenE.add(e.id); this.syncEnemy(e, newTick, alpha); }
-    for (const [id, v] of this.enemies) if (!seenE.has(id)) { v.spr.destroy(); v.shadow.destroy(); v.bar?.destroy(); v.barBg?.destroy(); v.bub?.destroy(); this.enemies.delete(id); }
+    for (const [id, v] of this.enemies) if (!seenE.has(id)) { v.spr.destroy(); v.shadow.destroy(); v.bar?.destroy(); v.barBg?.destroy(); v.bub?.destroy(); v.mark?.destroy(); this.enemies.delete(id); }
 
     const seenP = new Set<number>();
     for (const p of state.projectiles) { seenP.add(p.id); this.syncProj(p, newTick, alpha); }
@@ -298,7 +348,7 @@ export class Renderer {
       this.selRing.texture = tex(ring.canvas);
       this.selRing.position.set(x - ring.ax, y - ring.ay);
       this.selRing.visible = true;
-      if (this.rangeOwner !== 'ghost') this.showRange(x, y, sel.range / 1000, C.white, 'sel');
+      if (this.rangeOwner !== 'ghost') this.showRange(x, y, rangeView(sel.type, sel.range / 1000), C.white, 'sel');
     } else {
       this.selRing.visible = false;
       this.hideRange('sel');
@@ -369,7 +419,7 @@ export class Renderer {
       this.shadowC.addChild(shadow);
       const spr = new Sprite();
       this.worldC.addChild(spr);
-      v = { spr, shadow, key: '', drop: 8, up: 0, tiers: t.tiers.join('') };
+      v = { spr, shadow, key: '', drop: 8, up: 0, tiers: t.tiers.join(''), kick: 0 };
       this.towers.set(t.id, v);
     }
     const s = this.towerSpr(t);
@@ -378,9 +428,29 @@ export class Renderer {
     if (v.drop > 0) { dy = -Math.round(Math.sin((v.drop / 8) * Math.PI * 0.5) * 12); v.drop -= 0.5; }
     let dx = 0;
     if (v.up > 0) { dx = v.up % 2 < 1 ? 0 : 0; v.up -= 0.5; dy -= v.up > 3 ? 2 : v.up > 0 ? 1 : 0; }
+    // Rueckstoss (Longshot): 1-2 px gegen die Blickrichtung, klingt in ein paar Ticks ab
+    if (v.kick > 0) {
+      const a = (t.facing * Math.PI) / 4;
+      const k = v.kick > 2 ? 2 : 1;
+      dx -= Math.round(Math.cos(a) * k); dy += Math.round(Math.sin(a) * k);
+      v.kick -= 0.5;
+    }
     v.spr.position.set(x - s.ax + dx, y - s.ay + dy);
     v.spr.zIndex = y;
-    v.shadow.position.set(x - 9, y - 3);
+    // Schatten waechst mit der Stufe (Market-Gebaeude sind breiter)
+    const top = Math.max(t.tiers[0], t.tiers[1], t.tiers[2]);
+    const sw = t.type === 'market' ? 18 + top * 2 : 16;
+    v.shadow.texture = shadowTex(sw, 5);
+    v.shadow.position.set(x - sw / 2 - 1, y - 3);
+    // Faehnchen: Turm steht in einer Market-Aura
+    const inAura = this.auraOf.get(t.id) === true;
+    if (inAura) {
+      if (!v.flag) { v.flag = new Sprite(); this.worldC.addChild(v.flag); }
+      v.flag.texture = tex(PENNANTS[Math.floor(this.now / 220) & 1]);
+      v.flag.position.set(x + (footMilli(t.type) / 1000) - 1, y - 12);
+      v.flag.zIndex = y + 1;
+      v.flag.visible = true;
+    } else if (v.flag) { v.flag.destroy(); v.flag = undefined; }
   }
 
   private syncEnemy(e: EnemyState, newTick: boolean, alpha: number): void {
@@ -414,6 +484,14 @@ export class Renderer {
       v.bub.position.set(x - bs.ax, y - bs.ay - (e.type === 'leviathan' ? 14 : 5));
       v.bub.alpha = 0.9;
     } else if (v.bub) { v.bub.destroy(); v.bub = undefined; }
+    // Crippling Shot: rotes Fadenkreuz ueber dem Ziel, solange die Sim die Markierung fuehrt
+    if (isMarked(e)) {
+      if (!v.mark) { v.mark = new Sprite(); this.fxHost.addChild(v.mark); }
+      const ms = P2.bossMark(Math.floor(this.now / 110));
+      v.mark.texture = tex(ms.canvas);
+      v.mark.position.set(x - ms.ax, y - ms.ay - (e.type === 'leviathan' ? 52 : e.type === 'brute' ? 30 : 22));
+      v.mark.alpha = e.markTicks < 30 && (Math.floor(this.now / 90) & 1) ? 0.4 : 1;
+    } else if (v.mark) { v.mark.destroy(); v.mark = undefined; }
     const sw = e.type === 'leviathan' ? 40 : e.type === 'brute' ? 16 : 9, sh = e.type === 'leviathan' ? 10 : e.type === 'brute' ? 5 : 3;
     v.shadow.texture = shadowTex(sw, sh);
     v.shadow.alpha = e.type === 'leviathan' ? 0.8 : 1;
@@ -438,23 +516,59 @@ export class Renderer {
     if (!v) {
       const spr = new Sprite();
       this.projC.addChild(spr);
-      v = { spr, key: '', px: cx, py: cy, cx, cy };
+      // Start am Muendungspunkt der Waffe (Fuss-Anker + `towerMuzzle`), nicht in der Turmmitte; die Sim-Bahn bleibt, der
+      // Versatz klingt in den ersten Ticks auf null ab (nur Optik, der Treffer gehoert der Sim)
+      const own = this.latest?.towers.find((q) => q.id === p.owner);
+      const mz = own ? (own.type === 'wren' ? heroMuzzle(own.heroLevel, own.facing) : towerMuzzle(own.type, own.tiers, own.facing)) : { x: 0, y: 0 };
+      v = { spr, key: '', px: cx, py: cy, cx, cy, mx: p.sub === 1 ? 0 : mz.x, my: p.sub === 1 ? 0 : mz.y };
       if (p.kind === 'bomb') { v.shadow = new Sprite(shadowTex(7, 3)); this.shadowC.addChild(v.shadow); }
       this.projs.set(p.id, v);
     } else if (newTick) {
       v.px = v.cx; v.py = v.cy; v.cx = cx; v.cy = cy;
     }
-    const gx = v.px + (v.cx - v.px) * alpha, gy = v.py + (v.cy - v.py) * alpha;
+    const gx0 = v.px + (v.cx - v.px) * alpha, gy0 = v.py + (v.cy - v.py) * alpha;
+    const fade = Math.max(0, 1 - (p.age + alpha) / 8);
+    const gx = gx0 + v.mx * fade, gy = gy0 + v.my * fade;
     let lift = 0;
     if (p.arc) lift = Math.sin((Math.min(10000, p.arc.t) / 10000) * Math.PI) * 26;
     const ang = Math.atan2(-p.vy, p.vx);
     const dir16 = ((Math.round((ang / (Math.PI * 2)) * 16) % 16) + 16) % 16;
-    const s = projectileSprite(p.kind, p.kind === 'bomb' ? Math.floor(this.now / 70) & 15 : dir16);
+    const look = projectileLook(p.kind, this.latest?.towers.find((q) => q.id === p.owner), p.sub);
+    const s = projectileSprite(look, p.kind === 'bomb' ? Math.floor(this.now / 70) & 15 : dir16);
     v.spr.texture = tex(s.canvas);
     v.spr.position.set(Math.round(gx) - s.ax, Math.round(gy - lift) - s.ay);
     v.spr.zIndex = 0;
     if (v.shadow) v.shadow.position.set(Math.round(gx) - 4, Math.round(gy) - 2);
     v.spr.zIndex = 100000;
+  }
+
+  /** Fragt die Sim, ob eine Market-Aura auf einen Turm wirkt (Faehnchen am Turm). */
+  setAuraProbe(fn: (id: number) => TowerAura): void {
+    this.auraProbe = fn;
+    this.auraOf.clear();
+  }
+
+  /** Muenzen fliegen von (x,y) zur Geldanzeige; `done` wird gerufen, wenn die erste landet (fuer Puls und Ton). */
+  coinsToCash(x: number, y: number, amount: number, done?: () => void): void {
+    const n = coinCount(amount);
+    const FLIGHT = 34;
+    const to = this.cashTarget;
+    let landed = false;
+    this.fx.custom(FLIGHT + coinDelay(n) + 2, (node) => {
+      const coins = Array.from({ length: n }, (_, k) => { const sp = new Sprite(); node.addChild(sp); return { sp, k }; });
+      return (age) => {
+        for (const c of coins) {
+          const t = (age - coinDelay(c.k)) / FLIGHT;
+          c.sp.visible = t > 0 && t < 1;
+          if (!c.sp.visible) continue;
+          const p = coinPath({ x, y }, to, t, c.k, n);
+          const s = coinSprite(Math.floor((age + c.k * 3) / 4));
+          c.sp.texture = tex(s.canvas);
+          c.sp.position.set(Math.round(p.x) - s.ax, Math.round(p.y) - s.ay);
+          if (t > 0.9 && !landed) { landed = true; done?.(); }
+        }
+      };
+    });
   }
 
   /** Zustand fuer Event-Effekte (Turmposition beim Abschuss usw.) */
@@ -486,8 +600,19 @@ export class Renderer {
         const t = this.latest?.towers.find((q) => q.id === ev.tower);
         if (t) {
           const mz = t.type === 'wren' ? heroMuzzle(t.heroLevel, t.facing) : towerMuzzle(t.type, t.tiers, t.facing);
-          const col = t.type === 'bombardier' ? [C.orange, C.stone, C.yellow] : t.type === 'frostcaller' ? [C.ice, C.white] : t.type === 'wren' ? [C.yellow, C.amber] : [C.sand, C.white];
+          const col = t.type === 'bombardier' ? [C.orange, C.stone, C.yellow] : t.type === 'frostcaller' ? [C.ice, C.white] : t.type === 'wren' ? [C.yellow, C.amber] : t.type === 'longshot' ? [C.yellow, C.white] : [C.sand, C.white];
           fx.burst(m(t.x) + mz.x, m(t.y) + mz.y, col, 3, 0.9, 1, 0.02, 8);
+          if (t.type === 'longshot') {
+            // Muendungsblitz: heller Ring plus Funken in Blickrichtung, dazu Rueckstoss am Sprite
+            const top = Math.max(t.tiers[0], t.tiers[1], t.tiers[2]);
+            const a = (t.facing * Math.PI) / 4;
+            const gold = t.tiers[0] >= 5;
+            fx.ring(m(t.x) + mz.x, m(t.y) + mz.y, 1, 4 + Math.min(top, 5), gold ? C.yellow : C.white, 5);
+            fx.burst(m(t.x) + mz.x, m(t.y) + mz.y, gold ? [C.yellow, C.white, C.amber] : [C.yellow, C.white, C.orange], 4 + top, 1.7, 1, 0.01, 7 + top);
+            void a;
+            const v = this.towers.get(t.id);
+            if (v) v.kick = 4;
+          }
         }
         break;
       }
@@ -519,12 +644,47 @@ export class Renderer {
         break;
       }
       case 'nova': fx.nova(m(ev.x), m(ev.y), m(ev.radius)); break;
+      case 'ricochet': {
+        const pts = ev.points.map(([x, y]) => [m(x), m(y) - 5] as [number, number]);
+        if (pts.length >= 2) {
+          const frames = [P2.ricochet(pts, 0), P2.ricochet(pts, 1)];
+          fx.custom(12, (node) => {
+            const sp = new Sprite(); node.addChild(sp);
+            return (age) => {
+              const f = frames[Math.floor(age / 2) % 2];
+              sp.texture = tex(f.canvas);
+              sp.position.set(-f.ax, -f.ay);
+              sp.alpha = age > 7 ? 1 - (age - 7) / 5 : 1;
+            };
+          });
+          for (const [x, y] of pts.slice(1)) fx.burst(x, y, [C.white, C.yellow], 3, 1.2, 1, 0.03, 8);
+        }
+        break;
+      }
+      case 'income': this.incomeFx(ev.tower, ev.amount, ev.cash, ev.bank); break;
+      case 'withdraw': {
+        const t = this.latest?.towers.find((q) => q.id === ev.tower);
+        if (t) {
+          const tx = m(t.x), ty = m(t.y);
+          fx.anim(tx, ty - 6, 6, (f) => P2.bankChest(f), { per: 4 });
+          fx.float(tx, ty - 44, `+${ev.amount}`, C.yellow, 46, 0.35);
+          fx.burst(tx, ty - 20, [C.yellow, C.amber, C.white], 8, 1.6, 2, 0.05, 22);
+          this.coinsToCash(tx, ty - 22, ev.amount, () => this.onCoinsLanded?.(ev.amount));
+        }
+        break;
+      }
       case 'chain': fx.bolt(ev.points.map(([x, y]) => [m(x), m(y)] as [number, number])); break;
       case 'status': {
         const id = ev.enemy;
         const e = this.enemies.get(id);
         if (!e) break;
         const kind = ev.kind;
+        if (kind === 'mark') {
+          // das Fadenkreuz haengt in `syncEnemy` am Ziel, solange `markTicks` > 0; hier nur der Einschlag
+          const q = this.enemyPos(id);
+          if (q) { fx.ring(q.x, q.y - 14, 2, 14, C.red, 10); fx.float(q.x, q.y - 34, 'MARKED', C.coral, 34, 0.3); }
+          break;
+        }
         const etype = this.latest?.enemies.find((q) => q.id === id)?.type ?? 'red';
         const dur = kind === 'freeze' ? 60 : kind === 'stun' ? 30 : kind === 'burn' ? 36 : kind === 'reveal' ? 20 : 16;
         fx.anim(0, 0, FRAMES.STATUS_FRAMES, (f) => P2.status(kind, f, etype), {
@@ -567,7 +727,7 @@ export class Renderer {
         if (t) { fx.ring(m(t.x), m(t.y), 4, 30, C.yellow, 20); fx.burst(m(t.x), m(t.y) - 16, [C.yellow, C.white, C.amber], 16, 1.8, 2, -0.02, 30); fx.float(m(t.x), m(t.y) - 44, 'LEVEL UP', C.yellow, 50, 0.3); }
         break;
       }
-      case 'ability': if (ev.id === 'flare' || ev.id === 'dawnbreak') this.heroCast = this.now + 300; this.abilityFx(ev.id, ev.x, ev.y); break;
+      case 'ability': if (ev.id === 'flare' || ev.id === 'dawnbreak') this.heroCast = this.now + 300; this.abilityFx(ev.id, ev.x, ev.y, ev.cash); break;
       case 'power': this.powerFx(ev.power, ev.x, ev.y); break;
       case 'trap': {
         const v = this.traps.get(ev.id);
@@ -597,6 +757,27 @@ export class Renderer {
         break;
       }
       default: break;
+    }
+  }
+
+  /** Wird gerufen, wenn Muenzen die Geldanzeige erreichen (Match: Puls und Ton). */
+  onCoinsLanded?: (amount: number) => void;
+
+  /** Rundenende: Muenzen steigen vom Market auf; `cash` fliegt zur Geldanzeige, was auf die Bank ging, bleibt als Kontostand stehen. */
+  private incomeFx(towerId: number, amount: number, cash: number, bank: number): void {
+    const t = this.latest?.towers.find((q) => q.id === towerId);
+    if (!t) return;
+    const fx = this.fx;
+    const tx = t.x / 1000, ty = t.y / 1000;
+    fx.anim(tx, ty, FRAMES.COIN_RISE_FRAMES, (f) => P2.coinRise(f), { per: 4 });
+    if (cash > 0) {
+      fx.float(tx, ty - 46, `+${cash}`, C.yellow, 56, 0.3);
+      this.coinsToCash(tx, ty - 24, cash, () => this.onCoinsLanded?.(cash));
+    }
+    const banked = amount - cash;
+    if (banked > 0 || bank > 0) {
+      fx.anim(tx + 14, ty - 2, 6, (f) => P2.bankChest(Math.min(5, f === 0 ? 0 : f)), { per: 3 });
+      fx.float(tx, ty - (cash > 0 ? 58 : 46), `BANK ${bank}`, C.ice, 56, 0.25);
     }
   }
 
@@ -691,7 +872,13 @@ export class Renderer {
     }
   }
 
-  private abilityFx(id: string, x?: number, y?: number): void {
+  /** Eine Aktion in n Ticks (laeuft ueber die Effektschicht, haelt also mit Pause und Tempo Schritt). */
+  private after(ticks: number, fn: () => void): void {
+    let done = false;
+    this.fx.custom(ticks + 1, () => (age) => { if (!done && age >= ticks) { done = true; fn(); } });
+  }
+
+  private abilityFx(id: string, x?: number, y?: number, cash?: number): void {
     const fx = this.fx;
     if (id === 'arrowRain') {
       fx.flash(C.leaf, 0.1);
@@ -707,6 +894,42 @@ export class Renderer {
     } else if (id === 'flare') {
       fx.flash(C.yellow, 0.35);
       if (x !== undefined && y !== undefined) fx.anim(x / 1000, y / 1000, FRAMES.FLARE_FRAMES, (f) => P2.flare(f, 40), { per: 4 });
+    } else if (id === 'focus') {
+      // goldener Doppelring um jeden Longshot, solange der Fokus laeuft (8 s = 480 Ticks)
+      fx.flash(C.amber, 0.12);
+      for (const t of this.latest?.towers ?? []) {
+        if (t.type !== 'longshot') continue;
+        fx.anim(t.x / 1000, t.y / 1000 - 10, FRAMES.FOCUS_FRAMES, (f) => P2.focus(f), { per: 4, loop: 30 });
+      }
+    } else if (id === 'supplyDrop') {
+      // Kiste faellt am Fallschirm neben den ausloesenden Longshot, springt auf, Gold fliegt zur Anzeige
+      const bx = x !== undefined ? x / 1000 + 26 : 320, by = y !== undefined ? y / 1000 + 12 : 180;
+      fx.anim(bx, by, FRAMES.DROP_FRAMES, (f) => P2.supplyDrop(f), { per: 5 });
+      this.after(36, () => {
+        if (cash) { fx.float(bx, by - 30, `+${cash}`, C.yellow, 60, 0.3); this.coinsToCash(bx, by - 10, cash, () => this.onCoinsLanded?.(cash)); }
+        fx.burst(bx, by - 8, [C.yellow, C.amber, C.white], 10, 1.7, 2, 0.05, 24);
+      });
+    } else if (id === 'grant') {
+      // Siegel-Blitz, Muenzfontaene und Goldregen ueber der Karte
+      fx.flash(C.yellow, 0.25);
+      const gx = x !== undefined ? x / 1000 : 320, gy = y !== undefined ? y / 1000 : 180;
+      fx.anim(gx, gy - 14, FRAMES.GRANT_FRAMES, (f) => P2.grant(f), { per: 4 });
+      if (cash) {
+        fx.float(gx, gy - 52, `+${cash}`, C.yellow, 70, 0.3);
+        this.coinsToCash(gx, gy - 24, cash, () => this.onCoinsLanded?.(cash));
+      }
+      fx.custom(70, (node) => {
+        const coins = Array.from({ length: 26 }, (_, i) => { const sp = new Sprite(); node.addChild(sp); return { sp, x: 20 + R() * 600, y: -8 - R() * 70, vy: 2 + R() * 2.2, ph: i * 3 }; });
+        return (age) => {
+          for (const c of coins) {
+            const yy = c.y + c.vy * age;
+            const sp = coinSprite(Math.floor((age + c.ph) / 4));
+            c.sp.texture = tex(sp.canvas);
+            c.sp.position.set(Math.round(c.x) - sp.ax, Math.round(yy) - sp.ay);
+            c.sp.visible = yy < 366;
+          }
+        };
+      });
     } else if (id === 'dawnbreak') {
       fx.flash(C.yellow, 0.55);
       for (let i = 1; i < PATH.length; i++) {

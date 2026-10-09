@@ -31,13 +31,16 @@ export async function startGame(root: HTMLElement): Promise<GameHandle> {
     await store.update({ ...p, settings: { ...p.settings, unlockAll: true } });
   }
   if (hooks && !test) await store.update({ ...newProfile(), playerXp: xpForLevel(4) });
+  if (q.has('debug')) (window as unknown as { __audio: unknown }).__audio = audio;
+  audio.attach(); // AudioContext schon beim ersten Klick/Tastendruck im Menue entsperren
   void runApp(root, {
     store,
     startMatch: (r, o) => startMatch(r, { ...o, debug: q.has('debug') || hooks, seed: q.has('seed') ? Number(q.get('seed')) : undefined }),
     sound: (id) => audio.play(SOUND[id]),
     audio: audio.volumeApi,
     adoptLegacyVolume: (pct) => audio.adoptLegacy(pct),
-    theme: (th) => audio.setTheme(th),
+    // Menue-Musik entfernt (Max, 09.10.2026): im Menue nur Klick-/UI-Toene, Musik nur im Match
+    theme: () => undefined,
   });
   return { setBlocked: () => undefined };
 }

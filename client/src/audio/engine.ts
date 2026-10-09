@@ -6,16 +6,21 @@
 import { MUSIC, RECIPES, type Voice } from './recipes';
 import { R11_RECIPES } from './recipes-r11';
 import { R12_RECIPES } from './recipes-r12';
+import { R13_RECIPES } from './recipes-r13';
+import { r13Sound } from './r13-map';
 import { MENU_THEMES, type MenuThemeId, type MusicTheme } from './recipes-ui';
 import { AUDIO_KEY, fromPct, migrateAudio, toPct, type AudioSettings, type VolumeApi } from './settings';
 import { commitHit, towerGapMs, towerLoudness, towerPitch, topTier, windowGain, type Hit } from './tower-vol';
 import type { SimEvent, TowerState } from '../sim';
 
 const MAX_VOICES = 26;
+/** Feste Mischfaktoren (Max, 09.10.2026): Effekte x0,7, Musik x0,8; die Regler zeigen weiter 0-100 %. */
+export const MIX_SFX = 0.7;
+export const MIX_MUSIC = 0.8;
 type Ctor = typeof AudioContext;
 
 /** Mindestabstand je Klang in ms (gegen Matsch bei Massenpops) */
-const MIN_GAP: Record<string, number> = { pop: 28, tink: 60, 'shoot.ranger': 35, 'shoot.volley': 60, 'shoot.frost': 50, 'shoot.chain': 70, 'explode.mini': 50, 'pop.big': 80, 'shoot.hero': 40, 'power.trapHit': 45, 'embers.count': 40 };
+const MIN_GAP: Record<string, number> = { pop: 28, tink: 60, 'shoot.ranger': 35, 'shoot.volley': 60, 'shoot.frost': 50, 'shoot.chain': 70, 'explode.mini': 50, 'pop.big': 80, 'shoot.hero': 40, 'power.trapHit': 45, 'embers.count': 40, income: 150, 'coin.land': 90, ricochet: 60, mark: 200, 'shoot.snipe': 40 };
 
 function load(): { s: AudioSettings; stored: boolean } {
   try {
@@ -66,6 +71,8 @@ export class AudioEngine {
     this.stopMusic();
   }
 
+  /** Fuer Tests/Smoke: Zustand des AudioContext (null = noch nicht entsperrt). */
+  get ctxState(): string | null { return this.ctx?.state ?? null; }
   get musicVol(): number { return this.s.musicVol; }
   get sfxVol(): number { return this.s.sfxVol; }
   /** Gab es schon gespeicherte Einstellungen? (sonst darf das alte Profil-Volume als Vorgabe dienen) */
@@ -94,8 +101,8 @@ export class AudioEngine {
     if (!this.ctx || !this.master || !this.sfxBus || !this.musicBus) return;
     const t = this.ctx.currentTime;
     this.master.gain.setTargetAtTime(this.quiet ? 0 : 0.9, t, 0.02);
-    this.sfxBus.gain.setTargetAtTime(this.s.sfxVol, t, 0.02);
-    this.musicBus.gain.setTargetAtTime(this.s.musicVol, t, 0.05);
+    this.sfxBus.gain.setTargetAtTime(this.s.sfxVol * MIX_SFX, t, 0.02);
+    this.musicBus.gain.setTargetAtTime(this.s.musicVol * MIX_MUSIC, t, 0.05);
   }
 
   private unlock(): void {
@@ -139,12 +146,13 @@ export class AudioEngine {
     this.log.push(id);
     if (this.log.length > 60) this.log.shift();
     const ctx = this.ctx;
-    if (!ctx || !this.sfxBus || this.s.sfxVol <= 0 || ctx.state !== 'running') return;
+    if (!ctx || !this.sfxBus || this.s.sfxVol <= 0 || ctx.state === 'closed') return;
+    if (ctx.state === 'suspended') void ctx.resume(); // erster Klick im Menue: Klang wird eingeplant und startet mit dem Resume
     const now = performance.now();
     const gap = MIN_GAP[id];
     if (gap && now - (this.last.get(id) ?? -1e9) < gap) return;
     this.last.set(id, now);
-    const rec = R12_RECIPES[id] ?? R11_RECIPES[id] ?? RECIPES[id];
+    const rec = R13_RECIPES[id] ?? R12_RECIPES[id] ?? R11_RECIPES[id] ?? RECIPES[id];
     if (!rec) return;
     const t0 = ctx.currentTime + 0.005;
     for (const v of rec) this.voice(v, t0, gain, rate);
@@ -193,6 +201,12 @@ export class AudioEngine {
   // ---------------------------------------------------------------- Events -> Klaenge
   onEvent(ev: SimEvent, towers: readonly TowerState[]): void {
     const rnd = (): number => 0.94 + Math.random() * 0.12;
+    const p13 = r13Sound(ev, towers);
+    if (p13) {
+      if (p13.tower) this.playTower(p13.id, p13.tower.key, p13.tower.top, rnd(), p13.tower.base);
+      else this.play(p13.id, p13.gain ?? 1, rnd());
+      return;
+    }
     switch (ev.type) {
       case 'fire': {
         const t = towers.find((q) => q.id === ev.tower);

@@ -4,7 +4,8 @@
  */
 import type { HeroType, TowerType } from '../sim';
 
-export const TOWER_TYPES: TowerType[] = ['ranger', 'bombardier', 'frostcaller'];
+/** Reihenfolge der Turm-Leiste (Runde 13): die drei Basistuerme, dann die Spezialisten. */
+export const TOWER_TYPES: TowerType[] = ['ranger', 'bombardier', 'frostcaller', 'longshot', 'market'];
 export const HERO_TYPES: HeroType[] = ['wren'];
 export const ROLE: Record<TowerType | HeroType, string> = {
   ranger: 'Cheap single target',
@@ -20,6 +21,9 @@ export const ABILITY_TEXT: Record<string, { name: string; desc: string }> = {
   absoluteZero: { name: 'Absolute Zero', desc: 'Freezes every Glim for 4 seconds.' },
   flare: { name: 'Flare', desc: 'A blast of lamplight on the strongest Glim. Reveals camo.' },
   dawnbreak: { name: 'Dawnbreak', desc: 'A beam of dawn burns along the whole path.' },
+  focus: { name: 'Focus', desc: 'All Longshots shoot twice as fast for 8 seconds.' },
+  supplyDrop: { name: 'Supply Drop', desc: 'A crate drops from the sky and pays out gold.' },
+  grant: { name: 'Grant', desc: 'Your Grant Offices pay out a lump sum of gold.' },
 };
 export const TARGET_TEXT: Record<string, string> = { first: 'First', last: 'Last', strong: 'Strong', close: 'Close' };
 export const PATH_COLORS = ['#feae34', '#2ce8f5', '#f6757a'];

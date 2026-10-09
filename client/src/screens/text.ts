@@ -96,6 +96,8 @@ export const S = {
       ranger: ['Volley', 'Rapid', 'Eagle Eye'],
       bombardier: ['Bigger Blasts', 'Clusters', 'Concussion'],
       frostcaller: ['Permafrost', 'Shatter', 'Storm'],
+      longshot: ['Heavy Rounds', 'Rapid Reload', 'Field Kit'],
+      market: ['Harvest', 'Bank', 'Town Square'],
     } as Record<string, string[]>,
   },
   settings: {
