@@ -14,6 +14,8 @@ const PORT = Number(process.env.R13B_PORT ?? 5198);
 const base = `http://127.0.0.1:${PORT}`;
 const want = process.argv.slice(2);
 
+// Blattname im Skript -> Seitenparameter
+const PAGE = { fx: 'fxr13', proj: 'projr13' };
 const SHEETS = {
   alt: 'b-tuerme-alt.png',
   market: 'b-market.png',
@@ -43,7 +45,7 @@ try {
     const errs = [];
     page.on('pageerror', (e) => errs.push(String(e)));
     page.on('console', (m) => { if (m.type() === 'error') errs.push(m.text()); });
-    await page.goto(`${base}/sprite-sheet.html?sheet=${name}${arg ? `&t=${arg}` : ''}`);
+    await page.goto(`${base}/sprite-sheet.html?sheet=${PAGE[name] ?? name}${arg ? `&t=${arg}` : ''}`);
     await page.waitForFunction('window.__ready === true', null, { timeout: 30000 }).catch(() => errs.push('nicht bereit'));
     const el = await page.$('#out canvas');
     if (el) await el.screenshot({ path: resolve(outDir, arg ? `b-${name}-${arg}.png` : (SHEETS[name] ?? `b-${name}.png`)) });

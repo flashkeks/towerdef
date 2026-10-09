@@ -4,6 +4,7 @@
  * Keine Abhaengigkeit von Pixi oder der Sim. Die Raster dahinter (`*Raster`) sind in Node testbar.
  */
 import { explosionRaster, novaRaster, popRaster, boltLineRaster, statusRaster, puffRaster, leakRaster, arrowRainRaster, absoluteZeroRaster, flareRaster, dawnBeamRaster, bossPlateRaster, type ExplosionKind, type StatusKind, EXPLOSION_RADIUS } from '../fx/effects';
+import { coinRiseRaster, bankChestRaster, auraRingRaster, grantRaster, ricochetRaster, supplyDropRaster, focusRaster, bossMarkRaster } from '../fx/r13';
 import { textRaster, textWidth } from '../font';
 import type { PalName } from '../palette';
 import { camoAlpha, rowsToCanvas, type Sprite } from './canvas';
@@ -176,7 +177,32 @@ const bossPlate = (frame: number, side: 1 | -1 = 1): Sprite => {
   return cached(`bp|${side}|${f}`, () => sprite(bossPlateRaster(f, side)));
 };
 
-export const fx = { explosion, popShards, nova, boltLine, status, puff, leak, arrowRain, absoluteZero, flare, dawnBeam, bossPlate };
+
+// ---------- Effekte Runde 13: Lantern Market und Longshot ----------
+export { COIN_RISE_FRAMES, CHEST_FRAMES, AURA_FRAMES, GRANT_FRAMES, DROP_FRAMES, FOCUS_FRAMES, MARK_FRAMES } from '../fx/r13';
+const clampF = (f: number, n: number): number => Math.max(0, Math.min(n - 1, Math.floor(f)));
+/** Muenzflug am Rundenende: Muenzen steigen vom Market auf (Frame 0..7). Anker = Fuss des Stands. */
+const coinRise = (frame: number): Sprite => { const f = clampF(frame, 8); return cached(`cr|${f}`, () => sprite(coinRiseRaster(f))); };
+/** Bank-Truhe (Frame 0 zu .. 3/4 Muenzen springen .. 5 Deckel faellt). Anker = Fuss unten Mitte. */
+const bankChest = (frame: number): Sprite => { const f = clampF(frame, 6); return cached(`bc|${f}`, () => sprite(bankChestRaster(f))); };
+/** Aura-Ring in Pfadfarbe (`path` 0..2, Standard 2 = Town Square) mit Wirkradius in px, 4 Frames. Anker Mitte. */
+const auraRing = (radius: number, frame: number, path: 0 | 1 | 2 = 2): Sprite => {
+  const f = ((Math.floor(frame) % 4) + 4) % 4, R = Math.round(radius);
+  return cached(`ar13|${R}|${f}|${path}`, () => sprite(auraRingRaster(R, f, path)));
+};
+/** Grant-Fahigkeit: Siegel-Blitz und Muenzfontaene (Frame 0..7), Anker Mitte. */
+const grant = (frame: number): Sprite => { const f = clampF(frame, 8); return cached(`gr|${f}`, () => sprite(grantRaster(f))); };
+/** Ricochet-Spur durch Weltpunkte, Anker = Weltursprung. Nicht gecacht. */
+const ricochet = (points: [number, number][], frame = 0): Sprite => sprite(ricochetRaster(points, frame));
+/** Supply-Drop: 0-5 faellt am Fallschirm, 6-8 landet, 9-11 Kiste oeffnet sich. Anker = Kistenfuss. */
+const supplyDrop = (frame: number): Sprite => { const f = clampF(frame, 12); return cached(`sd|${f}`, () => sprite(supplyDropRaster(f))); };
+/** Focus: goldener Doppelring + Tempo-Striche um einen Longshot (Frame 0..3), Anker Mitte. */
+const focus = (frame: number): Sprite => { const f = ((Math.floor(frame) % 4) + 4) % 4; return cached(`fo|${f}`, () => sprite(focusRaster(f))); };
+/** Boss-Markierung (rotes Fadenkreuz ueber dem Ziel, Crippling Shot), 4 Frames, Anker Mitte. */
+const bossMark = (frame: number): Sprite => { const f = ((Math.floor(frame) % 4) + 4) % 4; return cached(`bm|${f}`, () => sprite(bossMarkRaster(f))); };
+
+export const fx = { explosion, popShards, nova, boltLine, status, puff, leak, arrowRain, absoluteZero, flare, dawnBeam, bossPlate, coinRise, bankChest, auraRing, grant, ricochet, supplyDrop, focus, bossMark };
+export { coinRise, bankChest, auraRing, grant as grantFx, ricochet, supplyDrop, focus as focusFx, bossMark };
 export { explosion, popShards, nova, boltLine, status as statusFx, puff, leak as leakFx, arrowRain as arrowRainFx, absoluteZero as absoluteZeroFx, flare as flareFx, dawnBeam, bossPlate };
 
 // ---------- Pixel-Ziffern ----------

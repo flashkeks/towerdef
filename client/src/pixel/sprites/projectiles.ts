@@ -78,6 +78,35 @@ export function projectileRaster(kind: ProjectileKind, dir16: number, spin = 0):
       const f = P(0); s.px(f[0], f[1], 'white');
       break;
     }
+    case 'snipe': {
+      // sehr schneller Bolzen: duenner dunkler Schaft, helle Spitze, lange Leuchtspur (gelb -> orange, gestrichelt)
+      for (let i = 1; i <= 7; i++) { const q = P(-4 - i * 1.15, 0); if (i % 3 !== 0) s.px(q[0], q[1], i < 3 ? 'white' : i < 5 ? 'yellow' : 'orange'); }
+      L(-4, 4, 0, 'sand'); L(1, 4, 0, 'silver'); L(-3, 1, 0.8, 'dusk');
+      const tip = P(5); s.px(tip[0], tip[1], 'white'); const t2 = P(4); s.px(t2[0], t2[1], 'silver');
+      for (const w of [-1, 1]) { const f = P(-4, w); s.px(f[0], f[1], 'red'); }
+      break;
+    }
+    case 'snipeHeavy': {
+      // schwerer Eisenbolzen (magic): dicker Schaft, Eisenspitze, eisblaue Spur
+      for (let i = 1; i <= 8; i++) { const q = P(-4 - i * 1.2, (i % 2 ? 0.4 : -0.4)); if (i % 4 !== 0) s.px(q[0], q[1], i < 3 ? 'white' : i < 6 ? 'ice' : 'sky'); }
+      L(-4, 3, 0, 'wood'); L(-4, 3, 0.9, 'bark');
+      L(2, 5, 0, 'stone'); L(2, 4, 1, 'slate'); L(2, 4, -1, 'slate');
+      const tip = P(6); s.px(tip[0], tip[1], 'white'); const t2 = P(5); s.px(t2[0], t2[1], 'silver');
+      for (const w of [-1.4, 1.4]) { const f = P(-4, w); s.px(f[0], f[1], 'red'); const g = P(-3, w); s.px(g[0], g[1], 'crimson'); }
+      break;
+    }
+    case 'snipeGold': {
+      // Lanternbreaker: goldener Lichtbolzen mit weissem Kern und Funkenspur
+      for (let i = 1; i <= 9; i++) { const q = P(-5 - i * 0.95, ((i * 7) % 5 - 2) * 0.5); s.px(q[0], q[1], i < 3 ? 'white' : i < 6 ? 'yellow' : 'amber'); }
+      L(-6, 4, 0, 'white'); L(-6, 3, 1, 'yellow'); L(-6, 3, -1, 'yellow'); L(-4, 1, 2, 'amber'); L(-4, 1, -2, 'amber');
+      const tip = P(7); s.px(tip[0], tip[1], 'white'); const t2 = P(5.5, 1); s.px(t2[0], t2[1], 'yellow'); const t3 = P(5.5, -1); s.px(t3[0], t3[1], 'yellow');
+      break;
+    }
+    case 'splinter': {
+      // Splitter: winzige Metallscherbe
+      L(-2, 2, 0, 'silver'); const tip = P(3); s.px(tip[0], tip[1], 'white'); const f = P(-1, 1); s.px(f[0], f[1], 'stone'); const g = P(-3); s.px(g[0], g[1], 'amber');
+      break;
+    }
     case 'lantern': {
       for (let i = 1; i <= 6; i++) { const q = P(-3 - i, ((spin + i) % 3 - 1) * 0.6); s.px(q[0], q[1], i < 3 ? 'orange' : i < 5 ? 'red' : 'crimson'); }
       s.ball(C, C, 3, 3, ['orange', 'amber', 'yellow']);

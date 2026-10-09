@@ -9,7 +9,7 @@ import { dir16, dir8, dirOf, TOWER_FRAMES } from '../src/pixel/sprites/pose';
 import { projectileRaster } from '../src/pixel/sprites/projectiles';
 import { Surface } from '../src/pixel/sprites/surface';
 import { towerRaster, TOWER_H, TOWER_W } from '../src/pixel/sprites/towers';
-import { ABILITIES, ENEMY_TYPES, PROJECTILE_KINDS, TOWER_TYPES, type Tiers, type TowerType } from '../src/pixel/sprites/types';
+import { ABILITIES, ENEMY_TYPES, PROJECTILE_KINDS, SHOOTER_TYPES, TOWER_TYPES, type Tiers, type TowerType } from '../src/pixel/sprites/types';
 import { flipX } from '../src/pixel/raster';
 
 const sig = (rows: string[]): string => rows.join('/');
@@ -34,7 +34,7 @@ describe('Tuerme', () => {
     }
   });
   it('Rahmen ist konstant, Anker liegt im Bild, alle Frames und Richtungen sind gueltig und nicht leer', () => {
-    for (const type of TOWER_TYPES) {
+    for (const type of SHOOTER_TYPES) {
       for (const tiers of [[0, 0, 0], [5, 0, 0], [0, 5, 2], [2, 0, 5], [3, 2, 0]] as Tiers[]) {
         for (let f = 0; f < 8; f++) {
           for (const fr of TOWER_FRAMES) {
@@ -51,14 +51,14 @@ describe('Tuerme', () => {
     }
   });
   it('gespiegelte Blickrichtungen (W, NW, SW) sind exakte Spiegelbilder von E, NE, SE', () => {
-    for (const type of TOWER_TYPES) {
+    for (const type of SHOOTER_TYPES) {
       for (const [a, b] of [[4, 0], [3, 1], [5, 7]]) {
         expect(towerRaster(type, [2, 1, 0], a, 'idle1').rows).toEqual(flipX(towerRaster(type, [2, 1, 0], b, 'idle1').rows));
       }
     }
   });
   it('acht Blickrichtungen ergeben mindestens fuenf verschiedene Bilder, Idle-Frames wechseln', () => {
-    for (const type of TOWER_TYPES) {
+    for (const type of SHOOTER_TYPES) {
       const dirs = new Set(Array.from({ length: 8 }, (_, f) => sig(towerRaster(type, [3, 0, 0], f, 'idle0').rows)));
       expect(dirs.size).toBe(8);
       const frames = new Set(['idle0', 'idle1', 'idle2', 'idle3'].map((fr) => sig(towerRaster(type, [1, 0, 0], 0, fr as 'idle0').rows)));
@@ -66,7 +66,7 @@ describe('Tuerme', () => {
     }
   });
   it('Angriff: F2 (Abschuss) unterscheidet sich von F0, F1 und F3; Muendung liegt vor der Figur', () => {
-    for (const type of TOWER_TYPES) {
+    for (const type of SHOOTER_TYPES) {
       const a = [0, 1, 2, 3].map((i) => towerRaster(type, [1, 0, 0], 0, `atk${i}` as 'atk0'));
       expect(new Set(a.map((r) => sig(r.rows))).size).toBe(4);
       expect(a[2].mx).toBeGreaterThan(0);
@@ -154,7 +154,7 @@ describe('Projektile', () => {
         expect(count(r.rows)).toBeGreaterThan(3);
       }
     }
-    for (const k of ['arrow', 'bigArrow', 'bolt', 'starBolt', 'frost', 'shard'] as const) {
+    for (const k of ['arrow', 'bigArrow', 'bolt', 'starBolt', 'frost', 'shard', 'snipe', 'snipeHeavy', 'snipeGold'] as const) {
       expect(new Set(Array.from({ length: 16 }, (_, d) => sig(projectileRaster(k, d).rows))).size).toBe(16);
     }
   });
@@ -207,7 +207,7 @@ describe('Effekte', () => {
 });
 
 describe('Icons und Schrift', () => {
-  it('45 Upgrade-Icons 16x16, alle verschieden, Stufenpunkte zaehlen mit', () => {
+  it('75 Upgrade-Icons 16x16, alle verschieden, Stufenpunkte zaehlen mit', () => {
     const seen = new Set<string>();
     for (const type of TOWER_TYPES) for (const p of [0, 1, 2] as const) for (let t = 1; t <= 5; t++) {
       const r = iconUpgradeRaster(type, p, t);
@@ -216,9 +216,9 @@ describe('Icons und Schrift', () => {
       valid(r.rows);
       seen.add(sig(r.rows));
     }
-    expect(seen.size).toBe(45);
+    expect(seen.size).toBe(75);
     for (const a of ABILITIES) { valid(iconAbilityRaster(a).rows); }
-    expect(new Set(ABILITIES.map((a) => sig(iconAbilityRaster(a).rows))).size).toBe(4);
+    expect(new Set(ABILITIES.map((a) => sig(iconAbilityRaster(a).rows))).size).toBe(7);
   });
   it('Pixel-Ziffern 3 x 5', () => {
     const r = textRaster('+120', 'yellow', null);

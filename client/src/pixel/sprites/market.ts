@@ -341,7 +341,7 @@ export function drawMarket(t: Tiers, p: Pose): TowerLayers {
   }
   if (A >= 2 && !(bld && main === 0)) {
     // Laternenkette quer ueber die ganze Breite
-    const x0 = fits(lx - 6), x1 = fits(rx + 6), y0 = (bld ? topY + 6 : G - 33) - 2;
+    const x0 = fits(lx - 6), x1 = fits(rx + 6), y0 = (bld ? G - 28 : G - 33) - 2;
     for (let x = x0; x <= x1; x++) { const k = (x - x0) / Math.max(1, x1 - x0); back.px(x, y0 + Math.sin(k * Math.PI) * 5, 'bark'); }
     for (let i = 0; i < 5; i++) { const k = (i + 0.5) / 5; lamp(s, front, Math.round(x0 + (x1 - x0) * k), Math.round(y0 + Math.sin(k * Math.PI) * 5), ph + i); }
   }

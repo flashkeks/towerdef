@@ -1,6 +1,7 @@
 /** Held Wren, the Lamplighter: sichtbare Level-Stufen (1-4, 5-9, 10-14, 15-19, 20), Idle/Angriff/Faehigkeits-Pose. */
 import { drawArm } from './bows';
 import { flame, orbit, spark, tube } from './parts';
+import { drawGear, growOf, widthOf, type GearPal } from './gear';
 import { dirOf, poseOf, type Dir, type Pose, type TowerFrame } from './pose';
 import { GY, OX, OY, TH, TW, type TowerLayers } from './ranger';
 import { outlineSurface, RAMPS, Surface } from './surface';
@@ -34,11 +35,23 @@ function lantern(s: Surface, front: Surface, x: number, y: number, size: number,
   }
 }
 
+/** Wren: alle Pfade in Laternengold (Stufe 5 = goldene Fluegel). */
+const WREN_PAL: GearPal = {
+  ramp: [RAMPS.brass, RAMPS.brass, RAMPS.brass],
+  ramp5: [RAMPS.gold, RAMPS.gold, RAMPS.gold],
+  hi: ['yellow', 'yellow', 'yellow'],
+  mid: ['amber', 'amber', 'amber'],
+};
+/** Sichtbare Ausruestungsstufe (0..5) je Helden-Stufe 0..4. */
+const WREN_TIER = [0, 2, 3, 4, 5];
+
 export function drawWren(level: number, d: Dir, p: Pose, cast: number): TowerLayers {
   const W = TW, H = TH;
   const s = new Surface(W, H), back = new Surface(W, H), front = new Surface(W, H);
   const stage = heroStage(level);
-  const ph = p.ph, up = p.up;
+  const ph = p.ph;
+  const gt = WREN_TIER[stage], gr = growOf(gt), wg = widthOf(gt);
+  const up = p.up + gr;
   const G = GY, ox = OX;
 
   // ---- Umhang (ab Stufe 1) ----
@@ -54,7 +67,7 @@ export function drawWren(level: number, d: Dir, p: Pose, cast: number): TowerLay
   back.rect(ox - 7 - sway, G - 15 - up, 2, 6, 'amber'); back.rect(ox - 7 - sway, G - 15 - up, 1, 6, 'yellow'); back.px(ox - 6 - sway, G - 9 - up, 'orange'); back.px(ox - 7 - sway, G - 8 - up, 'orange');
 
   // ---- Stab ----
-  const sx = ox + 6, sy = G - 3 - up;
+  const sx = ox + 6 + Math.min(2, wg), sy = G - 3 - up;
   let vx = 0.3 * d.ux, vy = -0.95 + 0.2 * d.uy;
   if (p.atk) { vx = d.ux * [0.55, 0.7, 0.4, 0.45][p.ai]; vy = -0.8 + 0.4 * d.uy; }
   if (cast >= 0) { vx = 0.05; vy = -1; }
@@ -81,14 +94,17 @@ export function drawWren(level: number, d: Dir, p: Pose, cast: number): TowerLay
   s.rect(ox - 4, G - 1, 3, 2, 'bark'); s.rect(ox + 1, G - 1, 3, 2, 'bark');
   const yT = G - 10 - up, yB = G - 1;
   const dress = RAMPS.plum;
-  s.poly([[ox - 4, yT], [ox + 4, yT], [ox + 6, yB], [ox - 6, yB]], (x, y) => (x <= ox - 4 ? dress[2] : x >= ox + 3 ? dress[0] : dress[1]));
-  s.rect(ox - 6, yB, 13, 1, 'amber'); s.rect(ox - 4, G - 5, 9, 1, 'amber'); s.px(ox, G - 5, 'yellow');
+  s.poly([[ox - 4 - wg, yT], [ox + 4 + wg, yT], [ox + 6 + wg, yB], [ox - 6 - wg, yB]], (x, y) => (x <= ox - 4 - wg ? dress[2] : x >= ox + 3 + wg ? dress[0] : dress[1]));
+  s.rect(ox - 6 - wg, yB, 13 + wg * 2, 1, 'amber'); s.rect(ox - 4 - wg, G - 5, 9 + wg * 2, 1, 'amber'); s.px(ox, G - 5, 'yellow');
   s.rect(ox - 4, yT, 9, 1, 'orchid');
   if (stage >= 3) { s.px(ox - 2, G - 7, 'yellow'); s.px(ox + 2, G - 7, 'yellow'); s.px(ox, G - 8, 'yellow'); }
 
+  drawGear(s, back, front, { ox, G, yT, wg, t: [gt, 0, 0], ph, OY, own: { cape: true }, pal: WREN_PAL });
+
   // ---- Kopf ----
   const hcx = ox, hcy = G - 15 - up;
-  s.ball(hcx, hcy, 5.5, 5, RAMPS.skin);
+  const hb = gr >= 4 ? 1 : 0;
+  s.ball(hcx, hcy, 5.5 + hb, 5 + hb, RAMPS.skin);
   // Haare: Kappe + Seitenstraehnen
   s.ellipseFn(hcx, hcy - 1.5, 6.2, 5, (x, y, nx, ny) => (y < hcy - 2 ? ((-nx * 0.5 - ny * 0.7) > 0.3 ? 'amber' : 'orange') : null));
   s.rect(hcx - 6, hcy - 2, 2, 5, 'amber'); s.rect(hcx + 5, hcy - 2, 2, 4, 'orange');

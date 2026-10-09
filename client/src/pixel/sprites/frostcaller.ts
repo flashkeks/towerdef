@@ -236,9 +236,8 @@ export function drawFrost(t: Tiers, d: Dir, p: Pose): TowerLayers {
     }
   }
   if (C >= 5) {
-    // Dauerblitze am Rand + Wolke um den Sockel
-    cloud(front, ox - 7, OY - 2, 10, false, ph + 1);
-    cloud(front, ox + 6, OY - 1, 11, false, ph);
+    // Dauerblitze am Boden rund um die Fuesse (keine Wolken-Plattform mehr)
+    for (let i = 0; i < 3; i++) if ((ph + i) % 3 !== 1) bolt(front, ox - 12 + i * 12, OY - 7, ox - 10 + i * 12 + (ph & 1), OY - 1, 21 + ph * 3 + i, 'white', 'yellow');
   }
   return { fig: s, back, front, muzzle };
 }
