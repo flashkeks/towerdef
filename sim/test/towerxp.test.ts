@@ -3,8 +3,8 @@ import { describe, expect, it } from 'vitest';
 import { createGame, splitTowerXp, towerXpPot, type Game, type GameOptions, type Tiers, type TowerType } from '../src/index';
 import { buy, place, run } from './helpers';
 
-const none: Record<TowerType, Tiers> = { ranger: [0, 0, 0], bombardier: [0, 0, 0], frostcaller: [0, 0, 0] };
-const acct = (n = 100): Record<TowerType, number> => ({ ranger: n, bombardier: n, frostcaller: n });
+const none: Record<TowerType, Tiers> = { ranger: [0, 0, 0], bombardier: [0, 0, 0], frostcaller: [0, 0, 0], longshot: [0, 0, 0], market: [0, 0, 0] };
+const acct = (n = 100): Record<TowerType, number> => ({ ranger: n, bombardier: n, frostcaller: n, longshot: n, market: n });
 function xpGame(over: Partial<GameOptions> = {}): Game {
   return createGame({
     map: 'bare', difficulty: 'medium', seed: 1, mods: { startCash: 100000 },
@@ -54,12 +54,12 @@ describe('Aufteilung', () => {
     }
     // Gleichstand: der erste Typ in der Reihenfolge bekommt den Rest
     const t = splitTowerXp(10, { ranger: 100, bombardier: 100, frostcaller: 100 }, { ranger: 1, bombardier: 1, frostcaller: 1 });
-    expect(t).toEqual({ ranger: 4, bombardier: 3, frostcaller: 3 });
+    expect(t).toEqual({ ranger: 4, bombardier: 3, frostcaller: 3, longshot: 0, market: 0 });
   });
   it('ohne Pops geht alles nach Geld, ohne Geld alles nach Pops, ohne beides nichts', () => {
-    expect(splitTowerXp(10, { ranger: 100, bombardier: 300, frostcaller: 0 }, { ranger: 0, bombardier: 0, frostcaller: 0 })).toEqual({ ranger: 2, bombardier: 8, frostcaller: 0 });
-    expect(splitTowerXp(10, { ranger: 0, bombardier: 0, frostcaller: 0 }, { ranger: 0, bombardier: 0, frostcaller: 4 })).toEqual({ ranger: 0, bombardier: 0, frostcaller: 10 });
-    expect(splitTowerXp(10, { ranger: 0, bombardier: 0, frostcaller: 0 }, { ranger: 0, bombardier: 0, frostcaller: 0 })).toEqual({ ranger: 0, bombardier: 0, frostcaller: 0 });
+    expect(splitTowerXp(10, { ranger: 100, bombardier: 300, frostcaller: 0 }, { ranger: 0, bombardier: 0, frostcaller: 0 })).toEqual({ ranger: 2, bombardier: 8, frostcaller: 0, longshot: 0, market: 0 });
+    expect(splitTowerXp(10, { ranger: 0, bombardier: 0, frostcaller: 0 }, { ranger: 0, bombardier: 0, frostcaller: 4 })).toEqual({ ranger: 0, bombardier: 0, frostcaller: 10, longshot: 0, market: 0 });
+    expect(splitTowerXp(10, { ranger: 0, bombardier: 0, frostcaller: 0 }, { ranger: 0, bombardier: 0, frostcaller: 0 })).toEqual({ ranger: 0, bombardier: 0, frostcaller: 0, longshot: 0, market: 0 });
   });
 });
 
@@ -100,7 +100,7 @@ describe('Verteilung im Match', () => {
     const g = createGame({ map: 'bare', difficulty: 'medium', seed: 1, mods: { startCash: 100000 } });
     const id = place(g, 'ranger');
     playRound1(g);
-    expect(g.state.towerXpGained).toEqual({ ranger: 0, bombardier: 0, frostcaller: 0 });
+    expect(g.state.towerXpGained).toEqual({ ranger: 0, bombardier: 0, frostcaller: 0, longshot: 0, market: 0 });
     expect(g.apply({ type: 'unlockTier', tower: 'ranger', path: 0 })).toEqual({ ok: false, reason: 'maxed' });
     expect(g.apply({ type: 'upgrade', towerId: id, path: 0 }).ok).toBe(true);
     const h = createGame({ map: 'bare', difficulty: 'medium', seed: 1, unlocks: { towers: ['ranger'], maxTier: none } });

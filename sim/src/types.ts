@@ -3,31 +3,31 @@
  * Positionen in Milli-px, Zeit in Ticks (60/s), Faktoren in Basispunkten, Zustand nur Ganzzahlen.
  */
 
-export type TowerType = 'ranger' | 'bombardier' | 'frostcaller';
+export type TowerType = 'ranger' | 'bombardier' | 'frostcaller' | 'longshot' | 'market';
 export type HeroType = 'wren';
 export type EnemyType = 'red' | 'blue' | 'green' | 'gold' | 'ironshell' | 'ember' | 'brute' | 'leviathan';
 export type Difficulty = 'easy' | 'medium' | 'hard';
 export type TargetMode = 'first' | 'last' | 'strong' | 'close';
 export type Tiers = [number, number, number];
-export type AbilityId = 'arrowRain' | 'absoluteZero' | 'flare' | 'dawnbreak';
+export type AbilityId = 'arrowRain' | 'absoluteZero' | 'flare' | 'dawnbreak' | 'focus' | 'supplyDrop' | 'grant';
 export type DamageType = 'sharp' | 'cold' | 'explosive' | 'energy' | 'magic';
 export type PowerKey =
   | 'goldDrop' | 'lanternBomb' | 'caltrops' | 'frostTrap' | 'timeWarp' | 'lanternOil' | 'extraLives' | 'heroBoost'
   | 'instaWarden:ranger' | 'instaWarden:bombardier' | 'instaWarden:frostcaller';
 export type TrapKind = 'caltrops' | 'frostTrap';
-export type ProjectileKind = 'arrow' | 'bigArrow' | 'bolt' | 'starBolt' | 'bomb' | 'frag' | 'frost' | 'shard' | 'lantern';
+export type ProjectileKind = 'arrow' | 'bigArrow' | 'bolt' | 'starBolt' | 'bomb' | 'frag' | 'frost' | 'shard' | 'lantern' | 'snipe';
 
 export interface GameOptions {
   map: string;
   difficulty: Difficulty;
   seed: number;
   /** Was das Profil freigeschaltet hat (P4). Fehlt = alles frei (Tests, Sandbox). */
-  unlocks?: { towers: (TowerType | HeroType)[]; maxTier: Record<TowerType, Tiers> };
+  unlocks?: { towers: (TowerType | HeroType)[]; maxTier: Partial<Record<TowerType, Tiers>> };
   /**
    * Turm-XP-Konto aus dem Profil (Runde 11b). Fehlt = kein XP-System aktiv (keine Verteilung, `unlockTier` → `no-xp`).
    * Das Konto lebt im Match in `state.towerXp`; das Endkonto geht zurück ins Profil.
    */
-  towerXp?: Record<TowerType, number>;
+  towerXp?: Partial<Record<TowerType, number>>;
   /** Power-Inventar aus dem Profil (Runde 12). Fehlt = keine Powers. Fehlende Schlüssel zählen als 0. */
   powers?: Partial<Record<PowerKey, number>>;
   /** Wissensbaum (P4), alles optional, Standard 0. Bedeutung: siehe sim/README.md. */
@@ -43,6 +43,29 @@ export interface GameOptions {
     heroStartLevel?: number;
     /** Zuschlag auf den Turm-XP-Topf in Basispunkten ("Fast Learner": 2000 = +20 %). */
     towerXpBp?: number;
+    // --- Runde 13 (Wissensbaum) ---
+    /** Rabatt auf alle Stufe-2-Upgrades von Ranger/Bombardier/Frostcaller ("Veteran Primaries", 1000 = −10 %). */
+    t2DiscountBp?: number;
+    /** Angriffstempo je Turmtyp in Basispunkten, additiv zu Auren ("Quick Hands" 500, "Steady Aim" 1000). */
+    tempoBp?: Partial<Record<TowerType, number>>;
+    /** Verlängert Absolute Zero um Ticks ("Deep Freeze" 30). */
+    freezeAddTicks?: number;
+    /** Market-Ertrag in Basispunkten ("Market Savvy" 1000). */
+    marketBp?: number;
+    /** Bank-Zinsen in Basispunkten zusätzlich, nur mit Bank ("Compound Interest" 500). */
+    bankRateBp?: number;
+    /** Gold pro Supply Drop zusätzlich ("Supply Lines" 200). */
+    supplyBonus?: number;
+    /** Market-Wirkradius in Basispunkten ("Wide Aura" 1500). */
+    marketRadiusBp?: number;
+    /** Rabatt auf den Kaufpreis eines Markets ("Bulk Orders" 1000). */
+    marketPriceBp?: number;
+    /** Wren-XP-Zuschlag in Basispunkten ("Hero Training" 1500). */
+    heroXpBp?: number;
+    /** Einsätze je Power-Art und Runde (Standard 1; "Spare Pocket" 2). */
+    powerUses?: number;
+    /** Zusätzliche Powers zu Matchbeginn ("Starter Kit": goldDrop 1). */
+    freePowers?: Partial<Record<PowerKey, number>>;
   };
 }
 
@@ -53,6 +76,8 @@ export type Command =
   | { type: 'sell'; towerId: number }
   | { type: 'target'; towerId: number; mode: TargetMode }
   | { type: 'ability'; ability: AbilityId }
+  /** Runde 13: Bank eines Markets (Lockbox …) abheben. Gründe: `no-tower`, `not-bank`, `empty`. */
+  | { type: 'withdraw'; towerId: number }
   /** Runde 12: Power einsetzen. `x`/`y` (Milli-px) nur bei Ziel-Powers (Lantern Bomb, Fallen, Insta-Warden). */
   | { type: 'power'; power: PowerKey; x?: number; y?: number }
   | { type: 'startRound' }
@@ -132,6 +157,8 @@ export interface TowerState {
   shots: number;
   auraCd: number;
   thunderCd: number;
+  /** Runde 13: Bank-Konto (Market mit Lockbox …), sonst 0. Zählt erst als Geld, wenn abgehoben (oder verkauft). */
+  bank: number;
 }
 
 export interface EnemyState {
@@ -158,6 +185,9 @@ export interface EnemyState {
   brittleTicks: number;
   burnDmg: number;
   burnOwner: number;
+  /** Runde 13: Boss-Markierung (Crippling Shot): Restticks und Zusatzschaden aus allen Quellen in Basispunkten. */
+  markTicks: number;
+  markBp: number;
   dead: boolean;
 }
 
@@ -211,6 +241,31 @@ export interface RoundPreview {
   hasBoss: boolean;
 }
 
+/** Aktuelle Market-Kennwerte (`Game.marketInfo`). */
+export interface MarketInfo {
+  /** Einkommen der nächsten Rundenende-Auszahlung (Wissensbaum und Golden Exchange eingerechnet), ohne Zinsen. */
+  income: number;
+  hasBank: boolean;
+  bank: number;
+  bankRateBp: number;
+  bankCap: number;
+  /** Zinsen, die beim nächsten Rundenende auf das aktuelle Konto fallen würden. */
+  nextInterest: number;
+  grantCash: number;
+  /** Wirkradius der Auren in Milli-px (= `TowerState.range`). */
+  radius: number;
+}
+/** Auren, die auf einen Turm wirken (stärkster Wert je Feld über alle Markets im Radius). */
+export interface TowerAura {
+  rangeBp: number;
+  camo: boolean;
+  speedBp: number;
+  armor: boolean;
+  pierce: number;
+  dmg: number;
+  discountBp: number;
+}
+
 export type AbilityState = { id: AbilityId; ready: boolean; cdLeft: number; cdTotal: number };
 
 export interface GameState {
@@ -238,11 +293,15 @@ export interface GameState {
     spent: Record<string, number>;
     /** Runde 12: erfolgreiche Einsätze je Power in diesem Match. */
     powersUsed: Record<PowerKey, number>;
+    /** Runde 13: Summe des Market-Einkommens (inkl. Zinsen) in diesem Match. */
+    income: number;
   };
   /** Runde 12: Restbestand je Power (Start = `GameOptions.powers`). */
   powers: Record<PowerKey, number>;
   /** Runde 12: je Power die Runde (`state.round`) des letzten Einsatzes, -1 = nie. Gesperrt, solange sie `state.round` entspricht. */
   powerUsedRound: Record<PowerKey, number>;
+  /** Runde 13: Einsätze je Power in der Runde `powerUsedRound` (Spare Pocket erlaubt 2). */
+  powerUses: Record<PowerKey, number>;
   /** Runde 12: Fallen auf dem Weg, aufsteigende id. */
   traps: TrapState[];
   // --- Innenleben ---
@@ -255,6 +314,8 @@ export interface GameState {
   autoStart: boolean;
   heroPlaced: boolean;
   rainLeft: number;
+  /** Runde 13: Focus (Longshot B4), Restticks. */
+  focusLeft: number;
   nextId: number;
   rng: number[];
   /** Laufende Spawn-Gruppen. */
@@ -272,7 +333,12 @@ export type SimEvent =
   | { type: 'explode'; tick: number; x: number; y: number; radius: number; kind: 'bomb' | 'mini' | 'star' | 'quake' }
   | { type: 'nova'; tick: number; x: number; y: number; radius: number }
   | { type: 'chain'; tick: number; tower: number; points: [number, number][]; dmg: number }
-  | { type: 'status'; tick: number; enemy: number; kind: 'slow' | 'stun' | 'freeze' | 'burn' | 'reveal' }
+  | { type: 'status'; tick: number; enemy: number; kind: 'slow' | 'stun' | 'freeze' | 'burn' | 'reveal' | 'mark' }
+  /** Runde 13: Ricochet (Longshot C2), sofort. `points` = Treffer + Sprungziele. */
+  | { type: 'ricochet'; tick: number; tower: number; points: [number, number][]; dmg: number }
+  /** Runde 13: Market-Einkommen am Rundenende. `amount` = verdient (inkl. Zinsen), `cash` = direkt ausgezahlt, `bank` = Kontostand danach. */
+  | { type: 'income'; tick: number; tower: number; round: number; amount: number; cash: number; bank: number }
+  | { type: 'withdraw'; tick: number; tower: number; amount: number }
   | { type: 'leak'; tick: number; enemy: number; etype: EnemyType; lives: number }
   | { type: 'place'; tick: number; tower: number; ttype: TowerType | HeroType; cash: number }
   | { type: 'upgrade'; tick: number; tower: number; ttype: TowerType | HeroType; tiers: Tiers; cash: number }
@@ -280,7 +346,7 @@ export type SimEvent =
   | { type: 'unlockTier'; tick: number; tower: TowerType; path: 0 | 1 | 2; tier: number; cost: number; xp: number }
   | { type: 'towerXp'; tick: number; round: number; pot: number; gains: Partial<Record<TowerType, number>> }
   | { type: 'heroLevel'; tick: number; tower: number; level: number }
-  | { type: 'ability'; tick: number; id: AbilityId; x?: number; y?: number }
+  | { type: 'ability'; tick: number; id: AbilityId; x?: number; y?: number; cash?: number }
   | { type: 'power'; tick: number; power: PowerKey; x?: number; y?: number }
   | { type: 'trap'; tick: number; id: number; kind: TrapKind; charges: number }
   | { type: 'trapGone'; tick: number; id: number; kind: TrapKind; reason: 'spent' | 'expired' }
@@ -299,7 +365,12 @@ export interface Game {
   upgradeInfo(towerId: number): UpgradeInfo[];
   /** Freischalt-Menü eines Turmtyps: 3 Pfade × 5 Stufen mit Sichtbarkeit und Kosten (Turm-XP). */
   unlockInfo(type: TowerType): UnlockPathInfo[];
+  /** Verkaufserlös (70 %/75 % der Ausgaben, aufgerundet) plus Bank-Inhalt eines Markets. */
   sellValue(towerId: number): number;
+  /** Runde 13: Market-Kennwerte für Panel und Münz-Animation; null, wenn der Turm kein Market ist. */
+  marketInfo(towerId: number): MarketInfo | null;
+  /** Runde 13: Auren der Markets, die gerade auf diesen Turm wirken (alle 0 = keine). */
+  auraOf(towerId: number): TowerAura;
   priceOf(type: TowerType | HeroType): number;
   /** Runde 12: Trockenlauf von `{ type: 'power' }` (ändert nichts) für Vorschau-Kreis/Geist. Liefert dieselben Gründe wie `apply`. */
   canUsePower(power: PowerKey, x?: number, y?: number): PlaceCheck;
