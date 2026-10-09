@@ -1,0 +1,345 @@
+[
+ {
+  "round": 1,
+  "groups": [
+   {
+    "type": "red",
+    "n": 20,
+    "gapMs": 900,
+    "startMs": 0
+   }
+  ]
+ },
+ {
+  "round": 2,
+  "groups": [
+   {
+    "type": "red",
+    "n": 35,
+    "gapMs": 700,
+    "startMs": 0
+   }
+  ]
+ },
+ {
+  "round": 3,
+  "groups": [
+   {
+    "type": "red",
+    "n": 25,
+    "gapMs": 700,
+    "startMs": 0
+   },
+   {
+    "type": "blue",
+    "n": 10,
+    "gapMs": 900,
+    "startMs": 6000
+   }
+  ]
+ },
+ {
+  "round": 4,
+  "groups": [
+   {
+    "type": "red",
+    "n": 30,
+    "gapMs": 500,
+    "startMs": 0
+   },
+   {
+    "type": "blue",
+    "n": 20,
+    "gapMs": 700,
+    "startMs": 5000
+   }
+  ]
+ },
+ {
+  "round": 5,
+  "groups": [
+   {
+    "type": "blue",
+    "n": 35,
+    "gapMs": 600,
+    "startMs": 0
+   },
+   {
+    "type": "green",
+    "n": 8,
+    "gapMs": 1000,
+    "startMs": 10000
+   }
+  ]
+ },
+ {
+  "round": 6,
+  "groups": [
+   {
+    "type": "blue",
+    "n": 25,
+    "gapMs": 500,
+    "startMs": 0
+   },
+   {
+    "type": "green",
+    "n": 20,
+    "gapMs": 700,
+    "startMs": 4000
+   }
+  ]
+ },
+ {
+  "round": 7,
+  "groups": [
+   {
+    "type": "blue",
+    "n": 10,
+    "gapMs": 600,
+    "startMs": 0
+   },
+   {
+    "type": "green",
+    "n": 50,
+    "gapMs": 400,
+    "startMs": 3000
+   }
+  ]
+ },
+ {
+  "round": 8,
+  "groups": [
+   {
+    "type": "blue",
+    "n": 40,
+    "gapMs": 350,
+    "startMs": 0
+   },
+   {
+    "type": "gold",
+    "n": 18,
+    "gapMs": 800,
+    "startMs": 8000
+   }
+  ]
+ },
+ {
+  "round": 9,
+  "groups": [
+   {
+    "type": "green",
+    "n": 30,
+    "gapMs": 400,
+    "startMs": 0
+   },
+   {
+    "type": "gold",
+    "n": 24,
+    "gapMs": 600,
+    "startMs": 6000
+   }
+  ]
+ },
+ {
+  "round": 10,
+  "groups": [
+   {
+    "type": "blue",
+    "n": 120,
+    "gapMs": 150,
+    "startMs": 0
+   }
+  ]
+ },
+ {
+  "round": 11,
+  "groups": [
+   {
+    "type": "ironshell",
+    "n": 8,
+    "gapMs": 1400,
+    "startMs": 0
+   },
+   {
+    "type": "green",
+    "n": 30,
+    "gapMs": 500,
+    "startMs": 2000
+   }
+  ]
+ },
+ {
+  "round": 12,
+  "groups": [
+   {
+    "type": "ember",
+    "n": 14,
+    "gapMs": 1000,
+    "startMs": 0
+   },
+   {
+    "type": "gold",
+    "n": 40,
+    "gapMs": 400,
+    "startMs": 4000
+   }
+  ]
+ },
+ {
+  "round": 13,
+  "groups": [
+   {
+    "type": "green",
+    "n": 20,
+    "gapMs": 600,
+    "startMs": 0,
+    "camo": true
+   },
+   {
+    "type": "gold",
+    "n": 50,
+    "gapMs": 350,
+    "startMs": 3000
+   }
+  ]
+ },
+ {
+  "round": 14,
+  "groups": [
+   {
+    "type": "ironshell",
+    "n": 24,
+    "gapMs": 700,
+    "startMs": 0
+   },
+   {
+    "type": "green",
+    "n": 50,
+    "gapMs": 300,
+    "startMs": 4000
+   }
+  ]
+ },
+ {
+  "round": 15,
+  "groups": [
+   {
+    "type": "brute",
+    "n": 8,
+    "gapMs": 1800,
+    "startMs": 0
+   },
+   {
+    "type": "gold",
+    "n": 40,
+    "gapMs": 400,
+    "startMs": 5000
+   }
+  ]
+ },
+ {
+  "round": 16,
+  "groups": [
+   {
+    "type": "ember",
+    "n": 20,
+    "gapMs": 600,
+    "startMs": 0
+   },
+   {
+    "type": "ironshell",
+    "n": 20,
+    "gapMs": 600,
+    "startMs": 3000
+   },
+   {
+    "type": "gold",
+    "n": 16,
+    "gapMs": 500,
+    "startMs": 10000,
+    "camo": true
+   }
+  ]
+ },
+ {
+  "round": 17,
+  "groups": [
+   {
+    "type": "brute",
+    "n": 16,
+    "gapMs": 1200,
+    "startMs": 0
+   },
+   {
+    "type": "gold",
+    "n": 60,
+    "gapMs": 250,
+    "startMs": 4000
+   }
+  ]
+ },
+ {
+  "round": 18,
+  "groups": [
+   {
+    "type": "gold",
+    "n": 120,
+    "gapMs": 120,
+    "startMs": 0
+   },
+   {
+    "type": "gold",
+    "n": 24,
+    "gapMs": 300,
+    "startMs": 8000,
+    "camo": true
+   }
+  ]
+ },
+ {
+  "round": 19,
+  "groups": [
+   {
+    "type": "brute",
+    "n": 26,
+    "gapMs": 800,
+    "startMs": 0
+   },
+   {
+    "type": "ironshell",
+    "n": 20,
+    "gapMs": 500,
+    "startMs": 6000
+   },
+   {
+    "type": "ember",
+    "n": 14,
+    "gapMs": 600,
+    "startMs": 12000
+   }
+  ]
+ },
+ {
+  "round": 20,
+  "groups": [
+   {
+    "type": "leviathan",
+    "n": 1,
+    "gapMs": 1000,
+    "startMs": 0
+   },
+   {
+    "type": "brute",
+    "n": 10,
+    "gapMs": 1500,
+    "startMs": 8000
+   },
+   {
+    "type": "gold",
+    "n": 60,
+    "gapMs": 300,
+    "startMs": 2000
+   }
+  ]
+ }
+]
