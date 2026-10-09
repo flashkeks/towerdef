@@ -16,7 +16,7 @@ const script: [number, Command][] = [
 ];
 
 function play(seed: number, withExtra = false): string {
-  const g = createGame({ map: 'meadow', difficulty: 'medium', seed, mods: { startCash: 5000 } });
+  const g = createGame({ map: 'bare', difficulty: 'medium', seed, mods: { startCash: 5000 } });
   for (let t = 0; t < 6000; t++) {
     for (const [at, c] of script) if (at === t) g.apply(c);
     if (withExtra && t === 700) g.apply({ type: 'sell', towerId: 3 });
@@ -37,8 +37,8 @@ describe('Determinismus', () => {
     expect(play(7)).not.toBe(play(8));
   });
   it('Schritte in Teilen = in einem Rutsch', () => {
-    const a = createGame({ map: 'meadow', difficulty: 'easy', seed: 3, mods: { startCash: 2000 } });
-    const b = createGame({ map: 'meadow', difficulty: 'easy', seed: 3, mods: { startCash: 2000 } });
+    const a = createGame({ map: 'bare', difficulty: 'easy', seed: 3, mods: { startCash: 2000 } });
+    const b = createGame({ map: 'bare', difficulty: 'easy', seed: 3, mods: { startCash: 2000 } });
     for (const g of [a, b]) {
       g.apply({ type: 'place', tower: 'bombardier', x: 60000, y: 122000 });
       g.apply({ type: 'startRound' });
@@ -48,7 +48,7 @@ describe('Determinismus', () => {
     expect(a.hash()).toBe(b.hash());
   });
   it('Zustand ist nur Ganzzahlen (hash wirft sonst)', () => {
-    const g = createGame({ map: 'meadow', difficulty: 'hard', seed: 5, mods: { startCash: 3000 } });
+    const g = createGame({ map: 'bare', difficulty: 'hard', seed: 5, mods: { startCash: 3000 } });
     g.apply({ type: 'place', tower: 'frostcaller', x: 60000, y: 122000 });
     g.apply({ type: 'startRound' });
     for (let i = 0; i < 600; i++) g.step();

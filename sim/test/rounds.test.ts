@@ -71,7 +71,7 @@ describe('Runden', () => {
   });
 
   it('Niederlage bei Leben <= 0; danach nehmen Befehle nichts an', () => {
-    const g = createGame({ map: 'meadow', difficulty: 'hard', seed: 1, mods: { lives: -90 } });
+    const g = createGame({ map: 'bare', difficulty: 'hard', seed: 1, mods: { lives: -90 } });
     g.apply({ type: 'startRound' });
     const ev = run(g, 6000, () => g.state.phase === 'lost');
     expect(g.state.phase).toBe('lost');
@@ -84,7 +84,7 @@ describe('Runden', () => {
   });
 
   it('Sieg nach Runde 20 (Bot, Medium), danach Spielende', () => {
-    const r = runBot(parseStrategy('ranger 0-0-0 + ranger 0-0-0 + bombardier 4-0-2 + hero'), { difficulty: 'medium', seed: 1 });
+    const r = runBot(parseStrategy('ranger 0-0-0 + ranger 0-2-4 + bombardier 0-0-0 + bombardier 4-2-0 + hero'), { difficulty: 'medium', seed: 1 });
     expect(r.result).toBe('won');
     expect(r.round).toBe(20);
     expect(r.lives).toBeGreaterThan(0);

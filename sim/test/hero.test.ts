@@ -4,7 +4,7 @@ import { buy, newGame, place, run } from './helpers';
 
 describe('Held Wren', () => {
   it('einmal je Match, Preis 540, Grundwerte', () => {
-    const g = createGame({ map: 'meadow', difficulty: 'medium', seed: 1 });
+    const g = createGame({ map: 'bare', difficulty: 'medium', seed: 1 });
     const id = place(g, 'wren');
     expect(g.state.cash).toBe(110);
     const w = g.state.towers[0];

@@ -1,7 +1,7 @@
 import { createGame, type Game, type GameOptions, type SimEvent, type TowerType, type HeroType, type Tiers } from '../src/index';
 
 export function newGame(over: Partial<GameOptions> = {}): Game {
-  return createGame({ map: 'meadow', difficulty: 'medium', seed: 1, mods: { startCash: 100000 }, ...over });
+  return createGame({ map: 'bare', difficulty: 'medium', seed: 1, mods: { startCash: 100000 }, ...over });
 }
 
 /** Ein Turm neben dem ersten Wegstück ((-16,92) -> (120,92)), Mitte x=60 px. */
