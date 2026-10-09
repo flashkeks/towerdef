@@ -1,21 +1,22 @@
 /** Wissensbaum: drei Aeste als Pixel-Knoten mit Linien, Punkte oben, Klick kauft, Tooltip erklaert. */
 import {
-  BRANCHES, BRANCH_NAMES, KNOWLEDGE, buyNode, knowledgePoints, nodeById, nodeState, resetKnowledge, type Branch, type KnowledgeNode,
+  BRANCHES, BRANCH_NAMES, KNOWLEDGE, buyNode, knowledgePoints, nodeById, nodeState, resetKnowledge, type Branch,
 } from '../meta';
 import { h } from '../ui/dom';
+import { DEFAULT_OPTS, layoutTree } from './knowledge-layout';
 import { icon, type IconName } from './icons';
 import { cv, makeTip, ptext } from './px';
 import { S } from './text';
 import type { Ctx, View } from './types';
 
 const ICONS: Record<string, IconName> = {
-  'head-start': 'coin', 'better-deals': 'tag', 'lantern-tax': 'lantern',
-  'sharp-eyes': 'eye', 'bigger-barrels': 'bomb', 'cold-snap': 'snow', 'cheaper-basics': 'discount',
-  'extra-lives': 'heart', 'veteran-hero': 'star', 'fast-learner': 'book',
+  'head-start': 'coin', 'better-deals': 'tag', 'lantern-tax': 'lantern', 'big-head-start': 'coin', 'market-savvy': 'tag', 'compound-interest': 'discount',
+  'sharp-eyes': 'eye', 'bigger-barrels': 'bomb', 'cold-snap': 'snow', 'cheaper-basics': 'discount', 'quick-hands': 'bolt', 'deep-freeze': 'snow', 'veteran-primaries': 'star',
+  'steady-aim': 'eye', 'supply-lines': 'flag', 'wide-aura': 'lantern', 'bulk-orders': 'tag',
+  'extra-lives': 'heart', 'veteran-hero': 'star', 'fast-learner': 'book', 'thick-walls': 'heart', 'hero-training': 'arrow', 'legendary': 'star', 'scholar': 'book',
+  'ember-pouch': 'flame', 'bulk-buyer': 'discount', 'spare-pocket': 'gear', 'starter-kit': 'coin',
 };
-const CELL_W = 150;
-const CELL_H = 158;
-const NODE = 96;
+const OPTS = DEFAULT_OPTS;
 
 let lastBought: string | null = null;
 
@@ -44,47 +45,45 @@ export function knowledgeView(ctx: Ctx): View {
   el.append(topBar(ctx, S.knowledge.title, right));
 
   const tree = h('div', 'ktree');
-  // Runde 13: fünf Äste (Platzhalter-Darstellung bis Agent C den Baum neu baut)
-  for (const branch of BRANCHES as readonly Branch[]) {
-    const nodes = KNOWLEDGE.filter((n) => n.branch === branch);
-    const cols = Math.max(...nodes.map((n) => n.col)) + 1;
-    const rows = Math.max(...nodes.map((n) => n.row)) + 1;
+  const layout = layoutTree(KNOWLEDGE, BRANCHES as readonly string[], OPTS);
+  const NS = 'http://www.w3.org/2000/svg';
+  for (const pb of layout.branches) {
+    const branch = pb.branch as Branch;
     const panel = h('section', `kbranch ${branch}`);
-    panel.append(h('div', 'kbranch-t', BRANCH_NAMES[branch]));
+    panel.style.width = `${pb.w}px`;
+    const bought = KNOWLEDGE.filter((n) => n.branch === branch && p.knowledge.includes(n.id)).length;
+    const total = KNOWLEDGE.filter((n) => n.branch === branch).length;
+    const title = h('div', 'kbranch-t', BRANCH_NAMES[branch]);
+    title.append(h('span', 'kbranch-c num', `${bought}/${total}`));
+    panel.append(title);
     const field = h('div', 'kfield');
-    field.style.width = `${cols * CELL_W}px`;
-    field.style.height = `${rows * CELL_H}px`;
+    field.style.width = `${pb.fieldW}px`;
+    field.style.height = `${pb.fieldH}px`;
 
-    // Linien (SVG, harte Kanten)
-    const NS = 'http://www.w3.org/2000/svg';
+    // Linien (SVG, harte Kanten): Voraussetzung -> Knoten, in Astfarbe sobald die Voraussetzung gelernt ist
     const svg = document.createElementNS(NS, 'svg');
     svg.setAttribute('class', 'klines');
-    svg.setAttribute('width', String(cols * CELL_W));
-    svg.setAttribute('height', String(rows * CELL_H));
-    const cx = (n: KnowledgeNode): number => n.col * CELL_W + CELL_W / 2;
-    const top = (n: KnowledgeNode): number => n.row * CELL_H + 8;
-    for (const n of nodes) {
-      for (const rid of n.requires) {
-        const q = nodeById(rid);
-        if (!q) continue;
-        const y1 = top(q) + NODE;
-        const y2 = top(n);
-        const ym = Math.round((y1 + y2) / 2);
-        const path = document.createElementNS(NS, 'path');
-        path.setAttribute('d', `M${cx(q)} ${y1} V${ym} H${cx(n)} V${y2}`);
-        path.setAttribute('class', `kline ${p.knowledge.includes(rid) ? 'on' : ''}`);
-        svg.append(path);
-      }
+    svg.setAttribute('width', String(pb.fieldW));
+    svg.setAttribute('height', String(pb.fieldH));
+    for (const l of pb.lines) {
+      const ym = Math.round((l.y1 + l.y2) / 2);
+      const path = document.createElementNS(NS, 'path');
+      path.setAttribute('d', `M${l.x1} ${l.y1} V${ym} H${l.x2} V${l.y2}`);
+      path.setAttribute('class', `kline ${p.knowledge.includes(l.from) ? 'on' : ''}`);
+      svg.append(path);
     }
     field.append(svg);
 
-    for (const n of nodes) {
+    for (const pn of pb.nodes) {
+      const n = nodeById(pn.id)!;
       const st = nodeState(p, n.id);
       const b = h('button', `knode ${st} ${lastBought === n.id ? 'bought-now' : ''}`);
-      b.style.left = `${cx(n) - NODE / 2}px`;
-      b.style.top = `${top(n)}px`;
-      b.style.width = `${NODE}px`;
-      b.append(cv(icon(ICONS[n.id] ?? 'star'), 3, 'knode-ic'), h('div', 'knode-n', n.name));
+      b.dataset.node = n.id;
+      b.style.left = `${pn.x}px`;
+      b.style.top = `${pn.y}px`;
+      b.style.width = `${OPTS.nodeW}px`;
+      b.style.height = `${OPTS.nodeH}px`;
+      b.append(cv(icon(ICONS[n.id] ?? 'star'), 2, 'knode-ic'), h('div', 'knode-n', n.name));
       const foot = h('div', 'knode-f');
       if (st === 'bought') foot.append(cv(icon('check'), 2));
       else if (st === 'locked') foot.append(cv(icon('lock'), 2));

@@ -173,28 +173,31 @@ button.chip:hover { background: var(--p-night); }
 canvas.pop { animation: pop-in 0.5s steps(6) both; }
 
 /* ---- Wissensbaum ---- */
-.ktree { display: flex; justify-content: center; gap: 36px; flex-wrap: wrap; align-items: flex-start; }
-.kbranch { background: var(--p-night); padding: 14px 20px 22px; margin: 4px; box-shadow: 0 -4px 0 0 var(--p-ink), 0 4px 0 0 var(--p-ink), -4px 0 0 0 var(--p-ink), 4px 0 0 0 var(--p-ink), inset 0 4px 0 0 var(--p-dusk), inset 0 -4px 0 0 var(--p-ink); }
-.kbranch-t { text-align: center; font: 800 20px 'Rajdhani', sans-serif; letter-spacing: 0.22em; text-transform: uppercase; margin-bottom: 8px; }
-.kbranch.economy .kbranch-t { color: var(--p-yellow); }
-.kbranch.towers .kbranch-t { color: var(--p-ice); }
-.kbranch.wardens .kbranch-t { color: var(--p-coral); }
-.kfield { position: relative; margin: 0 auto; }
+.ktree { display: flex; justify-content: center; gap: 14px; align-items: flex-start; }
+.kbranch { --bc: var(--p-amber); background: var(--p-night); padding: 12px 12px 14px; margin: 4px; box-shadow: 0 -4px 0 0 var(--p-ink), 0 4px 0 0 var(--p-ink), -4px 0 0 0 var(--p-ink), 4px 0 0 0 var(--p-ink), inset 0 4px 0 0 var(--bc), inset 0 -4px 0 0 var(--p-ink); }
+.kbranch-t { text-align: center; font: 800 18px 'Rajdhani', sans-serif; letter-spacing: 0.2em; text-transform: uppercase; margin: 0 0 10px; color: var(--bc); height: 30px; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1; }
+.kbranch-c { font-size: 12px; letter-spacing: 0.1em; color: var(--p-stone); margin-top: 2px; }
+.kbranch.economy { --bc: var(--p-yellow); }
+.kbranch.primary { --bc: var(--p-ice); }
+.kbranch.specialists { --bc: var(--p-leaf); }
+.kbranch.wardens { --bc: var(--p-coral); }
+.kbranch.powers { --bc: var(--p-orchid, var(--p-violet)); }
+.kfield { position: relative; }
 .klines { position: absolute; inset: 0; pointer-events: none; shape-rendering: crispEdges; }
 .kline { fill: none; stroke: var(--p-dusk); stroke-width: 6; }
-.kline.on { stroke: var(--p-amber); }
+.kline.on { stroke: var(--bc); }
 .knode {
-  position: absolute; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 6px 8px; background: var(--p-ink); text-align: center;
+  position: absolute; display: flex; flex-direction: column; align-items: center; justify-content: space-between; gap: 2px; padding: 6px 4px 5px; box-sizing: border-box; background: var(--p-ink); text-align: center;
   box-shadow: 0 -4px 0 0 var(--p-dusk), 0 4px 0 0 var(--p-dusk), -4px 0 0 0 var(--p-dusk), 4px 0 0 0 var(--p-dusk);
 }
-.knode-n { font-weight: 800; font-size: 15px; line-height: 1.05; letter-spacing: 0.02em; min-height: 32px; display: grid; place-items: center; }
-.knode-f { display: flex; align-items: center; gap: 6px; font-weight: 800; color: var(--p-yellow); min-height: 28px; }
-.knode.bought { background: var(--p-deep); box-shadow: 0 -4px 0 0 var(--p-amber), 0 4px 0 0 var(--p-amber), -4px 0 0 0 var(--p-amber), 4px 0 0 0 var(--p-amber); }
+.knode-n { font-weight: 800; font-size: 13px; line-height: 1.05; letter-spacing: 0.01em; flex: 1; display: grid; place-items: center; }
+.knode-f { display: flex; align-items: center; gap: 5px; font-weight: 800; color: var(--p-yellow); min-height: 18px; }
+.knode.bought { background: var(--p-deep); box-shadow: 0 -4px 0 0 var(--bc), 0 4px 0 0 var(--bc), -4px 0 0 0 var(--bc), 4px 0 0 0 var(--bc); }
 .knode.available { background: var(--p-night); box-shadow: 0 -4px 0 0 var(--p-leaf), 0 4px 0 0 var(--p-leaf), -4px 0 0 0 var(--p-leaf), 4px 0 0 0 var(--p-leaf); animation: avail 1.2s steps(2) infinite; }
 .knode.available:hover { background: var(--p-dusk); transform: translateY(-3px); }
 .knode.unaffordable { opacity: 0.85; }
 .knode.unaffordable .knode-f { color: var(--p-red); }
-.knode.locked { opacity: 0.5; }
+.knode.locked { opacity: 0.5; background: var(--p-ink); filter: grayscale(0.8); }
 .knode.locked .knode-ic { filter: grayscale(1) brightness(0.7); }
 .knode.locked .knode-f { color: var(--p-stone); }
 .knode.bought-now { animation: pop-in 0.5s steps(6); }

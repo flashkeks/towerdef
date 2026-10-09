@@ -6,7 +6,7 @@ import { Container, Sprite, Texture } from 'pixi.js';
 import { C, NAME_OF, rng } from '../pixel/map/buf';
 import { PAL, type PalName } from '../pixel/palette';
 import type { EnemyType } from '../sim';
-import { fx as P2, ringSprite, pixelText, EXPLOSION_FRAMES, POP_FRAMES, NOVA_FRAMES, PUFF_FRAMES, FLARE_FRAMES, ZERO_FRAMES, BEAM_FRAMES, PLATE_FRAMES, STATUS_FRAMES, type Spr } from './sprites';
+import { fx as P2, ringSprite, pixelText, EXPLOSION_FRAMES, POP_FRAMES, NOVA_FRAMES, PUFF_FRAMES, FLARE_FRAMES, ZERO_FRAMES, BEAM_FRAMES, PLATE_FRAMES, STATUS_FRAMES, COIN_RISE_FRAMES, GRANT_FRAMES, DROP_FRAMES, FOCUS_FRAMES, type Spr } from './sprites';
 import { tex } from './textures';
 
 export interface Fx { age: number; life: number; node: Container; update(dt: number): void }
@@ -176,4 +176,4 @@ export class FxLayer {
   }
 }
 
-export const FRAMES = { FLARE_FRAMES, ZERO_FRAMES, BEAM_FRAMES, PLATE_FRAMES, STATUS_FRAMES, PER };
+export const FRAMES = { FLARE_FRAMES, ZERO_FRAMES, BEAM_FRAMES, PLATE_FRAMES, STATUS_FRAMES, COIN_RISE_FRAMES, GRANT_FRAMES, DROP_FRAMES, FOCUS_FRAMES, PER };

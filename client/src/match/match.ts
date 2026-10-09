@@ -15,7 +15,8 @@ import { PATH, PATH_HW } from '../pixel/map/layout';
 import { displayName as powerName, slotUsable, trapSpot, type PowerSlot } from '../powers/info';
 import { UnlockMenu } from './unlock-menu';
 import { Renderer } from './renderer';
-import { iconUpgrade, heroPortrait, towerPortrait, heroSprite, towerSprite } from './sprites';
+import { iconUpgrade, iconAbility, heroPortrait, towerPortrait, heroSprite, towerSprite } from './sprites';
+import { canWithdraw, cooldownText, marketRadiusPx, rangeView, type RangeView } from './r13';
 import { ABILITY_TEXT, HERO_TYPES, HOTKEY, ROLE, TOWER_TYPES } from './tower-text';
 import { copyCanvas, uiIcon } from './ui-icons';
 import { volumeButton } from '../ui/volume';
@@ -59,7 +60,7 @@ export interface MatchResult {
 }
 
 const TICKS_PER_S = 60;
-const KEYS_ABILITY = ['1', '2', '3'];
+const KEYS_ABILITY = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
 
 export async function startMatch(root: HTMLElement, opts: StartOptions): Promise<MatchResult> {
   const seed = opts.seed ?? (Math.floor(Math.random() * 2 ** 31) | 0);
@@ -120,6 +121,7 @@ class Match {
     this.done = new Promise((res) => (this.finish = res));
     this.panel = new Panel(game, { map: opts.map ?? 'meadow', difficulty: opts.difficulty, seed: opts.seed, unlocks: opts.unlocks, mods: opts.mods }, {
       upgrade: (id, p) => this.buyPath(id, p),
+      withdraw: (id) => this.withdraw(id),
       sell: (id) => { this.report(this.game.apply({ type: 'sell', towerId: id })); this.select(null); },
       target: (id, mode: TargetMode) => { this.game.apply({ type: 'target', towerId: id, mode }); audio.play('click'); },
       close: () => this.select(null),
@@ -146,6 +148,8 @@ class Match {
     audio.setTheme('match');
     window.addEventListener('keydown', this.keyHandler);
     this.bindBoard();
+    this.r.setAuraProbe((id) => this.game.auraOf(id));
+    this.r.onCoinsLanded = () => { this.pulse(this.cashBox, 'pulse-gain'); audio.play('coin.land'); };
     if (this.opts.debug) (window as unknown as { __dw: unknown }).__dw = { game: this.game, r: this.r, match: this, audio, DATA };
     this.last = performance.now();
     this.raf = requestAnimationFrame((n) => this.frame(n));
@@ -154,6 +158,20 @@ class Match {
   private fit(): void {
     const r = this.board.getBoundingClientRect();
     this.r.fit(r.width, r.height);
+    this.aimCash();
+  }
+
+  /** Muenzfluege (Market, Grant, Supply Drop) zielen auf die Geldanzeige oben links; in Kartenpixeln, an den Rand geklemmt. */
+  private aimCash(): void {
+    const rc = this.r.canvasRect, bc = this.cashBox.getBoundingClientRect();
+    if (!rc.width || !bc.width) return;
+    const x = ((bc.left + bc.width / 2 - rc.left) / rc.width) * 640;
+    const y = ((bc.top + bc.height / 2 - rc.top) / rc.height) * 360;
+    this.r.cashTarget = { x: Math.max(6, Math.min(634, x)), y: Math.max(3, Math.min(356, y)) };
+  }
+
+  private withdraw(id: number): void {
+    this.report(this.game.apply({ type: 'withdraw', towerId: id }));
   }
 
   // ------------------------------------------------------------------ DOM
@@ -364,7 +382,7 @@ class Match {
     } else {
       this.r.setAim(null);
       const ty = DATA.powers[a.key].tower as TowerType;
-      this.r.setGhost({ x, y, spr: towerSprite(ty, (DATA.powers[a.key].tiers ?? [0, 0, 0]) as Tiers, 6, 'idle0'), range: baseRangePx(ty), foot: footMilli(ty) / 1000, ok: chk.ok });
+      this.r.setGhost({ x, y, spr: towerSprite(ty, (DATA.powers[a.key].tiers ?? [0, 0, 0]) as Tiers, 6, 'idle0'), view: this.ghostView(ty), foot: footMilli(ty) / 1000, ok: chk.ok });
     }
     this.lastGhostReason = chk.ok ? null : chk.reason;
   }
@@ -402,6 +420,12 @@ class Match {
     return best;
   }
 
+  /** Beim Platzieren: Ring (Schiessende), Aura-Radius (Market, mit Wide Aura) oder nichts (Longshot: ganze Karte). */
+  private ghostView(ty: TowerType | HeroType): RangeView {
+    const base = isHero(ty) ? baseRangePx(ty) : ty === 'market' ? marketRadiusPx(DATA.towers.market.base.range as number, this.opts.mods?.marketRadiusBp ?? 0) : baseRangePx(ty);
+    return rangeView(ty, base);
+  }
+
   private updateGhost(): void {
     if (this.aim) { this.updateAim(); return; }
     if (!this.placing || !this.mouse) { this.r.setGhost(null); return; }
@@ -409,7 +433,7 @@ class Match {
     const x = Math.round(this.mouse.x), y = Math.round(this.mouse.y);
     const chk = this.game.canPlace(ty, x * 1000, y * 1000);
     const spr = isHero(ty) ? heroSprite(1, 6, 'idle0') : towerSprite(ty, [0, 0, 0], 6, 'idle0');
-    this.r.setGhost({ x, y, spr, range: baseRangePx(ty), foot: footMilli(ty) / 1000, ok: chk.ok });
+    this.r.setGhost({ x, y, spr, view: this.ghostView(ty), foot: footMilli(ty) / 1000, ok: chk.ok });
     this.lastGhostReason = chk.ok ? null : chk.reason;
   }
   private lastGhostReason: string | null = null;
@@ -464,6 +488,7 @@ class Match {
     const ty = [...TOWER_TYPES, ...HERO_TYPES].find((q) => HOTKEY[q].toLowerCase() === lower);
     if (ty) { this.beginPlace(ty); return; }
     if (k === ' ') { e.preventDefault(); if (this.game.state.phase === 'wave' && this.game.state.groups.length > 0) this.setSpeed(this.speed >= 3 ? 1 : this.speed + 1); else this.startRound(); return; }
+    if (lower === 'b' && sel != null) { const tw = this.game.state.towers.find((q) => q.id === sel); if (tw?.type === 'market') this.withdraw(sel); return; }
     if (lower === 'p') { this.setPaused(true); return; }
     if (lower === 'm') { this.toggleMute(); return; }
     if (lower === 'f') { this.setSpeed(this.speed >= 3 ? 1 : this.speed + 1); return; }
@@ -594,7 +619,9 @@ class Match {
         const b = h('button', 'ab-btn');
         b.dataset.ab = a.id;
         b.title = ABILITY_TEXT[a.id].desc;
-        b.append(h('kbd', '', String(i + 1)), h('span', 'ab-n', ABILITY_TEXT[a.id].name), h('div', 'cd'));
+        const ic = h('div', 'ab-ic');
+        ic.append(copyCanvas(iconAbility(a.id).canvas, 2));
+        b.append(ic, h('span', 'ab-n', ABILITY_TEXT[a.id].name), h('kbd', '', String(i + 1)), h('div', 'cd'), h('span', 'ab-t num'));
         b.onclick = () => this.useAbility(a.id);
         this.abBar.append(b);
       });
@@ -604,6 +631,7 @@ class Match {
       if (!b) continue;
       setClass(b, 'ready', a.ready);
       (b.querySelector('.cd') as HTMLElement).style.height = a.ready ? '0%' : `${(a.cdLeft / Math.max(1, a.cdTotal)) * 100}%`;
+      setText(b.querySelector('.ab-t') as HTMLElement, a.ready ? '' : cooldownText(a.cdLeft));
     }
   }
 

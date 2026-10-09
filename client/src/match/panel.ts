@@ -14,6 +14,7 @@ import { heroPortrait, iconUpgrade, towerSprite } from './sprites';
 import { tierButton, type TierBtn } from './tier-button';
 import { ABILITY_TEXT, PATH_COLORS, TARGET_TEXT } from './tower-text';
 import { copyCanvas, uiIcon } from './ui-icons';
+import { auraLines, canWithdraw, hasAura, marketLines, GLOBAL_RANGE } from './r13';
 
 /** Platz fuer den Turm in der Buehne (px): Stufen-Kuerzel oben, Targeting unten bleiben frei. */
 const FIG_W = 300, FIG_H = 100;
@@ -52,6 +53,8 @@ const MODES: TargetMode[] = ['first', 'last', 'strong', 'close'];
 export interface PanelCallbacks {
   upgrade(towerId: number, path: 0 | 1 | 2): void;
   sell(towerId: number): void;
+  /** Runde 13: Bank eines Markets abheben */
+  withdraw(towerId: number): void;
   target(towerId: number, mode: TargetMode): void;
   close(): void;
   toast(msg: string): void;
@@ -106,7 +109,9 @@ export class Panel {
     const sell = this.game.sellValue(tw.id);
     const hero = isHero(tw.type);
     const xp = hero ? 0 : state.towerXp[tw.type as TowerType];
-    const sig = JSON.stringify([tw.tiers, tw.target, tw.heroLevel, tw.camo, infos.map((i) => [i.next, i.price, i.canBuy, i.reason, i.revealed, i.unlocked, i.unlockCost, tierButton(i, xp).kind]), sell, xp, hero ? state.abilities.map((a) => [a.id, a.ready]) : 0]);
+    const mi = hero ? null : this.game.marketInfo(tw.id);
+    const au = hero ? null : this.game.auraOf(tw.id);
+    const sig = JSON.stringify([mi, au, tw.range >= GLOBAL_RANGE, tw.tiers, tw.target, tw.heroLevel, tw.camo, infos.map((i) => [i.next, i.price, i.canBuy, i.reason, i.revealed, i.unlocked, i.unlockCost, tierButton(i, xp).kind]), sell, xp, hero ? state.abilities.map((a) => [a.id, a.ready]) : 0]);
     if (sig !== this.sig) {
       this.sig = sig;
       this.build(tw, infos, sell, state);
@@ -185,6 +190,8 @@ export class Panel {
     const tg = h('div', 'ps-target', TARGET_TEXT[tw.target]);
     stage.append(fig, h('div', 'ps-tiers', label), arrow(-1), arrow(1), tg);
     el.append(stage);
+    const extra = this.infoBox(tw);
+    if (extra) el.append(extra);
 
     // drei Pfadzeilen
     const data = DATA.towers[ty];
@@ -253,6 +260,47 @@ export class Panel {
     ub.onclick = () => this.cb.openUnlock(ty);
     foot.append(ub, this.sellButton(tw, sell));
     el.append(foot);
+  }
+
+  /** Runde 13: Market (Ertrag, Bank mit Withdraw, Aura-Radius), Longshot (Reichweite), Turm in einer Market-Aura (aktive Boni). */
+  private infoBox(tw: TowerState): HTMLElement | null {
+    const box = h('div', 'ps-info');
+    if (tw.type === 'market') {
+      const mi = this.game.marketInfo(tw.id);
+      if (!mi) return null;
+      const L = marketLines(mi);
+      const inc = h('div', 'pi-line');
+      inc.append(uiIcon('coin', 2), h('span', 'pi-k', t('panel.income')), h('b', 'num pi-v', L.income));
+      box.append(inc);
+      if (L.bank) {
+        const bk = h('div', 'pi-bank');
+        const top = h('div', 'pi-line');
+        top.append(uiIcon('shield', 2), h('span', 'pi-k', t('panel.bank')), h('b', 'num pi-v bank-bal', L.bank.balance), h('span', 'num muted', ` / ${L.bank.cap}`));
+        const bar = h('div', 'pi-bar');
+        const fill = h('div', 'pi-fill');
+        fill.style.width = `${Math.round(L.bank.fill * 100)}%`;
+        bar.append(fill);
+        const sub = h('div', 'pi-sub', `${L.bank.rate}  \u00b7  ${t('panel.interest', { n: mi.nextInterest })}`);
+        const wb = h('button', `pi-withdraw${canWithdraw(mi) ? '' : ' off'}`);
+        wb.append(uiIcon('coin', 2), h('span', 'lbl', canWithdraw(mi) ? t('panel.withdrawN', { n: mi.bank }) : t('panel.withdraw')), h('kbd', '', 'B'));
+        wb.title = canWithdraw(mi) ? t('panel.withdraw') : t('panel.bankEmpty');
+        wb.onclick = () => this.cb.withdraw(tw.id);
+        bk.append(top, bar, sub, wb);
+        box.append(bk);
+      }
+      if (L.grant) box.append(h('div', 'pi-sub', L.grant));
+      box.append(h('div', 'pi-sub', t('panel.auraRadius', { n: Math.round(mi.radius / 1000) })));
+      return box;
+    }
+    if (tw.range >= GLOBAL_RANGE) box.append(h('div', 'pi-line pi-range', t('panel.wholeMap')));
+    const au = this.game.auraOf(tw.id);
+    if (hasAura(au)) {
+      const a = h('div', 'pi-aura');
+      a.append(h('div', 'pi-k', t('panel.auraGets')));
+      for (const l of auraLines(au)) a.append(h('div', 'pi-chip', l));
+      box.append(a);
+    }
+    return box.childElementCount ? box : null;
   }
 
   private descFor(path: number, which: 'next' | 'own'): string {
