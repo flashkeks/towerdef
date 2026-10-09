@@ -3,6 +3,8 @@ import type { Rows } from '../raster';
 import { dirOf, poseOf, type TowerFrame } from './pose';
 import { drawBombardier } from './bombardier';
 import { drawFrost } from './frostcaller';
+import { drawMarket } from './market';
+import { drawLongshot } from './longshot';
 import { drawRanger, OX, OY, TH, TW } from './ranger';
 import { outlineSurface, Surface } from './surface';
 import type { Tiers, TowerType } from './types';
@@ -15,7 +17,9 @@ export const TOWER_H = TH;
 export function towerRaster(type: TowerType, tiers: Tiers, facing: number, frame: TowerFrame): RasterSprite {
   const d = dirOf(facing);
   const p = poseOf(frame);
-  const L = type === 'ranger' ? drawRanger(tiers, d, p) : type === 'bombardier' ? drawBombardier(tiers, d, p) : drawFrost(tiers, d, p);
+  const L = type === 'ranger' ? drawRanger(tiers, d, p) : type === 'bombardier' ? drawBombardier(tiers, d, p) : type === 'frostcaller' ? drawFrost(tiers, d, p)
+    : type === 'longshot' ? drawLongshot(tiers, d, p) : drawMarket(tiers, p);
+  if (type === 'market') d.flip = false; // Schilder und Gebaeude werden nie gespiegelt, Market dreht sich nicht
   const out = new Surface(TOWER_W, TOWER_H);
   out.blit(L.back);
   out.blit(outlineSurface(L.fig));

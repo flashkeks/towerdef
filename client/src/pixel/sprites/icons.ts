@@ -60,7 +60,7 @@ const stars = (s: Surface, pts: [number, number][], c: PalName = 'yellow') => pt
 type Draw = (s: Surface) => void;
 const SKULL = (s: Surface, x: number, y: number) => { s.rect(x, y, 5, 4, 'white'); s.rect(x + 1, y + 4, 3, 1, 'white'); s.px(x + 1, y + 1, 'ink'); s.px(x + 3, y + 1, 'ink'); s.px(x + 2, y + 3, 'ink'); };
 
-const DRAW: Record<TowerType, Draw[][]> = {
+const DRAW: Record<'ranger' | 'bombardier' | 'frostcaller', Draw[][]> = {
   ranger: [
     // A Volley
     [

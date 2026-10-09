@@ -1,6 +1,6 @@
 /** Held Wren, the Lamplighter: sichtbare Level-Stufen (1-4, 5-9, 10-14, 15-19, 20), Idle/Angriff/Faehigkeits-Pose. */
 import { drawArm } from './bows';
-import { flame, orbit, pedestal, spark, tube } from './parts';
+import { flame, orbit, spark, tube } from './parts';
 import { dirOf, poseOf, type Dir, type Pose, type TowerFrame } from './pose';
 import { GY, OX, OY, TH, TW, type TowerLayers } from './ranger';
 import { outlineSurface, RAMPS, Surface } from './surface';
@@ -40,7 +40,6 @@ export function drawWren(level: number, d: Dir, p: Pose, cast: number): TowerLay
   const stage = heroStage(level);
   const ph = p.ph, up = p.up;
   const G = GY, ox = OX;
-  pedestal(s, ox, OY, stage >= 4 ? 'gold' : 'stone', ph, stage >= 4 ? 11 : 9);
 
   // ---- Umhang (ab Stufe 1) ----
   if (stage >= 1) {

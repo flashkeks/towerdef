@@ -42,11 +42,21 @@ const NAMES: Record<TowerType, string[][]> = {
     ['Base', 'Frost Nova', 'Brittle Ice', 'Ice Shards', 'Glacial Spike', "Winter's Wrath"],
     ['Base', 'Spark', 'Storm Sight', 'Chain Lightning', 'Tempest', 'Stormcaller'],
   ],
+  market: [
+    ['Stall', 'Busy Stalls', 'Night Market', 'Trade Hall', 'Merchant Guild', 'Golden Exchange'],
+    ['Stall', 'Coin Purse', 'Lockbox', 'Lantern Bank', 'Grant Office', 'Treasury'],
+    ['Stall', 'Watchpost', 'Lookout Bell', 'Drum Hall', 'Armory', 'Lantern Capital'],
+  ],
+  longshot: [
+    ['Base', 'Iron Bolt', 'Piercing Bolt', 'Deadeye', 'Giantslayer', 'Lanternbreaker'],
+    ['Base', 'Night Scope', 'Quick Reload', 'Repeater', 'Volley Squad', 'Lantern Legion'],
+    ['Base', 'Shrapnel', 'Ricochet', 'Supply Drop', 'Elite Sniper', 'Crippling Shot'],
+  ],
 };
 const MIX: Tiers[] = [[3, 2, 0], [0, 2, 4], [2, 0, 5], [4, 0, 2], [0, 3, 2], [1, 1, 1], [5, 2, 0], [2, 5, 0]];
 
 function sheetTowers(types: TowerType[]): HTMLCanvasElement {
-  const K = 4, CW = 58 * K, CH = 68 * K, cols = 8;
+  const K = 3, CW = 100 * K, CH = 84 * K, cols = 8;
   const rowsPer = 4;
   const { c, g } = mk(cols * CW + 20, types.length * (rowsPer * CH + 34) + 10);
   types.forEach((type, ti) => {
@@ -57,7 +67,7 @@ function sheetTowers(types: TowerType[]): HTMLCanvasElement {
         const tiers: Tiers = [0, 0, 0]; tiers[p] = t;
         const x = 10 + t * CW, y = y0 + 28 + p * CH;
         tile(g, x, y, CW - 4, CH - 4);
-        blit(g, api.towerSprite(type, tiers, 0, 'idle0'), x + 29 * K, y + 56 * K, K);
+        blit(g, api.towerSprite(type, tiers, 0, 'idle0'), x + 50 * K, y + 76 * K, K);
         label(g, `${'ABC'[p]}${t} ${NAMES[type][p][t]}`, x + 4, y + 14, '#ffffff');
       }
     // zwei Reihen mit Blickrichtungen + Angriff am Ende der Pfadzeilen
@@ -66,14 +76,14 @@ function sheetTowers(types: TowerType[]): HTMLCanvasElement {
       for (let k = 0; k < 2; k++) {
         const x = 10 + (6 + k) * CW, y = y0 + 28 + p * CH;
         tile(g, x, y, CW - 4, CH - 4);
-        blit(g, api.towerSprite(type, tiers, k === 0 ? 5 : 2, k === 0 ? 'atk1' : 'idle1'), x + 29 * K, y + 56 * K, K);
+        blit(g, api.towerSprite(type, tiers, k === 0 ? 5 : 2, k === 0 ? 'atk1' : 'idle1'), x + 50 * K, y + 76 * K, K);
         label(g, `${tiers.join('-')} ${k ? 'N idle' : 'SW atk'}`, x + 4, y + 14, '#ffffff');
       }
     }
     MIX.forEach((tiers, i) => {
       const x = 10 + i * CW, y = y0 + 28 + 3 * CH;
       tile(g, x, y, CW - 4, CH - 4);
-      blit(g, api.towerSprite(type, tiers, i % 8, 'idle0'), x + 29 * K, y + 56 * K, K);
+      blit(g, api.towerSprite(type, tiers, i % 8, 'idle0'), x + 50 * K, y + 76 * K, K);
       label(g, tiers.join('-'), x + 4, y + 14, '#ffffff');
     });
   });
@@ -82,7 +92,7 @@ function sheetTowers(types: TowerType[]): HTMLCanvasElement {
 
 function sheetFrames(): HTMLCanvasElement {
   // alle 8 Frames und alle 8 Blickrichtungen eines Turms je Typ
-  const K = 3, CW = 58 * K, CH = 68 * K;
+  const K = 3, CW = 100 * K, CH = 84 * K;
   const types: TowerType[] = ['ranger', 'bombardier', 'frostcaller'];
   const { c, g } = mk(8 * CW + 20, types.length * 2 * CH + 20);
   const frames: TowerFrame[] = ['idle0', 'idle1', 'idle2', 'idle3', 'atk0', 'atk1', 'atk2', 'atk3'];
@@ -91,13 +101,13 @@ function sheetFrames(): HTMLCanvasElement {
     frames.forEach((fr, i) => {
       const x = 10 + i * CW, y = 10 + ti * 2 * CH;
       tile(g, x, y, CW - 4, CH - 4);
-      blit(g, api.towerSprite(type, tiers, 0, fr), x + 29 * K, y + 56 * K, K);
+      blit(g, api.towerSprite(type, tiers, 0, fr), x + 50 * K, y + 76 * K, K);
       label(g, fr, x + 4, y + 12, '#fff');
     });
     for (let d = 0; d < 8; d++) {
       const x = 10 + d * CW, y = 10 + ti * 2 * CH + CH;
       tile(g, x, y, CW - 4, CH - 4);
-      blit(g, api.towerSprite(type, tiers, d, 'atk1'), x + 29 * K, y + 56 * K, K);
+      blit(g, api.towerSprite(type, tiers, d, 'atk1'), x + 50 * K, y + 76 * K, K);
       label(g, `facing ${d}`, x + 4, y + 12, '#fff');
     }
   });
@@ -105,29 +115,29 @@ function sheetFrames(): HTMLCanvasElement {
 }
 
 function sheetHero(): HTMLCanvasElement {
-  const K = 4, CW = 58 * K, CH = 68 * K;
+  const K = 4, CW = 100 * K, CH = 84 * K;
   const { c, g } = mk(10 * CW + 20, 4 * CH + 20);
   const lv = [1, 5, 10, 15, 20];
   lv.forEach((l, i) => {
     const x = 10 + i * CW, y = 10;
     tile(g, x, y, CW - 4, CH - 4);
-    blit(g, api.heroSprite(l, 0, 'idle0'), x + 29 * K, y + 56 * K, K);
+    blit(g, api.heroSprite(l, 0, 'idle0'), x + 50 * K, y + 76 * K, K);
     label(g, `Level ${l}`, x + 4, y + 14, '#fff');
     tile(g, x, y + CH, CW - 4, CH - 4);
-    blit(g, api.heroSprite(l, 7, 'atk1'), x + 29 * K, y + CH + 56 * K, K);
+    blit(g, api.heroSprite(l, 7, 'atk1'), x + 50 * K, y + CH + 76 * K, K);
     label(g, `L${l} atk`, x + 4, y + CH + 14, '#fff');
   });
   const fr = api.HERO_FRAMES;
   fr.forEach((f, i) => {
     const x = 10 + i * CW, y = 10 + 2 * CH;
     tile(g, x, y, CW - 4, CH - 4);
-    blit(g, api.heroSprite(20, 0, f), x + 29 * K, y + 56 * K, K);
+    blit(g, api.heroSprite(20, 0, f), x + 50 * K, y + 76 * K, K);
     label(g, `L20 ${f}`, x + 4, y + 14, '#fff');
   });
   for (let d = 0; d < 8; d++) {
     const x = 10 + d * CW, y = 10 + 3 * CH;
     tile(g, x, y, CW - 4, CH - 4);
-    blit(g, api.heroSprite(10, d, 'idle0'), x + 29 * K, y + 56 * K, K);
+    blit(g, api.heroSprite(10, d, 'idle0'), x + 50 * K, y + 76 * K, K);
     label(g, `L10 facing ${d}`, x + 4, y + 14, '#fff');
   }
   return c;
@@ -258,16 +268,18 @@ function sheetProj(): HTMLCanvasElement {
 }
 
 function sheetZoom(): HTMLCanvasElement {
-  // Nahaufnahme: Stufe 0 / 3 / 5 jedes Pfads eines Typs (arg), x8
-  const type = ((arg ?? 'ranger') as TowerType);
-  const K = 8, CW = 56 * K, CH = 64 * K;
-  const items: Tiers[] = [[0, 0, 0], [3, 0, 0], [5, 0, 0], [0, 3, 0], [0, 0, 3], [0, 0, 5]];
-  const { c, g } = mk(3 * CW, 2 * CH);
-  items.forEach((t, i) => {
-    const x = (i % 3) * CW, y = Math.floor(i / 3) * CH;
-    tile(g, x, y, CW, CH);
-    blit(g, api.towerSprite(type, t, 0, 'idle0'), x + 27 * K, y + 54 * K, K);
-  });
+  // Nahaufnahme einer Pfadreihe: t=TYP-PFAD (z. B. ranger-0), Stufen 0..5 nebeneinander, x6, auf die Figur zugeschnitten
+  const [tp, pp] = (arg ?? 'ranger-0').split('-');
+  const type = tp as TowerType, path = Number(pp ?? 0);
+  const K = 5, CW = 76 * K, CH = 100 * K;
+  const { c, g } = mk(6 * CW, CH);
+  for (let t = 0; t <= 5; t++) {
+    const x = t * CW;
+    tile(g, x, 0, CW - 4, CH);
+    const tiers: Tiers = [0, 0, 0]; tiers[path] = t;
+    blit(g, api.towerSprite(type, tiers, 0, 'idle1'), x + 48 * K, 73 * K, K);
+    label(g, `${'ABC'[path]}${t}`, x + 6, 16, '#ffffff');
+  }
   return c;
 }
 const sheets: Record<string, () => HTMLCanvasElement> = {
