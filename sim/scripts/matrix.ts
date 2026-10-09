@@ -75,7 +75,7 @@ if (process.env.MATRIX_POPS !== '0') {
   const out: string[] = ['', '| Turm (4 Stueck, Medium) | Pops je 1.000 Gold | Ø Runde |', '|---|---|---|'];
   for (const [k, text] of Object.entries(SOLO)) {
     const rs = seeds.map((seed) => runBot(parseStrategy(text), { difficulty: 'medium', seed }));
-    const per = rs.reduce((a, r) => a + ((r.pops[k] ?? 0) / Math.max(1, r.spent[k] ?? 1)) * 1000, 0) / rs.length;
+    const per = rs.reduce((a, r) => a + (((r.pops as Record<string, number>)[k] ?? 0) / Math.max(1, r.spent[k] ?? 1)) * 1000, 0) / rs.length;
     const avgR = rs.reduce((a, r) => a + r.round, 0) / rs.length;
     out.push(`| ${k} | ${Math.round(per)} | ${avgR.toFixed(1)} |`);
   }
