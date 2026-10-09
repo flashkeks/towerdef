@@ -75,8 +75,8 @@ function pathColor(x: number, y: number, pd: number, gx: number, gy: number): nu
   if (pd <= PATH_HW - 0.6) {
     const edge = pd / PATH_HW; // 0 Mitte .. 1 Rand
     let c = C.tan;
-    if (edge < 0.7 && n > 0.62 + edge * 0.25) c = C.peach;
-    if (edge < 0.3 && n > 0.78) c = C.sand;
+    if (edge < 0.7 && n > 0.7 + edge * 0.2) c = C.peach;
+    if (edge < 0.3 && n > 0.88) c = C.sand;
     if (n < 0.2 && edge > 0.3) c = C.wood;
     if (edge > 0.62) c = bayer(x, y) < (edge - 0.62) * 2.1 ? C.wood : C.tan;
     if (edge > 0.9 && lit < 0) c = bayer(x + 1, y) < 0.65 ? C.bark : C.wood; // Schattenseite
@@ -230,25 +230,25 @@ export function paintMeadow(): MeadowArt {
 }
 
 function paintTownEdge(g: Buf, PD: (x: number, y: number) => number): void {
+  const cobble = (x: number, y: number, a: number, b: number, c: number): number => {
+    const row = y >> 2, off = (row & 1) * 3;
+    const joint = (x + off) % 6 === 0 || y % 4 === 0;
+    const h = hash2(((x + off) / 6) | 0, row, 3);
+    return joint ? a : h > 0.66 ? c : b;
+  };
   for (let y = 0; y < MAP_H; y++) for (let x = 604; x < MAP_W; x++) {
     const pd = PD(x, y);
-    const f = (x - 604) / 36;
     if (pd <= PATH_HW + 1.5) continue;
-    // Pflaster: Kopfstein-Muster, nach rechts dichter
-    if (bayer(x >> 1, y >> 1) < f * 1.15) {
-      const row = y >> 2, off = (row & 1) * 3;
-      const stone = (x + off) % 6 === 0 || y % 4 === 0;
-      const h = hash2((x + off) / 6 | 0, row, 3);
-      g.set(x, y, stone ? C.slate : h > 0.66 ? C.silver : h > 0.3 ? C.stone : C.silver);
-    }
+    if (x >= 614) g.set(x, y, cobble(x, y, C.slate, C.stone, C.silver));
+    else if (x >= 611) g.set(x, y, y % 2 === 0 ? C.silver : C.stone); // Randstein
+    else if (x >= 608) g.set(x, y, bayer(x, y) < (x - 607) / 4 ? C.stone : g.get(x, y));
+    else if (x >= 604 && bayer(x, y) < (x - 603) / 8) g.set(x, y, C.stone);
   }
   // Weg im Torbereich als Pflaster (letzte 56 px)
   for (let y = 146; y < 175; y++) for (let x = 584; x < MAP_W; x++) {
     const f = (x - 584) / 56;
-    if (PD(x, y) > PATH_HW - 0.5 || bayer(x, y) > f * 1.2) continue;
-    const row = y >> 2, off = (row & 1) * 3;
-    const stone = (x + off) % 6 === 0 || y % 4 === 0;
-    g.set(x, y, stone ? C.tan : hash2((x + off) / 6 | 0, row, 4) > 0.5 ? C.sand : C.peach);
+    if (PD(x, y) > PATH_HW - 0.5 || bayer(x, y) > f * 1.3 + 0.05) continue;
+    g.set(x, y, cobble(x, y, C.tan, C.sand, C.peach));
   }
 }
 

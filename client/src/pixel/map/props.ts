@@ -187,15 +187,18 @@ function rock(v: number, big: boolean): PropArt {
 }
 
 function hay(v: number): PropArt {
-  const b = mk(18, 16);
-  const t: Tones = { dark: C.orange, mid: C.amber, light: C.yellow, hi: C.sand };
-  shadedDisc(b, 9, 8, 6, 5, t, 2 + v, 0.1);
-  // Ringlinien einer Rundballe
-  b.each(9, 8, 4, 3, (x, y) => { const d = Math.hypot((x - 9) / 4, (y - 8) / 3); if (d > 0.7 && d < 1.05 && b.get(x, y) !== t.light) b.set(x, y, C.orange); });
-  b.set(9, 8, C.orange);
-  b.line(4, 12, 14, 12, C.orange);
-  b.outline(C.rust);
-  return { buf: b, ax: 9, ay: 13, shadow: { ox: 3, oy: 0, rx: 8, ry: 3 } };
+  // Strohballen: Quader mit Seil, Oberseite hell
+  const b = mk(20, 16);
+  b.rect(2, 5, 14, 8, C.yellow);
+  b.rect(2, 3, 14, 3, C.sand);
+  b.rect(2, 3, 14, 1, C.white);
+  b.rect(14, 5, 2, 8, C.amber);
+  b.rect(2, 12, 14, 1, C.amber);
+  b.rect(6, 3, 1, 10, C.bark);
+  b.rect(11, 3, 1, 10, C.bark);
+  for (const [x, y] of [[3, 7], [8, 9], [4, 10], [9, 6], [13, 8]]) b.set(x, y, v ? C.sand : C.amber);
+  b.outline(C.orange);
+  return { buf: b, ax: 9, ay: 14, shadow: { ox: 3, oy: 0, rx: 9, ry: 3 } };
 }
 function barrel(): PropArt {
   const b = mk(12, 14);
