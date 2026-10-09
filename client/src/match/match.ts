@@ -149,6 +149,7 @@ class Match {
     window.addEventListener('keydown', this.keyHandler);
     this.bindBoard();
     this.r.setAuraProbe((id) => this.game.auraOf(id));
+    this.r.setBuffProbe((id) => this.game.buffOf(id));
     this.r.onCoinsLanded = () => { this.pulse(this.cashBox, 'pulse-gain'); audio.play('coin.land'); };
     if (this.opts.debug) (window as unknown as { __dw: unknown }).__dw = { game: this.game, r: this.r, match: this, audio, DATA };
     this.last = performance.now();
@@ -190,11 +191,11 @@ class Match {
     const side = h('aside', 'm-side pxbox');
     const tw = this.tabs.towers;
     tw.append(h('div', 'm-side-h', t('match.towers')));
-    const list = h('div', 'm-cards');
+    const list = h('div', 'm-cards m-cards-towers');
     for (const ty of TOWER_TYPES) list.append(this.card(ty));
     tw.append(list);
     tw.append(h('div', 'm-side-h', t('match.hero')));
-    const hl = h('div', 'm-cards');
+    const hl = h('div', 'm-cards m-cards-hero');
     for (const ty of HERO_TYPES) hl.append(this.card(ty));
     tw.append(hl);
     side.append(this.tabs.bar, this.tabs.panes);
@@ -492,7 +493,7 @@ class Match {
     if (lower === 'p') { this.setPaused(true); return; }
     if (lower === 'm') { this.toggleMute(); return; }
     if (lower === 'f') { this.setSpeed(this.speed >= 3 ? 1 : this.speed + 1); return; }
-    if (lower === 'a') { this.game.apply({ type: 'autoStart', on: !this.game.state.autoStart }); return; }
+    if (lower === 'g') { this.game.apply({ type: 'autoStart', on: !this.game.state.autoStart }); return; }
     const ai = KEYS_ABILITY.indexOf(k);
     if (ai >= 0) { const a = this.game.state.abilities[ai]; if (a) this.useAbility(a.id); return; }
     const pi = [',', '.', '/'].indexOf(k);
@@ -580,6 +581,8 @@ class Match {
         else if (ev.power === 'extraLives') this.pulse(this.livesBox, 'pulse-life');
         this.toast(powerName(ev.power), 'gain');
         break;
+      case 'heal': this.pulse(this.livesBox, 'pulse-life'); break;
+      case 'gate': this.toast('Gate held: leak stopped', 'gain'); break;
       case 'gameOver': this.onGameOver(ev.result === 'won'); break;
       default: break;
     }

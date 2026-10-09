@@ -9,11 +9,12 @@ import { Buf, C, NAME_OF, bayer, rng } from '../pixel/map/buf';
 import { meadowArt } from '../pixel/map/compose';
 import { flagFrame, MILL_STEPS, WATER_FRAMES, windmillBlades } from '../pixel/map/paint';
 import { PAL } from '../pixel/palette';
-import { type EnemyState, type EnemyType, type GameState, type ProjectileState, type SimEvent, type TowerAura, type TowerState } from '../sim';
+import { type EnemyState, type EnemyType, type GameState, type ProjectileState, type PuddleState, type SimEvent, type TowerAura, type TowerBuff, type TowerState, type WallState } from '../sim';
+import { glowKind, monsterScale, wallWear, zoneView, type GlowKind } from './r14';
 import { rangeView, coinCount, coinDelay, coinPath, hasAura, isMarked, projectileLook, type RangeView } from './r13';
 import { FxLayer, FRAMES } from './fx';
 import { footMilli } from './info';
-import { TRAP_W, bigHeart, bombLantern, bubbleSprite, coinSprite, trapSprite, discSprite, enemySprite, fx as P2, heroSprite, projectileSprite, ringSprite, shadowSprite, heroMuzzle, towerMuzzle, towerSprite, type HeroFrame, type Spr, type TowerFrame } from './sprites';
+import { TRAP_W, monsterSprite, bigHeart, bombLantern, bubbleSprite, coinSprite, trapSprite, discSprite, enemySprite, fx as P2, heroSprite, projectileSprite, ringSprite, shadowSprite, heroMuzzle, towerMuzzle, towerSprite, type HeroFrame, type Spr, type TowerFrame } from './sprites';
 import { tex } from './textures';
 import { PATH } from '../pixel/map/layout';
 import { TRAP_CHARGES, trapPieces } from '../powers/info';
@@ -29,8 +30,10 @@ const SHARD_COL: Record<EnemyType, number[]> = {
   ironshell: [C.stone, C.silver, C.slate], ember: [C.orange, C.yellow, C.red], brute: [C.slate, C.dusk, C.stone], leviathan: [C.navy, C.stone, C.sky],
 };
 
-interface TowerView { spr: Sprite; shadow: Sprite; key: string; drop: number; up: number; tiers: string; kick: number; flag?: Sprite }
-interface EnemyView { bub?: Sprite; mark?: Sprite; spr: Sprite; shadow: Sprite; key: string; px: number; py: number; cx: number; cy: number; flash: number; flip: boolean; bar?: Sprite; barBg?: Sprite }
+interface TowerView { spr: Sprite; shadow: Sprite; key: string; drop: number; up: number; tiers: string; kick: number; flag?: Sprite; zone?: Sprite; glow?: Sprite; mon: boolean; hide: number }
+interface EnemyView { vine?: Sprite; vol?: Sprite; bub?: Sprite; mark?: Sprite; spr: Sprite; shadow: Sprite; key: string; px: number; py: number; cx: number; cy: number; flash: number; flip: boolean; bar?: Sprite; barBg?: Sprite }
+interface WallView { spr: Sprite; x: number; y: number; hide: number }
+interface PuddleView { spr: Sprite; x: number; y: number; r: number }
 interface TrapView { spr: Sprite; x: number; y: number; kind: 'caltrops' | 'frostTrap'; key: string; drop: number }
 interface ProjView { spr: Sprite; shadow?: Sprite; key: string; px: number; py: number; cx: number; cy: number; mx: number; my: number }
 
@@ -78,6 +81,10 @@ export class Renderer {
   private enemies = new Map<number, EnemyView>();
   private projs = new Map<number, ProjView>();
   private traps = new Map<number, TrapView>();
+  private walls = new Map<number, WallView>();
+  private puddles = new Map<number, PuddleView>();
+  private buffProbe: ((id: number) => TowerBuff) | null = null;
+  private glowOf = new Map<number, GlowKind | null>();
   private aimSpr = new Sprite();
   private aimOn = false;
   private warpSpr = new Sprite(Texture.WHITE);
@@ -213,6 +220,10 @@ export class Renderer {
     }
     for (const v of this.traps.values()) v.spr.destroy();
     this.traps.clear();
+    for (const v of this.walls.values()) v.spr.destroy();
+    this.walls.clear();
+    for (const v of this.puddles.values()) v.spr.destroy();
+    this.puddles.clear();
     this.fx.clear();
     this.lastTick = -1;
   }
@@ -318,14 +329,17 @@ export class Renderer {
     this.lastTick = state.tick;
     const seenT = new Set<number>();
     for (const t of state.towers) { seenT.add(t.id); this.syncTower(t); }
-    for (const [id, v] of this.towers) if (!seenT.has(id)) { v.spr.destroy(); v.shadow.destroy(); v.flag?.destroy(); this.towers.delete(id); this.auraOf.delete(id); }
+    for (const [id, v] of this.towers) if (!seenT.has(id)) { v.spr.destroy(); v.shadow.destroy(); v.flag?.destroy(); v.zone?.destroy(); v.glow?.destroy(); this.towers.delete(id); this.auraOf.delete(id); this.glowOf.delete(id); }
     if (this.auraProbe && (newTick && state.tick % 12 === 0 || this.auraOf.size !== state.towers.length)) {
       for (const t of state.towers) this.auraOf.set(t.id, t.type !== 'market' && hasAura(this.auraProbe(t.id)));
+    }
+    if (this.buffProbe && (newTick && state.tick % 10 === 0 || this.glowOf.size !== state.towers.length)) {
+      for (const t of state.towers) this.glowOf.set(t.id, t.type === 'wren' || t.type === 'market' ? null : glowKind(this.buffProbe(t.id)));
     }
 
     const seenE = new Set<number>();
     for (const e of state.enemies) { seenE.add(e.id); this.syncEnemy(e, newTick, alpha); }
-    for (const [id, v] of this.enemies) if (!seenE.has(id)) { v.spr.destroy(); v.shadow.destroy(); v.bar?.destroy(); v.barBg?.destroy(); v.bub?.destroy(); v.mark?.destroy(); this.enemies.delete(id); }
+    for (const [id, v] of this.enemies) if (!seenE.has(id)) { v.spr.destroy(); v.shadow.destroy(); v.bar?.destroy(); v.barBg?.destroy(); v.bub?.destroy(); v.mark?.destroy(); v.vine?.destroy(); v.vol?.destroy(); this.enemies.delete(id); }
 
     const seenP = new Set<number>();
     for (const p of state.projectiles) { seenP.add(p.id); this.syncProj(p, newTick, alpha); }
@@ -335,6 +349,13 @@ export class Renderer {
     const seenTr = new Set<number>();
     for (const tr of state.traps) { seenTr.add(tr.id); this.syncTrap(tr); }
     for (const [id, v] of this.traps) if (!seenTr.has(id)) { v.spr.destroy(); this.traps.delete(id); }
+    // Runde 14: Baumwaende und Saeurepfuetzen auf dem Weg
+    const seenW = new Set<number>();
+    for (const w of state.walls) { seenW.add(w.id); this.syncWall(w); }
+    for (const [id, v] of this.walls) if (!seenW.has(id)) { v.spr.destroy(); this.walls.delete(id); }
+    const seenPu = new Set<number>();
+    for (const pu of state.puddles) { seenPu.add(pu.id); this.syncPuddle(pu); }
+    for (const [id, v] of this.puddles) if (!seenPu.has(id)) { v.spr.destroy(); this.puddles.delete(id); }
     // Zeitblase: blaue Toenung, solange Time Warp laeuft (sanftes Ein- und Ausblenden)
     const wl = state.warpLeft;
     this.warpSpr.visible = wl > 0 || this.warpSpr.alpha > 0.01;
@@ -374,6 +395,38 @@ export class Renderer {
     v.spr.position.set(Math.round(v.x) - sp.ax, Math.round(v.y) - sp.ay + dy);
   }
 
+  private syncWall(w: WallState): void {
+    let v = this.walls.get(w.id);
+    if (!v) {
+      const spr = new Sprite();
+      this.worldC.addChild(spr);
+      v = { spr, x: w.x / 1000, y: w.y / 1000, hide: this.now + 6 * 3 * 16.7 };
+      this.walls.set(w.id, v);
+    }
+    const sp = P2.treeWall(wallWear(w.left), Math.floor(this.now / 220));
+    v.spr.texture = tex(sp.canvas);
+    v.spr.position.set(Math.round(v.x) - sp.ax, Math.round(v.y) - sp.ay);
+    v.spr.zIndex = Math.round(v.y);
+    v.spr.visible = this.now >= v.hide;
+    // kurz vor Ablauf flackert die ungenutzte Wand
+    v.spr.alpha = w.ttl < 120 && (Math.floor(this.now / 120) & 1) ? 0.6 : 1;
+  }
+
+  private syncPuddle(p: PuddleState): void {
+    let v = this.puddles.get(p.id);
+    const r = Math.max(8, Math.round(p.radius / 1000));
+    if (!v) {
+      const spr = new Sprite();
+      this.trapC.addChild(spr);
+      v = { spr, x: p.x / 1000, y: p.y / 1000, r };
+      this.puddles.set(p.id, v);
+    }
+    const sp = P2.acidPool(r, Math.floor(this.now / 240));
+    v.spr.texture = tex(sp.canvas);
+    v.spr.position.set(Math.round(v.x) - sp.ax, Math.round(v.y) - sp.ay);
+    v.spr.alpha = 0.55 + 0.45 * Math.min(1, p.charges / 20);
+  }
+
   private animateMap(): void {
     const t = this.now;
     this.waterSpr.texture = this.waterFrames[Math.floor(t / 170) % WATER_FRAMES];
@@ -407,6 +460,7 @@ export class Renderer {
   private towerSpr(t: TowerState): Spr {
     const atk = t.attackTick;
     const frame = (atk > 0 ? (atk < 4 ? 'atk0' : atk < 6 ? 'atk1' : atk < 11 ? 'atk2' : 'atk3') : `idle${(Math.floor(this.now / 166) + t.id) & 3}`) as TowerFrame;
+    if (t.monsterTicks > 0 && t.type !== 'wren') return monsterSprite(t.facing, frame, monsterScale(t.type));
     if (t.type === 'wren' && this.now < this.heroCast) return heroSprite(t.heroLevel, t.facing, this.heroCast - this.now > 150 ? 'cast0' : 'cast1');
     return t.type === 'wren' ? heroSprite(t.heroLevel, t.facing, frame as HeroFrame) : towerSprite(t.type, t.tiers, t.facing, frame);
   }
@@ -419,7 +473,7 @@ export class Renderer {
       this.shadowC.addChild(shadow);
       const spr = new Sprite();
       this.worldC.addChild(spr);
-      v = { spr, shadow, key: '', drop: 8, up: 0, tiers: t.tiers.join(''), kick: 0 };
+      v = { spr, shadow, key: '', drop: 8, up: 0, tiers: t.tiers.join(''), kick: 0, mon: false, hide: 0 };
       this.towers.set(t.id, v);
     }
     const s = this.towerSpr(t);
@@ -439,15 +493,38 @@ export class Renderer {
     v.spr.zIndex = y;
     // Schatten waechst mit der Stufe (Market-Gebaeude sind breiter)
     const top = Math.max(t.tiers[0], t.tiers[1], t.tiers[2]);
-    const sw = t.type === 'market' ? 18 + top * 2 : 16;
+    const monster = t.monsterTicks > 0;
+    if (v.mon && !monster) { this.fx.puff(x, y - 6, null); this.fx.burst(x, y - 14, [C.leaf, C.grass, C.stone], 8, 1.4, 2, 0.04, 18); }
+    v.mon = monster;
+    v.spr.visible = this.now >= v.hide;
+    const sw = monster ? (t.type === 'alchemist' ? 34 : 20) : t.type === 'market' ? 18 + top * 2 : 16;
     v.shadow.texture = shadowTex(sw, 5);
     v.shadow.position.set(x - sw / 2 - 1, y - 3);
+    // Ranken-Zone (Thornweaver B4/B5) dauerhaft unter dem Turm
+    const zv = zoneView(t);
+    if (zv) {
+      if (!v.zone) { v.zone = new Sprite(); this.trapC.addChild(v.zone); }
+      const zs = zv.world ? P2.worldTreeZone(zv.r, Math.floor(this.now / 200)) : P2.thornZone(zv.r, Math.floor(this.now / 200));
+      v.zone.texture = tex(zs.canvas);
+      v.zone.position.set(x - zs.ax, y - zs.ay);
+      v.zone.alpha = 0.9;
+    } else if (v.zone) { v.zone.destroy(); v.zone = undefined; }
+    // Buff-Glanz (Trank des Alchemisten)
+    const gk = this.glowOf.get(t.id) ?? null;
+    if (gk && !monster) {
+      if (!v.glow) { v.glow = new Sprite(); this.worldC.addChild(v.glow); }
+      const gs = P2.buffGlow(Math.floor(this.now / 130), gk);
+      v.glow.texture = tex(gs.canvas);
+      v.glow.position.set(x - gs.ax, y - gs.ay);
+      v.glow.zIndex = y + 1;
+      v.glow.alpha = 0.8;
+    } else if (v.glow) { v.glow.destroy(); v.glow = undefined; }
     // Faehnchen: Turm steht in einer Market-Aura
     const inAura = this.auraOf.get(t.id) === true;
     if (inAura) {
       if (!v.flag) { v.flag = new Sprite(); this.worldC.addChild(v.flag); }
       v.flag.texture = tex(PENNANTS[Math.floor(this.now / 220) & 1]);
-      v.flag.position.set(x + (footMilli(t.type) / 1000) - 1, y - 12);
+      v.flag.position.set(x + (footMilli(t.type) / 1000) - 1, y - 12 - (monster ? 14 : 0));
       v.flag.zIndex = y + 1;
       v.flag.visible = true;
     } else if (v.flag) { v.flag.destroy(); v.flag = undefined; }
@@ -476,7 +553,7 @@ export class Renderer {
     v.spr.position.set(x - s.ax, y - s.ay + (e.type === 'leviathan' ? Math.round(Math.sin(this.now / 400) * 2) - 8 : 0));
     v.spr.zIndex = y + (e.type === 'leviathan' ? 40 : 0);
     v.spr.alpha = camo ? 0.55 + 0.2 * Math.sin(this.now / 90 + e.id) : 1;
-    v.spr.tint = e.frozenTicks > 0 ? hex(C.ice) : e.stunTicks > 0 ? hex(C.yellow) : e.slowBp > 0 && e.slowTicks > 0 ? hex(C.silver) : 0xffffff;
+    v.spr.tint = e.frozenTicks > 0 ? hex(C.ice) : e.vineTicks > 0 ? 0xffffff : e.stunTicks > 0 ? hex(C.yellow) : e.goldTicks > 0 ? hex(C.sand) : e.slowBp > 0 && e.slowTicks > 0 ? hex(C.silver) : 0xffffff;
     if (this.latest && this.latest.warpLeft > 0) {
       if (!v.bub) { v.bub = new Sprite(); this.fxHost.addChild(v.bub); }
       const bs = bubbleSprite(Math.floor(this.now / 200) + e.id, e.type === 'leviathan' ? 22 : e.type === 'brute' ? 11 : 8);
@@ -484,6 +561,22 @@ export class Renderer {
       v.bub.position.set(x - bs.ax, y - bs.ay - (e.type === 'leviathan' ? 14 : 5));
       v.bub.alpha = 0.9;
     } else if (v.bub) { v.bub.destroy(); v.bub = undefined; }
+    // Ranken-Fessel (Vine Snare): Ranken um die Fuesse, solange die Sim den Gegner festhaelt
+    if (e.vineTicks > 0) {
+      if (!v.vine) { v.vine = new Sprite(); this.worldC.addChild(v.vine); }
+      const vs = P2.vineSnare(Math.floor(this.now / 160));
+      v.vine.texture = tex(vs.canvas);
+      v.vine.position.set(x - vs.ax, y - vs.ay);
+      v.vine.zIndex = y + 1;
+      v.vine.alpha = e.vineTicks < 20 && (Math.floor(this.now / 80) & 1) ? 0.5 : 1;
+    } else if (v.vine) { v.vine.destroy(); v.vine = undefined; }
+    // Unstable Concoction: gruene Markierung, solange der Gegner beim Tod explodieren wuerde
+    if (e.volatile > 0) {
+      if (!v.vol) { v.vol = new Sprite(); this.fxHost.addChild(v.vol); }
+      const as = P2.acidMark(Math.floor(this.now / 130));
+      v.vol.texture = tex(as.canvas);
+      v.vol.position.set(x - as.ax, y - as.ay - (e.type === 'leviathan' ? 46 : e.type === 'brute' ? 26 : 14));
+    } else if (v.vol) { v.vol.destroy(); v.vol = undefined; }
     // Crippling Shot: rotes Fadenkreuz ueber dem Ziel, solange die Sim die Markierung fuehrt
     if (isMarked(e)) {
       if (!v.mark) { v.mark = new Sprite(); this.fxHost.addChild(v.mark); }
@@ -521,7 +614,7 @@ export class Renderer {
       const own = this.latest?.towers.find((q) => q.id === p.owner);
       const mz = own ? (own.type === 'wren' ? heroMuzzle(own.heroLevel, own.facing) : towerMuzzle(own.type, own.tiers, own.facing)) : { x: 0, y: 0 };
       v = { spr, key: '', px: cx, py: cy, cx, cy, mx: p.sub === 1 ? 0 : mz.x, my: p.sub === 1 ? 0 : mz.y };
-      if (p.kind === 'bomb') { v.shadow = new Sprite(shadowTex(7, 3)); this.shadowC.addChild(v.shadow); }
+      if (p.kind === 'bomb' || p.kind === 'potion') { v.shadow = new Sprite(shadowTex(7, 3)); this.shadowC.addChild(v.shadow); }
       this.projs.set(p.id, v);
     } else if (newTick) {
       v.px = v.cx; v.py = v.cy; v.cx = cx; v.cy = cy;
@@ -534,12 +627,18 @@ export class Renderer {
     const ang = Math.atan2(-p.vy, p.vx);
     const dir16 = ((Math.round((ang / (Math.PI * 2)) * 16) % 16) + 16) % 16;
     const look = projectileLook(p.kind, this.latest?.towers.find((q) => q.id === p.owner), p.sub);
-    const s = projectileSprite(look, p.kind === 'bomb' ? Math.floor(this.now / 70) & 15 : dir16);
+    const s = projectileSprite(look, p.kind === 'bomb' || p.kind === 'potion' ? Math.floor(this.now / 70) & 15 : dir16);
     v.spr.texture = tex(s.canvas);
     v.spr.position.set(Math.round(gx) - s.ax, Math.round(gy - lift) - s.ay);
     v.spr.zIndex = 0;
     if (v.shadow) v.shadow.position.set(Math.round(gx) - 4, Math.round(gy) - 2);
     v.spr.zIndex = 100000;
+  }
+
+  /** Fragt die Sim nach dem Trank-Buff eines Turms (Glanz am Turm). */
+  setBuffProbe(fn: (id: number) => TowerBuff): void {
+    this.buffProbe = fn;
+    this.glowOf.clear();
   }
 
   /** Fragt die Sim, ob eine Market-Aura auf einen Turm wirkt (Faehnchen am Turm). */
@@ -600,7 +699,7 @@ export class Renderer {
         const t = this.latest?.towers.find((q) => q.id === ev.tower);
         if (t) {
           const mz = t.type === 'wren' ? heroMuzzle(t.heroLevel, t.facing) : towerMuzzle(t.type, t.tiers, t.facing);
-          const col = t.type === 'bombardier' ? [C.orange, C.stone, C.yellow] : t.type === 'frostcaller' ? [C.ice, C.white] : t.type === 'wren' ? [C.yellow, C.amber] : t.type === 'longshot' ? [C.yellow, C.white] : [C.sand, C.white];
+          const col = t.type === 'bombardier' ? [C.orange, C.stone, C.yellow] : t.type === 'frostcaller' ? [C.ice, C.white] : t.type === 'wren' ? [C.yellow, C.amber] : t.type === 'longshot' ? [C.yellow, C.white] : t.type === 'thornweaver' ? [C.leaf, C.grass, C.yellow] : t.type === 'alchemist' ? [C.leaf, C.yellow, C.white] : [C.sand, C.white];
           fx.burst(m(t.x) + mz.x, m(t.y) + mz.y, col, 3, 0.9, 1, 0.02, 8);
           if (t.type === 'longshot') {
             // Muendungsblitz: heller Ring plus Funken in Blickrichtung, dazu Rueckstoss am Sprite
@@ -638,7 +737,9 @@ export class Renderer {
       }
       case 'explode': {
         const r = m(ev.radius);
-        fx.explosion(m(ev.x), m(ev.y), r, ev.kind === 'acid' ? 'mini' : ev.kind === 'unstable' ? 'bomb' : ev.kind); // acid/unstable: Platzhalter bis zu den Sprites aus Agent B
+        if (ev.kind === 'acid') fx.anim(m(ev.x), m(ev.y), FRAMES.SPLASH_FRAMES, (f) => P2.acidSplash(Math.max(8, Math.round(r)), f), { per: 3 });
+        else if (ev.kind === 'unstable') { fx.anim(m(ev.x), m(ev.y), FRAMES.DEATH_BLAST_FRAMES, (f) => P2.deathBlast(f, Math.max(10, Math.round(r))), { per: 3 }); fx.burst(m(ev.x), m(ev.y), [C.leaf, C.yellow, C.grass], 6, 1.6, 2, 0.05, 16); }
+        else fx.explosion(m(ev.x), m(ev.y), r, ev.kind);
         if (ev.kind === 'quake') { fx.shake.t = 14; fx.shake.amp = 2; }
         else if (ev.kind === 'star') { fx.shake.t = 8; fx.shake.amp = 1; }
         break;
@@ -673,7 +774,110 @@ export class Renderer {
         }
         break;
       }
-      case 'chain': fx.bolt(ev.points.map(([x, y]) => [m(x), m(y)] as [number, number])); break;
+      case 'chain': {
+        const pts = ev.points.map(([x, y]) => [m(x), m(y)] as [number, number]);
+        const own = this.latest?.towers.find((q) => q.id === ev.tower);
+        if (own?.type === 'thornweaver' && pts.length >= 2) this.stormArc(pts, own.tiers[0] >= 4, own.tiers[0] >= 3);
+        else fx.bolt(pts);
+        break;
+      }
+      case 'whirlwind': {
+        const x = m(ev.x), y = m(ev.y);
+        fx.anim(x, y + 4, FRAMES.WIND_FRAMES, (f) => P2.whirlwind(f), { per: 3, loop: 2 });
+        fx.ring(x, y, 4, Math.max(10, m(ev.radius)), C.ice, 14);
+        fx.burst(x, y - 8, [C.ice, C.white, C.leaf], 8, 1.8, 1, -0.02, 18);
+        break;
+      }
+      case 'vine': {
+        const q = this.enemyPos(ev.enemy);
+        const x = q?.x ?? m(ev.x), y = q?.y ?? m(ev.y);
+        fx.burst(x, y, [C.leaf, C.grass, C.pine ?? C.grass], 6, 1.1, 1, 0.03, 14);
+        break;
+      }
+      case 'zone': {
+        const x = m(ev.x), y = m(ev.y), r = m(ev.radius);
+        fx.ring(x, y, 4, Math.min(r, 120), ev.dmg >= 5 ? C.amber : C.leaf, 12);
+        if (ev.hits > 0) fx.burst(x, y - 2, [C.leaf, C.grass, C.yellow], Math.min(8, 2 + ev.hits), 1.3, 1, 0.02, 12);
+        break;
+      }
+      case 'wall': {
+        const x = m(ev.x), y = m(ev.y);
+        fx.anim(x, y, FRAMES.WALL_GROW_FRAMES, (f) => P2.treeWallGrow(f), { per: 3 });
+        fx.burst(x, y - 2, [C.leaf, C.grass, C.wood], 10, 1.6, 2, 0.04, 20);
+        fx.shake.t = 8; fx.shake.amp = 1;
+        break;
+      }
+      case 'wallEat': {
+        const x = m(ev.x), y = m(ev.y);
+        fx.burst(x, y - 6, [C.leaf, C.grass, C.yellow], 6, 1.4, 1, 0.04, 14);
+        if (ev.cash >= 3) fx.float(x, y - 22, `+${ev.cash}`, C.yellow, 30, 0.4);
+        break;
+      }
+      case 'wallGone': {
+        const v = this.walls.get(ev.id);
+        if (v) {
+          fx.puff(v.x, v.y - 4, null);
+          fx.burst(v.x, v.y - 10, [C.leaf, C.grass, C.wood, C.bark ?? C.wood], 12, 1.6, 2, 0.05, 22);
+          fx.float(v.x, v.y - 30, ev.reason === 'spent' ? 'SPENT' : 'GONE', C.leaf, 28, 0.3);
+        }
+        break;
+      }
+      case 'brew': {
+        const t = this.latest?.towers.find((q) => q.id === ev.target);
+        if (t) {
+          const x = m(t.x), y = m(t.y);
+          const kind = ev.ticks === 0 ? 'permanent' : ev.dmg >= 2 || ev.speedBp >= 2500 ? 'stimulant' : 'brew';
+          fx.anim(x, y, FRAMES.BUFF_FRAMES, (f) => P2.buffGlow(f, kind), { per: 4, loop: 2 });
+          fx.burst(x, y - 22, [C.leaf, C.yellow, C.white], 8, 1.3, 1, -0.02, 20);
+          fx.float(x, y - 40, ev.ticks === 0 ? 'FOREVER' : 'BREW', kind === 'brew' ? C.coral : C.amber, 34, 0.35);
+        }
+        break;
+      }
+      case 'monster': {
+        const t = this.latest?.towers.find((q) => q.id === ev.tower);
+        const v = this.towers.get(ev.tower);
+        if (t) {
+          const x = m(t.x), y = m(t.y);
+          if (v) v.hide = this.now + 8 * 3 * 16.7;
+          fx.anim(x, y, FRAMES.TRANSFORM_FRAMES, (f) => P2.monsterTransform(f), { per: 3 });
+          if (t.type === 'alchemist') { fx.shake.t = 10; fx.shake.amp = 1; }
+        }
+        break;
+      }
+      case 'shrink': {
+        const x = m(ev.x), y = m(ev.y);
+        fx.anim(x, y, FRAMES.SHRINK_FRAMES, (f) => P2.shrink(ev.from, f), { per: 3 });
+        if (ev.cash >= 3) fx.float(x, y - 22, `+${ev.cash}`, C.yellow, 30, 0.4);
+        break;
+      }
+      case 'bounty': {
+        const x = m(ev.x), y = m(ev.y);
+        fx.anim(x, y - 6, FRAMES.GOLD_BURST_FRAMES, (f) => P2.goldBurst('lead', f), { per: 3 });
+        fx.float(x, y - 22, `+${ev.gold}`, C.yellow, 34, 0.4);
+        break;
+      }
+      case 'heal': {
+        const t = ev.tower ? this.latest?.towers.find((q) => q.id === ev.tower) : undefined;
+        fx.float(70, 38, `+${ev.lives}`, C.coral, 60, 0.3);
+        if (t) {
+          const x = m(t.x), y = m(t.y);
+          fx.custom(40, (node) => {
+            const sp = new Sprite(); node.addChild(sp);
+            const hs = bigHeart();
+            sp.texture = tex(hs.canvas);
+            return (age) => { sp.position.set(Math.round(x + Math.sin(age / 5) * 3) - hs.ax, Math.round(y - 30 - age * 0.9) - hs.ay); sp.alpha = age > 28 ? 1 - (age - 28) / 12 : 1; };
+          });
+        }
+        break;
+      }
+      case 'gate': {
+        fx.flash(C.leaf, 0.2);
+        fx.ring(628, 160, 3, 26, C.leaf, 18);
+        fx.ring(628, 160, 2, 16, C.white, 12);
+        fx.burst(624, 158, [C.leaf, C.white, C.silver], 12, 1.8, 2, 0.03, 22);
+        fx.float(600, 138, 'GATE HELD', C.leaf, 56, 0.3);
+        break;
+      }
       case 'status': {
         const id = ev.enemy;
         const e = this.enemies.get(id);
@@ -685,9 +889,27 @@ export class Renderer {
           if (q) { fx.ring(q.x, q.y - 14, 2, 14, C.red, 10); fx.float(q.x, q.y - 34, 'MARKED', C.coral, 34, 0.3); }
           break;
         }
+        if (kind === 'snare' || kind === 'volatile') {
+          // Ranke und Unstable-Markierung haengen in `syncEnemy` am Gegner, solange die Sim den Zustand fuehrt
+          const q = this.enemyPos(id);
+          if (q) fx.burst(q.x, q.y - 6, kind === 'snare' ? [C.leaf, C.grass] : [C.leaf, C.yellow], 4, 0.9, 1, 0.02, 10);
+          break;
+        }
+        if (kind === 'gold') {
+          const q = this.enemyPos(id);
+          if (q) fx.anim(q.x, q.y - 6, FRAMES.GOLD_BURST_FRAMES, (f) => P2.goldBurst('rubber', f), { per: 3 });
+          break;
+        }
         const etype = this.latest?.enemies.find((q) => q.id === id)?.type ?? 'red';
+        if (kind === 'acid') {
+          fx.anim(0, 0, FRAMES.MARK_ACID_FRAMES, (f) => P2.acidMark(f), {
+            per: 4, loop: 3,
+            follow: () => { const v = this.enemies.get(id); return v ? { x: v.cx, y: v.cy - (etype === 'leviathan' ? 46 : etype === 'brute' ? 26 : 14) } : null; },
+          });
+          break;
+        }
         const dur = kind === 'freeze' ? 60 : kind === 'stun' ? 30 : kind === 'burn' ? 36 : kind === 'reveal' ? 20 : 16;
-        fx.anim(0, 0, FRAMES.STATUS_FRAMES, (f) => P2.status(kind === 'snare' ? 'slow' : kind === 'acid' || kind === 'volatile' ? 'burn' : kind === 'gold' ? 'mark' : kind, f, etype), {
+        fx.anim(0, 0, FRAMES.STATUS_FRAMES, (f) => P2.status(kind, f, etype), {
           per: 4, loop: Math.max(1, Math.round(dur / (FRAMES.STATUS_FRAMES * 4))),
           follow: () => { const v = this.enemies.get(id); return v ? { x: v.cx, y: v.cy - (kind === 'freeze' ? 6 : etype === 'leviathan' ? 40 : etype === 'brute' ? 24 : 16) } : null; },
         });
@@ -760,6 +982,22 @@ export class Renderer {
     }
   }
 
+  /** Blitzbogen aus der Wolke des Thornweavers: Punkte[0] = Turm; die Wolke sitzt ueber dem Turm (ab A3 gross). */
+  private stormArc(pts: [number, number][], big: boolean, cloud: boolean): void {
+    const p = pts.map((q, i) => (i === 0 ? [q[0], q[1] - (cloud ? 36 : 22)] : [q[0], q[1] - 6]) as [number, number]);
+    this.fx.custom(10, (node) => {
+      const sp = new Sprite(); node.addChild(sp);
+      return (age) => {
+        const f = P2.stormArc(p, Math.floor(age / 2), big);
+        sp.texture = tex(f.canvas);
+        sp.position.set(-f.ax, -f.ay);
+        sp.alpha = age > 6 ? 1 - (age - 6) / 4 : 1;
+      };
+    });
+    for (const [x, y] of p.slice(1)) this.fx.burst(x, y, [C.ice, C.white, C.sky], 3, 1.2, 1, 0.02, 8);
+    if (big) { this.fx.shake.t = 4; this.fx.shake.amp = 1; }
+  }
+
   /** Wird gerufen, wenn Muenzen die Geldanzeige erreichen (Match: Puls und Ton). */
   onCoinsLanded?: (amount: number) => void;
 
@@ -769,6 +1007,12 @@ export class Renderer {
     if (!t) return;
     const fx = this.fx;
     const tx = t.x / 1000, ty = t.y / 1000;
+    if (t.type !== 'market') {
+      // Thornweaver (World Tree, Jungle's Bounty): Gold bluebt als Blaetter-Schauer, keine Markt-Muenzen
+      fx.burst(tx, ty - 24, [C.leaf, C.grass, C.yellow], 8, 1.2, 1, -0.02, 22);
+      if (cash > 0) { fx.float(tx, ty - 46, `+${cash}`, C.yellow, 56, 0.3); this.coinsToCash(tx, ty - 24, cash, () => this.onCoinsLanded?.(cash)); }
+      return;
+    }
     fx.anim(tx, ty, FRAMES.COIN_RISE_FRAMES, (f) => P2.coinRise(f), { per: 4 });
     if (cash > 0) {
       fx.float(tx, ty - 46, `+${cash}`, C.yellow, 56, 0.3);
@@ -887,6 +1131,10 @@ export class Renderer {
         if (t.type !== 'ranger') continue;
         fx.anim(t.x / 1000, t.y / 1000, 6, (f) => P2.arrowRain(f, Math.round(t.range / 1000)), { per: 3, loop: 40 });
       }
+    } else if (id === 'wallOfTrees') {
+      fx.flash(C.leaf, 0.12);
+    } else if (id === 'tonic') {
+      fx.flash(C.orchid ?? C.yellow, 0.16);
     } else if (id === 'absoluteZero') {
       fx.flash(C.white, 0.6);
       fx.anim(0, 0, FRAMES.ZERO_FRAMES, (f) => P2.absoluteZero(f), { per: 4, loop: 1 });

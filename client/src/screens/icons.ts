@@ -8,7 +8,7 @@ import { Surface, RAMPS, type Ramp } from '../pixel/sprites/surface';
 
 export type IconName =
   | 'coin' | 'tag' | 'lantern' | 'eye' | 'bomb' | 'snow' | 'discount' | 'heart' | 'star' | 'book'
-  | 'lock' | 'check' | 'flame' | 'arrow' | 'bolt' | 'gear' | 'flag';
+  | 'lock' | 'check' | 'flame' | 'arrow' | 'bolt' | 'gear' | 'flag' | 'leaf' | 'flask' | 'shield' | 'cross';
 
 const W = 14;
 type Draw = (s: Surface) => void;
@@ -123,6 +123,35 @@ const DRAW: Record<IconName, Draw> = {
   flag: (s) => {
     s.rect(3, 1, 1, 12, 'wood');
     s.poly([[4, 2], [12, 4], [4, 8]], 'red');
+  },
+  leaf: (s) => {
+    s.poly([[2, 12], [2, 6], [6, 1], [12, 1], [12, 7], [8, 12]], 'grass');
+    s.poly([[4, 10], [4, 6], [7, 3], [10, 3], [10, 6], [7, 10]], 'leaf');
+    s.line(2, 12, 10, 3, 'pine');
+    s.px(8, 3, 'white');
+  },
+  flask: (s) => {
+    s.rect(5, 1, 4, 5, 'silver');
+    s.rect(4, 0, 6, 1, 'white');
+    s.poly([[5, 5], [9, 5], [13, 12], [1, 12]], 'silver');
+    s.poly([[5, 8], [9, 8], [11, 11], [3, 11]], 'leaf');
+    s.rect(3, 11, 8, 1, 'grass');
+    s.px(6, 9, 'white');
+    s.px(8, 3, 'ice');
+  },
+  shield: (s) => {
+    s.poly([[2, 1], [12, 1], [12, 7], [7, 13], [2, 7]], 'stone');
+    s.poly([[3, 2], [11, 2], [11, 7], [7, 11], [3, 7]], 'silver');
+    s.rect(6, 3, 2, 6, 'amber');
+    s.rect(4, 5, 6, 2, 'amber');
+    s.px(4, 3, 'white');
+  },
+  cross: (s) => {
+    s.rect(5, 1, 4, 12, 'red');
+    s.rect(1, 5, 12, 4, 'red');
+    s.rect(6, 2, 2, 10, 'coral');
+    s.rect(2, 6, 10, 2, 'coral');
+    s.px(5, 2, 'white');
   },
 };
 

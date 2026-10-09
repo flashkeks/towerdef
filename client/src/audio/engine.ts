@@ -8,6 +8,8 @@ import { R11_RECIPES } from './recipes-r11';
 import { R12_RECIPES } from './recipes-r12';
 import { R13_RECIPES } from './recipes-r13';
 import { r13Sound } from './r13-map';
+import { R14_RECIPES } from './recipes-r14';
+import { r14Sound } from './r14-map';
 import { MENU_THEMES, type MenuThemeId, type MusicTheme } from './recipes-ui';
 import { AUDIO_KEY, fromPct, migrateAudio, toPct, type AudioSettings, type VolumeApi } from './settings';
 import { commitHit, towerGapMs, towerLoudness, towerPitch, topTier, windowGain, type Hit } from './tower-vol';
@@ -20,7 +22,7 @@ export const MIX_MUSIC = 0.8;
 type Ctor = typeof AudioContext;
 
 /** Mindestabstand je Klang in ms (gegen Matsch bei Massenpops) */
-const MIN_GAP: Record<string, number> = { pop: 28, tink: 60, 'shoot.ranger': 35, 'shoot.volley': 60, 'shoot.frost': 50, 'shoot.chain': 70, 'explode.mini': 50, 'pop.big': 80, 'shoot.hero': 40, 'power.trapHit': 45, 'embers.count': 40, income: 150, 'coin.land': 90, ricochet: 60, mark: 200, 'shoot.snipe': 40 };
+const MIN_GAP: Record<string, number> = { pop: 28, tink: 60, 'shoot.ranger': 35, 'shoot.volley': 60, 'shoot.frost': 50, 'shoot.chain': 70, 'explode.mini': 50, 'pop.big': 80, 'shoot.hero': 40, 'power.trapHit': 45, 'embers.count': 40, income: 150, 'coin.land': 90, ricochet: 60, mark: 200, 'shoot.snipe': 40, 'shoot.thorn': 45, 'shoot.potion': 45, 'splash.acid': 60, zone: 400, 'wall.eat': 90, vine: 120, bounty: 80, whirlwind: 300 };
 
 function load(): { s: AudioSettings; stored: boolean } {
   try {
@@ -152,7 +154,7 @@ export class AudioEngine {
     const gap = MIN_GAP[id];
     if (gap && now - (this.last.get(id) ?? -1e9) < gap) return;
     this.last.set(id, now);
-    const rec = R13_RECIPES[id] ?? R12_RECIPES[id] ?? R11_RECIPES[id] ?? RECIPES[id];
+    const rec = R14_RECIPES[id] ?? R13_RECIPES[id] ?? R12_RECIPES[id] ?? R11_RECIPES[id] ?? RECIPES[id];
     if (!rec) return;
     const t0 = ctx.currentTime + 0.005;
     for (const v of rec) this.voice(v, t0, gain, rate);
@@ -201,7 +203,7 @@ export class AudioEngine {
   // ---------------------------------------------------------------- Events -> Klaenge
   onEvent(ev: SimEvent, towers: readonly TowerState[]): void {
     const rnd = (): number => 0.94 + Math.random() * 0.12;
-    const p13 = r13Sound(ev, towers);
+    const p13 = r14Sound(ev, towers) ?? r13Sound(ev, towers);
     if (p13) {
       if (p13.tower) this.playTower(p13.id, p13.tower.key, p13.tower.top, rnd(), p13.tower.base);
       else this.play(p13.id, p13.gain ?? 1, rnd());

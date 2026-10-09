@@ -74,7 +74,9 @@ export function towersView(ctx: Ctx, tower?: TowerType): View {
   let hoverLabel: string | null = null;
   const draw = (): void => {
     const f = TOWER_FRAMES[frame % 4];
-    blit(art, towerSprite(t, shown, FACING, f), 5);
+    const sp = towerSprite(t, shown, FACING, f);
+    // grosse Stufen (Avatar, World Tree) sind breiter als 55 px: Massstab so waehlen, dass die Figur in die Buehne (300 x 250 ueber dem Boden) passt
+    blit(art, sp, Math.max(2, Math.min(5, Math.floor(296 / sp.canvas.width), Math.floor(250 / sp.canvas.height))));
     tierLine.textContent = hoverLabel ?? S.towers.best;
   };
   draw();

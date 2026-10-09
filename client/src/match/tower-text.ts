@@ -4,8 +4,8 @@
  */
 import type { HeroType, TowerType } from '../sim';
 
-/** Reihenfolge der Turm-Leiste (Runde 13): die drei Basistuerme, dann die Spezialisten. */
-export const TOWER_TYPES: TowerType[] = ['ranger', 'bombardier', 'frostcaller', 'longshot', 'market'];
+/** Reihenfolge der Turm-Leiste (Runde 14): die drei Basistuerme, dann die Spezialisten (Longshot, Market, Thornweaver, Alchemist). */
+export const TOWER_TYPES: TowerType[] = ['ranger', 'bombardier', 'frostcaller', 'longshot', 'market', 'thornweaver', 'alchemist'];
 export const HERO_TYPES: HeroType[] = ['wren'];
 export const ROLE: Record<TowerType | HeroType, string> = {
   ranger: 'Cheap single target',

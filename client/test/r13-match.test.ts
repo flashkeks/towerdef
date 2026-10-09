@@ -13,7 +13,7 @@ const mi = (o: Partial<MarketInfo> = {}): MarketInfo => ({ income: 80, hasBank: 
 
 describe('Turm-Leiste', () => {
   it('Reihenfolge und Hotkeys', () => {
-    expect(TOWER_TYPES).toEqual(['ranger', 'bombardier', 'frostcaller', 'longshot', 'market']);
+    expect(TOWER_TYPES).toEqual(['ranger', 'bombardier', 'frostcaller', 'longshot', 'market', 'thornweaver', 'alchemist']);
     expect(HOTKEY.longshot).toBe('T');
     expect(HOTKEY.market).toBe('Z');
     expect(new Set(Object.values(HOTKEY)).size).toBe(Object.keys(HOTKEY).length);
@@ -134,9 +134,15 @@ describe('Wissensbaum-Layout', () => {
   it('alle 28 Knoten platziert, fuenf Aeste nebeneinander ohne Ueberlappung', () => {
     expect(lay.branches.length).toBe(5);
     expect(lay.branches.reduce((n, b) => n + b.nodes.length, 0)).toBe(KNOWLEDGE.length);
-    for (let i = 1; i < lay.branches.length; i++) expect(lay.branches[i].x).toBeGreaterThanOrEqual(lay.branches[i - 1].x + lay.branches[i - 1].w);
+    for (let i = 1; i < lay.branches.length; i++) {
+      const a = lay.branches[i - 1], b = lay.branches[i];
+      if (a.row === b.row) expect(b.x).toBeGreaterThanOrEqual(a.x + a.w); else expect(b.y).toBeGreaterThanOrEqual(a.y + a.h);
+    }
   });
-  it('passt in 1280 px Breite', () => { expect(lay.width).toBeLessThan(1280 - 72); });
+  it('passt in 1280 px Breite (Runde 14: Zeilen brechen um, Hoehe darf scrollen)', () => {
+    expect(lay.width).toBeLessThanOrEqual(1280 - 72);
+    expect(lay.height).toBeGreaterThan(0);
+  });
   it('Hoehe: Knoten stehen ohne Ueberlappung im Raster', () => {
     for (const b of lay.branches) {
       const seen = new Set<string>();

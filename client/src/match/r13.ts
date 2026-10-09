@@ -32,6 +32,8 @@ export function marketRadiusPx(baseMilli: number, marketRadiusBp = 0): number {
 
 /** Welches Bild der Longshot-Bolzen bekommt: Basis, schwerer Eisenbolzen (A1+, magic) oder Lanternbreaker (A5); Splitter. */
 export function projectileLook(kind: SimProjectile, owner: { type: string; tiers: readonly number[] } | undefined, sub = 0): ProjectileKind {
+  if (owner?.type === 'thornweaver') return kind === 'thorn' && (owner.tiers[2] ?? 0) >= 5 ? 'thornMagic' : kind;
+  if (owner?.type === 'alchemist') return kind === 'potion' && (owner.tiers[2] ?? 0) >= 3 ? 'potionGold' : kind;
   if (owner?.type !== 'longshot') return kind;
   if (kind === 'frag' || sub === 1) return 'splinter';
   if (kind !== 'snipe') return kind;
