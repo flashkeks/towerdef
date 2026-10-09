@@ -1,7 +1,7 @@
 # sim - deterministischer Simulationskern (Duskwardens, Runde 11)
 
 Stand: **fertig für den Vertical Slice.** `createGame` mit dem Vertrag aus `docs/design/schnittstelle.md`: 3 Türme × 3 Pfade × 5 Stufen,
-Held Wren (Level 1-20), Projektile mit Flugzeit, Gegner-Schichten, 20 Runden, 4 Fähigkeiten, Bot. 79 Tests (`npx vitest run`),
+Held Wren (Level 1-20), Projektile mit Flugzeit, Gegner-Schichten, 20 Runden, 4 Fähigkeiten, Bot, **Turm-XP im Match (Runde 11b)**. 101 Tests (`npx vitest run`),
 `npx tsc --noEmit` sauber. Freeplay (R21+) ist **nicht** gebaut.
 
 ```bash
@@ -68,13 +68,25 @@ Wissensbaum-`mods`: `startCash`/`lives` additiv zu den Schwierigkeitswerten, `se
 
 - `Game.sandbox` (Tests/Sandbox): `spawn(type, progress?, camo?)`, `hurt(enemyId, amount, dtype?)`, `setCash(n)`.
 - `UpgradeInfo` = `{ path, current, next (null = voll), name, desc, price, canBuy, reason? }`, `reason`: `maxed` | `crosspath` | `locked` | `no-cash`.
-- Befehl-Gründe: `place`: `unknown-tower`, `locked`, `hero-limit`, `out-of-bounds`, `on-path`, `water`, `blocked`, `overlap`, `no-cash`; `upgrade`: `maxed`, `crosspath`, `locked`, `no-cash`, `hero`, `no-tower`;
+- Befehl-Gründe: `unlockTier`: `maxed`, `locked`, `no-xp`; `place`: `unknown-tower`, `locked`, `hero-limit`, `out-of-bounds`, `on-path`, `water`, `blocked`, `overlap`, `no-cash`; `upgrade`: `maxed`, `crosspath`, `locked`, `no-cash`, `hero`, `no-tower`;
   `ability`: `no-ability`, `cooldown`, `no-target` (Flare ohne Gegner in Reichweite); `startRound`: `spawning`, `no-more-rounds`; nach Spielende `game-over`.
 - Der **Held ist nicht verkaufbar** (`sell` → `hero`), weil er einmal je Match gilt.
 - `TowerState`/`EnemyState`/`ProjectileState`/`GameState` tragen zusätzliche Innenfelder (`cd`, `frac`, `round`, `groups`, `rng` …), die Teil des Hashes sind; die UI braucht sie nicht.
 - `stats.leaked` = verlorene Leben durch Lecks (nicht Anzahl Gegner). `stats.pops` = geknackte Schichten je Turmtyp (inkl. Held `wren`).
 - Pop-Zuordnung geht an den Turm, der den Treffer/Brand/Blitz/Explosion verursacht hat; ist der Turm verkauft, zählt der Pop nur für das Geld.
 - Auto-Start schaltet erst nach dem manuellen Start von Runde 1 und startet die nächste Runde, sobald die vorige fertig gespawnt hat.
+
+## Turm-XP und Freischalten im Match (Runde 11b)
+
+Spezifikation: `docs/design/meta.md` „Nachtrag Runde 11b“. Zahlen in `data/xp.json` (`potBase` 10, `potPerRound` 6, `unlockCost` 100/250/900/2.500/8.000) und `difficulties.json` (`towerXpBp`: 10000/11000/12000).
+
+- **Optionen:** `GameOptions.towerXp` = Konto je Turmtyp (aus dem Profil). Fehlt es, ist das XP-System aus: keine Verteilung, `unlockTier` → `no-xp`, `unlocks` wie bisher.
+- **Zustand:** `state.towerXp` (Konto), `state.towerXpGained` (Summe im Match), `state.maxTier` (freigeschaltete Stufe je Pfad, Start = `unlocks.maxTier`, ohne `unlocks` überall 5), `state.roundPops` (Pops ohne Held seit dem letzten Rundenende). Alles ganzzahlig, im Hash.
+- **Rundenende** (`endRound`, je Runde einzeln): Topf `floor((10 + 6 × Runde) × towerXpBp × (10000 + mods.towerXpBp) / 10^8)` (Medium R1–20 ≈ 1.606). Aufteilung (`splitTowerXp` in `src/xp.ts`, rein): je Typ **50 % nach `spent`** der stehenden Türme (Held nie) und **50 % nach `roundPops`**. Fehlt eine Hälfte, geht der ganze Topf nach der anderen; fehlen beide, gibt es nichts. Rest nach dem Abrunden an den Typ mit dem größten Anteil (Gleichstand: ranger, bombardier, frostcaller). Event `towerXp { round, pot, gains }`. Bei überlappenden Runden zählen die Pops seit dem letzten Rundenende.
+- **`unlockTier { tower, path }`:** nächste Stufe des Pfads (`maxTier + 1`), Kosten aus `xp.json`, unabhängig vom Crosspath. Gründe: `maxed`, `locked` (Turm selbst nicht frei), `no-xp` (Konto zu klein oder kein XP-System). Event `unlockTier`. Danach geht `upgrade` auf diese Stufe (sonst `locked`).
+- **Verdeckte Stufen:** `upgradeInfo` liefert je Pfad zusätzlich `unlocked` (maxTier), `unlockCost` und `revealed`; `unlockInfo(type)` das ganze Menü (3 × 5, `revealed`/`unlocked`/`cost`). Stufe 1 ist immer sichtbar, sonst nur wenn die Stufe davor freigeschaltet ist; sonst sind `name`/`desc` leer.
+- **Crosspath** (`tiersAllowed`, unverändert): höchstens zwei Pfade belegt, höchstens einer ≥ 3; 5-2-0 geht, 2-2-2 und 3-3-0 nicht. Belegt in `test/towerxp.test.ts`.
+- **Bot:** `BotResult.towerXpGained`; `npm run bot` zeigt `XP ranger/bombardier/frostcaller`.
 
 ## Regeln im Detail (wo der Entwurf Spielraum ließ)
 
