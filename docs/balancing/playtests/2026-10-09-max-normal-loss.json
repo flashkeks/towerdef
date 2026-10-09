@@ -1,0 +1,473 @@
+{
+ "format": "towerdef-replay",
+ "formatVersion": 5,
+ "gameVersion": "aa72d10 2026-10-09",
+ "stage": "greenie-1",
+ "difficulty": "normal",
+ "players": 1,
+ "seed": 382872405,
+ "team": [
+  "goku_ssj3",
+  "genos",
+  "krillin",
+  "speedwagon",
+  "jotaro",
+  "law"
+ ],
+ "unitMods": [
+  {
+   "player": 0,
+   "unit": "goku_ssj3",
+   "lvlBp": 10000,
+   "traitBp": 1250
+  },
+  {
+   "player": 0,
+   "unit": "genos",
+   "lvlBp": 10000
+  },
+  {
+   "player": 0,
+   "unit": "krillin",
+   "lvlBp": 10000
+  },
+  {
+   "player": 0,
+   "unit": "speedwagon",
+   "lvlBp": 10000
+  },
+  {
+   "player": 0,
+   "unit": "jotaro",
+   "lvlBp": 10000
+  },
+  {
+   "player": 0,
+   "unit": "law",
+   "lvlBp": 10000
+  }
+ ],
+ "cards": [],
+ "complete": true,
+ "result": "loss",
+ "endTick": 8483,
+ "endHash": "fdd82ff0c7a9edd9",
+ "endWave": 11,
+ "endLives": 0,
+ "endCoins": 12503,
+ "durationTicks": 8483,
+ "durationMs": 166057,
+ "date": "2026-10-09",
+ "commands": [
+  {
+   "tick": 78,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "goku_ssj3",
+    "x": 5486,
+    "y": 2042
+   },
+   "ok": true
+  },
+  {
+   "tick": 179,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "genos",
+    "x": 7792,
+    "y": 1944
+   },
+   "ok": true
+  },
+  {
+   "tick": 267,
+   "player": 0,
+   "cmd": {
+    "type": "place",
+    "unitId": "speedwagon",
+    "x": 5167,
+    "y": 56
+   },
+   "ok": true
+  },
+  {
+   "tick": 329,
+   "player": 0,
+   "cmd": {
+    "type": "skipWave"
+   },
+   "ok": true
+  },
+  {
+   "tick": 669,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 2
+   },
+   "ok": true
+  },
+  {
+   "tick": 1264,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 1
+   },
+   "ok": true
+  },
+  {
+   "tick": 3098,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 1
+   },
+   "ok": true
+  },
+  {
+   "tick": 3523,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 1
+   },
+   "ok": true
+  },
+  {
+   "tick": 4239,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 1
+   },
+   "ok": true
+  },
+  {
+   "tick": 4485,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 2
+   },
+   "ok": true
+  },
+  {
+   "tick": 4494,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 2
+   },
+   "ok": true
+  },
+  {
+   "tick": 4507,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 2
+   },
+   "ok": true
+  },
+  {
+   "tick": 4535,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 2
+   },
+   "ok": false,
+   "reason": "not-enough-coins"
+  },
+  {
+   "tick": 5060,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 2
+   },
+   "ok": true
+  },
+  {
+   "tick": 5072,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 2
+   },
+   "ok": false,
+   "reason": "not-enough-coins"
+  },
+  {
+   "tick": 5342,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 2
+   },
+   "ok": true
+  },
+  {
+   "tick": 5758,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 1,
+    "mode": "last"
+   },
+   "ok": true
+  },
+  {
+   "tick": 5785,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 1,
+    "mode": "close"
+   },
+   "ok": true
+  },
+  {
+   "tick": 5818,
+   "player": 0,
+   "cmd": {
+    "type": "setTargeting",
+    "entityId": 1,
+    "mode": "strongest"
+   },
+   "ok": true
+  },
+  {
+   "tick": 6003,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 3
+   },
+   "ok": true
+  },
+  {
+   "tick": 6012,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 3
+   },
+   "ok": true
+  },
+  {
+   "tick": 6022,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 3
+   },
+   "ok": false,
+   "reason": "not-enough-coins"
+  },
+  {
+   "tick": 6031,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 3
+   },
+   "ok": false,
+   "reason": "not-enough-coins"
+  },
+  {
+   "tick": 6164,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 3
+   },
+   "ok": true
+  },
+  {
+   "tick": 6180,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 3
+   },
+   "ok": false,
+   "reason": "not-enough-coins"
+  },
+  {
+   "tick": 6630,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 3
+   },
+   "ok": true
+  },
+  {
+   "tick": 7901,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 1
+   },
+   "ok": true
+  },
+  {
+   "tick": 7926,
+   "player": 0,
+   "cmd": {
+    "type": "upgrade",
+    "entityId": 1
+   },
+   "ok": false,
+   "reason": "not-enough-coins"
+  }
+ ],
+ "controls": [
+  {
+   "type": "speed",
+   "tick": 735,
+   "speed": 3
+  }
+ ],
+ "waves": [
+  {
+   "wave": 1,
+   "startTick": 329,
+   "coinsStart": 600,
+   "coinsEnd": 1358,
+   "livesStart": 30,
+   "livesEnd": 30,
+   "leaks": 0,
+   "leaksByEnemy": {},
+   "kills": 8
+  },
+  {
+   "wave": 2,
+   "startTick": 1038,
+   "coinsStart": 2208,
+   "coinsEnd": 2337,
+   "livesStart": 30,
+   "livesEnd": 30,
+   "leaks": 0,
+   "leaksByEnemy": {},
+   "kills": 9
+  },
+  {
+   "wave": 3,
+   "startTick": 1879,
+   "coinsStart": 3337,
+   "coinsEnd": 5095,
+   "livesStart": 30,
+   "livesEnd": 28,
+   "leaks": 1,
+   "leaksByEnemy": {
+    "runner": 1
+   },
+   "kills": 10
+  },
+  {
+   "wave": 4,
+   "startTick": 2722,
+   "coinsStart": 6245,
+   "coinsEnd": 5694,
+   "livesStart": 29,
+   "livesEnd": 23,
+   "leaks": 3,
+   "leaksByEnemy": {
+    "runner": 3
+   },
+   "kills": 11
+  },
+  {
+   "wave": 5,
+   "startTick": 3463,
+   "coinsStart": 6994,
+   "coinsEnd": 7074,
+   "livesStart": 24,
+   "livesEnd": 24,
+   "leaks": 0,
+   "leaksByEnemy": {},
+   "kills": 11
+  },
+  {
+   "wave": 6,
+   "startTick": 4190,
+   "coinsStart": 8524,
+   "coinsEnd": 2943,
+   "livesStart": 25,
+   "livesEnd": 15,
+   "leaks": 5,
+   "leaksByEnemy": {
+    "runner": 4,
+    "grunt": 1
+   },
+   "kills": 14
+  },
+  {
+   "wave": 7,
+   "startTick": 5014,
+   "coinsStart": 4543,
+   "coinsEnd": 1542,
+   "livesStart": 16,
+   "livesEnd": 16,
+   "leaks": 0,
+   "leaksByEnemy": {},
+   "kills": 13
+  },
+  {
+   "wave": 8,
+   "startTick": 5672,
+   "coinsStart": 3292,
+   "coinsEnd": 1665,
+   "livesStart": 17,
+   "livesEnd": 6,
+   "leaks": 4,
+   "leaksByEnemy": {
+    "flyer": 4
+   },
+   "kills": 17
+  },
+  {
+   "wave": 9,
+   "startTick": 6572,
+   "coinsStart": 5115,
+   "coinsEnd": 6999,
+   "livesStart": 7,
+   "livesEnd": 3,
+   "leaks": 2,
+   "leaksByEnemy": {
+    "runner": 2
+   },
+   "kills": 15
+  },
+  {
+   "wave": 10,
+   "startTick": 7472,
+   "coinsStart": 11349,
+   "coinsEnd": 6619,
+   "livesStart": 4,
+   "livesEnd": 4,
+   "leaks": 3,
+   "leaksByEnemy": {
+    "grunt": 3
+   },
+   "kills": 7
+  },
+  {
+   "wave": 11,
+   "startTick": 8372,
+   "coinsStart": 11119,
+   "coinsEnd": 12503,
+   "livesStart": 5,
+   "livesEnd": 0,
+   "leaks": 0,
+   "leaksByEnemy": {},
+   "kills": 0
+  }
+ ],
+ "feedback": ""
+}

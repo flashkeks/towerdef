@@ -4,6 +4,28 @@ Verbindlich für alle weiteren Runden. Die beantwortete Fragenliste liegt in
 `docs/design/FRAGEN.md`. Hier steht die Auslegung, nach der gearbeitet wird.
 Änderungen nur durch die Menschen.
 
+## Neustart als BTD6-artiges Spiel (Max, 09.10.2026) — gilt vor allem darunter
+
+Max hat Runde 10 gespielt (Replay `docs/balancing/playtests/2026-10-09-max-normal-loss.json`). Echte Bilder
+laden, Interface ok, aber: Schaden kommt vor der Angriffs-Animation an; Goku SSJ3 räumt alles ab, Genos macht
+„gar nichts“ (AA-Werte 1:1: maxDps 1.200 gegen 30, Power Creep aus AA geerbt); Trade/Reroll zu dünn. Und
+grundsätzlich: **550 Figuren lassen sich nie alle gut aussehen und gut spielen lassen. „So ist es ein bisschen billig.“**
+
+Deshalb:
+1. **Wenige Türme, jeder durchgeplant, wie Bloons TD 6.** Feste, überschaubare Zahl; je Turm Upgrade-Pfade mit
+   Stufen, jede Stufe ändert Verhalten **und sieht man am Turm**. Werte werden je Turm entworfen, nicht importiert.
+2. **Der AA-Import fliegt raus** (550 Units, Banner, Evolutionen, Trade/Reroll). Archiv als Git-Tag, nicht löschen.
+   Simulator, Karten, Wellen, Bosse, Meta/Speicherstand, Interface und Effekte bleiben die Basis.
+3. **Grafik: Pixel-Sprites, im Code gezeichnet** wie im Kek-Game (`flashkeks/snake`, `public/pfx.js`, `bfx.js`,
+   `afx.js`): einheitlicher Stil, Animationsframes, sichtbare Upgrade-Stufen. Keine Fremdbilder für Türme.
+4. **Gacha nur noch für Helden und Skins.** Türme sind für alle frei (Freischaltung über Fortschritt wie BTD6).
+5. **Erst ein Vertical Slice**: wenige Türme + ein Held komplett (alle Upgrades, Sprites, Animation, Ton, Balance)
+   auf einer Karte. Erst wenn Max sagt „so ist es geil“, kommen weitere.
+6. **Treffer erst bei Ankunft:** Projektile haben im Simulator eine Flugzeit; Schaden zählt, wenn die Animation trifft.
+
+Was dem widerspricht (Look-Wechsel Punkt 1–3 über AniList-Bilder für 550 Units, Kurswechsel Punkt 2–3
+„AA-Inhalte direkt übernehmen, Masse vor Feinschliff“), ist überholt.
+
 ## Look-Wechsel 08.10.2026 (Max, nach Runde 9 auf der Preview) — gilt vor dem Kurswechsel unten
 
 Max hat Runde 9 gespielt. Interface außerhalb des Matches: gut. Aber:
