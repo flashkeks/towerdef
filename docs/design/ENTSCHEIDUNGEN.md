@@ -4,6 +4,17 @@ Verbindlich für alle weiteren Runden. Die beantwortete Fragenliste liegt in
 `docs/design/FRAGEN.md`. Hier steht die Auslegung, nach der gearbeitet wird.
 Änderungen nur durch die Menschen.
 
+## Turm-XP und Freischalten (Max, 09.10.2026 abends, nach dem ersten Spiel mit Runde 11)
+
+„Genau so habe ich mir das vorgestellt.“ Änderungen:
+1. **Turm-XP viel langsamer.** Eine 3-Minuten-Partie mit dem Ranger hat alle drei Pfade auf Stufe 3 freigeschaltet — viel zu schnell.
+2. **XP gibt es im Match, und Freischalten geht im Match**: Turm anklicken → Knopf „Unlock“ → Menü mit den Stufen dieses Turmtyps,
+   dort mit Turm-XP kaufen (wie BTD6-Upgrade-Menü). Außerhalb des Matches bleibt das Turm-Detail.
+3. **XP nach echter Beteiligung und nach Wert:** wer Kills macht, bekommt mehr; dazu XP je Runde nach dem investierten Geld je Turmtyp
+   (10 Ranger für zusammen 3.000 gegen einen voll ausgebauten Bombardier für 10.000 → der Bombardier bekommt etwa dreimal so viel).
+4. **Upgrades verdeckt:** Was eine Stufe macht, sieht man erst, wenn die Stufe davor freigeschaltet ist (Stufe 1 immer sichtbar).
+5. Crosspath wie BTD6 (zwei Pfade, nur einer über Stufe 2) bleibt — gilt fürs Kaufen im Match, nicht fürs Freischalten.
+
 ## Neustart als BTD6-artiges Spiel (Max, 09.10.2026) — gilt vor allem darunter
 
 Max hat Runde 10 gespielt (Replay `docs/balancing/playtests/2026-10-09-max-normal-loss.json`). Echte Bilder

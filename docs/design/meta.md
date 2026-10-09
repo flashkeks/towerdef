@@ -64,3 +64,26 @@ Zurücksetzen des Baums: kostenlos, gibt alle Punkte zurück (Slice, später ggf
 3. **Turm-Detail**: Turm groß (Sprite in der gewählten Stufe), 3 × 5 Stufen als Pixel-Icons mit Name/Preis, Turm-XP-Balken,
    Klick auf freischaltbare Stufe → Freischalten (Ton + Effekt), Vorschau des Sprites je Stufe beim Überfahren.
 4. **Startseite / Kartenwahl**: Spieler-Level + Balken, Karte mit Medaillen, Schwierigkeit wählen, Knöpfe zu Türme/Wissen.
+
+## Nachtrag Runde 11b (Max, 09.10.2026 abends) — gilt vor „Turm-XP“ oben
+
+**Turm-XP entsteht im Match, am Ende jeder Runde** (nicht mehr 1 XP je Pop + 20 je Kauf am Matchende):
+- Topf je Runde: `XP_r = (10 + 6 × Runde) × Schwierigkeit` (Easy 1,0 / Medium 1,1 / Hard 1,2). Summe R1–20 Medium ≈ 1.610.
+- Aufteilung auf die Turmtypen, die in der Runde standen: **50 % nach investiertem Geld** (Summe `spent` aller Türme dieses Typs
+  / Summe aller Türme, ohne Held) und **50 % nach Schichten, die der Typ in dieser Runde geknackt hat**. Beispiel 10 Ranger
+  (3.000) + 1 Bombardier (10.000), Pops 50/50: Ranger 0,5 × 23 % + 0,5 × 50 % ≈ 37 %, Bombardier ≈ 63 %; macht der Bombardier
+  auch die Mehrheit der Kills, entsprechend mehr.
+- Rundung: ganze XP, Rest an den Typ mit dem größten Anteil (deterministisch). Freeplay später 30 %.
+- Startguthaben je Turm **100** (statt 250): genau Stufe 1 eines Pfads.
+- Kosten bleiben T1 100 / T2 250 / T3 900 / T4 2.500 / T5 8.000. Einordnung: eine volle Medium-Partie mit einem Haupt-Turm bringt
+  ihm ≈ 800–1.100 XP → etwa ein T3 je Partie, T4 nach ~3 Partien, T5 nach ~10+.
+- Wissensknoten „Fast Learner“ (+20 %) wirkt auf den Topf.
+
+**Freischalten im Match:** Die Sim führt das Turm-XP-Konto im Match (`GameOptions.towerXp`, Startwert aus dem Profil) und die
+Freischaltungen (`unlocks.maxTier`). Neuer Befehl `{ type: 'unlockTier', tower, path }`: zieht die Kosten der nächsten Stufe vom
+Konto ab und hebt `maxTier`; Gründe `no-xp`, `maxed`. Freischalten ist **unabhängig vom Crosspath** (man darf alle drei Pfade
+freischalten, kaufen nur 5-2-0). Am Matchende liefert das Ergebnis das Endkonto und die Endstufen; Meta übernimmt beides
+(idempotent je Match-ID).
+
+**Verdeckte Stufen:** Name/Beschreibung einer Stufe nur, wenn die Stufe davor freigeschaltet ist (oder Stufe 1). Sonst „???“ mit
+Schloss und nur die XP-Kosten. Gilt im Upgrade-Panel, im Freischalt-Menü und im Turm-Detail.
