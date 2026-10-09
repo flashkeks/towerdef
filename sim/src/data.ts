@@ -53,6 +53,8 @@ const towersSchema = z.object({
   ranger: towerSchema,
   bombardier: towerSchema,
   frostcaller: towerSchema,
+  longshot: towerSchema,
+  market: towerSchema,
   wren: heroSchema,
 });
 
@@ -157,6 +159,8 @@ export interface GameData {
   rbe: Record<EnemyType, number>;
 }
 
+const ALL_TOWERS = ['ranger', 'bombardier', 'frostcaller', 'longshot', 'market'] as const;
+
 function check(cond: boolean, msg: string): void {
   if (!cond) throw new Error(`Spieldaten inkonsistent: ${msg}`);
 }
@@ -179,7 +183,7 @@ function load(): GameData {
 
   for (const e of ENEMY_TYPES) check(!!enemies[e], `Gegner ${e} fehlt`);
   rounds.forEach((r, i) => check(r.round === i + 1, `Runde ${i + 1} falsch nummeriert`));
-  for (const k of ['ranger', 'bombardier', 'frostcaller'] as const) {
+  for (const k of ALL_TOWERS) {
     for (const p of t[k].paths) {
       let last = 0;
       for (const tier of p.tiers) {
@@ -195,7 +199,7 @@ function load(): GameData {
   const checkMods = (mods: Mod[], where: string): void => {
     for (const m of mods) check(typeOk(m.stat, m.v), `${where}: ${m.stat} hat falschen Typ`);
   };
-  for (const k of ['ranger', 'bombardier', 'frostcaller'] as const) {
+  for (const k of ALL_TOWERS) {
     for (const [stat, v] of Object.entries(t[k].base)) check(typeOk(stat, v), `${k} base ${stat}`);
     t[k].paths.forEach((p) => p.tiers.forEach((tier) => checkMods(tier.mods as Mod[], `${k}/${tier.name}`)));
   }
@@ -211,7 +215,7 @@ function load(): GameData {
   for (const e of ENEMY_TYPES) rbe[e] = calc(e, 0);
 
   return {
-    towers: { ranger: t.ranger, bombardier: t.bombardier, frostcaller: t.frostcaller },
+    towers: { ranger: t.ranger, bombardier: t.bombardier, frostcaller: t.frostcaller, longshot: t.longshot, market: t.market },
     hero: { wren: t.wren },
     enemies,
     rounds,

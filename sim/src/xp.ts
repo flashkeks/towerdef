@@ -4,7 +4,8 @@
 import { DATA } from './data.js';
 import type { Difficulty, TowerType } from './types.js';
 
-export const XP_TOWER_TYPES: readonly TowerType[] = ['ranger', 'bombardier', 'frostcaller'];
+/** Reihenfolge entscheidet bei Gleichstand um den Rest (Runde 13: Longshot, Market dahinter). */
+export const XP_TOWER_TYPES: readonly TowerType[] = ['ranger', 'bombardier', 'frostcaller', 'longshot', 'market'];
 type PerTower = Record<TowerType, number>;
 
 /** Topf der Runde `r`: (potBase + potPerRound x r) x Schwierigkeit x (1 + towerXpBp), abgerundet. */
@@ -19,12 +20,16 @@ export function towerXpPot(r: number, difficulty: Difficulty, extraBp = 0): numb
  * Rest nach der Rundung an den Typ mit dem größten Anteil (Gleichstand: Reihenfolge ranger, bombardier, frostcaller).
  * Die Summe der Anteile ist immer genau `pot`.
  */
-export function splitTowerXp(pot: number, spent: PerTower, pops: PerTower): PerTower {
-  const out: PerTower = { ranger: 0, bombardier: 0, frostcaller: 0 };
-  const spentTot = spent.ranger + spent.bombardier + spent.frostcaller;
-  const popsTot = pops.ranger + pops.bombardier + pops.frostcaller;
+export function splitTowerXp(pot: number, spentIn: Partial<PerTower>, popsIn: Partial<PerTower>): PerTower {
+  const zero = (): PerTower => ({ ranger: 0, bombardier: 0, frostcaller: 0, longshot: 0, market: 0 });
+  const out = zero();
+  const spent = { ...zero(), ...spentIn };
+  const pops = { ...zero(), ...popsIn };
+  const sum = (o: PerTower): number => XP_TOWER_TYPES.reduce((a, t) => a + o[t], 0);
+  const spentTot = sum(spent);
+  const popsTot = sum(pops);
   if (pot <= 0 || (spentTot === 0 && popsTot === 0)) return out;
-  const num: PerTower = { ranger: 0, bombardier: 0, frostcaller: 0 };
+  const num = zero();
   let den: number;
   if (spentTot > 0 && popsTot > 0) {
     den = 2 * spentTot * popsTot;

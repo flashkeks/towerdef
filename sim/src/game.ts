@@ -13,7 +13,7 @@ import { applyMod, pathOrder, type Mod, type Stats } from './stats.js';
 import { cosBp, rotate, sinBp } from './trig.js';
 import type {
   AbilityId, Command, CommandResult, DamageType, Difficulty, EnemyState, EnemyType, Game, GameOptions, GameState,
-  HeroType, PlaceCheck, PowerKey, ProjectileKind, ProjectileState, RoundPreview, SimEvent, TargetMode, TowerState, TowerType, Tiers, TrapState, UnlockPathInfo, UpgradeInfo,
+  HeroType, MarketInfo, PlaceCheck, TowerAura, PowerKey, ProjectileKind, ProjectileState, RoundPreview, SimEvent, TargetMode, TowerState, TowerType, Tiers, TrapState, UnlockPathInfo, UpgradeInfo,
 } from './types.js';
 
 export const MAX_ROUND = 20;
@@ -22,8 +22,13 @@ const ATTACK_ANIM = 18;
 const MIN_SPAWN_PROGRESS = 8000;
 const PROJ_RADIUS = 3500;
 const CELL = 24000;
-const TOWER_TYPES: readonly TowerType[] = ['ranger', 'bombardier', 'frostcaller'];
-const ABILITY_ORDER: AbilityId[] = ['arrowRain', 'absoluteZero', 'flare', 'dawnbreak'];
+const TOWER_TYPES: readonly TowerType[] = ['ranger', 'bombardier', 'frostcaller', 'longshot', 'market'];
+/** Die drei "Primary"-Türme (Wissensbaum-Ast Primary). */
+const PRIMARY: readonly TowerType[] = ['ranger', 'bombardier', 'frostcaller'];
+const ABILITY_ORDER: AbilityId[] = ['arrowRain', 'absoluteZero', 'flare', 'dawnbreak', 'focus', 'supplyDrop', 'grant'];
+/** Reichweite ab hier = ganze Karte (Longshot): Zielwahl über alle Gegner, keine Reichweiten-Boni. */
+export const GLOBAL_RANGE = 1_000_000;
+const perTower = <T,>(v: () => T): Record<TowerType, T> => ({ ranger: v(), bombardier: v(), frostcaller: v(), longshot: v(), market: v() });
 const STRONG_RANK: Record<EnemyType, number> = { leviathan: 8, brute: 7, ironshell: 6, ember: 6, gold: 4, green: 3, blue: 2, red: 1 };
 
 const isHero = (t: TowerType | HeroType): t is HeroType => t === 'wren';
@@ -80,7 +85,7 @@ export function createGame(opts: GameOptions): Game {
     return o;
   };
   const powers0 = zeroPowers(0);
-  for (const k of POWER_KEYS) powers0[k] = Math.max(0, Math.floor(opts.powers?.[k] ?? 0));
+  for (const k of POWER_KEYS) powers0[k] = Math.max(0, Math.floor(opts.powers?.[k] ?? 0)) + Math.max(0, Math.floor(kmods.freePowers?.[k] ?? 0));
 
   const lives0 = diff.lives + (kmods.lives ?? 0);
   const S: GameState = {
@@ -94,22 +99,21 @@ export function createGame(opts: GameOptions): Game {
     enemies: [],
     projectiles: [],
     abilities: [],
-    towerXp: opts.towerXp ? { ranger: opts.towerXp.ranger, bombardier: opts.towerXp.bombardier, frostcaller: opts.towerXp.frostcaller } : { ranger: 0, bombardier: 0, frostcaller: 0 },
-    towerXpGained: { ranger: 0, bombardier: 0, frostcaller: 0 },
-    maxTier: {
-      ranger: opts.unlocks ? [...opts.unlocks.maxTier.ranger] : [5, 5, 5],
-      bombardier: opts.unlocks ? [...opts.unlocks.maxTier.bombardier] : [5, 5, 5],
-      frostcaller: opts.unlocks ? [...opts.unlocks.maxTier.frostcaller] : [5, 5, 5],
-    },
-    roundPops: { ranger: 0, bombardier: 0, frostcaller: 0 },
+    towerXp: perTower(() => 0),
+    towerXpGained: perTower(() => 0),
+    maxTier: perTower((): Tiers => [5, 5, 5]),
+    roundPops: perTower(() => 0),
     stats: {
-      pops: { ranger: 0, bombardier: 0, frostcaller: 0, wren: 0 },
+      pops: { ...perTower(() => 0), wren: 0 },
       leaked: 0,
-      spent: { ranger: 0, bombardier: 0, frostcaller: 0, wren: 0 },
+      spent: { ...perTower(() => 0), wren: 0 },
       powersUsed: zeroPowers(0),
+      income: 0,
+      abilityCash: 0,
     },
     powers: powers0,
     powerUsedRound: zeroPowers(-1),
+    powerUses: zeroPowers(0),
     traps: [],
     warpLeft: 0,
     oilRound: 0,
@@ -117,11 +121,17 @@ export function createGame(opts: GameOptions): Game {
     autoStart: false,
     heroPlaced: false,
     rainLeft: 0,
+    focusLeft: 0,
     nextId: 1,
     rng: seedRng(opts.seed),
     groups: [],
     activeRounds: [],
   };
+
+  for (const t of TOWER_TYPES) {
+    if (opts.towerXp) S.towerXp[t] = opts.towerXp[t] ?? 0;
+    if (opts.unlocks) S.maxTier[t] = opts.unlocks.maxTier[t] ? ([...opts.unlocks.maxTier[t]!] as Tiers) : [0, 0, 0];
+  }
 
   let events: SimEvent[] = [];
   const emit = (e: SimEvent): void => {
@@ -147,11 +157,37 @@ export function createGame(opts: GameOptions): Game {
   function towerDef(type: TowerType | HeroType): { price: number; radius: number } {
     return isHero(type) ? DATA.hero[type] : DATA.towers[type];
   }
-  const priceOf = (type: TowerType | HeroType): number => round5(towerDef(type).price, diff.priceBp);
-  function upgradePrice(type: TowerType, path: number, tier: number): number {
+  const priceOf = (type: TowerType | HeroType): number => {
+    let base = towerDef(type).price;
+    if (type === 'market' && kmods.marketPriceBp) base = Math.floor((base * (10000 - kmods.marketPriceBp)) / 10000);
+    return round5(base, diff.priceBp);
+  };
+  function upgradePrice(t: TowerState, path: number, tier: number): number {
+    const type = t.type as TowerType;
     let base = DATA.towers[type].paths[path].tiers[tier - 1].price;
     if (tier === 1 && kmods.t1DiscountBp) base = Math.floor((base * (10000 - kmods.t1DiscountBp)) / 10000);
+    if (tier === 2 && kmods.t2DiscountBp && PRIMARY.includes(type)) base = Math.floor((base * (10000 - kmods.t2DiscountBp)) / 10000);
+    const disc = auraOf(t).discountBp;
+    if (disc) base = Math.floor((base * (10000 - disc)) / 10000);
     return round5(base, diff.priceBp);
+  }
+
+  /** Auren der Markets auf einen Turm: je Feld der stärkste Wert, keine Stapelung. Der Market selbst gehört nicht dazu. */
+  function auraOf(t: TowerState): TowerAura {
+    const a: TowerAura = { rangeBp: 0, camo: false, speedBp: 0, armor: false, pierce: 0, dmg: 0, discountBp: 0 };
+    for (const m of S.towers) {
+      if (m === t || m.type !== 'market') continue;
+      const ms = tstats.get(m.id);
+      if (!ms || dist2(t.x, t.y, m.x, m.y) > ms.range * ms.range) continue;
+      a.rangeBp = Math.max(a.rangeBp, ms.aRangeBp);
+      if (ms.aCamo > 0) a.camo = true;
+      a.speedBp = Math.max(a.speedBp, ms.aSpeedBp);
+      if (ms.aArmor > 0) a.armor = true;
+      a.pierce = Math.max(a.pierce, ms.aPierce);
+      a.dmg = Math.max(a.dmg, ms.aDmg);
+      a.discountBp = Math.max(a.discountBp, ms.aDiscBp);
+    }
+    return a;
   }
 
   function computeStats(t: TowerState): Stats {
@@ -177,6 +213,12 @@ export function createGame(opts: GameOptions): Game {
       st.flareR = f(st.flareR);
     }
     if (kmods.slowDurBp) st.slowTicks = Math.floor((st.slowTicks * (10000 + kmods.slowDurBp)) / 10000);
+    if (kmods.freezeAddTicks) {
+      if (st.azDur > 0) st.azDur += kmods.freezeAddTicks;
+      if (st.azBoss > 0) st.azBoss += kmods.freezeAddTicks;
+    }
+    if (kmods.supplyBonus && st.supplyCash > 0) st.supplyCash += kmods.supplyBonus;
+    if (kmods.marketRadiusBp && t.type === 'market') st.range = Math.floor((st.range * (10000 + kmods.marketRadiusBp)) / 10000);
     return st;
   }
 
@@ -197,6 +239,16 @@ export function createGame(opts: GameOptions): Game {
     if (id === 'absoluteZero') {
       let cd = 0;
       for (const t of S.towers) if (t.type === 'frostcaller') { const st = tstats.get(t.id)!; if (st.azDur > 0) cd = Math.max(cd, st.azCd); }
+      return cd > 0 ? { cd } : null;
+    }
+    if (id === 'focus' || id === 'supplyDrop' || id === 'grant') {
+      let cd = 0;
+      for (const t of S.towers) {
+        const st = tstats.get(t.id)!;
+        if (id === 'focus' && t.type === 'longshot' && st.focusDur > 0) cd = Math.max(cd, st.focusCd);
+        if (id === 'supplyDrop' && t.type === 'longshot' && st.supplyCash > 0) cd = Math.max(cd, st.supplyCd);
+        if (id === 'grant' && t.type === 'market' && st.grantCash > 0) cd = Math.max(cd, st.grantCd);
+      }
       return cd > 0 ? { cd } : null;
     }
     const h = heroTower();
@@ -227,7 +279,7 @@ export function createGame(opts: GameOptions): Game {
     const e: EnemyState = {
       id: S.nextId++, type, x: pos.x, y: pos.y, progress, hp: d.hp, maxHp: d.hp, camo, revealed,
       slowBp: 0, slowTicks: 0, stunTicks: 0, frozenTicks: 0, burnTicks: 0, damageStage: 0,
-      frac: 0, round, brittleTicks: 0, burnDmg: 0, burnOwner: 0, dead: false,
+      frac: 0, round, brittleTicks: 0, burnDmg: 0, burnOwner: 0, markTicks: 0, markBp: 0, dead: false,
     };
     S.enemies.push(e);
     emap.set(e.id, e);
@@ -299,6 +351,8 @@ export function createGame(opts: GameOptions): Game {
     }
     let total = amount;
     if (e.brittleTicks > 0) total += 1;
+    // Crippling Shot: markierter Boss nimmt aus allen Quellen mehr Schaden (kaufmännisch gerundet)
+    if (e.markTicks > 0 && total > 0) total += Math.floor((total * e.markBp + 5000) / 10000);
     if (total <= 0) return false;
     if (!silent) emit({ type: 'hit', tick: S.tick, enemy: e.id, tower: src, dmg: total, dtype, x: e.x, y: e.y });
     const before = e.hp;
@@ -466,9 +520,11 @@ export function createGame(opts: GameOptions): Game {
     let best: EnemyState | null = null;
     let bestKey = 0;
     const r2 = range * range;
-    const cand = queryBox(t.x - range - 25000, t.y - range - 25000, t.x + range + 25000, t.y + range + 25000);
+    // Ganze Karte (Longshot): kein Raster, alle Gegner ansehen
+    const cand = range >= GLOBAL_RANGE ? S.enemies : queryBox(t.x - range - 25000, t.y - range - 25000, t.x + range + 25000, t.y + range + 25000);
+    const elite = tstats.get(t.id)?.eliteStrong === 1;
     for (const e of cand) {
-      if (e.progress < MIN_SPAWN_PROGRESS) continue;
+      if (e.dead || e.progress < MIN_SPAWN_PROGRESS) continue;
       if (requireDetect && e.camo && !e.revealed && !detect) continue;
       const d2 = dist2(t.x, t.y, e.x, e.y);
       if (d2 > r2) continue;
@@ -477,7 +533,7 @@ export function createGame(opts: GameOptions): Game {
         case 'first': key = e.progress * 1024 - (e.id & 1023); break;
         case 'last': key = -e.progress * 1024 - (e.id & 1023); break;
         case 'close': key = -d2; break;
-        default: key = STRONG_RANK[e.type] * 1e12 + e.progress; break;
+        default: key = (elite && e.type === 'brute' ? 9 : STRONG_RANK[e.type]) * 1e12 + e.progress; break;
       }
       if (best === null || key > bestKey || (key === bestKey && e.id < best.id)) {
         best = e;
@@ -515,10 +571,13 @@ export function createGame(opts: GameOptions): Game {
     if (!e || e.dead || dist2(t.x, t.y, e.x, e.y) > (t.range + 12000) * (t.range + 12000)) e = pickTarget(t, t.range, t.camo, t.target);
     if (!e) return;
     t.facing = facingOf(e.x - t.x, e.y - t.y);
+    // Market-Aura (Runde 13): +Schaden, sharp -> magic (Armory), +Pierce
+    const aura = auraOf(t);
+    const dmg = st.dmg + aura.dmg;
 
     if (st.atk === 'chain') {
       emit({ type: 'fire', tick: S.tick, tower: t.id, kind: 'chain' });
-      lightning(t.x, t.y, e, st.chainN, st.chainRange, st.dmg, t.id, [], true);
+      lightning(t.x, t.y, e, st.chainN, st.chainRange, dmg, t.id, [], true);
       return;
     }
     if (st.atk === 'bomb') {
@@ -534,7 +593,7 @@ export function createGame(opts: GameOptions): Game {
       }
       const flight = Math.max(1, st.flight);
       const pp = predictPos(e, flight);
-      const p = makeProj(t.id, st.pk, t.x, t.y, 0, 0, st.dmg, st.dtype, 0, flight, 0, st);
+      const p = makeProj(t.id, st.pk, t.x, t.y, 0, 0, dmg, st.dtype, 0, flight, 0, st);
       p.arc = { x0: t.x, y0: t.y, x1: pp.x, y1: pp.y, t: 0 };
       emit({ type: 'fire', tick: S.tick, tower: t.id, projectile: p.id, kind: st.pk });
       return;
@@ -551,7 +610,7 @@ export function createGame(opts: GameOptions): Game {
     for (let i = 0; i < st.count; i++) {
       const deg = Math.floor(((2 * i - (st.count - 1)) * st.spread) / 2);
       const [vx, vy] = rotate(bvx, bvy, deg);
-      const p = makeProj(t.id, st.pk, t.x, t.y, vx, vy, st.dmg, st.dtype, st.pierce, life, 0, st);
+      const p = makeProj(t.id, st.pk, t.x, t.y, vx, vy, dmg, aura.armor && st.dtype === 'sharp' ? 'magic' : st.dtype, st.pierce + aura.pierce, life, 0, st);
       if (i === 0) first = p.id;
     }
     emit({ type: 'fire', tick: S.tick, tower: t.id, projectile: first, kind: st.pk });
@@ -560,6 +619,9 @@ export function createGame(opts: GameOptions): Game {
   function updateTowers(): void {
     const hero = heroTower();
     const hst = hero ? tstats.get(hero.id)! : null;
+    // Elite Sniper: das beste Tempo-Angebot gilt für alle Longshots
+    let elite = 0;
+    for (const o of S.towers) if (o.type === 'longshot') elite = Math.max(elite, tstats.get(o.id)!.eliteBp);
     for (const t of S.towers) {
       const st = tstats.get(t.id)!;
       // Aura des Helden
@@ -568,7 +630,16 @@ export function createGame(opts: GameOptions): Game {
         speedBuff = hst.buffSpeedBp;
         rangeBuff = hst.buffRangeBp;
       }
-      t.range = rangeBuff ? Math.floor((st.range * (10000 + rangeBuff)) / 10000) : st.range;
+      // Auren der Markets, Wissensbaum-Tempo, Elite Sniper (additiv in Basispunkten)
+      const aura = t.type === 'market' ? null : auraOf(t);
+      if (aura) {
+        speedBuff += aura.speedBp;
+        rangeBuff += aura.rangeBp;
+      }
+      speedBuff += kmods.tempoBp?.[t.type as TowerType] ?? 0;
+      if (t.type === 'longshot') speedBuff += elite;
+      t.range = t.type === 'market' || st.range >= GLOBAL_RANGE || !rangeBuff ? st.range : Math.floor((st.range * (10000 + rangeBuff)) / 10000);
+      t.camo = st.camo === 1 || !!aura?.camo;
 
       // Frost-Aura
       if (st.auraSlowBp > 0) {
@@ -602,6 +673,7 @@ export function createGame(opts: GameOptions): Game {
       if (st.atk === 'none') continue;
       let dec = Math.floor((1000 * (10000 + speedBuff)) / 10000);
       if (t.type === 'ranger' && S.rainLeft > 0) dec *= 3;
+      if (t.type === 'longshot' && S.focusLeft > 0) dec *= 2;
       t.cd -= dec;
       if (t.cd < -dec) t.cd = -dec;
       if (t.attackTick > 0) {
@@ -633,6 +705,23 @@ export function createGame(opts: GameOptions): Game {
     else if (p.sub === 1 && p.kind === 'frag' && st.fragExplR > 0) explodeAt(at.x, at.y, st.fragExplR, st.fragExplDmg, 'explosive', 6, p.owner, null, 'mini', 0, 0, p.hit);
   }
 
+  /** Ricochet (Longshot C2): sofort auf `ricochetN` weitere Gegner, je Sprung 1 Schaden weniger (mindestens 1). */
+  function ricochet(p: ProjectileState, from: EnemyState, st: Stats): void {
+    const points: [number, number][] = [[from.x, from.y]];
+    let cur = from;
+    for (let i = 1; i <= st.ricochetN; i++) {
+      const next = nearestUnhit(cur.x, cur.y, st.ricochetRange, [from.id, ...p.hit], 1)[0];
+      if (!next) break;
+      const created: number[] = [];
+      points.push([next.x, next.y]);
+      p.hit.push(next.id);
+      damage(next, Math.max(1, p.dmg - i), p.dtype, p.owner, created);
+      for (const c of created) p.hit.push(c);
+      cur = next;
+    }
+    if (points.length >= 2) emit({ type: 'ricochet', tick: S.tick, tower: p.owner, points, dmg: p.dmg });
+  }
+
   function hitEnemy(p: ProjectileState, e: EnemyState, st: Stats): void {
     p.hit.push(e.id);
     p.pierce--;
@@ -642,9 +731,18 @@ export function createGame(opts: GameOptions): Game {
     for (const c of created) p.hit.push(c);
     if (p.sub === 0) {
       if (dealt && !e.dead) {
-        if (st.slowBp > 0) applySlow(e, st.slowBp, st.slowTicks, st.brittle === 1);
+        const boss = etab[e.type].boss;
+        if (st.markTicks > 0 && boss) {
+          // Crippling Shot: Boss wird nicht verlangsamt, sondern markiert
+          if (e.markTicks <= 0) emit({ type: 'status', tick: S.tick, enemy: e.id, kind: 'mark' });
+          e.markTicks = Math.max(e.markTicks, st.markTicks);
+          e.markBp = Math.max(e.markBp, st.markBp);
+        } else if (st.slowBp > 0) applySlow(e, st.slowBp, st.slowTicks, st.brittle === 1);
+        if (st.hitStunBoss > 0 && boss) applyStun(e, 0, st.hitStunBoss);
         if (st.burnDmg > 0) applyBurn(e, st.burnDmg, st.burnTicks, p.owner);
       }
+      if (dealt && st.fragOnHit > 0) spawnFrags(e.x, e.y, st, p.owner, p.hit.slice());
+      if (dealt && st.ricochetN > 0) ricochet(p, e, st);
       if (dealt && st.sparkN > 0) {
         lightning(e.x, e.y, null, st.sparkN, st.chainRange, st.sparkDmg, p.owner, [e.id, ...p.hit], true);
       }
@@ -768,6 +866,7 @@ export function createGame(opts: GameOptions): Game {
       }
       if (e.slowTicks > 0 && --e.slowTicks === 0) e.slowBp = 0;
       if (e.brittleTicks > 0) e.brittleTicks--;
+      if (e.markTicks > 0 && --e.markTicks === 0) e.markBp = 0;
       if (e.frozenTicks > 0) {
         e.frozenTicks--;
         continue;
@@ -827,7 +926,7 @@ export function createGame(opts: GameOptions): Game {
   function grantHeroXp(amount: number): void {
     const h = heroTower();
     if (!h) return;
-    h.heroXp += amount;
+    h.heroXp += kmods.heroXpBp ? Math.floor((amount * (10000 + kmods.heroXpBp)) / 10000) : amount;
     const lv = DATA.hero.wren.levels;
     let changed = false;
     while (h.heroLevel < 20 && h.heroXp >= lv[h.heroLevel].xp) {
@@ -838,12 +937,37 @@ export function createGame(opts: GameOptions): Game {
     if (changed) refreshTower(h);
   }
 
+  /** Market-Einkommen am Rundenende (Runde 13): Zinsen auf das Konto, Einnahmen dazu, Deckel; Überlauf geht als Geld raus. */
+  function payMarkets(r: number): void {
+    const markets = S.towers.filter((t) => t.type === 'market');
+    for (const m of markets) {
+      const st = tstats.get(m.id)!;
+      if (st.income <= 0 && m.bank <= 0) continue;
+      let golden = 0;
+      for (const o of markets) if (o !== m) golden = Math.max(golden, tstats.get(o.id)!.goldenBp);
+      const gross = Math.floor((st.income * (10000 + (kmods.marketBp ?? 0) + golden)) / 10000);
+      let amount = gross;
+      let cash = gross;
+      if (st.bankOn > 0) {
+        const interest = Math.floor((m.bank * (st.bankRateBp + (kmods.bankRateBp ?? 0))) / 10000);
+        const total = m.bank + interest + gross;
+        m.bank = Math.min(st.bankCap, total);
+        cash = total - m.bank;
+        amount = gross + interest;
+      }
+      S.cash += cash;
+      S.stats.income += amount;
+      if (amount > 0 || cash > 0) emit({ type: 'income', tick: S.tick, tower: m.id, round: r, amount, cash, bank: m.bank });
+    }
+  }
+
   function endRound(r: number): void {
     const bonus = 100 + r + (r <= 10 ? (kmods.earlyBonus ?? 0) : 0);
     S.cash += bonus;
     S.roundsCleared++;
     S.activeRounds = S.activeRounds.filter((x) => x !== r);
     for (const t of S.traps.slice()) if (t.until > 0 && t.until <= r) removeTrap(t, 'expired');
+    payMarkets(r);
     grantHeroXp(60 + 20 * r);
     emit({ type: 'roundEnd', tick: S.tick, round: r, bonus });
     distributeTowerXp(r);
@@ -857,12 +981,12 @@ export function createGame(opts: GameOptions): Game {
    */
   function distributeTowerXp(r: number): void {
     if (!opts.towerXp) return;
-    const spent = { ranger: 0, bombardier: 0, frostcaller: 0 };
+    const spent = perTower(() => 0);
     for (const t of S.towers) if (!isHero(t.type)) spent[t.type] += t.spent;
     const pops = S.roundPops;
-    const spentTot = spent.ranger + spent.bombardier + spent.frostcaller;
-    const popsTot = pops.ranger + pops.bombardier + pops.frostcaller;
-    S.roundPops = { ranger: 0, bombardier: 0, frostcaller: 0 };
+    const spentTot = TOWER_TYPES.reduce((a, k) => a + spent[k], 0);
+    const popsTot = TOWER_TYPES.reduce((a, k) => a + pops[k], 0);
+    S.roundPops = perTower(() => 0);
     if (spentTot === 0 && popsTot === 0) return;
     const pot = towerXpPot(r, opts.difficulty, kmods.towerXpBp ?? 0);
     const split = splitTowerXp(pot, spent, pops);
@@ -914,6 +1038,7 @@ export function createGame(opts: GameOptions): Game {
     // 2. Fähigkeits-Abklingzeiten
     for (const a of S.abilities) if (!a.ready && --a.cdLeft <= 0) { a.cdLeft = 0; a.ready = true; }
     if (S.rainLeft > 0) S.rainLeft--;
+    if (S.focusLeft > 0) S.focusLeft--;
     if (S.warpLeft > 0) S.warpLeft--;
     // 3. Gegner bewegen, Status
     updateEnemies();
@@ -982,7 +1107,7 @@ export function createGame(opts: GameOptions): Game {
       const unlocked = S.maxTier[t.type as TowerType][p];
       if (cur >= 5) return { path: p, current: cur, next: null, name: '', desc: '', price: 0, unlocked, unlockCost: 0, revealed: true, canBuy: false, reason: 'maxed' };
       const tier = d.paths[p].tiers[cur];
-      const price = upgradePrice(t.type as TowerType, p, cur + 1);
+      const price = upgradePrice(t, p, cur + 1);
       const reason = upgradeBlock(t, p, price);
       const revealed = cur + 1 === 1 || unlocked >= cur;
       return {
@@ -1020,8 +1145,22 @@ export function createGame(opts: GameOptions): Game {
 
   const sellValue = (id: number): number => {
     const t = towerById(id);
-    return t ? Math.ceil((t.spent * sellRate) / 10000) : 0;
+    return t ? Math.ceil((t.spent * sellRate) / 10000) + t.bank : 0;
   };
+
+  function marketInfo(id: number): MarketInfo | null {
+    const t = towerById(id);
+    if (!t || t.type !== 'market') return null;
+    const st = tstats.get(t.id)!;
+    let golden = 0;
+    for (const o of S.towers) if (o !== t && o.type === 'market') golden = Math.max(golden, tstats.get(o.id)!.goldenBp);
+    const rate = st.bankOn > 0 ? st.bankRateBp + (kmods.bankRateBp ?? 0) : 0;
+    return {
+      income: Math.floor((st.income * (10000 + (kmods.marketBp ?? 0) + golden)) / 10000),
+      hasBank: st.bankOn > 0, bank: t.bank, bankRateBp: rate, bankCap: st.bankCap,
+      nextInterest: Math.floor((t.bank * rate) / 10000), grantCash: st.grantCash, radius: st.range,
+    };
+  }
 
   function useAbility(id: AbilityId): CommandResult {
     const a = S.abilities.find((x) => x.id === id);
@@ -1043,6 +1182,38 @@ export function createGame(opts: GameOptions): Game {
         if (e.frozenTicks <= 0) emit({ type: 'status', tick: S.tick, enemy: e.id, kind: 'freeze' });
         e.frozenTicks = Math.max(e.frozenTicks, f);
       }
+    } else if (id === 'focus') {
+      let dur = 0;
+      for (const t of S.towers) if (t.type === 'longshot') dur = Math.max(dur, tstats.get(t.id)!.focusDur);
+      S.focusLeft = dur;
+      emit({ type: 'ability', tick: S.tick, id });
+    } else if (id === 'supplyDrop') {
+      // Jeder Longshot mit Supply Drop liefert seine Kiste (eine gemeinsame Abklingzeit, wie bei Arrow Rain)
+      let total = 0;
+      let at: TowerState | undefined;
+      for (const t of S.towers) {
+        const st = tstats.get(t.id)!;
+        if (t.type === 'longshot' && st.supplyCash > 0) {
+          total += st.supplyCash;
+          at ??= t;
+        }
+      }
+      S.cash += total;
+      S.stats.abilityCash += total;
+      emit({ type: 'ability', tick: S.tick, id, x: at?.x, y: at?.y, cash: total });
+    } else if (id === 'grant') {
+      let total = 0;
+      let at: TowerState | undefined;
+      for (const t of S.towers) {
+        const st = tstats.get(t.id)!;
+        if (t.type === 'market' && st.grantCash > 0) {
+          total += st.grantCash;
+          at ??= t;
+        }
+      }
+      S.cash += total;
+      S.stats.abilityCash += total;
+      emit({ type: 'ability', tick: S.tick, id, x: at?.x, y: at?.y, cash: total });
     } else {
       const h = heroTower();
       if (!h) return { ok: false, reason: 'no-ability' };
@@ -1081,7 +1252,7 @@ export function createGame(opts: GameOptions): Game {
     const t: TowerState = {
       id: S.nextId++, type, x, y, tiers: [...tiers] as Tiers, heroLevel: lvl,
       heroXp: hero ? DATA.hero.wren.levels[lvl - 1].xp : 0, target: 'first', facing: 0, attackTick: 0, pops: 0, spent,
-      camo: false, range: 0, cd: 0, windupLeft: 0, windupTarget: 0, shots: 0, auraCd: 0, thunderCd: 0,
+      camo: false, range: 0, cd: 0, windupLeft: 0, windupTarget: 0, shots: 0, auraCd: 0, thunderCd: 0, bank: 0,
     };
     S.towers.push(t);
     if (hero) S.heroPlaced = true;
@@ -1098,7 +1269,7 @@ export function createGame(opts: GameOptions): Game {
   function powerCheck(power: PowerKey, xIn?: number, yIn?: number): PlaceCheck {
     if (!isPowerKey(power)) return { ok: false, reason: 'unknown-power' };
     if (S.powers[power] <= 0) return { ok: false, reason: 'no-power' };
-    if (S.powerUsedRound[power] === S.round) return { ok: false, reason: 'used-this-round' };
+    if (S.powerUsedRound[power] === S.round && S.powerUses[power] >= Math.max(1, kmods.powerUses ?? 1)) return { ok: false, reason: 'used-this-round' };
     const d = DATA.powers[power];
     if (power === 'heroBoost') {
       const h = heroTower();
@@ -1128,6 +1299,7 @@ export function createGame(opts: GameOptions): Game {
     const x = num(cmd.x) ? Math.round(cmd.x) : undefined;
     const y = num(cmd.y) ? Math.round(cmd.y) : undefined;
     S.powers[key]--;
+    S.powerUses[key] = S.powerUsedRound[key] === S.round ? S.powerUses[key] + 1 : 1;
     S.powerUsedRound[key] = S.round;
     S.stats.powersUsed[key]++;
     let id: number | undefined;
@@ -1245,7 +1417,7 @@ export function createGame(opts: GameOptions): Game {
         if (isHero(t.type)) return { ok: false, reason: 'hero' };
         if (![0, 1, 2].includes(cmd.path)) return { ok: false, reason: 'bad-path' };
         const cur = t.tiers[cmd.path];
-        const price = cur >= 5 ? 0 : upgradePrice(t.type as TowerType, cmd.path, cur + 1);
+        const price = cur >= 5 ? 0 : upgradePrice(t, cmd.path, cur + 1);
         const why = upgradeBlock(t, cmd.path, price);
         if (why) return { ok: false, reason: why };
         S.cash -= price;
@@ -1290,6 +1462,17 @@ export function createGame(opts: GameOptions): Game {
       }
       case 'ability':
         return useAbility(cmd.ability);
+      case 'withdraw': {
+        const t = towerById(cmd.towerId);
+        if (!t) return { ok: false, reason: 'no-tower' };
+        if (t.type !== 'market' || tstats.get(t.id)!.bankOn <= 0) return { ok: false, reason: 'not-bank' };
+        if (t.bank <= 0) return { ok: false, reason: 'empty' };
+        const amount = t.bank;
+        S.cash += amount;
+        t.bank = 0;
+        emit({ type: 'withdraw', tick: S.tick, tower: t.id, amount });
+        return { ok: true, id: t.id };
+      }
       case 'power':
         return usePower(cmd);
       case 'startRound':
@@ -1321,6 +1504,11 @@ export function createGame(opts: GameOptions): Game {
     upgradeInfo,
     unlockInfo,
     sellValue,
+    marketInfo,
+    auraOf: (id) => {
+      const t = towerById(id);
+      return t ? auraOf(t) : { rangeBp: 0, camo: false, speedBp: 0, armor: false, pierce: 0, dmg: 0, discountBp: 0 };
+    },
     priceOf,
     canUsePower: powerCheck,
     roundPreview,

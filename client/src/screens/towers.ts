@@ -11,7 +11,7 @@ import { blit, cv, ptext, reducedMotion } from './px';
 import { S, fmt } from './text';
 import type { Ctx, View } from './types';
 
-const NAMES: Record<TowerType, string> = { ranger: 'Ranger', bombardier: 'Bombardier', frostcaller: 'Frostcaller' };
+const NAMES: Record<TowerType, string> = { ranger: 'Ranger', bombardier: 'Bombardier', frostcaller: 'Frostcaller', longshot: 'Longshot', market: 'Lantern Market' };
 const FACING = 6;
 
 let lastUnlocked: string | null = null;

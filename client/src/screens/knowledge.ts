@@ -1,6 +1,6 @@
 /** Wissensbaum: drei Aeste als Pixel-Knoten mit Linien, Punkte oben, Klick kauft, Tooltip erklaert. */
 import {
-  BRANCH_NAMES, KNOWLEDGE, buyNode, knowledgePoints, nodeById, nodeState, resetKnowledge, type Branch, type KnowledgeNode,
+  BRANCHES, BRANCH_NAMES, KNOWLEDGE, buyNode, knowledgePoints, nodeById, nodeState, resetKnowledge, type Branch, type KnowledgeNode,
 } from '../meta';
 import { h } from '../ui/dom';
 import { icon, type IconName } from './icons';
@@ -44,7 +44,8 @@ export function knowledgeView(ctx: Ctx): View {
   el.append(topBar(ctx, S.knowledge.title, right));
 
   const tree = h('div', 'ktree');
-  for (const branch of ['economy', 'towers', 'wardens'] as Branch[]) {
+  // Runde 13: fünf Äste (Platzhalter-Darstellung bis Agent C den Baum neu baut)
+  for (const branch of BRANCHES as readonly Branch[]) {
     const nodes = KNOWLEDGE.filter((n) => n.branch === branch);
     const cols = Math.max(...nodes.map((n) => n.col)) + 1;
     const rows = Math.max(...nodes.map((n) => n.row)) + 1;
@@ -83,7 +84,7 @@ export function knowledgeView(ctx: Ctx): View {
       b.style.left = `${cx(n) - NODE / 2}px`;
       b.style.top = `${top(n)}px`;
       b.style.width = `${NODE}px`;
-      b.append(cv(icon(ICONS[n.id]), 3, 'knode-ic'), h('div', 'knode-n', n.name));
+      b.append(cv(icon(ICONS[n.id] ?? 'star'), 3, 'knode-ic'), h('div', 'knode-n', n.name));
       const foot = h('div', 'knode-f');
       if (st === 'bought') foot.append(cv(icon('check'), 2));
       else if (st === 'locked') foot.append(cv(icon('lock'), 2));

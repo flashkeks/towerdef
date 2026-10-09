@@ -201,7 +201,7 @@ export function boltLineRaster(points: [number, number][], frame = 0): FxRaster 
   return fin(s, -x0, -y0);
 }
 
-export type StatusKind = 'slow' | 'stun' | 'burn' | 'reveal' | 'freeze';
+export type StatusKind = 'slow' | 'stun' | 'burn' | 'reveal' | 'freeze' | 'mark';
 export const STATUS_FRAMES = 4;
 /** Markierungen ueber dem Gegner (12 x 12, Anker = Mitte) bzw. Eisblock um den Gegner (`freeze`, Groesse nach Typ). */
 export function statusRaster(kind: StatusKind, frame: number, etype: EnemyType = 'red'): FxRaster {

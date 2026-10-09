@@ -211,3 +211,42 @@ Gründe: `unknown-power`, `no-power`, `used-this-round`, `no-hero`, `maxed`, `in
 | `trapGone` | id, kind, reason | 'spent' oder 'expired' |
 
 Meta: `Profile.embers`, `Profile.inventory`, `Profile.starterPack`; `MatchResult.powersUsed?`; `MatchReport.embersGained / embers / powersUsed`; `buyPower(profile, key, count?)`; `matchOptions(profile).powers`.
+
+## Ergänzung Runde 13: Lantern Market, Longshot, Wissensbaum
+
+Spezifikation: `docs/design/tuerme-r13.md`. Details der Umsetzung und Abweichungen: `sim/README.md` „Runde 13“, `meta/README.md`.
+
+```ts
+export type TowerType = 'ranger' | 'bombardier' | 'frostcaller' | 'longshot' | 'market';
+export type AbilityId = 'arrowRain' | 'absoluteZero' | 'flare' | 'dawnbreak' | 'focus' | 'supplyDrop' | 'grant';
+export type ProjectileKind = /* … */ | 'snipe';                      // Longshot-Bolzen (50 px je Tick); Splitter nutzen 'frag'
+Command: { type: 'withdraw'; towerId: number }                       // Bank abheben; Gründe 'no-tower' | 'not-bank' | 'empty'; Ergebnis { ok: true, id: towerId }
+TowerState.bank: number;                                             // Market-Konto (sonst 0)
+TowerState.range                                                     // Longshot: ≥ 1.000.000 = ganze Karte (keine Ring-Zeichnung nötig); Market: Wirkradius der Auren
+TowerState.camo                                                      // gilt jetzt inkl. Lookout-Bell-Aura (jeden Tick neu)
+EnemyState.markTicks / markBp                                        // Crippling Shot: Boss-Markierung (Restticks, +bp Schaden)
+GameState.focusLeft                                                  // Focus (Longshot B4), Restticks
+GameState.powerUses                                                  // Einsätze je Power in der Runde powerUsedRound (Spare Pocket: 2)
+GameState.stats.income / abilityCash                                 // Market-Einkommen gesamt / Gold aus Grant + Supply Drop
+Game.marketInfo(towerId): MarketInfo | null                          // { income, hasBank, bank, bankRateBp, bankCap, nextInterest, grantCash, radius }
+Game.auraOf(towerId): TowerAura                                      // { rangeBp, camo, speedBp, armor, pierce, dmg, discountBp } – was gerade auf den Turm wirkt
+Game.sellValue(id)                                                   // enthält bei Markets den Bank-Inhalt
+GameOptions.towerXp / unlocks.maxTier                                // Partial: fehlende Typen = 0 bzw. [0,0,0]
+GameOptions.mods                                                     // neu: t2DiscountBp, tempoBp{typ}, freezeAddTicks, marketBp, bankRateBp, supplyBonus, marketRadiusBp,
+                                                                     //      marketPriceBp, heroXpBp, powerUses, freePowers
+```
+
+| Event | Felder | Bedeutung |
+|---|---|---|
+| `income` | tower, round, amount, cash, bank | Rundenende, je Market: `amount` verdient (inkl. Zinsen), `cash` direkt ausgezahlt (ohne Bank = amount; Überlauf bei vollem Konto), `bank` Kontostand danach. Münzen von `tower` zur Geldanzeige fliegen lassen (bei Bank: zum Konto, `cash` zur Anzeige) |
+| `withdraw` | tower, amount | Bank abgehoben |
+| `ricochet` | tower, points: [x,y][], dmg | Longshot C2: Treffer + Sprungziele (sofort) |
+| `ability` | id, x?, y?, **cash?** | `grant` / `supplyDrop`: `cash` = Gold, x/y = Position des (ersten) auslösenden Turms |
+| `status` | enemy, kind | neu: `kind: 'mark'` (Boss markiert) |
+
+Fähigkeiten `focus`, `supplyDrop`, `grant` sind wie Arrow Rain **global**: eine gemeinsame Abklingzeit, mehrere Türme addieren Gold bzw. teilen sich die Wirkung.
+
+Meta: `TOWER_TYPES` hat fünf Einträge; `Profile.towerXp` / `towerTiers` je fünf (Staende bis Runde 12 werden beim Laden ergänzt, Startwert 100 bzw. `[0,0,0]`);
+`KNOWLEDGE` (28 Knoten) trägt `branch` (`BRANCHES`: economy, primary, specialists, wardens, powers), `col`, `row`, `requires` (mindestens einer);
+`knowledgePoints.total` = Level − 1 + erste Medaillen (`medalCount`); `MatchResult` darf `longshot`/`market` in `towerXp`/`towerTiers`/`pops` weglassen;
+`MatchReport.embers.pouch`; `powerCost(profile, key)` (Bulk Buyer); `LEVEL_UNLOCKS` mit `longshot` (5) und `market` (6).

@@ -93,6 +93,41 @@ export interface Stats {
   buffRadius: number;
   buffSpeedBp: number;
   buffRangeBp: number;
+  // Lantern Market (Runde 13): `range` ist hier der Wirkradius der Auren
+  /** Gold je Rundenende (vor Wissensbaum/Golden Exchange). */
+  income: number;
+  bankOn: number;
+  bankRateBp: number;
+  bankCap: number;
+  grantCash: number;
+  grantCd: number;
+  /** Golden Exchange: andere Markets verdienen so viele Basispunkte mehr. */
+  goldenBp: number;
+  /** Auren auf Türme im Radius (stärkster Wert je Feld zählt, keine Stapelung). */
+  aRangeBp: number;
+  aCamo: number;
+  aSpeedBp: number;
+  aArmor: number;
+  aPierce: number;
+  aDmg: number;
+  aDiscBp: number;
+  // Longshot (Runde 13)
+  /** Treffer wirft Splitter (`fragN` …) statt Bombe/Nova. */
+  fragOnHit: number;
+  ricochetN: number;
+  ricochetRange: number;
+  /** Betäubung des Bosses bei jedem Treffer (Ticks, Lanternbreaker). */
+  hitStunBoss: number;
+  /** Boss-Markierung: Dauer in Ticks, Zusatzschaden in Basispunkten aus allen Quellen. */
+  markTicks: number;
+  markBp: number;
+  focusDur: number;
+  focusCd: number;
+  supplyCash: number;
+  supplyCd: number;
+  /** Elite Sniper: Tempo-Aura für alle Longshots in Basispunkten. */
+  eliteBp: number;
+  eliteStrong: number;
 }
 
 export const STAT_DEFAULTS: Stats = {
@@ -106,6 +141,10 @@ export const STAT_DEFAULTS: Stats = {
   rainDur: 0, rainCd: 0, azDur: 0, azBoss: 0, azCd: 0,
   flareDmg: 0, flareR: 0, flareMax: 0, flareCd: 0, dawnDmg: 0, dawnBoss: 0, dawnCd: 0, burnDmg: 0, burnTicks: 0,
   buffRadius: 0, buffSpeedBp: 0, buffRangeBp: 0,
+  income: 0, bankOn: 0, bankRateBp: 0, bankCap: 0, grantCash: 0, grantCd: 0, goldenBp: 0,
+  aRangeBp: 0, aCamo: 0, aSpeedBp: 0, aArmor: 0, aPierce: 0, aDmg: 0, aDiscBp: 0,
+  fragOnHit: 0, ricochetN: 0, ricochetRange: 0, hitStunBoss: 0, markTicks: 0, markBp: 0,
+  focusDur: 0, focusCd: 0, supplyCash: 0, supplyCd: 0, eliteBp: 0, eliteStrong: 0,
 };
 
 export const STRING_STATS: ReadonlySet<string> = new Set(['atk', 'pk', 'dtype', 'fragKind', 'fragDtype']);

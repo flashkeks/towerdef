@@ -1080,6 +1080,562 @@
    }
   ]
  },
+ "longshot": {
+  "name": "Longshot",
+  "desc": "Sniper with a range of the whole map. Slow, hard-hitting shots that arrive almost instantly.",
+  "price": 350,
+  "radius": 9,
+  "base": {
+   "atk": "projectile",
+   "pk": "snipe",
+   "dtype": "sharp",
+   "dmg": 2,
+   "pierce": 1,
+   "interval": 96000,
+   "range": 1000000,
+   "speed": 3000
+  },
+  "paths": [
+   {
+    "name": "Heavy Rounds",
+    "tiers": [
+     {
+      "name": "Iron Bolt",
+      "price": 350,
+      "desc": "Iron-tipped bolt: 4 damage, magic (cracks Ironshell).",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "dmg",
+        "v": 4
+       },
+       {
+        "op": "set",
+        "stat": "dtype",
+        "v": "magic"
+       }
+      ]
+     },
+     {
+      "name": "Piercing Bolt",
+      "price": 1200,
+      "desc": "Longer barrel: 7 damage, pierces 2.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "dmg",
+        "v": 7
+       },
+       {
+        "op": "set",
+        "stat": "pierce",
+        "v": 2
+       }
+      ]
+     },
+     {
+      "name": "Deadeye",
+      "price": 3000,
+      "desc": "18 damage, +10 against Brutes.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "dmg",
+        "v": 18
+       },
+       {
+        "op": "set",
+        "stat": "bonusBrute",
+        "v": 10
+       }
+      ]
+     },
+     {
+      "name": "Giantslayer",
+      "price": 5000,
+      "desc": "30 damage, +100 against bosses.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "dmg",
+        "v": 30
+       },
+       {
+        "op": "set",
+        "stat": "bonusBoss",
+        "v": 100
+       }
+      ]
+     },
+     {
+      "name": "Lanternbreaker",
+      "price": 22000,
+      "desc": "80 damage, +500 against bosses. A hit staggers a boss for 0.5 s.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "dmg",
+        "v": 80
+       },
+       {
+        "op": "set",
+        "stat": "bonusBoss",
+        "v": 500
+       },
+       {
+        "op": "set",
+        "stat": "hitStunBoss",
+        "v": 30
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "name": "Rapid Reload",
+    "tiers": [
+     {
+      "name": "Night Scope",
+      "price": 200,
+      "desc": "Green night-vision glass: detects Shades (camo).",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "camo",
+        "v": 1
+       }
+      ]
+     },
+     {
+      "name": "Quick Reload",
+      "price": 400,
+      "desc": "Shoots 30% faster.",
+      "mods": [
+       {
+        "op": "mul",
+        "stat": "interval",
+        "v": 7000
+       }
+      ]
+     },
+     {
+      "name": "Repeater",
+      "price": 2500,
+      "desc": "Repeating rifle: shoots three times as fast.",
+      "mods": [
+       {
+        "op": "mul",
+        "stat": "interval",
+        "v": 3300
+       }
+      ]
+     },
+     {
+      "name": "Volley Squad",
+      "price": 4500,
+      "desc": "A second shooter. Ability Focus: all Longshots shoot twice as fast for 8 s. Cooldown 60 s.",
+      "mods": [
+       {
+        "op": "mul",
+        "stat": "interval",
+        "v": 6600
+       },
+       {
+        "op": "set",
+        "stat": "focusDur",
+        "v": 480
+       },
+       {
+        "op": "set",
+        "stat": "focusCd",
+        "v": 3600
+       }
+      ]
+     },
+     {
+      "name": "Lantern Legion",
+      "price": 13000,
+      "desc": "Three shooters: fires every 0.12 s, 4 damage.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "interval",
+        "v": 7200
+       },
+       {
+        "op": "max",
+        "stat": "dmg",
+        "v": 4
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "name": "Field Kit",
+    "tiers": [
+     {
+      "name": "Shrapnel",
+      "price": 250,
+      "desc": "A hit throws 3 splinters.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "fragOnHit",
+        "v": 1
+       },
+       {
+        "op": "set",
+        "stat": "fragN",
+        "v": 3
+       },
+       {
+        "op": "set",
+        "stat": "fragDmg",
+        "v": 1
+       },
+       {
+        "op": "set",
+        "stat": "fragPierce",
+        "v": 1
+       }
+      ]
+     },
+     {
+      "name": "Ricochet",
+      "price": 450,
+      "desc": "The bolt jumps to 2 more enemies, 1 damage less each time.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "ricochetN",
+        "v": 2
+       },
+       {
+        "op": "set",
+        "stat": "ricochetRange",
+        "v": 60000
+       }
+      ]
+     },
+     {
+      "name": "Supply Drop",
+      "price": 2000,
+      "desc": "Ability Supply Drop: a crate with +800 gold. Cooldown 60 s.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "supplyCash",
+        "v": 800
+       },
+       {
+        "op": "set",
+        "stat": "supplyCd",
+        "v": 3600
+       }
+      ]
+     },
+     {
+      "name": "Elite Sniper",
+      "price": 4000,
+      "desc": "All Longshots shoot 40% faster. Strong targeting prefers Brutes.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "eliteBp",
+        "v": 4000
+       },
+       {
+        "op": "set",
+        "stat": "eliteStrong",
+        "v": 1
+       }
+      ]
+     },
+     {
+      "name": "Crippling Shot",
+      "price": 12000,
+      "desc": "Hits slow normal enemies by 50% for 2 s. Bosses take 20% more damage from every source for 3 s.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "slowBp",
+        "v": 5000
+       },
+       {
+        "op": "set",
+        "stat": "slowTicks",
+        "v": 120
+       },
+       {
+        "op": "set",
+        "stat": "markTicks",
+        "v": 180
+       },
+       {
+        "op": "set",
+        "stat": "markBp",
+        "v": 2000
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ },
+ "market": {
+  "name": "Lantern Market",
+  "desc": "No attack. Pays gold at the end of every round, banks interest, or lights up the towers around it.",
+  "price": 1000,
+  "radius": 13,
+  "base": {
+   "atk": "none",
+   "range": 80000,
+   "income": 60
+  },
+  "paths": [
+   {
+    "name": "Harvest",
+    "tiers": [
+     {
+      "name": "Busy Stalls",
+      "price": 400,
+      "desc": "A second stall: +30 gold each round.",
+      "mods": [
+       {
+        "op": "add",
+        "stat": "income",
+        "v": 30
+       }
+      ]
+     },
+     {
+      "name": "Night Market",
+      "price": 600,
+      "desc": "Lantern string lights up: +40 gold each round.",
+      "mods": [
+       {
+        "op": "add",
+        "stat": "income",
+        "v": 40
+       }
+      ]
+     },
+     {
+      "name": "Trade Hall",
+      "price": 2200,
+      "desc": "Half-timbered hall: 320 gold each round.",
+      "mods": [
+       {
+        "op": "add",
+        "stat": "income",
+        "v": 190
+       }
+      ]
+     },
+     {
+      "name": "Merchant Guild",
+      "price": 6000,
+      "desc": "Guild house: 900 gold each round.",
+      "mods": [
+       {
+        "op": "add",
+        "stat": "income",
+        "v": 580
+       }
+      ]
+     },
+     {
+      "name": "Golden Exchange",
+      "price": 18000,
+      "desc": "Golden dome: 2,400 gold each round. Other Markets earn 10% more.",
+      "mods": [
+       {
+        "op": "add",
+        "stat": "income",
+        "v": 1500
+       },
+       {
+        "op": "set",
+        "stat": "goldenBp",
+        "v": 1000
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "name": "Bank",
+    "tiers": [
+     {
+      "name": "Coin Purse",
+      "price": 300,
+      "desc": "+20 gold each round.",
+      "mods": [
+       {
+        "op": "add",
+        "stat": "income",
+        "v": 20
+       }
+      ]
+     },
+     {
+      "name": "Lockbox",
+      "price": 500,
+      "desc": "Income goes into a bank (Withdraw). 10% interest per round, holds up to 3,000.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "bankOn",
+        "v": 1
+       },
+       {
+        "op": "set",
+        "stat": "bankRateBp",
+        "v": 1000
+       },
+       {
+        "op": "set",
+        "stat": "bankCap",
+        "v": 3000
+       }
+      ]
+     },
+     {
+      "name": "Lantern Bank",
+      "price": 2500,
+      "desc": "15% interest per round, holds up to 7,000.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "bankRateBp",
+        "v": 1500
+       },
+       {
+        "op": "set",
+        "stat": "bankCap",
+        "v": 7000
+       }
+      ]
+     },
+     {
+      "name": "Grant Office",
+      "price": 5000,
+      "desc": "Ability Grant: +2,000 gold. Cooldown 90 s.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "grantCash",
+        "v": 2000
+       },
+       {
+        "op": "set",
+        "stat": "grantCd",
+        "v": 5400
+       }
+      ]
+     },
+     {
+      "name": "Treasury",
+      "price": 20000,
+      "desc": "Grant gives +8,000 gold. 20% interest, holds up to 20,000.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "grantCash",
+        "v": 8000
+       },
+       {
+        "op": "set",
+        "stat": "bankRateBp",
+        "v": 2000
+       },
+       {
+        "op": "set",
+        "stat": "bankCap",
+        "v": 20000
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "name": "Town Square",
+    "tiers": [
+     {
+      "name": "Watchpost",
+      "price": 250,
+      "desc": "Towers nearby see 10% farther.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "aRangeBp",
+        "v": 1000
+       }
+      ]
+     },
+     {
+      "name": "Lookout Bell",
+      "price": 400,
+      "desc": "Towers nearby detect Shades (camo).",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "aCamo",
+        "v": 1
+       }
+      ]
+     },
+     {
+      "name": "Drum Hall",
+      "price": 1500,
+      "desc": "Towers nearby attack 15% faster.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "aSpeedBp",
+        "v": 1500
+       }
+      ]
+     },
+     {
+      "name": "Armory",
+      "price": 4000,
+      "desc": "Towers nearby: sharp shots crack Ironshell, +1 pierce.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "aArmor",
+        "v": 1
+       },
+       {
+        "op": "set",
+        "stat": "aPierce",
+        "v": 1
+       }
+      ]
+     },
+     {
+      "name": "Lantern Capital",
+      "price": 15000,
+      "desc": "Towers nearby: +1 damage, upgrades cost 10% less.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "aDmg",
+        "v": 1
+       },
+       {
+        "op": "set",
+        "stat": "aDiscBp",
+        "v": 1000
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ },
  "wren": {
   "name": "Wren",
   "title": "the Lamplighter",

@@ -12,7 +12,9 @@ export const SEEN_MATCHES_MAX = 100;
 const nat = z.number().int().min(0);
 const tierNum = z.number().int().min(0).max(5);
 const tiers3 = z.tuple([tierNum, tierNum, tierNum]);
-const perTower = <T extends z.ZodType>(s: T) => z.object({ ranger: s, bombardier: s, frostcaller: s });
+/** Runde 13: `longshot` und `market` fehlen in Staenden bis Runde 12 und bekommen ihren Startwert (Migration, nichts wird zurueckgesetzt). */
+const perTower = <T extends z.ZodType>(s: T, fresh: () => z.output<T>) =>
+  z.object({ ranger: s, bombardier: s, frostcaller: s, longshot: s.default(fresh as never), market: s.default(fresh as never) });
 const medalSet = z.object({ easy: z.boolean(), medium: z.boolean(), hard: z.boolean() });
 const best = z.object({ round: nat, livesLost: nat });
 const inventorySchema = z.object(Object.fromEntries(POWER_KEYS.map((k) => [k, nat.default(0)]))) as unknown as z.ZodType<Record<PowerKey, number>>;
@@ -23,9 +25,9 @@ export const ProfileSchema = z.object({
   createdAt: z.string().min(1),
   playerXp: nat,
   /** Gesammelte, noch nicht ausgegebene Turm-XP. */
-  towerXp: perTower(nat),
+  towerXp: perTower(nat, () => STARTER_TOWER_XP),
   /** Freigeschaltete Stufe je Pfad (hoechste, der Reihe nach). */
-  towerTiers: perTower(tiers3),
+  towerTiers: perTower(tiers3, (): Tiers => [0, 0, 0]),
   knowledge: z.array(z.string()),
   medals: z.record(z.string(), medalSet),
   best: z.record(z.string(), bestSet),
@@ -45,7 +47,7 @@ export const ProfileSchema = z.object({
 export type Profile = z.infer<typeof ProfileSchema>;
 
 export function newProfile(now = new Date(0).toISOString()): Profile {
-  const per = <T>(v: () => T): Record<TowerType, T> => ({ ranger: v(), bombardier: v(), frostcaller: v() });
+  const per = <T>(v: () => T): Record<TowerType, T> => ({ ranger: v(), bombardier: v(), frostcaller: v(), longshot: v(), market: v() });
   return {
     schema: SAVE_SCHEMA,
     createdAt: now,
@@ -67,6 +69,9 @@ export function newProfile(now = new Date(0).toISOString()): Profile {
 }
 
 export const emptyMedals = (): Record<Difficulty, boolean> => ({ easy: false, medium: false, hard: false });
+/** Anzahl der ersten Medaillen (je Karte und Schwierigkeit eine) = Wissenspunkte aus Medaillen (Runde 13). */
+export const medalCount = (p: Pick<Profile, 'medals'>): number =>
+  Object.values(p.medals).reduce((s, m) => s + (m.easy ? 1 : 0) + (m.medium ? 1 : 0) + (m.hard ? 1 : 0), 0);
 
 export type LoadResult = { profile: Profile; reset: boolean; reason?: 'old-schema' | 'invalid' };
 
@@ -98,7 +103,7 @@ export function sanitize(p: Profile): Profile {
   }
   const owned = KNOWLEDGE.filter((n) => bought.has(n.id));
   const spent = owned.reduce((s, n) => s + n.cost, 0);
-  const knowledge = spent > levelFromXp(p.playerXp).level - 1 ? [] : owned.map((n) => n.id);
+  const knowledge = spent > levelFromXp(p.playerXp).level - 1 + medalCount(p) ? [] : owned.map((n) => n.id);
   return grantStarterPack({ ...p, knowledge });
 }
 

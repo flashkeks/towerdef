@@ -625,7 +625,7 @@ class Match {
       livesLeft: st.lives,
       pops: { ...st.stats.pops },
       towerXp: { ...st.towerXp },
-      towerTiers: { ranger: [...st.maxTier.ranger], bombardier: [...st.maxTier.bombardier], frostcaller: [...st.maxTier.frostcaller] },
+      towerTiers: Object.fromEntries(Object.entries(st.maxTier).map(([k, v]) => [k, [...v]])) as typeof st.maxTier, // Runde 13: alle fünf Typen
       towerXpGained: { ...st.towerXpGained },
       powersUsed: { ...st.stats.powersUsed },
       upgrades: this.upgrades,

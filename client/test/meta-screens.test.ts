@@ -17,8 +17,8 @@ describe('MatchOutcome -> MatchResult', () => {
     expect(r.roundsCleared).toBe(11);
     expect(r.livesLost).toBe(50);
     expect(r.towerXp).toBeUndefined();
-    const full = toMetaResult(outcome({ towerXp: { ranger: 5, bombardier: 0, frostcaller: 9 }, towerTiers: { ranger: [1, 0, 0], bombardier: [0, 0, 0], frostcaller: [0, 0, 0] }, towerXpGained: { ranger: 40, bombardier: 0, frostcaller: 9 } }), ctx);
-    expect(full.towerXp).toEqual({ ranger: 5, bombardier: 0, frostcaller: 9 });
+    const full = toMetaResult(outcome({ towerXp: { ranger: 5, bombardier: 0, frostcaller: 9, longshot: 0, market: 0 }, towerTiers: { ranger: [1, 0, 0], bombardier: [0, 0, 0], frostcaller: [0, 0, 0], longshot: [0, 0, 0], market: [0, 0, 0] }, towerXpGained: { ranger: 40, bombardier: 0, frostcaller: 9, longshot: 0, market: 0 } }), ctx);
+    expect(full.towerXp).toEqual({ ranger: 5, bombardier: 0, frostcaller: 9, longshot: 0, market: 0 });
     expect(full.towerTiers?.ranger).toEqual([1, 0, 0]);
     expect(full.towerXpGained?.ranger).toBe(40);
     expect(r.pops).toEqual({ ranger: 500, wren: 200 });
@@ -56,7 +56,8 @@ describe('Bildschirm-Logik', () => {
     expect(legalTiers([0, 0, 0])).toEqual([0, 0, 0]);
   });
   it('lockInfo nennt Freischalt-Level fuer gesperrte Tuerme', () => {
-    expect(lockInfo(newProfile())).toEqual({ bombardier: 'Unlocks at level 2', frostcaller: 'Unlocks at level 4', wren: 'Unlocks at level 3' });
-    expect(lockInfo({ ...newProfile(), playerXp: xpForLevel(4) })).toEqual({});
+    expect(lockInfo(newProfile())).toEqual({ bombardier: 'Unlocks at level 2', frostcaller: 'Unlocks at level 4', longshot: 'Unlocks at level 5', market: 'Unlocks at level 6', wren: 'Unlocks at level 3' });
+    expect(lockInfo({ ...newProfile(), playerXp: xpForLevel(4) })).toEqual({ longshot: 'Unlocks at level 5', market: 'Unlocks at level 6' });
+    expect(lockInfo({ ...newProfile(), playerXp: xpForLevel(6) })).toEqual({});
   });
 });
