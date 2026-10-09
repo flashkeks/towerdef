@@ -155,9 +155,9 @@ const RIBBON: Record<MedalKind, [string, string]> = { bronze: ['crimson', 'red']
 export function medal(kind: MedalKind, earned: boolean): Sprite {
   return make(`m|${kind}|${earned ? 1 : 0}`, 18, 22, (s) => {
     const [rd, rl] = earned ? RIBBON[kind] : (['night', 'dusk'] as const);
-    s.poly([[4, 0], [8, 0], [11, 12], [7, 12]], rd as never);
-    s.poly([[14, 0], [10, 0], [7, 12], [11, 12]], rl as never);
-    s.line(9, 0, 9, 3, rl as never);
+    s.rect(4, 0, 4, 9, rd as never);
+    s.rect(10, 0, 4, 9, rl as never);
+    s.rect(4, 0, 1, 9, rl as never);
     const ramp: Ramp = earned ? MEDAL_RAMP[kind] : ['night', 'night', 'dusk'];
     s.ball(9, 15, 8, 7, ramp, earned);
     s.ring(9, 15, 8, 7, earned ? ramp[0] : 'dusk');

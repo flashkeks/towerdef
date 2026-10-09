@@ -3,7 +3,7 @@
  * Speicher: IndexedDB, Rueckfall localStorage, zuletzt Arbeitsspeicher (siehe storage.ts).
  */
 import { exportProfile, importProfile, loadProfile, type Profile } from './index';
-import { ProfileStorage, defaultTiers, MemoryTier, type Persistence } from './storage';
+import { ProfileStorage, defaultTiers, MemoryTier, type Persistence, type StorageTier } from './storage';
 
 export interface MetaStore {
   readonly profile: Profile;
@@ -19,9 +19,9 @@ export interface MetaStore {
   wipe(): Promise<void>;
 }
 
-export async function openStore(opts: { memoryOnly?: boolean; now?: () => string } = {}): Promise<MetaStore> {
+export async function openStore(opts: { memoryOnly?: boolean; now?: () => string; tiers?: StorageTier[] } = {}): Promise<MetaStore> {
   const now = opts.now ?? ((): string => new Date().toISOString());
-  const storage = new ProfileStorage(opts.memoryOnly ? [new MemoryTier()] : defaultTiers());
+  const storage = new ProfileStorage(opts.tiers ?? (opts.memoryOnly ? [new MemoryTier()] : defaultTiers()));
   const out = await storage.load();
   let profile: Profile;
   if (out.kind === 'ok') {

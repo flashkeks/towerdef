@@ -23,4 +23,29 @@ describe('meta store', () => {
     const out = await st.load();
     expect(out.kind).toBe('ok');
   });
+  it('openStore: alter Stand (Runde 10) wird zurueckgesetzt, Hinweis einmalig, und der Reset ist sofort gespeichert', async () => {
+    const tier = new MemoryTier();
+    await tier.write(1, makeEnvelope(1, { schemaVersion: 3, units: { a: 1 } }));
+    const s = await openStore({ tiers: [tier] });
+    expect(s.profile.showResetNotice).toBe(true);
+    expect(s.profile.playerXp).toBe(0);
+    // zweiter Start ohne Quittung: Hinweis bleibt, bis der Spieler OK klickt
+    expect((await openStore({ tiers: [tier] })).profile.showResetNotice).toBe(true);
+    await s.ackResetNotice();
+    const again = await openStore({ tiers: [tier] });
+    expect(again.profile.showResetNotice).toBe(false);
+    expect(again.profile.schema).toBe(11);
+  });
+  it('openStore: kaputter Umschlag -> frisch mit Hinweis; nie gespielt -> ohne Hinweis', async () => {
+    const bad = new MemoryTier();
+    await bad.write(1, '{kaputt');
+    expect((await openStore({ tiers: [bad] })).profile.showResetNotice).toBe(true);
+    expect((await openStore({ tiers: [new MemoryTier()] })).profile.showResetNotice).toBe(false);
+  });
+  it('Profil ueberlebt Neustart (Speichern -> Laden)', async () => {
+    const tier = new MemoryTier();
+    const s = await openStore({ tiers: [tier] });
+    await s.update({ ...s.profile, playerXp: 1234 });
+    expect((await openStore({ tiers: [tier] })).profile.playerXp).toBe(1234);
+  });
 });
