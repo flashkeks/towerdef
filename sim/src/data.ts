@@ -6,6 +6,7 @@ import towersJson from '../data/towers.json';
 import enemiesJson from '../data/enemies.json';
 import roundsJson from '../data/rounds.json';
 import difficultiesJson from '../data/difficulties.json';
+import xpJson from '../data/xp.json';
 import meadowJson from '../data/maps/meadow.json';
 import { STAT_DEFAULTS, type Mod, type Stats } from './stats.js';
 import type { Difficulty, EnemyType, HeroType, TowerType } from './types.js';
@@ -94,7 +95,11 @@ const diffSchema = z.object({
   startCash: z.number().int().nonnegative(),
   /** Gold je geknackter Schicht (Runde 11 / P5: 2, weil 20 Runden den Gegnerfortschritt von BTD6-R1-40 tragen). */
   popCash: z.number().int().positive(),
+  /** Faktor auf den Turm-XP-Topf je Runde (Runde 11b): Easy 1,0 / Medium 1,1 / Hard 1,2. */
+  towerXpBp: z.number().int().positive(),
 });
+/** Turm-XP (Runde 11b): Topf je Runde = (potBase + potPerRound x Runde) x Schwierigkeit; Freischaltkosten je Stufe 1..5. */
+const xpSchema = z.object({ potBase: z.number().int().nonnegative(), potPerRound: z.number().int().nonnegative(), unlockCost: z.array(z.number().int().positive()).length(5) });
 const difficultiesSchema = z.object({ easy: diffSchema, medium: diffSchema, hard: diffSchema });
 
 const pt = z.tuple([z.number(), z.number()]);
@@ -123,6 +128,7 @@ export interface GameData {
   /** Index = Runde - 1. */
   rounds: RoundData[];
   difficulties: Record<Difficulty, DifficultyData>;
+  xp: z.infer<typeof xpSchema>;
   maps: Record<string, MapFile>;
   /** RBE des ganzen Baums je Typ (Hülle + Kinder), mit HP aus enemies.json. */
   rbe: Record<EnemyType, number>;
@@ -138,6 +144,8 @@ function load(): GameData {
   const rounds = roundsSchema.parse(roundsJson);
   const difficulties = difficultiesSchema.parse(difficultiesJson);
   const meadow = mapSchema.parse(meadowJson);
+  const xp = xpSchema.parse(xpJson);
+  for (let i = 1; i < 5; i++) check(xp.unlockCost[i] > xp.unlockCost[i - 1], 'Freischaltkosten nicht steigend');
 
   for (const e of ENEMY_TYPES) check(!!enemies[e], `Gegner ${e} fehlt`);
   rounds.forEach((r, i) => check(r.round === i + 1, `Runde ${i + 1} falsch nummeriert`));
@@ -178,6 +186,7 @@ function load(): GameData {
     enemies,
     rounds,
     difficulties,
+    xp,
     maps: { meadow },
     rbe,
   };
