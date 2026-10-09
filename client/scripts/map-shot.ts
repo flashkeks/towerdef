@@ -23,6 +23,14 @@ if (what === 'check') {
   }
   process.exit(0);
 }
+if (what === 'previews') {
+  // alle Kartenwahl-Vorschaubilder nebeneinander (je 160 x 90, 8 px Luecke)
+  const ids: MapId[] = ['meadow', 'frostfen', 'quarry'];
+  const sheet = new Buf(ids.length * 168 - 8, 90);
+  ids.forEach((m, i) => { const p = mapPreview(m); for (let y = 0; y < 90; y++) for (let x = 0; x < 160; x++) sheet.set(i * 168 + x, y, p.get(x, y)); });
+  writeFileSync(out, png(sheet.rgba(), sheet.w, sheet.h, Number(sc)));
+  process.exit(0);
+}
 const t0 = Date.now();
 mapArt(id as MapId);
 console.log('gemalt in', Date.now() - t0, 'ms');
