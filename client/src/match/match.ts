@@ -364,7 +364,7 @@ class Match {
       for (const ev of this.game.drainEvents()) {
         if (ev.type === 'upgrade') this.onEvent(ev);
         else if (ev.type === 'place') this.tiersSeen.set(ev.tower, [0, 0, 0]);
-        else if (ev.type === 'gameOver') this.onEvent(ev);
+        else if (ev.type === 'gameOver' || ev.type === 'towerXp') this.onEvent(ev);
       }
     }
   }
@@ -421,12 +421,12 @@ class Match {
         // Rundenende: kurze Anzeige je Turmtyp mit dem Anteil
         for (const ty of TOWER_TYPES) {
           const n = ev.gains[ty];
-          if (n) this.toast(t('unlock.xpGain', { n, name: displayName(ty) }), 'xp');
+          if (n) this.toast(t('unlock.xpGain', { n, name: displayName(ty) }), 'gain');
         }
         audio.play('ui.tick');
         break;
       }
-      case 'unlockTier': this.toast(t('unlock.bought', { name: DATA.towers[ev.tower].paths[ev.path].tiers[ev.tier - 1].name }), 'xp'); break;
+      case 'unlockTier': this.toast(t('unlock.bought', { name: DATA.towers[ev.tower].paths[ev.path].tiers[ev.tier - 1].name }), 'gain'); break;
       case 'gameOver': this.onGameOver(ev.result === 'won'); break;
       default: break;
     }

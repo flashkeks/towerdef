@@ -276,3 +276,5 @@ canvas.pop { animation: pop-in 0.5s steps(6) both; }
 @media (prefers-reduced-motion: reduce) {
   .dw-screens * { animation: none !important; transition: none !important; }
 }
+.ttier.veiled .ttier-n { color: var(--p-silver); letter-spacing: .14em; }
+.ttier.veiled .ttier-d { font-style: italic; opacity: .8; }

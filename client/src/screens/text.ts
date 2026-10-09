@@ -82,6 +82,8 @@ export const S = {
     tier: (n: number): string => `Tier ${n}`,
     preview: 'Preview',
     lockedBadge: (n: number): string => `Level ${n}`,
+    hidden: '???',
+    hiddenHint: 'Unlock the tier before it to reveal this upgrade.',
     howto: 'Towers earn XP every round \u2014 more for the ones you invested in and that pop the most.',
     paths: {
       ranger: ['Volley', 'Rapid', 'Eagle Eye'],
