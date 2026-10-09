@@ -4,10 +4,11 @@ import { drawArm } from './bows';
 import type { Dir, Pose } from './pose';
 import { RAMPS, type Ramp, Surface } from './surface';
 import type { Tiers } from './types';
-import { GY, mainPath, OX, OY, pedestalKind, type TowerLayers } from './ranger';
+import { outlineSurface } from './surface';
+import { GY, mainPath, OX, OY, pedestalKind, TH, TW, type TowerLayers } from './ranger';
 
 export function drawFrost(t: Tiers, d: Dir, p: Pose): TowerLayers {
-  const W = 55, H = 56;
+  const W = TW, H = TH;
   const s = new Surface(W, H), back = new Surface(W, H), front = new Surface(W, H);
   const [A, B, C] = t;
   const top = Math.max(A, B, C);
@@ -24,28 +25,37 @@ export function drawFrost(t: Tiers, d: Dir, p: Pose): TowerLayers {
 
   // ---- Hintergrund ----
   if (B >= 5) {
-    // Frost-Golem-Silhouette hinter der Figur
-    const gy = G - 4;
-    const gc = (x: number, y: number) => (x < ox - 2 ? 'ice' : x > ox + 3 ? 'navy' : 'sky');
-    back.poly([[ox - 8, gy - 22], [ox + 8, gy - 22], [ox + 12, gy - 14], [ox + 9, gy + 2], [ox - 9, gy + 2], [ox - 12, gy - 14]], gc);
-    back.ball(ox, gy - 26, 5, 4.5, RAMPS.ice);
-    back.rect(ox - 3, gy - 27, 2, 2, 'yellow'); back.rect(ox + 1, gy - 27, 2, 2, 'yellow');
-    back.rect(ox - 16, gy - 20, 5, 12, 'sky'); back.rect(ox + 11, gy - 20, 5, 12, 'navy');
-    back.rect(ox - 16, gy - 20, 5, 2, 'ice'); back.rect(ox + 11, gy - 20, 5, 2, 'sky');
-    for (let i = 0; i < 4; i++) back.px(ox - 5 + i * 3, gy - 10 + (i % 2) * 3, 'white');
-    // Eisflügel
-    for (const sgn of [-1, 1]) {
+    // Eisfluegel (hinter dem Golem) und Frost-Golem-Silhouette
+    const g = new Surface(TW, TH);
+    const gy = G - 3;
+    for (const sg of [-1, 1]) {
+      const flap = ph === 1 || ph === 2 ? 1 : 0;
       for (let i = 0; i < 4; i++) {
-        const wx = ox + sgn * (13 + i * 3), wy = gy - 26 + i * 2 + (ph & 1);
-        back.line(wx, wy, wx + sgn * 2, wy - 8 + i * 1, i % 2 ? 'ice' : 'white', 1);
-        back.line(wx, wy, wx + sgn * 2, wy - 8 + i * 1, i % 2 ? 'ice' : 'white', 1);
+        const bx = ox + sg * 6, by = G - 18 - up;
+        const tx = ox + sg * (14 + i * 3), ty = G - 34 + i * 3 - flap * 2;
+        g.line(bx, by + i, tx, ty, i % 2 ? 'ice' : 'sky', 2);
+        g.px(tx, ty - 1, 'white');
       }
     }
+    // Golem: Koerper, Schultern, Arme, Kopf
+    g.poly([[ox - 9, gy - 27], [ox + 9, gy - 27], [ox + 12, gy - 20], [ox + 9, gy + 3], [ox - 9, gy + 3], [ox - 12, gy - 20]], (x, y) => (x < ox - 4 ? 'sky' : x > ox + 5 ? 'navy' : 'navy'));
+    g.poly([[ox - 6, gy - 27], [ox + 6, gy - 27], [ox + 8, gy - 18], [ox - 8, gy - 18]], (x) => (x < ox ? 'ice' : 'sky'));
+    for (const sg of [-1, 1]) {
+      g.ball(ox + sg * 13, gy - 22, 4, 3.4, RAMPS.ice);
+      crystal(g, ox + sg * 14, gy - 27, 4, RAMPS.frost, 1);
+      g.line(ox + sg * 12, gy - 20, ox + sg * 17, gy - 8, 'sky', 4);
+      g.ball(ox + sg * 17, gy - 6, 3.6, 3.6, RAMPS.ice);
+    }
+    g.ball(ox, gy - 29, 5.2, 4.6, RAMPS.ice);
+    g.rect(ox - 3, gy - 30, 2, 2, ph % 2 ? 'yellow' : 'white'); g.rect(ox + 1, gy - 30, 2, 2, ph % 2 ? 'yellow' : 'white');
+    g.rect(ox - 2, gy - 26, 5, 1, 'navy');
+    for (let i = 0; i < 4; i++) g.px(ox - 5 + i * 3, gy - 12 + (i % 2) * 4, 'white');
+    back.blit(outlineSurface(g));
   }
   if (C >= 3) {
     // kleine Gewitterwolke über dem Hut (C3+), bei C4/C5 grösser
     const w = C >= 5 ? 20 : C >= 4 ? 16 : 11;
-    cloud(back, ox, G - 28 - up - (C >= 4 ? 3 : 0) + (ph === 1 || ph === 2 ? 1 : 0), w, true, ph);
+    cloud(back, ox, G - 28 - up - (C >= 5 ? 5 : C >= 4 ? 3 : 1) + (ph === 1 || ph === 2 ? 1 : 0), w, true, ph);
   }
   if (A >= 5) {
     // weisse Aura: gestrichelter Ring
@@ -224,8 +234,8 @@ export function drawFrost(t: Tiers, d: Dir, p: Pose): TowerLayers {
   }
   if (C >= 5) {
     // Dauerblitze am Rand + Wolke um den Sockel
-    cloud(front, ox - 6, OY - 1, 9, true, ph + 1);
-    cloud(front, ox + 6, OY, 10, true, ph);
+    cloud(front, ox - 7, OY - 2, 10, false, ph + 1);
+    cloud(front, ox + 6, OY - 1, 11, false, ph);
   }
   return { fig: s, back, front, muzzle };
 }

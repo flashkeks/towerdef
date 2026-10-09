@@ -17,6 +17,7 @@ const SHEETS = {
   towers: 'p2-tuerme.png',
   tower: 'p2-turm.png',
   frames: 'p2-frames.png',
+  zoom: 'p2-zoom.png',
   hero: 'p2-held.png',
   enemies: 'p2-gegner.png',
   pop: 'p2-platzen.png',
@@ -47,7 +48,7 @@ async function recordAttacks(browser) {
 }
 
 const server = spawn('npx', ['vite', '--port', String(PORT), '--strictPort', '--host', '127.0.0.1'], { cwd: root, stdio: 'ignore', detached: true });
-const stop = () => { try { process.kill(-server.pid, 'SIGTERM'); } catch { /* weg */ } };
+const stop = () => { try { process.kill(-server.pid, 'SIGKILL'); } catch { /* weg */ } };
 process.on('exit', stop);
 for (let i = 0; i < 80; i++) {
   try { if ((await fetch(base + '/sprite-sheet.html')).ok) break; } catch { /* noch nicht */ }
@@ -57,12 +58,12 @@ const exe = process.env.P2_CHROMIUM ?? (existsSync('/opt/pw-browsers/chromium') 
 const browser = await chromium.launch({ executablePath: exe });
 let code = 0;
 try {
-  const names = want.length ? want : Object.keys(SHEETS).filter((k) => k !== 'tower');
+  const names = want.length ? want : Object.keys(SHEETS).filter((k) => k !== 'tower' && k !== 'zoom');
   for (const spec of names) {
     // "quick:bombardier" -> Blatt `quick`, Parameter t=bombardier, Datei p2-quick-bombardier.png
     const [name, arg] = spec.split(':');
     if (name === 'angriffe') { await recordAttacks(browser); continue; }
-    const page = await browser.newPage({ viewport: { width: 1600, height: 900 } });
+    const page = await browser.newPage({ viewport: { width: 2000, height: 1000 } });
     const errs = [];
     page.on('pageerror', (e) => errs.push(String(e)));
     page.on('console', (m) => { if (m.type() === 'error') errs.push(m.text()); });

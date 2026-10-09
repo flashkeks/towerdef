@@ -9,9 +9,11 @@ import { tube } from './parts';
 
 export interface TowerLayers { fig: Surface; back: Surface; front: Surface; muzzle: [number, number] }
 
+export const TW = 55;
+export const TH = 64;
 export const OX = 27;
-export const GY = 38; // Fuss der Figur auf dem Sockel
-export const OY = 42; // Boden (Ankerpunkt)
+export const GY = 46; // Fuss der Figur auf dem Sockel
+export const OY = 50; // Boden (Ankerpunkt)
 
 export function pedestalKind(top: number, type: 'ranger' | 'bombardier' | 'frostcaller', t: Tiers): 'stump' | 'stone' | 'gold' | 'ice' | 'snow' {
   if (top >= 5) return 'gold';
@@ -25,7 +27,7 @@ export function mainPath(t: Tiers): number {
 }
 
 export function drawRanger(t: Tiers, d: Dir, p: Pose): TowerLayers {
-  const W = 55, H = 56;
+  const W = TW, H = TH;
   const s = new Surface(W, H), back = new Surface(W, H), front = new Surface(W, H);
   const [A, B, C] = t;
   const top = Math.max(A, B, C);
@@ -39,10 +41,12 @@ export function drawRanger(t: Tiers, d: Dir, p: Pose): TowerLayers {
 
   // ---------- Hintergrund: Umhang, Banner, Koecher, Aura ----------
   if (A >= 5) {
-    // langer Umhang, flattert
-    const wob = [0, 1, 1, 0][ph];
-    back.poly([[ox - 4, G - 10 - up], [ox + 4, G - 10 - up], [ox + 6, G - 1], [ox + 2 + wob, G + 1], [ox - 3, G + 2 - wob], [ox - 8 - wob, G - 2]], (x, y) => (x < ox - 4 ? 'crimson' : x > ox + 2 ? 'plum' : 'red'));
-    back.line(ox - 5, G - 8 - up, ox - 8 - wob, G - 2, 'plum');
+    // langer Umhang, flattert nach hinten
+    const wob = [0, 1, 2, 1][ph];
+    const yt = G - 11 - up;
+    back.poly([[ox - 4, yt], [ox + 4, yt], [ox + 6, G], [ox + 4, G + 3], [ox - 3, G + 3 - (wob & 1)], [ox - 11 - wob, G + 1], [ox - 10 - wob, G - 6], [ox - 7, G - 12 - up]], (x, y) => (x > ox + 2 || y > G ? 'plum' : x < ox - 8 ? 'crimson' : x < ox - 3 ? 'red' : 'crimson'));
+    back.line(ox - 6, G - 11 - up, ox - 10 - wob, G - 1, 'coral');
+    back.px(ox - 10 - wob, G + 1, 'plum'); back.px(ox - 7, G + 2, 'plum');
   }
   if (B >= 4) {
     const bx = ox - 6;
@@ -105,6 +109,10 @@ export function drawRanger(t: Tiers, d: Dir, p: Pose): TowerLayers {
   s.ball(hcx, hcy, 6, 5.5, hood);
   // Kapuzenspitze (zeigt nach hinten/links)
   s.px(hcx - 6, hcy - 3, hood[1]); s.px(hcx - 7, hcy - 2, hood[0]); s.px(hcx - 6, hcy - 2, hood[1]);
+  if (A >= 2 && !goldArmor && B < 4) {
+    // rote Feder in der Kapuze
+    s.line(hcx + 3, hcy - 5, hcx + 6, hcy - 10, 'red'); s.line(hcx + 4, hcy - 5, hcx + 6, hcy - 9, 'crimson'); s.px(hcx + 6, hcy - 11, 'coral'); s.px(hcx + 5, hcy - 9, 'white');
+  }
   if (d.eyes > 0) {
     const fx = hcx + (d.eyes === 1 ? 3 : d.ex), fy = hcy + 1 + (d.eyes === 1 ? -1 : Math.round(d.ey * 0.5));
     const rx = d.eyes === 1 ? 2.6 : 3.7;
@@ -214,7 +222,7 @@ export function drawRangerWeapon(s: Surface, front: Surface, t: Tiers, d: Dir, p
         const ca = Math.cos(off), sa = Math.sin(off);
         const dx = ux * ca - uy * sa, dy = ux * sa + uy * ca;
         const len = A >= 5 ? 14 : 9;
-        drawArrow(s, nock[0], nock[1], dx, dy, len, { tip: A >= 5 ? 'yellow' : tipc, fletch: A >= 5 ? 'white' : fletch, shaft: A >= 5 ? 'amber' : 'sand' });
+        drawArrow(s, nock[0], nock[1], dx, dy, len, { tip: A >= 5 ? 'yellow' : tipc, fletch: A >= 5 ? 'white' : fletch, shaft: A >= 5 ? 'amber' : 'sand', barbs: A >= 1 });
         if (A >= 5) drawArrow(front, nock[0], nock[1] + 0, dx, dy, 0, { tip: 'yellow', fletch: null });
       }
     }

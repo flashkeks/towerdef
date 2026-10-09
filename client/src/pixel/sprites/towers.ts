@@ -3,14 +3,14 @@ import type { Rows } from '../raster';
 import { dirOf, poseOf, type TowerFrame } from './pose';
 import { drawBombardier } from './bombardier';
 import { drawFrost } from './frostcaller';
-import { drawRanger, OX, OY } from './ranger';
+import { drawRanger, OX, OY, TH, TW } from './ranger';
 import { outlineSurface, Surface } from './surface';
 import type { Tiers, TowerType } from './types';
 
 export interface RasterSprite { rows: Rows; ax: number; ay: number; mx?: number; my?: number }
 
-export const TOWER_W = 55;
-export const TOWER_H = 56;
+export const TOWER_W = TW;
+export const TOWER_H = TH;
 
 export function towerRaster(type: TowerType, tiers: Tiers, facing: number, frame: TowerFrame): RasterSprite {
   const d = dirOf(facing);

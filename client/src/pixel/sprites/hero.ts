@@ -2,7 +2,7 @@
 import { drawArm } from './bows';
 import { flame, orbit, pedestal, spark, tube } from './parts';
 import { dirOf, poseOf, type Dir, type Pose, type TowerFrame } from './pose';
-import { GY, OX, OY, type TowerLayers } from './ranger';
+import { GY, OX, OY, TH, TW, type TowerLayers } from './ranger';
 import { outlineSurface, RAMPS, Surface } from './surface';
 
 export type HeroFrame = TowerFrame | 'cast0' | 'cast1';
@@ -35,7 +35,7 @@ function lantern(s: Surface, front: Surface, x: number, y: number, size: number,
 }
 
 export function drawWren(level: number, d: Dir, p: Pose, cast: number): TowerLayers {
-  const W = 55, H = 56;
+  const W = TW, H = TH;
   const s = new Surface(W, H), back = new Surface(W, H), front = new Surface(W, H);
   const stage = heroStage(level);
   const ph = p.ph, up = p.up;
@@ -144,7 +144,7 @@ export function heroRaster(level: number, facing: number, frame: HeroFrame): { r
   const p = poseOf(cast >= 0 ? 'idle0' : (frame as TowerFrame));
   if (cast >= 0) { p.ph = cast * 2; p.up = cast; }
   const L = drawWren(level, d, p, cast);
-  const out = new Surface(55, 56);
+  const out = new Surface(TW, TH);
   out.blit(L.back); out.blit(outlineSurface(L.fig)); out.blit(L.front);
   const fin = d.flip ? out.flipX() : out;
   return { rows: fin.toRows(), ax: OX, ay: OY, mx: (d.flip ? 2 * OX - L.muzzle[0] : L.muzzle[0]) - OX, my: L.muzzle[1] - OY };
