@@ -6,7 +6,7 @@ import { z } from 'zod';
 import type { Difficulty, GameOptions, HeroType, TowerType, Tiers } from '../../sim/src/types';
 import {
   DIFFICULTIES, DIFFICULTY_XP_BP, FREEPLAY_BP, KNOWLEDGE, LEVEL_UNLOCKS, MAX_ROUND, TIER_COST, TOWER_TYPES, WIN_BONUS_XP,
-  XP_PER_POP, XP_PER_TIER_BOUGHT, levelFromXp, nodeById, unlockLevel, type LevelUnlock,
+  XP_PER_POP, XP_PER_TIER_BOUGHT, levelFromXp, nodeById, unlockLevel, xpForLevel, type LevelUnlock,
 } from './data';
 import { SEEN_MATCHES_MAX, emptyMedals, type Profile } from './profile';
 
@@ -173,6 +173,24 @@ export function buyNode(p: Profile, id: string): { ok: true; profile: Profile } 
 }
 export function resetKnowledge(p: Profile): Profile {
   return { ...p, knowledge: [] };
+}
+
+// ---------------------------------------------------------------- Testhilfe
+
+/**
+ * Testhilfe "unlock everything" als Profil: alle Level-Freischaltungen erreicht, alle Stufen offen, alle Wissenspunkte
+ * verfuegbar (Level 15), Turm-XP reichlich. Anders als `settings.unlockAll` aendert es die Zahlen im Profil selbst.
+ */
+export function unlockEverything(p: Profile): Profile {
+  const maxed: Tiers = [5, 5, 5];
+  const xp = Math.max(p.playerXp, xpForLevel(15));
+  const full = TIER_COST.reduce((s, c) => s + c, 0) * 3;
+  return {
+    ...p,
+    playerXp: xp,
+    towerTiers: { ranger: [...maxed], bombardier: [...maxed], frostcaller: [...maxed] },
+    towerXp: { ranger: full, bombardier: full, frostcaller: full },
+  };
 }
 
 // ---------------------------------------------------------------- Optionen fuer die Sim

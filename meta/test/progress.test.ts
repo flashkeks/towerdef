@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
+import { createGame } from '../../sim/src/index';
 import {
   applyMatch, buyNode, exportProfile, importProfile, knowledgePoints, levelFromXp, loadProfile, matchOptions, matchXp, newProfile,
-  resetKnowledge, unlockTier, xpForLevel, type MatchResult, type Profile,
+  resetKnowledge, unlockEverything, unlockTier, xpForLevel, type MatchResult, type Profile,
 } from '../src/index';
 
 const res = (o: Partial<MatchResult> = {}): MatchResult => ({
@@ -170,5 +171,40 @@ describe('Laden, Reset, Export', () => {
     expect(code('{"a":1}')).toBe('import-wrong-format');
     expect(code(json.replace('"playerXp": 2970', '"playerXp": 9999'))).toBe('import-bad-checksum');
     expect(code(JSON.stringify({ ...JSON.parse(json), formatVersion: 3 }))).toBe('import-old-version');
+  });
+});
+
+describe('Testhilfe unlockEverything', () => {
+  it('alles offen, Wissensbaum voll kaufbar, Profil bleibt gueltig', () => {
+    const p = unlockEverything(newProfile());
+    expect(matchOptions(p).unlocks.towers).toHaveLength(4);
+    expect(matchOptions(p).unlocks.maxTier.ranger).toEqual([5, 5, 5]);
+    expect(knowledgePoints(p).free).toBeGreaterThanOrEqual(14);
+    expect(loadProfile(JSON.parse(JSON.stringify(p))).reset).toBe(false);
+  });
+});
+
+describe('matchOptions gegen die echte Sim', () => {
+  it('createGame nimmt unlocks + mods an: Startgeld/Leben, gesperrte Stufe, gesperrter Turm', () => {
+    const base = createGame({ map: 'meadow', difficulty: 'medium', seed: 1, ...matchOptions(newProfile()) });
+    const p: Profile = { ...withXp(xpForLevel(4)), knowledge: ['head-start', 'extra-lives'], towerTiers: { ranger: [2, 0, 0], bombardier: [0, 0, 0], frostcaller: [0, 0, 0] } };
+    const g = createGame({ map: 'meadow', difficulty: 'medium', seed: 1, ...matchOptions(p) });
+    expect(g.state.cash).toBe(base.state.cash + 100);
+    expect(g.state.lives).toBe(base.state.lives + 10);
+    // Bombardier ist ab Level 2 frei, im frischen Profil nicht
+    expect(base.canPlace('bombardier', 60000, 122000)).toEqual({ ok: false, reason: 'locked' });
+    let spot: { x: number; y: number } | null = null;
+    for (let y = 20; y < 340 && !spot; y += 20) for (let x = 20; x < 620 && !spot; x += 20) if (g.canPlace('ranger', x * 1000, y * 1000).ok) spot = { x: x * 1000, y: y * 1000 };
+    expect(spot).not.toBeNull();
+    const id = g.apply({ type: 'place', tower: 'ranger', ...(spot as { x: number; y: number }) });
+    expect(id.ok).toBe(true);
+    if (id.ok && id.id !== undefined) {
+      expect(g.apply({ type: 'upgrade', towerId: id.id, path: 0 }).ok).toBe(true);
+      g.sandbox.setCash(100000);
+      g.apply({ type: 'upgrade', towerId: id.id, path: 0 });
+      const third = g.apply({ type: 'upgrade', towerId: id.id, path: 0 });
+      expect(third.ok).toBe(false);
+      if (!third.ok) expect(third.reason).toBe('locked');
+    }
   });
 });
