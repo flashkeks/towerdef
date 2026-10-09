@@ -8,10 +8,11 @@ import { audio } from '../audio/engine';
 import { t } from '../i18n/t';
 import { h, setClass, setText } from '../ui/dom';
 import { baseRangePx, displayName, footMilli, isHero } from './info';
+import { Confirm } from './confirm';
 import { Panel } from './panel';
 import { UnlockMenu } from './unlock-menu';
 import { Renderer } from './renderer';
-import { heroPortrait, towerPortrait, heroSprite, towerSprite } from './sprites';
+import { iconUpgrade, heroPortrait, towerPortrait, heroSprite, towerSprite } from './sprites';
 import { ABILITY_TEXT, HERO_TYPES, HOTKEY, ROLE, TOWER_TYPES } from './tower-text';
 import { copyCanvas, uiIcon } from './ui-icons';
 import './match.css';
@@ -71,6 +72,7 @@ class Match {
   private overlay = h('div', 'm-overlay hidden');
   private panel: Panel;
   private unlockMenu: UnlockMenu;
+  private confirm = new Confirm();
   private abBar = h('div', 'm-abilities');
   private cards = new Map<TowerType | HeroType, HTMLElement>();
   private livesEl = h('b', 'num', '0');
@@ -104,12 +106,13 @@ class Match {
     this.matchId = `${opts.map ?? 'meadow'}-${opts.difficulty}-${opts.seed}-${Date.now().toString(36)}`;
     this.done = new Promise((res) => (this.finish = res));
     this.panel = new Panel(game, { map: opts.map ?? 'meadow', difficulty: opts.difficulty, seed: opts.seed, unlocks: opts.unlocks, mods: opts.mods }, {
-      upgrade: (id, p) => this.report(this.game.apply({ type: 'upgrade', towerId: id, path: p })),
+      upgrade: (id, p) => this.buyPath(id, p),
       sell: (id) => { this.report(this.game.apply({ type: 'sell', towerId: id })); this.select(null); },
       target: (id, mode: TargetMode) => { this.game.apply({ type: 'target', towerId: id, mode }); audio.play('click'); },
       close: () => this.select(null),
       toast: (s) => this.toast(s),
       openUnlock: (ty) => this.unlockMenu.show(ty),
+      askUnlock: (ty, p) => this.askUnlock(ty, p),
     });
     this.unlockMenu = new UnlockMenu(game, {
       unlock: (ty, p) => this.unlockTier(ty, p),
@@ -121,7 +124,7 @@ class Match {
     this.buildDom();
     this.root.replaceChildren(this.el);
     await this.r.init(this.board);
-    this.board.append(this.toasts, this.bannerEl, this.abBar, this.panel.el, this.unlockMenu.el, this.overlay);
+    this.board.append(this.toasts, this.bannerEl, this.abBar, this.panel.el, this.unlockMenu.el, this.confirm.el, this.overlay);
     this.ro = new ResizeObserver(() => this.fit());
     this.ro.observe(this.board);
     this.fit();
@@ -218,11 +221,40 @@ class Match {
     if (!res.ok) { this.toast(t(`reason.${res.reason}`) === `reason.${res.reason}` ? t('reason.unknown') : t(`reason.${res.reason}`)); audio.play('error'); }
   }
 
-  /** Freischalten im Match (Runde 11b): Befehl an die Sim, Ton, Meldung. */
+  /** Freischalten im Match (Runde 11b): Befehl an die Sim, Ton, Effekt am gewaehlten Turm. */
   private unlockTier(ty: TowerType, path: 0 | 1 | 2): void {
     const res = this.game.apply({ type: 'unlockTier', tower: ty, path });
     if (!res.ok) { this.report(res); return; }
     audio.play('ui.unlock');
+    const sel = this.panel.selected;
+    const tw = sel == null ? undefined : this.game.state.towers.find((q) => q.id === sel);
+    if (tw && tw.type === ty) this.r.unlockFx(tw.id);
+  }
+
+  /** Turm-Panel (Runde 11c): Klick auf eine nicht freigeschaltete Stufe -> "Unlock <Name> for N Tower XP?" mit Yes/No. */
+  private askUnlock(ty: TowerType, path: 0 | 1 | 2): void {
+    const pi = this.game.unlockInfo(ty)[path];
+    const tier = pi?.next != null ? pi.tiers[pi.next - 1] : undefined;
+    if (!pi || !tier) return;
+    if (this.game.state.towerXp[ty] < tier.cost) { this.toast(t('panel.needXp', { n: tier.cost - this.game.state.towerXp[ty] })); audio.play('error'); return; }
+    audio.play('click');
+    this.confirm.show({
+      title: t('confirm.unlock', { name: tier.revealed ? tier.name : t('panel.hidden'), n: tier.cost }),
+      sub: t('confirm.unlockSub'),
+      icon: tier.revealed ? iconUpgrade(ty, path, tier.tier).canvas : undefined,
+      yes: () => this.unlockTier(ty, path),
+    });
+  }
+
+  /** Taste `,` `.` `/` und Panel-Knopf: naechste Stufe des Pfads kaufen; nicht freigeschaltet -> Bestaetigung. */
+  private buyPath(towerId: number, path: 0 | 1 | 2): void {
+    const b = this.panel.buttonFor(towerId, path);
+    if (!b) return;
+    switch (b.btn.kind) {
+      case 'unlock': this.askUnlock(b.type, path); break;
+      case 'needxp': this.toast(t('panel.needXp', { n: b.btn.xpMissing })); audio.play('error'); break;
+      default: this.report(this.game.apply({ type: 'upgrade', towerId, path }));
+    }
   }
 
   toast(msg: string, cls = ''): void {
@@ -335,6 +367,10 @@ class Match {
     if (e.ctrlKey || e.metaKey || e.altKey || this.ended) return;
     const k = e.key;
     const sel = this.panel.selected;
+    if (this.confirm.open) {
+      if (k === 'Enter' || k === 'Escape' || k.toLowerCase() === 'y' || k.toLowerCase() === 'n') { e.preventDefault(); this.confirm.answer(k === 'Enter' || k.toLowerCase() === 'y'); }
+      return;
+    }
     if (k === 'Escape' && this.unlockMenu.open) { this.unlockMenu.show(null); return; }
     if (k === 'Escape') { if (this.placing) this.beginPlace(null); else if (sel != null) this.select(null); else this.setPaused(!this.paused); return; }
     if (this.paused) return;
@@ -349,7 +385,7 @@ class Match {
     const ai = KEYS_ABILITY.indexOf(k);
     if (ai >= 0) { const a = this.game.state.abilities[ai]; if (a) this.useAbility(a.id); return; }
     const pi = [',', '.', '/'].indexOf(k);
-    if (pi >= 0 && sel != null) { e.preventDefault(); this.report(this.game.apply({ type: 'upgrade', towerId: sel, path: pi as 0 | 1 | 2 })); return; }
+    if (pi >= 0 && sel != null) { e.preventDefault(); this.buyPath(sel, pi as 0 | 1 | 2); return; }
     if ((k === 'Backspace' || k === 'Delete') && sel != null) { this.report(this.game.apply({ type: 'sell', towerId: sel })); this.select(null); }
   }
 

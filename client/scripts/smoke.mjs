@@ -1,5 +1,5 @@
 // Smoke-Test (Runde 11 / P3): startet `vite preview` auf dist/ und spielt in Chromium:
-// Startbildschirm -> Match -> Turm per Mausklick platzieren -> Upgrade-Panel -> Runde starten -> Gegner laufen -> ein paar Runden auf 3x -> keine Konsolenfehler.
+// Startbildschirm -> Match -> Turm per Mausklick platzieren -> Turm-Panel (Kauf per Knopf, Freischalten per Popup) -> Runde starten -> Gegner laufen -> ein paar Runden auf 3x -> keine Konsolenfehler.
 // Aufruf: npm run build && npm run smoke
 import { launch, serve, watchErrors } from './lib-serve.mjs';
 
@@ -34,13 +34,36 @@ try {
   await page.mouse.click(...at(150, 150));
   await page.waitForFunction(() => __dw.game.state.towers.length === 1, null, { timeout: 3000 });
   check(true, 'Turm per Mausklick platziert');
-  await page.waitForSelector('.m-panel:not(.hidden) .p-tier', { timeout: 3000 });
-  check(await page.locator('.m-panel .p-col').count() === 3, 'Upgrade-Panel zeigt drei Pfade');
-  check(await page.locator('.m-panel .p-tier').count() === 15, 'Upgrade-Panel zeigt 15 Stufen');
-  // Upgrade kaufen: Cash auf Easy 650 - 170 = 480, erste Stufe Pfad A kostet ~100
-  await page.keyboard.press(',');
+  await page.waitForSelector('.m-panel:not(.hidden) .ps-row', { timeout: 3000 });
+  check(await page.locator('.m-panel .ps-row').count() === 3, 'Turm-Panel zeigt drei Pfadzeilen');
+  check(await page.locator('.m-panel .ps-next').count() === 3 && await page.locator('.m-panel .p-tier').count() === 0, 'Turm-Panel zeigt je Pfad nur einen Knopf (nicht 15 Stufen)');
+  // Upgrade ueber den Panel-Knopf kaufen (?debug: alles freigeschaltet): Cash auf Easy 650 - 170 = 480, erste Stufe Pfad A kostet ~100
+  await page.waitForSelector('.m-panel .ps-row[data-path="0"] .ps-next.k-buy');
+  await page.click('.m-panel .ps-row[data-path="0"] .ps-next');
   await page.waitForFunction(() => __dw.game.state.towers[0].tiers[0] === 1, null, { timeout: 3000 });
-  check(true, 'Upgrade per Taste (,) gekauft');
+  check(true, 'Upgrade ueber den Panel-Knopf gekauft');
+  await page.keyboard.press('.');
+  await page.waitForFunction(() => __dw.game.state.towers[0].tiers[1] === 1, null, { timeout: 3000 });
+  check(true, 'Upgrade per Taste (.) gekauft');
+  // Freischalten per Pop-up: Stufe sperren (Sim-Zustand), Knopf zeigt XP, Klick -> Pop-up -> Enter -> Preis im Knopf
+  await page.evaluate(() => { const s = __dw.game.state; s.maxTier.ranger = [1, 1, 0]; s.towerXp.ranger = 400; });
+  await page.waitForSelector('.m-panel .ps-row[data-path="0"] .ps-next.k-unlock');
+  check(true, 'nicht freigeschaltete Stufe zeigt XP-Knopf');
+  await page.click('.m-panel .ps-row[data-path="0"] .ps-next');
+  await page.waitForSelector('.m-confirm:not(.hidden) .cf-yes', { timeout: 3000 });
+  check(true, 'Klick auf gesperrte Stufe oeffnet das Bestaetigungs-Popup');
+  await page.keyboard.press('Escape');
+  await page.waitForSelector('.m-confirm', { state: 'hidden' });
+  check(await page.evaluate(() => __dw.game.state.maxTier.ranger[0]) === 1, 'Esc im Popup schaltet nichts frei');
+  await page.click('.m-panel .ps-row[data-path="0"] .ps-next');
+  await page.waitForSelector('.m-confirm:not(.hidden) .cf-yes');
+  await page.click('.m-confirm .cf-yes');
+  await page.waitForSelector('.m-panel .ps-row[data-path="0"] .ps-next.k-buy', { timeout: 3000 });
+  check(await page.evaluate(() => __dw.game.state.maxTier.ranger[0]) === 2, 'Popup Ja: Stufe freigeschaltet, Knopf zeigt sofort den Goldpreis');
+  await page.evaluate(() => { __dw.game.state.maxTier.ranger = [5, 5, 5]; });
+  await page.click('.m-panel .ps-row[data-path="0"] .ps-next');
+  await page.waitForFunction(() => __dw.game.state.towers[0].tiers[0] === 2, null, { timeout: 3000 });
+  check(true, 'freigeschaltete Stufe direkt gekauft');
   // Runde starten, Gegner laufen
   await page.keyboard.press('Escape');
   await page.keyboard.press(' ');
