@@ -55,6 +55,8 @@ const towersSchema = z.object({
   frostcaller: towerSchema,
   longshot: towerSchema,
   market: towerSchema,
+  thornweaver: towerSchema,
+  alchemist: towerSchema,
   wren: heroSchema,
 });
 
@@ -159,7 +161,7 @@ export interface GameData {
   rbe: Record<EnemyType, number>;
 }
 
-const ALL_TOWERS = ['ranger', 'bombardier', 'frostcaller', 'longshot', 'market'] as const;
+const ALL_TOWERS = ['ranger', 'bombardier', 'frostcaller', 'longshot', 'market', 'thornweaver', 'alchemist'] as const;
 
 function check(cond: boolean, msg: string): void {
   if (!cond) throw new Error(`Spieldaten inkonsistent: ${msg}`);
@@ -215,7 +217,7 @@ function load(): GameData {
   for (const e of ENEMY_TYPES) rbe[e] = calc(e, 0);
 
   return {
-    towers: { ranger: t.ranger, bombardier: t.bombardier, frostcaller: t.frostcaller, longshot: t.longshot, market: t.market },
+    towers: { ranger: t.ranger, bombardier: t.bombardier, frostcaller: t.frostcaller, longshot: t.longshot, market: t.market, thornweaver: t.thornweaver, alchemist: t.alchemist },
     hero: { wren: t.wren },
     enemies,
     rounds,

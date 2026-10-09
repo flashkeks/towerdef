@@ -620,7 +620,8 @@ class Match {
         b.dataset.ab = a.id;
         b.title = ABILITY_TEXT[a.id].desc;
         const ic = h('div', 'ab-ic');
-        ic.append(copyCanvas(iconAbility(a.id).canvas, 2));
+        // Sim heisst die Faehigkeit 'tonic', das Pixel-Icon 'transformingTonic' (Runde 14)
+        ic.append(copyCanvas(iconAbility(a.id === 'tonic' ? 'transformingTonic' : a.id).canvas, 2));
         b.append(ic, h('span', 'ab-n', ABILITY_TEXT[a.id].name), h('kbd', '', String(i + 1)), h('div', 'cd'), h('span', 'ab-t num'));
         b.onclick = () => this.useAbility(a.id);
         this.abBar.append(b);

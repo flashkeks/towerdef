@@ -1636,6 +1636,572 @@
    }
   ]
  },
+ "thornweaver": {
+  "name": "Thornweaver",
+  "price": 400,
+  "radius": 11,
+  "desc": "Nature caster. Throws a fan of thorns at close range; grows into lightning, vines and a whole forest.",
+  "base": {
+   "atk": "projectile",
+   "pk": "thorn",
+   "dtype": "sharp",
+   "dmg": 1,
+   "pierce": 1,
+   "interval": 66000,
+   "range": 70000,
+   "speed": 450,
+   "count": 5,
+   "spread": 12
+  },
+  "paths": [
+   {
+    "name": "Storm",
+    "tiers": [
+     {
+      "name": "Hard Thorns",
+      "price": 250,
+      "desc": "Thorns pierce 2 enemies.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "pierce",
+        "v": 2
+       }
+      ]
+     },
+     {
+      "name": "Heart of Thunder",
+      "price": 1000,
+      "desc": "Every 2.3 s a chain lightning hits 4 targets for 2 damage.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "zapN",
+        "v": 4
+       },
+       {
+        "op": "set",
+        "stat": "zapDmg",
+        "v": 2
+       },
+       {
+        "op": "set",
+        "stat": "zapInterval",
+        "v": 138
+       },
+       {
+        "op": "set",
+        "stat": "zapRange",
+        "v": 40000
+       }
+      ]
+     },
+     {
+      "name": "Tempest",
+      "price": 2500,
+      "desc": "Lightning hits 8 targets for 3. Every 4 s a whirlwind throws Glims 40 px back along the path (not bosses).",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "zapN",
+        "v": 8
+       },
+       {
+        "op": "set",
+        "stat": "zapDmg",
+        "v": 3
+       },
+       {
+        "op": "set",
+        "stat": "whirlEvery",
+        "v": 240
+       },
+       {
+        "op": "set",
+        "stat": "whirlPx",
+        "v": 40000
+       }
+      ]
+     },
+     {
+      "name": "Storm Mother",
+      "price": 6000,
+      "desc": "Lightning hits 15 targets for 6 damage.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "zapN",
+        "v": 15
+       },
+       {
+        "op": "set",
+        "stat": "zapDmg",
+        "v": 6
+       }
+      ]
+     },
+     {
+      "name": "Avatar of Wrath",
+      "price": 26000,
+      "desc": "+1 damage for every 25 enemies on the map (up to +10).",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "avatarPer",
+        "v": 25
+       },
+       {
+        "op": "set",
+        "stat": "avatarMax",
+        "v": 10
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "name": "Wild",
+    "tiers": [
+     {
+      "name": "Thorn Burst",
+      "price": 300,
+      "desc": "Throws 8 thorns in all directions instead of a fan.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "count",
+        "v": 8
+       },
+       {
+        "op": "set",
+        "stat": "spread",
+        "v": 45
+       }
+      ]
+     },
+     {
+      "name": "Vine Snare",
+      "price": 600,
+      "desc": "Every 3 s a vine holds a Glim in place for 1.5 s (not bosses).",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "snareEvery",
+        "v": 180
+       },
+       {
+        "op": "set",
+        "stat": "snareTicks",
+        "v": 90
+       }
+      ]
+     },
+     {
+      "name": "Wall of Trees",
+      "price": 2200,
+      "desc": "Ability: a wall of trees grows on the path and swallows 150 RBE of Glims (not bosses). Cooldown 45 s.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "wallRbe",
+        "v": 150
+       },
+       {
+        "op": "set",
+        "stat": "wallCd",
+        "v": 2700
+       },
+       {
+        "op": "set",
+        "stat": "wallTtl",
+        "v": 2400
+       }
+      ]
+     },
+     {
+      "name": "Spirit of the Forest",
+      "price": 6000,
+      "desc": "Thorny vines cover the path in range: 1 damage per second to everything inside.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "zoneBp",
+        "v": 10000
+       },
+       {
+        "op": "set",
+        "stat": "zoneDmg",
+        "v": 1
+       }
+      ]
+     },
+     {
+      "name": "World Tree",
+      "price": 24000,
+      "desc": "Vine damage 5 per second over twice the radius. +100 gold each round.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "zoneBp",
+        "v": 20000
+       },
+       {
+        "op": "set",
+        "stat": "zoneDmg",
+        "v": 5
+       },
+       {
+        "op": "set",
+        "stat": "roundGold",
+        "v": 100
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "name": "Grove",
+    "tiers": [
+     {
+      "name": "Druidic Reach",
+      "price": 150,
+      "desc": "Range +15%.",
+      "mods": [
+       {
+        "op": "mul",
+        "stat": "range",
+        "v": 11500
+       }
+      ]
+     },
+     {
+      "name": "Herbal Lore",
+      "price": 400,
+      "desc": "Detects Shades (camo).",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "camo",
+        "v": 1
+       }
+      ]
+     },
+     {
+      "name": "Jungle's Bounty",
+      "price": 1500,
+      "desc": "+150 gold and +2 lives each round.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "bountyGold",
+        "v": 150
+       },
+       {
+        "op": "set",
+        "stat": "roundLives",
+        "v": 2
+       }
+      ]
+     },
+     {
+      "name": "Spring Blessing",
+      "price": 3500,
+      "desc": "Towers in range attack 15% faster.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "groveSpeedBp",
+        "v": 1500
+       }
+      ]
+     },
+     {
+      "name": "Grove Guardian",
+      "price": 10000,
+      "desc": "Thorns turn to magic (crack Ironshell) and deal +3 damage.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "dtype",
+        "v": "magic"
+       },
+       {
+        "op": "add",
+        "stat": "dmg",
+        "v": 3
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ },
+ "alchemist": {
+  "name": "Alchemist",
+  "price": 500,
+  "radius": 10,
+  "desc": "Lobs acid potions, brews buffs for nearby towers and turns gold out of lead.",
+  "base": {
+   "atk": "potion",
+   "pk": "potion",
+   "dtype": "magic",
+   "dmg": 1,
+   "radius": 18000,
+   "maxT": 12,
+   "flight": 36,
+   "burnDmg": 1,
+   "burnTicks": 180,
+   "interval": 90000,
+   "range": 64000
+  },
+  "paths": [
+   {
+    "name": "Brews",
+    "tiers": [
+     {
+      "name": "Larger Potions",
+      "price": 250,
+      "desc": "Splash radius +30%.",
+      "mods": [
+       {
+        "op": "mul",
+        "stat": "radius",
+        "v": 13000
+       }
+      ]
+     },
+     {
+      "name": "Acidic Mixture",
+      "price": 350,
+      "desc": "+1 damage against Ironshell and Brutes. Acid 2 per second.",
+      "mods": [
+       {
+        "op": "add",
+        "stat": "bonusIron",
+        "v": 1
+       },
+       {
+        "op": "add",
+        "stat": "bonusBrute",
+        "v": 1
+       },
+       {
+        "op": "max",
+        "stat": "burnDmg",
+        "v": 2
+       }
+      ]
+     },
+     {
+      "name": "Berserker Brew",
+      "price": 1200,
+      "desc": "Every 6 s a potion on a tower in range: +1 damage, +15% range, +10% speed for 8 s.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "brewEvery",
+        "v": 360
+       },
+       {
+        "op": "set",
+        "stat": "brewDmg",
+        "v": 1
+       },
+       {
+        "op": "set",
+        "stat": "brewRangeBp",
+        "v": 1500
+       },
+       {
+        "op": "set",
+        "stat": "brewSpeedBp",
+        "v": 1000
+       },
+       {
+        "op": "set",
+        "stat": "brewTicks",
+        "v": 480
+       }
+      ]
+     },
+     {
+      "name": "Stronger Stimulant",
+      "price": 3000,
+      "desc": "Potion gives +2 damage and +25% speed.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "brewDmg",
+        "v": 2
+       },
+       {
+        "op": "set",
+        "stat": "brewSpeedBp",
+        "v": 2500
+       }
+      ]
+     },
+     {
+      "name": "Permanent Brew",
+      "price": 15000,
+      "desc": "The potion effect lasts for good on every tower in range.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "brewPerm",
+        "v": 1
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "name": "Unstable",
+    "tiers": [
+     {
+      "name": "Stronger Acid",
+      "price": 250,
+      "desc": "Acid 3 per second.",
+      "mods": [
+       {
+        "op": "max",
+        "stat": "burnDmg",
+        "v": 3
+       }
+      ]
+     },
+     {
+      "name": "Perishing Potions",
+      "price": 450,
+      "desc": "+2 damage against Brutes, +5 against bosses.",
+      "mods": [
+       {
+        "op": "add",
+        "stat": "bonusBrute",
+        "v": 2
+       },
+       {
+        "op": "add",
+        "stat": "bonusBoss",
+        "v": 3
+       }
+      ]
+     },
+     {
+      "name": "Unstable Concoction",
+      "price": 2500,
+      "desc": "Hit Glims explode when they die: radius 24 px, 4 damage.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "unstR",
+        "v": 24000
+       },
+       {
+        "op": "set",
+        "stat": "unstDmg",
+        "v": 4
+       }
+      ]
+     },
+     {
+      "name": "Transforming Tonic",
+      "price": 4000,
+      "desc": "Ability: becomes a monster for 20 s, 30 damage per second to the strongest target. Cooldown 60 s.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "tonicDur",
+        "v": 1200
+       },
+       {
+        "op": "set",
+        "stat": "tonicCd",
+        "v": 3600
+       }
+      ]
+     },
+     {
+      "name": "Total Transformation",
+      "price": 15000,
+      "desc": "The ability also transforms 5 towers in range.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "tonicOthers",
+        "v": 5
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "name": "Gold",
+    "tiers": [
+     {
+      "name": "Faster Throwing",
+      "price": 250,
+      "desc": "Throws 25% faster.",
+      "mods": [
+       {
+        "op": "mul",
+        "stat": "interval",
+        "v": 7500
+       }
+      ]
+     },
+     {
+      "name": "Acid Pool",
+      "price": 300,
+      "desc": "Potions leave acid pools on the path: 1 damage every 0.5 s, 20 hits.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "poolN",
+        "v": 20
+       }
+      ]
+     },
+     {
+      "name": "Lead to Gold",
+      "price": 1500,
+      "desc": "Every Ironshell it cracks pays +40 gold.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "leadGold",
+        "v": 40
+       }
+      ]
+     },
+     {
+      "name": "Rubber to Gold",
+      "price": 3500,
+      "desc": "Hit Glims pay +1 gold per layer for 30 s.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "rubberTicks",
+        "v": 1800
+       }
+      ]
+     },
+     {
+      "name": "Shrink Potion",
+      "price": 22000,
+      "desc": "Every 3 s the strongest Glim in range (not bosses) shrinks to a Red Glim.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "shrinkEvery",
+        "v": 180
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ },
  "wren": {
   "name": "Wren",
   "title": "the Lamplighter",

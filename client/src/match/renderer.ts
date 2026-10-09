@@ -638,7 +638,7 @@ export class Renderer {
       }
       case 'explode': {
         const r = m(ev.radius);
-        fx.explosion(m(ev.x), m(ev.y), r, ev.kind);
+        fx.explosion(m(ev.x), m(ev.y), r, ev.kind === 'acid' ? 'mini' : ev.kind === 'unstable' ? 'bomb' : ev.kind); // acid/unstable: Platzhalter bis zu den Sprites aus Agent B
         if (ev.kind === 'quake') { fx.shake.t = 14; fx.shake.amp = 2; }
         else if (ev.kind === 'star') { fx.shake.t = 8; fx.shake.amp = 1; }
         break;
@@ -687,7 +687,7 @@ export class Renderer {
         }
         const etype = this.latest?.enemies.find((q) => q.id === id)?.type ?? 'red';
         const dur = kind === 'freeze' ? 60 : kind === 'stun' ? 30 : kind === 'burn' ? 36 : kind === 'reveal' ? 20 : 16;
-        fx.anim(0, 0, FRAMES.STATUS_FRAMES, (f) => P2.status(kind, f, etype), {
+        fx.anim(0, 0, FRAMES.STATUS_FRAMES, (f) => P2.status(kind === 'snare' ? 'slow' : kind === 'acid' || kind === 'volatile' ? 'burn' : kind === 'gold' ? 'mark' : kind, f, etype), {
           per: 4, loop: Math.max(1, Math.round(dur / (FRAMES.STATUS_FRAMES * 4))),
           follow: () => { const v = this.enemies.get(id); return v ? { x: v.cx, y: v.cy - (kind === 'freeze' ? 6 : etype === 'leviathan' ? 40 : etype === 'brute' ? 24 : 16) } : null; },
         });

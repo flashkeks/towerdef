@@ -7,13 +7,13 @@ import { dist2, isqrt } from './fixed.js';
 import { hashState } from './hash.js';
 import { getMap, pointInPolygon } from './map.js';
 import { towerXpPot, splitTowerXp } from './xp.js';
-import { positionAt, pathClearance, nearestOnPath } from './path.js';
+import { COVERAGE_STEP, positionAt, pathClearance, nearestOnPath } from './path.js';
 import { nextInt, seedRng } from './prng.js';
 import { applyMod, pathOrder, type Mod, type Stats } from './stats.js';
 import { cosBp, rotate, sinBp } from './trig.js';
 import type {
   AbilityId, Command, CommandResult, DamageType, Difficulty, EnemyState, EnemyType, Game, GameOptions, GameState,
-  HeroType, MarketInfo, PlaceCheck, TowerAura, PowerKey, ProjectileKind, ProjectileState, RoundPreview, SimEvent, TargetMode, TowerState, TowerType, Tiers, TrapState, UnlockPathInfo, UpgradeInfo,
+  HeroType, MarketInfo, PlaceCheck, PuddleState, TowerAura, TowerBuff, PowerKey, ProjectileKind, ProjectileState, RoundPreview, SimEvent, TargetMode, TowerState, TowerType, Tiers, TrapState, UnlockPathInfo, UpgradeInfo, WallState,
 } from './types.js';
 
 export const MAX_ROUND = 20;
@@ -21,14 +21,20 @@ const WINDUP = 6;
 const ATTACK_ANIM = 18;
 const MIN_SPAWN_PROGRESS = 8000;
 const PROJ_RADIUS = 3500;
+/** Runde 14: Säurepfütze (Radius, Takt, Lebensdauer) und Monster-Form (Treffer alle 12 Ticks à 6 = 30 Schaden/s). */
+const PUDDLE_RADIUS = 12000;
+const PUDDLE_PULSE = 30;
+const PUDDLE_TTL = 1800;
+const MONSTER_EVERY = 12;
+const MONSTER_HIT = 6;
 const CELL = 24000;
-const TOWER_TYPES: readonly TowerType[] = ['ranger', 'bombardier', 'frostcaller', 'longshot', 'market'];
+const TOWER_TYPES: readonly TowerType[] = ['ranger', 'bombardier', 'frostcaller', 'longshot', 'market', 'thornweaver', 'alchemist'];
 /** Die drei "Primary"-Türme (Wissensbaum-Ast Primary). */
 const PRIMARY: readonly TowerType[] = ['ranger', 'bombardier', 'frostcaller'];
-const ABILITY_ORDER: AbilityId[] = ['arrowRain', 'absoluteZero', 'flare', 'dawnbreak', 'focus', 'supplyDrop', 'grant'];
+const ABILITY_ORDER: AbilityId[] = ['arrowRain', 'absoluteZero', 'flare', 'dawnbreak', 'focus', 'supplyDrop', 'grant', 'wallOfTrees', 'tonic'];
 /** Reichweite ab hier = ganze Karte (Longshot): Zielwahl über alle Gegner, keine Reichweiten-Boni. */
 export const GLOBAL_RANGE = 1_000_000;
-const perTower = <T,>(v: () => T): Record<TowerType, T> => ({ ranger: v(), bombardier: v(), frostcaller: v(), longshot: v(), market: v() });
+const perTower = <T,>(v: () => T): Record<TowerType, T> => ({ ranger: v(), bombardier: v(), frostcaller: v(), longshot: v(), market: v(), thornweaver: v(), alchemist: v() });
 const STRONG_RANK: Record<EnemyType, number> = { leviathan: 8, brute: 7, ironshell: 6, ember: 6, gold: 4, green: 3, blue: 2, red: 1 };
 
 const isHero = (t: TowerType | HeroType): t is HeroType => t === 'wren';
@@ -49,6 +55,8 @@ interface EnemyRt {
   boss: boolean;
   stages: number[];
   rbe: number;
+  /** Knoten im Gegnerbaum (Hülle + alle Kinder): so viele Pops, so viel Pop-Gold. */
+  nodes: number;
 }
 
 export function createGame(opts: GameOptions): Game {
@@ -72,11 +80,14 @@ export function createGame(opts: GameOptions): Game {
       boss: !!d.boss,
       stages: d.stages ?? [],
       rbe: 0,
+      nodes: 0,
     };
   }
   for (const k of Object.keys(etab) as EnemyType[]) {
     const calc = (e: EnemyType): number => etab[e].hp + etab[e].children.reduce((a, c) => a + calc(c), 0);
     etab[k].rbe = calc(k);
+    const cnt = (e: EnemyType): number => 1 + etab[e].children.reduce((a, c) => a + cnt(c), 0);
+    etab[k].nodes = cnt(k);
   }
 
   const zeroPowers = (v: number): Record<PowerKey, number> => {
@@ -110,11 +121,18 @@ export function createGame(opts: GameOptions): Game {
       powersUsed: zeroPowers(0),
       income: 0,
       abilityCash: 0,
+      groveGold: 0,
+      healed: 0,
+      bountyGold: 0,
     },
     powers: powers0,
     powerUsedRound: zeroPowers(-1),
     powerUses: zeroPowers(0),
     traps: [],
+    walls: [],
+    puddles: [],
+    gateLeft: Math.max(0, Math.floor(kmods.gate ?? 0)),
+    popCarry: 0,
     warpLeft: 0,
     oilRound: 0,
     oilCarry: 0,
@@ -219,6 +237,16 @@ export function createGame(opts: GameOptions): Game {
     }
     if (kmods.supplyBonus && st.supplyCash > 0) st.supplyCash += kmods.supplyBonus;
     if (kmods.marketRadiusBp && t.type === 'market') st.range = Math.floor((st.range * (10000 + kmods.marketRadiusBp)) / 10000);
+    // Runde 14 (Wissensbaum)
+    if (!isHero(t.type)) {
+      const pa = kmods.pierceAdd?.[t.type];
+      if (pa) st.pierce += pa;
+      const fa = kmods.fragAdd?.[t.type];
+      if (fa && st.fragN > 0) st.fragN += fa;
+    }
+    if (kmods.brewDurBp && st.brewTicks > 0) st.brewTicks = Math.floor((st.brewTicks * (10000 + kmods.brewDurBp)) / 10000);
+    if (kmods.bountyGold && st.bountyGold > 0) st.bountyGold += kmods.bountyGold;
+    if (kmods.leadGoldAdd && st.leadGold > 0) st.leadGold += kmods.leadGoldAdd;
     return st;
   }
 
@@ -227,6 +255,7 @@ export function createGame(opts: GameOptions): Game {
     tstats.set(t.id, st);
     t.camo = st.camo === 1;
     t.range = st.range;
+    t.zone = st.zoneBp > 0 ? Math.floor((st.range * st.zoneBp) / 10000) : 0;
     syncAbilities();
   }
 
@@ -248,6 +277,15 @@ export function createGame(opts: GameOptions): Game {
         if (id === 'focus' && t.type === 'longshot' && st.focusDur > 0) cd = Math.max(cd, st.focusCd);
         if (id === 'supplyDrop' && t.type === 'longshot' && st.supplyCash > 0) cd = Math.max(cd, st.supplyCd);
         if (id === 'grant' && t.type === 'market' && st.grantCash > 0) cd = Math.max(cd, st.grantCd);
+      }
+      return cd > 0 ? { cd } : null;
+    }
+    if (id === 'wallOfTrees' || id === 'tonic') {
+      let cd = 0;
+      for (const t of S.towers) {
+        const st = tstats.get(t.id)!;
+        if (id === 'wallOfTrees' && t.type === 'thornweaver' && st.wallRbe > 0) cd = Math.max(cd, st.wallCd);
+        if (id === 'tonic' && t.type === 'alchemist' && st.tonicDur > 0) cd = Math.max(cd, st.tonicCd);
       }
       return cd > 0 ? { cd } : null;
     }
@@ -279,7 +317,7 @@ export function createGame(opts: GameOptions): Game {
     const e: EnemyState = {
       id: S.nextId++, type, x: pos.x, y: pos.y, progress, hp: d.hp, maxHp: d.hp, camo, revealed,
       slowBp: 0, slowTicks: 0, stunTicks: 0, frozenTicks: 0, burnTicks: 0, damageStage: 0,
-      frac: 0, round, brittleTicks: 0, burnDmg: 0, burnOwner: 0, markTicks: 0, markBp: 0, dead: false,
+      frac: 0, round, brittleTicks: 0, burnDmg: 0, burnOwner: 0, vineTicks: 0, goldTicks: 0, volatile: 0, markTicks: 0, markBp: 0, dead: false,
     };
     S.enemies.push(e);
     emap.set(e.id, e);
@@ -333,7 +371,7 @@ export function createGame(opts: GameOptions): Game {
   }
 
   const bonusFor = (e: EnemyState, st: Stats): number =>
-    e.type === 'brute' ? st.bonusBrute : e.type === 'leviathan' ? st.bonusBrute + st.bonusBoss : 0;
+    e.type === 'brute' ? st.bonusBrute : e.type === 'leviathan' ? st.bonusBrute + st.bonusBoss : e.type === 'ironshell' ? st.bonusIron : 0;
 
   // ---------- Schaden ----------
 
@@ -351,6 +389,8 @@ export function createGame(opts: GameOptions): Game {
     }
     let total = amount;
     if (e.brittleTicks > 0) total += 1;
+    // Icicle Edge (Wissensbaum): Frostcaller-Treffer auf Eingefrorene
+    if (kmods.icicleDmg && e.frozenTicks > 0 && towerById(src)?.type === 'frostcaller') total += kmods.icicleDmg;
     // Crippling Shot: markierter Boss nimmt aus allen Quellen mehr Schaden (kaufmännisch gerundet)
     if (e.markTicks > 0 && total > 0) total += Math.floor((total * e.markBp + 5000) / 10000);
     if (total <= 0) return false;
@@ -380,23 +420,46 @@ export function createGame(opts: GameOptions): Game {
       S.oilCarry = t % 10000;
       cash += Math.floor(t / 10000);
     }
+    if (kmods.popCashBp) {
+      // Pop Bonus (Wissensbaum): Aufschlag mit Bruchrest wie bei Lantern Oil
+      const t = cash * kmods.popCashBp + S.popCarry;
+      S.popCarry = t % 10000;
+      cash += Math.floor(t / 10000);
+    }
+    // Rubber to Gold: markierte Gegner (und ihre Kinder) geben +1 Gold je Schicht
+    if (e.goldTicks > 0) cash += 1;
     S.cash += cash;
     const owner = towerById(src);
     if (owner) {
       owner.pops++;
       S.stats.pops[owner.type]++;
       if (!isHero(owner.type)) S.roundPops[owner.type]++;
+      // Lead to Gold: jeder geknackte Ironshell zahlt
+      if (e.type === 'ironshell' && owner.type === 'alchemist') {
+        const g = tstats.get(owner.id)?.leadGold ?? 0;
+        if (g > 0) {
+          S.cash += g;
+          S.stats.bountyGold += g;
+          emit({ type: 'bounty', tick: S.tick, tower: owner.id, x: e.x, y: e.y, gold: g, reason: 'lead' });
+        }
+      }
     }
     const kids: EnemyState[] = [];
     const n = d.children.length;
     for (let i = 0; i < n; i++) {
       const off = (2 * i - (n - 1)) * 3000;
       const k = spawnEnemy(d.children[i], Math.max(0, e.progress + off), e.camo, e.round, e.revealed);
+      k.goldTicks = e.goldTicks;
       kids.push(k);
       created?.push(k.id);
     }
     emit({ type: 'pop', tick: S.tick, enemy: e.id, etype: e.type, x: e.x, y: e.y, children: kids.map((k) => k.id), cash });
     if (!d.boss && excess > 0) for (const k of kids) damage(k, excess, dtype, src, created, true);
+    // Unstable Concoction: markierte Gegner explodieren beim Tod
+    if (e.volatile) {
+      const o = tstats.get(e.volatile);
+      if (o && o.unstDmg > 0) explodeAt(e.x, e.y, o.unstR, o.unstDmg, 'explosive', 12, e.volatile, null, 'unstable');
+    }
   }
 
   function applySlow(e: EnemyState, bp: number, ticks: number, brittle: boolean, raw = false): void {
@@ -425,14 +488,14 @@ export function createGame(opts: GameOptions): Game {
     if (!was) emit({ type: 'status', tick: S.tick, enemy: e.id, kind: 'stun' });
   }
 
-  function applyBurn(e: EnemyState, dmg: number, ticks: number, owner: number): void {
+  function applyBurn(e: EnemyState, dmg: number, ticks: number, owner: number, acid = false): void {
     if (e.dead || dmg <= 0) return;
     if (etab[e.type].boss) ticks = Math.floor(ticks / 2);
     const was = e.burnTicks > 0;
     e.burnTicks = Math.max(e.burnTicks, ticks);
     e.burnDmg = Math.max(e.burnDmg, dmg);
     e.burnOwner = owner;
-    if (!was) emit({ type: 'status', tick: S.tick, enemy: e.id, kind: 'burn' });
+    if (!was) emit({ type: 'status', tick: S.tick, enemy: e.id, kind: acid ? 'acid' : 'burn' });
   }
 
   // ---------- Treffer-Helfer ----------
@@ -440,7 +503,7 @@ export function createGame(opts: GameOptions): Game {
   /** Flächenschaden: nächste `max` Gegner im Radius. */
   function explodeAt(
     x: number, y: number, radius: number, dmg: number, dtype: DamageType, max: number, src: number, st: Stats | null,
-    kind: 'bomb' | 'mini' | 'star', stun = 0, stunBoss = 0, exclude?: readonly number[], withBonus = true,
+    kind: 'bomb' | 'mini' | 'star' | 'unstable', stun = 0, stunBoss = 0, exclude?: readonly number[], withBonus = true,
   ): void {
     emit({ type: 'explode', tick: S.tick, x, y, radius, kind });
     const cand = queryBox(x - radius - 30000, y - radius - 30000, x + radius + 30000, y + radius + 30000);
@@ -516,7 +579,7 @@ export function createGame(opts: GameOptions): Game {
 
   // ---------- Zielwahl ----------
 
-  function pickTarget(t: TowerState, range: number, detect: boolean, mode: TargetMode, requireDetect = true): EnemyState | null {
+  function pickTarget(t: TowerState, range: number, detect: boolean, mode: TargetMode, requireDetect = true, filter?: (e: EnemyState) => boolean): EnemyState | null {
     let best: EnemyState | null = null;
     let bestKey = 0;
     const r2 = range * range;
@@ -526,6 +589,7 @@ export function createGame(opts: GameOptions): Game {
     for (const e of cand) {
       if (e.dead || e.progress < MIN_SPAWN_PROGRESS) continue;
       if (requireDetect && e.camo && !e.revealed && !detect) continue;
+      if (filter && !filter(e)) continue;
       const d2 = dist2(t.x, t.y, e.x, e.y);
       if (d2 > r2) continue;
       let key: number;
@@ -541,6 +605,182 @@ export function createGame(opts: GameOptions): Game {
       }
     }
     return best;
+  }
+
+  // ================= Runde 14: Thornweaver und Alchemist =================
+
+  /** Alchemist-Tränke (Timer und Permanent Brew) und Spring Blessing auf einem Turm; stärkster Wert je Feld. */
+  function buffOf(t: TowerState): TowerBuff {
+    const b: TowerBuff = { dmg: 0, rangeBp: 0, speedBp: 0, groveSpeedBp: 0, permanent: false, ticks: t.buffTicks };
+    if (t.buffTicks > 0) {
+      b.dmg = t.buffDmg;
+      b.rangeBp = t.buffRangeBp;
+      b.speedBp = t.buffSpeedBp;
+    }
+    for (const a of S.towers) {
+      if (a === t) continue;
+      const as = tstats.get(a.id);
+      if (!as) continue;
+      if (a.type === 'alchemist' && as.brewPerm > 0 && dist2(t.x, t.y, a.x, a.y) <= a.range * a.range) {
+        b.permanent = true;
+        b.dmg = Math.max(b.dmg, as.brewDmg);
+        b.rangeBp = Math.max(b.rangeBp, as.brewRangeBp);
+        b.speedBp = Math.max(b.speedBp, as.brewSpeedBp);
+      }
+      if (a.type === 'thornweaver' && as.groveSpeedBp > 0 && dist2(t.x, t.y, a.x, a.y) <= a.range * a.range) b.groveSpeedBp = Math.max(b.groveSpeedBp, as.groveSpeedBp);
+    }
+    return b;
+  }
+
+  /** Avatar of Wrath: +1 Schaden je `avatarPer` lebende Gegner auf der Karte, höchstens `avatarMax`. */
+  function avatarBonus(st: Stats): number {
+    if (st.avatarPer <= 0) return 0;
+    let n = 0;
+    for (const e of S.enemies) if (!e.dead) n++;
+    return Math.min(st.avatarMax, Math.floor(n / st.avatarPer));
+  }
+
+  /** Säurepfütze auf dem Weg beim Landepunkt (x, y); eine Pfütze desselben Alchemisten in der Nähe wird aufgefrischt statt verdoppelt. */
+  function addPuddle(owner: number, x: number, y: number, charges: number): void {
+    const n = nearestOnPath(path, x, y);
+    const pos = positionAt(path, n.progress);
+    const near = S.puddles.find((q) => q.owner === owner && Math.abs(q.progress - n.progress) <= PUDDLE_RADIUS + 2000);
+    if (near) {
+      near.charges = Math.max(near.charges, charges);
+      near.ttl = PUDDLE_TTL;
+      emit({ type: 'puddle', tick: S.tick, id: near.id, tower: owner, x: near.x, y: near.y, radius: near.radius, charges: near.charges });
+      return;
+    }
+    const q: PuddleState = { id: S.nextId++, owner, progress: n.progress, x: pos.x, y: pos.y, radius: PUDDLE_RADIUS, charges, ttl: PUDDLE_TTL, cd: PUDDLE_PULSE };
+    S.puddles.push(q);
+    emit({ type: 'puddle', tick: S.tick, id: q.id, tower: owner, x: q.x, y: q.y, radius: q.radius, charges });
+  }
+
+  /** Tränke-Treffer: Spritzer auf die nächsten `maxT` Gegner im Radius, dazu Säure-DoT, Markierungen und Pfütze. */
+  function potionLand(p: ProjectileState, st: Stats): void {
+    const x = p.arc!.x1, y = p.arc!.y1;
+    emit({ type: 'explode', tick: S.tick, x, y, radius: st.radius, kind: 'acid' });
+    const cand = queryBox(x - st.radius - 30000, y - st.radius - 30000, x + st.radius + 30000, y + st.radius + 30000);
+    const list: { e: EnemyState; d2: number }[] = [];
+    for (const e of cand) {
+      const r = st.radius + etab[e.type].radius;
+      const d2 = dist2(x, y, e.x, e.y);
+      if (d2 <= r * r) list.push({ e, d2 });
+    }
+    list.sort((a, b) => a.d2 - b.d2 || a.e.id - b.e.id);
+    for (const { e } of list.slice(0, st.maxT)) {
+      if (e.dead) continue;
+      // Markierungen zuerst: auch der tödliche Treffer zählt als getroffen (Explosion, Gold)
+      if (st.unstDmg > 0) {
+        if (!e.volatile) emit({ type: 'status', tick: S.tick, enemy: e.id, kind: 'volatile' });
+        e.volatile = p.owner;
+      }
+      if (st.rubberTicks > 0) {
+        if (e.goldTicks <= 0) emit({ type: 'status', tick: S.tick, enemy: e.id, kind: 'gold' });
+        e.goldTicks = Math.max(e.goldTicks, st.rubberTicks);
+      }
+      damage(e, p.dmg + bonusFor(e, st), p.dtype, p.owner);
+      if (!e.dead && st.burnDmg > 0) applyBurn(e, st.burnDmg, st.burnTicks, p.owner, true);
+    }
+    if (st.poolN > 0) addPuddle(p.owner, x, y, st.poolN);
+  }
+
+  function updatePuddles(): void {
+    for (const q of S.puddles.slice()) {
+      q.ttl--;
+      if (q.ttl <= 0) {
+        S.puddles = S.puddles.filter((x) => x !== q);
+        emit({ type: 'puddleGone', tick: S.tick, id: q.id, reason: 'expired' });
+        continue;
+      }
+      if (--q.cd > 0) continue;
+      q.cd = PUDDLE_PULSE;
+      const hit = queryBox(q.x - q.radius - 30000, q.y - q.radius - 30000, q.x + q.radius + 30000, q.y + q.radius + 30000)
+        .filter((e) => e.progress >= MIN_SPAWN_PROGRESS && dist2(q.x, q.y, e.x, e.y) <= (q.radius + etab[e.type].radius) ** 2)
+        .sort((a, b) => b.progress - a.progress || a.id - b.id);
+      let n = 0;
+      for (const e of hit) {
+        if (q.charges <= 0) break;
+        if (e.dead) continue;
+        damage(e, 1, 'magic', q.owner);
+        q.charges--;
+        n++;
+      }
+      if (n > 0) emit({ type: 'puddle', tick: S.tick, id: q.id, tower: q.owner, x: q.x, y: q.y, radius: q.radius, charges: q.charges });
+      if (q.charges <= 0) {
+        S.puddles = S.puddles.filter((x) => x !== q);
+        emit({ type: 'puddleGone', tick: S.tick, id: q.id, reason: 'spent' });
+      }
+    }
+    for (const w of S.walls.slice()) {
+      if (--w.ttl <= 0) {
+        S.walls = S.walls.filter((x) => x !== w);
+        emit({ type: 'wallGone', tick: S.tick, id: w.id, reason: 'expired' });
+      }
+    }
+  }
+
+  /** Wall of Trees: am Ende des Wegstücks, das der Thornweaver erreicht (6 px davor). Null, wenn der Turm keinen Weg erreicht. */
+  function placeWall(t: TowerState): WallState | null {
+    const r2 = t.range * t.range;
+    const smp = path.samples;
+    let best = -1;
+    for (let i = smp.length - 1; i >= 0; i--) {
+      if (dist2(t.x, t.y, smp[i].x, smp[i].y) <= r2) {
+        best = i;
+        break;
+      }
+    }
+    if (best < 0) return null;
+    const st = tstats.get(t.id)!;
+    const progress = Math.max(MIN_SPAWN_PROGRESS, best * COVERAGE_STEP - 6000);
+    const pos = positionAt(path, progress);
+    const w: WallState = { id: S.nextId++, owner: t.id, progress, x: pos.x, y: pos.y, left: st.wallRbe, ttl: st.wallTtl };
+    S.walls.push(w);
+    emit({ type: 'wall', tick: S.tick, id: w.id, tower: t.id, x: w.x, y: w.y, progress, left: w.left });
+    return w;
+  }
+
+  /** Wände schlucken Nicht-Boss-Gegner, die in diesem Tick ihren Wegpunkt überqueren (Reihenfolge der Wände nach Weg). */
+  function crossWalls(e: EnemyState, a: number, b: number): void {
+    if (etab[e.type].boss) return;
+    const hit = S.walls.filter((w) => w.progress > a && w.progress <= b).sort((x, y) => x.progress - y.progress || x.id - y.id);
+    for (const w of hit) {
+      const rbe = e.hp + etab[e.type].children.reduce((acc, c) => acc + etab[c].rbe, 0);
+      const nodes = etab[e.type].nodes;
+      const cash = nodes * diff.popCash;
+      e.dead = true;
+      S.cash += cash;
+      w.left -= rbe;
+      const owner = towerById(w.owner);
+      if (owner) {
+        owner.pops += nodes;
+        S.stats.pops[owner.type] += nodes;
+        S.roundPops[owner.type as TowerType] += nodes;
+      }
+      emit({ type: 'wallEat', tick: S.tick, wall: w.id, enemy: e.id, etype: e.type, x: w.x, y: w.y, rbe, left: Math.max(0, w.left), cash });
+      if (w.left <= 0) {
+        S.walls = S.walls.filter((x) => x !== w);
+        emit({ type: 'wallGone', tick: S.tick, id: w.id, reason: 'spent' });
+      }
+      return;
+    }
+  }
+
+  /** Shrink Potion: der Gegner wird zum Red Glim (gleiche Id/Position). Die abgetragenen Schichten zahlen wie Pops. */
+  function shrinkEnemy(t: TowerState, e: EnemyState): void {
+    const removed = etab[e.type].nodes - 1;
+    const cash = removed * diff.popCash;
+    const from = e.type;
+    S.cash += cash;
+    t.pops += removed;
+    S.stats.pops[t.type] += removed;
+    S.roundPops[t.type as TowerType] += removed;
+    e.type = 'red';
+    e.hp = etab.red.hp;
+    e.maxHp = etab.red.hp;
+    e.damageStage = 0;
+    emit({ type: 'shrink', tick: S.tick, tower: t.id, enemy: e.id, from, x: e.x, y: e.y, cash });
   }
 
   // ================= Türme =================
@@ -573,11 +813,19 @@ export function createGame(opts: GameOptions): Game {
     t.facing = facingOf(e.x - t.x, e.y - t.y);
     // Market-Aura (Runde 13): +Schaden, sharp -> magic (Armory), +Pierce
     const aura = auraOf(t);
-    const dmg = st.dmg + aura.dmg;
+    const dmg = st.dmg + aura.dmg + buffOf(t).dmg + avatarBonus(st);
 
     if (st.atk === 'chain') {
       emit({ type: 'fire', tick: S.tick, tower: t.id, kind: 'chain' });
       lightning(t.x, t.y, e, st.chainN, st.chainRange, dmg, t.id, [], true);
+      return;
+    }
+    if (st.atk === 'potion') {
+      const flight = Math.max(1, st.flight);
+      const pp = predictPos(e, flight);
+      const p = makeProj(t.id, st.pk, t.x, t.y, 0, 0, dmg, st.dtype, 0, flight, 0, st);
+      p.arc = { x0: t.x, y0: t.y, x1: pp.x, y1: pp.y, t: 0 };
+      emit({ type: 'fire', tick: S.tick, tower: t.id, projectile: p.id, kind: st.pk });
       return;
     }
     if (st.atk === 'bomb') {
@@ -638,8 +886,123 @@ export function createGame(opts: GameOptions): Game {
       }
       speedBuff += kmods.tempoBp?.[t.type as TowerType] ?? 0;
       if (t.type === 'longshot') speedBuff += elite;
+      // Runde 14: Alchemist-Tränke (Timer, Permanent Brew) und Spring Blessing
+      if (t.buffTicks > 0 && --t.buffTicks === 0) {
+        t.buffDmg = 0;
+        t.buffRangeBp = 0;
+        t.buffSpeedBp = 0;
+      }
+      const bf = buffOf(t);
+      speedBuff += bf.speedBp + bf.groveSpeedBp;
+      rangeBuff += bf.rangeBp;
       t.range = t.type === 'market' || st.range >= GLOBAL_RANGE || !rangeBuff ? st.range : Math.floor((st.range * (10000 + rangeBuff)) / 10000);
       t.camo = st.camo === 1 || !!aura?.camo;
+
+      t.zone = st.zoneBp > 0 ? Math.floor((t.range * st.zoneBp) / 10000) : 0;
+      const bonus = (aura?.dmg ?? 0) + bf.dmg;
+
+      // Monster-Form (Transforming Tonic): 30 Schaden/s auf das stärkste Ziel in Reichweite
+      if (t.monsterTicks > 0) {
+        t.monsterTicks--;
+        if (t.monsterTicks % MONSTER_EVERY === 0) {
+          const m = pickTarget(t, t.range, true, 'strong');
+          if (m) damage(m, MONSTER_HIT, 'magic', t.id);
+        }
+      }
+      // Thornweaver: Wirbelwind wirft Nicht-Boss-Gegner zurück
+      if (st.whirlEvery > 0) {
+        if (t.whirlCd > 0) t.whirlCd--;
+        if (t.whirlCd <= 0) {
+          const hit = nearestUnhit(t.x, t.y, t.range, [], 9999).filter((o) => !etab[o.type].boss);
+          if (hit.length) {
+            t.whirlCd = st.whirlEvery;
+            for (const o of hit) {
+              o.progress = Math.max(0, o.progress - st.whirlPx);
+              o.frac = 0;
+              const pos = positionAt(path, o.progress);
+              o.x = pos.x;
+              o.y = pos.y;
+            }
+            emit({ type: 'whirlwind', tick: S.tick, tower: t.id, x: t.x, y: t.y, radius: t.range, px: st.whirlPx, enemies: hit.map((o) => o.id) });
+          }
+        }
+      }
+      // Thornweaver: Kettenblitz im Takt
+      if (st.zapN > 0) {
+        if (t.zapCd > 0) t.zapCd--;
+        if (t.zapCd <= 0) {
+          const z = pickTarget(t, t.range, t.camo, t.target);
+          if (z) {
+            t.zapCd = st.zapInterval;
+            lightning(t.x, t.y, z, st.zapN, st.zapRange, st.zapDmg + bonus + avatarBonus(st), t.id, [], true);
+          }
+        }
+      }
+      // Thornweaver: Ranke hält den vordersten freien Nicht-Boss-Gegner fest
+      if (st.snareEvery > 0) {
+        if (t.snareCd > 0) t.snareCd--;
+        if (t.snareCd <= 0) {
+          const v = pickTarget(t, t.range, t.camo, 'first', true, (o) => !etab[o.type].boss && o.stunTicks <= 0 && o.frozenTicks <= 0);
+          if (v) {
+            t.snareCd = st.snareEvery;
+            v.stunTicks = Math.max(v.stunTicks, st.snareTicks);
+            v.vineTicks = v.stunTicks;
+            emit({ type: 'status', tick: S.tick, enemy: v.id, kind: 'snare' });
+            emit({ type: 'vine', tick: S.tick, tower: t.id, enemy: v.id, x: v.x, y: v.y, ticks: st.snareTicks });
+          }
+        }
+      }
+      // Thornweaver: Dornenranken-Zone, 1x je Sekunde
+      if (st.zoneDmg > 0) {
+        if (t.zoneCd > 0) t.zoneCd--;
+        if (t.zoneCd <= 0) {
+          t.zoneCd = 60;
+          let n = 0;
+          for (const o of nearestUnhit(t.x, t.y, t.zone, [], 9999)) {
+            if (damage(o, st.zoneDmg, 'magic', t.id)) n++;
+          }
+          if (n > 0) emit({ type: 'zone', tick: S.tick, tower: t.id, x: t.x, y: t.y, radius: t.zone, dmg: st.zoneDmg, hits: n });
+        }
+      }
+      // Alchemist: Buff-Trank auf den Turm im Radius mit dem kürzesten Rest (Permanent Brew braucht keine Würfe)
+      if (st.brewEvery > 0 && st.brewPerm === 0) {
+        if (t.brewCd > 0) t.brewCd--;
+        if (t.brewCd <= 0) {
+          let target: TowerState | null = null;
+          let tk = 0, td = 0;
+          for (const o of S.towers) {
+            if (o === t || o.type === 'market' || dist2(t.x, t.y, o.x, o.y) > t.range * t.range) continue;
+            const d2 = dist2(t.x, t.y, o.x, o.y);
+            if (!target || o.buffTicks < tk || (o.buffTicks === tk && d2 < td)) {
+              target = o;
+              tk = o.buffTicks;
+              td = d2;
+            }
+          }
+          if (target) {
+            t.brewCd = st.brewEvery;
+            const stronger = target.buffTicks > 0 && target.buffDmg + target.buffSpeedBp > st.brewDmg + st.brewSpeedBp;
+            if (!stronger) {
+              target.buffDmg = st.brewDmg;
+              target.buffRangeBp = st.brewRangeBp;
+              target.buffSpeedBp = st.brewSpeedBp;
+            }
+            target.buffTicks = Math.max(target.buffTicks, st.brewTicks);
+            emit({ type: 'brew', tick: S.tick, tower: t.id, target: target.id, ticks: st.brewTicks, dmg: st.brewDmg, rangeBp: st.brewRangeBp, speedBp: st.brewSpeedBp });
+          }
+        }
+      }
+      // Alchemist: Shrink Potion
+      if (st.shrinkEvery > 0) {
+        if (t.shrinkCd > 0) t.shrinkCd--;
+        if (t.shrinkCd <= 0) {
+          const sh = pickTarget(t, t.range, true, 'strong', true, (o) => !etab[o.type].boss && o.type !== 'red');
+          if (sh) {
+            t.shrinkCd = st.shrinkEvery;
+            shrinkEnemy(t, sh);
+          }
+        }
+      }
 
       // Frost-Aura
       if (st.auraSlowBp > 0) {
@@ -776,8 +1139,9 @@ export function createGame(opts: GameOptions): Game {
         p.x = p.arc.x0 + Math.trunc(((p.arc.x1 - p.arc.x0) * p.arc.t) / 10000);
         p.y = p.arc.y0 + Math.trunc(((p.arc.y1 - p.arc.y0) * p.arc.t) / 10000);
         if (p.age >= flight) {
-          explodeAt(p.arc.x1, p.arc.y1, st.radius, p.dmg, p.dtype, st.maxT, p.owner, st, 'bomb', st.stun, st.stunBoss);
-          if (st.fragN > 0) spawnFrags(p.arc.x1, p.arc.y1, st, p.owner, []);
+          if (st.atk === 'potion') potionLand(p, st);
+          else explodeAt(p.arc.x1, p.arc.y1, st.radius, p.dmg, p.dtype, st.maxT, p.owner, st, 'bomb', st.stun, st.stunBoss);
+          if (st.atk !== 'potion' && st.fragN > 0) spawnFrags(p.arc.x1, p.arc.y1, st, p.owner, []);
         } else continue;
         removed.add(p.id);
         continue;
@@ -823,6 +1187,13 @@ export function createGame(opts: GameOptions): Game {
   // ================= Gegner =================
 
   function leak(e: EnemyState): void {
+    if (S.gateLeft > 0) {
+      // Sturdy Gate: dieses Leck kostet nichts
+      S.gateLeft--;
+      e.dead = true;
+      emit({ type: 'gate', tick: S.tick, enemy: e.id, etype: e.type });
+      return;
+    }
     const lost = e.hp + etab[e.type].children.reduce((a, c) => a + etab[c].rbe, 0);
     e.dead = true;
     S.lives = Math.max(0, S.lives - lost);
@@ -867,6 +1238,8 @@ export function createGame(opts: GameOptions): Game {
       if (e.slowTicks > 0 && --e.slowTicks === 0) e.slowBp = 0;
       if (e.brittleTicks > 0) e.brittleTicks--;
       if (e.markTicks > 0 && --e.markTicks === 0) e.markBp = 0;
+      if (e.goldTicks > 0) e.goldTicks--;
+      if (e.vineTicks > 0) e.vineTicks--;
       if (e.frozenTicks > 0) {
         e.frozenTicks--;
         continue;
@@ -885,6 +1258,10 @@ export function createGame(opts: GameOptions): Game {
       e.y = pos.y;
       if (S.traps.length && e.progress > before) {
         crossTraps(e, before, e.progress);
+        if (e.dead) continue;
+      }
+      if (S.walls.length && e.progress > before) {
+        crossWalls(e, before, e.progress);
         if (e.dead) continue;
       }
       if (e.progress >= path.length) {
@@ -961,6 +1338,30 @@ export function createGame(opts: GameOptions): Game {
     }
   }
 
+  /** Rundenertrag der Thornweaver (World Tree, Jungle's Bounty) und Field Medic (Wissensbaum), je Rundenende. */
+  function payGrove(r: number): void {
+    for (const t of S.towers) {
+      if (t.type !== 'thornweaver') continue;
+      const st = tstats.get(t.id)!;
+      const gold = st.roundGold + st.bountyGold;
+      if (gold > 0) {
+        S.cash += gold;
+        S.stats.groveGold += gold;
+        emit({ type: 'income', tick: S.tick, tower: t.id, round: r, amount: gold, cash: gold, bank: 0 });
+      }
+      if (st.roundLives > 0) {
+        S.lives += st.roundLives;
+        S.stats.healed += st.roundLives;
+        emit({ type: 'heal', tick: S.tick, tower: t.id, lives: st.roundLives });
+      }
+    }
+    if (kmods.roundLives) {
+      S.lives += kmods.roundLives;
+      S.stats.healed += kmods.roundLives;
+      emit({ type: 'heal', tick: S.tick, tower: 0, lives: kmods.roundLives });
+    }
+  }
+
   function endRound(r: number): void {
     const bonus = 100 + r + (r <= 10 ? (kmods.earlyBonus ?? 0) : 0);
     S.cash += bonus;
@@ -968,6 +1369,7 @@ export function createGame(opts: GameOptions): Game {
     S.activeRounds = S.activeRounds.filter((x) => x !== r);
     for (const t of S.traps.slice()) if (t.until > 0 && t.until <= r) removeTrap(t, 'expired');
     payMarkets(r);
+    payGrove(r);
     grantHeroXp(60 + 20 * r);
     emit({ type: 'roundEnd', tick: S.tick, round: r, bonus });
     distributeTowerXp(r);
@@ -1047,6 +1449,8 @@ export function createGame(opts: GameOptions): Game {
     updateTowers();
     // 5. Projektile
     updateProjectiles();
+    // 5b. Runde 14: Säurepfützen, Lebensdauer der Wände
+    updatePuddles();
     // 6. Aufräumen, Runden, Sieg/Niederlage
     finishTick();
     S.tick++;
@@ -1182,6 +1586,33 @@ export function createGame(opts: GameOptions): Game {
         if (e.frozenTicks <= 0) emit({ type: 'status', tick: S.tick, enemy: e.id, kind: 'freeze' });
         e.frozenTicks = Math.max(e.frozenTicks, f);
       }
+    } else if (id === 'wallOfTrees') {
+      let first: WallState | null = null;
+      for (const t of S.towers) {
+        if (t.type !== 'thornweaver' || tstats.get(t.id)!.wallRbe <= 0) continue;
+        const w = placeWall(t);
+        first ??= w;
+      }
+      if (!first) return { ok: false, reason: 'no-target' };
+      emit({ type: 'ability', tick: S.tick, id, x: first.x, y: first.y });
+    } else if (id === 'tonic') {
+      emit({ type: 'ability', tick: S.tick, id });
+      for (const a of S.towers) {
+        const as = tstats.get(a.id)!;
+        if (a.type !== 'alchemist' || as.tonicDur <= 0) continue;
+        a.monsterTicks = Math.max(a.monsterTicks, as.tonicDur);
+        emit({ type: 'monster', tick: S.tick, tower: a.id, source: a.id, ticks: as.tonicDur });
+        if (as.tonicOthers > 0) {
+          const near = S.towers
+            .filter((o) => o !== a && o.type !== 'market' && dist2(a.x, a.y, o.x, o.y) <= a.range * a.range)
+            .sort((p, q) => dist2(a.x, a.y, p.x, p.y) - dist2(a.x, a.y, q.x, q.y) || p.id - q.id)
+            .slice(0, as.tonicOthers);
+          for (const o of near) {
+            o.monsterTicks = Math.max(o.monsterTicks, as.tonicDur);
+            emit({ type: 'monster', tick: S.tick, tower: o.id, source: a.id, ticks: as.tonicDur });
+          }
+        }
+      }
     } else if (id === 'focus') {
       let dur = 0;
       for (const t of S.towers) if (t.type === 'longshot') dur = Math.max(dur, tstats.get(t.id)!.focusDur);
@@ -1253,6 +1684,8 @@ export function createGame(opts: GameOptions): Game {
       id: S.nextId++, type, x, y, tiers: [...tiers] as Tiers, heroLevel: lvl,
       heroXp: hero ? DATA.hero.wren.levels[lvl - 1].xp : 0, target: 'first', facing: 0, attackTick: 0, pops: 0, spent,
       camo: false, range: 0, cd: 0, windupLeft: 0, windupTarget: 0, shots: 0, auraCd: 0, thunderCd: 0, bank: 0,
+      zone: 0, buffTicks: 0, buffDmg: 0, buffRangeBp: 0, buffSpeedBp: 0, monsterTicks: 0,
+      zapCd: 0, whirlCd: 0, snareCd: 0, zoneCd: 0, brewCd: 0, shrinkCd: 0,
     };
     S.towers.push(t);
     if (hero) S.heroPlaced = true;
@@ -1508,6 +1941,10 @@ export function createGame(opts: GameOptions): Game {
     auraOf: (id) => {
       const t = towerById(id);
       return t ? auraOf(t) : { rangeBp: 0, camo: false, speedBp: 0, armor: false, pierce: 0, dmg: 0, discountBp: 0 };
+    },
+    buffOf: (id) => {
+      const t = towerById(id);
+      return t ? buffOf(t) : { dmg: 0, rangeBp: 0, speedBp: 0, groveSpeedBp: 0, permanent: false, ticks: 0 };
     },
     priceOf,
     canUsePower: powerCheck,

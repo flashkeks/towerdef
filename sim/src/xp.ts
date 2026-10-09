@@ -4,8 +4,8 @@
 import { DATA } from './data.js';
 import type { Difficulty, TowerType } from './types.js';
 
-/** Reihenfolge entscheidet bei Gleichstand um den Rest (Runde 13: Longshot, Market dahinter). */
-export const XP_TOWER_TYPES: readonly TowerType[] = ['ranger', 'bombardier', 'frostcaller', 'longshot', 'market'];
+/** Reihenfolge entscheidet bei Gleichstand um den Rest (Runde 13: Longshot, Market dahinter; Runde 14: Thornweaver, Alchemist). */
+export const XP_TOWER_TYPES: readonly TowerType[] = ['ranger', 'bombardier', 'frostcaller', 'longshot', 'market', 'thornweaver', 'alchemist'];
 type PerTower = Record<TowerType, number>;
 
 /** Topf der Runde `r`: (potBase + potPerRound x r) x Schwierigkeit x (1 + towerXpBp), abgerundet. */
@@ -21,7 +21,7 @@ export function towerXpPot(r: number, difficulty: Difficulty, extraBp = 0): numb
  * Die Summe der Anteile ist immer genau `pot`.
  */
 export function splitTowerXp(pot: number, spentIn: Partial<PerTower>, popsIn: Partial<PerTower>): PerTower {
-  const zero = (): PerTower => ({ ranger: 0, bombardier: 0, frostcaller: 0, longshot: 0, market: 0 });
+  const zero = (): PerTower => ({ ranger: 0, bombardier: 0, frostcaller: 0, longshot: 0, market: 0, thornweaver: 0, alchemist: 0 });
   const out = zero();
   const spent = { ...zero(), ...spentIn };
   const pops = { ...zero(), ...popsIn };

@@ -3,19 +3,19 @@
  * Positionen in Milli-px, Zeit in Ticks (60/s), Faktoren in Basispunkten, Zustand nur Ganzzahlen.
  */
 
-export type TowerType = 'ranger' | 'bombardier' | 'frostcaller' | 'longshot' | 'market';
+export type TowerType = 'ranger' | 'bombardier' | 'frostcaller' | 'longshot' | 'market' | 'thornweaver' | 'alchemist';
 export type HeroType = 'wren';
 export type EnemyType = 'red' | 'blue' | 'green' | 'gold' | 'ironshell' | 'ember' | 'brute' | 'leviathan';
 export type Difficulty = 'easy' | 'medium' | 'hard';
 export type TargetMode = 'first' | 'last' | 'strong' | 'close';
 export type Tiers = [number, number, number];
-export type AbilityId = 'arrowRain' | 'absoluteZero' | 'flare' | 'dawnbreak' | 'focus' | 'supplyDrop' | 'grant';
+export type AbilityId = 'arrowRain' | 'absoluteZero' | 'flare' | 'dawnbreak' | 'focus' | 'supplyDrop' | 'grant' | 'wallOfTrees' | 'tonic';
 export type DamageType = 'sharp' | 'cold' | 'explosive' | 'energy' | 'magic';
 export type PowerKey =
   | 'goldDrop' | 'lanternBomb' | 'caltrops' | 'frostTrap' | 'timeWarp' | 'lanternOil' | 'extraLives' | 'heroBoost'
   | 'instaWarden:ranger' | 'instaWarden:bombardier' | 'instaWarden:frostcaller';
 export type TrapKind = 'caltrops' | 'frostTrap';
-export type ProjectileKind = 'arrow' | 'bigArrow' | 'bolt' | 'starBolt' | 'bomb' | 'frag' | 'frost' | 'shard' | 'lantern' | 'snipe';
+export type ProjectileKind = 'arrow' | 'bigArrow' | 'bolt' | 'starBolt' | 'bomb' | 'frag' | 'frost' | 'shard' | 'lantern' | 'snipe' | 'thorn' | 'potion';
 
 export interface GameOptions {
   map: string;
@@ -66,6 +66,25 @@ export interface GameOptions {
     powerUses?: number;
     /** Zusätzliche Powers zu Matchbeginn ("Starter Kit": goldDrop 1). */
     freePowers?: Partial<Record<PowerKey, number>>;
+    // --- Runde 14 (Wissensbaum) ---
+    /** Pop-Gold-Zuschlag in Basispunkten mit Bruchrest ("Pop Bonus" 500). */
+    popCashBp?: number;
+    /** Zusätzliche Pierce je Turmtyp ("Sharper Arrows": ranger 1). */
+    pierceAdd?: Partial<Record<TowerType, number>>;
+    /** Zusätzliche Splitter je Turmtyp, nur wenn der Turm schon Splitter wirft ("Fused Shells": bombardier 2). */
+    fragAdd?: Partial<Record<TowerType, number>>;
+    /** Frostcaller: Zusatzschaden auf eingefrorene Gegner ("Icicle Edge" 1). */
+    icicleDmg?: number;
+    /** Jungle's Bounty: Zusatzgold je Runde ("Bountiful Grove" 50). */
+    bountyGold?: number;
+    /** Buff-Tränke des Alchemisten halten länger, Basispunkte ("Potent Brews" 2500). */
+    brewDurBp?: number;
+    /** Lead to Gold: Zusatzgold je Ironshell ("Midas Hands" 20). */
+    leadGoldAdd?: number;
+    /** Leben je Rundenende ("Field Medic" 1). */
+    roundLives?: number;
+    /** Leckschutz: so viele Lecks werden je Match verhindert ("Sturdy Gate" 1). */
+    gate?: number;
   };
 }
 
@@ -159,6 +178,52 @@ export interface TowerState {
   thunderCd: number;
   /** Runde 13: Bank-Konto (Market mit Lockbox …), sonst 0. Zählt erst als Geld, wenn abgehoben (oder verkauft). */
   bank: number;
+  // --- Runde 14 (sichtbar für die UI) ---
+  /** Thornweaver: Radius der Dornenranken-Zone in Milli-px (0 = keine). */
+  zone: number;
+  /** Alchemist-Buff auf diesem Turm (Trank): Restticks, Schaden, Reichweite/Tempo in Basispunkten. Dauerhafte Tränke (Permanent Brew) stehen hier nicht, nur in `Game.buffOf`. */
+  buffTicks: number;
+  buffDmg: number;
+  buffRangeBp: number;
+  buffSpeedBp: number;
+  /** Transforming Tonic: Restticks der Monster-Form (0 = normal). */
+  monsterTicks: number;
+  // --- Innenleben Runde 14 ---
+  zapCd: number;
+  whirlCd: number;
+  snareCd: number;
+  zoneCd: number;
+  brewCd: number;
+  shrinkCd: number;
+}
+
+/** Wall of Trees (Thornweaver B3): Weg-Objekt, schluckt Gegner bis `left` RBE aufgebraucht sind. */
+export interface WallState {
+  id: number;
+  owner: number;
+  /** Milli-px auf dem Weg. */
+  progress: number;
+  x: number;
+  y: number;
+  /** Noch freie RBE (Kapazität 150). */
+  left: number;
+  /** Restticks bis die Wand ungenutzt verschwindet. */
+  ttl: number;
+}
+
+/** Säurepfütze (Alchemist C2) auf dem Weg. */
+export interface PuddleState {
+  id: number;
+  owner: number;
+  progress: number;
+  x: number;
+  y: number;
+  /** Radius in Milli-px. */
+  radius: number;
+  /** Verbleibende Treffer. */
+  charges: number;
+  ttl: number;
+  cd: number;
 }
 
 export interface EnemyState {
@@ -185,6 +250,12 @@ export interface EnemyState {
   brittleTicks: number;
   burnDmg: number;
   burnOwner: number;
+  /** Runde 14: Ranken-Fessel (Thornweaver), Restticks; der Gegner steht (`stunTicks` ist mitgesetzt). */
+  vineTicks: number;
+  /** Runde 14: Rubber to Gold, Restticks; jede geknackte Schicht gibt +1 Gold. Kinder erben den Rest. */
+  goldTicks: number;
+  /** Runde 14: Unstable Concoction, Id des Alchemisten (0 = nicht markiert); explodiert beim Tod. */
+  volatile: number;
   /** Runde 13: Boss-Markierung (Crippling Shot): Restticks und Zusatzschaden aus allen Quellen in Basispunkten. */
   markTicks: number;
   markBp: number;
@@ -266,6 +337,19 @@ export interface TowerAura {
   discountBp: number;
 }
 
+/** Runde 14: wirksame Buffs auf einem Turm (stärkster Wert je Feld über Trank-Timer und Permanent Brew). */
+export interface TowerBuff {
+  dmg: number;
+  rangeBp: number;
+  speedBp: number;
+  /** Spring Blessing (Thornweaver C4), Basispunkte Tempo; ist in `speedBp` NICHT enthalten. */
+  groveSpeedBp: number;
+  /** Mindestens ein Trank liegt dauerhaft an (Permanent Brew). */
+  permanent: boolean;
+  /** Restticks des Trank-Timers (0 = keiner). */
+  ticks: number;
+}
+
 export type AbilityState = { id: AbilityId; ready: boolean; cdLeft: number; cdTotal: number };
 
 export interface GameState {
@@ -297,6 +381,10 @@ export interface GameState {
     income: number;
     /** Runde 13: Gold aus den Fähigkeiten Grant und Supply Drop. */
     abilityCash: number;
+    /** Runde 14: Gold und Leben aus Thornweaver-Rundenerträgen (World Tree, Jungle's Bounty, Field Medic), Gold aus Lead/Rubber/Shrink. */
+    groveGold: number;
+    healed: number;
+    bountyGold: number;
   };
   /** Runde 12: Restbestand je Power (Start = `GameOptions.powers`). */
   powers: Record<PowerKey, number>;
@@ -306,6 +394,13 @@ export interface GameState {
   powerUses: Record<PowerKey, number>;
   /** Runde 12: Fallen auf dem Weg, aufsteigende id. */
   traps: TrapState[];
+  /** Runde 14: Bäume-Wände (Thornweaver) und Säurepfützen (Alchemist) auf dem Weg. */
+  walls: WallState[];
+  puddles: PuddleState[];
+  /** Runde 14: Sturdy Gate, noch verbleibende Leck-Verhinderungen. */
+  gateLeft: number;
+  /** Runde 14: Bruchrest von Pop Bonus (0..9999). */
+  popCarry: number;
   // --- Innenleben ---
   /** Time Warp: Restticks. */
   warpLeft: number;
@@ -332,15 +427,41 @@ export type SimEvent =
   | { type: 'hit'; tick: number; enemy: number; tower: number; dmg: number; dtype: DamageType; x: number; y: number }
   | { type: 'blocked'; tick: number; enemy: number; x: number; y: number; reason: 'armor' | 'immune' }
   | { type: 'pop'; tick: number; enemy: number; etype: EnemyType; x: number; y: number; children: number[]; cash: number }
-  | { type: 'explode'; tick: number; x: number; y: number; radius: number; kind: 'bomb' | 'mini' | 'star' | 'quake' }
+  | { type: 'explode'; tick: number; x: number; y: number; radius: number; kind: 'bomb' | 'mini' | 'star' | 'quake' | 'acid' | 'unstable' }
   | { type: 'nova'; tick: number; x: number; y: number; radius: number }
   | { type: 'chain'; tick: number; tower: number; points: [number, number][]; dmg: number }
-  | { type: 'status'; tick: number; enemy: number; kind: 'slow' | 'stun' | 'freeze' | 'burn' | 'reveal' | 'mark' }
+  | { type: 'status'; tick: number; enemy: number; kind: 'slow' | 'stun' | 'freeze' | 'burn' | 'reveal' | 'mark' | 'snare' | 'acid' | 'gold' | 'volatile' }
   /** Runde 13: Ricochet (Longshot C2), sofort. `points` = Treffer + Sprungziele. */
   | { type: 'ricochet'; tick: number; tower: number; points: [number, number][]; dmg: number }
   /** Runde 13: Market-Einkommen am Rundenende. `amount` = verdient (inkl. Zinsen), `cash` = direkt ausgezahlt, `bank` = Kontostand danach. */
   | { type: 'income'; tick: number; tower: number; round: number; amount: number; cash: number; bank: number }
   | { type: 'withdraw'; tick: number; tower: number; amount: number }
+  /** Runde 14: Thornweaver-/Alchemist-Ereignisse (sofort, Position in Milli-px). */
+  /** Wirbelwind (A3): `enemies` = zurückgeworfene Gegner, `px` = Rückstoß in Milli-px Wegfortschritt. */
+  | { type: 'whirlwind'; tick: number; tower: number; x: number; y: number; radius: number; px: number; enemies: number[] }
+  /** Ranke hält `enemy` für `ticks` fest (B2). */
+  | { type: 'vine'; tick: number; tower: number; enemy: number; x: number; y: number; ticks: number }
+  /** Dornenranken-Zone pulsiert (B4/B5), einmal je Sekunde: `hits` = getroffene Gegner. */
+  | { type: 'zone'; tick: number; tower: number; x: number; y: number; radius: number; dmg: number; hits: number }
+  /** Wall of Trees entsteht / schluckt einen Gegner / verschwindet. */
+  | { type: 'wall'; tick: number; id: number; tower: number; x: number; y: number; progress: number; left: number }
+  | { type: 'wallEat'; tick: number; wall: number; enemy: number; etype: EnemyType; x: number; y: number; rbe: number; left: number; cash: number }
+  | { type: 'wallGone'; tick: number; id: number; reason: 'spent' | 'expired' }
+  /** Buff-Trank (A3-A5) von `tower` auf `target`; `ticks` 0 = dauerhaft (Permanent Brew, nur beim ersten Mal je Turm gemeldet). */
+  | { type: 'brew'; tick: number; tower: number; target: number; ticks: number; dmg: number; rangeBp: number; speedBp: number }
+  /** Monster-Form (Transforming Tonic): Turm `tower` für `ticks`; `source` = auslösender Alchemist. */
+  | { type: 'monster'; tick: number; tower: number; source: number; ticks: number }
+  /** Säurepfütze entsteht, wird aufgefrischt oder verbraucht Treffer (`charges` = Rest) / verschwindet. */
+  | { type: 'puddle'; tick: number; id: number; tower: number; x: number; y: number; radius: number; charges: number }
+  | { type: 'puddleGone'; tick: number; id: number; reason: 'spent' | 'expired' }
+  /** Shrink Potion: `enemy` war `from`, ist jetzt ein Red Glim (gleiche Id und Position). */
+  | { type: 'shrink'; tick: number; tower: number; enemy: number; from: EnemyType; x: number; y: number; cash: number }
+  /** Zusatzgold an einer Stelle: Lead to Gold (Ironshell geknackt). */
+  | { type: 'bounty'; tick: number; tower: number; x: number; y: number; gold: number; reason: 'lead' }
+  /** Rundenertrag Leben (Jungle's Bounty, Field Medic). */
+  | { type: 'heal'; tick: number; tower: number; lives: number }
+  /** Sturdy Gate hat ein Leck verhindert. */
+  | { type: 'gate'; tick: number; enemy: number; etype: EnemyType }
   | { type: 'leak'; tick: number; enemy: number; etype: EnemyType; lives: number }
   | { type: 'place'; tick: number; tower: number; ttype: TowerType | HeroType; cash: number }
   | { type: 'upgrade'; tick: number; tower: number; ttype: TowerType | HeroType; tiers: Tiers; cash: number }
@@ -373,6 +494,8 @@ export interface Game {
   marketInfo(towerId: number): MarketInfo | null;
   /** Runde 13: Auren der Markets, die gerade auf diesen Turm wirken (alle 0 = keine). */
   auraOf(towerId: number): TowerAura;
+  /** Runde 14: Was an Alchemist-Trank und Thornweaver-Segen auf dem Turm liegt (inkl. Permanent Brew). */
+  buffOf(towerId: number): TowerBuff;
   priceOf(type: TowerType | HeroType): number;
   /** Runde 12: Trockenlauf von `{ type: 'power' }` (ändert nichts) für Vorschau-Kreis/Geist. Liefert dieselben Gründe wie `apply`. */
   canUsePower(power: PowerKey, x?: number, y?: number): PlaceCheck;

@@ -250,3 +250,49 @@ Meta: `TOWER_TYPES` hat fünf Einträge; `Profile.towerXp` / `towerTiers` je fü
 `KNOWLEDGE` (28 Knoten) trägt `branch` (`BRANCHES`: economy, primary, specialists, wardens, powers), `col`, `row`, `requires` (mindestens einer);
 `knowledgePoints.total` = Level − 1 + erste Medaillen (`medalCount`); `MatchResult` darf `longshot`/`market` in `towerXp`/`towerTiers`/`pops` weglassen;
 `MatchReport.embers.pouch`; `powerCost(profile, key)` (Bulk Buyer); `LEVEL_UNLOCKS` mit `longshot` (5) und `market` (6).
+
+## Ergänzung Runde 14: Thornweaver, Alchemist, Wissensbaum 40 Knoten
+
+Spezifikation: `docs/design/tuerme-r13.md` (Abschnitte 3, 4, „Runde 14“). Umsetzung und Abweichungen: `sim/README.md` „Runde 14“, `meta/README.md`.
+
+```ts
+export type TowerType = 'ranger' | 'bombardier' | 'frostcaller' | 'longshot' | 'market' | 'thornweaver' | 'alchemist';
+export type AbilityId = /* … */ | 'wallOfTrees' | 'tonic';           // global wie Arrow Rain: eine Abklingzeit, wirkt an allen passenden Türmen
+export type ProjectileKind = /* … */ | 'thorn' | 'potion';            // Dorn (450 px/s, Fächer/rundum); Trank im Bogen (Flugzeit 36 Ticks)
+Command: { type: 'ability', ability: 'wallOfTrees' | 'tonic' }       // wallOfTrees: Grund 'no-target' wenn kein Thornweaver mit B3 einen Weg in Reichweite hat
+GameState.walls: WallState[]                                          // Baumwände auf dem Weg { id, owner, progress, x, y, left (freie RBE, Start 150), ttl }
+GameState.puddles: PuddleState[]                                      // Säurepfützen (Alchemist C2) { id, owner, progress, x, y, radius, charges, ttl, cd }
+GameState.gateLeft / popCarry                                         // Sturdy Gate: verbleibende Leck-Verhinderungen; Bruchrest Pop Bonus
+GameState.stats.groveGold / healed / bountyGold                       // Gold aus World Tree + Jungle's Bounty; Leben aus Bounty/Field Medic; Gold aus Lead to Gold/Rubber/Shrink
+TowerState.zone                                                       // Thornweaver B4/B5: Radius der Ranken-Zone in Milli-px (0 = keine) -> Zone dauerhaft zeichnen
+TowerState.buffTicks / buffDmg / buffRangeBp / buffSpeedBp            // Alchemist-Trank auf diesem Turm (Restticks, +Schaden, Reichweite/Tempo in bp)
+TowerState.monsterTicks                                               // Transforming Tonic: Restticks der Monster-Form (0 = normal) -> Monster-Sprite statt Turm
+EnemyState.vineTicks / goldTicks / volatile                           // Ranke (steht), Rubber to Gold (Restticks), Unstable Concoction (Id des Alchemisten, 0 = nein)
+Game.buffOf(towerId): TowerBuff                                       // { dmg, rangeBp, speedBp, groveSpeedBp, permanent, ticks } – was gerade (inkl. Permanent Brew, Spring Blessing) auf dem Turm wirkt
+GameOptions.mods                                                      // neu: popCashBp, pierceAdd{typ}, fragAdd{typ}, icicleDmg, bountyGold, brewDurBp, leadGoldAdd, roundLives, gate
+GameOptions.towerXp / unlocks.maxTier                                 // Partial wie in Runde 13
+```
+
+| Event | Felder | Bedeutung |
+|---|---|---|
+| `whirlwind` | tower, x, y, radius, px, enemies[] | Tempest-Wirbelwind: `enemies` = zurückgeworfene Gegner (Nicht-Boss), `px` = Rückstoß in Milli-px Wegfortschritt |
+| `vine` | tower, enemy, x, y, ticks | Ranke hält `enemy` für `ticks` fest (Vine Snare) |
+| `zone` | tower, x, y, radius, dmg, hits | Ranken-Zone pulsiert einmal je Sekunde (B4/B5) |
+| `wall` / `wallEat` / `wallGone` | id, tower, x, y, progress, left / wall, enemy, etype, rbe, left, cash / id, reason `spent`\|`expired` | Wall of Trees entsteht, schluckt einen Gegner (zahlt wie Pops), verschwindet |
+| `brew` | tower, target, ticks, dmg, rangeBp, speedBp | Buff-Trank; `ticks` 0 = dauerhaft (Permanent Brew, nur beim ersten Mal je Turm gemeldet) |
+| `monster` | tower, source, ticks | Transforming Tonic: Turm `tower` ist `ticks` lang ein Monster (`source` = auslösender Alchemist) |
+| `puddle` / `puddleGone` | id, tower, x, y, radius, charges / id, reason | Säurepfütze entsteht, wird aufgefrischt oder verbraucht Treffer / verschwindet |
+| `shrink` | tower, enemy, from, x, y, cash | Shrink Potion: Gegner ist jetzt ein Red Glim (gleiche Id und Position) |
+| `bounty` | tower, x, y, gold, reason `lead` | Lead to Gold: Zusatzgold an der Trefferstelle |
+| `heal` | tower, lives | Rundenertrag Leben (Jungle's Bounty; Field Medic mit `tower: 0`) |
+| `gate` | enemy, etype | Sturdy Gate hat ein Leck verhindert |
+| `income` | tower, round, amount, cash, bank | auch für Thornweaver-Rundengold (World Tree, Bounty): `bank` 0 |
+| `explode` | kind | neu: `'acid'` (Säurespritzer, Radius des Trank-Splash), `'unstable'` (Unstable Concoction, 24 px) |
+| `status` | enemy, kind | neu: `'snare'` (Ranke), `'acid'` (Säure läuft), `'gold'` (Rubber to Gold), `'volatile'` (Unstable markiert) |
+| `fire` / `windup` | wie bisher | Thornweaver: Fächer (5) bzw. rundum (8) Dornen, `projectile` `thorn`; Alchemist: `potion` im Bogen, Treffer erst bei Ankunft |
+
+Kettenblitz des Thornweavers nutzt das vorhandene Event `chain`. Fähigkeit `wallOfTrees`: `ability`-Event mit x/y der ersten Wand; `tonic`: `ability` plus ein `monster`-Event je betroffenem Turm.
+
+Meta: `TOWER_TYPES` hat sieben Einträge; `Profile.towerXp` / `towerTiers` je sieben (Stände bis Runde 13 werden beim Laden ergänzt: Startwert 100 bzw. `[0,0,0]`, nichts wird zurückgesetzt); `MatchResult.towerXp`/`towerTiers`/`pops` dürfen die neuen Typen weglassen;
+`LEVEL_UNLOCKS` mit `thornweaver` (7) und `alchemist` (9); `KNOWLEDGE` hat **40** Knoten (Summe 77 Punkte, jeder mit `branch/col/row/requires/cost/desc`, jede Voraussetzung steht in einer **früheren Zeile** desselben Asts);
+`MatchReport.embers.rush` (Ember Rush); `matchEmbers(…, pouchBp, rush)`. Neue IDs: `investor`, `pop-bonus` (economy) · `sharper-arrows`, `fused-shells`, `icicle-edge` (primary) · `deep-roots`, `bountiful-grove`, `potent-brews`, `midas-hands`, `field-medic` (specialists) · `sturdy-gate` (wardens) · `ember-rush` (powers).

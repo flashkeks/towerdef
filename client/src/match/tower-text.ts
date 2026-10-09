@@ -13,9 +13,11 @@ export const ROLE: Record<TowerType | HeroType, string> = {
   frostcaller: 'Slows and controls',
   longshot: 'Sniper, whole-map range',
   market: 'Earns gold, buffs towers',
+  thornweaver: 'Nature caster: thorns, vines, lightning',
+  alchemist: 'Acid splash, buffs nearby towers',
   wren: 'Hero: lights the way',
 };
-export const HOTKEY: Record<TowerType | HeroType, string> = { ranger: 'Q', bombardier: 'W', frostcaller: 'E', longshot: 'T', market: 'Z', wren: 'R' };
+export const HOTKEY: Record<TowerType | HeroType, string> = { ranger: 'Q', bombardier: 'W', frostcaller: 'E', longshot: 'T', market: 'Z', thornweaver: 'D', alchemist: 'A', wren: 'R' };
 export const ABILITY_TEXT: Record<string, { name: string; desc: string }> = {
   arrowRain: { name: 'Arrow Rain', desc: 'All Rangers shoot 3x faster for a few seconds.' },
   absoluteZero: { name: 'Absolute Zero', desc: 'Freezes every Glim for 4 seconds.' },
@@ -23,6 +25,8 @@ export const ABILITY_TEXT: Record<string, { name: string; desc: string }> = {
   dawnbreak: { name: 'Dawnbreak', desc: 'A beam of dawn burns along the whole path.' },
   focus: { name: 'Focus', desc: 'All Longshots shoot twice as fast for 8 seconds.' },
   supplyDrop: { name: 'Supply Drop', desc: 'A crate drops from the sky and pays out gold.' },
+  wallOfTrees: { name: 'Wall of Trees', desc: 'A wall of trees rises on the path and swallows Glims.' },
+  tonic: { name: 'Transforming Tonic', desc: 'The Alchemist turns into a monster for 20 seconds.' },
   grant: { name: 'Grant', desc: 'Your Grant Offices pay out a lump sum of gold.' },
 };
 export const TARGET_TEXT: Record<string, string> = { first: 'First', last: 'Last', strong: 'Strong', close: 'Close' };

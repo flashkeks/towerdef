@@ -13,9 +13,9 @@ import { SEEN_MATCHES_MAX, emptyMedals, medalCount, type Profile } from './profi
 const nat = z.number().int().min(0);
 const tierNum = z.number().int().min(0).max(5);
 const tiers3 = z.tuple([tierNum, tierNum, tierNum]);
-/** Runde 13: `longshot`/`market` duerfen in aelteren Ergebnissen fehlen (zaehlen als 0 bzw. unveraendert). */
-const perTowerAll = z.object({ ranger: nat, bombardier: nat, frostcaller: nat, longshot: nat.default(0), market: nat.default(0) });
-const perTowerNat = z.object({ ranger: nat.optional(), bombardier: nat.optional(), frostcaller: nat.optional(), longshot: nat.optional(), market: nat.optional(), wren: nat.optional() });
+/** Runde 13/14: `longshot`/`market`/`thornweaver`/`alchemist` duerfen in aelteren Ergebnissen fehlen (zaehlen als 0 bzw. unveraendert). */
+const perTowerAll = z.object({ ranger: nat, bombardier: nat, frostcaller: nat, longshot: nat.default(0), market: nat.default(0), thornweaver: nat.default(0), alchemist: nat.default(0) });
+const perTowerNat = z.object({ ranger: nat.optional(), bombardier: nat.optional(), frostcaller: nat.optional(), longshot: nat.optional(), market: nat.optional(), thornweaver: nat.optional(), alchemist: nat.optional(), wren: nat.optional() });
 /** Was das Match meldet (P3 liefert es). */
 export const MatchResultSchema = z.object({
   matchId: z.string().min(1),
@@ -32,7 +32,7 @@ export const MatchResultSchema = z.object({
    * Fehlen sie (altes Format / Match ohne XP-System), bleibt das Turm-Profil unveraendert.
    */
   towerXp: perTowerAll.optional(),
-  towerTiers: z.object({ ranger: tiers3, bombardier: tiers3, frostcaller: tiers3, longshot: tiers3.default([0, 0, 0]), market: tiers3.default([0, 0, 0]) }).optional(),
+  towerTiers: z.object({ ranger: tiers3, bombardier: tiers3, frostcaller: tiers3, longshot: tiers3.default([0, 0, 0]), market: tiers3.default([0, 0, 0]), thornweaver: tiers3.default([0, 0, 0]), alchemist: tiers3.default([0, 0, 0]) }).optional(),
   towerXpGained: perTowerAll.optional(),
   /** Runde 12: erfolgreiche Power-Einsaetze (`state.stats.powersUsed`); werden vom Inventar abgezogen. */
   powersUsed: z.record(z.string(), nat.max(9999)).optional(),
@@ -77,20 +77,22 @@ export interface MatchReport {
   towerXpGained: Partial<Record<TowerType, number>>;
   /** Runde 12: Embers aus diesem Match, Summe und Aufschluesselung. */
   embersGained: number;
-  embers: { rounds: number; win: number; medal: number; levelUp: number; pouch: number };
+  embers: { rounds: number; win: number; medal: number; levelUp: number; pouch: number; rush: number };
   /** Runde 12: Powers, die dieses Match verbraucht hat (Summe, fuer "Powers used: N"). */
   powersUsed: number;
 }
 
 /** Embers fuer ein Match (Spezifikation: docs/design/powers.md). */
-export function matchEmbers(roundsCleared: number, difficulty: Difficulty, won: boolean, newMedal: boolean, levelUps: number, pouchBp = 0): MatchReport['embers'] {
+export function matchEmbers(roundsCleared: number, difficulty: Difficulty, won: boolean, newMedal: boolean, levelUps: number, pouchBp = 0, rush = false): MatchReport['embers'] {
   let rounds = 0;
   for (let r = 1; r <= Math.min(roundsCleared, MAX_ROUND); r++) rounds += embersForRound(r);
   const win = won ? EMBERS_WIN[difficulty] : 0;
   const medal = newMedal ? EMBERS_FIRST_MEDAL : 0;
   const levelUp = levelUps * EMBERS_LEVEL_UP;
-  // Ember Pouch (Runde 13): Zuschlag auf die Summe, abgerundet
-  return { rounds, win, medal, levelUp, pouch: Math.floor(((rounds + win + medal + levelUp) * pouchBp) / 10000) };
+  // Ember Rush (Runde 14): +1 Ember je geschaffter Runde (Runden 1-20)
+  const rushEmbers = rush ? Math.min(roundsCleared, MAX_ROUND) : 0;
+  // Ember Pouch (Runde 13): Zuschlag auf die Summe inkl. Rush, abgerundet
+  return { rounds, win, medal, levelUp, pouch: Math.floor(((rounds + win + medal + levelUp + rushEmbers) * pouchBp) / 10000), rush: rushEmbers };
 }
 
 const hasKnow = (p: Profile, id: string): boolean => p.knowledge.includes(id);
@@ -105,7 +107,7 @@ export function applyMatch(p: Profile, resultIn: MatchResult): { profile: Profil
   if (p.seenMatches.includes(res.matchId)) {
     return {
       profile: p,
-      report: { duplicate: true, xpGained: 0, xpBefore: p.playerXp, xpAfter: p.playerXp, levelBefore: lv0.level, levelAfter: lv0.level, pointsGained: 0, unlocks: [], newMedal: null, newBest: false, towerXpGained: {}, embersGained: 0, embers: { rounds: 0, win: 0, medal: 0, levelUp: 0, pouch: 0 }, powersUsed: 0 },
+      report: { duplicate: true, xpGained: 0, xpBefore: p.playerXp, xpAfter: p.playerXp, levelBefore: lv0.level, levelAfter: lv0.level, pointsGained: 0, unlocks: [], newMedal: null, newBest: false, towerXpGained: {}, embersGained: 0, embers: { rounds: 0, win: 0, medal: 0, levelUp: 0, pouch: 0, rush: 0 }, powersUsed: 0 },
     };
   }
   const xpGained = matchXp(res.roundsCleared, res.difficulty, res.won, hasKnow(p, 'scholar') ? SCHOLAR_BP : 0);
@@ -137,8 +139,8 @@ export function applyMatch(p: Profile, resultIn: MatchResult): { profile: Profil
   if (better) bestMap[res.map] = { ...bestMap[res.map], [res.difficulty]: { round: res.roundsCleared, livesLost: res.livesLost } };
 
   // Embers und Inventar (Runde 12)
-  const emb = matchEmbers(res.roundsCleared, res.difficulty, res.won, newMedal !== null, lv1.level - lv0.level, hasKnow(p, 'ember-pouch') ? EMBER_POUCH_BP : 0);
-  const embersGained = emb.rounds + emb.win + emb.medal + emb.levelUp + emb.pouch;
+  const emb = matchEmbers(res.roundsCleared, res.difficulty, res.won, newMedal !== null, lv1.level - lv0.level, hasKnow(p, 'ember-pouch') ? EMBER_POUCH_BP : 0, hasKnow(p, 'ember-rush'));
+  const embersGained = emb.rounds + emb.win + emb.medal + emb.levelUp + emb.pouch + emb.rush;
   const inventory = { ...emptyInventory(), ...p.inventory };
   let powersUsed = 0;
   for (const k of POWER_KEYS) {
@@ -283,7 +285,10 @@ export function matchOptions(p: Profile): MatchOptions {
   if (k('better-deals')) mods.sellBp = 7500;
   if (k('lantern-tax')) mods.earlyBonus = 20;
   if (k('cheaper-basics')) mods.t1DiscountBp = 1000;
-  if (k('sharp-eyes')) mods.rangeBp = { ranger: 800 };
+  const rangeBp: Partial<Record<TowerType, number>> = {};
+  if (k('sharp-eyes')) rangeBp.ranger = 800;
+  if (k('deep-roots')) rangeBp.thornweaver = 1000; // Runde 14
+  if (Object.keys(rangeBp).length) mods.rangeBp = rangeBp;
   if (k('bigger-barrels')) mods.radiusBp = 1000;
   if (k('cold-snap')) mods.slowDurBp = 2500;
   if (k('veteran-hero')) mods.heroStartLevel = 3;
@@ -300,10 +305,22 @@ export function matchOptions(p: Profile): MatchOptions {
   if (k('compound-interest')) mods.bankRateBp = 500;
   if (k('supply-lines')) mods.supplyBonus = 200;
   if (k('wide-aura')) mods.marketRadiusBp = 1500;
-  if (k('bulk-orders')) mods.marketPriceBp = 1000;
+  // Bulk Orders und Investor (Runde 14) stapeln: je -10 % auf den Kaufpreis eines Markets
+  const marketPrice = (k('bulk-orders') ? 1000 : 0) + (k('investor') ? 1000 : 0);
+  if (marketPrice) mods.marketPriceBp = marketPrice;
   if (k('hero-training')) mods.heroXpBp = 1500;
   if (k('spare-pocket')) mods.powerUses = 2;
   if (k('starter-kit')) mods.freePowers = { goldDrop: STARTER_KIT_GOLD_DROPS };
+  // Runde 14
+  if (k('pop-bonus')) mods.popCashBp = 500;
+  if (k('sharper-arrows')) mods.pierceAdd = { ranger: 1 };
+  if (k('fused-shells')) mods.fragAdd = { bombardier: 2 };
+  if (k('icicle-edge')) mods.icicleDmg = 1;
+  if (k('bountiful-grove')) mods.bountyGold = 50;
+  if (k('potent-brews')) mods.brewDurBp = 2500;
+  if (k('midas-hands')) mods.leadGoldAdd = 20;
+  if (k('field-medic')) mods.roundLives = 1;
+  if (k('sturdy-gate')) mods.gate = 1;
   return { unlocks: { towers, maxTier }, towerXp: { ...p.towerXp }, powers: { ...emptyInventory(), ...p.inventory }, mods };
 }
 
