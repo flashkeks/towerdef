@@ -86,7 +86,7 @@ describe('Held Wren', () => {
     expect(g.apply({ type: 'ability', ability: 'flare' })).toEqual({ ok: false, reason: 'cooldown' });
   });
 
-  it('Dawnbreak: 20 Schaden an allem, 300 am Boss', () => {
+  it('Dawnbreak: 20 Schaden an allem, 100 am Boss', () => {
     const g = newGame({ mods: { startCash: 100000, heroStartLevel: 10 } });
     place(g, 'wren', 60, 122);
     const brute = g.sandbox.spawn('brute', 700000);
@@ -99,8 +99,8 @@ describe('Held Wren', () => {
     expect(g.apply({ type: 'ability', ability: 'dawnbreak' }).ok).toBe(true);
     expect(g.state.enemies.find((e) => e.id === brute)).toBeUndefined();
     expect(g.state.enemies.find((e) => e.id === red)).toBeUndefined();
-    expect(g.state.enemies.find((e) => e.id === boss)).toBeUndefined(); // 300 = Hülle
-    expect(g.state.enemies.filter((e) => e.type === 'brute')).toHaveLength(4);
+    expect(g.state.enemies.find((e) => e.id === boss)!.hp).toBe(200); // 100 von 300
+    expect(g.state.enemies.filter((e) => e.type === 'brute')).toHaveLength(0);
   });
 
   it('Held-Feuer: Brand ab L8', () => {
