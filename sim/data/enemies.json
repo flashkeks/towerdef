@@ -1,0 +1,90 @@
+{
+ "red": {
+  "name": "Red Glim",
+  "hp": 1,
+  "tempo": 100,
+  "radius": 6,
+  "children": []
+ },
+ "blue": {
+  "name": "Blue Glim",
+  "hp": 1,
+  "tempo": 140,
+  "radius": 6,
+  "children": [
+   "red"
+  ]
+ },
+ "green": {
+  "name": "Green Glim",
+  "hp": 1,
+  "tempo": 180,
+  "radius": 6,
+  "children": [
+   "blue"
+  ]
+ },
+ "gold": {
+  "name": "Gold Glim",
+  "hp": 1,
+  "tempo": 320,
+  "radius": 6,
+  "children": [
+   "green"
+  ]
+ },
+ "ironshell": {
+  "name": "Ironshell",
+  "hp": 1,
+  "tempo": 100,
+  "radius": 7,
+  "children": [
+   "gold",
+   "gold"
+  ],
+  "armor": true
+ },
+ "ember": {
+  "name": "Emberling",
+  "hp": 1,
+  "tempo": 200,
+  "radius": 6,
+  "children": [
+   "gold",
+   "gold"
+  ],
+  "immuneCold": true
+ },
+ "brute": {
+  "name": "Gloom Brute",
+  "hp": 10,
+  "tempo": 160,
+  "radius": 9,
+  "children": [
+   "ironshell",
+   "ember"
+  ],
+  "stages": [
+   70,
+   40
+  ]
+ },
+ "leviathan": {
+  "name": "Dusk Leviathan",
+  "hp": 300,
+  "tempo": 60,
+  "radius": 22,
+  "children": [
+   "brute",
+   "brute",
+   "brute",
+   "brute"
+  ],
+  "boss": true,
+  "stages": [
+   75,
+   50,
+   25
+  ]
+ }
+}

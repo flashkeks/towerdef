@@ -1,18 +1,18 @@
 /**
- * Pfad als Polylinie in Milli-Tiles. Position aus zurückgelegter Distanz (ganzzahlig),
- * Abdeckung je Position = Pfadlänge in Reichweite (Stichprobe alle COVERAGE_STEP Milli-Tiles, Ergebnis je (x, y, Reichweite) gecacht),
+ * Pfad als Polylinie in Milli-px. Position aus zurückgelegter Distanz (ganzzahlig),
+ * Abdeckung je Position = Pfadlänge in Reichweite (Stichprobe alle COVERAGE_STEP Milli-px, Ergebnis je (x, y, Reichweite) gecacht),
  * Abstand eines Punkts zum Pfad (ganzzahlig, für die Platzierung).
  */
 import { dist2, isqrt } from './fixed.js';
 
 export interface Path {
-  /** Stützpunkte in Milli-Tiles. */
+  /** Stützpunkte in Milli-px. */
   points: { x: number; y: number }[];
   /** cum[i] = Distanz vom Start bis points[i]. */
   cum: number[];
-  /** Gesamtlänge in Milli-Tiles. */
+  /** Gesamtlänge in Milli-px. */
   length: number;
-  /** Stichproben alle COVERAGE_STEP Milli-Tiles (Index k = Distanz k * COVERAGE_STEP), einmal beim Bau berechnet. */
+  /** Stichproben alle COVERAGE_STEP Milli-px (Index k = Distanz k * COVERAGE_STEP), einmal beim Bau berechnet. */
   samples: { x: number; y: number }[];
   /** Abdeckungs-Cache (Schlüssel aus x, y, Reichweite), geteilt von allen Sims mit demselben Pfad (rein von der Geometrie abhängig). */
   covCache: Map<number, number>;
@@ -66,7 +66,7 @@ export function sharedCoverageCache(points: readonly { x: number; y: number }[])
   return c;
 }
 
-/** Pfadlänge (Milli-Tiles) innerhalb von `range` um (x,y); Näherung per Stichprobe, je (x, y, range) gecacht. */
+/** Pfadlänge (Milli-px) innerhalb von `range` um (x,y); Näherung per Stichprobe, je (x, y, range) gecacht. */
 export function coverage(path: Path, x: number, y: number, range: number): number {
   // Schlüssel eindeutig für |x|, |y| < 2^15 (+ Offset) und range < 2^14.
   const key = ((x + 32768) * 65536 + (y + 32768)) * 16384 + range;
@@ -87,7 +87,7 @@ export function coverage(path: Path, x: number, y: number, range: number): numbe
 }
 
 /**
- * Ist (x, y) mindestens `r` Milli-Tiles von jeder Strecke des Pfads entfernt? Ganzzahlig und exakt: Endpunkte per Quadratvergleich,
+ * Ist (x, y) mindestens `r` Milli-px von jeder Strecke des Pfads entfernt? Ganzzahlig und exakt: Endpunkte per Quadratvergleich,
  * Strecken-Inneres per Kreuzprodukt (|cross| / Länge = Abstand, verglichen als cross^2 gegen r^2 * len^2; ein grober Vorab-Vergleich
  * hält die Zwischenwerte unter 2^53).
  */
