@@ -97,7 +97,7 @@ export async function runApp(root: HTMLElement, opts: AppOptions): Promise<AppHa
     const map = MAP_IDS[0];
     const before = store.profile;
     const mo = matchOptions(before);
-    const startOpts: MatchStartOptions = { map, difficulty, unlocks: mo.unlocks, mods: mo.mods, lockInfo: lockInfo(before) };
+    const startOpts: MatchStartOptions = { map, difficulty, unlocks: mo.unlocks, towerXp: mo.towerXp, mods: mo.mods, lockInfo: lockInfo(before) };
     view?.dispose?.();
     view = null;
     let outcome;

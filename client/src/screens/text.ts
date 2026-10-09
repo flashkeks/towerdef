@@ -82,7 +82,7 @@ export const S = {
     tier: (n: number): string => `Tier ${n}`,
     preview: 'Preview',
     lockedBadge: (n: number): string => `Level ${n}`,
-    howto: 'Tower XP comes from cracked layers and bought upgrades. Spend it here.',
+    howto: 'Towers earn XP every round \u2014 more for the ones you invested in and that pop the most.',
     paths: {
       ranger: ['Volley', 'Rapid', 'Eagle Eye'],
       bombardier: ['Bigger Blasts', 'Clusters', 'Concussion'],

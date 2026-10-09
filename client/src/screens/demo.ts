@@ -16,7 +16,7 @@ function seeded(): Profile {
   if (scene === 'home' || scene === 'tower' || scene === 'knowledge') {
     // ein paar Partien gespielt: Level 5, Medaillen Easy + Medium, Turm-XP auf Stand
     const play = (id: string, d: 'easy' | 'medium' | 'hard', won: boolean, rounds: number, pops: number): void => {
-      p = applyMatch(p, { matchId: id, map: 'meadow', difficulty: d, won, roundsCleared: rounds, livesLost: 12, pops: { ranger: pops, bombardier: Math.floor(pops / 2) }, tierBuys: { ranger: 6, bombardier: 4 } }).profile;
+      p = applyMatch(p, { matchId: id, map: 'meadow', difficulty: d, won, roundsCleared: rounds, livesLost: 12, pops: { ranger: pops, bombardier: Math.floor(pops / 2) }, towerXp: { ranger: 100, bombardier: 100, frostcaller: 100 }, towerXpGained: { ranger: Math.floor(pops / 3), bombardier: Math.floor(pops / 6), frostcaller: 0 } }).profile;
     };
     play('a', 'easy', true, 20, 1200);
     if (scene === 'knowledge') {
