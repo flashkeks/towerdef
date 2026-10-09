@@ -10,9 +10,11 @@ export const ROLE: Record<TowerType | HeroType, string> = {
   ranger: 'Cheap single target',
   bombardier: 'Area damage, cracks armor',
   frostcaller: 'Slows and controls',
+  longshot: 'Sniper, whole-map range',
+  market: 'Earns gold, buffs towers',
   wren: 'Hero: lights the way',
 };
-export const HOTKEY: Record<TowerType | HeroType, string> = { ranger: 'Q', bombardier: 'W', frostcaller: 'E', wren: 'R' };
+export const HOTKEY: Record<TowerType | HeroType, string> = { ranger: 'Q', bombardier: 'W', frostcaller: 'E', longshot: 'T', market: 'Z', wren: 'R' };
 export const ABILITY_TEXT: Record<string, { name: string; desc: string }> = {
   arrowRain: { name: 'Arrow Rain', desc: 'All Rangers shoot 3x faster for a few seconds.' },
   absoluteZero: { name: 'Absolute Zero', desc: 'Freezes every Glim for 4 seconds.' },

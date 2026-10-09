@@ -73,7 +73,7 @@ export const S = {
     needs: (name: string): string => `Needs ${name} first`,
     needsOne: (names: string): string => `Needs one of: ${names}`,
     noPoints: 'Not enough points',
-    branch: { economy: 'Economy', towers: 'Towers', wardens: 'Wardens' },
+    branch: { economy: 'Economy', primary: 'Primary', specialists: 'Specialists', wardens: 'Wardens', powers: 'Powers' },
     tip: 'Each level up earns one point.',
   },
   towers: {

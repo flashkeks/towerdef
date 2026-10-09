@@ -15,7 +15,8 @@ export const TOWER_H = TH;
 export function towerRaster(type: TowerType, tiers: Tiers, facing: number, frame: TowerFrame): RasterSprite {
   const d = dirOf(facing);
   const p = poseOf(frame);
-  const L = type === 'ranger' ? drawRanger(tiers, d, p) : type === 'bombardier' ? drawBombardier(tiers, d, p) : drawFrost(tiers, d, p);
+  // Platzhalter Runde 13: Longshot/Market bis zu den eigenen Figuren (Agent B) als Ranger
+  const L = type === 'ranger' || type === 'longshot' || type === 'market' ? drawRanger(tiers, d, p) : type === 'bombardier' ? drawBombardier(tiers, d, p) : drawFrost(tiers, d, p);
   const out = new Surface(TOWER_W, TOWER_H);
   out.blit(L.back);
   out.blit(outlineSurface(L.fig));

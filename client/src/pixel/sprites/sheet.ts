@@ -42,6 +42,16 @@ const NAMES: Record<TowerType, string[][]> = {
     ['Base', 'Frost Nova', 'Brittle Ice', 'Ice Shards', 'Glacial Spike', "Winter's Wrath"],
     ['Base', 'Spark', 'Storm Sight', 'Chain Lightning', 'Tempest', 'Stormcaller'],
   ],
+  longshot: [
+    ['Base', 'Iron Bolt', 'Piercing Bolt', 'Deadeye', 'Giantslayer', 'Lanternbreaker'],
+    ['Base', 'Night Scope', 'Quick Reload', 'Repeater', 'Volley Squad', 'Lantern Legion'],
+    ['Base', 'Shrapnel', 'Ricochet', 'Supply Drop', 'Elite Sniper', 'Crippling Shot'],
+  ],
+  market: [
+    ['Base', 'Busy Stalls', 'Night Market', 'Trade Hall', 'Merchant Guild', 'Golden Exchange'],
+    ['Base', 'Coin Purse', 'Lockbox', 'Lantern Bank', 'Grant Office', 'Treasury'],
+    ['Base', 'Watchpost', 'Lookout Bell', 'Drum Hall', 'Armory', 'Lantern Capital'],
+  ],
 };
 const MIX: Tiers[] = [[3, 2, 0], [0, 2, 4], [2, 0, 5], [4, 0, 2], [0, 3, 2], [1, 1, 1], [5, 2, 0], [2, 5, 0]];
 
