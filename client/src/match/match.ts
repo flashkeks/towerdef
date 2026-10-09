@@ -9,7 +9,7 @@ import { t } from '../i18n/t';
 import { h, setClass, setText } from '../ui/dom';
 import { baseRangePx, displayName, footMilli, isHero } from './info';
 import { Confirm } from './confirm';
-import { Panel } from './panel';
+import { Panel, fitFigure } from './panel';
 import { SideTabs } from './side-tabs';
 import { PATH, PATH_HW } from '../pixel/map/layout';
 import { displayName as powerName, slotUsable, trapSpot, type PowerSlot } from '../powers/info';
@@ -227,7 +227,11 @@ class Match {
     const c = h('button', 'm-card');
     const spr = isHero(ty) ? heroPortrait() : towerPortrait(ty);
     const port = h('div', 'm-port');
-    port.append(copyCanvas(spr.canvas, spr.canvas.height * 2 <= 52 && spr.canvas.width * 2 <= 58 ? 2 : 1));
+    // Runde 14b: auf sichtbare Pixel zuschneiden, ganzzahlig und mittig. Zwei Fassungen (1x/2x), das CSS waehlt je nach Fensterhoehe.
+    const f1 = fitFigure(spr.canvas, 99, 99, 1), f2 = fitFigure(spr.canvas, 76, 78, 2);
+    f1.classList.add('fig1');
+    f2.classList.add('fig2');
+    port.append(f1, f2);
     const txt = h('div', 'm-card-t');
     txt.append(h('div', 'm-card-n', displayName(ty)), h('div', 'm-card-r', ROLE[ty]));
     const price = h('div', 'm-card-p');

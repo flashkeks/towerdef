@@ -1,45 +1,73 @@
 /**
- * Wissensbaum-Layout (Runde 13, Runde 14 groesser): reine Geometrie, ohne DOM. Jeder Ast ist ein Raster aus `col`/`row` der
- * Knoten; die Aeste fliessen nebeneinander und brechen in eine neue Zeile um, wenn die Breite `maxW` nicht reicht
- * (5 Aeste mit 40 Knoten passen bei 1280 px nicht in eine Reihe, wenn die Knoten gross bleiben sollen). Die Hoehe waechst
- * mit, der Bildschirm scrollt senkrecht, nie waagerecht. Liefert Position jedes Knotens und die Linien fuer `requires`.
+ * Wissensbaum-Layout (Runde 14b): reine Geometrie, ohne DOM. Alle Aeste stehen nebeneinander auf EINER Flaeche, kein Scrollen:
+ * die Zellgroesse `cell` ergibt sich aus Breite und Hoehe des Brettes (Spalten + Astluecken, Zeilen + Kopfzeile), die Knoten
+ * skalieren also mit dem Fenster. Liefert je Knoten den Mittelpunkt (Abzeichen) und je Voraussetzung eine Linie von Mitte zu Mitte.
  */
 export interface LNode { id: string; branch: string; col: number; row: number; requires: readonly string[] }
-export interface LOpts { cellW: number; cellH: number; nodeW: number; nodeH: number; padX: number; headH: number; padBottom: number; gap: number; minW: number; /** Hoechstbreite einer Zeile (Inhaltsbreite des Bildschirms) */ maxW: number; rowGap: number }
-export interface PlacedNode { id: string; x: number; y: number }
-export interface PlacedBranch { branch: string; row: number; x: number; y: number; w: number; h: number; fieldW: number; fieldH: number; nodes: PlacedNode[]; lines: { from: string; to: string; x1: number; y1: number; x2: number; y2: number }[] }
-export interface TreeLayout { branches: PlacedBranch[]; rows: number; width: number; height: number; /** freie Breite rechts in der letzten Zeile (fuer die Legende) */ freeRight: number }
+export interface LOpts {
+  /** Breite und Hoehe des Brettes in px (Innenmasse der Flaeche) */
+  width: number; height: number;
+  /** Rand links/rechts und unten */
+  padX: number; padY: number;
+  /** Hoehe der Astueberschriften */
+  headH: number;
+  /** Luecke zwischen Aesten in Zellen */
+  gapCells: number;
+  /** Obergrenze der Zellgroesse (sehr grosse Fenster) */
+  maxCell: number;
+}
+export interface PlacedNode { id: string; cx: number; cy: number }
+export interface PlacedLine { from: string; to: string; x1: number; y1: number; x2: number; y2: number }
+export interface PlacedBranch { branch: string; x: number; w: number; cols: number; rows: number; nodes: PlacedNode[]; lines: PlacedLine[] }
+export interface TreeLayout {
+  /** Zeilenabstand (Zellhoehe) und Spaltenabstand (Zellbreite) in px */
+  cell: number; colW: number; badge: number; branches: PlacedBranch[];
+  /** belegte Flaeche (liegt immer innerhalb von width x height), mittig im Brett */
+  x: number; y: number; w: number; h: number;
+}
 
-/** Runde 14 (Max: "ein bisschen klein skaliert, kann groesser sein"): Knoten 120 x 100 statt 96 x 76, Schrift und Kosten groesser. */
-export const DEFAULT_OPTS: LOpts = { cellW: 132, cellH: 124, nodeW: 120, nodeH: 108, padX: 14, headH: 54, padBottom: 14, gap: 16, minW: 200, maxW: 1208, rowGap: 22 };
+export const DEFAULT_OPTS: LOpts = { width: 1208, height: 560, padX: 16, padY: 14, headH: 52, gapCells: 0.55, maxCell: 150 };
 
 export function layoutTree(nodes: readonly LNode[], order: readonly string[], o: LOpts = DEFAULT_OPTS): TreeLayout {
-  const branches: PlacedBranch[] = [];
-  let x = 0, y = 0, row = 0, rowH = 0, width = 0;
-  for (const b of order) {
+  const act = order.filter((b) => nodes.some((n) => n.branch === b));
+  const cols = new Map<string, number>();
+  let totalCols = 0, maxRows = 1;
+  for (const b of act) {
     const ns = nodes.filter((n) => n.branch === b);
-    if (!ns.length) continue;
-    const cols = Math.max(...ns.map((n) => n.col)) + 1;
-    const rows = Math.max(...ns.map((n) => n.row)) + 1;
-    const fieldW = cols * o.cellW, fieldH = rows * o.cellH;
-    const w = Math.max(fieldW + o.padX * 2, o.minW), h = o.headH + fieldH + o.padBottom;
-    if (x > 0 && x + w > o.maxW) { x = 0; y += rowH + o.rowGap; rowH = 0; row++; }
-    // Position relativ zum Ast-Feld (links oben der Knoten)
+    const c = Math.max(...ns.map((n) => n.col)) + 1;
+    cols.set(b, c);
+    totalCols += c;
+    maxRows = Math.max(maxRows, Math.max(...ns.map((n) => n.row)) + 1);
+  }
+  const nGaps = Math.max(0, act.length - 1);
+  const byH = (o.height - o.headH - o.padY * 2) / maxRows;
+  const byW = (o.width - o.padX * 2) / (totalCols + nGaps * o.gapCells);
+  const cell = Math.max(24, Math.floor(Math.min(byH, byW * 1.5, o.maxCell)));
+  // Spalten duerfen breiter sein als die Zeilen hoch (Namen brauchen Platz), aber nicht uferlos
+  const colW = Math.max(24, Math.floor(Math.min(byW, cell * 1.45)));
+  const badge = Math.round(Math.min(cell, colW) * 0.64 / 2) * 2;
+  // Restbreite geht in die Astluecken (bis zu einer ganzen Spaltenbreite)
+  const gap = nGaps ? Math.floor(Math.min(colW * 1.1, Math.max(colW * o.gapCells, (o.width - o.padX * 2 - totalCols * colW) / nGaps))) : 0;
+  const w = totalCols * colW + nGaps * gap;
+  const h = o.headH + maxRows * cell;
+  const x0 = Math.floor((o.width - w) / 2), y0 = Math.floor(Math.max(o.padY, (o.height - h) / 2));
+  const branches: PlacedBranch[] = [];
+  let x = x0;
+  for (const b of act) {
+    const ns = nodes.filter((n) => n.branch === b);
+    const c = cols.get(b)!;
     const pos = new Map<string, PlacedNode>();
-    for (const n of ns) pos.set(n.id, { id: n.id, x: n.col * o.cellW + (o.cellW - o.nodeW) / 2, y: n.row * o.cellH + 4 });
-    const lines: PlacedBranch['lines'] = [];
+    for (const n of ns) pos.set(n.id, { id: n.id, cx: x + n.col * colW + colW / 2, cy: y0 + o.headH + n.row * cell + cell / 2 });
+    const lines: PlacedLine[] = [];
     for (const n of ns) {
       const to = pos.get(n.id)!;
       for (const r of n.requires) {
         const from = pos.get(r);
-        if (!from) continue;
-        lines.push({ from: r, to: n.id, x1: from.x + o.nodeW / 2, y1: from.y + o.nodeH, x2: to.x + o.nodeW / 2, y2: to.y });
+        if (from) lines.push({ from: r, to: n.id, x1: from.cx, y1: from.cy, x2: to.cx, y2: to.cy });
       }
     }
-    branches.push({ branch: b, row, x, y, w, h, fieldW, fieldH, nodes: [...pos.values()], lines });
-    x += w + o.gap;
-    rowH = Math.max(rowH, h);
-    width = Math.max(width, x - o.gap);
+    branches.push({ branch: b, x, w: c * colW, cols: c, rows: Math.max(...ns.map((n) => n.row)) + 1, nodes: [...pos.values()], lines });
+    x += c * colW + gap;
   }
-  return { branches, rows: row + 1, width, height: y + rowH, freeRight: Math.max(0, o.maxW - Math.max(0, x - o.gap)) };
+  return { cell, colW, badge, branches, x: x0, y: y0, w, h };
 }
