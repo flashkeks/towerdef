@@ -183,3 +183,31 @@ Gründe: `out-of-bounds`, `on-path`, `water`, `blocked`, `overlap`, `no-cash`, `
 - `client/src/match/` (P3): Renderer (Pixi v8, 640 × 360-Textur, nearest), Eingabe (Platzieren mit Geist + Reichweitenkreis,
   Auswahl, Tastatur), HUD (Leben, Geld, Runde x/20, Start/Tempo), Turm-Leiste rechts, Upgrade-Panel wie BTD6.
 - Bis P2 fertig ist, benutzt P3 Platzhalter-Raster (einfarbige Kreise) hinter derselben Funktionssignatur.
+
+## Ergänzung Runde 12: Powers
+
+Details und Begründungen: `docs/design/powers.md` (Abschnitt "Umsetzung").
+
+```ts
+export type PowerKey = 'goldDrop' | 'lanternBomb' | 'caltrops' | 'frostTrap' | 'timeWarp' | 'lanternOil' | 'extraLives' | 'heroBoost'
+  | 'instaWarden:ranger' | 'instaWarden:bombardier' | 'instaWarden:frostcaller';
+GameOptions.powers?: Partial<Record<PowerKey, number>>;                      // Inventar beim Start
+Command: { type: 'power'; power: PowerKey; x?: number; y?: number }          // Milli-px; x/y bei Lantern Bomb, Fallen, Insta-Warden
+GameState.powers: Record<PowerKey, number>;                                  // Restbestand
+GameState.powerUsedRound: Record<PowerKey, number>;                          // Runde des letzten Einsatzes, -1 = nie
+GameState.traps: { id; kind: 'caltrops' | 'frostTrap'; progress; x; y; charges; until }[];
+GameState.stats.powersUsed: Record<PowerKey, number>;
+Game.canUsePower(power, x?, y?): PlaceCheck;                                 // Trockenlauf mit denselben Gründen
+Game.roundPreview(r): { round; groups: { type; n; camo }[]; rbe; hasCamo; hasArmor; hasEmber; hasBoss } | null;
+DATA.powers[key]: { name; desc; price; use: 'button' | 'target' | 'path' | 'place'; params; tower?; tiers? };  DATA.powerOrder; POWER_KEYS
+```
+
+Gründe: `unknown-power`, `no-power`, `used-this-round`, `no-hero`, `maxed`, `invalid-target`, `not-on-path`, beim Insta-Warden die Platziergründe (ohne `no-cash`).
+
+| Event | Felder | Bedeutung |
+|---|---|---|
+| `power` | power, x?, y? | Einsatz erfolgreich (bei Fallen die gerasterte Position) |
+| `trap` | id, kind, charges | Ladung verbraucht, `charges` = Rest |
+| `trapGone` | id, kind, reason | 'spent' oder 'expired' |
+
+Meta: `Profile.embers`, `Profile.inventory`, `Profile.starterPack`; `MatchResult.powersUsed?`; `MatchReport.embersGained / embers / powersUsed`; `buyPower(profile, key, count?)`; `matchOptions(profile).powers`.
