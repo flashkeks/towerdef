@@ -909,17 +909,6 @@ export function createGame(opts: GameOptions): Game {
           if (m) damage(m, MONSTER_HIT, 'magic', t.id);
         }
       }
-      // Thornweaver: Kettenblitz im Takt
-      if (st.zapN > 0) {
-        if (t.zapCd > 0) t.zapCd--;
-        if (t.zapCd <= 0) {
-          const z = pickTarget(t, t.range, t.camo, t.target);
-          if (z) {
-            t.zapCd = st.zapInterval;
-            lightning(t.x, t.y, z, st.zapN, st.zapRange, st.zapDmg + bonus + avatarBonus(st), t.id, [], true);
-          }
-        }
-      }
       // Thornweaver: Wirbelwind wirft Nicht-Boss-Gegner zurück
       if (st.whirlEvery > 0) {
         if (t.whirlCd > 0) t.whirlCd--;
@@ -935,6 +924,17 @@ export function createGame(opts: GameOptions): Game {
               o.y = pos.y;
             }
             emit({ type: 'whirlwind', tick: S.tick, tower: t.id, x: t.x, y: t.y, radius: t.range, px: st.whirlPx, enemies: hit.map((o) => o.id) });
+          }
+        }
+      }
+      // Thornweaver: Kettenblitz im Takt
+      if (st.zapN > 0) {
+        if (t.zapCd > 0) t.zapCd--;
+        if (t.zapCd <= 0) {
+          const z = pickTarget(t, t.range, t.camo, t.target);
+          if (z) {
+            t.zapCd = st.zapInterval;
+            lightning(t.x, t.y, z, st.zapN, st.zapRange, st.zapDmg + bonus + avatarBonus(st), t.id, [], true);
           }
         }
       }

@@ -58,6 +58,10 @@ export interface BotResult {
   income: number;
   /** Gold aus Grant und Supply Drop. */
   abilityCash: number;
+  /** Runde 14: Gold aus Thornweaver-Rundenerträgen, Leben aus Jungle's Bounty/Field Medic, Gold aus Lead to Gold. */
+  groveGold: number;
+  healed: number;
+  bountyGold: number;
   hash: string;
 }
 
@@ -236,6 +240,8 @@ export function createBot(game: Game, mapId: string, strategy: Strategy): Bot {
         case 'focus': use = n >= 6 || boss; break;
         case 'supplyDrop': use = true; break;
         case 'grant': use = true; break;
+        case 'wallOfTrees': use = n >= 10 || boss; break;
+        case 'tonic': use = n >= 15 || boss; break;
       }
       if (use) game.apply({ type: 'ability', ability: a.id });
     }
@@ -280,6 +286,9 @@ export function runBot(strategy: Strategy, opts: Partial<GameOptions> & { diffic
     towerXpGained: { ...S.towerXpGained },
     income: S.stats.income,
     abilityCash: S.stats.abilityCash,
+    groveGold: S.stats.groveGold,
+    healed: S.stats.healed,
+    bountyGold: S.stats.bountyGold,
     hash: game.hash(),
   };
 }
@@ -293,7 +302,7 @@ export function parseStrategy(text: string): Strategy {
       hero = true;
       continue;
     }
-    const m = /^(ranger|bombardier|frostcaller|longshot|market)\s+(\d)-(\d)-(\d)(?:@(first|last|strong|close))?$/.exec(part);
+    const m = /^(ranger|bombardier|frostcaller|longshot|market|thornweaver|alchemist)\s+(\d)-(\d)-(\d)(?:@(first|last|strong|close))?$/.exec(part);
     if (!m) throw new Error(`Strategie nicht lesbar: "${part}"`);
     towers.push({ type: m[1] as TowerType, tiers: [Number(m[2]), Number(m[3]), Number(m[4])], target: m[5] as TargetMode | undefined });
   }
