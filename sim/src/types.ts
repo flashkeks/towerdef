@@ -564,7 +564,7 @@ export interface Game {
   roundPreview(r: number): RoundPreview | null;
   /** Nur für Tests/Sandbox: Gegner direkt setzen, Schaden direkt zufügen. Ändert den Zustand wie ein normaler Eingriff (deterministisch). */
   readonly sandbox: {
-    spawn(type: EnemyType, progress?: number, camo?: boolean, branch?: number): number;
+    spawn(type: EnemyType, progress?: number, camo?: boolean, branch?: number, traits?: { fortified?: boolean; regrow?: boolean }): number;
     hurt(enemyId: number, amount: number, dtype?: DamageType): boolean;
     setCash(cash: number): void;
   };

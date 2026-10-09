@@ -2113,8 +2113,8 @@ export function createGame(opts: GameOptions): Game {
     canUsePower: powerCheck,
     roundPreview,
     sandbox: {
-      spawn(type, progress = 0, camo = false, branch = 0) {
-        const e = spawnEnemy(type, progress, camo, S.round, false, branch);
+      spawn(type, progress = 0, camo = false, branch = 0, traits = {}) {
+        const e = spawnEnemy(type, progress, camo, S.round, false, branch, !!traits.fortified, traits.regrow ? type : null);
         S.phase = 'wave';
         return e.id;
       },
