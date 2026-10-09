@@ -1,10 +1,21 @@
 # Status (global)
 
-Arbeitsauftrag: [`/run.md`](../run.md) (**Runde 12: Reiter, Embers, Store und Powers — abgeschlossen**, Spezifikation [design/powers.md](design/powers.md)). Runde 11 (+11b Turm-XP im Match, +11c BTD6-Panel) abgeschlossen, Bericht unten, Auftrag in [archiv/run-runde11.md](archiv/run-runde11.md). **Verbindlich zuerst:** [design/ENTSCHEIDUNGEN.md](design/ENTSCHEIDUNGEN.md), dann [design/schnittstelle.md](design/schnittstelle.md). **Jede Sitzung liest danach diese Datei.**
+Arbeitsauftrag: [`/run.md`](../run.md) (**Runde 13 abgeschlossen** (Market, Longshot, Wissensbaum, keine Plattformen), Runde 14 = Thornweaver + Alchemist (`design/tuerme-r13.md`); Runde 12: Reiter, Embers, Store und Powers, Spezifikation [design/powers.md](design/powers.md)). Runde 11 (+11b Turm-XP im Match, +11c BTD6-Panel) abgeschlossen, Bericht unten, Auftrag in [archiv/run-runde11.md](archiv/run-runde11.md). **Verbindlich zuerst:** [design/ENTSCHEIDUNGEN.md](design/ENTSCHEIDUNGEN.md), dann [design/schnittstelle.md](design/schnittstelle.md). **Jede Sitzung liest danach diese Datei.**
 Frühere Aufträge: [archiv/run-runde1.md](archiv/run-runde1.md), [archiv/run-runde2.md](archiv/run-runde2.md), [archiv/run-runde3.md](archiv/run-runde3.md), [archiv/run-runde4.md](archiv/run-runde4.md), [archiv/run-runde5.md](archiv/run-runde5.md), [archiv/run-runde6.md](archiv/run-runde6.md), [archiv/run-runde7.md](archiv/run-runde7.md), [archiv/run-runde8-verworfen.md](archiv/run-runde8-verworfen.md), [archiv/run-runde8.md](archiv/run-runde8.md), [archiv/run-runde9.md](archiv/run-runde9.md).
 
 
 **Runde 13 C (Client-Einbau, 09.10.2026):** Turm-Leiste mit fuenf Tuermen (T = Longshot, Z = Market, B = Withdraw), Market im Match (Aura-Ring statt Schussring, Faehnchen an Tuermen in der Aura, Muenzflug zur Geldanzeige, Bank mit Withdraw im Panel), Longshot (kein Ring, Muendungsblitz/Rueckstoss, Ricochet, Boss-Markierung, Focus/Supply Drop/Grant mit Icons), Wissensbaum fuer 28 Knoten in 5 Aesten (`screens/knowledge-layout.ts`), Projektile starten am Muendungspunkt, Menue ohne Musik, AudioContext ab dem ersten Klick, Mix Effekte x0,7 / Musik x0,8. Tests `client/test/r13-match.test.ts`, Bilder `client/docs/r13/c-*.png`, Skript `client/scripts/shots-r13-c.mjs`.
+
+## Runde 13 (Lantern Market, Longshot, Wissensbaum 28 Knoten, Figuren ohne Plattform) — abgeschlossen 09.10.2026
+
+| Paket | Agent | Was man sieht |
+|---|---|---|
+| A Sim + Meta | Sonnet | Market (Ertrag, Bank mit Zinsen + `withdraw`, Grant, Auren), Longshot (ganze Karte, 3.000 px/s, Focus, Supply Drop, Ricochet, Boss-Markierung), Wissensbaum 28 Knoten / 5 Äste, Punkte aus Level + ersten Medaillen, Freischaltung Longshot L5 / Market L6. Abweichungen: `sim/README.md` „Runde 13“ |
+| B Pixel | Sonnet | **keine Plattformen mehr**, deutlichere Stufen (T3 größer + Panzer, T4 Rüstung + Leuchten, T5 Flügel + eigene Farben), Market (Stand → Kuppel/Schatzkammer/Rathaus) und Longshot komplett. Bilder `client/docs/r13/b-*` |
+| C Client | Sonnet | Turm-Leiste mit 5 Türmen + Wren, Market-Aura/Münzflug/Bank-Panel/Withdraw, Longshot ohne Ring + Markierung, Fähigkeiten Grant/Focus/Supply Drop, neuer Wissensbaum-Bildschirm. **Max' Playtest-Punkte:** Projektile starten am Bogen/Lauf (`towerMuzzle`), keine Menü-Musik mehr, Menü-Klicktöne ab dem ersten Klick, Mix Effekte × 0,7 / Musik × 0,8. Bilder `client/docs/r13/c-*` |
+| Hauptsitzung | – | Market-Ertrag +30 % (Bot: lohnte sich kaum), Turm-Leiste bei ≤ 860 px Höhe kompakter (Wren war bei 720 px unter dem Scrollrand) |
+
+Tests: sim 173, meta 64, client 136; tsc, build, smoke grün.
 
 ## Runde 12 (Reiter, Embers, Store, Powers) — abgeschlossen 09.10.2026
 

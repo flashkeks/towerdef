@@ -347,3 +347,13 @@ kbd { font: 700 10px var(--font-num); background: var(--ink); color: var(--silve
 .ab-btn > .ab-t, .ab-btn > kbd { position: absolute; }
 .m-pane > *, .m-cards > * { flex-shrink: 0; }
 .m-card-r { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Hauptsitzung 09.10.2026: bei 720 px Höhe verschwand Wren unter dem Scrollrand der Turm-Leiste (5 Türme + Held).
+   Niedrige Fenster: Rollen-Zeile weg, Karten flacher, damit alle 6 Karten ohne Scrollen passen. */
+@media (max-height: 860px) {
+  .m-card { min-height: 44px; padding: 2px 6px 2px 2px; }
+  .m-card .m-port { width: 46px; height: 40px; }
+  .m-card-r { display: none; }
+  .m-card-n { font-size: 14px; }
+  .m-card-p { font-size: 15px; }
+  .m-side { gap: 6px; padding: 10px 12px; }
+}
