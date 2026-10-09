@@ -374,7 +374,7 @@
    "pk": "bomb",
    "dtype": "explosive",
    "dmg": 1,
-   "radius": 24000,
+   "radius": 32000,
    "maxT": 14,
    "flight": 27,
    "interval": 90000,
@@ -1224,7 +1224,7 @@
    {
     "level": 10,
     "xp": 2350,
-    "desc": "Ability: Dawnbreak - a beam of light across the whole path: 20 damage to every enemy, 300 to the Leviathan.",
+    "desc": "Ability: Dawnbreak - a beam of light across the whole path: 20 damage to every enemy, 100 to the Leviathan.",
     "mods": [
      {
       "op": "set",
@@ -1234,7 +1234,7 @@
      {
       "op": "set",
       "stat": "dawnBoss",
-      "v": 300
+      "v": 100
      },
      {
       "op": "set",
@@ -1364,7 +1364,7 @@
    {
     "level": 20,
     "xp": 8250,
-    "desc": "Dawnbreak: 60 damage (1200 to the Leviathan), cooldown 45 s.",
+    "desc": "Dawnbreak: 60 damage (240 to the Leviathan), cooldown 45 s.",
     "mods": [
      {
       "op": "set",
@@ -1374,7 +1374,7 @@
      {
       "op": "set",
       "stat": "dawnBoss",
-      "v": 1200
+      "v": 240
      },
      {
       "op": "set",

@@ -13,3 +13,5 @@ export { getMap, loadMap, pointInPolygon } from './map.js';
 export type { MapRt } from './map.js';
 export { STAT_DEFAULTS, applyMod, pathOrder } from './stats.js';
 export type { Stats, Mod, ModOp } from './stats.js';
+export { runBot, createBot, parseStrategy, buildSteps } from './bot.js';
+export type { Strategy, TowerPlan, BotResult, Bot } from './bot.js';

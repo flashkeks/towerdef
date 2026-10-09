@@ -193,4 +193,10 @@ export interface Game {
   upgradeInfo(towerId: number): UpgradeInfo[];
   sellValue(towerId: number): number;
   priceOf(type: TowerType | HeroType): number;
+  /** Nur für Tests/Sandbox: Gegner direkt setzen, Schaden direkt zufügen. Ändert den Zustand wie ein normaler Eingriff (deterministisch). */
+  readonly sandbox: {
+    spawn(type: EnemyType, progress?: number, camo?: boolean): number;
+    hurt(enemyId: number, amount: number, dtype?: DamageType): boolean;
+    setCash(cash: number): void;
+  };
 }
