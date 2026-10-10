@@ -11,6 +11,7 @@ import { paintQuarry } from './quarry';
 import { paintHollow } from './hollow';
 import { paintMarsh } from './marsh';
 import { paintBastion } from './bastion';
+import { paintSkyreach } from './skyreach';
 import { ambientPoints, smokePoints } from './ambient';
 import { bayer } from './buf';
 import type { MapArt, MapId } from './types';
@@ -35,7 +36,7 @@ const PAINTERS: Record<MapId, () => MapArt> = {
   frostfen: paintFrostfen,
   bastion: paintBastion,
   quarry: paintQuarry,
-  skyreach: () => { throw new Error('skyreach folgt'); },
+  skyreach: paintSkyreach,
 };
 
 export function mapArt(id: MapId): MapArt {
