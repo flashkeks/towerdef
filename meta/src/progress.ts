@@ -3,12 +3,12 @@
  * Alle Funktionen sind rein: das uebergebene Profil bleibt unveraendert.
  */
 import { z } from 'zod';
-import type { Difficulty, GameOptions, HeroType, PowerKey, TowerType, Tiers } from '../../sim/src/types';
+import type { Difficulty, GameOptions, HeroType, ModeId, PowerKey, TowerType, Tiers } from '../../sim/src/types';
 import {
   BULK_BUYER_BP, DIFFICULTIES, DIFFICULTY_XP_BP, EMBERS_FIRST_MEDAL, EMBERS_LEVEL_UP, EMBERS_WIN, POWER_KEYS, embersForRound, emptyInventory, powerPrice, FREEPLAY_BP, KNOWLEDGE, LEVEL_UNLOCKS, MAX_ROUND, TIER_COST, TOWER_TYPES, WIN_BONUS_XP,
-  levelFromXp, nodeById, unlockLevel, xpForLevel, type LevelUnlock,
+  MAPS, MODE_IDS, MODE_META, levelFromXp, mapById, maxRoundOf, nodeById, unlockLevel, xpForLevel, type LevelUnlock, type MapMeta,
 } from './data';
-import { SEEN_MATCHES_MAX, emptyMedals, medalCount, type Profile } from './profile';
+import { SEEN_MATCHES_MAX, bestOf, emptyMedals, medalCount, medalsOf, type Profile } from './profile';
 
 const nat = z.number().int().min(0);
 const tierNum = z.number().int().min(0).max(5);
@@ -20,9 +20,11 @@ const perTowerNat = z.object({ ranger: nat.optional(), bombardier: nat.optional(
 export const MatchResultSchema = z.object({
   matchId: z.string().min(1),
   map: z.string().min(1),
+  /** Runde 15: Spielmodus (fehlt = Standard). */
+  mode: z.enum(MODE_IDS as unknown as [ModeId, ...ModeId[]]).default('standard'),
   difficulty: z.enum(['easy', 'medium', 'hard']),
   won: z.boolean(),
-  /** Geschaffte Runden (state.roundsCleared); Runden ueber 20 zaehlen als Freeplay. */
+  /** Geschaffte Runden (state.roundsCleared); Runden ueber die letzte Runde der Karte zaehlen als Freeplay. */
   roundsCleared: nat.max(9999),
   livesLost: nat.max(9999),
   /** Geknackte Schichten je Turmtyp (state.stats.pops). */
@@ -49,16 +51,81 @@ export function isDifficultyUnlocked(p: Profile, d: Difficulty): boolean {
   return p.settings.unlockAll || playerLevel(p) >= unlockLevel(d);
 }
 
+// ---------------------------------------------------------------- Karten und Modi (Runde 15)
+
+const diffRank = (d: Difficulty): number => DIFFICULTIES.indexOf(d);
+/** Standard-Medaille auf `map` in mindestens dieser Schwierigkeit (eine haertere Medaille genuegt). */
+export function hasMedalAtLeast(p: Profile, map: string, difficulty: Difficulty): boolean {
+  const m = medalsOf(p, map);
+  return DIFFICULTIES.some((d) => diffRank(d) >= diffRank(difficulty) && m[d]);
+}
+
+export interface MapLock {
+  unlocked: boolean;
+  /** Offen, weil das Level reicht (oder die Karte von Anfang an frei ist). */
+  byLevel: boolean;
+  /** Offen, weil die Medaille auf der Vorgaengerkarte reicht. */
+  byMedal: boolean;
+  /** Englischer Hinweis fuer das Schloss, leer wenn offen. */
+  text: string;
+}
+/** Karten-Freischaltung: Spieler-Level **oder** Medaille auf der Vorgaengerkarte. */
+export function mapLock(p: Profile, mapId: string): MapLock {
+  const m = mapById(mapId);
+  if (!m || !m.unlock) return { unlocked: true, byLevel: true, byMedal: false, text: '' };
+  const byLevel = playerLevel(p) >= m.unlock.level;
+  const byMedal = hasMedalAtLeast(p, m.unlock.medal.map, m.unlock.medal.difficulty);
+  const unlocked = p.settings.unlockAll || byLevel || byMedal;
+  const prev = mapById(m.unlock.medal.map)?.name ?? m.unlock.medal.map;
+  const d = m.unlock.medal.difficulty[0].toUpperCase() + m.unlock.medal.difficulty.slice(1);
+  return { unlocked, byLevel, byMedal, text: unlocked ? '' : `Reach level ${m.unlock.level} or win ${prev} on ${d}.` };
+}
+export const isMapUnlocked = (p: Profile, mapId: string): boolean => mapLock(p, mapId).unlocked;
+export const unlockedMaps = (p: Profile): MapMeta[] => MAPS.filter((m) => isMapUnlocked(p, m.id));
+
+export interface ModeLock {
+  unlocked: boolean;
+  text: string;
+}
+/** Modus-Freischaltung je Karte: Standard-Medaille der geforderten Schwierigkeit (oder haerter) auf genau dieser Karte. */
+export function modeLock(p: Profile, mapId: string, mode: ModeId): ModeLock {
+  const need = MODE_META[mode]?.unlockMedal ?? null;
+  if (need === null) return { unlocked: true, text: '' };
+  if (p.settings.unlockAll || hasMedalAtLeast(p, mapId, need)) return { unlocked: true, text: '' };
+  const d = need[0].toUpperCase() + need.slice(1);
+  return { unlocked: false, text: `Win this map on ${d} first.` };
+}
+export const isModeUnlocked = (p: Profile, mapId: string, mode: ModeId): boolean => modeLock(p, mapId, mode).unlocked;
+
+/** Belohnungsfaktoren (Basispunkte) einer Karte und eines Modus. */
+export function rewardFactors(mapId: string, mode: ModeId = 'standard'): { xpBp: number; embersBp: number; modeBp: number } {
+  const m = mapById(mapId);
+  return { xpBp: m?.xpBp ?? 10000, embersBp: m?.embersBp ?? 10000, modeBp: MODE_META[mode]?.bonusBp ?? 0 };
+}
+
 // ---------------------------------------------------------------- Match-XP
 
-export function matchXp(roundsCleared: number, difficulty: Difficulty, won: boolean, extraBp = 0): number {
+/** Belohnungs-Zusatz je Karte und Modus; Vorgabe = Meadow, Standard (Zahlen wie vor Runde 15). */
+export interface RewardCtx {
+  /** Letzte Runde der Karte; Runden darueber zaehlen als Freeplay. */
+  maxRound?: number;
+  /** Kartenfaktor in Basispunkten (10000 = x1,0). */
+  mapBp?: number;
+  /** Modus-Bonus in Basispunkten (2000 = +20 %). */
+  modeBp?: number;
+}
+
+/** Spieler-XP eines Matches. Reihenfolge: Schwierigkeit, Scholar, Kartenfaktor, Modus-Bonus; erst am Ende gerundet. */
+export function matchXp(roundsCleared: number, difficulty: Difficulty, won: boolean, extraBp = 0, ctx: RewardCtx = {}): number {
+  const maxRound = ctx.maxRound ?? MAX_ROUND;
   let base = 0;
   for (let r = 1; r <= roundsCleared; r++) {
     const v = 20 + 10 * r;
-    base += r > MAX_ROUND ? Math.floor((v * FREEPLAY_BP) / 10000) : v;
+    base += r > maxRound ? Math.floor((v * FREEPLAY_BP) / 10000) : v;
   }
   if (won) base += WIN_BONUS_XP;
-  return Math.round((base * DIFFICULTY_XP_BP[difficulty] * (10000 + extraBp)) / 100_000_000);
+  const x = (base * DIFFICULTY_XP_BP[difficulty] * (10000 + extraBp)) / 100_000_000;
+  return Math.round(x * ((ctx.mapBp ?? 10000) / 10000) * ((10000 + (ctx.modeBp ?? 0)) / 10000));
 }
 
 export interface MatchReport {
@@ -74,27 +141,46 @@ export interface MatchReport {
   unlocks: LevelUnlock[];
   newMedal: Difficulty | null;
   newBest: boolean;
+  /** Runde 15: Karte und Modus dieses Matches und ihre Belohnungsfaktoren (Basispunkte). */
+  map: string;
+  mode: ModeId;
+  rewardBp: { xp: number; embers: number; mode: number };
+  /** Runde 15: durch dieses Match (Level-Up oder Medaille) neu geoeffnete Karten und Modi. */
+  unlockedMaps: string[];
+  unlockedModes: { map: string; mode: ModeId }[];
   towerXpGained: Partial<Record<TowerType, number>>;
   /** Runde 12: Embers aus diesem Match, Summe und Aufschluesselung. */
   embersGained: number;
-  embers: { rounds: number; win: number; medal: number; levelUp: number; pouch: number; rush: number };
+  embers: { rounds: number; win: number; medal: number; levelUp: number; pouch: number; rush: number; /** Runde 15: Zuwachs durch Kartenfaktor und Modus-Bonus; fehlt, wenn 0. */ bonus?: number };
   /** Runde 12: Powers, die dieses Match verbraucht hat (Summe, fuer "Powers used: N"). */
   powersUsed: number;
 }
 
-/** Embers fuer ein Match (Spezifikation: docs/design/powers.md). */
-export function matchEmbers(roundsCleared: number, difficulty: Difficulty, won: boolean, newMedal: boolean, levelUps: number, pouchBp = 0, rush = false): MatchReport['embers'] {
+/**
+ * Embers fuer ein Match (Spezifikation: docs/design/powers.md, Runde 15: karten- und modusabhaengig).
+ * Runden, Sieg, Medaille und Rush werden mit Kartenfaktor und Modus-Bonus multipliziert (`bonus` = Zuwachs, abgerundet);
+ * Level-Ups nicht. Ember Pouch rechnet auf die Summe danach.
+ */
+export function matchEmbers(roundsCleared: number, difficulty: Difficulty, won: boolean, newMedal: boolean, levelUps: number, pouchBp = 0, rush = false, ctx: RewardCtx = {}): MatchReport['embers'] {
+  const maxRound = ctx.maxRound ?? MAX_ROUND;
   let rounds = 0;
-  for (let r = 1; r <= Math.min(roundsCleared, MAX_ROUND); r++) rounds += embersForRound(r);
+  for (let r = 1; r <= Math.min(roundsCleared, maxRound); r++) rounds += embersForRound(r);
   const win = won ? EMBERS_WIN[difficulty] : 0;
   const medal = newMedal ? EMBERS_FIRST_MEDAL : 0;
   const levelUp = levelUps * EMBERS_LEVEL_UP;
-  // Ember Rush (Runde 14): +1 Ember je geschaffter Runde (Runden 1-20)
-  const rushEmbers = rush ? Math.min(roundsCleared, MAX_ROUND) : 0;
-  // Ember Pouch (Runde 13): Zuschlag auf die Summe inkl. Rush, abgerundet
-  return { rounds, win, medal, levelUp, pouch: Math.floor(((rounds + win + medal + levelUp + rushEmbers) * pouchBp) / 10000), rush: rushEmbers };
+  // Ember Rush (Runde 14): +1 Ember je geschaffter Runde
+  const rushEmbers = rush ? Math.min(roundsCleared, maxRound) : 0;
+  const core = rounds + win + medal + rushEmbers;
+  const scaled = Math.floor(((core * (ctx.mapBp ?? 10000)) / 10000) * ((10000 + (ctx.modeBp ?? 0)) / 10000) + 1e-9);
+  const bonus = scaled - core;
+  // Ember Pouch (Runde 13): Zuschlag auf die Summe inkl. Rush, Level-Ups und Kartenbonus, abgerundet
+  return { rounds, win, medal, levelUp, pouch: Math.floor(((core + bonus + levelUp) * pouchBp) / 10000), rush: rushEmbers, ...(bonus ? { bonus } : {}) };
 }
 
+const rewardOf = (map: string, mode: ModeId): MatchReport['rewardBp'] => {
+  const f = rewardFactors(map, mode);
+  return { xp: f.xpBp, embers: f.embersBp, mode: f.modeBp };
+};
 const hasKnow = (p: Profile, id: string): boolean => p.knowledge.includes(id);
 /** Scholar: +10 % Spieler-XP. Ember Pouch: +10 % Embers. Starter Kit: 1 Gold Drop gratis je Match. */
 export const SCHOLAR_BP = 1000;
@@ -107,10 +193,12 @@ export function applyMatch(p: Profile, resultIn: MatchResult): { profile: Profil
   if (p.seenMatches.includes(res.matchId)) {
     return {
       profile: p,
-      report: { duplicate: true, xpGained: 0, xpBefore: p.playerXp, xpAfter: p.playerXp, levelBefore: lv0.level, levelAfter: lv0.level, pointsGained: 0, unlocks: [], newMedal: null, newBest: false, towerXpGained: {}, embersGained: 0, embers: { rounds: 0, win: 0, medal: 0, levelUp: 0, pouch: 0, rush: 0 }, powersUsed: 0 },
+      report: { duplicate: true, xpGained: 0, xpBefore: p.playerXp, xpAfter: p.playerXp, levelBefore: lv0.level, levelAfter: lv0.level, pointsGained: 0, unlocks: [], newMedal: null, newBest: false, towerXpGained: {}, embersGained: 0, embers: { rounds: 0, win: 0, medal: 0, levelUp: 0, pouch: 0, rush: 0 }, powersUsed: 0, map: res.map, mode: res.mode, rewardBp: rewardOf(res.map, res.mode), unlockedMaps: [], unlockedModes: [] },
     };
   }
-  const xpGained = matchXp(res.roundsCleared, res.difficulty, res.won, hasKnow(p, 'scholar') ? SCHOLAR_BP : 0);
+  const ctx: RewardCtx = { maxRound: maxRoundOf(res.map), mapBp: rewardFactors(res.map).xpBp, modeBp: rewardFactors(res.map, res.mode).modeBp };
+  const ectx: RewardCtx = { ...ctx, mapBp: rewardFactors(res.map).embersBp };
+  const xpGained = matchXp(res.roundsCleared, res.difficulty, res.won, hasKnow(p, 'scholar') ? SCHOLAR_BP : 0, ctx);
   const playerXp = p.playerXp + xpGained;
   const lv1 = levelFromXp(playerXp);
   const unlocks = LEVEL_UNLOCKS.filter((u) => u.level > lv0.level && u.level <= lv1.level);
@@ -126,21 +214,30 @@ export function applyMatch(p: Profile, resultIn: MatchResult): { profile: Profil
   }
   if (res.towerXpGained) for (const t of TOWER_TYPES) if (res.towerXpGained[t] > 0) towerXpGained[t] = res.towerXpGained[t];
 
+  // Medaillen und Bestleistung: Standard in `medals`/`best`, Zusatzmodi in `modeMedals`/`modeBest` (je Karte)
   const medals = { ...p.medals };
+  const modeMedals = { ...p.modeMedals };
+  const cur = medalsOf(p, res.map, res.mode);
   let newMedal: Difficulty | null = null;
   if (res.won) {
-    const cur = medals[res.map] ?? emptyMedals();
     if (!cur[res.difficulty]) newMedal = res.difficulty;
-    medals[res.map] = { ...cur, [res.difficulty]: true };
+    const next = { ...cur, [res.difficulty]: true };
+    if (res.mode === 'standard') medals[res.map] = next;
+    else modeMedals[res.map] = { ...modeMedals[res.map], [res.mode]: next };
   }
   const bestMap = { ...p.best };
-  const prev = bestMap[res.map]?.[res.difficulty];
+  const modeBest = { ...p.modeBest };
+  const prev = bestOf(p, res.map, res.difficulty, res.mode);
   const better = !prev || res.roundsCleared > prev.round || (res.roundsCleared === prev.round && res.livesLost < prev.livesLost);
-  if (better) bestMap[res.map] = { ...bestMap[res.map], [res.difficulty]: { round: res.roundsCleared, livesLost: res.livesLost } };
+  if (better) {
+    const rec = { round: res.roundsCleared, livesLost: res.livesLost };
+    if (res.mode === 'standard') bestMap[res.map] = { ...bestMap[res.map], [res.difficulty]: rec };
+    else modeBest[res.map] = { ...modeBest[res.map], [res.mode]: { ...modeBest[res.map]?.[res.mode], [res.difficulty]: rec } };
+  }
 
   // Embers und Inventar (Runde 12)
-  const emb = matchEmbers(res.roundsCleared, res.difficulty, res.won, newMedal !== null, lv1.level - lv0.level, hasKnow(p, 'ember-pouch') ? EMBER_POUCH_BP : 0, hasKnow(p, 'ember-rush'));
-  const embersGained = emb.rounds + emb.win + emb.medal + emb.levelUp + emb.pouch + emb.rush;
+  const emb = matchEmbers(res.roundsCleared, res.difficulty, res.won, newMedal !== null, lv1.level - lv0.level, hasKnow(p, 'ember-pouch') ? EMBER_POUCH_BP : 0, hasKnow(p, 'ember-rush'), ectx);
+  const embersGained = emb.rounds + emb.win + emb.medal + emb.levelUp + emb.pouch + emb.rush + (emb.bonus ?? 0);
   const inventory = { ...emptyInventory(), ...p.inventory };
   let powersUsed = 0;
   for (const k of POWER_KEYS) {
@@ -161,13 +258,20 @@ export function applyMatch(p: Profile, resultIn: MatchResult): { profile: Profil
     towerTiers,
     medals,
     best: bestMap,
+    modeMedals,
+    modeBest,
     seenMatches: [...p.seenMatches, res.matchId].slice(-SEEN_MATCHES_MAX),
     matchesPlayed: p.matchesPlayed + 1,
     matchesWon: p.matchesWon + (res.won ? 1 : 0),
   };
+  // Neu geoeffnete Karten und Modi (Level-Up oder Medaille)
+  const unlockedMapsNow = MAPS.filter((m) => !isMapUnlocked(p, m.id) && isMapUnlocked(profile, m.id)).map((m) => m.id);
+  const unlockedModesNow: { map: string; mode: ModeId }[] = [];
+  for (const m of MAPS) for (const mode of MODE_IDS) if (isMapUnlocked(profile, m.id) && !isModeUnlocked(p, m.id, mode) && isModeUnlocked(profile, m.id, mode)) unlockedModesNow.push({ map: m.id, mode });
   return {
     profile,
     report: {
+      map: res.map, mode: res.mode, rewardBp: rewardOf(res.map, res.mode), unlockedMaps: unlockedMapsNow, unlockedModes: unlockedModesNow,
       duplicate: false, xpGained, xpBefore: p.playerXp, xpAfter: playerXp, levelBefore: lv0.level, levelAfter: lv1.level,
       pointsGained: lv1.level - lv0.level, unlocks, newMedal, newBest: better, towerXpGained, embersGained, embers: emb, powersUsed,
     },
@@ -263,13 +367,13 @@ export function unlockEverything(p: Profile): Profile {
 
 // ---------------------------------------------------------------- Optionen fuer die Sim
 
-export type MatchOptions = Required<Pick<GameOptions, 'unlocks' | 'towerXp'>> & { powers: Record<PowerKey, number> } & { mods: NonNullable<GameOptions['mods']> };
+export type MatchOptions = Required<Pick<GameOptions, 'unlocks' | 'towerXp'>> & { powers: Record<PowerKey, number> } & { mods: NonNullable<GameOptions['mods']>; mode: ModeId };
 
 /**
- * `unlocks` + `towerXp` + `powers` (Inventar) + `mods` fuer `createGame`. `towerXp` ist das Konto (Sim fuehrt es im Match, `unlockTier` im Match),
+ * `unlocks` + `towerXp` + `powers` (Inventar) + `mods` + `mode` (Runde 15, Vorgabe `standard`) fuer `createGame`; die Karte reicht der Aufrufer selbst weiter. `towerXp` ist das Konto (Sim fuehrt es im Match, `unlockTier` im Match),
  * `mods.towerXpBp` = Fast Learner. Mit "unlock everything" ist alles frei.
  */
-export function matchOptions(p: Profile): MatchOptions {
+export function matchOptions(p: Profile, mode: ModeId = 'standard'): MatchOptions {
   const all = p.settings.unlockAll;
   const towers: (TowerType | HeroType)[] = [...TOWER_TYPES.filter((t) => isTowerUnlocked(p, t))];
   if (isTowerUnlocked(p, 'wren')) towers.push('wren');
@@ -321,7 +425,7 @@ export function matchOptions(p: Profile): MatchOptions {
   if (k('midas-hands')) mods.leadGoldAdd = 20;
   if (k('field-medic')) mods.roundLives = 1;
   if (k('sturdy-gate')) mods.gate = 1;
-  return { unlocks: { towers, maxTier }, towerXp: { ...p.towerXp }, powers: { ...emptyInventory(), ...p.inventory }, mods };
+  return { unlocks: { towers, maxTier }, towerXp: { ...p.towerXp }, powers: { ...emptyInventory(), ...p.inventory }, mods, mode };
 }
 
 export { DIFFICULTIES, KNOWLEDGE };
