@@ -6,8 +6,8 @@
 import type { Buf } from './buf';
 import type { PropArt } from './props';
 
-export type MapId = 'meadow' | 'frostfen' | 'quarry';
-export const MAP_IDS: MapId[] = ['meadow', 'frostfen', 'quarry'];
+export type MapId = 'meadow' | 'frostfen' | 'quarry' | 'dunes' | 'harbor' | 'spire';
+export const MAP_IDS: MapId[] = ['meadow', 'frostfen', 'quarry', 'dunes', 'harbor', 'spire'];
 
 export interface PlacedArt {
   prop: { kind: string; x: number; y: number; v: number; r: number };
