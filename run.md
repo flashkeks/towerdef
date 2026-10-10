@@ -17,12 +17,18 @@ Runde 15 (Kartenwahl, Modi, neue Gegner/Bosse), 15b (eine Rundenliste bis R120, 
 Runde 16 K1+K2 (sieben neue Karten gemalt + spielbar), Meta-Leiter mit zehn Karten (`meta/src/data.ts` MAPS + LEVEL_UNLOCKS).
 
 **Halb fertig — als Patches in `docs/wip/<paket>/`** (Worktree-Branches waren nur lokal). Wiederherstellen:
-`git worktree add ../wt/X -b X dev && cd ../wt/X && git am ../../towerdef/docs/wip/X/*.patch` (Basis `7f802bd`), danach `docs/wip/X` in `dev` löschen.
+`git worktree add ../wt/X -b X BASIS && cd ../wt/X && git am ../../towerdef/docs/wip/X/*.patch`, danach `docs/wip/X` in `dev` löschen.
+**Basis je Paket (geprüft 10.10.2026, Folgesitzung):** `r16e` und `r16h` → `7f802bd`, `git am` läuft sauber.
+`r16t` → **`9fd5bc9`** (K1-Zweig, vor dem Merge von 15b/K2) — auf `7f802bd` scheitert schon Patch 0001 an `sim/src/game.ts`.
+Danach `git merge dev`: 5 Konfliktblöcke (`sim/src/game.ts` 3 — `perTower`/`STRONG_RANK` brauchen beide Seiten: neue Türme
+riverkeeper/bellringer/tinker **und** die späten Schiffe dreadnought/cruiser/duskrunner aus 15b; `meta/src/progress.ts` 1,
+`meta/test/progress.test.ts` 1). Nicht `git am -3` auf `dev` versuchen, der Merge ist übersichtlicher.
 - `r16t` — Paket T (runde16.md §2/§3): Sim `placement: water`, Riverkeeper/Bellringer/Tinker, Helden bram/sela generalisiert, Meta
   (heroes, selectedHero, buyHero, heroLock, Freischaltung L4/L11/L13, Wissensknoten), Client-Platzhalter-Look. Letzter Schritt laut Agent:
   „remaining client fixes“. Offen: Tests/tsc grün ziehen, Matrix, `tuerme-r16.md` prüfen, STATUS „Runde 16 T“.
 - `r16e` — Paket E (Issue #4): ChallengeRules + Code + Sim-Regeln, Tages-Challenge + Belohnung (Meta). Offen: ein Test bei R25
-  („more iterations“), gesamter Client (Challenges-Seite, Editor, Code-Eingabe, Ergebnis), Screenshots, `docs/design/challenges.md`.
+  („more iterations“), Client **angefangen, nicht geprüft** (Patch 0003: `screens/challenges.ts`, `challenge-edit.ts`, `challenge-result.ts`,
+  `challenge-ui.ts`, `challenge.css`, `scripts/shots-r16-e.mjs`, ~720 Zeilen) — tsc/Tests/Screenshots dafür fehlen, `docs/design/challenges.md` fehlt.
 - `r16h` — Paket H: Startseite für zehn Karten (Kacheln liefen unten aus dem Bild). Nur kleiner Anfang (154 Zeilen). Ziel: ohne Scrollen
   bei 1280×720, Reiter nach Stufe oder Seiten à 5, Schloss mit Bedingung, Platz für Knopf „Challenges“.
 
