@@ -108,7 +108,7 @@ describe('Wave-Vorschau', () => {
     expect(sawCamo && sawArmor && sawEmber).toBe(true);
   });
   it('gleiche Typ/Camo-Gruppen werden in einer Zeile zusammengefasst', () => {
-    const rows = waveRows({ round: 1, rbe: 1, hasCamo: false, hasArmor: false, hasEmber: false, hasBoss: false, groups: [{ type: 'red', n: 5, camo: false }, { type: 'blue', n: 2, camo: false }, { type: 'red', n: 3, camo: false }, { type: 'red', n: 1, camo: true }] });
+    const rows = waveRows({ round: 1, rbe: 1, hasCamo: false, hasArmor: false, hasEmber: false, hasBoss: false, hasFrostling: false, hasBlimp: false, hasRegrow: false, hasFortified: false, groups: [{ type: 'red', n: 5, camo: false, regrow: false, fortified: false }, { type: 'blue', n: 2, camo: false, regrow: false, fortified: false }, { type: 'red', n: 3, camo: false, regrow: false, fortified: false }, { type: 'red', n: 1, camo: true, regrow: false, fortified: false }] });
     expect(rows.map((r) => [r.type, r.camo, r.n])).toEqual([['red', false, 8], ['blue', false, 2], ['red', true, 1]]);
   });
 });

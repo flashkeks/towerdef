@@ -14,6 +14,7 @@ export const WARNING_TEXT: Record<Warning, { name: string; tip: string }> = {
 
 export const ENEMY_NAMES: Record<EnemyKind, string> = {
   red: 'Red Glim', blue: 'Blue Glim', green: 'Green Glim', gold: 'Gold Glim', ironshell: 'Ironshell', ember: 'Emberling', brute: 'Brute', leviathan: 'Dusk Leviathan',
+  pink: 'Pink Glim', frostling: 'Frostling', crystal: 'Crystal Brute', gloomship: 'Gloomship', wyrm: 'Frost Wyrm', colossus: 'Ember Colossus',
 };
 
 export function warnings(p: RoundPreview): Warning[] {

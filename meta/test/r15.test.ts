@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   MAPS, MAP_IDS, MAP_NAMES, MODE_IDS, MODE_META, allMedalCount, applyMatch, bestOf, exportProfile, importProfile, isMapUnlocked, isModeUnlocked, knowledgePoints, loadProfile,
-  mapLock, matchEmbers, matchOptions, matchXp, maxRoundOf, medalCount, medalsOf, modeLock, newProfile, rewardFactors, unlockLevel, unlockedMaps, xpForLevel,
+  mapLock, matchEmbers, matchOptions, matchXp, maxRoundOf, medalCount, medalsOf, modeLock, newProfile, playerLevel, rewardFactors, unlockLevel, unlockedMaps, xpForLevel,
   type MatchResult, type Profile,
 } from '../src/index';
 
@@ -125,7 +125,9 @@ describe('Medaillen und Bestleistung je Karte x Schwierigkeit x Modus', () => {
     expect(knowledgePoints(p).total).toBe(2);
     p = applyMatch(p, res({ map: 'frostfen', difficulty: 'easy' })).profile;
     p = applyMatch(p, res({ matchId: 'x', mode: 'no-hero' })).profile;
-    expect(knowledgePoints(p).total).toBe(2 + 1);
+    // Level steigt durch die Matches mit; die Modus-Medaille (no-hero) zaehlt nicht, die Standard-Medaille (frostfen easy) schon
+    expect(knowledgePoints(p).total).toBe(playerLevel(p) - 1 + 1);
+    expect(allMedalCount(p)).toBe(2);
   });
   it('Idempotent je matchId (auch mit Modus)', () => {
     const a = applyMatch(newProfile(), res({ mode: 'half-cash' }));

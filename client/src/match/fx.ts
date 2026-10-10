@@ -6,6 +6,7 @@ import { Container, Sprite, Texture } from 'pixi.js';
 import { C, NAME_OF, rng } from '../pixel/map/buf';
 import { PAL, type PalName } from '../pixel/palette';
 import type { EnemyType } from '../sim';
+import { spriteType } from './enemy-look';
 import { fx as P2, ringSprite, pixelText, EXPLOSION_FRAMES, POP_FRAMES, NOVA_FRAMES, PUFF_FRAMES, FLARE_FRAMES, ZERO_FRAMES, BEAM_FRAMES, PLATE_FRAMES, STATUS_FRAMES, COIN_RISE_FRAMES, GRANT_FRAMES, DROP_FRAMES, FOCUS_FRAMES, WIND_FRAMES, WALL_GROW_FRAMES, SPLASH_FRAMES, MARK_ACID_FRAMES, BUFF_FRAMES, DEATH_BLAST_FRAMES, TRANSFORM_FRAMES, SHRINK_FRAMES, GOLD_BURST_FRAMES, type Spr } from './sprites';
 import { tex } from './textures';
 
@@ -104,7 +105,7 @@ export class FxLayer {
   }
 
   pop(x: number, y: number, etype: EnemyType): void {
-    this.anim(x, y, POP_FRAMES, (f) => P2.popShards(etype, f));
+    this.anim(x, y, POP_FRAMES, (f) => P2.popShards(spriteType(etype), f));
   }
 
   nova(x: number, y: number, radius: number): void {
