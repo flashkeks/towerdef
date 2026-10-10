@@ -18,6 +18,7 @@ Branch `r15-c` (Stand = dev `f52a95e` + Paket C). Bilder `client/docs/r15/c-*.pn
 - **Wellen-Vorschau** (`powers/wave.ts`): `waveRows` trennt Zeilen nach Regrow/Fortified (Tag in der Zeile, Sprite mit Overlay), neue Warnungen Blast-proof (Frostling), Blimp, Regrow, Fortified mit Tooltip.
 - **Pruefhilfe**: mit `?debug`/`?hooks` gibt es `window.__app = { store, go, ctx }` (Medaillen setzen, Bildschirm wechseln).
 - `scripts/smoke.mjs` an den neuen Weg angepasst (erst Kachel, dann Play). Aeltere `shots-r11..r14`-Skripte klicken noch `.diff`/`.app-play` direkt auf der Startseite und brauchen davor `.maptile[data-map="meadow"]`.
+- Pruefung: sim 255, meta 96, client 198 Tests, `tsc --noEmit` in allen drei, `npm run build`, `npm run smoke` gruen.
 - Tests: `client/test/r15-client.test.ts` (15 Tests: Gegner-Look, Wellen-Zeilen und Warnungen, Wege, Schlosstexte, Modus-Sperren, Ergebnis mit Karte/Modus).
 
 Offen / bekannt: Frostfen-Wyrm laeuft auf dem oberen Ast bei y = 40 und ragt dort ueber den Kartenrand (Sprite 60 px hoch); Karten-Malen blockiert beim ersten Start kurz den Hauptfaden (siehe Vorschaubilder); Bot-/Spieltest der Modi im Browser nur stichprobenartig (Screenshots), keine Matrix.
