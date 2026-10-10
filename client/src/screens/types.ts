@@ -1,4 +1,4 @@
-import type { Difficulty, PowerKey, TowerType } from '../../../sim/src/types';
+import type { Difficulty, ModeId, PowerKey, TowerType } from '../../../sim/src/types';
 import type { MatchReport, Profile } from '../meta';
 import type { MetaStore } from '../meta/store';
 import type { VolumeApi } from '../audio/settings';
@@ -12,6 +12,9 @@ export interface ResultInfo {
   quit: boolean;
   round: number;
   difficulty: Difficulty;
+  /** Runde 15: Karte und Modus des Matches (Anzeige und "Again") */
+  map: string;
+  mode: ModeId;
   report: MatchReport;
   /** Turm-XP vor dem Match (Anzeige der Balken). */
   towerXpBefore: Record<TowerType, number>;
@@ -26,6 +29,7 @@ export interface ResultInfo {
 
 export type Route =
   | { name: 'home' }
+  | { name: 'setup'; map: string }
   | { name: 'knowledge' }
   | { name: 'towers'; tower?: TowerType }
   | { name: 'store' }
@@ -42,8 +46,12 @@ export interface Ctx {
   sound(id: SoundId): void;
   /** Lautstaerke (Musik und Effekte getrennt), Runde 12 */
   audio: VolumeApi;
+  /** Startet ein Match auf `ctx.map` im Modus `ctx.mode` (Runde 15). */
   play(d: Difficulty): void;
   difficulty: Difficulty;
+  /** Gewaehlte Karte und Modus (bleiben fuer "Again" erhalten) */
+  map: string;
+  mode: ModeId;
 }
 
 export interface View {

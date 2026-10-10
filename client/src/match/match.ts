@@ -3,7 +3,7 @@
  * Renderer, Ton und HUD weiter und nimmt Eingaben entgegen. Keine Spielregeln hier: alles entscheidet `Game`.
  * Einstieg fuer die App: `startMatch(root, opts) -> Promise<MatchResult>`.
  */
-import { createGame, DATA, MAX_ROUND, type AbilityId, type PowerKey, type CommandResult, type Difficulty, type Game, type GameOptions, type GameState, type HeroType, type SimEvent, type TargetMode, type Tiers, type TowerType } from '../sim';
+import { createGame, DATA, MODES, modeAllows, type ModeId, type AbilityId, type PowerKey, type CommandResult, type Difficulty, type Game, type GameOptions, type GameState, type HeroType, type SimEvent, type TargetMode, type Tiers, type TowerType } from '../sim';
 import { audio } from '../audio/engine';
 import { t } from '../i18n/t';
 import { h, setClass, setText } from '../ui/dom';
@@ -11,7 +11,9 @@ import { baseRangePx, displayName, footMilli, isHero } from './info';
 import { Confirm } from './confirm';
 import { Panel, fitFigure } from './panel';
 import { SideTabs } from './side-tabs';
-import { PATH, PATH_HW } from '../pixel/map/layout';
+import { mapGeometry, type MapGeometry } from './map-info';
+import { BOSS_NAMES, isBoss } from './enemy-info';
+import type { MapId } from '../pixel/map/maps';
 import { displayName as powerName, slotUsable, trapSpot, type PowerSlot } from '../powers/info';
 import { UnlockMenu } from './unlock-menu';
 import { Renderer } from './renderer';
@@ -24,6 +26,8 @@ import './match.css';
 
 export interface StartOptions {
   map?: string;
+  /** Spielmodus (Runde 15), Vorgabe Standard */
+  mode?: ModeId;
   difficulty: Difficulty;
   seed?: number;
   unlocks?: GameOptions['unlocks'];
@@ -39,6 +43,10 @@ export interface StartOptions {
 }
 
 export interface MatchResult {
+  /** Runde 15: Karte, Modus und geschaffte Runden (bei Deflation zaehlt nur ab der Startrunde) */
+  map: string;
+  mode: ModeId;
+  roundsCleared: number;
   /** eindeutige Kennung dieses Laufs (Karte-Schwierigkeit-Seed-Startzeit), z. B. fuer die Meta-Ablage */
   matchId: string;
   won: boolean;
@@ -64,7 +72,7 @@ const KEYS_ABILITY = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
 
 export async function startMatch(root: HTMLElement, opts: StartOptions): Promise<MatchResult> {
   const seed = opts.seed ?? (Math.floor(Math.random() * 2 ** 31) | 0);
-  const game = createGame({ map: opts.map ?? 'meadow', difficulty: opts.difficulty, seed, unlocks: opts.unlocks, towerXp: opts.towerXp, mods: opts.mods, powers: opts.powers });
+  const game = createGame({ map: opts.map ?? 'meadow', mode: opts.mode ?? 'standard', difficulty: opts.difficulty, seed, unlocks: opts.unlocks, towerXp: opts.towerXp, mods: opts.mods, powers: opts.powers });
   const m = new Match(root, game, { ...opts, seed });
   await m.init();
   return m.done;
@@ -73,7 +81,8 @@ export async function startMatch(root: HTMLElement, opts: StartOptions): Promise
 class Match {
   readonly done: Promise<MatchResult>;
   private finish!: (r: MatchResult) => void;
-  private readonly r = new Renderer();
+  private readonly r: Renderer;
+  private readonly geo: MapGeometry;
   private readonly el = h('div', 'm-root');
   private board = h('div', 'm-board');
   private toasts = h('div', 'm-toasts');
@@ -117,9 +126,11 @@ class Match {
   private endTimer = 0;
 
   constructor(private readonly root: HTMLElement, private readonly game: Game, private readonly opts: StartOptions & { seed: number }) {
-    this.matchId = `${opts.map ?? 'meadow'}-${opts.difficulty}-${opts.seed}-${Date.now().toString(36)}`;
+    this.r = new Renderer((opts.map ?? 'meadow') as MapId);
+    this.geo = mapGeometry(opts.map ?? 'meadow');
+    this.matchId = `${opts.map ?? 'meadow'}-${opts.mode ?? 'standard'}-${opts.difficulty}-${opts.seed}-${Date.now().toString(36)}`;
     this.done = new Promise((res) => (this.finish = res));
-    this.panel = new Panel(game, { map: opts.map ?? 'meadow', difficulty: opts.difficulty, seed: opts.seed, unlocks: opts.unlocks, mods: opts.mods }, {
+    this.panel = new Panel(game, { map: opts.map ?? 'meadow', mode: opts.mode ?? 'standard', difficulty: opts.difficulty, seed: opts.seed, unlocks: opts.unlocks, mods: opts.mods }, {
       upgrade: (id, p) => this.buyPath(id, p),
       withdraw: (id) => this.withdraw(id),
       sell: (id) => { this.report(this.game.apply({ type: 'sell', towerId: id })); this.select(null); },
@@ -146,6 +157,7 @@ class Match {
     this.fit();
     audio.attach();
     audio.setTheme('match');
+    if (this.game.info.mode !== 'standard') this.toast(MODES[this.game.info.mode].desc, 'gain');
     window.addEventListener('keydown', this.keyHandler);
     this.bindBoard();
     this.r.setAuraProbe((id) => this.game.auraOf(id));
@@ -182,11 +194,17 @@ class Match {
     lives.append(uiIcon('heart', 3), this.livesEl);
     const cash = this.cashBox;
     cash.append(uiIcon('coin', 3), this.cashEl);
-    const map = h('div', 'm-mapname', 'Lanternfall Meadow');
+    const map = h('div', 'm-mapname', this.game.info.map in DATA.maps ? DATA.maps[this.game.info.map].name : 'Lanternfall Meadow');
+    const mode = this.game.info.mode;
+    // Modus-Hinweis neben dem Kartennamen; Deflation und Half Cash sagen dazu, was mit dem Einkommen ist
+    const chip = h('div', `m-mode mode-${mode}${mode === 'standard' ? ' hidden' : ''}`, MODES[mode].name);
+    chip.title = MODES[mode].desc;
+    if (mode === 'deflation') cash.append(h('span', 'm-income-note', 'no income'));
+    else if (mode === 'half-cash') cash.append(h('span', 'm-income-note', 'half income'));
     this.pauseBtn.append(uiIcon('pause', 2));
     this.pauseBtn.title = t('match.pause') + ' (P)';
     this.pauseBtn.onclick = () => this.setPaused(!this.paused);
-    top.append(lives, cash, this.roundEl, h('div', 'grow'), map, this.vol.el, this.pauseBtn);
+    top.append(lives, cash, this.roundEl, h('div', 'grow'), chip, map, this.vol.el, this.pauseBtn);
 
     const side = h('aside', 'm-side pxbox');
     const tw = this.tabs.towers;
@@ -239,16 +257,25 @@ class Match {
     txt.append(price);
     const key = h('kbd', 'm-key', HOTKEY[ty]);
     c.append(port, txt, key);
+    // Modus-Sperre (Runde 15) geht vor der Level-Sperre: ausgegraut mit Hinweis, welcher Modus es verbietet
+    const modeOk = modeAllows(this.game.info.mode, ty);
     const unlocked = !this.opts.unlocks || this.opts.unlocks.towers.includes(ty);
-    if (!unlocked) {
+    if (!modeOk || !unlocked) {
       c.classList.add('locked');
+      if (!modeOk) c.classList.add('mode-off');
       const lock = h('div', 'm-lock');
-      lock.append(uiIcon('lock', 3), h('span', '', this.opts.lockInfo?.[ty] ?? t('match.locked')));
+      lock.append(uiIcon('lock', 3), h('span', '', !modeOk ? this.modeLockText(ty) : this.opts.lockInfo?.[ty] ?? t('match.locked')));
       c.append(lock);
     }
     c.onclick = () => this.beginPlace(ty);
     this.cards.set(ty, c);
     return c;
+  }
+
+  /** Hinweis auf gesperrten Karten, wenn der Modus den Turm oder den Helden verbietet. */
+  private modeLockText(ty: TowerType | HeroType): string {
+    const m = MODES[this.game.info.mode];
+    return ty === 'wren' ? 'No hero in this mode' : `Not in ${m.name}`;
   }
 
   // ------------------------------------------------------------------ Aktionen
@@ -338,6 +365,7 @@ class Match {
   /** Platte im Powers-Reiter angeklickt: Knopf-Powers sofort, Ziel-Powers wechseln in den Zielmodus. */
   private pickPower(slot: PowerSlot): void {
     if (this.ended) return;
+    if (!MODES[this.game.info.mode].powers) { this.toast(t('reason.mode-locked')); audio.play('error'); return; }
     if (!slotUsable(slot)) {
       this.toast(t(slot.state === 'empty' ? 'reason.no-power' : slot.state === 'used' ? 'reason.used-this-round' : 'reason.no-hero'));
       audio.play('error');
@@ -382,7 +410,7 @@ class Match {
       this.r.setAim({ kind: 'bomb', x, y, r: DATA.powers.lanternBomb.params.radiusPx as number, ok: chk.ok });
     } else if (a.use === 'path') {
       this.r.setGhost(null);
-      const sp = trapSpot(PATH, PATH_HW, x, y);
+      const sp = this.trapSpotAny(x, y);
       this.r.setAim({ kind: a.key as 'caltrops' | 'frostTrap', x: chk.ok ? sp.x : x, y: chk.ok ? sp.y : y, ok: chk.ok });
     } else {
       this.r.setAim(null);
@@ -390,6 +418,16 @@ class Match {
       this.r.setGhost({ x, y, spr: towerSprite(ty, (DATA.powers[a.key].tiers ?? [0, 0, 0]) as Tiers, 6, 'idle0'), view: this.ghostView(ty), foot: footMilli(ty) / 1000, ok: chk.ok });
     }
     this.lastGhostReason = chk.ok ? null : chk.reason;
+  }
+
+  /** Naechster Wegpunkt ueber alle Aeste (Frostfen hat zwei), mit der Pruefung der halben Wegbreite. */
+  private trapSpotAny(x: number, y: number): { ok: boolean; x: number; y: number } {
+    let best = trapSpot(this.geo.paths[0], this.geo.halfWidth, x, y), bd = Math.hypot(best.x - x, best.y - y);
+    for (const p of this.geo.paths.slice(1)) {
+      const q = trapSpot(p, this.geo.halfWidth, x, y), d = Math.hypot(q.x - x, q.y - y);
+      if (d < bd) { best = q; bd = d; }
+    }
+    return best;
   }
 
   private pulse(el: HTMLElement, cls: string): void {
@@ -400,6 +438,7 @@ class Match {
 
   private beginPlace(ty: TowerType | HeroType | null): void {
     if (ty) this.cancelAim();
+    if (ty && !modeAllows(this.game.info.mode, ty)) { this.toast(this.modeLockText(ty)); audio.play('error'); return; }
     if (ty && this.opts.unlocks && !this.opts.unlocks.towers.includes(ty)) { this.toast(this.opts.lockInfo?.[ty] ?? t('match.locked')); audio.play('error'); return; }
     this.placing = this.placing === ty ? null : ty;
     if (this.placing) { this.select(null); this.toast(t('match.placeHint')); }
@@ -561,7 +600,7 @@ class Match {
     audio.onEvent(ev, st.towers);
     switch (ev.type) {
       case 'roundStart':
-        this.banner(t('match.round', { n: ev.round, max: MAX_ROUND }), ev.round === MAX_ROUND ? t('match.bossIncoming') : '');
+        this.banner(t('match.round', { n: ev.round, max: this.game.info.maxRound }), this.bossLine(ev.round));
         break;
       case 'upgrade': {
         const prev = this.tiersSeen.get(ev.tower) ?? [0, 0, 0];
@@ -592,13 +631,19 @@ class Match {
     }
   }
 
+  /** Unterzeile des Rundenbanners: "<Boss> approaches", wenn die Runde einen Boss hat. */
+  private bossLine(round: number): string {
+    const boss = this.game.roundPreview(round)?.groups.find((g) => isBoss(g.type));
+    return boss ? t('match.bossIncoming', { name: BOSS_NAMES[boss.type] ?? 'A boss' }) : '';
+  }
+
   private onGameOver(won: boolean): void {
     if (this.ended) return;
     this.ended = true;
     const box = h('div', `ov-box ${won ? 'won' : 'lost'}`);
     const cont = h('button', 'm-start small', t('match.continue'));
     cont.onclick = () => this.end(false);
-    box.append(h('div', 'ov-t', t(won ? 'match.victory' : 'match.defeat')), h('div', 'ov-s', t('match.round', { n: this.game.state.round, max: MAX_ROUND })), cont);
+    box.append(h('div', 'ov-t', t(won ? 'match.victory' : 'match.defeat')), h('div', 'ov-s', t('match.round', { n: this.game.state.round, max: this.game.info.maxRound })), cont);
     this.overlay.replaceChildren(box);
     this.overlay.classList.remove('hidden');
     this.endTimer = window.setTimeout(() => this.end(false), 6000);
@@ -607,7 +652,7 @@ class Match {
   private hud(st: GameState): void {
     setText(this.livesEl, String(st.lives));
     setText(this.cashEl, String(st.cash));
-    setText(this.roundEl, t('match.round', { n: Math.max(st.round, 0), max: MAX_ROUND }));
+    setText(this.roundEl, t('match.round', { n: Math.max(st.round, 0), max: this.game.info.maxRound }));
     this.startBtn.disabled = this.ended;
     setClass(this.autoBtn, 'on', st.autoStart);
     setClass(this.cashBox, 'oil', st.oilRound > 0 && st.round <= st.oilRound);
@@ -654,6 +699,9 @@ class Match {
     const st = this.game.state;
     const result: MatchResult = {
       matchId: this.matchId,
+      map: this.opts.map ?? 'meadow',
+      mode: this.game.info.mode,
+      roundsCleared: st.roundsCleared,
       won: st.phase === 'won',
       round: st.round,
       difficulty: this.opts.difficulty,

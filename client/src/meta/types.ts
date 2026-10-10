@@ -3,9 +3,9 @@
  * P3 liefert (Stand wip): { won, round, difficulty, seed, livesLeft, pops, upgrades[], ticks, quit }.
  * Optionale Felder `roundsCleared`, `livesLost`, `matchId` werden bevorzugt, wenn P3 sie genau liefert.
  */
-import type { Difficulty, GameOptions, HeroType, PowerKey, Tiers, TowerType } from '../../../sim/src/types';
+import type { Difficulty, GameOptions, HeroType, ModeId, PowerKey, Tiers, TowerType } from '../../../sim/src/types';
 import { DATA } from '../../../sim/src/data';
-import { MAX_ROUND, type MatchResult } from '../../../meta/src/index';
+import { maxRoundOf, type MatchResult } from '../../../meta/src/index';
 
 export interface MatchOutcome {
   won: boolean;
@@ -34,6 +34,8 @@ export interface MatchOutcome {
 /** Optionen, die die Bildschirme an `startMatch` geben (Obermenge der P3-`StartOptions`). */
 export interface MatchStartOptions {
   map: string;
+  /** Spielmodus (Runde 15) */
+  mode: ModeId;
   difficulty: Difficulty;
   unlocks: GameOptions['unlocks'];
   mods: GameOptions['mods'];
@@ -47,12 +49,12 @@ export interface MatchStartOptions {
 
 export type StartMatch = (root: HTMLElement, opts: MatchStartOptions) => Promise<MatchOutcome>;
 
-export function toMetaResult(o: MatchOutcome, ctx: { matchId: string; map: string; startLives: number }): MatchResult {
-  const roundsCleared = Math.max(0, Math.min(9999, o.roundsCleared ?? (o.won ? Math.min(o.round, MAX_ROUND) : o.round - 1)));
+export function toMetaResult(o: MatchOutcome, ctx: { matchId: string; map: string; mode?: ModeId; startLives: number }): MatchResult {
+  const roundsCleared = Math.max(0, Math.min(9999, o.roundsCleared ?? (o.won ? Math.min(o.round, maxRoundOf(ctx.map)) : o.round - 1)));
   const livesLost = Math.max(0, Math.min(9999, Math.round(o.livesLost ?? ctx.startLives - o.livesLeft)));
   const pops: MatchResult['pops'] = {};
   for (const [k, v] of Object.entries(o.pops)) pops[k as keyof MatchResult['pops']] = Math.max(0, Math.floor(v ?? 0));
-  return { matchId: o.matchId ?? ctx.matchId, map: ctx.map, difficulty: o.difficulty, won: o.won, roundsCleared, livesLost, pops, towerXp: o.towerXp, towerTiers: o.towerTiers, towerXpGained: o.towerXpGained, powersUsed: o.powersUsed };
+  return { matchId: o.matchId ?? ctx.matchId, map: ctx.map, mode: ctx.mode ?? 'standard', difficulty: o.difficulty, won: o.won, roundsCleared, livesLost, pops, towerXp: o.towerXp, towerTiers: o.towerTiers, towerXpGained: o.towerXpGained, powersUsed: o.powersUsed };
 }
 
 /** Leben zu Beginn: Schwierigkeit + Wissensbaum (`mods.lives`). */

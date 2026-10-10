@@ -7,7 +7,9 @@
 import { Application, Container, Sprite, Texture } from 'pixi.js';
 import { Buf, C, NAME_OF, bayer, rng } from '../pixel/map/buf';
 import { meadowArt } from '../pixel/map/compose';
-import { flagFrame, MILL_STEPS, WATER_FRAMES, windmillBlades } from '../pixel/map/paint';
+import { mapArt, type MapId } from '../pixel/map/maps';
+import { ambientPoints } from '../pixel/map/ambient';
+import { flagFrame, MILL_STEPS, windmillBlades } from '../pixel/map/paint';
 import { PAL } from '../pixel/palette';
 import { type EnemyState, type EnemyType, type GameState, type ProjectileState, type PuddleState, type SimEvent, type TowerAura, type TowerBuff, type TowerState, type WallState } from '../sim';
 import { glowKind, monsterScale, wallWear, zoneView, type GlowKind } from './r14';
@@ -16,8 +18,8 @@ import { FxLayer, FRAMES } from './fx';
 import { footMilli } from './info';
 import { TRAP_W, monsterSprite, bigHeart, bombLantern, bubbleSprite, coinSprite, trapSprite, discSprite, enemySprite, fx as P2, heroSprite, projectileSprite, ringSprite, shadowSprite, heroMuzzle, towerMuzzle, towerSprite, type HeroFrame, type Spr, type TowerFrame } from './sprites';
 import { tex } from './textures';
-import { spriteType } from './enemy-look';
-import { PATH } from '../pixel/map/layout';
+import { ENEMY_LOOK, spriteStage } from './enemy-info';
+import { mapGeometry, type MapGeometry } from './map-info';
 import { TRAP_CHARGES, trapPieces } from '../powers/info';
 import type { PowerKey, TrapState } from '../sim';
 
@@ -29,9 +31,13 @@ const R = rng(77);
 const SHARD_COL: Partial<Record<EnemyType, number[]>> = {
   red: [C.red, C.crimson, C.coral], blue: [C.sky, C.navy, C.ice], green: [C.leaf, C.grass, C.yellow], gold: [C.amber, C.yellow, C.orange],
   ironshell: [C.stone, C.silver, C.slate], ember: [C.orange, C.yellow, C.red], brute: [C.slate, C.dusk, C.stone], leviathan: [C.navy, C.stone, C.sky],
+  pink: [C.orchid, C.coral, C.peach], frostling: [C.plum, C.violet, C.ice], crystal: [C.navy, C.sky, C.ice], gloomship: [C.night, C.violet, C.orchid],
+  wyrm: [C.ice, C.white, C.sky, C.navy], colossus: [C.red, C.orange, C.yellow, C.slate],
 };
+/** Gegner, die beim Platzen groessere Scherben werfen */
+const BIG_SHARDS = new Set<EnemyType>(['brute', 'leviathan', 'crystal', 'gloomship', 'wyrm', 'colossus']);
 
-interface TowerView { spr: Sprite; shadow: Sprite; key: string; drop: number; up: number; tiers: string; kick: number; flag?: Sprite; zone?: Sprite; glow?: Sprite; mon: boolean; hide: number }
+interface TowerView { ice?: Sprite; spr: Sprite; shadow: Sprite; key: string; drop: number; up: number; tiers: string; kick: number; flag?: Sprite; zone?: Sprite; glow?: Sprite; mon: boolean; hide: number }
 interface EnemyView { vine?: Sprite; vol?: Sprite; bub?: Sprite; mark?: Sprite; spr: Sprite; shadow: Sprite; key: string; px: number; py: number; cx: number; cy: number; flash: number; flip: boolean; bar?: Sprite; barBg?: Sprite }
 interface WallView { spr: Sprite; x: number; y: number; hide: number }
 interface PuddleView { spr: Sprite; x: number; y: number; r: number }
@@ -93,7 +99,12 @@ export class Renderer {
   private flashSpr!: Sprite;
   private mill!: Sprite;
   private flagSprs: Sprite[] = [];
-  private lampGlows: { s: Sprite; base: number; ph: number }[] = [];
+  private lampGlows: { s: Sprite; base: number; ph: number; pulse: boolean }[] = [];
+  /** Luftteilchen (Schnee, Funken, Dunst) als Sprite-Pool ueber allem */
+  private ambC = new Container();
+  private ambPool: Sprite[] = [];
+  private geo: MapGeometry;
+  private art: ReturnType<typeof mapArt>;
   private flies: { s: Sprite; g: Sprite; x: number; y: number; ph: number; sp: number; ax: number; ay: number }[] = [];
   private smokes: { parts: Sprite[]; x: number; y: number }[] = [];
   private beams: Sprite | null = null;
@@ -117,6 +128,11 @@ export class Renderer {
   private shakeOff = { x: 0, y: 0 };
   scale = 1;
 
+  constructor(readonly mapId: MapId = 'meadow') {
+    this.geo = mapGeometry(mapId);
+    this.art = mapArt(mapId);
+  }
+
   async init(host: HTMLElement): Promise<void> {
     this.app = new Application();
     await this.app.init({ width: VIEW_W, height: VIEW_H, antialias: false, resolution: 1, backgroundColor: hex(C.ink), autoStart: false, roundPixels: true, preference: 'webgl' });
@@ -124,7 +140,7 @@ export class Renderer {
     this.canvasEl.className = 'm-canvas';
     host.prepend(this.canvasEl);
     const st = this.app.stage;
-    st.addChild(this.mapC, this.trapC, this.shadowC, this.worldC, this.projC, this.fxHost, this.lightC, this.uiC);
+    st.addChild(this.mapC, this.trapC, this.shadowC, this.worldC, this.projC, this.fxHost, this.lightC, this.ambC, this.uiC);
     this.worldC.sortableChildren = true;
     this.buildMap();
     this.flashSpr = new Sprite(Texture.WHITE);
@@ -139,10 +155,11 @@ export class Renderer {
   }
 
   private buildMap(): void {
-    const art = meadowArt();
+    const art = this.art;
+    const meadow = this.mapId === 'meadow' ? meadowArt() : null;
     const ground = new Sprite(tex(art.ground.toCanvas()));
     this.mapC.addChild(ground);
-    this.waterFrames = art.water.map((w) => tex(w.toCanvas()));
+    this.waterFrames = art.anim.map((w) => tex(w.toCanvas()));
     this.waterSpr.texture = this.waterFrames[0];
     this.mapC.addChild(this.waterSpr);
     this.mapC.addChild(new Sprite(tex(art.deco.toCanvas())));
@@ -152,36 +169,40 @@ export class Renderer {
       s.zIndex = prop.y;
       this.worldC.addChild(s);
     }
-    // Windmuehle, Fahnen, Rauch, Lichter
+    // Windmuehle und Fahnen gibt es nur auf der Wiese
     this.millFrames = Array.from({ length: MILL_STEPS }, (_, i) => tex(windmillBlades(i).toCanvas()));
     this.mill = new Sprite(this.millFrames[0]);
-    this.mill.position.set(art.mill.x - 30, art.mill.y - 30);
-    this.mill.zIndex = art.mill.y + 40;
-    this.worldC.addChild(this.mill);
     this.flagFrames = Array.from({ length: 4 }, (_, i) => tex(flagFrame(i).toCanvas()));
-    for (const f of art.flags) {
-      const s = new Sprite(this.flagFrames[0]);
-      s.position.set(f.x + 1, f.y - 1);
-      s.zIndex = f.y + 60;
-      this.worldC.addChild(s);
-      this.flagSprs.push(s);
+    if (meadow) {
+      this.mill.position.set(meadow.mill.x - 30, meadow.mill.y - 30);
+      this.mill.zIndex = meadow.mill.y + 40;
+      this.worldC.addChild(this.mill);
+      for (const f of meadow.flags) {
+        const s = new Sprite(this.flagFrames[0]);
+        s.position.set(f.x + 1, f.y - 1);
+        s.zIndex = f.y + 60;
+        this.worldC.addChild(s);
+        this.flagSprs.push(s);
+      }
     }
     for (const sm of art.smoke) {
       const parts = Array.from({ length: 3 }, () => {
         const p = new Sprite(Texture.WHITE);
-        p.width = p.height = 2; p.tint = hex(C.silver);
+        p.width = p.height = 2; p.tint = hex(this.mapId === 'quarry' ? C.stone : C.silver);
         this.fxHost.addChild(p);
         return p;
       });
       this.smokes.push({ parts, x: sm.x, y: sm.y });
     }
     for (const l of art.lights) {
-      const g = new Sprite(tex(glowCanvas(l.r, l.warm ? C.yellow : C.ice)));
+      const col = l.col ? C[l.col] : l.warm ? C.yellow : C.ice;
+      const g = new Sprite(tex(glowCanvas(l.r, col)));
       g.anchor.set(0.5); g.position.set(l.x, l.y);
       g.alpha = l.warm ? 0.32 : 0.28;
       this.lightC.addChild(g);
-      this.lampGlows.push({ s: g, base: g.alpha, ph: R() * 6 });
+      this.lampGlows.push({ s: g, base: g.alpha, ph: R() * 6, pulse: l.flicker === 'pulse' });
     }
+    if (!meadow) return;
     const flyGlow = tex(glowCanvas(4, C.yellow));
     for (let i = 0; i < 22; i++) {
       const west = i < 6;
@@ -330,7 +351,7 @@ export class Renderer {
     this.lastTick = state.tick;
     const seenT = new Set<number>();
     for (const t of state.towers) { seenT.add(t.id); this.syncTower(t); }
-    for (const [id, v] of this.towers) if (!seenT.has(id)) { v.spr.destroy(); v.shadow.destroy(); v.flag?.destroy(); v.zone?.destroy(); v.glow?.destroy(); this.towers.delete(id); this.auraOf.delete(id); this.glowOf.delete(id); }
+    for (const [id, v] of this.towers) if (!seenT.has(id)) { v.spr.destroy(); v.shadow.destroy(); v.ice?.destroy(); v.flag?.destroy(); v.zone?.destroy(); v.glow?.destroy(); this.towers.delete(id); this.auraOf.delete(id); this.glowOf.delete(id); }
     if (this.auraProbe && (newTick && state.tick % 12 === 0 || this.auraOf.size !== state.towers.length)) {
       for (const t of state.towers) this.auraOf.set(t.id, t.type !== 'market' && hasAura(this.auraProbe(t.id)));
     }
@@ -430,11 +451,12 @@ export class Renderer {
 
   private animateMap(): void {
     const t = this.now;
-    this.waterSpr.texture = this.waterFrames[Math.floor(t / 170) % WATER_FRAMES];
-    this.mill.texture = this.millFrames[Math.floor(t / 260) % MILL_STEPS];
+    this.waterSpr.texture = this.waterFrames[Math.floor(t / this.art.animMs) % this.waterFrames.length];
+    if (this.mapId === 'meadow') this.mill.texture = this.millFrames[Math.floor(t / 260) % MILL_STEPS];
     const ff = this.flagFrames[Math.floor(t / 150) % 4];
     for (const f of this.flagSprs) f.texture = ff;
-    for (const g of this.lampGlows) g.s.alpha = g.base * (0.82 + 0.18 * Math.sin(t / 130 + g.ph) * Math.sin(t / 47 + g.ph * 2));
+    for (const g of this.lampGlows) g.s.alpha = g.pulse ? g.base * (0.7 + 0.3 * Math.sin(t / 420 + g.ph)) : g.base * (0.82 + 0.18 * Math.sin(t / 130 + g.ph) * Math.sin(t / 47 + g.ph * 2));
+    this.animateAmbient(t);
     for (const f of this.flies) {
       const a = t / 1000 * f.sp + f.ph;
       const x = Math.round(f.x + Math.sin(a * 1.3) * f.ax), y = Math.round(f.y + Math.sin(a * 0.9 + 1) * f.ay);
@@ -456,6 +478,23 @@ export class Renderer {
       this.shakeOff = { x: ox, y: oy };
       this.app.stage.position.set(ox, oy);
     }
+  }
+
+  /** Schnee, Funken und Dunst: Teilchen aus `ambientPoints` (rein rechnerisch) auf einen Sprite-Pool legen. */
+  private animateAmbient(t: number): void {
+    if (this.mapId === 'meadow') return;
+    const pts = ambientPoints(this.mapId, t);
+    for (let i = 0; i < pts.length; i++) {
+      let s = this.ambPool[i];
+      if (!s) { s = new Sprite(Texture.WHITE); this.ambPool.push(s); this.ambC.addChild(s); }
+      const p = pts[i];
+      s.visible = true;
+      s.tint = hex(p.c);
+      s.width = p.w; s.height = p.h ?? p.w;
+      s.alpha = p.kind === 'haze' ? Math.min(0.22, p.a * 2.8) : p.a;
+      s.position.set(p.x, p.y);
+    }
+    for (let i = pts.length; i < this.ambPool.length; i++) this.ambPool[i].visible = false;
   }
 
   private towerSpr(t: TowerState): Spr {
@@ -498,6 +537,15 @@ export class Renderer {
     if (v.mon && !monster) { this.fx.puff(x, y - 6, null); this.fx.burst(x, y - 14, [C.leaf, C.grass, C.stone], 8, 1.4, 2, 0.04, 18); }
     v.mon = monster;
     v.spr.visible = this.now >= v.hide;
+    // Frost Wyrm: Eisblock ueber dem eingefrorenen Turm (die Sim fuehrt `frozen`), flackert kurz vor dem Auftauen
+    if (t.frozen > 0) {
+      if (!v.ice) { v.ice = new Sprite(); this.worldC.addChild(v.ice); }
+      const is = P2.towerFrozen(Math.floor(this.now / 160));
+      v.ice.texture = tex(is.canvas);
+      v.ice.position.set(x - is.ax, y - is.ay);
+      v.ice.zIndex = y + 2;
+      v.ice.alpha = t.frozen < 30 && (Math.floor(this.now / 90) & 1) ? 0.45 : 1;
+    } else if (v.ice) { v.ice.destroy(); v.ice = undefined; }
     const sw = monster ? (t.type === 'alchemist' ? 34 : 20) : t.type === 'market' ? 18 + top * 2 : 16;
     v.shadow.texture = shadowTex(sw, 5);
     v.shadow.position.set(x - sw / 2 - 1, y - 3);
@@ -547,19 +595,20 @@ export class Renderer {
     }
     const x = Math.round(v.px + (v.cx - v.px) * alpha), y = Math.round(v.py + (v.cy - v.py) * alpha);
     const hitFlash = this.now < v.flash;
-    const fr = (Math.floor(this.now / (e.type === 'gold' ? 110 : 170)) + e.id) & 3;
+    const look = ENEMY_LOOK[e.type];
+    const fr = (Math.floor(this.now / (e.type === 'gold' || e.type === 'pink' ? 110 : look.top > 45 ? 220 : 170)) + e.id) & 3;
     const camo = e.camo && !e.revealed;
-    const s = enemySprite(spriteType(e.type), fr, { camo: e.camo, damageStage: e.damageStage, hitFlash, flip: v.flip });
+    const s = enemySprite(e.type, fr, { camo: e.camo, damageStage: spriteStage(e), hitFlash, flip: v.flip, regrow: e.regrowTo !== null, fortified: e.fortified });
     v.spr.texture = tex(s.canvas);
     v.spr.position.set(x - s.ax, y - s.ay + (e.type === 'leviathan' ? Math.round(Math.sin(this.now / 400) * 2) - 8 : 0));
-    v.spr.zIndex = y + (e.type === 'leviathan' ? 40 : 0);
+    v.spr.zIndex = y + look.lift;
     v.spr.alpha = camo ? 0.55 + 0.2 * Math.sin(this.now / 90 + e.id) : 1;
-    v.spr.tint = e.frozenTicks > 0 ? hex(C.ice) : e.vineTicks > 0 ? 0xffffff : e.stunTicks > 0 ? hex(C.yellow) : e.goldTicks > 0 ? hex(C.sand) : e.slowBp > 0 && e.slowTicks > 0 ? hex(C.silver) : 0xffffff;
+    v.spr.tint = e.frozenTicks > 0 ? hex(C.ice) : e.vineTicks > 0 ? 0xffffff : e.stunTicks > 0 ? hex(C.yellow) : e.goldTicks > 0 ? hex(C.sand) : e.hasteTicks > 0 ? hex(C.peach) : e.slowBp > 0 && e.slowTicks > 0 ? hex(C.silver) : 0xffffff;
     if (this.latest && this.latest.warpLeft > 0) {
       if (!v.bub) { v.bub = new Sprite(); this.fxHost.addChild(v.bub); }
-      const bs = bubbleSprite(Math.floor(this.now / 200) + e.id, e.type === 'leviathan' ? 22 : e.type === 'brute' ? 11 : 8);
+      const bs = bubbleSprite(Math.floor(this.now / 200) + e.id, Math.max(8, Math.round(look.top / 2.1)));
       v.bub.texture = tex(bs.canvas);
-      v.bub.position.set(x - bs.ax, y - bs.ay - (e.type === 'leviathan' ? 14 : 5));
+      v.bub.position.set(x - bs.ax, y - bs.ay - Math.round(look.top * 0.3));
       v.bub.alpha = 0.9;
     } else if (v.bub) { v.bub.destroy(); v.bub = undefined; }
     // Ranken-Fessel (Vine Snare): Ranken um die Fuesse, solange die Sim den Gegner festhaelt
@@ -576,29 +625,37 @@ export class Renderer {
       if (!v.vol) { v.vol = new Sprite(); this.fxHost.addChild(v.vol); }
       const as = P2.acidMark(Math.floor(this.now / 130));
       v.vol.texture = tex(as.canvas);
-      v.vol.position.set(x - as.ax, y - as.ay - (e.type === 'leviathan' ? 46 : e.type === 'brute' ? 26 : 14));
+      v.vol.position.set(x - as.ax, y - as.ay - look.top);
     } else if (v.vol) { v.vol.destroy(); v.vol = undefined; }
     // Crippling Shot: rotes Fadenkreuz ueber dem Ziel, solange die Sim die Markierung fuehrt
     if (isMarked(e)) {
       if (!v.mark) { v.mark = new Sprite(); this.fxHost.addChild(v.mark); }
       const ms = P2.bossMark(Math.floor(this.now / 110));
       v.mark.texture = tex(ms.canvas);
-      v.mark.position.set(x - ms.ax, y - ms.ay - (e.type === 'leviathan' ? 52 : e.type === 'brute' ? 30 : 22));
+      v.mark.position.set(x - ms.ax, y - ms.ay - look.top - 6);
       v.mark.alpha = e.markTicks < 30 && (Math.floor(this.now / 90) & 1) ? 0.4 : 1;
     } else if (v.mark) { v.mark.destroy(); v.mark = undefined; }
-    const sw = e.type === 'leviathan' ? 40 : e.type === 'brute' ? 16 : 9, sh = e.type === 'leviathan' ? 10 : e.type === 'brute' ? 5 : 3;
-    v.shadow.texture = shadowTex(sw, sh);
-    v.shadow.alpha = e.type === 'leviathan' ? 0.8 : 1;
-    v.shadow.position.set(x - sw / 2 - 1, y - sh / 2 - 1 + (e.type === 'leviathan' ? 8 : 0));
-    if (e.type === 'leviathan' || (e.type === 'brute' && e.hp < e.maxHp)) {
+    // Schatten: Gloomship schwebt, sein Schatten liegt am Boden unter dem Anker (eigener Sprite, 35 % Alpha eingebaut)
+    if (e.type === 'gloomship') {
+      const gs = P2.gloomShadow(Math.floor(this.now / 200));
+      v.shadow.texture = tex(gs.canvas);
+      v.shadow.alpha = 1;
+      v.shadow.position.set(x - gs.ax, y - gs.ay);
+    } else {
+      const [sw, sh] = look.shadow;
+      v.shadow.texture = shadowTex(sw, sh);
+      v.shadow.alpha = e.type === 'leviathan' ? 0.8 : 1;
+      v.shadow.position.set(x - sw / 2 - 1, y - sh / 2 - 1 + (e.type === 'leviathan' ? 8 : 0));
+    }
+    if (look.bar > 0 && (look.barAlways || e.hp < e.maxHp)) {
       if (!v.bar) {
         v.barBg = new Sprite(Texture.WHITE); v.barBg.tint = hex(C.ink); v.barBg.height = 4;
         v.bar = new Sprite(Texture.WHITE); v.bar.tint = hex(C.red); v.bar.height = 2;
         this.fxHost.addChild(v.barBg, v.bar);
       }
-      const w = e.type === 'leviathan' ? 40 : 14;
+      const w = look.bar;
       v.barBg!.width = w + 2;
-      v.barBg!.position.set(x - w / 2 - 1, y - (e.type === 'leviathan' ? 34 : 18));
+      v.barBg!.position.set(x - w / 2 - 1, y - look.barY);
       v.bar.width = Math.max(1, Math.round((w * e.hp) / e.maxHp));
       v.bar.position.set(x - w / 2, v.barBg!.y + 1);
     }
@@ -726,13 +783,23 @@ export class Renderer {
       }
       case 'blocked': {
         fx.burst(m(ev.x), m(ev.y) - 3, [C.silver, C.stone], 4, 1.4, 1, 0.05, 10);
-        fx.float(m(ev.x), m(ev.y) - 12, ev.reason === 'armor' ? 'TINK' : 'IMMUNE', C.silver, 22, 0.3);
+        fx.float(m(ev.x), m(ev.y) - 12, ev.reason === 'armor' ? 'TINK' : ev.reason === 'explosion' ? 'NO BLAST' : 'IMMUNE', ev.reason === 'explosion' ? C.ice : C.silver, 22, 0.3);
         break;
       }
       case 'pop': {
         const x = m(ev.x), y = m(ev.y);
         fx.pop(x, y - 4, ev.etype);
-        if (ev.etype === 'brute' || ev.etype === 'leviathan') fx.burst(x, y - 6, SHARD_COL[ev.etype] ?? SHARD_COL.brute!, 12, 1.8, 2, 0.07, 22);
+        if (BIG_SHARDS.has(ev.etype)) fx.burst(x, y - 6, SHARD_COL[ev.etype] ?? SHARD_COL.brute!, 12, 1.8, 2, 0.07, 22);
+        if (ev.etype === 'gloomship') {
+          // Absturz: das Schiff schlaegt am Boden unter sich ein
+          fx.anim(x, y, FRAMES.GLOOM_CRASH_FRAMES, (f) => P2.gloomCrash(f), { per: 3 });
+          fx.shake.t = 10; fx.shake.amp = 2;
+        } else if (ev.etype === 'wyrm' || ev.etype === 'colossus') {
+          fx.anim(x, y, FRAMES.BOSS_DEATH_FRAMES, (f) => P2.bossDeath(ev.etype as 'wyrm' | 'colossus', f), { per: 3 });
+          fx.shake.t = 30; fx.shake.amp = 3;
+          fx.flash(ev.etype === 'wyrm' ? C.ice : C.orange, 0.4);
+          fx.float(x, y - 70, ev.etype === 'wyrm' ? 'WYRM SLAIN' : 'COLOSSUS SLAIN', C.yellow, 70, 0.3);
+        }
         if (ev.cash >= 3) fx.float(x, y - 14, `+${ev.cash}`, C.yellow, 30, 0.4);
         break;
       }
@@ -847,7 +914,7 @@ export class Renderer {
       }
       case 'shrink': {
         const x = m(ev.x), y = m(ev.y);
-        fx.anim(x, y, FRAMES.SHRINK_FRAMES, (f) => P2.shrink(spriteType(ev.from), f), { per: 3 });
+        fx.anim(x, y, FRAMES.SHRINK_FRAMES, (f) => P2.shrink(ev.from, f), { per: 3 });
         if (ev.cash >= 3) fx.float(x, y - 22, `+${ev.cash}`, C.yellow, 30, 0.4);
         break;
       }
@@ -873,10 +940,11 @@ export class Renderer {
       }
       case 'gate': {
         fx.flash(C.leaf, 0.2);
-        fx.ring(628, 160, 3, 26, C.leaf, 18);
-        fx.ring(628, 160, 2, 16, C.white, 12);
-        fx.burst(624, 158, [C.leaf, C.white, C.silver], 12, 1.8, 2, 0.03, 22);
-        fx.float(600, 138, 'GATE HELD', C.leaf, 56, 0.3);
+        const ex = this.geo.exit;
+        fx.ring(ex.x, ex.y, 3, 26, C.leaf, 18);
+        fx.ring(ex.x, ex.y, 2, 16, C.white, 12);
+        fx.burst(ex.x - 4, ex.y - 2, [C.leaf, C.white, C.silver], 12, 1.8, 2, 0.03, 22);
+        fx.float(ex.x - 28, ex.y - 22, 'GATE HELD', C.leaf, 56, 0.3);
         break;
       }
       case 'status': {
@@ -905,21 +973,21 @@ export class Renderer {
         if (kind === 'acid') {
           fx.anim(0, 0, FRAMES.MARK_ACID_FRAMES, (f) => P2.acidMark(f), {
             per: 4, loop: 3,
-            follow: () => { const v = this.enemies.get(id); return v ? { x: v.cx, y: v.cy - (etype === 'leviathan' ? 46 : etype === 'brute' ? 26 : 14) } : null; },
+            follow: () => { const v = this.enemies.get(id); return v ? { x: v.cx, y: v.cy - ENEMY_LOOK[etype].top } : null; },
           });
           break;
         }
         const dur = kind === 'freeze' ? 60 : kind === 'stun' ? 30 : kind === 'burn' ? 36 : kind === 'reveal' ? 20 : 16;
-        fx.anim(0, 0, FRAMES.STATUS_FRAMES, (f) => P2.status(kind, f, spriteType(etype)), {
+        fx.anim(0, 0, FRAMES.STATUS_FRAMES, (f) => P2.status(kind, f, etype), {
           per: 4, loop: Math.max(1, Math.round(dur / (FRAMES.STATUS_FRAMES * 4))),
-          follow: () => { const v = this.enemies.get(id); return v ? { x: v.cx, y: v.cy - (kind === 'freeze' ? 6 : etype === 'leviathan' ? 40 : etype === 'brute' ? 24 : 16) } : null; },
+          follow: () => { const v = this.enemies.get(id); return v ? { x: v.cx, y: v.cy - (kind === 'freeze' ? 6 : Math.round(ENEMY_LOOK[etype].top * 0.93) + 1) } : null; },
         });
         break;
       }
       case 'leak': {
         fx.shake.t = 10; fx.shake.amp = 2; fx.flash(C.red, 0.3);
-        fx.anim(628, 160, 6, (f) => P2.leak(f), { per: 3 });
-        fx.float(618, 140, `-${ev.lives}`, C.red, 40, 0.5);
+        fx.anim(this.geo.exit.x, this.geo.exit.y, 6, (f) => P2.leak(f), { per: 3 });
+        fx.float(this.geo.exit.x - 10, this.geo.exit.y - 20, `-${ev.lives}`, C.red, 40, 0.5);
         break;
       }
       case 'place': {
@@ -972,11 +1040,52 @@ export class Renderer {
       case 'roundEnd': if (ev.bonus) fx.float(320, 28, `+${ev.bonus}`, C.yellow, 50, 0.3); break;
       case 'bossStage': {
         const p = this.enemyPos(ev.enemy);
-        fx.shake.t = 16; fx.shake.amp = 2; fx.flash(C.white, 0.35);
+        const bt = this.latest?.enemies.find((q) => q.id === ev.enemy)?.type;
+        fx.shake.t = 16; fx.shake.amp = 2; fx.flash(bt === 'wyrm' ? C.ice : bt === 'colossus' ? C.orange : C.white, 0.35);
         if (p) {
           fx.anim(p.x, p.y - 20, FRAMES.PLATE_FRAMES, (f) => P2.bossPlate(f, ev.stage % 2 ? 1 : -1), { per: 3 });
-          fx.burst(p.x, p.y - 20, [C.slate, C.stone, C.silver, C.navy], 14, 2.2, 3, 0.08, 28);
+          fx.burst(p.x, p.y - 20, bt === 'wyrm' ? [C.ice, C.white, C.sky, C.navy] : bt === 'colossus' ? [C.orange, C.red, C.slate, C.stone] : [C.slate, C.stone, C.silver, C.navy], 14, 2.2, 3, 0.08, 28);
         }
+        break;
+      }
+      case 'regrow': {
+        // Eine Schicht waechst nach: Blaetter ranken um den Gegner, der Sprite hat die neue Huelle schon
+        fx.anim(m(ev.x), m(ev.y), FRAMES.REGROW_FRAMES, (f) => P2.regrow(ev.to, f), { per: 3 });
+        break;
+      }
+      case 'bossBreath': {
+        // Frosthauch: Ring um den Wyrm, Eis fliegt zu den getroffenen Tuermen (der Eisblock kommt aus `TowerState.frozen`)
+        const x = m(ev.x), y = m(ev.y), r = Math.round(m(ev.radius));
+        fx.anim(x, y - 8, FRAMES.FROST_BREATH_FRAMES, (f) => P2.frostBreath(f, r), { per: 4 });
+        fx.flash(C.ice, 0.14);
+        fx.shake.t = 8; fx.shake.amp = 1;
+        fx.float(x, y - 66, 'FROST BREATH', C.ice, 50, 0.3);
+        for (const id of ev.towers) {
+          const t = this.latest?.towers.find((q) => q.id === id);
+          if (t) fx.burst(m(t.x), m(t.y) - 12, [C.ice, C.white, C.sky], 8, 1.4, 2, 0.03, 18);
+        }
+        break;
+      }
+      case 'towerFrozen': {
+        const t = this.latest?.towers.find((q) => q.id === ev.tower);
+        if (t) fx.float(m(t.x), m(t.y) - 40, 'FROZEN', C.ice, 30, 0.3);
+        break;
+      }
+      case 'bossSpit': {
+        const x = m(ev.x), y = m(ev.y);
+        fx.burst(x, y - 24, [C.ice, C.white, C.sky, C.plum], 16, 2.2, 2, 0.05, 24);
+        fx.ring(x, y - 12, 3, 28, C.ice, 14);
+        fx.shake.t = 8; fx.shake.amp = 1;
+        fx.float(x, y - 70, 'FROSTLINGS!', C.ice, 50, 0.3);
+        break;
+      }
+      case 'stomp': {
+        // Lava-Stampfer: Druckwelle im Radius, die Gegner darin laufen schneller (Sprite-Tint in `syncEnemy`)
+        const x = m(ev.x), y = m(ev.y), r = Math.round(m(ev.radius));
+        fx.anim(x, y, FRAMES.STOMP_FRAMES, (f) => P2.stomp(f, r), { per: 3 });
+        fx.shake.t = 16; fx.shake.amp = 2; fx.flash(C.orange, 0.2);
+        fx.burst(x, y - 4, [C.orange, C.yellow, C.red, C.amber], 14, 2.2, 2, 0.06, 22);
+        fx.float(x, y - 66, 'STOMP', C.orange, 40, 0.3);
         break;
       }
       default: break;
@@ -1181,8 +1290,14 @@ export class Renderer {
       });
     } else if (id === 'dawnbreak') {
       fx.flash(C.yellow, 0.55);
-      for (let i = 1; i < PATH.length; i++) {
-        const [ax, ay] = PATH[i - 1], [bx, by] = PATH[i];
+      // alle Wegaeste; Aeste teilen ihr Endstueck (Frostfen): jede Strecke nur einmal
+      const seen = new Set<string>();
+      for (const path of this.geo.paths) for (let i = 1; i < path.length; i++) {
+        const [ax, ay] = path[i - 1], [bx, by] = path[i];
+        if (ax !== bx && ay !== by) continue;
+        const key = `${Math.min(ax, bx)},${Math.min(ay, by)},${Math.max(ax, bx)},${Math.max(ay, by)}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
         const vert = ax === bx;
         const len = Math.abs(vert ? by - ay : bx - ax);
         const sx = Math.min(ax, bx), sy = Math.min(ay, by);

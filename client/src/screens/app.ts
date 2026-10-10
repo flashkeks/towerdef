@@ -4,7 +4,8 @@
  * Das Match selbst (P3) kommt von aussen; hier wird nur Profil -> Optionen und Ergebnis -> Profil uebersetzt.
  */
 import type { Difficulty, TowerType } from '../../../sim/src/types';
-import { applyMatch, isTowerUnlocked, matchOptions, unlockLevel, MAP_IDS, TOWER_TYPES, type Profile } from '../meta';
+import { applyMatch, isTowerUnlocked, matchOptions, unlockLevel, TOWER_TYPES, type Profile } from '../meta';
+import type { ModeId } from '../../../sim/src/types';
 import { openStore, type MetaStore } from '../meta/store';
 import { startLives, toMetaResult, type MatchStartOptions, type StartMatch } from '../meta/types';
 import { h } from '../ui/dom';
@@ -16,6 +17,8 @@ import { noticeView } from './notice';
 import { resultView } from './result';
 import { setPalette } from './px';
 import { settingsView } from './settings';
+import { setupView } from './setup';
+import { warmPreviews } from './previews';
 import { storeView } from './store';
 import { towersView } from './towers';
 import type { Ctx, MenuTheme, Route, SoundId, View } from './types';
@@ -91,6 +94,8 @@ export async function runApp(root: HTMLElement, opts: AppOptions): Promise<AppHa
     root,
     store,
     difficulty: 'medium',
+    map: 'meadow',
+    mode: 'standard' as ModeId,
     sound,
     audio,
     async update(p) {
@@ -99,6 +104,7 @@ export async function runApp(root: HTMLElement, opts: AppOptions): Promise<AppHa
     go(r) {
       switch (r.name) {
         case 'home': return mount(homeView(ctx));
+        case 'setup': return mount(setupView(ctx, r.map));
         case 'knowledge': return mount(knowledgeView(ctx));
         case 'towers': return mount(towersView(ctx, r.tower), 'march');
         case 'store': return mount(storeView(ctx), 'bazaar');
@@ -115,10 +121,10 @@ export async function runApp(root: HTMLElement, opts: AppOptions): Promise<AppHa
   };
 
   async function playMatch(difficulty: Difficulty): Promise<void> {
-    const map = MAP_IDS[0];
+    const map = ctx.map, mode = ctx.mode;
     const before = store.profile;
-    const mo = matchOptions(before);
-    const startOpts: MatchStartOptions = { map, difficulty, unlocks: mo.unlocks, towerXp: mo.towerXp, mods: mo.mods, powers: mo.powers, lockInfo: lockInfo(before) };
+    const mo = matchOptions(before, mode);
+    const startOpts: MatchStartOptions = { map, mode, difficulty, unlocks: mo.unlocks, towerXp: mo.towerXp, mods: mo.mods, powers: mo.powers, lockInfo: lockInfo(before) };
     view?.dispose?.();
     view = null;
     let outcome;
@@ -132,7 +138,7 @@ export async function runApp(root: HTMLElement, opts: AppOptions): Promise<AppHa
     }
     // Das Match darf die Huelle ersetzt haben: wieder einhaengen
     root.replaceChildren(shell);
-    const res = toMetaResult(outcome, { matchId: newId(), map, startLives: startLives(difficulty, mo.mods) });
+    const res = toMetaResult(outcome, { matchId: newId(), map, mode, startLives: startLives(difficulty, mo.mods) });
     const usedAny = Object.values(outcome.powersUsed ?? {}).some((n) => (n ?? 0) > 0);
     // Verlassen in Runde 0 zaehlt nicht - ausser, es wurde eine Power eingesetzt (sonst gaebe es Gratis-Powers durch Verlassen)
     if (outcome.quit && res.roundsCleared === 0 && !usedAny) return ctx.go({ name: 'home' });
@@ -141,13 +147,14 @@ export async function runApp(root: HTMLElement, opts: AppOptions): Promise<AppHa
     ctx.go({
       name: 'result',
       info: {
-        won: outcome.won, quit: !!outcome.quit, round: outcome.round, difficulty, report,
+        won: outcome.won, quit: !!outcome.quit, round: outcome.round, difficulty, map, mode, report,
         towerXpBefore: { ...before.towerXp }, towerXpAfter: { ...profile.towerXp }, livesLost: res.livesLost, powersUsed: outcome.powersUsed, embersBefore: before.embers, embersAfter: profile.embers,
       },
     });
   }
 
   root.replaceChildren(shell);
+  warmPreviews();
   ctx.go(opts.initial ?? (store.profile.showResetNotice ? { name: 'notice' } : { name: 'home' }));
   return { ctx, go: (r) => ctx.go(r) };
 }

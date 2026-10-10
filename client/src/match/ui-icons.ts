@@ -22,6 +22,10 @@ const ROWS: Record<string, Rows> = {
   flame: ['...k...', '..kok..', '.korok.', '.koyok.', 'koyyyok', '.koyok.', '..kkk..'],
   camo: ['.kkkkk.', 'kgdgdgk', 'kdgkgdk', 'kgdgdgk', '.kkkkk.'],
   skull: ['.kkkkk.', 'kwwwwwk', 'kwkwkwk', 'kwwwwwk', '.kwkwk.', '.kkkkk.'],
+  flake: ['..k.k..', 'k.kik.k', '.kiwik.', 'kiwwwik', '.kiwik.', 'k.kik.k', '..k.k..'],
+  cloud: ['..kkk...', '.ksssk.k', 'ksswsskk', 'ksssssssk'.slice(0, 8), '.kkkkkkk'],
+  leaf: ['....kkk', '..kkddk', '.kdgdgk', 'kdgdgk.', 'kdgk...', 'kkk....', 'k......'],
+  band: ['kkkkkkk', 'ktttttk', 'kllklkk', 'ktttttk', 'kkkkkkk', 'k.....k', 'k.....k'],
   x: ['k...k', '.k.k.', '..k..', '.k.k.', 'k...k'],
 };
 

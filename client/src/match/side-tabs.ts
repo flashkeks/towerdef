@@ -2,10 +2,9 @@
  * Rechte Leiste mit Reitern (Runde 12): Towers (wie bisher, baut `match.ts`), Powers (Inventar), Wave (Vorschau der Runde).
  * Logik steckt in `powers/info.ts` und `powers/wave.ts` (rein); hier nur DOM. Der Match reicht Klicks per Callback durch.
  */
-import { MAX_ROUND, type Game, type GameState } from '../sim';
+import { MODES, type Game, type GameState } from '../sim';
 import { t } from '../i18n/t';
 import { slotHint, slotUsable, powerSlots, cycleTab, SIDE_TABS, type PowerSlot, type SideTab } from '../powers/info';
-import { spriteType } from './enemy-look';
 import { ENEMY_NAMES, WARNING_TEXT, previewRound, totalEnemies, waveRows, warnings, type Warning } from '../powers/wave';
 import { h, setClass } from '../ui/dom';
 import { enemySprite, iconPower } from './sprites';
@@ -18,7 +17,9 @@ export interface SideCallbacks {
   pick(slot: PowerSlot): void;
 }
 
-const WARN_ICON: Record<Warning, string> = { camo: 'camo', armor: 'shield', ember: 'flame', boss: 'skull' };
+const WARN_ICON: Record<Warning, string> = { camo: 'camo', armor: 'shield', ember: 'flame', boss: 'skull', frostling: 'flake', blimp: 'cloud', regrow: 'leaf', fortified: 'band' };
+
+const BIG = new Set(['leviathan', 'gloomship', 'wyrm', 'colossus']);
 
 export class SideTabs {
   readonly bar = h('div', 'm-tabs');
@@ -65,14 +66,24 @@ export class SideTabs {
 
   update(st: GameState): void {
     // Zaehler am Reiter: wie viele Powers sind jetzt einsetzbar
-    const ready = this.slots(st).filter(slotUsable).length;
+    const ready = this.powersOff ? 0 : this.slots(st).filter(slotUsable).length;
     if (this.badge.textContent !== (ready ? String(ready) : '')) this.badge.textContent = ready ? String(ready) : '';
     if (this.tab === 'powers') this.updatePowers(st);
     else if (this.tab === 'wave') this.updateWave(st);
   }
 
   // ------------------------------------------------------------------ Powers
+  /** Deflation: keine Powers (Sim lehnt mit `mode-locked` ab); der Reiter zeigt nur einen Hinweis. */
+  private get powersOff(): boolean { return !MODES[this.game.info.mode].powers; }
+
   private updatePowers(st: GameState): void {
+    if (this.powersOff) {
+      if (this.powerSig !== 'off') {
+        this.powerSig = 'off';
+        this.powers.replaceChildren(h('div', 'pw-off', t('powers.off', { mode: MODES[this.game.info.mode].name })));
+      }
+      return;
+    }
     const slots = this.slots(st);
     const sig = `${this.armed}|` + slots.map((s) => `${s.key}:${s.count}:${s.state}`).join(',');
     if (sig === this.powerSig) return;
@@ -101,7 +112,7 @@ export class SideTabs {
 
   // ------------------------------------------------------------------ Wave
   private updateWave(st: GameState): void {
-    const r = previewRound(st.phase, st.round, MAX_ROUND);
+    const r = previewRound(st.phase, st.round, this.game.info.maxRound);
     const sig = `${r}|${st.phase}`;
     if (sig === this.waveSig) return;
     this.waveSig = sig;
@@ -125,10 +136,14 @@ export class SideTabs {
     for (const row of waveRows(pv)) {
       const e = h('div', `wv-row${row.camo ? ' camo' : ''}`);
       e.dataset.type = row.type;
+      if (row.regrow) e.dataset.regrow = '1';
+      if (row.fortified) e.dataset.fortified = '1';
       const art = h('div', 'wv-art');
-      art.append(copyCanvas(enemySprite(spriteType(row.type), 0, { camo: row.camo }).canvas, row.type === 'leviathan' ? 1 : 2));
+      art.append(copyCanvas(enemySprite(row.type, 0, { camo: row.camo, regrow: row.regrow, fortified: row.fortified }).canvas, BIG.has(row.type) ? 1 : 2));
       const nm = h('div', 'wv-name', ENEMY_NAMES[row.type] ?? row.type);
       if (row.camo) nm.append(h('span', 'wv-tag', ' camo'));
+      if (row.regrow) nm.append(h('span', 'wv-tag tg-regrow', ' regrow'));
+      if (row.fortified) nm.append(h('span', 'wv-tag tg-fort', ' fortified'));
       e.append(art, nm, h('div', 'wv-n num', `x${row.n}`));
       list.append(e);
     }
