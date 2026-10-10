@@ -600,7 +600,8 @@ export class Renderer {
     const camo = e.camo && !e.revealed;
     const s = enemySprite(e.type, fr, { camo: e.camo, damageStage: spriteStage(e), hitFlash, flip: v.flip, regrow: e.regrowTo !== null, fortified: e.fortified });
     v.spr.texture = tex(s.canvas);
-    v.spr.position.set(x - s.ax, y - s.ay + (e.type === 'leviathan' ? Math.round(Math.sin(this.now / 400) * 2) - 8 : 0));
+    // Grosse Gegner am Kartenrand (Frostfen oberer Ast y=40) nicht oben abschneiden: Oberkante mind. 2 px im Bild (10.10.2026)
+    v.spr.position.set(x - s.ax, Math.max(2, y - s.ay + (e.type === 'leviathan' ? Math.round(Math.sin(this.now / 400) * 2) - 8 : 0)));
     v.spr.zIndex = y + look.lift;
     v.spr.alpha = camo ? 0.55 + 0.2 * Math.sin(this.now / 90 + e.id) : 1;
     v.spr.tint = e.frozenTicks > 0 ? hex(C.ice) : e.vineTicks > 0 ? 0xffffff : e.stunTicks > 0 ? hex(C.yellow) : e.goldTicks > 0 ? hex(C.sand) : e.hasteTicks > 0 ? hex(C.peach) : e.slowBp > 0 && e.slowTicks > 0 ? hex(C.silver) : 0xffffff;
@@ -655,7 +656,7 @@ export class Renderer {
       }
       const w = look.bar;
       v.barBg!.width = w + 2;
-      v.barBg!.position.set(x - w / 2 - 1, y - look.barY);
+      v.barBg!.position.set(x - w / 2 - 1, Math.max(0, y - look.barY));
       v.bar.width = Math.max(1, Math.round((w * e.hp) / e.maxHp));
       v.bar.position.set(x - w / 2, v.barBg!.y + 1);
     }
