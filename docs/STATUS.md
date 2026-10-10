@@ -4,6 +4,22 @@ Arbeitsauftrag: [`/run.md`](../run.md) (**Runde 13 abgeschlossen** (Market, Long
 Frühere Aufträge: [archiv/run-runde1.md](archiv/run-runde1.md), [archiv/run-runde2.md](archiv/run-runde2.md), [archiv/run-runde3.md](archiv/run-runde3.md), [archiv/run-runde4.md](archiv/run-runde4.md), [archiv/run-runde5.md](archiv/run-runde5.md), [archiv/run-runde6.md](archiv/run-runde6.md), [archiv/run-runde7.md](archiv/run-runde7.md), [archiv/run-runde8-verworfen.md](archiv/run-runde8-verworfen.md), [archiv/run-runde8.md](archiv/run-runde8.md), [archiv/run-runde9.md](archiv/run-runde9.md).
 
 
+## Runde 16 TP (Pixel-Figuren, Wasser-Platzierung, Helden-Wahl, Store-Heroes, Kuehlteich, 10.10.2026) — fertig, in `dev`
+
+Drei Sonnet-Agents (Figuren) parallel, Hauptsitzung UI + Zusammenfuehrung. Bilder `client/docs/r16/tp-*.png`
+(Skripte `client/scripts/shots-r16-tp-riverkeeper.mjs`, `shots-r16-tp-bell-tinker.mjs`, `shots-r16-tp-heroes.mjs`).
+
+- **Riverkeeper** (`pixel/sprites/riverkeeper.ts`): Faehrmann im Boot, Wellenkranz; A Harpune -> Tidal Lance, B Sonar -> Seeschlange (Leviathan Call), C Deckkanone -> Flaggschiff mit Begleitbooten. Geschosse `harpoon`, `cannonball`; Sonar-Ring und Leviathan-Schlag im Match (`match/r16-riverkeeper.ts`).
+- **Bellringer** (`bellringer.ts`): Glockenstuhl -> Glockenturm; A Carillon, B Wachturm mit Auge (Alarm), C Goldglocke mit Giesserei. Wird wie Market nie gespiegelt. Alarm-Effekt (`match/r16-bell.ts`).
+- **Tinker** (`tinker.ts`, `sentry.ts`): Bastler; A Uhrwerk-Fort, B Eisenstachel-Feld, C Teslaspulen. Sentries aus `state.sentries` sichtbar, Schuss startet an der Sentry, Fallen ueber die Caltrops-Darstellung, Overclock-Funken (`match/r16-tinker.ts`). Geschoss `nail`.
+- **Bram / Sela** (`bram.ts`, `sela.ts`): je fuenf Stufen (L1/5/10/15/20), idle/atk/cast. Sprite-API kennt den Helden: `heroSprite(hero, level, facing, frame)`, `heroPortrait(hero)`. Geschosse `hammer` (dreht sich), `starlight`; Icons und Effekte Anvil Drop, Forge of Dawn, Starfall, Eclipse (`match/r16-heroes.ts`). Helden-Panel zeigt alle Helden-Faehigkeiten.
+- **Wasser-Platzierung** (`match/water-hint.ts`): beim Riverkeeper pulsieren die Wasserflaechen als Pixel-Raster, eigener Hinweis.
+- **Helden-Wahl** im Setup (unter der Karte, gesperrte mit Level/Embers), **Store-Rubrik Heroes** (Bram 1.500, Sela 2.500 Embers), Startseite zeigt den gewaehlten Helden.
+- **Turm-Leiste** im Match: zehn Tuerme + Held in drei Spalten, ohne Scrollen bei 1280x720 und 1920x1080; Towers-Bildschirm mit zehn Reitern in einer Zeile.
+- **Ember Quarry**: Kuehlteich (frueher Lavatuempel an der Wegbiegung) ist Sim-`water`, Platz fuer einen bis zwei Riverkeeper; Deko/Blocker unveraendert.
+- **Pruefung**: sim 346, meta 127, client 272 Tests, tsc ueberall, build, smoke gruen (72 Pruefungen, neu: Helden-Wahl, Match mit Bram, Wasser-Hinweis, Store-Heroes, elf Kacheln).
+- Offen (Feinschliff, wenn Max es sieht): Tinker T0-T2 etwas gedrungen, Bellringer-Glocken A3/A5 klumpig, Riverkeeper A3/A4 wenig verschieden und C5 dunkel, Bram-Ambos von hinten kaum sichtbar, Eclipse-Sonne fest oben mittig; kein Audio fuer Alarm/Overclock/Sentry/Helden-Faehigkeiten.
+
 ## Runde 16 E (Challenges, Issue #4, 10.10.2026) — fertig, in `dev`
 
 Beschreibung `design/challenges.md`, Bilder `client/docs/r16/e-*.png` (Skript `client/scripts/shots-r16-e.mjs`).

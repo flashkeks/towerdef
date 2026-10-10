@@ -122,7 +122,7 @@ function step(): void {
 function fire(t: Tw): void {
   const tg = (t as Tw & { tg?: En }).tg;
   if (!tg) return;
-  const m = t.kind === 'hero' ? api.heroMuzzle(t.lvl, t.facing) : api.towerMuzzle(t.kind === 'ranger' ? 'ranger' : t.kind === 'bomb' ? 'bombardier' : 'frostcaller', t.tiers, t.facing);
+  const m = t.kind === 'hero' ? api.heroMuzzle('wren', t.lvl, t.facing) : api.towerMuzzle(t.kind === 'ranger' ? 'ranger' : t.kind === 'bomb' ? 'bombardier' : 'frostcaller', t.tiers, t.facing);
   const sx = t.x + m.x, sy = t.y + m.y;
   const lead = tg.x + speed[tg.type] * 0.8 * (t.kind === 'bomb' ? 22 : 6);
   const tx = t.kind === 'frost' && t.tiers[2] >= 3 ? tg.x : lead, ty = PATH_Y - 6;
@@ -167,7 +167,7 @@ function draw(): void {
     const fr = t.atk >= 0 ? (['atk0', 'atk1', 'atk2', 'atk3'] as const)[Math.min(3, Math.floor(t.atk / 4) === 1 && t.atk < 8 ? 1 : t.atk < 5 ? 0 : t.atk < 8 ? 1 : t.atk < 12 ? 2 : 3)] : (['idle0', 'idle1', 'idle2', 'idle3'] as const)[Math.floor(tick / 10) % 4];
     items.push({ y: t.y, f: () => {
       put(api.shadowSprite(18, 6), t.x, t.y - 2);
-      if (t.kind === 'hero') put(api.heroSprite(t.lvl, t.facing, fr), t.x, t.y);
+      if (t.kind === 'hero') put(api.heroSprite('wren', t.lvl, t.facing, fr), t.x, t.y);
       else put(api.towerSprite(t.kind === 'ranger' ? 'ranger' : t.kind === 'bomb' ? 'bombardier' : 'frostcaller', t.tiers, t.facing, fr), t.x, t.y);
     } });
   }

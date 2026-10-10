@@ -39,6 +39,11 @@ Pruefung auf `dev`: sim 345, meta 127, client 240 Tests, tsc ueberall, build, sm
 **Als Naechstes: TP** (unten). Neue Tuerme laufen im Client bis dahin mit Platzhalter-Figuren, es gibt noch keine Helden-Auswahl
 und keine Wasser-Hervorhebung beim Platzieren. Ember Quarry hat keine Wasserflaeche (Spec: Kuehlteich) — in TP oder K-Nachtrag.
 
+## 2c. Stand 10.10.2026 spaet: TP fertig
+TP (Figuren, Wasser-UI, Helden-Wahl, Store-Heroes, Quarry-Kuehlteich) ist in `dev`, Abschnitt in `docs/STATUS.md`. Damit ist Runde 16 komplett.
+**Als Naechstes: Deploy-Frage an Max** (Homelab-Sitzung, erst zeigen was sich geaendert hat — live ist noch Runde 14b), danach Issue #3 schliessen.
+Danach offen: Feinschliff-Liste aus STATUS TP, Wellen-Editor fuer Challenges, Issue #5 (Bestenliste, braucht edge).
+
 ## 3. Danach
 - **TP**: Pixel-Figuren für Riverkeeper/Bellringer/Tinker (Stufen-Looks) und Bram/Sela, Wasser-Platzier-UI, Helden-Auswahl im Setup, Store-Rubrik Heroes.
 - Vor dem Deploy: Screenshots, STATUS, dann Homelab-Sitzung fragt Max (erst zeigen, was geändert wurde).

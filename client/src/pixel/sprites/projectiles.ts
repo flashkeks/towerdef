@@ -140,6 +140,26 @@ export function projectileRaster(kind: ProjectileKind, dir16: number, spin = 0):
       const f = P(2.5); s.px(f[0], f[1], 'amber');
       break;
     }
+    case 'hammer': {
+      // Bram: sich drehender Schmiedehammer (`spin` 0..15, 22,5 Grad je Schritt), Stiel Holz, Kopf Stahl, Funkenschweif
+      const a2 = (spin / 16) * Math.PI * 2;
+      const hx = Math.cos(a2), hy = -Math.sin(a2), qx = -hy, qy = hx;
+      const at = (t: number, w: number): [number, number] => [C + hx * t + qx * w, C + hy * t + qy * w];
+      for (let i = 1; i <= 3; i++) { const q = at(-3 - i * 1.6, (i % 2 ? 0.8 : -0.8)); s.px(q[0], q[1], i < 2 ? 'yellow' : 'orange'); }
+      for (let t = -5; t <= 2; t++) { const q = at(t, 0); s.px(q[0], q[1], t % 2 ? 'wood' : 'tan'); }
+      for (let t = 2; t <= 5; t++) for (let w = -2; w <= 2; w++) { const q = at(t, w); s.px(q[0], q[1], t === 2 || w === 2 ? 'slate' : t === 5 || w === -2 ? 'silver' : 'stone'); }
+      { const q = at(5, -2); s.px(q[0], q[1], 'white'); const e = at(3.5, 2); s.px(e[0], e[1], 'amber'); }
+      break;
+    }
+    case 'starlight': {
+      // Sela: Sternenstrahl, weisser Kern mit Kreuz, Spur gelb -> eisblau -> nachtblau, dazwischen Sternchen
+      for (let i = 1; i <= 9; i++) { const q = P(-3 - i * 1.15, 0); s.px(q[0], q[1], i < 3 ? 'white' : i < 5 ? 'yellow' : i < 7 ? 'ice' : 'sky'); }
+      L(-4, 2, 0, 'ice'); L(-3, 3, 0.9, 'sky'); L(-3, 3, -0.9, 'sky');
+      for (const [t, w] of [[-6, 2.2], [-9, -2.2], [-11, 1.6]] as [number, number][]) { const q = P(t, w); s.px(q[0], q[1], 'yellow'); const r1 = P(t, w + 1); s.px(r1[0], r1[1], 'white'); }
+      s.ball(C + ux * 3, C + uy * 3, 1.9, 1.9, ['ice', 'white', 'white']);
+      const t1 = P(7); s.px(t1[0], t1[1], 'white'); const t2 = P(3, 2.4); s.px(t2[0], t2[1], 'yellow'); const t3 = P(3, -2.4); s.px(t3[0], t3[1], 'yellow');
+      break;
+    }
     case 'potion': case 'potionGold': {
       // Flasche im Bogen: `spin` = Drehung 0..15 (22,5 Grad je Schritt), Hals zeigt in Drehrichtung
       const gold = kind === 'potionGold';

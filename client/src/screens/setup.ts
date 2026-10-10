@@ -122,7 +122,7 @@ export function setupView(ctx: Ctx, mapId: string): View {
       b.disabled = !e.lock.owned;
       const txt = h('div', 'hp-t');
       txt.append(h('div', 'hp-n', e.meta.short), h('div', 'hp-r', e.lock.owned ? e.meta.role : e.lock.embers === null ? `Level ${e.lock.unlockLevel}` : `Level ${e.lock.unlockLevel} or ${e.lock.embers.toLocaleString('en-US')} Embers`));
-      b.append(cv(heroPortrait(), 2, 'hp-ic'), txt);
+      b.append(cv(heroPortrait(e.meta.id), 2, 'hp-ic'), txt);
       b.title = e.lock.owned ? `${e.meta.name}: ${e.meta.desc}` : e.lock.text;
       if (!hbtns.has(e.meta.id)) {
         b.onclick = () => {

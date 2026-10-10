@@ -18,9 +18,9 @@ export type EnemyType = 'red' | 'blue' | 'green' | 'gold' | 'ironshell' | 'ember
 /** Merkmale als Ueberlagerung (Runde 15): regrow = Blaetterkranz, fortified = Eisenbaender. Mit Camo kombinierbar. */
 export type EnemyTrait = 'regrow' | 'fortified';
 /** thorn/thornMagic: Thornweaver; potion/potionGold: Alchemist (Runde 14; bei potion* ist `dir16` die Drehung der Flasche). snipe/snipeHeavy/snipeGold/splinter: Longshot (Runde 13). */
-export type ProjectileKind = 'arrow' | 'bigArrow' | 'bolt' | 'starBolt' | 'bomb' | 'frag' | 'frost' | 'shard' | 'lantern' | 'snipe' | 'snipeHeavy' | 'snipeGold' | 'splinter' | 'thorn' | 'thornMagic' | 'potion' | 'potionGold' | 'harpoon' | 'cannonball' | 'nail';
+export type ProjectileKind = 'arrow' | 'bigArrow' | 'bolt' | 'starBolt' | 'bomb' | 'frag' | 'frost' | 'shard' | 'lantern' | 'snipe' | 'snipeHeavy' | 'snipeGold' | 'splinter' | 'thorn' | 'thornMagic' | 'potion' | 'potionGold' | 'harpoon' | 'cannonball' | 'nail' | 'hammer' | 'starlight';
 export type BaseAbilityId = 'arrowRain' | 'absoluteZero' | 'flare' | 'dawnbreak' | 'grant' | 'focus' | 'supplyDrop' | 'wallOfTrees' | 'transformingTonic' | 'alarm' | 'overclock';
-/** Runde 16: alarm und overclock haben eigene Icons (Paket TP Bellringer/Tinker); anvilDrop, forgeOfDawn, starfall, eclipse zeichnen vorerst die Icons der Vorbilder (`ABILITY_LOOK`). */
+/** Runde 16 TP: alarm und overclock haben eigene Icons ueber ABILITY_LOOK; anvilDrop, forgeOfDawn, starfall, eclipse faengt `iconAbilityRaster` vorher ab (icons-heroes.ts). */
 export type AbilityId = BaseAbilityId | 'alarm' | 'overclock' | 'anvilDrop' | 'forgeOfDawn' | 'starfall' | 'eclipse';
 export const ABILITY_LOOK: Record<AbilityId, BaseAbilityId> = {
   arrowRain: 'arrowRain', absoluteZero: 'absoluteZero', flare: 'flare', dawnbreak: 'dawnbreak', grant: 'grant', focus: 'focus', supplyDrop: 'supplyDrop', wallOfTrees: 'wallOfTrees', transformingTonic: 'transformingTonic',
@@ -32,5 +32,5 @@ export const TOWER_TYPES: TowerType[] = ['ranger', 'bombardier', 'frostcaller', 
 export const SHOOTER_TYPES: TowerType[] = ['ranger', 'bombardier', 'frostcaller', 'longshot', 'thornweaver', 'alchemist', 'riverkeeper'];
 export const ENEMY_TYPES: EnemyType[] = ['red', 'blue', 'green', 'gold', 'ironshell', 'ember', 'brute', 'leviathan', 'pink', 'frostling', 'crystal', 'gloomship', 'wyrm', 'colossus', 'cruiser', 'duskrunner', 'dreadnought'];
 export const ENEMY_TRAITS: EnemyTrait[] = ['regrow', 'fortified'];
-export const PROJECTILE_KINDS: ProjectileKind[] = ['arrow', 'bigArrow', 'bolt', 'starBolt', 'bomb', 'frag', 'frost', 'shard', 'lantern', 'snipe', 'snipeHeavy', 'snipeGold', 'splinter', 'thorn', 'thornMagic', 'potion', 'potionGold', 'harpoon', 'cannonball', 'nail'];
+export const PROJECTILE_KINDS: ProjectileKind[] = ['arrow', 'bigArrow', 'bolt', 'starBolt', 'bomb', 'frag', 'frost', 'shard', 'lantern', 'snipe', 'snipeHeavy', 'snipeGold', 'splinter', 'thorn', 'thornMagic', 'potion', 'potionGold', 'harpoon', 'cannonball', 'nail', 'hammer', 'starlight'];
 export const ABILITIES: AbilityId[] = ['arrowRain', 'absoluteZero', 'flare', 'dawnbreak', 'grant', 'focus', 'supplyDrop', 'wallOfTrees', 'transformingTonic'];

@@ -103,7 +103,7 @@ export function storeView(ctx: Ctx): View {
     const head = h('div', 'sc-head');
     const nm = h('div', 'hc-t');
     nm.append(h('div', 'sc-name', e.meta.name), h('div', 'hc-role', `${e.meta.role} \u00b7 ${fmt(e.matchPrice)} gold in a match`));
-    head.append(cv(heroPortrait(), 3, 'sc-ic'), nm);
+    head.append(cv(heroPortrait(e.meta.id), 3, 'sc-ic'), nm);
     el2.append(head, h('div', 'sc-desc', e.meta.desc));
     const foot = h('div', 'sc-foot');
     if (own) foot.append(h('div', 'sc-owned hc-own', e.selected ? 'Yours \u00b7 selected' : e.lock.purchased ? 'Yours (bought)' : 'Yours'));

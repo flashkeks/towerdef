@@ -2,7 +2,7 @@
  * Ergebnis nach dem Match: XP-Balken fuellt sich animiert, Level-Up mit Freischalt-Karten, neue Medaille,
  * Turm-XP je Turm (Balken bis zur naechsten Freischaltung), Knoepfe Again / Home.
  */
-import type { TowerType } from '../../../sim/src/types';
+import type { HeroType, TowerType } from '../../../sim/src/types';
 import { MAP_NAMES, MODE_META, TIER_COST, TOWER_TYPES, levelFromXp, maxRoundOf, rewardFactors, type LevelUnlock } from '../meta';
 import { heroPortrait, towerPortrait } from '../pixel/sprites';
 import { h, setText } from '../ui/dom';
@@ -75,7 +75,7 @@ export function resultView(ctx: Ctx, info: ResultInfo): View {
 
   const addCard = (u: LevelUnlock): void => {
     const c = h('div', `ucard ${u.kind}`);
-    const art = u.kind === 'tower' ? cv(towerPortrait(u.id as TowerType), 2) : u.kind === 'hero' ? cv(heroPortrait(), 2) : cv(medal('gold', true), 3);
+    const art = u.kind === 'tower' ? cv(towerPortrait(u.id as TowerType), 2) : u.kind === 'hero' ? cv(heroPortrait(u.id as HeroType), 2) : cv(medal('gold', true), 3);
     c.append(art, h('div', 'ucard-k', S.result.unlocked), h('div', 'ucard-t', u.title), h('div', 'ucard-d', u.text));
     cards.append(c);
   };

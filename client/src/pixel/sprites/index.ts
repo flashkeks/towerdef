@@ -14,13 +14,14 @@ import type { PalName } from '../palette';
 import { camoAlpha, rowsToCanvas, type Sprite } from './canvas';
 import { enemyRaster, type EnemyOpts } from './enemies';
 import { heroRaster, type HeroFrame } from './hero';
+import { heroStage, STAGE_LEVEL } from './hero-stage';
 import { iconAbilityRaster, iconUpgradeRaster } from './icons';
 import { bigHeartRaster, bombLanternRaster, bubbleRaster, coinRaster, emberRaster, merchantRaster, powerIconRaster, trapRaster, type PowerIconId } from './powers';
 import type { TowerFrame } from './pose';
 import { projectileRaster } from './projectiles';
 import { Surface } from './surface';
 import { monsterRaster, towerRaster } from './towers';
-import type { AbilityId, EnemyType, ProjectileKind, Tiers, TowerType } from './types';
+import type { AbilityId, EnemyType, HeroType, ProjectileKind, Tiers, TowerType } from './types';
 
 export type { Sprite, AlphaFn } from './canvas';
 export * from './types';
@@ -57,13 +58,14 @@ export function towerMuzzle(type: TowerType, tiers: Tiers, facing: number): { x:
   const r = towerRaster(type, tiers, ((Math.round(facing) % 8) + 8) % 8, 'idle0');
   return { x: r.mx ?? 0, y: r.my ?? 0 };
 }
-export function heroSprite(level: number, facing: number, frame: HeroFrame): Sprite {
-  const st = level >= 20 ? 4 : level >= 15 ? 3 : level >= 10 ? 2 : level >= 5 ? 1 : 0;
+/** Held (Rahmen 96 x 80, Anker = Fuesse). `hero` = wren | bram | sela; `level` waehlt die sichtbare Stufe (1-4, 5-9, 10-14, 15-19, 20). */
+export function heroSprite(hero: HeroType, level: number, facing: number, frame: HeroFrame): Sprite {
+  const st = heroStage(level);
   const f = ((Math.round(facing) % 8) + 8) % 8;
-  return cached(`h|${st}|${f}|${frame}`, () => sprite(heroRaster(st === 0 ? 1 : st === 1 ? 5 : st === 2 ? 10 : st === 3 ? 15 : 20, f, frame)));
+  return cached(`h|${hero}|${st}|${f}|${frame}`, () => sprite(heroRaster(hero, STAGE_LEVEL[st], f, frame)));
 }
-export function heroMuzzle(level: number, facing: number): { x: number; y: number } {
-  const r = heroRaster(level, ((Math.round(facing) % 8) + 8) % 8, 'idle0');
+export function heroMuzzle(hero: HeroType, level: number, facing: number): { x: number; y: number } {
+  const r = heroRaster(hero, STAGE_LEVEL[heroStage(level)], ((Math.round(facing) % 8) + 8) % 8, 'idle0');
   return { x: r.mx, y: r.my };
 }
 
@@ -95,7 +97,7 @@ export function shadowSprite(w: number, h: number): Sprite {
 /** Projektil in 16 Richtungen (0 = rechts, gegen den Uhrzeigersinn). Bombe: `dir16` dreht die Lunte (Spin). Anker = Mitte. */
 export function projectileSprite(kind: ProjectileKind, dir16: number): Sprite {
   const d = ((Math.round(dir16) % 16) + 16) % 16;
-  return cached(`p|${kind}|${d}`, () => sprite(projectileRaster(kind, kind === 'bomb' || kind === 'potion' || kind === 'potionGold' ? 0 : d, kind === 'bomb' || kind === 'lantern' || kind === 'potion' || kind === 'potionGold' ? d : 0)));
+  return cached(`p|${kind}|${d}`, () => sprite(projectileRaster(kind, kind === 'bomb' || kind === 'potion' || kind === 'potionGold' || kind === 'hammer' ? 0 : d, kind === 'bomb' || kind === 'lantern' || kind === 'potion' || kind === 'potionGold' || kind === 'hammer' ? d : 0)));
 }
 
 // ---------- Icons und Portraets ----------
@@ -121,9 +123,9 @@ export function towerPortrait(type: TowerType): Sprite {
     return rowsToCanvas(c.rows, r.ax - c.dx, r.ay - c.dy);
   });
 }
-export function heroPortrait(): Sprite {
-  return cached('hp', () => {
-    const r = heroRaster(1, 0, 'idle0');
+export function heroPortrait(hero: HeroType = 'wren'): Sprite {
+  return cached(`hp|${hero}`, () => {
+    const r = heroRaster(hero, 1, 0, 'idle0');
     const c = crop(r.rows);
     return rowsToCanvas(c.rows, r.ax - c.dx, r.ay - c.dy);
   });

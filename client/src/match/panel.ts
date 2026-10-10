@@ -6,10 +6,11 @@
  * Held: Level, XP-Balken, Faehigkeiten (Aufbau wie in Runde 11), dazu Targeting, Verkaufen, Pops.
  * Das Panel entscheidet nichts: es fragt `game.upgradeInfo` und schickt Kommandos ueber die Callbacks.
  */
-import { DATA, type Game, type GameOptions, type GameState, type TargetMode, type TowerState, type TowerType, type UpgradeInfo } from '../sim';
+import { DATA, type Game, type GameOptions, type GameState, type HeroType, type TargetMode, type TowerState, type TowerType, type UpgradeInfo } from '../sim';
 import { h, setText } from '../ui/dom';
 import { t } from '../i18n/t';
 import { displayName, isHero } from './info';
+import { isHeroAbility } from './r16-heroes';
 import { heroPortrait, iconUpgrade, towerSprite } from './sprites';
 import { tierButton, type TierBtn } from './tier-button';
 import { ABILITY_TEXT, PATH_COLORS, TARGET_TEXT } from './tower-text';
@@ -355,7 +356,7 @@ export class Panel {
     const el = this.el;
     const head = h('div', 'p-head');
     const port = h('div', 'p-port');
-    port.append(fitFigure(heroPortrait().canvas, 68, 70, 2));
+    port.append(fitFigure(heroPortrait(tw.type as HeroType).canvas, 68, 70, 2));
     const nm = h('div', 'p-name');
     nm.append(h('div', 'p-title', displayName(tw.type)), h('div', 'p-sub', t('panel.level', { n: tw.heroLevel })));
     const pops = h('div', 'p-pops');
@@ -400,7 +401,7 @@ export class Panel {
     // Faehigkeiten
     const abs = h('div', 'p-abs');
     abs.append(h('div', 'lbl', t('panel.ability')));
-    for (const a of state.abilities.filter((q) => q.id === 'flare' || q.id === 'dawnbreak')) {
+    for (const a of state.abilities.filter((q) => isHeroAbility(q.id))) {
       const b = h('div', 'ab-card');
       b.dataset.ab = a.id;
       b.append(h('b', '', ABILITY_TEXT[a.id].name), h('span', 'small', ABILITY_TEXT[a.id].desc), h('div', 'cd'));

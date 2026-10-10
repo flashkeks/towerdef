@@ -32,8 +32,8 @@ describe('Runde 13: keine Plattform', () => {
       const lastY = r.rows.map((x, y) => (/[^.]/.test(x) ? y : -1)).filter((y) => y >= 0).pop() as number;
       expect(Math.abs(lastY - r.ay), type).toBeLessThanOrEqual(2);
     }
-    expect(footWidth(heroRaster(1, 0, 'idle0').rows, 2)).toBeLessThanOrEqual(16);
-    expect(footWidth(heroRaster(20, 0, 'idle0').rows, 2)).toBeLessThanOrEqual(30);
+    expect(footWidth(heroRaster('wren', 1, 0, 'idle0').rows, 2)).toBeLessThanOrEqual(16);
+    expect(footWidth(heroRaster('wren', 20, 0, 'idle0').rows, 2)).toBeLessThanOrEqual(30);
   });
 });
 
@@ -68,7 +68,7 @@ describe('Runde 13: deutlichere Stufen bei Ranger, Bombardier, Frostcaller', () 
     }
   });
   it('Wren: Stufen sichtbar groesser, Level 20 am hoechsten', () => {
-    const h = [1, 5, 10, 15, 20].map((l) => height(heroRaster(l, 6, 'idle0').rows));
+    const h = [1, 5, 10, 15, 20].map((l) => height(heroRaster('wren', l, 6, 'idle0').rows));
     expect(h[4]).toBeGreaterThan(h[0] + 8);
     expect(h[3]).toBeGreaterThanOrEqual(h[1]);
   });

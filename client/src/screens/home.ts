@@ -3,6 +3,7 @@ import type { Difficulty, HeroType, TowerType } from '../../../sim/src/types';
 import {
   BRANCH_NAMES, DIFFICULTIES, END_ROUND, MAPS, MODE_IDS, TIER_COST, TOWER_TYPES, bestOf, isTowerUnlocked, knowledgePoints,
   levelFromXp, mapLock, mapById, medalsOf, unlockLevel, dailyStatus, utcDay, type MapMeta, type Profile,
+  activeHero, heroOwned,
 } from '../meta';
 import { heroPortrait, towerPortrait } from '../pixel/sprites';
 import { h } from '../ui/dom';
@@ -205,10 +206,11 @@ export function homeView(ctx: Ctx): View {
   line.append(h('div', 'h2', S.home.lineup));
   const crew = h('div', 'crew');
   const names: Record<string, string> = { ranger: 'Ranger', bombardier: 'Bombardier', frostcaller: 'Frostcaller', longshot: 'Longshot', market: 'Lantern Market', thornweaver: 'Thornweaver', alchemist: 'Alchemist', riverkeeper: 'Riverkeeper', bellringer: 'Bellringer', tinker: 'Tinker', wren: 'Wren', bram: 'Bram', sela: 'Sela' };
-  for (const id of [...TOWER_TYPES, 'wren'] as (TowerType | HeroType)[]) {
-    const ok = isTowerUnlocked(p, id);
+  // Runde 16 TP: am Ende der gewaehlte Held (Wren, Bram oder Sela; Wahl im Setup, Kauf im Store)
+  for (const id of [...TOWER_TYPES, activeHero(p)] as (TowerType | HeroType)[]) {
+    const ok = id === 'bram' || id === 'sela' ? heroOwned(p, id) : isTowerUnlocked(p, id);
     const c = h('div', `crew-i ${ok ? '' : 'locked'}`);
-    const port = id === 'wren' || id === 'bram' || id === 'sela' ? heroPortrait() : towerPortrait(id);
+    const port = id === 'wren' || id === 'bram' || id === 'sela' ? heroPortrait(id as HeroType) : towerPortrait(id as TowerType);
     const art = cv(port, 2, ok ? '' : 'dim');
     c.append(art, h('div', 'crew-n', names[id]));
     if (!ok) {
