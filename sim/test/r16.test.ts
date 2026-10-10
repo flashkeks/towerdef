@@ -67,7 +67,7 @@ describe('Platzierung: Wasser und Land', () => {
     expect(h.canPlace('riverkeeper', 215000, 160000)).toEqual({ ok: true });
   });
 
-  it('echte Karten: Meadow-Bach und Frostfen-See tragen Wassertürme, Quarry (nur Lava) keinen', () => {
+  it('echte Karten: Meadow-Bach, Frostfen-See und der Quarry-Kuehlteich tragen Wassertürme, die Lava nicht', () => {
     const count = (map: string): number => {
       const g = createGame({ map, difficulty: 'medium', seed: 1, mods: { startCash: 100000 } });
       let n = 0;
@@ -76,7 +76,9 @@ describe('Platzierung: Wasser und Land', () => {
     };
     expect(count('meadow')).toBeGreaterThan(0);
     expect(count('frostfen')).toBeGreaterThan(50);
-    expect(count('quarry')).toBe(0);
+    // Runde 16 TP: Quarry hat einen kleinen Kuehlteich (runde16.md §2), die Lava bleibt fuer Wassertuerme gesperrt
+    expect(count('quarry')).toBeGreaterThan(0);
+    expect(count('quarry')).toBeLessThan(10);
   });
 });
 
@@ -97,6 +99,13 @@ describe('Daten Runde 16', () => {
 });
 
 describe('Riverkeeper', () => {
+  it('Ember Quarry: Kuehlteich (Runde 16 TP) nimmt einen Riverkeeper, Landtuerme nicht', () => {
+    const g = createGame({ map: 'quarry', difficulty: 'medium', seed: 1, mods: { startCash: 100000 } });
+    let spot: [number, number] | null = null;
+    for (let y = 205_000; y <= 245_000 && !spot; y += 1000) for (let x = 300_000; x <= 360_000 && !spot; x += 1000) if (g.canPlace('riverkeeper', x, y).ok) spot = [x, y];
+    expect(spot).not.toBeNull();
+    expect(g.canPlace('ranger', spot![0], spot![1]).ok).toBe(false);
+  });
   it('Harpunen: A2 = 3er-Fächer, A3 trifft Ironshell, A5 Lanze mit Boss-Schaden', () => {
     expect(statsOf('riverkeeper', [0, 0, 0])).toMatchObject({ pk: 'harpoon', dmg: 2, pierce: 3, count: 1 });
     expect(statsOf('riverkeeper', [2, 0, 0])).toMatchObject({ count: 3, pierce: 5 });

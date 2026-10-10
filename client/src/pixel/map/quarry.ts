@@ -10,12 +10,15 @@ import { closedSpline, Field, pathDistAll, pathField, polySdf, walk, type Pt } f
 import { quarryArt, type QuarryKind } from './props-quarry';
 import type { MapArt, MapLight, PlacedArt } from './types';
 
-const raw = quarry as unknown as { path: Pt[]; paths?: Pt[][]; pathHalfWidth: number; lava: Pt[][]; bridges: [Pt, Pt][]; buildArea: [number, number, number, number] };
+const raw = quarry as unknown as { path: Pt[]; paths?: Pt[][]; pathHalfWidth: number; lava: Pt[][]; water: Pt[][]; bridges: [Pt, Pt][]; buildArea: [number, number, number, number] };
 export const Q_BRANCHES: Pt[][] = raw.paths ?? [raw.path];
 export const Q_HW: number = raw.pathHalfWidth;
 /** Lava-Polygone der Sim, im Bild leicht gerundet (Spline durch dieselben Punkte). */
 export const LAVA: Pt[][] = raw.lava;
 export const LAVA_DRAWN: Pt[][] = LAVA.map((p) => closedSpline(p, 3));
+/** Runde 16 TP: Kuehlteich (Sim-`water`, frueher ein Lavatuempel) fuer den Riverkeeper. Fuer Deko, Blocker und Raender zaehlt er wie Lava. */
+export const POND: Pt[][] = raw.water ?? [];
+export const POND_DRAWN: Pt[][] = POND.map((p) => closedSpline(p, 3));
 export const BRIDGES_Q: [Pt, Pt][] = raw.bridges;
 export const ANIM_FRAMES = 8;
 
@@ -65,7 +68,7 @@ function scatter(lavaAt: (x: number, y: number) => number): QuarryProp[] {
   return out;
 }
 
-const lavaSdf = polySdf(LAVA);
+const lavaSdf = polySdf([...LAVA, ...POND]);
 export const lavaAt = (x: number, y: number): number => lavaSdf[Math.max(0, Math.min(MAP_H - 1, y | 0)) * MAP_W + Math.max(0, Math.min(MAP_W - 1, x | 0))];
 export const QUARRY_PROPS: QuarryProp[] = [...HAND, ...scatter(lavaAt)].sort((a, b) => a.y - b.y);
 
@@ -148,10 +151,23 @@ function lavaColor(x: number, y: number, dep: number, f: number): number {
   return t > -0.55 ? C.red : bayer(x, y) < 0.5 ? C.crimson : C.red;
 }
 
+/** Runde 16 TP: Kuehlteich (Bild f von ANIM_FRAMES): dunkles Wasser, wandernde helle Wellen, Dampfpunkte, heller Saum am Ufer. */
+function pondColor(x: number, y: number, dep: number, f: number): number {
+  const ph = (f / ANIM_FRAMES) * Math.PI * 2;
+  if (dep < 1.4) return bayer(x, y) < 0.5 ? C.sky : C.navy;
+  const w = Math.sin(x / 3.2 + ph) + Math.sin((x + y) / 5 - ph) * 0.8 + (vnoise(x, y, 6, 21) - 0.5) * 1.2;
+  if (hash2(x, y, 33 + f) > 0.992 && dep > 3) return C.white; // Dampf
+  if (w > 1.3) return bayer(x, y) < 0.6 ? C.ice : C.sky;
+  if (w > 0.4) return bayer(x + 1, y) < 0.5 ? C.sky : C.navy;
+  return dep > 4 && bayer(x, y) < 0.3 ? C.night : C.navy;
+}
+
 export function paintQuarry(): MapArt {
   const W = MAP_W, H = MAP_H;
   const ground = new Buf(W, H);
-  const lava = new Field(polySdf(LAVA_DRAWN));
+  // Teich zaehlt fuer Raender/Deko wie Lava (gleiches Bild wie vorher), nur die Fuellung ist Wasser
+  const lava = new Field(polySdf([...LAVA_DRAWN, ...POND_DRAWN]));
+  const pond = new Field(polySdf(POND_DRAWN));
   const pf = pathField(Q_BRANCHES);
   const HW = Q_HW;
   const onBridge = (x: number, y: number): boolean => BRIDGES_Q.some(([a, b]) => x >= Math.min(a[0], b[0]) - 14 && x <= Math.max(a[0], b[0]) + 14 && y >= Math.min(a[1], b[1]) - 14 && y <= Math.max(a[1], b[1]) + 14);
@@ -165,7 +181,7 @@ export function paintQuarry(): MapArt {
       const c = pathColor(x, y, pd, gx, gy);
       if (c !== null && ld > -1) { ground.set(x, y, c); continue; }
     }
-    if (ld < 0) { ground.set(x, y, C.red); continue; }
+    if (ld < 0) { ground.set(x, y, pond.at(x, y) < 0 ? C.navy : C.red); continue; }
     let c = rockTone(x, y);
     if (ld < 7) {
       const [gx, gy] = lava.grad(x, y);
@@ -233,9 +249,10 @@ export function paintQuarry(): MapArt {
   for (let gy = 8; gy < H; gy += 36) for (let gx = 8; gx < W; gx += 36) {
     // beste (tiefste) Lavastelle in der Zelle
     let best: [number, number] | null = null, bd = -7;
-    for (let y = gy; y < gy + 36; y += 3) for (let x = gx; x < gx + 36; x += 3) { const d = lava.at(x, y); if (d < bd) { bd = d; best = [x, y]; } }
+    for (let y = gy; y < gy + 36; y += 3) for (let x = gx; x < gx + 36; x += 3) { const d = lava.at(x, y); if (d < bd && pond.at(x, y) >= 0) { bd = d; best = [x, y]; } }
     if (best) lights.push({ x: best[0], y: best[1], r: 34, warm: true, col: 'orange', flicker: 'pulse' });
   }
+  for (const poly of POND) { const cx = poly.reduce((a, q) => a + q[0], 0) / poly.length, cy = poly.reduce((a, q) => a + q[1], 0) / poly.length; lights.push({ x: Math.round(cx), y: Math.round(cy), r: 26, warm: false, col: 'ice', flicker: 'pulse' }); }
   // Glutschein der Lava auf dem Fels (warme Raender gedithert, schon oben) und Pfuetzen unter Laternen
   for (const L of lights.filter((l) => l.flicker === 'flame' && l.r >= 26)) {
     const ly = L.y + 16, rx = L.r * 0.8, ry = L.r * 0.5;
@@ -266,17 +283,18 @@ export function paintQuarry(): MapArt {
   const deco = new Buf(W, H);
   paintRails(deco, lava, pf);
   for (const br of BRIDGES_Q) paintBridge(deco, br, lava);
-  const anim = Array.from({ length: ANIM_FRAMES }, (_, f) => paintLavaAnim(f, lava));
+  const anim = Array.from({ length: ANIM_FRAMES }, (_, f) => paintLavaAnim(f, lava, pond));
   const smoke: MapArt['smoke'] = [];
   return { id: 'quarry', name: 'Ember Quarry', ground, anim, animMs: 150, deco, props, lights, smoke };
 }
 
 // ---------- Lava-Bild ----------
-function paintLavaAnim(f: number, lava: Field): Buf {
+function paintLavaAnim(f: number, lava: Field, pond: Field): Buf {
   const b = new Buf(MAP_W, MAP_H);
   for (let y = 0; y < MAP_H; y++) for (let x = 0; x < MAP_W; x++) {
     const ld = lava.at(x, y);
     if (ld >= 0) continue;
+    if (pond.at(x, y) < 0) { b.set(x, y, pondColor(x, y, -ld, f)); continue; }
     let c = lavaColor(x, y, -ld, f);
     // Blasen: kleine Ringe, die aufgehen
     const bh = hash2(x >> 3, y >> 3, 14);
