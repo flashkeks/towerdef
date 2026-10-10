@@ -20,6 +20,7 @@ import { TRAP_W, monsterSprite, bigHeart, bombLantern, bubbleSprite, coinSprite,
 import { tex } from './textures';
 import { ENEMY_LOOK, spriteStage } from './enemy-info';
 import { mapGeometry, type MapGeometry } from './map-info';
+import { waterHintCanvas } from './water-hint';
 import { TRAP_CHARGES, trapPieces } from '../powers/info';
 import type { PowerKey, TrapState } from '../sim';
 
@@ -85,7 +86,8 @@ export class Renderer {
   private fxHost = new Container();
   private lightC = new Container();
   private uiC = new Container();
-  private waterSpr = new Sprite();
+  private waterHint = new Sprite();
+  private waterReady = false;
   private towers = new Map<number, TowerView>();
   private enemies = new Map<number, EnemyView>();
   private projs = new Map<number, ProjView>();
@@ -118,6 +120,8 @@ export class Renderer {
   private auraOf = new Map<number, boolean>();
   /** Ziel der Muenzfluege (Kartenpixel), vom Match gesetzt: Mitte der Geldanzeige */
   cashTarget = { x: 24, y: 2 };
+  /** Runde 16 TP: Wasserflaechen-Hinweis beim Platzieren eines Wasserturms. */
+  private waterSpr = new Sprite();
   private ghost = new Sprite();
   private ghostShadow = new Sprite();
   private ghostOk = true;
@@ -149,7 +153,7 @@ export class Renderer {
     this.flashSpr.width = VIEW_W; this.flashSpr.height = VIEW_H; this.flashSpr.alpha = 0;
     this.fx = new FxLayer(this.flashSpr);
     this.fxHost.addChild(this.fx.node, this.flashSpr);
-    for (const s of [this.selRing, this.rangeDisc, this.rangeRing, this.auraSpr, this.ghostShadow, this.ghost]) { s.visible = false; this.uiC.addChild(s); }
+    for (const s of [this.waterHint, this.selRing, this.rangeDisc, this.rangeRing, this.auraSpr, this.ghostShadow, this.ghost]) { s.visible = false; this.uiC.addChild(s); }
     this.aimSpr.visible = false; this.uiC.addChild(this.aimSpr);
     this.warpSpr.width = VIEW_W; this.warpSpr.height = VIEW_H; this.warpSpr.tint = hex(C.sky); this.warpSpr.alpha = 0; this.warpSpr.visible = false;
     this.lightC.addChild(this.warpSpr);
@@ -258,6 +262,12 @@ export class Renderer {
   }
 
   /** Geist beim Platzieren: Turm-Sprite, Fussabdruck, Reichweite (rot, wenn ungueltig). */
+  /** Runde 16 TP: Wasserflaechen hervorheben (nur solange ein Wasserturm platziert wird). */
+  setWaterHint(on: boolean): void {
+    if (on && !this.waterReady) { this.waterHint.texture = tex(waterHintCanvas(this.mapId, VIEW_W, VIEW_H)); this.waterReady = true; }
+    this.waterHint.visible = on;
+  }
+
   setGhost(g: { x: number; y: number; spr: Spr; view: RangeView; foot: number; ok: boolean } | null): void {
     const show = !!g;
     this.ghost.visible = this.ghostShadow.visible = show;
@@ -349,6 +359,7 @@ export class Renderer {
   sync(state: GameState, alpha: number, dtMs: number): void {
     this.now += dtMs;
     this.latest = state;
+    if (this.waterHint.visible) this.waterHint.alpha = 0.6 + 0.3 * Math.sin(this.now / 260);
     const newTick = state.tick !== this.lastTick;
     this.lastTick = state.tick;
     const seenT = new Set<number>();

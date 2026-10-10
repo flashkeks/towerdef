@@ -2,8 +2,8 @@
  * Store (Runde 12): Pixel-Laden mit Haendler, Karten je Power (Icon, Name, Text, Preis in Embers, Bestand), Kaufen mit Ton und Funken.
  * Bei Insta-Warden waehlt man die Variante. Embers-Anzeige oben. Kauf ueber `buyPower` (meta), Rest ist Anzeige.
  */
-import { buyPower } from '../meta';
-import { emberIcon, iconPower, merchantSprite, type PowerIconId } from '../pixel/sprites';
+import { buyHero, buyPower, heroStore, type HeroStoreEntry } from '../meta';
+import { emberIcon, heroPortrait, iconPower, merchantSprite, type PowerIconId } from '../pixel/sprites';
 import { INSTA_NAMES, INSTA_TIERS, INSTA_VARIANTS, type InstaVariant } from '../powers/info';
 import { priceNote, storeCards, type StoreCard } from '../powers/store';
 import { h } from '../ui/dom';
@@ -60,10 +60,65 @@ export function storeView(ctx: Ctx): View {
   let variant: InstaVariant = 'ranger';
   const talk = (s: string): void => { say.textContent = s; };
 
+  // Runde 16 TP: Rubriken "Powers" und "Heroes" (Bram, Sela mit Embers kaufen; Wren nur ueber Level)
+  let tab: 'powers' | 'heroes' = 'powers';
+  const tabs = h('div', 'store-tabs');
+  const tabBtn = (id: typeof tab, label: string): HTMLButtonElement => {
+    const b = h('button', 'store-tab');
+    b.dataset.tab = id;
+    b.textContent = label;
+    b.onclick = () => { if (tab === id) return; ctx.sound('click'); tab = id; render(); };
+    return b;
+  };
+  const tPowers = tabBtn('powers', 'Powers'), tHeroes = tabBtn('heroes', 'Heroes');
+  tabs.append(tPowers, tHeroes);
+
   const render = (flash?: string): void => {
     const p = ctx.store.profile;
+    tPowers.classList.toggle('on', tab === 'powers');
+    tHeroes.classList.toggle('on', tab === 'heroes');
+    grid.classList.toggle('heroes', tab === 'heroes');
+    if (tab === 'heroes') { grid.replaceChildren(...heroStore(p).map((e) => heroCard(e, flash === e.meta.id))); return; }
     const cards = storeCards(p.embers, p.inventory, variant);
     grid.replaceChildren(...cards.map((c) => card(c, flash === c.id)));
+  };
+
+  const buyH = (e: HeroStoreEntry): void => {
+    const res = buyHero(ctx.store.profile, e.meta.id);
+    if (!res.ok) {
+      ctx.sound('error');
+      talk(res.code === 'not-enough-embers' ? `${e.meta.short} costs ${fmt(e.lock.embers ?? 0)} Embers. ${fmt((e.lock.embers ?? 0) - ctx.store.profile.embers)} more.` : res.message);
+      return;
+    }
+    ctx.sound('storeBuy');
+    talk(`${e.meta.short} joins your wardens. Pick them before a match.`);
+    void ctx.update(res.profile).then(() => { chip.set(res.profile.embers); render(e.meta.id); });
+  };
+
+  const heroCard = (e: HeroStoreEntry, flash: boolean): HTMLElement => {
+    const own = e.lock.owned;
+    const poor = !own && e.lock.embers !== null && !e.lock.canBuy;
+    const el2 = h('article', `scard hcard${poor ? ' poor' : ''}${flash ? ' bought' : ''}`);
+    el2.dataset.hero = e.meta.id;
+    const head = h('div', 'sc-head');
+    const nm = h('div', 'hc-t');
+    nm.append(h('div', 'sc-name', e.meta.name), h('div', 'hc-role', `${e.meta.role} \u00b7 ${fmt(e.matchPrice)} gold in a match`));
+    head.append(cv(heroPortrait(), 3, 'sc-ic'), nm);
+    el2.append(head, h('div', 'sc-desc', e.meta.desc));
+    const foot = h('div', 'sc-foot');
+    if (own) foot.append(h('div', 'sc-owned hc-own', e.selected ? 'Yours \u00b7 selected' : e.lock.purchased ? 'Yours (bought)' : 'Yours'));
+    else if (e.lock.embers === null) foot.append(h('div', 'sc-owned', `Unlocks at level ${e.lock.unlockLevel}`));
+    else {
+      foot.append(h('div', 'sc-owned', `Or reach level ${e.lock.unlockLevel}`));
+      const btn = h('button', 'sc-buy');
+      btn.dataset.buy = e.meta.id;
+      btn.append(cv(emberIcon(0), 2), h('b', 'num', fmt(e.lock.embers)), h('span', 'sc-buy-l', 'Buy'));
+      btn.setAttribute('aria-disabled', String(!e.lock.canBuy));
+      btn.onclick = () => buyH(e);
+      foot.append(btn);
+    }
+    el2.append(foot);
+    return el2;
   };
 
   const buy = (c: StoreCard): void => {
@@ -114,7 +169,9 @@ export function storeView(ctx: Ctx): View {
   };
 
   render();
-  shop.append(stall, grid);
+  const counter = h('div', 'store-right');
+  counter.append(tabs, grid);
+  shop.append(stall, counter);
   el.append(shop);
   return { el, dispose: () => { clearInterval(breathe); } };
 }

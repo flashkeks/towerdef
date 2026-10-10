@@ -165,8 +165,8 @@ try {
   await p3.click('.diff[data-diff="easy"]');
   await p3.click('.app-play');
   await p3.waitForSelector('.m-canvas', { timeout: 20000 });
-  check(await p3.locator('.m-card').count() === 8, 'Turm-Leiste: sieben Tuerme und der Held');
-  check((await p3.locator('.m-card .m-card-n').allTextContents()).slice(3, 7).join('|') === 'Longshot|Lantern Market|Thornweaver|Alchemist', 'Longshot, Market, Thornweaver und Alchemist in der Leiste');
+  check(await p3.locator('.m-card').count() === 11, 'Turm-Leiste: zehn Tuerme und der Held (Runde 16 TP)');
+  check((await p3.locator('.m-card .m-card-n').allTextContents()).slice(3, 10).join('|') === 'Longshot|Lantern Market|Thornweaver|Alchemist|Riverkeeper|Bellringer|Tinker', 'Longshot, Market, Thornweaver, Alchemist, Riverkeeper, Bellringer, Tinker in der Leiste');
   check(await p3.evaluate(() => { const s = document.querySelector('.m-panes'); const c = [...document.querySelectorAll('.m-card')]; return s.scrollHeight <= s.clientHeight && Math.max(...c.map((e) => e.getBoundingClientRect().bottom)) <= s.getBoundingClientRect().bottom; }), 'Turm-Leiste bei 1280 x 720 ohne Scrollen');
   const rect3 = await p3.evaluate(() => { const r = document.querySelector('.m-canvas').getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height }; });
   const at3 = (mx, my) => [rect3.x + (mx / 640) * rect3.w, rect3.y + (my / 360) * rect3.h];
@@ -276,6 +276,33 @@ try {
   check(true, 'Tages-Challenge startet ein Match mit Regeln');
   await p5.waitForTimeout(500);
   check(err5.length === 0, `keine Konsolenfehler in Challenges (${err5.join(' | ')})`);
+
+  // Runde 16 TP: Held im Setup waehlen (Bram), Match startet mit ihm; Wasserflaechen-Hinweis beim Riverkeeper; Store-Rubrik Heroes
+  const p6 = await browser.newPage({ viewport: { width: 1280, height: 720 } });
+  const err6 = watchErrors(p6);
+  await p6.goto(url + '?debug');
+  await p6.waitForSelector('.maptile[data-map="hollow"]');
+  await p6.click('.maptile[data-map="hollow"]');
+  await p6.waitForSelector('.hero-pick[data-hero="bram"]');
+  check(await p6.locator('.hero-pick').count() === 3, 'Setup: drei Helden zur Wahl');
+  await p6.click('.hero-pick[data-hero="bram"]');
+  await p6.waitForSelector('.hero-pick.sel[data-hero="bram"]');
+  check(await p6.evaluate(() => { const sc = document.querySelector('.dw-screens'); return sc.scrollHeight <= sc.clientHeight + 1; }), 'Setup mit Helden-Wahl bei 1280 x 720 ohne Scrollen');
+  await p6.click('.app-play');
+  await p6.waitForSelector('.m-canvas', { timeout: 20000 });
+  await p6.waitForFunction(() => !!window.__dw?.game, null, { timeout: 5000 });
+  check(await p6.evaluate(() => __dw.game.info.hero === 'bram'), 'Match startet mit dem gewaehlten Helden (Bram)');
+  await p6.click('.m-card[data-tower="riverkeeper"]');
+  check(await p6.evaluate(() => __dw.r.waterHint.visible === true), 'Riverkeeper gewaehlt: Wasserflaechen hervorgehoben');
+  await p6.keyboard.press('Escape');
+  check(await p6.evaluate(() => __dw.r.waterHint.visible === false), 'Abbrechen: Wasser-Hinweis weg');
+  await p6.goto(url + '?debug');
+  await p6.waitForSelector('.maptile');
+  await p6.click('.navbtn:has-text("Store")');
+  await p6.click('.store-tab[data-tab="heroes"]');
+  await p6.waitForSelector('.hcard');
+  check(await p6.locator('.hcard').count() === 3, 'Store: Rubrik Heroes mit drei Helden');
+  check(err6.length === 0, `keine Konsolenfehler mit Helden-Wahl/Wasser/Store (${err6.join(' | ')})`);
 } finally {
   await browser.close();
   stop();

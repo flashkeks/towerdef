@@ -48,6 +48,7 @@ export const S = {
     next: 'Next unlock',
   },
   setup: {
+    hero: 'Hero',
     change: 'Maps',
     difficulty: 'Difficulty',
     mode: 'Mode',

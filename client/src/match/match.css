@@ -419,3 +419,15 @@ kbd { font: 700 10px var(--font-num); background: var(--ink); color: var(--silve
 .m-round.free::after { content: ' \00b7 FREEPLAY'; font-size: 14px; letter-spacing: .12em; color: var(--silver); }
 .ov-box .ov-s { max-width: 420px; text-align: center; line-height: 1.35; text-transform: none; font-size: 17px; }
 .ov-box .free-btn { background: var(--leaf, #5fae4a); color: #fff; }
+
+/* ---- Runde 16 TP: zehn Tuerme + Held (11 Kacheln): drei Spalten, damit die Leiste bei 1280 x 720 und 1920 x 1080 ohne Scrollen passt ---- */
+@media (max-height: 860px), (min-height: 1000px) {
+  .m-pane-towers { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
+  .m-cards .m-card { padding: 3px 2px 2px; }
+  .m-cards .m-card-n { font-size: 11px; }
+  .m-cards .m-card-p { font-size: 13px; gap: 3px; }
+  .m-cards .m-key { top: 2px; right: 2px; transform: scale(.85); transform-origin: top right; }
+}
+@media (max-height: 860px) {
+  .m-cards .m-port { height: 40px; }
+}

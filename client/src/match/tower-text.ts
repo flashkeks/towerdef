@@ -4,13 +4,11 @@
  */
 import type { HeroType, TowerType } from '../sim';
 
-/** Reihenfolge der Turm-Leiste (Runde 14): die drei Basistuerme, dann die Spezialisten (Longshot, Market, Thornweaver, Alchemist). */
-export const TOWER_TYPES: TowerType[] = ['ranger', 'bombardier', 'frostcaller', 'longshot', 'market', 'thornweaver', 'alchemist'];
-/**
- * Runde 16 (Paket T): Riverkeeper, Bellringer, Tinker und die Helden Bram und Sela sind in Sim und Meta fertig, aber noch nicht in der Turm-Leiste -
- * die Leiste, die Held-Auswahl und die Platzier-UI fuer Wasser bringt Paket TP. Der Held der Partie steht in `game.info.hero` (Held-Kachel in `match.ts`).
- */
-export const HERO_TYPES: HeroType[] = ['wren'];
+/** Reihenfolge der Turm-Leiste (Runde 14): die drei Basistuerme, dann die Spezialisten (Longshot, Market, Thornweaver, Alchemist),
+ * Runde 16 TP: Riverkeeper (Wasser), Bellringer, Tinker. */
+export const TOWER_TYPES: TowerType[] = ['ranger', 'bombardier', 'frostcaller', 'longshot', 'market', 'thornweaver', 'alchemist', 'riverkeeper', 'bellringer', 'tinker'];
+/** Runde 16 TP: alle Helden; im Match steht nur der Held der Partie in der Leiste (`game.info.hero`, Wahl im Setup). */
+export const HERO_TYPES: HeroType[] = ['wren', 'bram', 'sela'];
 export const ROLE: Record<TowerType | HeroType, string> = {
   ranger: 'Cheap single target',
   bombardier: 'Area damage, cracks armor',

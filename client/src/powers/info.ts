@@ -118,7 +118,7 @@ export function slotHint(s: PowerSlot): string {
   switch (s.state) {
     case 'empty': return 'Buy in the Store';
     case 'used': return 'Used this round';
-    case 'needhero': return 'Place Wren first';
+    case 'needhero': return 'Place your hero first';
     default: return s.target === 'button' ? 'Click to use' : s.target === 'place' ? 'Click, then place' : 'Click, then pick a spot';
   }
 }

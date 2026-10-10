@@ -502,3 +502,40 @@ canvas.pop { animation: pop-in 0.5s steps(6) both; }
   .home .crew-n { font-size: 13px; }
   .home .crew-lock { font-size: 12px; }
 }
+
+/* Runde 16 TP: Helden-Wahl im Setup (Wren, Bram, Sela) */
+.heroes.row { display: flex; flex-direction: row; gap: 14px; margin-bottom: 4px; }
+.hero-pick {
+  flex: 1 1 0; min-width: 0; margin: 4px; padding: 4px 10px 4px 4px; background: var(--p-night); display: flex; align-items: center; gap: 8px; text-align: left;
+  box-shadow: 0 -4px 0 0 var(--p-ink), 0 4px 0 0 var(--p-ink), -4px 0 0 0 var(--p-ink), 4px 0 0 0 var(--p-ink), inset 0 4px 0 0 var(--p-dusk), inset 0 -4px 0 0 var(--p-ink);
+}
+.hero-pick:hover:not(:disabled) { background: var(--p-dusk); }
+.hero-pick.sel { background: var(--p-dusk); box-shadow: 0 -4px 0 0 var(--p-ink), 0 4px 0 0 var(--p-ink), -4px 0 0 0 var(--p-ink), 4px 0 0 0 var(--p-ink), inset 0 0 0 4px var(--p-amber); }
+.hero-pick.locked .hp-ic { filter: grayscale(1) brightness(0.55); }
+.hero-pick .hp-t { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.hero-pick .hp-n { font-weight: 800; font-size: 17px; letter-spacing: 0.06em; text-transform: uppercase; }
+.hero-pick .hp-r { font-size: 12px; color: var(--p-silver); line-height: 1.1; }
+.hero-pick.locked .hp-n { color: var(--p-stone); }
+.hero-pick.locked .hp-r { color: var(--p-yellow); }
+.setup-left { display: flex; flex-direction: column; align-items: flex-start; gap: 14px; min-width: 0; }
+.setup-left > .setup-heroes { align-self: stretch; width: 0; min-width: 100%; }
+.setup-heroes { display: flex; flex-direction: column; gap: 6px; }
+.setup-heroes .heroes.row { gap: 8px; }
+.setup-heroes .hero-pick { padding-right: 6px; }
+
+/* Runde 16 TP: Store-Rubriken Powers / Heroes */
+.store .store-right { flex: 1; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.store .store-right .cards { flex: none; }
+.store-tabs { display: flex; gap: 12px; padding: 4px; }
+.store-tab { font-weight: 800; font-size: 18px; letter-spacing: 0.08em; text-transform: uppercase; padding: 6px 18px; background: var(--p-night); color: var(--p-silver); box-shadow: 0 -4px 0 0 var(--p-ink), 0 4px 0 0 var(--p-ink), -4px 0 0 0 var(--p-ink), 4px 0 0 0 var(--p-ink), inset 0 4px 0 0 var(--p-dusk); }
+.store-tab.on { color: var(--p-yellow); background: var(--p-dusk); box-shadow: 0 -4px 0 0 var(--p-ink), 0 4px 0 0 var(--p-ink), -4px 0 0 0 var(--p-ink), 4px 0 0 0 var(--p-ink), inset 0 0 0 4px var(--p-amber); }
+.store .cards.heroes { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+.hcard .hc-t { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.hcard .hc-role { font-size: 13px; color: var(--p-silver); }
+.hcard .hc-own { color: var(--p-leaf); font-weight: 800; }
+
+/* Runde 16 TP: zehn Turm-Reiter in einer Zeile (1280 px): kleiner, Icon einfach */
+.towers .tabs { flex-wrap: nowrap; gap: 6px; }
+.towers .tab { gap: 6px; padding: 6px 8px; margin: 4px 3px; font-size: 13px; letter-spacing: 0.03em; white-space: nowrap; }
+.towers .tab > canvas:first-child { display: none; }
+.towers .tab > canvas { width: 20px; height: 20px; }

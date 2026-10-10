@@ -3,7 +3,8 @@
  * Medaillen je Schwierigkeit stehen an der Karte und an jedem Modus; die Belohnungsfaktoren aendern sich mit Karte und Modus.
  */
 import type { Difficulty, ModeId } from '../../../sim/src/types';
-import { END_ROUND, DIFFICULTIES, MODE_IDS, MODE_META, isDifficultyUnlocked, mapById, mapLock, medalsOf, modeLock, rewardFactors, unlockLevel, bestOf } from '../meta';
+import { END_ROUND, DIFFICULTIES, MODE_IDS, MODE_META, heroStore, selectHero, isDifficultyUnlocked, mapById, mapLock, medalsOf, modeLock, rewardFactors, unlockLevel, bestOf } from '../meta';
+import { heroPortrait } from '../pixel/sprites';
 import { h, setClass } from '../ui/dom';
 import { MEDAL_OF, icon, medal } from './icons';
 import { previewCanvas } from './home';
@@ -106,13 +107,47 @@ export function setupView(ctx: Ctx, mapId: string): View {
   setClass(mbtns[ctx.mode]!, 'sel', true);
   side.append(modes);
 
+  // ---- Runde 16 TP: Held fuer dieses Match (Wren, Bram, Sela); gesperrte mit Bedingung, Auswahl bleibt im Profil
+  const heroCol = h('div', 'setup-heroes');
+  heroCol.append(h('div', 'h2', S.setup.hero));
+  const heroes = h('div', 'heroes row');
+  const hbtns = new Map<string, HTMLButtonElement>();
+  const drawHeroes = (): void => {
+    const list = heroStore(ctx.store.profile);
+    for (const e of list) {
+      const b = hbtns.get(e.meta.id) ?? h('button', 'hero-pick');
+      b.replaceChildren();
+      b.dataset.hero = e.meta.id;
+      b.className = `hero-pick ${e.lock.owned ? '' : 'locked'} ${e.selected ? 'sel' : ''}`.replace(/\s+/g, ' ').trim();
+      b.disabled = !e.lock.owned;
+      const txt = h('div', 'hp-t');
+      txt.append(h('div', 'hp-n', e.meta.short), h('div', 'hp-r', e.lock.owned ? e.meta.role : e.lock.embers === null ? `Level ${e.lock.unlockLevel}` : `Level ${e.lock.unlockLevel} or ${e.lock.embers.toLocaleString('en-US')} Embers`));
+      b.append(cv(heroPortrait(), 2, 'hp-ic'), txt);
+      b.title = e.lock.owned ? `${e.meta.name}: ${e.meta.desc}` : e.lock.text;
+      if (!hbtns.has(e.meta.id)) {
+        b.onclick = () => {
+          const res = selectHero(ctx.store.profile, e.meta.id);
+          if (!res.ok) { ctx.sound('error'); return; }
+          ctx.sound('click');
+          void ctx.update(res.profile).then(drawHeroes);
+        };
+        hbtns.set(e.meta.id, b);
+        heroes.append(b);
+      }
+    }
+  };
+  drawHeroes();
+  heroCol.append(heroes);
+
   const play = h('button', 'btn-big play app-play');
   play.append(ptext(S.home.play, 4, 'white'), cv(icon('arrow'), 3));
   play.onclick = () => { ctx.sound('click'); ctx.play(ctx.difficulty); };
   refreshReward();
   side.append(play, reward);
 
-  body.append(card, side);
+  const left = h('div', 'setup-left');
+  left.append(card, heroCol);
+  body.append(left, side);
   el.append(body);
   return { el };
 }

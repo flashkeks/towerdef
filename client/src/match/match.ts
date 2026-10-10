@@ -7,6 +7,7 @@ import { createGame, DATA, MODES, modeAllows, rulesAllow, describeRules, type Ch
 import { audio } from '../audio/engine';
 import { t } from '../i18n/t';
 import { h, setClass, setText } from '../ui/dom';
+import { hasWater } from './water-hint';
 import { baseRangePx, displayName, footMilli, isHero } from './info';
 import { Confirm } from './confirm';
 import { Panel, fitFigure } from './panel';
@@ -257,6 +258,7 @@ class Match {
 
   private card(ty: TowerType | HeroType): HTMLElement {
     const c = h('button', 'm-card');
+    c.dataset.tower = ty;
     const spr = isHero(ty) ? heroPortrait() : towerPortrait(ty);
     const port = h('div', 'm-port');
     // Runde 14b: auf sichtbare Pixel zuschneiden, ganzzahlig und mittig. Zwei Fassungen (1x/2x), das CSS waehlt je nach Fensterhoehe.
@@ -460,7 +462,10 @@ class Match {
     if (ty && !this.allowed(ty)) { this.toast(this.modeLockText(ty)); audio.play('error'); return; }
     if (ty && this.opts.unlocks && !this.opts.unlocks.towers.includes(ty)) { this.toast(this.opts.lockInfo?.[ty] ?? t('match.locked')); audio.play('error'); return; }
     this.placing = this.placing === ty ? null : ty;
-    if (this.placing) { this.select(null); this.toast(t('match.placeHint')); }
+    // Runde 16 TP: Wassertuerme zeigen beim Platzieren die Wasserflaechen; Karte ohne Wasser -> eigener Hinweis
+    const water = !!this.placing && !isHero(this.placing) && DATA.towers[this.placing].placement === 'water';
+    this.r.setWaterHint(water);
+    if (this.placing) { this.select(null); this.toast(t(water ? (hasWater(this.game.info.map) ? 'match.placeHintWater' : 'match.noWater') : 'match.placeHint')); }
     for (const [k, c] of this.cards) setClass(c, 'sel', k === this.placing);
     if (!this.placing) this.r.setGhost(null);
     this.updateGhost();
@@ -470,7 +475,7 @@ class Match {
     this.r.select(id);
     const tw = id == null ? null : this.game.state.towers.find((q) => q.id === id);
     this.panel.show(tw ? tw.id : null, tw ? tw.x / 1000 : 0);
-    if (id != null) { this.cancelAim(); this.placing = null; for (const c of this.cards.values()) setClass(c, 'sel', false); this.r.setGhost(null); }
+    if (id != null) { this.cancelAim(); this.placing = null; for (const c of this.cards.values()) setClass(c, 'sel', false); this.r.setGhost(null); this.r.setWaterHint(false); }
   }
 
   private towerAt(x: number, y: number): number | null {
