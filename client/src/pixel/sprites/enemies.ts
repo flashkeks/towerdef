@@ -2,11 +2,12 @@
 import type { PalName } from '../palette';
 import { flame, spark } from './parts';
 import { outlineSurface, RAMPS, type Ramp, silhouette, Surface } from './surface';
+import { drawCruiser, drawDreadnought, drawDuskrunner, CRUISER_AX, CRUISER_AY, CRUISER_H, CRUISER_W, DREAD_AX, DREAD_AY, DREAD_H, DREAD_W, RUNNER_AX, RUNNER_AY, RUNNER_H, RUNNER_W } from './enemies15e';
 import { drawColossus, drawCrystalBrute, drawFortified, drawFrostling, drawGloomship, drawPink, drawRegrow, drawWyrm } from './enemies15';
 import type { EnemyType } from './types';
 
 export interface EnemyRaster { rows: string[]; ax: number; ay: number }
-/** damageStage: brute 0-2, leviathan 0-3, crystal 0-3, gloomship 0-2, wyrm 0-2 (Phase), colossus 0-4 (Platten). regrow/fortified: Merkmale als Ueberlagerung (Runde 15). */
+/** damageStage: brute 0-2, leviathan 0-3, crystal 0-3, gloomship 0-2, wyrm 0-2 (Phase), colossus 0-4 (Platten), cruiser 0-2, duskrunner 0-2, dreadnought 0-3. regrow/fortified: Merkmale als Ueberlagerung (Runde 15). */
 export interface EnemyOpts { damageStage?: number; hitFlash?: boolean; flip?: boolean; regrow?: boolean; fortified?: boolean }
 
 export const SHELL: Record<'red' | 'blue' | 'green' | 'gold', Ramp> = {
@@ -30,6 +31,9 @@ export function shellRamp(t: EnemyType): Ramp {
     case 'gloomship': return ['night', 'violet', 'orchid'];
     case 'wyrm': return RAMPS.frost;
     case 'colossus': return ['red', 'orange', 'yellow'];
+    case 'cruiser': return ['night', 'violet', 'orchid'];
+    case 'duskrunner': return ['ink', 'dusk', 'red'];
+    case 'dreadnought': return ['ink', 'dusk', 'crimson'];
   }
 }
 
@@ -49,6 +53,10 @@ export const ENEMY_SIZE: Record<EnemyType, { w: number; h: number; ax: number; a
   gloomship: { w: 66, h: 64, ax: 33, ay: 62 },
   wyrm: { w: 80, h: 64, ax: 40, ay: 60 },
   colossus: { w: 80, h: 64, ax: 40, ay: 62 },
+  /** Runde 15e: alle drei schweben, ay = Bodenpunkt unter dem Schiff (Schatten via fx.shipShadow). */
+  cruiser: { w: CRUISER_W, h: CRUISER_H, ax: CRUISER_AX, ay: CRUISER_AY },
+  duskrunner: { w: RUNNER_W, h: RUNNER_H, ax: RUNNER_AX, ay: RUNNER_AY },
+  dreadnought: { w: DREAD_W, h: DREAD_H, ax: DREAD_AX, ay: DREAD_AY },
 };
 
 const WOBBLE = [
@@ -304,10 +312,13 @@ export function enemyRaster(type: EnemyType, frame: number, o: EnemyOpts = {}): 
     case 'gloomship': drawGloomship(f, Math.min(2, Math.max(0, o.damageStage ?? 0)), s); break;
     case 'wyrm': drawWyrm(f, Math.min(2, Math.max(0, o.damageStage ?? 0)), s); break;
     case 'colossus': drawColossus(f, Math.min(4, Math.max(0, o.damageStage ?? 0)), s); break;
+    case 'cruiser': drawCruiser(f, Math.min(2, Math.max(0, o.damageStage ?? 0)), s); break;
+    case 'duskrunner': drawDuskrunner(f, Math.min(2, Math.max(0, o.damageStage ?? 0)), s); break;
+    case 'dreadnought': drawDreadnought(f, Math.min(3, Math.max(0, o.damageStage ?? 0)), s); break;
   }
   if (o.fortified) drawFortified(s, type, f);
   if (o.regrow) drawRegrow(s, type, f);
-  const diag = type === 'leviathan' || type === 'gloomship' || type === 'wyrm' || type === 'colossus';
+  const diag = type === 'leviathan' || type === 'gloomship' || type === 'wyrm' || type === 'colossus' || type === 'cruiser' || type === 'duskrunner' || type === 'dreadnought';
   let out = outlineSurface(s, 'ink', diag);
   if (o.hitFlash) out = silhouette(out, 'white');
   if (o.flip) out = out.flipX();

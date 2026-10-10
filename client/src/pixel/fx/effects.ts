@@ -158,7 +158,7 @@ export function novaRaster(frame: number, radius = 16): FxRaster {
 /** Platzen einer Schicht: Scherben in Schichtfarbe, kleiner Puff. frame 0..5. */
 export function popRaster(etype: EnemyType, frame: number): FxRaster {
   const f = Math.max(0, Math.min(POP_FRAMES - 1, Math.floor(frame)));
-  const BIG: Partial<Record<EnemyType, number>> = { brute: 1.6, leviathan: 3.2, ironshell: 1.2, frostling: 1.1, crystal: 1.9, gloomship: 2.8, wyrm: 3.4, colossus: 3.6 };
+  const BIG: Partial<Record<EnemyType, number>> = { brute: 1.6, leviathan: 3.2, ironshell: 1.2, frostling: 1.1, crystal: 1.9, gloomship: 2.8, wyrm: 3.4, colossus: 3.6, cruiser: 3.6, duskrunner: 1.7, dreadnought: 4.6 };
   const big = BIG[etype] ?? 1;
   const size = Math.ceil(30 * big);
   const s = new Surface(size, size);
@@ -211,8 +211,8 @@ export function statusRaster(kind: StatusKind, frame: number, etype: EnemyType =
   const f = ((Math.floor(frame) % 4) + 4) % 4;
   if (kind === 'freeze') {
     const z = ENEMY_SIZE[etype];
-    const BW: Partial<Record<EnemyType, number>> = { leviathan: 66, brute: 24, ember: 16, ironshell: 16, crystal: 32, gloomship: 56, wyrm: 70, colossus: 66 };
-    const BH: Partial<Record<EnemyType, number>> = { leviathan: 50, brute: 24, crystal: 30, gloomship: 34, wyrm: 46, colossus: 56 };
+    const BW: Partial<Record<EnemyType, number>> = { leviathan: 66, brute: 24, ember: 16, ironshell: 16, crystal: 32, gloomship: 56, wyrm: 70, colossus: 66, cruiser: 80, duskrunner: 48, dreadnought: 100 };
+    const BH: Partial<Record<EnemyType, number>> = { leviathan: 50, brute: 24, crystal: 30, gloomship: 34, wyrm: 46, colossus: 56, cruiser: 44, duskrunner: 22, dreadnought: 56 };
     const bw = BW[etype] ?? 14;
     const bh = BH[etype] ?? 16;
     const s = new Surface(bw + 8, bh + 8);
