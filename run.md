@@ -32,8 +32,14 @@ riverkeeper/bellringer/tinker **und** die späten Schiffe dreadnought/cruiser/du
 - ~~`r16h`~~ **erledigt, in `dev`** — Paket H: Startseite für zehn Karten (Kacheln liefen unten aus dem Bild). Nur kleiner Anfang (154 Zeilen). Ziel: ohne Scrollen
   bei 1280×720, Reiter nach Stufe oder Seiten à 5, Schloss mit Bedingung, Platz für Knopf „Challenges“.
 
+## 2b. Stand 10.10.2026 abends (Folgesitzung)
+H, T und E sind wiederhergestellt, fertig und in `dev` (`0d91102`, `3be5c50`, `afd6c38`); `docs/wip/` ist leer und weg.
+Je Paket ein Abschnitt in `docs/STATUS.md`, neu `docs/design/tuerme-r16.md` (Werte + Matrix) und `docs/design/challenges.md`.
+Pruefung auf `dev`: sim 345, meta 127, client 240 Tests, tsc ueberall, build, smoke gruen.
+**Als Naechstes: TP** (unten). Neue Tuerme laufen im Client bis dahin mit Platzhalter-Figuren, es gibt noch keine Helden-Auswahl
+und keine Wasser-Hervorhebung beim Platzieren. Ember Quarry hat keine Wasserflaeche (Spec: Kuehlteich) — in TP oder K-Nachtrag.
+
 ## 3. Danach
 - **TP**: Pixel-Figuren für Riverkeeper/Bellringer/Tinker (Stufen-Looks) und Bram/Sela, Wasser-Platzier-UI, Helden-Auswahl im Setup, Store-Rubrik Heroes.
-- Merge-Reihenfolge: H → T → E (E und H fassen beide `home.ts` an: E nur einen Knopf).
 - Vor dem Deploy: Screenshots, STATUS, dann Homelab-Sitzung fragt Max (erst zeigen, was geändert wurde).
 - Issue #5 (Server/Bestenliste) braucht Max/edge. Issue #3 nach dem Deploy schließen (Market, Karten, Freeplay erledigt).
