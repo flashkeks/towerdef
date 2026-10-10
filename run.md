@@ -41,7 +41,7 @@ und keine Wasser-Hervorhebung beim Platzieren. Ember Quarry hat keine Wasserflae
 
 ## 2c. Stand 10.10.2026 spaet: TP fertig
 TP (Figuren, Wasser-UI, Helden-Wahl, Store-Heroes, Quarry-Kuehlteich) ist in `dev`, Abschnitt in `docs/STATUS.md`. Damit ist Runde 16 komplett.
-**Als Naechstes: Deploy-Frage an Max** (Homelab-Sitzung, erst zeigen was sich geaendert hat — live ist noch Runde 14b), danach Issue #3 schliessen.
+**Deployt** als Release `2026-10-10-d8d1abd` (Preview, 10.10.2026 nach Freigabe Max); Issue #3 geschlossen.
 Danach offen: Feinschliff-Liste aus STATUS TP, Wellen-Editor fuer Challenges, Issue #5 (Bestenliste, braucht edge).
 
 ## 3. Danach
