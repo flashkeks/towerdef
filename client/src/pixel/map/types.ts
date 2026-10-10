@@ -6,8 +6,9 @@
 import type { Buf } from './buf';
 import type { PropArt } from './props';
 
-export type MapId = 'meadow' | 'frostfen' | 'quarry';
-export const MAP_IDS: MapId[] = ['meadow', 'frostfen', 'quarry'];
+export type MapId = 'meadow' | 'hollow' | 'marsh' | 'frostfen' | 'bastion' | 'quarry' | 'skyreach';
+/** In der Reihenfolge der Karten-Leiter (Runde 16, docs/design/runde16.md). */
+export const MAP_IDS: MapId[] = ['meadow', 'hollow', 'marsh', 'frostfen', 'bastion', 'quarry', 'skyreach'];
 
 export interface PlacedArt {
   prop: { kind: string; x: number; y: number; v: number; r: number };
