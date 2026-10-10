@@ -6,7 +6,7 @@
 import { explosionRaster, novaRaster, popRaster, boltLineRaster, statusRaster, puffRaster, leakRaster, arrowRainRaster, absoluteZeroRaster, flareRaster, dawnBeamRaster, bossPlateRaster, type ExplosionKind, type StatusKind, EXPLOSION_RADIUS } from '../fx/effects';
 import { coinRiseRaster, bankChestRaster, auraRingRaster, grantRaster, ricochetRaster, supplyDropRaster, focusRaster, bossMarkRaster } from '../fx/r13';
 import { acidMarkRaster, acidPoolRaster, acidSplashRaster, buffGlowRaster, deathBlastRaster, goldBurstRaster, monsterTransformRaster, shrinkRaster, stormArcRaster, thornZoneRaster, treeWallGrowRaster, treeWallRaster, vineSnareRaster, whirlwindRaster, worldTreeZoneRaster } from '../fx/r14';
-import { bossDeathRaster, frostBreathRaster, gloomCrashRaster, gloomShadowRaster, regrowRaster, stompRaster, towerFrozenRaster, type BossKind, FROST_BREATH_RADIUS, STOMP_RADIUS } from '../fx/r15';
+import { bossDeathRaster, duskTrailRaster, frostBreathRaster, gloomCrashRaster, gloomShadowRaster, regrowRaster, shipCrashRaster, shipShadowRaster, stompRaster, towerFrozenRaster, type BigShipKind, type BossKind, type ShipKind, FROST_BREATH_RADIUS, STOMP_RADIUS } from '../fx/r15';
 import { textRaster, textWidth } from '../font';
 import type { PalName } from '../palette';
 import { camoAlpha, rowsToCanvas, type Sprite } from './canvas';
@@ -246,7 +246,8 @@ export function monsterSprite(facing: number, frame: TowerFrame, scale = 1): Spr
 
 // ---------- Effekte Runde 15 (B2): neue Gegner und Bosse ----------
 export { REGROW_FRAMES, FROST_BREATH_FRAMES, FROZEN_TOWER_FRAMES, STOMP_FRAMES, GLOOM_CRASH_FRAMES, BOSS_DEATH_FRAMES, GLOOM_SHADOW_FRAMES, FROST_BREATH_RADIUS, STOMP_RADIUS } from '../fx/r15';
-export type { BossKind } from '../fx/r15';
+export type { BossKind, BigShipKind, ShipKind } from '../fx/r15';
+export { SHIP_CRASH_FRAMES, DUSK_TRAIL_FRAMES } from '../fx/r15';
 /** Regrow: Schicht waechst nach (Frame 0..5), Anker = Fuss des Gegners. */
 const regrow = (etype: EnemyType, frame: number): Sprite => { const f = clampF(frame, 6); return cached(`rg|${etype}|${f}`, () => sprite(regrowRaster(etype, f))); };
 /** Frosthauch des Frost Wyrm (Frame 0..7), Radius px (Standard 60 = Einfrier-Umkreis), Anker = Mitte (auf dem Wyrm). */
@@ -262,7 +263,15 @@ const gloomCrash = (frame: number): Sprite => { const f = clampF(frame, 8); retu
 /** Boss-Tod 'wyrm' (Eisbruch) / 'colossus' (Eruption), Frame 0..9, Anker = Fuss des Bosses. */
 const bossDeath = (kind: BossKind, frame: number): Sprite => { const f = clampF(frame, 10); return cached(`bd|${kind}|${f}`, () => sprite(bossDeathRaster(kind, f))); };
 
-export const fx = { regrow, frostBreath, towerFrozen, stomp, gloomShadow, gloomCrash, bossDeath, stormArc, whirlwind, vineSnare, treeWall, treeWallGrow, thornZone, worldTreeZone, acidSplash, acidMark, acidPool, buffGlow, deathBlast, monsterTransform, shrink, goldBurst, explosion, popShards, nova, boltLine, status, puff, leak, arrowRain, absoluteZero, flare, dawnBeam, bossPlate, coinRise, bankChest, auraRing, grant, ricochet, supplyDrop, focus, bossMark };
+// ---------- Effekte Runde 15e: Cruiser, Duskrunner, Dreadnought ----------
+/** Schatten am Boden unter einem schwebenden Schiff (gloomship, cruiser, duskrunner, dreadnought; 35 % Alpha eingebaut), Frame 0..3, Anker = Mitte. Fuer gloomship identisch zu gloomShadow. */
+const shipShadow = (kind: ShipKind, frame: number): Sprite => { const f = wrap4(frame); return cached(`ss|${kind}|${f}`, () => sprite(shipShadowRaster(kind, f), () => 0.35)); };
+/** Absturz von cruiser / dreadnought (Frame 0..9, groesser als gloomCrash), Anker = Aufschlagpunkt am Boden. */
+const shipCrash = (kind: BigShipKind, frame: number): Sprite => { const f = clampF(frame, 10); return cached(`scr|${kind}|${f}`, () => sprite(shipCrashRaster(kind, f))); };
+/** Duskrunner-Nachzieher (Tempo-Streifen + Nachbilder), Frame 0..3. Anker = Bodenpunkt wie enemySprite('duskrunner'): an dieselbe Stelle zeichnen, unter das Schiff. `flip` wie beim Schiff. */
+const duskTrail = (frame: number, flip = false): Sprite => { const f = wrap4(frame); return cached(`dt|${f}|${flip ? 1 : 0}`, () => sprite(duskTrailRaster(f, flip))); };
+
+export const fx = { shipShadow, shipCrash, duskTrail, regrow, frostBreath, towerFrozen, stomp, gloomShadow, gloomCrash, bossDeath, stormArc, whirlwind, vineSnare, treeWall, treeWallGrow, thornZone, worldTreeZone, acidSplash, acidMark, acidPool, buffGlow, deathBlast, monsterTransform, shrink, goldBurst, explosion, popShards, nova, boltLine, status, puff, leak, arrowRain, absoluteZero, flare, dawnBeam, bossPlate, coinRise, bankChest, auraRing, grant, ricochet, supplyDrop, focus, bossMark };
 export { coinRise, bankChest, auraRing, grant as grantFx, ricochet, supplyDrop, focus as focusFx, bossMark };
 export { explosion, popShards, nova, boltLine, status as statusFx, puff, leak as leakFx, arrowRain as arrowRainFx, absoluteZero as absoluteZeroFx, flare as flareFx, dawnBeam, bossPlate };
 

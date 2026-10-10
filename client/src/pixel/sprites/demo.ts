@@ -35,7 +35,7 @@ const towers: Tw[] = [
 ];
 
 function spawn(type: EnemyType, camo = false): void { ens.push({ type, x: -10, hp: type === 'brute' ? 4 : 1, hit: 0, slow: 0, stun: 0, camo, stage: 0, id: nid++ }); }
-const speed: Record<EnemyType, number> = { red: 0.55, blue: 0.7, green: 0.9, gold: 1.5, ironshell: 0.6, ember: 1.0, brute: 0.6, leviathan: 0.3, pink: 1.8, frostling: 0.9, crystal: 0.6, gloomship: 0.4, wyrm: 0.25, colossus: 0.2 };
+const speed: Record<EnemyType, number> = { red: 0.55, blue: 0.7, green: 0.9, gold: 1.5, ironshell: 0.6, ember: 1.0, brute: 0.6, leviathan: 0.3, pink: 1.8, frostling: 0.9, crystal: 0.6, gloomship: 0.4, wyrm: 0.25, colossus: 0.2, cruiser: 0.3, duskrunner: 3.0, dreadnought: 0.15 };
 
 function pop(e: En): void {
   fxs.push({ make: (f) => api.popShards(e.type, f), x: e.x, y: PATH_Y - 6, f: 0, n: 6, rate: 3, tick: 0 });
