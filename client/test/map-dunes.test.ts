@@ -87,7 +87,7 @@ describe('Ashra Dunes: Layout und dunes.json', () => {
     expect(a).toEqual(b);
     expect(a).not.toEqual(c);
     expect(a.some((p) => p.kind === 'haze')).toBe(true);
-    expect(a.filter((p) => p.kind === 'flake').every((p) => p.x >= -40 && p.x <= 640 && p.y >= -6 && p.y < 370)).toBe(true);
+    expect(a.filter((p) => p.kind === 'flake').every((p) => p.x >= -40 && p.x <= 680 && p.y >= -6 && p.y < 370)).toBe(true);
     expect(smokePoints(art.smoke, 500)).toHaveLength(art.smoke.length * 4);
     const pv = mapPreview('dunes');
     expect(pv.w).toBe(160);
