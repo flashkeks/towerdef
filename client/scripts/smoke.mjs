@@ -14,8 +14,11 @@ try {
   const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
   const errors = watchErrors(page);
   await page.goto(url + '?debug');
-  await page.waitForSelector('.app-play', { timeout: 20000 });
-  check(true, 'Startbildschirm da');
+  await page.waitForSelector('.maptile[data-map="meadow"]', { timeout: 20000 });
+  check(true, 'Startbildschirm da (Kartenwahl)');
+  check(await page.locator('.maptile').count() === 3, 'Kartenwahl zeigt drei Karten');
+  await page.click('.maptile[data-map="meadow"]');
+  await page.waitForSelector('.app-play');
   await page.click('.diff[data-diff="easy"]');
   await page.click('.app-play');
   await page.waitForSelector('.m-canvas', { timeout: 20000 });
@@ -86,7 +89,7 @@ try {
   const p2 = await browser.newPage({ viewport: { width: 1280, height: 720 } });
   const err2 = watchErrors(p2);
   await p2.goto(url + '?debug');
-  await p2.waitForSelector('.app-play', { timeout: 20000 });
+  await p2.waitForSelector('.maptile', { timeout: 20000 });
   await p2.click('.navbtn:has-text("Store")');
   await p2.waitForSelector('.scard');
   check(await p2.locator('.scard').count() === 9, 'Store zeigt neun Karten');
@@ -98,6 +101,7 @@ try {
   await p2.click('.scard[data-power="instaWarden"] .sc-var[data-variant="bombardier"]');
   check(await p2.locator('.scard[data-power="instaWarden"] .sc-var.on[data-variant="bombardier"]').count() === 1, 'Insta-Warden: Variante waehlbar');
   await p2.click('.subtop .btn-small');
+  await p2.click('.maptile[data-map="meadow"]');
   await p2.waitForSelector('.app-play');
   await p2.click('.diff[data-diff="easy"]');
   await p2.click('.app-play');
@@ -125,7 +129,7 @@ try {
   const p3 = await browser.newPage({ viewport: { width: 1280, height: 720 } });
   const err3 = watchErrors(p3);
   await p3.goto(url + '?debug');
-  await p3.waitForSelector('.app-play', { timeout: 20000 });
+  await p3.waitForSelector('.maptile', { timeout: 20000 });
   // Menue-Ton: schon der erste Klick im Hauptmenue entsperrt den AudioContext (vorher blieb alles stumm bis nach einem Match)
   check(await p3.evaluate(() => __audio.ctxState) === null, 'Audio vor dem ersten Klick noch nicht entsperrt');
   await p3.click('.navbtn:has-text("Knowledge")');
@@ -138,6 +142,7 @@ try {
   check(await p3.evaluate(() => { const sc = document.querySelector('.dw-screens'); return sc.scrollHeight <= sc.clientHeight; }), 'Wissensbaum bei 1280 x 720 ohne Scrollen (alle Aeste auf einer Flaeche)');
   check(await p3.evaluate(() => __audio.musicTimer === null), 'Menue ohne Musik (kein Musik-Timer)');
   await p3.click('.subtop .btn-small');
+  await p3.click('.maptile[data-map="meadow"]');
   await p3.waitForSelector('.app-play');
   await p3.click('.diff[data-diff="easy"]');
   await p3.click('.app-play');
@@ -186,7 +191,7 @@ try {
   const p4 = await browser.newPage({ viewport: { width: 1280, height: 720 } });
   const err4 = watchErrors(p4);
   await p4.goto(url + '?debug&level=30&seed=5');
-  await p4.waitForSelector('.app-play', { timeout: 20000 });
+  await p4.waitForSelector('.maptile', { timeout: 20000 });
   await p4.click('.navbtn:has-text("Knowledge")');
   await p4.waitForSelector('.knode');
   const vis = await p4.evaluate(() => { const e = [...document.querySelectorAll('.knode.available')].find((n) => { const r = n.getBoundingClientRect(); return r.top > 60 && r.bottom < 700; }); if (!e) return null; const r = e.getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2]; });
@@ -196,6 +201,7 @@ try {
   await p4.waitForTimeout(250);
   check(await p4.evaluate(() => { const sc = document.querySelector('.dw-screens'); return sc.scrollTop === 0 && document.querySelectorAll('.knode').length === 40; }), 'Wissensbaum nach einem Kauf neu gezeichnet, weiter ohne Scrollen');
   await p4.click('.subtop .btn-small');
+  await p4.click('.maptile[data-map="meadow"]');
   await p4.waitForSelector('.app-play');
   await p4.click('.diff[data-diff="medium"]');
   await p4.click('.app-play');

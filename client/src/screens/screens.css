@@ -388,3 +388,73 @@ canvas.pop { animation: pop-in 0.5s steps(6) both; }
 .pw-used .num { color: var(--p-yellow); font-size: 24px; }
 .pw-icons { display: flex; gap: 4px; flex-wrap: wrap; }
 .res-col { display: flex; flex-direction: column; gap: 14px; }
+
+/* ---- Runde 15 C: Kartenwahl und Match-Start ---- */
+.pv-box { position: relative; background: var(--p-ink); line-height: 0; flex: none; }
+.pv-box canvas.pv { image-rendering: pixelated; image-rendering: crisp-edges; display: block; }
+.pv-box.dim canvas.pv { filter: grayscale(1) brightness(0.5); }
+.pv-wait { position: absolute; inset: 0; display: grid; place-items: center; color: var(--p-stone); font-weight: 800; letter-spacing: 0.2em; text-transform: uppercase; font-size: 14px; line-height: 1; }
+
+.home { gap: 10px; }
+.home .mid.maps { display: flex; flex-direction: column; gap: 4px; align-self: stretch; width: 100%; }
+.home .mid.maps .h2 { margin-bottom: 4px; }
+.maptiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; }
+.maptile {
+  position: relative; display: flex; flex-direction: column; text-align: left; margin: 4px; padding: 0; background: var(--p-night); min-width: 0;
+  box-shadow: 0 -4px 0 0 var(--p-ink), 0 4px 0 0 var(--p-ink), -4px 0 0 0 var(--p-ink), 4px 0 0 0 var(--p-ink), 0 0 0 8px var(--p-dusk), 0 -8px 0 0 var(--p-dusk), 0 8px 0 0 var(--p-dusk);
+}
+.maptile:hover:not(:disabled), .maptile:focus-visible { background: var(--p-dusk); box-shadow: 0 -4px 0 0 var(--p-ink), 0 4px 0 0 var(--p-ink), -4px 0 0 0 var(--p-ink), 4px 0 0 0 var(--p-ink), 0 0 0 8px var(--p-amber), 0 -8px 0 0 var(--p-amber), 0 8px 0 0 var(--p-amber); }
+.maptile.gold { box-shadow: 0 -4px 0 0 var(--p-ink), 0 4px 0 0 var(--p-ink), -4px 0 0 0 var(--p-ink), 4px 0 0 0 var(--p-ink), 0 0 0 8px var(--p-amber), 0 -8px 0 0 var(--p-amber), 0 8px 0 0 var(--p-amber), 0 0 0 12px var(--p-ink); }
+.maptile.locked { cursor: not-allowed; }
+.mt-art { position: relative; background: var(--p-ink); display: flex; justify-content: center; padding: 0; line-height: 0; }
+.mt-tier {
+  position: absolute; left: 8px; top: 8px; z-index: 2; padding: 3px 10px 4px; font: 800 14px 'Rajdhani', sans-serif; line-height: 1.1; letter-spacing: 0.12em; text-transform: uppercase; color: var(--p-white);
+  background: var(--p-grass); box-shadow: 0 0 0 3px var(--p-ink);
+}
+.tier-intermediate .mt-tier { background: var(--p-navy); }
+.tier-advanced .mt-tier { background: var(--p-crimson); }
+.mt-lock {
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; display: flex; align-items: center; gap: 12px; padding: 10px 14px; line-height: 1.15;
+  background: rgba(24, 20, 37, 0.9); color: var(--p-yellow); font-weight: 800; font-size: 16px; text-align: left; border-top: 3px solid var(--p-amber);
+}
+.mt-info { padding: 8px 14px 10px; display: flex; flex-direction: column; gap: 4px; }
+.maptile .map-name { font-size: 24px; margin-bottom: 0; }
+.mt-sub { font-size: 14px; color: var(--p-silver); letter-spacing: 0.04em; }
+.mt-modes { position: absolute; right: 8px; bottom: 8px; z-index: 2; padding: 2px 8px 3px; line-height: 1.2; font-size: 12px; font-weight: 800; color: var(--p-silver); background: var(--p-ink); letter-spacing: 0.06em; text-transform: uppercase; }
+.maptile .medals { gap: 8px; }
+.maptile .medal { padding: 4px 8px; column-gap: 8px; min-width: 0; }
+.maptile .medal-d { font-size: 13px; }
+.maptile .medal-b { font-size: 12px; white-space: nowrap; }
+.maptile .mapflag { top: 8px; right: 8px; z-index: 2; font-size: 13px; padding: 3px 10px; }
+
+.setup-body { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 28px; align-items: start; }
+.setup-map .mt-art { padding: 0; }
+.setup-map .mt-info { padding: 12px 18px 16px; width: 488px; gap: 8px; }
+.setup-map .medals { gap: 8px; }
+.setup-map .medal { padding: 6px 8px; column-gap: 8px; min-width: 0; }
+.setup-map .medal-b { font-size: 12px; white-space: nowrap; }
+.setup-map .mt-sub { font-size: 16px; }
+.setup-desc { font-size: 17px; color: var(--p-silver); line-height: 1.25; }
+.setup-side { display: flex; flex-direction: column; gap: 6px; }
+.diffs.row { flex-direction: row; gap: 14px; margin-bottom: 4px; }
+.diffs.row .diff { flex: 1 1 0; min-width: 0; padding: 8px 12px; }
+.diffs.row .diff-t { font-size: 20px; }
+.diffs.row .diff-s { font-size: 13px; line-height: 1.1; }
+.diffs.row .diff-lock { position: static; transform: none; grid-column: 1 / -1; margin-top: 4px; font-size: 13px; }
+.modes { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; margin-bottom: 4px; }
+.mode {
+  position: relative; text-align: left; margin: 4px; padding: 8px 12px 9px; min-height: 82px; background: var(--p-night); display: flex; flex-direction: column; gap: 3px; min-width: 0;
+  box-shadow: 0 -4px 0 0 var(--p-ink), 0 4px 0 0 var(--p-ink), -4px 0 0 0 var(--p-ink), 4px 0 0 0 var(--p-ink), inset 0 4px 0 0 var(--p-dusk), inset 0 -4px 0 0 var(--p-ink);
+}
+.mode:hover:not(:disabled) { background: var(--p-dusk); }
+.mode.sel { background: var(--p-dusk); box-shadow: 0 -4px 0 0 var(--p-ink), 0 4px 0 0 var(--p-ink), -4px 0 0 0 var(--p-ink), 4px 0 0 0 var(--p-ink), inset 0 0 0 4px var(--p-amber); }
+.mode-h { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.mode-n { font-weight: 800; font-size: 19px; letter-spacing: 0.06em; text-transform: uppercase; }
+.mode-pips { display: flex; gap: 2px; align-items: center; margin-right: 34px; }
+.mode-d { font-size: 14px; color: var(--p-silver); line-height: 1.15; }
+.mode-bonus { position: absolute; right: 12px; top: 10px; font-weight: 800; font-size: 13px; color: var(--p-leaf); }
+.mode.locked .mode-n { color: var(--p-stone); }
+.mode-lock { position: absolute; left: 4px; right: 4px; bottom: 4px; display: flex; align-items: center; gap: 8px; padding: 5px 8px; min-height: 36px; background: rgba(24, 20, 37, 0.94); color: var(--p-yellow); font-weight: 800; font-size: 14px; line-height: 1.1; }
+.setup .play { margin-top: 4px; min-height: 68px; }
+.setup-reward { text-align: center; font-size: 14px; color: var(--p-silver); letter-spacing: 0.05em; }
+.res-factors { margin-top: 8px; font-size: 14px; color: var(--p-silver); letter-spacing: 0.05em; }

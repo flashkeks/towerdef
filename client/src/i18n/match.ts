@@ -21,6 +21,7 @@ export const matchStrings = {
   'powers.aimBomb': 'Click to throw, Esc to cancel',
   'powers.aimPath': 'Click on the path, Esc to cancel',
   'powers.aimPlace': 'Click to place, Esc to cancel',
+  'powers.off': 'Powers are switched off in {mode}.',
   'powers.hint': 'One use per kind each round.',
   'wave.title': 'Round {n}',
   'wave.next': 'Coming next',
@@ -36,7 +37,7 @@ export const matchStrings = {
   'match.defeat': 'Defeat',
   'match.continue': 'Continue',
   'match.roundCleared': 'Round {n} cleared',
-  'match.bossIncoming': 'Dusk Leviathan approaches',
+  'match.bossIncoming': '{name} approaches',
   'match.freeplay': 'Endless',
 
   'panel.sell': 'Sell',
@@ -134,6 +135,7 @@ export const matchStrings = {
   'start.hardText': '100 lives, pricey towers, faster Glims',
   'start.play': 'Play',
   'start.map': 'Lanternfall Meadow',
+  'reason.mode-locked': "Not allowed in this mode",
   'start.sub': 'Defend the lanterns of Lanternfall against the Glims of the dusk.',
   'start.controls': 'Q/W/E/R place towers   Space start round   , . / upgrade paths   1-3 abilities   Esc cancel',
 

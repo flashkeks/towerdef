@@ -5,6 +5,7 @@
  *   ?hooks             Pruefskripte (Runde 11b): normales Profil (Sperren sichtbar, Level 4 = alle Tuerme), nur im Arbeitsspeicher, dazu `window.__dw`
  *   ?level=N           (mit debug/hooks) Spieler-Level N, damit Wissenspunkte und Freischaltungen pruefbar sind
  *   ?seed=N            fester Seed fuer das Match
+ *   (debug/hooks)      `window.__app` = { store, go, ctx } fuer Bildskripte (Medaillen setzen, Bildschirm wechseln)
  */
 import './ui/kit/fonts.css';
 import './ui/kit/tokens.css';
@@ -34,7 +35,7 @@ export async function startGame(root: HTMLElement): Promise<GameHandle> {
   if (hooks && !test) await store.update({ ...newProfile(), playerXp: xpForLevel(q.has('level') ? Number(q.get('level')) : 4) });
   if (q.has('debug')) (window as unknown as { __audio: unknown }).__audio = audio;
   audio.attach(); // AudioContext schon beim ersten Klick/Tastendruck im Menue entsperren
-  void runApp(root, {
+  const app = await runApp(root, {
     store,
     startMatch: (r, o) => startMatch(r, { ...o, debug: q.has('debug') || hooks, seed: q.has('seed') ? Number(q.get('seed')) : undefined }),
     sound: (id) => audio.play(SOUND[id]),
@@ -43,5 +44,7 @@ export async function startGame(root: HTMLElement): Promise<GameHandle> {
     // Menue-Musik entfernt (Max, 09.10.2026): im Menue nur Klick-/UI-Toene, Musik nur im Match
     theme: () => undefined,
   });
+  // Pruefhilfe: Profil und Navigation fuer Bildskripte (nur mit ?debug/?hooks)
+  if (test || hooks) (window as unknown as { __app: unknown }).__app = { store, go: app.go, ctx: app.ctx };
   return { setBlocked: () => undefined };
 }

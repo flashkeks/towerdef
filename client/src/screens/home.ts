@@ -1,14 +1,14 @@
 /** Startseite: Spieler-Level, Kartenkachel mit Medaillen, Schwierigkeit, Knoepfe zu Tuermen, Wissen, Einstellungen. */
 import type { Difficulty, HeroType, TowerType } from '../../../sim/src/types';
 import {
-  BRANCH_NAMES, DIFFICULTIES, MAP_IDS, MAP_NAMES, TIER_COST, TOWER_TYPES, isDifficultyUnlocked, isTowerUnlocked, knowledgePoints,
-  levelFromXp, unlockLevel, type Profile,
+  BRANCH_NAMES, DIFFICULTIES, MAPS, MODE_IDS, TIER_COST, TOWER_TYPES, bestOf, isTowerUnlocked, knowledgePoints,
+  levelFromXp, mapLock, mapById, medalsOf, unlockLevel, type MapMeta, type Profile,
 } from '../meta';
 import { heroPortrait, towerPortrait } from '../pixel/sprites';
-import { h, setClass } from '../ui/dom';
+import { h } from '../ui/dom';
 import { MEDAL_OF, icon, medal } from './icons';
 import { bar, cv, ptext } from './px';
-import { meadowScene } from './scene';
+import { previewFor } from './previews';
 import { embersChip } from './store';
 import { S, fmt } from './text';
 import type { Ctx, View } from './types';
@@ -48,6 +48,77 @@ export function levelBadge(p: Profile, big = false): HTMLElement {
   return box;
 }
 
+/** Text im Schloss einer Karte: "Reach level 8 or earn Medium on Lanternfall Meadow". */
+export function mapLockText(m: MapMeta): string {
+  if (!m.unlock) return '';
+  const d = m.unlock.medal.difficulty;
+  return S.maps.lockedBy(m.unlock.level, mapById(m.unlock.medal.map)?.name ?? m.unlock.medal.map, d[0].toUpperCase() + d.slice(1));
+}
+
+/** Vorschau einer Karte als Leinwand (160 x 90, ganzzahlig vergroessert); bis sie gemalt ist, ein dunkler Platzhalter. */
+export function previewCanvas(id: string, scale: number, cls = ''): HTMLElement {
+  const box = h('div', `pv-box ${cls}`.trim());
+  box.style.width = `${160 * scale}px`;
+  box.style.height = `${90 * scale}px`;
+  const put = (c: HTMLCanvasElement): void => {
+    c.className = 'px pv';
+    c.style.width = `${160 * scale}px`;
+    c.style.height = `${90 * scale}px`;
+    box.replaceChildren(c);
+  };
+  const now = previewFor(id, put);
+  if (now) put(now);
+  else box.append(h('div', 'pv-wait', 'Painting\u2026'));
+  return box;
+}
+
+/** Eine Kachel der Kartenwahl. */
+function mapTile(ctx: Ctx, p: Profile, m: MapMeta): HTMLElement {
+  const lock = mapLock(p, m.id);
+  const medals = medalsOf(p, m.id);
+  const all = medals.easy && medals.medium && medals.hard;
+  const tile = h('button', `maptile tier-${m.tier} ${lock.unlocked ? '' : 'locked'} ${all ? 'gold' : ''}`.trim());
+  tile.dataset.map = m.id;
+  tile.disabled = !lock.unlocked;
+  const art = h('div', 'mt-art');
+  art.append(previewCanvas(m.id, 2, lock.unlocked ? '' : 'dim'));
+  art.append(h('div', 'mt-tier', S.maps.tier[m.tier] ?? m.tierName));
+  if (all) {
+    const tag = h('div', 'mapflag');
+    tag.append(cv(icon('star'), 2), h('span', '', S.maps.allMedals));
+    art.append(tag);
+  }
+  if (!lock.unlocked) {
+    const l = h('div', 'mt-lock');
+    l.append(cv(icon('lock'), 3), h('span', '', mapLockText(m)));
+    art.append(l);
+  }
+  const info = h('div', 'mt-info');
+  info.append(h('div', 'map-name', m.name), h('div', 'mt-sub', S.maps.rounds(m.maxRound, m.boss)));
+  const row = h('div', 'medals');
+  for (const d of DIFFICULTIES) {
+    const mm = h('div', `medal ${medals[d] ? 'on' : 'off'}`);
+    mm.dataset.diff = d;
+    const best = bestOf(p, m.id, d);
+    mm.append(cv(medal(MEDAL_OF[d], medals[d]), 2), h('div', 'medal-d', S.home.difficulty[d]), h('div', 'medal-b num', best ? `Best R${best.round}` : '-'));
+    mm.title = best ? S.home.best(best.round) : S.home.noBest;
+    row.append(mm);
+  }
+  const modeTotal = (MODE_IDS.length - 1) * 3;
+  info.append(row);
+  art.append(h('div', 'mt-modes num', S.maps.modeMedals(countModeMedals(p, m.id), modeTotal)));
+  tile.append(art, info);
+  tile.onclick = () => { if (lock.unlocked) { ctx.sound('click'); ctx.map = m.id; ctx.go({ name: 'setup', map: m.id }); } else ctx.sound('error'); };
+  return tile;
+}
+
+/** Medaillen der Zusatzmodi auf einer Karte (ohne Standard). */
+export function countModeMedals(p: Profile, map: string): number {
+  let n = 0;
+  for (const mode of MODE_IDS) if (mode !== 'standard') { const m = medalsOf(p, map, mode); n += (m.easy ? 1 : 0) + (m.medium ? 1 : 0) + (m.hard ? 1 : 0); }
+  return n;
+}
+
 export function homeView(ctx: Ctx): View {
   const p = ctx.store.profile;
   const el = h('div', 'scr home');
@@ -68,57 +139,12 @@ export function homeView(ctx: Ctx): View {
   embers.el.classList.add('home-embers');
   top.append(logo, embers.el, head);
 
-  // ---- Mitte: Karte links, Schwierigkeit rechts
-  const mid = h('div', 'mid');
-  const mapId = MAP_IDS[0];
-  const medals = p.medals[mapId] ?? { easy: false, medium: false, hard: false };
-  const all = medals.easy && medals.medium && medals.hard;
-  const card = h('div', `mapcard ${all ? 'gold' : ''}`);
-  const scene = h('div', 'mapscene');
-  scene.append(cv(meadowScene(), 4, 'scene'));
-  if (all) {
-    const tag = h('div', 'mapflag');
-    tag.append(cv(icon('star'), 2), h('span', '', S.home.medalsDone));
-    scene.append(tag);
-  }
-  const info = h('div', 'mapinfo');
-  info.append(h('div', 'map-name', MAP_NAMES[mapId]));
-  const row = h('div', 'medals');
-  for (const d of DIFFICULTIES) {
-    const m = h('div', `medal ${medals[d] ? 'on' : 'off'}`);
-    const best = p.best[mapId]?.[d];
-    m.append(cv(medal(MEDAL_OF[d], medals[d]), 3), h('div', 'medal-d', S.home.difficulty[d]), h('div', 'medal-b num', best ? S.home.best(best.round) : S.home.noBest));
-    row.append(m);
-  }
-  info.append(row);
-  card.append(scene, info);
-
-  const side = h('aside', 'side');
-  side.append(h('div', 'h2', S.home.pickDifficulty));
-  const list = h('div', 'diffs');
-  const btns: Record<string, HTMLButtonElement> = {};
-  for (const d of DIFFICULTIES) {
-    const ok = isDifficultyUnlocked(p, d);
-    const b = h('button', 'diff');
-    b.dataset.diff = d;
-    b.disabled = !ok;
-    b.append(cv(medal(MEDAL_OF[d], medals[d]), 2), h('div', 'diff-t', S.home.difficulty[d]), h('div', 'diff-s', ok ? S.home.diffText[d] : ''));
-    if (!ok) {
-      const lock = h('div', 'diff-lock');
-      lock.append(cv(icon('lock'), 2), h('span', '', S.home.lockedAt(unlockLevel(d))));
-      b.append(lock);
-    }
-    b.onclick = () => { ctx.difficulty = d; ctx.sound('click'); Object.entries(btns).forEach(([k, e]) => setClass(e, 'sel', k === d)); };
-    btns[d] = b;
-    list.append(b);
-  }
-  if (!isDifficultyUnlocked(p, ctx.difficulty)) ctx.difficulty = 'medium';
-  setClass(btns[ctx.difficulty], 'sel', true);
-  const play = h('button', 'btn-big play app-play');
-  play.append(ptext(S.home.play, 4, 'white'), cv(icon('arrow'), 3));
-  play.onclick = () => { ctx.sound('click'); ctx.play(ctx.difficulty); };
-  side.append(list, play);
-  mid.append(card, side);
+  // ---- Mitte: Kartenwahl (Runde 15): drei Kacheln mit Vorschau, Stufe, Medaillen und Schloss
+  const mid = h('div', 'mid maps');
+  mid.append(h('div', 'h2', S.maps.title));
+  const grid = h('div', 'maptiles');
+  for (const m of MAPS) grid.append(mapTile(ctx, p, m));
+  mid.append(grid);
 
   // ---- Fuss: Navigation und Aufstellung
   const foot = h('footer', 'foot');

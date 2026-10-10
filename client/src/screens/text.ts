@@ -26,6 +26,7 @@ export const S = {
     lineup: 'Your wardens',
     heroTag: 'Hero',
     medalsDone: 'All medals earned',
+    mapMedals: 'Medals',
     readyTower: 'Tower upgrades ready',
     difficulty: { easy: 'Easy', medium: 'Medium', hard: 'Hard' },
     diffText: {
@@ -33,6 +34,21 @@ export const S = {
       medium: 'The standard way to play.',
       hard: 'Pricey towers, faster foes.',
     },
+  },
+  maps: {
+    title: 'Choose a map',
+    tier: { beginner: 'Beginner', intermediate: 'Intermediate', advanced: 'Advanced' } as Record<string, string>,
+    rounds: (n: number, boss: string): string => `${n} rounds \u00b7 Boss: ${boss}`,
+    modeMedals: (n: number, of: number): string => `Mode medals ${n}/${of}`,
+    lockedBy: (level: number, prev: string, d: string): string => `Reach level ${level} or earn ${d} on ${prev}`,
+    allMedals: 'All medals earned',
+  },
+  setup: {
+    change: 'Maps',
+    difficulty: 'Difficulty',
+    mode: 'Mode',
+    reward: (xp: string, em: string, mode: number): string => `Rewards: XP x${xp}, Embers x${em}${mode ? `, mode bonus +${mode}%` : ''}`,
+    best: (r: number): string => `Best: round ${r}`,
   },
   result: {
     victory: 'Victory',

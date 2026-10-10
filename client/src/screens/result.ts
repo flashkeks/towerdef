@@ -3,7 +3,7 @@
  * Turm-XP je Turm (Balken bis zur naechsten Freischaltung), Knoepfe Again / Home.
  */
 import type { TowerType } from '../../../sim/src/types';
-import { MAP_NAMES, MAX_ROUND, TIER_COST, TOWER_TYPES, levelFromXp, type LevelUnlock } from '../meta';
+import { MAP_NAMES, MODE_META, TIER_COST, TOWER_TYPES, levelFromXp, maxRoundOf, rewardFactors, type LevelUnlock } from '../meta';
 import { heroPortrait, towerPortrait } from '../pixel/sprites';
 import { h, setText } from '../ui/dom';
 import { MEDAL_OF, icon, medal } from './icons';
@@ -34,7 +34,7 @@ export function resultView(ctx: Ctx, info: ResultInfo): View {
   const head = h('header', 'res-head');
   head.append(
     ptext(info.quit ? S.result.left : info.won ? S.result.victory : S.result.defeat, 7, info.won ? 'leaf' : info.quit ? 'silver' : 'red', 'ink', 'res-title'),
-    h('div', 'res-sub', `${MAP_NAMES.meadow} · ${S.home.difficulty[info.difficulty]} · ${S.result.round(Math.min(info.round, MAX_ROUND), MAX_ROUND)}`),
+    h('div', 'res-sub', [MAP_NAMES[info.map] ?? info.map, info.mode === 'standard' ? '' : MODE_META[info.mode].name, S.home.difficulty[info.difficulty], S.result.round(Math.min(info.round, maxRoundOf(info.map)), maxRoundOf(info.map))].filter(Boolean).join(' \u00b7 ')),
   );
   if (r.newMedal) {
     const m = h('div', 'res-medal');
@@ -62,6 +62,11 @@ export function resultView(ctx: Ctx, info: ResultInfo): View {
   const cards = h('div', 'unlock-cards');
   xpCard.append(lvRow, banner, cards);
   if (r.duplicate) xpCard.append(h('div', 'muted', S.result.duplicate));
+  // Faktoren der Karte und des Modus (Runde 15), damit man sieht, woher der Zuschlag kommt
+  const rf = rewardFactors(info.map, info.mode);
+  if (rf.xpBp !== 10000 || rf.embersBp !== 10000 || rf.modeBp) {
+    xpCard.append(h('div', 'res-factors num', S.setup.reward((rf.xpBp / 10000).toFixed(2).replace(/0$/, ''), (rf.embersBp / 10000).toFixed(2).replace(/0$/, ''), Math.round(rf.modeBp / 100))));
+  }
 
   const setLevelNum = (lv: number): void => {
     lvNum.replaceChildren(ptext(String(lv), 5, 'yellow'));
@@ -71,6 +76,12 @@ export function resultView(ctx: Ctx, info: ResultInfo): View {
     const c = h('div', `ucard ${u.kind}`);
     const art = u.kind === 'tower' ? cv(towerPortrait(u.id as TowerType), 2) : u.kind === 'hero' ? cv(heroPortrait(), 2) : cv(medal('gold', true), 3);
     c.append(art, h('div', 'ucard-k', S.result.unlocked), h('div', 'ucard-t', u.title), h('div', 'ucard-d', u.text));
+    cards.append(c);
+  };
+  /** Neu geoeffnete Karten und Modi (Runde 15) */
+  const addMapCard = (kind: 'map' | 'mode', title: string, text: string): void => {
+    const c = h('div', `ucard ${kind}`);
+    c.append(cv(icon('flag'), 4), h('div', 'ucard-k', S.result.unlocked), h('div', 'ucard-t', title), h('div', 'ucard-d', text));
     cards.append(c);
   };
   const addPoints = (n: number): void => {
@@ -220,6 +231,8 @@ export function resultView(ctx: Ctx, info: ResultInfo): View {
     }
     eGain.textContent = `+${fmt(gained)}`;
     eChip.set(info.embersAfter, false);
+    for (const id of r.unlockedMaps) { addMapCard('map', MAP_NAMES[id] ?? id, 'New map'); ctx.sound('unlock'); }
+    for (const u of r.unlockedModes) { addMapCard('mode', MODE_META[u.mode].name, `New mode on ${MAP_NAMES[u.map] ?? u.map}`); ctx.sound('unlock'); }
     if (r.pointsGained > 0) { addPoints(r.pointsGained); }
     el.dataset.done = '1';
   };
