@@ -4,6 +4,8 @@ import { flame, flake, crystal, cloud, spark } from './parts';
 import { RAMPS, type Ramp, Surface } from './surface';
 import { flask } from './alchemist';
 import { antler, leafAt } from './thornweaver';
+import { bell } from './bellringer';
+import { cog, jack, miniTurret } from './tinker';
 import { ABILITY_LOOK, baseLook, type AbilityId, type BaseAbilityId, type BaseTowerType, type TowerType } from './types';
 
 export const ICON = 16;
@@ -64,6 +66,7 @@ const lanternIcon = (s: Surface, x: number, y: number): void => { s.px(x, y - 1,
 const ACID: Ramp = ['grass', 'leaf', 'yellow'];
 const HULK_: Ramp = ['pine', 'grass', 'leaf'];
 const coin = (s: Surface, x: number, y: number): void => { s.ball(x, y, 2.2, 2.2, ['rust', 'amber', 'yellow']); s.px(x - 1, y - 1, 'white'); };
+const IRON_: Ramp = ['ink', 'dusk', 'stone'];
 const SKULL = (s: Surface, x: number, y: number) => { s.rect(x, y, 5, 4, 'white'); s.rect(x + 1, y + 4, 3, 1, 'white'); s.px(x + 1, y + 1, 'ink'); s.px(x + 3, y + 1, 'ink'); s.px(x + 2, y + 3, 'ink'); };
 
 const DRAW: Record<BaseTowerType, Draw[][]> = {
@@ -276,6 +279,58 @@ const DRAW: Record<BaseTowerType, Draw[][]> = {
       (s) => { for (const [x, y, w] of [[1, 3, 5], [6, 1, 6], [11, 4, 4]] as [number, number, number][]) { s.rect(x + w / 2, y, 1, 8, 'bark'); s.poly([[x, y + 1], [x + w, y + 1], [x + w, y + 6], [x, y + 6]], (px) => (px < x + 2 ? 'orchid' : 'violet')); s.px(x + w / 2, y + 3, 'yellow'); } s.poly([[0, 9], [15, 9], [13, 12], [2, 12]], 'night'); s.rect(0, 9, 16, 1, 'orchid'); stars(s, [[2, 1], [14, 1], [8, 0]], 'yellow'); },
     ],
   ],
+  bellringer: [
+    // A Chimes
+    [
+      (s) => { bell(s, 6, 1, 8, 8, RAMPS.brass, 0); bell(s, 12, 4, 4, 5, RAMPS.brass, 0, { band: false }); stars(s, [[2, 3], [14, 1]], 'white'); },
+      (s) => { bell(s, 8, 0, 6, 7, ['clay', 'orange', 'amber'], 0); bell(s, 3, 3, 4, 5, RAMPS.brass, 0, { band: false }); bell(s, 13, 3, 4, 5, RAMPS.brass, 0, { band: false }); s.rect(0, 1, 16, 1, 'bark'); s.line(1, 12, 3, 10, 'yellow'); s.line(15, 12, 13, 10, 'yellow'); },
+      (s) => { s.box(2, 4, 12, 9, RAMPS.stone); s.rect(5, 3, 6, 5, 'night'); s.ellipse(8, 3, 3, 2, 'night'); bell(s, 8, 2, 5, 6, RAMPS.brass, 0, { band: false }); s.poly([[1, 4], [8, 0], [15, 4]], (x) => (x < 8 ? 'red' : 'crimson')); s.rect(6, 10, 4, 3, 'bark'); },
+      (s) => { s.box(5, 5, 6, 9, RAMPS.stone); s.poly([[4, 5], [8, 0], [12, 5]], (x) => (x < 8 ? 'red' : 'crimson')); s.px(8, 0, 'yellow'); s.rect(6, 6, 4, 3, 'night'); bell(s, 8, 5, 3, 4, RAMPS.brass, 0, { band: false }); s.rect(7, 10, 2, 3, 'night'); for (const sg of [-1, 1]) s.line(8 + sg * 3, 7, 8 + sg * 6, 13, 'stone'); s.ring(8, 7, 7, 6, 'yellow'); },
+      (s) => { for (let i = 0; i < 5; i++) bell(s, 2 + i * 3, 1 + Math.abs(i - 2), i === 2 ? 4 : 3, i === 2 ? 7 : 5, i % 2 ? RAMPS.brass : RAMPS.gold, 0, { band: false }); s.rect(0, 0, 16, 1, 'yellow'); s.rect(3, 11, 10, 1, 'amber'); for (let i = 0; i < 5; i++) s.px(3 + i * 2, 12, i % 2 ? 'white' : 'ink'); s.ring(8, 6, 7, 5.5, 'white'); },
+    ],
+    // B Watch
+    [
+      (s) => { bell(s, 8, 2, 8, 8, ['dusk', 'stone', 'silver'], 0); s.rect(7, 0, 3, 1, 'bark'); s.rect(1, 3, 3, 4, 'amber'); s.rect(1, 3, 3, 1, 'rust'); s.px(2, 5, 'white'); s.px(14, 3, 'white'); },
+      (s) => { s.box(3, 2, 10, 8, RAMPS.wood); s.rect(7, 0, 2, 2, 'bark'); s.ball(8, 6, 3, 3, RAMPS.gold); s.px(7, 5, 'white'); s.rect(5, 6, 6, 1, 'rust'); s.rect(6, 11, 5, 1, 'tan'); },
+      (s) => { bell(s, 7, 1, 9, 9, ['crimson', 'red', 'coral'], 0); s.rect(14, 2, 2, 5, 'yellow'); s.px(14, 9, 'yellow'); s.px(1, 6, 'coral'); s.px(0, 4, 'red'); s.px(2, 3, 'red'); },
+      (s) => { s.poly([[2, 5], [10, 2], [10, 10], [2, 8]], (x) => (x < 6 ? 'yellow' : 'amber')); s.rect(0, 5, 3, 3, 'rust'); s.rect(11, 1, 4, 10, 'sand'); s.rect(11, 1, 4, 1, 'white'); for (const y of [3, 5, 7]) s.rect(12, y, 2, 1, 'stone'); s.px(13, 11, 'tan'); },
+      (s) => { eyeI(s, 8, 6, 'red'); s.poly([[0, 3], [3, 1], [3, 5]], 'yellow'); s.poly([[16, 3], [13, 1], [13, 5]], 'yellow'); s.rect(3, 10, 10, 1, 'crimson'); s.px(2, 8, 'red'); s.px(14, 8, 'red'); stars(s, [[8, 1]], 'white'); },
+    ],
+    // C Toll
+    [
+      (s) => { s.ball(6, 9, 4, 4, ['rust', 'tan', 'sand']); s.rect(4, 3, 5, 2, 'bark'); s.rect(5, 4, 3, 1, 'yellow'); coin(s, 12, 4); coin(s, 11, 9); s.px(6, 9, 'yellow'); },
+      (s) => { bell(s, 7, 1, 9, 9, ['slate', 'silver', 'white'], 0); coin(s, 13, 10); coin(s, 2, 11); stars(s, [[13, 3]], 'white'); },
+      (s) => { bell(s, 8, 0, 8, 8, RAMPS.gold, 0); for (let x = 1; x < 15; x++) s.px(x, 10, Math.floor(x / 3) % 2 ? 'amber' : 'sand'); s.rect(1, 11, 14, 1, 'sand'); coin(s, 3, 4); coin(s, 13, 4); },
+      (s) => { s.box(2, 6, 9, 7, ['night', 'dusk', 'slate']); s.rect(4, 8, 5, 5, 'ink'); s.rect(5, 9, 3, 4, 'orange'); s.rect(6, 10, 1, 2, 'yellow'); s.rect(9, 1, 3, 5, 'slate'); s.px(10, 0, 'stone'); s.rect(12, 8, 3, 2, 'slate'); s.rect(11, 7, 5, 1, 'stone'); s.px(13, 5, 'yellow'); s.px(14, 3, 'amber'); },
+      (s) => { bell(s, 8, 1, 10, 10, RAMPS.gold, 0); for (const [x, y] of [[2, 3], [14, 4], [3, 11], [13, 11], [8, 13]]) coin(s, x, y); s.poly([[5, 0], [6, 2], [8, 0], [10, 2], [11, 0], [11, 3], [5, 3]], 'white'); s.rect(5, 1, 7, 1, 'yellow'); },
+    ],
+  ],
+  tinker: [
+    // A Sentry
+    [
+      (s) => { s.box(2, 6, 12, 7, RAMPS.red); s.rect(2, 9, 12, 1, 'crimson'); s.rect(5, 3, 6, 3, 'silver'); s.rect(6, 4, 4, 1, 'ink'); s.px(8, 9, 'yellow'); s.px(3, 6, 'white'); },
+      (s) => { miniTurret(s, 4, 12, 1, RAMPS.brass, 0, true); miniTurret(s, 11, 12, -1, RAMPS.brass, 1, true); stars(s, [[8, 3]], 'yellow'); },
+      (s) => { s.line(8, 7, 4, 13, 'bark'); s.line(8, 7, 12, 13, 'bark'); s.box(5, 3, 7, 5, RAMPS.iron); s.rect(11, 4, 5, 3, 'slate'); s.px(15, 5, 'white'); s.px(7, 4, 'yellow'); s.px(15, 3, 'yellow'); s.px(14, 7, 'yellow'); },
+      (s) => { cog(s, 6, 8, 4, 0, RAMPS.brass, 8); s.box(8, 2, 6, 4, RAMPS.brass); s.rect(13, 3, 3, 2, 'slate'); s.px(15, 3, 'white'); s.px(11, 3, 'ink'); },
+      (s) => { s.box(1, 7, 14, 6, ['plum', 'rust', 'clay']); for (const x of [1, 12]) { s.box(x, 3, 3, 10, ['plum', 'rust', 'clay']); s.poly([[x - 1, 3], [x + 1.5, 0], [x + 4, 3]], 'yellow'); } cog(s, 8, 7, 4, 0, RAMPS.brass, 8); s.rect(6, 11, 4, 2, 'ink'); },
+    ],
+    // B Caltrops
+    [
+      (s) => { s.ball(6, 10, 4, 4, ['bark', 'wood', 'tan']); s.rect(4, 4, 5, 2, 'bark'); jack(s, 6, 3); jack(s, 12, 11); s.px(10, 7, 'silver'); },
+      (s) => { jack(s, 5, 6); jack(s, 11, 9); s.px(8, 3, 'white'); s.px(8, 4, 'silver'); s.line(2, 11, 6, 9, 'silver'); s.px(13, 4, 'white'); s.px(14, 3, 'white'); s.rect(0, 12, 16, 1, 'bark'); },
+      (s) => { s.box(1, 8, 14, 4, ['night', 'slate', 'stone']); for (let i = 0; i < 7; i++) { s.px(2 + i * 2, 7, 'white'); s.px(2 + i * 2, 6 - (i & 1), 'silver'); } s.px(2, 5, 'silver'); },
+      (s) => { s.box(1, 7, 14, 5, IRON_); for (let i = 0; i < 6; i++) { s.line(2 + i * 2.4, 6, 2 + i * 2.4, 3 - (i & 1), 'silver'); s.px(2 + i * 2.4, 2 - (i & 1), 'white'); } s.rect(1, 12, 14, 1, 'red'); },
+      (s) => { for (const [x, h] of [[2, 6], [5, 10], [8, 12], [11, 9], [14, 6]] as [number, number][]) { s.poly([[x - 1.5, 13], [x + 1.5, 13], [x, 13 - h]], (px) => (px < x ? 'stone' : 'dusk')); s.px(x, 14 - h, 'white'); } s.rect(0, 13, 16, 1, 'night'); s.px(8, 1, 'red'); },
+    ],
+    // C Overclock
+    [
+      (s) => { s.box(4, 6, 8, 6, ['rust', 'amber', 'yellow']); s.rect(11, 7, 4, 1, 'amber'); s.px(15, 6, 'silver'); s.rect(6, 3, 3, 3, 'silver'); s.px(7, 12, 'yellow'); s.px(7, 13, 'yellow'); cog(s, 3, 3, 1.5, 0, RAMPS.brass, 6); },
+      (s) => { for (const x of [4, 11]) { s.ball(x, 7, 3.5, 3.5, ['rust', 'amber', 'yellow']); s.ball(x, 7, 2, 2, ['navy', 'sky', 'ice']); s.px(x - 1, 6, 'white'); } s.rect(7, 7, 2, 1, 'rust'); s.rect(0, 6, 1, 3, 'bark'); s.rect(15, 6, 1, 3, 'bark'); },
+      (s) => { s.rect(7, 4, 2, 9, 'slate'); for (const y of [6, 9, 12]) s.rect(5, y, 6, 2, 'amber'); s.ball(8, 3, 3, 3, ['sky', 'ice', 'white']); boltI(s, 11, 0, 5, 'yellow'); s.px(3, 3, 'white'); },
+      (s) => { for (const [x, h] of [[4, 8], [12, 8]] as [number, number][]) { s.rect(x, 13 - h, 2, h, 'slate'); s.ball(x + 0.5, 13 - h - 1, 2.6, 2.6, ['sky', 'ice', 'white']); s.rect(x - 1, 9, 4, 1, 'amber'); } s.line(5, 2, 8, 4, 'yellow'); s.line(8, 4, 11, 2, 'yellow'); s.px(8, 5, 'white'); s.px(8, 3, 'white'); },
+      (s) => { s.ball(8, 7, 5, 5, ['sky', 'ice', 'white']); cog(s, 8, 7, 3, 0, RAMPS.brass, 8); for (const [x, y, dx, dy] of [[0, 0, 3, 3], [15, 0, -3, 3], [0, 14, 3, -3], [15, 14, -3, -3]] as [number, number, number, number][]) { s.line(x, y, x + dx, y + dy, 'yellow'); s.px(x + dx, y + dy, 'white'); } s.ring(8, 7, 7, 6, 'white'); },
+    ],
+  ],
 };
 
 export function iconUpgradeRaster(type: TowerType, path: 0 | 1 | 2, tier: number): { rows: string[]; ax: number; ay: number } {
@@ -299,13 +354,15 @@ const ABIL: Record<BaseAbilityId, Draw> = {
   supplyDrop: (s) => { s.ball(8, 4, 6, 3.4, ['sky', 'ice', 'white']); s.rect(2, 4, 12, 1, 'navy'); s.line(3, 5, 6, 10, 'white'); s.line(13, 5, 10, 10, 'white'); s.line(8, 5, 8, 10, 'white'); s.box(5, 10, 6, 5, RAMPS.wood); s.rect(5, 12, 6, 1, 'amber'); s.px(8, 11, 'yellow'); },
   wallOfTrees: (s) => { for (const [x, h] of [[3, 8], [8, 11], [13, 8]] as [number, number][]) { s.rect(x - 1, 14 - h + 3, 2, h - 3, 'bark'); s.px(x - 1, 14 - h + 3, 'wood'); s.ball(x, 14 - h + 2, 3.4, 3.2, ['pine', 'grass', 'leaf']); s.px(x - 1, 14 - h + 1, 'white'); } s.rect(0, 14, 16, 1, 'deep'); for (const x of [2, 6, 10, 14]) s.px(x, 13, 'white'); },
   transformingTonic: (s) => { flask(s, 4, 9, 3, ['violet', 'orchid', 'coral'], 0); s.ball(11, 7, 4.4, 4.2, HULK_); s.rect(8, 4, 7, 2, 'leaf'); for (const x of [9, 11, 13]) s.px(x, 4, 'pine'); s.px(9, 7, 'white'); s.rect(9, 11, 5, 3, 'pine'); stars(s, [[2, 2], [8, 1]], 'white'); },
+  alarm: (s) => { bell(s, 8, 1, 10, 10, ['crimson', 'red', 'coral'], 0); s.rect(7, 12, 2, 1, 'yellow'); for (const sg of [-1, 1]) { s.line(8 + sg * 7, 3, 8 + sg * 6, 9, 'yellow'); s.line(8 + sg * 5, 4, 8 + sg * 4.5, 8, 'white'); } s.px(8, 14, 'yellow'); s.rect(7, 4, 2, 3, 'white'); s.px(8, 8, 'white'); },
+  overclock: (s) => { cog(s, 8, 8, 5, 0, ['rust', 'amber', 'yellow'], 10); s.ball(8, 8, 3, 3, ['night', 'dusk', 'slate']); boltI(s, 6, 3, 10, 'yellow'); stars(s, [[1, 2], [14, 13], [14, 2]], 'ice'); },
   dawnbreak: (s) => { s.rect(0, 5, 16, 6, 'amber'); s.rect(0, 6, 16, 4, 'yellow'); s.rect(0, 7, 16, 2, 'white'); for (const x of [2, 7, 12]) { s.px(x, 3, 'yellow'); s.px(x + 2, 12, 'amber'); } s.ellipse(14, 8, 2, 4, 'white'); },
 };
 
 export function iconAbilityRaster(idIn: AbilityId): { rows: string[]; ax: number; ay: number } {
   const id = ABILITY_LOOK[idIn];
   const s = new Surface(ICON, ICON);
-  const col: PalName = { arrowRain: 'amber', absoluteZero: 'sky', flare: 'yellow', dawnbreak: 'orange', grant: 'yellow', focus: 'red', supplyDrop: 'sky', wallOfTrees: 'leaf', transformingTonic: 'orchid' }[id] as PalName;
+  const col: PalName = { arrowRain: 'amber', absoluteZero: 'sky', flare: 'yellow', dawnbreak: 'orange', grant: 'yellow', focus: 'red', supplyDrop: 'sky', wallOfTrees: 'leaf', transformingTonic: 'orchid', alarm: 'red', overclock: 'ice' }[id] as PalName;
   s.rect(0, 0, 16, 16, 'night'); s.rect(0, 0, 16, 1, col); s.rect(0, 0, 1, 16, col); s.rect(0, 15, 16, 1, 'ink'); s.rect(15, 0, 1, 16, 'ink');
   for (const [x, y] of [[0, 0], [15, 0], [0, 15], [15, 15]]) s.px(x, y, null);
   const d = new Surface(16, 16);

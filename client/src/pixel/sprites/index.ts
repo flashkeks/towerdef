@@ -3,6 +3,8 @@
  * Alles reine Funktionen: Parameter -> { canvas, ax, ay } (Anker = Fuss bzw. Mitte, siehe je Funktion), gecacht je Schluessel.
  * Keine Abhaengigkeit von Pixi oder der Sim. Die Raster dahinter (`*Raster`) sind in Node testbar.
  */
+import { sentryRaster, type SentryFrame } from './sentry';
+import { alarmMarkRaster, buildPuffRaster, overclockRaster } from '../fx/r16tb';
 import { explosionRaster, novaRaster, popRaster, boltLineRaster, statusRaster, puffRaster, leakRaster, arrowRainRaster, absoluteZeroRaster, flareRaster, dawnBeamRaster, bossPlateRaster, type ExplosionKind, type StatusKind, EXPLOSION_RADIUS } from '../fx/effects';
 import { coinRiseRaster, bankChestRaster, auraRingRaster, grantRaster, ricochetRaster, supplyDropRaster, focusRaster, bossMarkRaster } from '../fx/r13';
 import { acidMarkRaster, acidPoolRaster, acidSplashRaster, buffGlowRaster, deathBlastRaster, goldBurstRaster, monsterTransformRaster, shrinkRaster, stormArcRaster, thornZoneRaster, treeWallGrowRaster, treeWallRaster, vineSnareRaster, whirlwindRaster, worldTreeZoneRaster } from '../fx/r14';
@@ -320,3 +322,23 @@ export function bombLantern(frame = 0): Sprite {
   const f = frame & 1;
   return cached(`bomblan|${f}`, () => sprite(bombLanternRaster(f)));
 }
+
+// ---------- Runde 16 TP: Sentry, Overclock, Alarm ----------
+export { SENTRY_FRAMES, type SentryFrame } from './sentry';
+export { OC_FRAMES, ALARM_MARK_FRAMES, BUILD_FRAMES } from '../fx/r16tb';
+/** Sentry des Tinkers: `look` 0..4 (= Sentry-Pfad A1..A5), Blick 0..7, Frame b0-b2 (Aufbau) / idle0-1 / fire. Anker = Fuss. */
+export function sentrySprite(look: number, facing: number, frame: SentryFrame): Sprite {
+  const l = Math.max(0, Math.min(4, Math.round(look))), f = ((Math.round(facing) % 8) + 8) % 8;
+  return cached(`sen|${l}|${f}|${frame}`, () => sprite(sentryRaster(l, f, frame)));
+}
+/** Muendung der Sentry relativ zum Anker. */
+export function sentryMuzzle(look: number, facing: number): { x: number; y: number } {
+  const r = sentryRaster(look, ((Math.round(facing) % 8) + 8) % 8, 'idle0');
+  return { x: r.mx, y: r.my };
+}
+/** Overclock-Funken am Turm (Frame 0..3), `big` = Ultra. Anker = Fuss. */
+export const overclockFx = (frame: number, big = false): Sprite => { const f = ((Math.floor(frame) % 4) + 4) % 4; return cached(`oc|${big ? 1 : 0}|${f}`, () => sprite(overclockRaster(f, big))); };
+/** Alarm-Zeichen ueber einem stehenden Gegner (Frame 0..3). Anker = Mitte des Gegners. */
+export const alarmMarkFx = (frame: number): Sprite => { const f = ((Math.floor(frame) % 4) + 4) % 4; return cached(`alm|${f}`, () => sprite(alarmMarkRaster(f))); };
+/** Bauwolke beim Aufbau einer Sentry (Frame 0..4). Anker = Fuss. */
+export const buildPuffFx = (frame: number): Sprite => { const f = clampF(frame, 5); return cached(`bpf|${f}`, () => sprite(buildPuffRaster(f))); };

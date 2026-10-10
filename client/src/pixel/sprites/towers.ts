@@ -4,6 +4,8 @@ import { dirOf, poseOf, type TowerFrame } from './pose';
 import { drawBombardier } from './bombardier';
 import { drawFrost } from './frostcaller';
 import { drawMarket } from './market';
+import { drawBellringer } from './bellringer';
+import { drawTinker } from './tinker';
 import { drawLongshot } from './longshot';
 import { drawThornweaver } from './thornweaver';
 import { drawRiverkeeper } from './riverkeeper';
@@ -18,12 +20,13 @@ export const TOWER_W = TW;
 export const TOWER_H = TH;
 
 export function towerRaster(typeIn: TowerType, tiers: Tiers, facing: number, frame: TowerFrame): RasterSprite {
-  const type = baseLook(typeIn); // Runde 16: Platzhalter fuer Bellringer/Tinker (Riverkeeper hat seit TP eine eigene Figur)
+  const type = baseLook(typeIn); // Runde 16 TP: alle Tuerme haben eigene Figuren
   const d = dirOf(facing);
   const p = poseOf(frame);
   const L = type === 'ranger' ? drawRanger(tiers, d, p) : type === 'bombardier' ? drawBombardier(tiers, d, p) : type === 'frostcaller' ? drawFrost(tiers, d, p)
-    : type === 'longshot' ? drawLongshot(tiers, d, p) : type === 'thornweaver' ? drawThornweaver(tiers, d, p) : type === 'alchemist' ? drawAlchemist(tiers, d, p) : type === 'riverkeeper' ? drawRiverkeeper(tiers, d, p) : drawMarket(tiers, p);
-  if (type === 'market') d.flip = false; // Schilder und Gebaeude werden nie gespiegelt, Market dreht sich nicht
+    : type === 'longshot' ? drawLongshot(tiers, d, p) : type === 'thornweaver' ? drawThornweaver(tiers, d, p) : type === 'alchemist' ? drawAlchemist(tiers, d, p)
+    : type === 'riverkeeper' ? drawRiverkeeper(tiers, d, p) : type === 'bellringer' ? drawBellringer(tiers, p) : type === 'tinker' ? drawTinker(tiers, d, p) : drawMarket(tiers, p);
+  if (type === 'market' || type === 'bellringer') d.flip = false; // Schilder und Gebaeude werden nie gespiegelt, Market und Bellringer drehen sich nicht
   const out = new Surface(TOWER_W, TOWER_H);
   out.blit(L.back);
   out.blit(outlineSurface(L.fig));

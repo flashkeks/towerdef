@@ -23,6 +23,8 @@ import { ENEMY_LOOK, spriteStage } from './enemy-info';
 import { mapGeometry, type MapGeometry } from './map-info';
 import { waterHintCanvas } from './water-hint';
 import { TRAP_CHARGES, trapPieces } from '../powers/info';
+import { TinkerFx } from './r16-tinker';
+import { BellFx, bellFrameOf } from './r16-bell';
 import type { PowerKey, TrapState } from '../sim';
 
 export const VIEW_W = 640;
@@ -93,6 +95,9 @@ export class Renderer {
   private enemies = new Map<number, EnemyView>();
   private projs = new Map<number, ProjView>();
   private traps = new Map<number, TrapView>();
+  /** Runde 16 TP: Sentries/Fallen/Overclock des Tinkers und Alarm des Bellringers (eigene Dateien) */
+  private r16t = new TinkerFx(this.worldC, this.shadowC, () => this.fx, () => this.latest?.towers ?? []);
+  private r16b = new BellFx(this.projC, () => this.fx, () => this.latest?.towers ?? []);
   private walls = new Map<number, WallView>();
   private puddles = new Map<number, PuddleView>();
   private buffProbe: ((id: number) => TowerBuff) | null = null;
@@ -250,6 +255,7 @@ export class Renderer {
     }
     for (const v of this.traps.values()) v.spr.destroy();
     this.traps.clear();
+    this.r16t.clear(); this.r16b.clear();
     for (const v of this.walls.values()) v.spr.destroy();
     this.walls.clear();
     for (const v of this.puddles.values()) v.spr.destroy();
@@ -369,10 +375,10 @@ export class Renderer {
     this.sonar.update(state.towers, this.now, this.fx); // Runde 16 TP: Sonar-Ping des Riverkeepers
     for (const [id, v] of this.towers) if (!seenT.has(id)) { v.spr.destroy(); v.shadow.destroy(); v.ice?.destroy(); v.flag?.destroy(); v.zone?.destroy(); v.glow?.destroy(); this.towers.delete(id); this.auraOf.delete(id); this.glowOf.delete(id); }
     if (this.auraProbe && (newTick && state.tick % 12 === 0 || this.auraOf.size !== state.towers.length)) {
-      for (const t of state.towers) this.auraOf.set(t.id, t.type !== 'market' && hasAura(this.auraProbe(t.id)));
+      for (const t of state.towers) this.auraOf.set(t.id, t.type !== 'market' && t.type !== 'bellringer' && hasAura(this.auraProbe(t.id)));
     }
     if (this.buffProbe && (newTick && state.tick % 10 === 0 || this.glowOf.size !== state.towers.length)) {
-      for (const t of state.towers) this.glowOf.set(t.id, isHero(t.type) || t.type === 'market' ? null : glowKind(this.buffProbe(t.id)));
+      for (const t of state.towers) this.glowOf.set(t.id, isHero(t.type) || t.type === 'market' || t.type === 'bellringer' ? null : glowKind(this.buffProbe(t.id)));
     }
 
     const seenE = new Set<number>();
@@ -383,6 +389,8 @@ export class Renderer {
     for (const p of state.projectiles) { seenP.add(p.id); this.syncProj(p, newTick, alpha); }
     for (const [id, v] of this.projs) if (!seenP.has(id)) { v.spr.destroy(); v.shadow?.destroy(); this.projs.delete(id); }
 
+    this.r16t.sync(state, this.now, state.tick);
+    this.r16b.sync(state, this.now);
     // Fallen auf dem Weg: Zacken/Kristalle nehmen mit den Ladungen ab
     const seenTr = new Set<number>();
     for (const tr of state.traps) { seenTr.add(tr.id); this.syncTrap(tr); }
@@ -417,7 +425,7 @@ export class Renderer {
 
   private syncTrap(t: TrapState): void {
     const slots = t.kind === 'caltrops' ? 6 : 5;
-    const pieces = trapPieces(t.charges, TRAP_CHARGES[t.kind], slots);
+    const pieces = trapPieces(t.charges, this.r16t.trapMax(t.id) ?? TRAP_CHARGES[t.kind], slots);
     const fr = t.kind === 'frostTrap' ? Math.floor(this.now / 380) & 1 : 0;
     let v = this.traps.get(t.id);
     if (!v) {
@@ -521,6 +529,7 @@ export class Renderer {
       if (this.now < this.heroCast) return heroSprite(t.heroLevel, t.facing, this.heroCast - this.now > 150 ? 'cast0' : 'cast1');
       return heroSprite(t.heroLevel, t.facing, frame as HeroFrame);
     }
+    if (t.type === 'bellringer') return towerSprite(t.type, t.tiers, 0, bellFrameOf(t.id, this.now, this.r16b.alarmUntil));
     if (t.monsterTicks > 0) return monsterSprite(t.facing, frame, monsterScale(t.type));
     return towerSprite(t.type, t.tiers, t.facing, frame);
   }
@@ -566,7 +575,7 @@ export class Renderer {
       v.ice.zIndex = y + 2;
       v.ice.alpha = t.frozen < 30 && (Math.floor(this.now / 90) & 1) ? 0.45 : 1;
     } else if (v.ice) { v.ice.destroy(); v.ice = undefined; }
-    const sw = monster ? (t.type === 'alchemist' ? 34 : 20) : t.type === 'market' ? 18 + top * 2 : 16;
+    const sw = monster ? (t.type === 'alchemist' ? 34 : 20) : t.type === 'market' || t.type === 'bellringer' ? 18 + top * 2 : 16;
     v.shadow.texture = shadowTex(sw, 5);
     v.shadow.position.set(x - sw / 2 - 1, y - 3);
     // Ranken-Zone (Thornweaver B4/B5) dauerhaft unter dem Turm
@@ -700,7 +709,8 @@ export class Renderer {
       // Versatz klingt in den ersten Ticks auf null ab (nur Optik, der Treffer gehoert der Sim)
       const own = this.latest?.towers.find((q) => q.id === p.owner);
       const mz = own ? (isHero(own.type) ? heroMuzzle(own.heroLevel, own.facing) : towerMuzzle(own.type, own.tiers, own.facing)) : { x: 0, y: 0 };
-      v = { spr, key: '', px: cx, py: cy, cx, cy, mx: p.sub === 1 ? 0 : mz.x, my: p.sub === 1 ? 0 : mz.y };
+      const so = this.r16t.shotOffset(p.id);
+      v = { spr, key: '', px: cx, py: cy, cx, cy, mx: so ? so.x : p.sub === 1 ? 0 : mz.x, my: so ? so.y : p.sub === 1 ? 0 : mz.y };
       if (p.kind === 'bomb' || p.kind === 'potion') { v.shadow = new Sprite(shadowTex(7, 3)); this.shadowC.addChild(v.shadow); }
       this.projs.set(p.id, v);
     } else if (newTick) {
@@ -781,6 +791,8 @@ export class Renderer {
   handle(ev: SimEvent): void {
     const fx = this.fx;
     const m = (v: number): number => v / 1000;
+    this.r16b.handle(ev, this.now);
+    if (this.r16t.handle(ev, this.now)) return;
     switch (ev.type) {
       case 'fire': {
         const t = this.latest?.towers.find((q) => q.id === ev.tower);
