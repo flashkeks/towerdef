@@ -100,11 +100,13 @@ function mapTile(ctx: Ctx, p: Profile, m: MapMeta): HTMLElement {
     const mm = h('div', `medal ${medals[d] ? 'on' : 'off'}`);
     mm.dataset.diff = d;
     const best = bestOf(p, m.id, d);
-    mm.append(cv(medal(MEDAL_OF[d], medals[d]), 2), h('div', 'medal-d', S.home.difficulty[d]), h('div', 'medal-b num', best ? S.home.best(best.round) : S.home.noBest));
+    mm.append(cv(medal(MEDAL_OF[d], medals[d]), 2), h('div', 'medal-d', S.home.difficulty[d]), h('div', 'medal-b num', best ? `Best R${best.round}` : '-'));
+    mm.title = best ? S.home.best(best.round) : S.home.noBest;
     row.append(mm);
   }
   const modeTotal = (MODE_IDS.length - 1) * 3;
-  info.append(row, h('div', 'mt-modes num', S.maps.modeMedals(countModeMedals(p, m.id), modeTotal)));
+  info.append(row);
+  art.append(h('div', 'mt-modes num', S.maps.modeMedals(countModeMedals(p, m.id), modeTotal)));
   tile.append(art, info);
   tile.onclick = () => { if (lock.unlocked) { ctx.sound('click'); ctx.map = m.id; ctx.go({ name: 'setup', map: m.id }); } else ctx.sound('error'); };
   return tile;

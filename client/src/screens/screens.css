@@ -395,7 +395,9 @@ canvas.pop { animation: pop-in 0.5s steps(6) both; }
 .pv-box.dim canvas.pv { filter: grayscale(1) brightness(0.5); }
 .pv-wait { position: absolute; inset: 0; display: grid; place-items: center; color: var(--p-stone); font-weight: 800; letter-spacing: 0.2em; text-transform: uppercase; font-size: 14px; line-height: 1; }
 
-.home .mid.maps { display: flex; flex-direction: column; gap: 8px; }
+.home { gap: 10px; }
+.home .mid.maps { display: flex; flex-direction: column; gap: 4px; align-self: stretch; width: 100%; }
+.home .mid.maps .h2 { margin-bottom: 4px; }
 .maptiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; }
 .maptile {
   position: relative; display: flex; flex-direction: column; text-align: left; margin: 4px; padding: 0; background: var(--p-night); min-width: 0;
@@ -415,19 +417,22 @@ canvas.pop { animation: pop-in 0.5s steps(6) both; }
   position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; display: flex; align-items: center; gap: 12px; padding: 10px 14px; line-height: 1.15;
   background: rgba(24, 20, 37, 0.9); color: var(--p-yellow); font-weight: 800; font-size: 16px; text-align: left; border-top: 3px solid var(--p-amber);
 }
-.mt-info { padding: 10px 16px 14px; display: flex; flex-direction: column; gap: 6px; }
+.mt-info { padding: 8px 14px 10px; display: flex; flex-direction: column; gap: 4px; }
 .maptile .map-name { font-size: 24px; margin-bottom: 0; }
 .mt-sub { font-size: 14px; color: var(--p-silver); letter-spacing: 0.04em; }
-.mt-modes { font-size: 13px; color: var(--p-stone); letter-spacing: 0.06em; text-transform: uppercase; }
+.mt-modes { position: absolute; right: 8px; bottom: 8px; z-index: 2; padding: 2px 8px 3px; line-height: 1.2; font-size: 12px; font-weight: 800; color: var(--p-silver); background: var(--p-ink); letter-spacing: 0.06em; text-transform: uppercase; }
 .maptile .medals { gap: 8px; }
-.maptile .medal { padding: 6px 8px; column-gap: 8px; min-width: 0; }
+.maptile .medal { padding: 4px 8px; column-gap: 8px; min-width: 0; }
 .maptile .medal-d { font-size: 13px; }
 .maptile .medal-b { font-size: 12px; white-space: nowrap; }
 .maptile .mapflag { top: 8px; right: 8px; z-index: 2; font-size: 13px; padding: 3px 10px; }
 
 .setup-body { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 28px; align-items: start; }
 .setup-map .mt-art { padding: 0; }
-.setup-map .mt-info { padding: 12px 18px 16px; max-width: 488px; }
+.setup-map .mt-info { padding: 12px 18px 16px; width: 488px; gap: 8px; }
+.setup-map .medals { gap: 8px; }
+.setup-map .medal { padding: 6px 8px; column-gap: 8px; min-width: 0; }
+.setup-map .medal-b { font-size: 12px; white-space: nowrap; }
 .setup-map .mt-sub { font-size: 16px; }
 .setup-desc { font-size: 17px; color: var(--p-silver); line-height: 1.25; }
 .setup-side { display: flex; flex-direction: column; gap: 6px; }

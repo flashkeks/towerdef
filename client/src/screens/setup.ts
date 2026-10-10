@@ -32,7 +32,15 @@ export function setupView(ctx: Ctx, mapId: string): View {
   const art = h('div', 'mt-art');
   art.append(previewCanvas(m.id, 3), h('div', 'mt-tier', S.maps.tier[m.tier] ?? m.tierName));
   const info = h('div', 'mt-info');
-  info.append(h('div', 'mt-sub', S.maps.rounds(m.maxRound, m.boss)), h('div', 'setup-desc', m.desc));
+  const stdMedals = medalsOf(p, m.id);
+  const row = h('div', 'medals');
+  for (const d of DIFFICULTIES) {
+    const mm = h('div', `medal ${stdMedals[d] ? 'on' : 'off'}`);
+    const best = bestOf(p, m.id, d);
+    mm.append(cv(medal(MEDAL_OF[d], stdMedals[d]), 2), h('div', 'medal-d', S.home.difficulty[d]), h('div', 'medal-b num', best ? `Best R${best.round}` : 'Not played'));
+    row.append(mm);
+  }
+  info.append(h('div', 'mt-sub', S.maps.rounds(m.maxRound, m.boss)), h('div', 'setup-desc', m.desc), row);
   card.append(art, info);
 
   // ---- rechts: Schwierigkeit, Modus, Play
