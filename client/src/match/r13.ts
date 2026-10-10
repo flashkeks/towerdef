@@ -30,11 +30,11 @@ export function marketRadiusPx(baseMilli: number, marketRadiusBp = 0): number {
   return Math.floor((baseMilli * (10000 + marketRadiusBp)) / 10000) / 1000;
 }
 
-const PLACEHOLDER_SHOT: Partial<Record<SimProjectile, ProjectileKind>> = { harpoon: 'bolt', hammer: 'bolt', cannonball: 'frag', nail: 'arrow', starlight: 'starBolt' };
+const PLACEHOLDER_SHOT: Partial<Record<SimProjectile, ProjectileKind>> = { hammer: 'bolt', nail: 'arrow', starlight: 'starBolt' };
 
 /** Welches Bild der Longshot-Bolzen bekommt: Basis, schwerer Eisenbolzen (A1+, magic) oder Lanternbreaker (A5); Splitter. */
 export function projectileLook(kindIn: SimProjectile, owner: { type: string; tiers: readonly number[] } | undefined, sub = 0): ProjectileKind {
-  // Runde 16: neue Geschosse zeichnen vorerst wie vorhandene (Platzhalter bis Paket TP): Harpune/Hammer = Bolzen, Kanonenkugel = Splitter, Nagel = Pfeil, Sternenlicht = Sternbolzen
+  // Runde 16: neue Geschosse zeichnen vorerst wie vorhandene (Platzhalter bis Paket TP): Hammer = Bolzen, Nagel = Pfeil, Sternenlicht = Sternbolzen
   const kind = (PLACEHOLDER_SHOT[kindIn] ?? kindIn) as ProjectileKind;
   if (owner?.type === 'thornweaver') return kind === 'thorn' && (owner.tiers[2] ?? 0) >= 5 ? 'thornMagic' : kind;
   if (owner?.type === 'alchemist') return kind === 'potion' && (owner.tiers[2] ?? 0) >= 3 ? 'potionGold' : kind;

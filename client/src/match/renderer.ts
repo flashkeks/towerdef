@@ -12,6 +12,7 @@ import { ambientPoints } from '../pixel/map/ambient';
 import { flagFrame, MILL_STEPS, windmillBlades } from '../pixel/map/paint';
 import { PAL } from '../pixel/palette';
 import { type EnemyState, type EnemyType, type GameState, type ProjectileState, type PuddleState, type SimEvent, type TowerAura, type TowerBuff, type TowerState, type WallState } from '../sim';
+import { SonarPinger, leviathanStrike } from './r16-riverkeeper';
 import { glowKind, monsterScale, wallWear, zoneView, type GlowKind } from './r14';
 import { rangeView, coinCount, coinDelay, coinPath, hasAura, isMarked, projectileLook, type RangeView } from './r13';
 import { FxLayer, FRAMES } from './fx';
@@ -134,6 +135,7 @@ export class Renderer {
   private shakeOff = { x: 0, y: 0 };
   scale = 1;
 
+  private readonly sonar = new SonarPinger();
   constructor(readonly mapId: MapId = 'meadow') {
     this.geo = mapGeometry(mapId);
     this.art = mapArt(mapId);
@@ -364,6 +366,7 @@ export class Renderer {
     this.lastTick = state.tick;
     const seenT = new Set<number>();
     for (const t of state.towers) { seenT.add(t.id); this.syncTower(t); }
+    this.sonar.update(state.towers, this.now, this.fx); // Runde 16 TP: Sonar-Ping des Riverkeepers
     for (const [id, v] of this.towers) if (!seenT.has(id)) { v.spr.destroy(); v.shadow.destroy(); v.ice?.destroy(); v.flag?.destroy(); v.zone?.destroy(); v.glow?.destroy(); this.towers.delete(id); this.auraOf.delete(id); this.glowOf.delete(id); }
     if (this.auraProbe && (newTick && state.tick % 12 === 0 || this.auraOf.size !== state.towers.length)) {
       for (const t of state.towers) this.auraOf.set(t.id, t.type !== 'market' && hasAura(this.auraProbe(t.id)));
@@ -877,6 +880,7 @@ export class Renderer {
         const pts = ev.points.map(([x, y]) => [m(x), m(y)] as [number, number]);
         const own = this.latest?.towers.find((q) => q.id === ev.tower);
         if (own?.type === 'thornweaver' && pts.length >= 2) this.stormArc(pts, own.tiers[0] >= 4, own.tiers[0] >= 3);
+        else if (own?.type === 'riverkeeper' && pts.length >= 1) leviathanStrike(fx, pts[pts.length - 1][0], pts[pts.length - 1][1]); // Runde 16 TP
         else fx.bolt(pts);
         break;
       }

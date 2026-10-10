@@ -12,11 +12,11 @@ import { ABILITY_TEXT, HERO_KEY, HOTKEY, ROLE } from '../src/match/tower-text';
 import { isHero, displayName, footMilli } from '../src/match/info';
 import { DATA, createGame, type TowerType } from '../src/sim';
 
-const NEW: TowerType[] = ['riverkeeper', 'bellringer', 'tinker'];
+const NEW: TowerType[] = ['bellringer', 'tinker']; // Riverkeeper hat seit Runde 16 TP eine eigene Figur (pixel-r16-riverkeeper.test.ts)
 
 describe('Platzhalter-Look Runde 16', () => {
-  it('neue Tuerme zeichnen wie ein vorhandener Turm (Riverkeeper = Longshot, Bellringer = Market, Tinker = Bombardier)', () => {
-    expect(NEW.map(baseLook)).toEqual(['longshot', 'market', 'bombardier']);
+  it('neue Tuerme zeichnen wie ein vorhandener Turm (Bellringer = Market, Tinker = Bombardier)', () => {
+    expect(NEW.map(baseLook)).toEqual(['market', 'bombardier']);
     for (const t of NEW) {
       const a = towerRaster(t, [0, 0, 0], 0, 'idle0');
       const b = towerRaster(baseLook(t), [0, 0, 0], 0, 'idle0');
@@ -38,7 +38,7 @@ describe('Platzhalter-Look Runde 16', () => {
     for (const k of ['harpoon', 'cannonball', 'nail', 'hammer', 'starlight'] as const) {
       expect(projectileLook(k, { type: 'riverkeeper', tiers: [0, 0, 0] })).toBeTypeOf('string');
     }
-    expect(projectileLook('harpoon', undefined)).toBe('bolt');
+    expect(projectileLook('harpoon', undefined)).toBe('harpoon'); // Runde 16 TP: echtes Geschoss
     expect(projectileLook('nail', undefined)).toBe('arrow');
   });
 
