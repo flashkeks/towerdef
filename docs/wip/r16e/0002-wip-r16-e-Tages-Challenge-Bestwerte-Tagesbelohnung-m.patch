@@ -1,0 +1,368 @@
+From 15e48cfc81a8ed9b934a40e18b8aa0b6ea11335f Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Sat, 10 Oct 2026 12:25:51 +0000
+Subject: [PATCH 2/3] wip(r16-e): Tages-Challenge, Bestwerte, Tagesbelohnung
+ (meta)
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01Qw1eNus4A4pQXWKdhKHxPf
+---
+ meta/src/challenge.ts       | 208 ++++++++++++++++++++++++++++++++++++
+ meta/src/index.ts           |   1 +
+ meta/src/profile.ts         |   4 +
+ meta/test/challenge.test.ts |  90 ++++++++++++++++
+ 4 files changed, 303 insertions(+)
+ create mode 100644 meta/src/challenge.ts
+ create mode 100644 meta/test/challenge.test.ts
+
+diff --git a/meta/src/challenge.ts b/meta/src/challenge.ts
+new file mode 100644
+index 0000000..18bd24d
+--- /dev/null
++++ b/meta/src/challenge.ts
+@@ -0,0 +1,208 @@
++/**
++ * Runde 16 E (10.10.2026): Taegliche Challenge und Bestwerte der Challenges. Reine Funktionen, kein DOM.
++ * Die Regeln selbst (Typ, Code, Pruefung) liegen in `sim/src/challenge.ts`; hier stehen der Tagesgenerator
++ * (UTC-Tag -> Regeln, offline, fuer alle gleich), die Embers-Belohnung (einmal pro Tag) und die lokalen Bestwerte.
++ * Tuerme, Helden und Karten kommen aus den Daten, nichts ist hart kodiert.
++ */
++import { z } from 'zod';
++import { DATA } from '../../sim/src/data';
++import { fnv1a64 } from '../../sim/src/hash';
++import { nextInt, seedRng } from '../../sim/src/prng';
++import { challengeTowers, encodeChallenge, normalizeRules, type ChallengeRules } from '../../sim/src/challenge';
++import type { Difficulty, Tiers, TowerType } from '../../sim/src/types';
++import { MAP_IDS } from './data';
++import type { Profile } from './profile';
++
++/** Embers fuer den ersten Sieg einer Tages-Challenge je UTC-Tag. */
++export const DAILY_EMBERS = 40;
++/** So viele Tage / Codes bleiben im Profil (juengste). */
++export const DAILY_KEEP = 30;
++export const CUSTOM_KEEP = 50;
++/** Wie `SEEN_MATCHES_MAX` im Profil (hier gespiegelt, damit `profile.ts` dieses Modul ohne Import-Kreis laden kann). */
++const SEEN_MAX = 100;
++
++// ---------------------------------------------------------------- Tag
++
++const DAY_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
++export const isDay = (s: unknown): s is string => {
++  if (typeof s !== 'string') return false;
++  const m = DAY_RE.exec(s);
++  if (!m) return false;
++  const d = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]));
++  return d.getUTCFullYear() === +m[1] && d.getUTCMonth() === +m[2] - 1 && d.getUTCDate() === +m[3];
++};
++/** UTC-Tag `YYYY-MM-DD` einer Zeit (ms seit 1970 oder Date). */
++export const utcDay = (t: number | Date = Date.now()): string => new Date(t).toISOString().slice(0, 10);
++
++// ---------------------------------------------------------------- Generator
++
++/** Ungefaehres Gesamtvermoegen (Geld + Ausgaben) eines guten Laufs vor Runde `r` (Bot-Messung 10.10.2026, Meadow, alle Schwierigkeiten gleich). */
++const WEALTH: readonly (readonly [number, number])[] = [[1, 650], [10, 3900], [20, 13400], [30, 39600], [40, 70000], [80, 250000]];
++export function wealthBefore(round: number): number {
++  const r = Math.max(1, round);
++  for (let i = 1; i < WEALTH.length; i++) {
++    if (r <= WEALTH[i][0]) {
++      const [x0, y0] = WEALTH[i - 1], [x1, y1] = WEALTH[i];
++      return Math.round(y0 + ((y1 - y0) * (r - x0)) / (x1 - x0));
++    }
++  }
++  return WEALTH[WEALTH.length - 1][1];
++}
++
++export interface DailyChallenge {
++  day: string;
++  /** Kurzname, z. B. "No Refunds". */
++  name: string;
++  rules: ChallengeRules;
++  code: string;
++}
++
++/**
++ * Regeln des Tages. Deterministisch aus dem Datum (und den Spieldaten), ohne Netz. Die Wuerfe laufen in fester Reihenfolge,
++ * jeder Wurf wird immer gezogen. Tages-Challenges ignorieren Wissensbaum und Powers, damit alle gleich spielen.
++ */
++export function dailyChallenge(day: string, maps: readonly string[] = MAP_IDS): DailyChallenge {
++  if (!isDay(day)) throw new Error(`Bad day "${String(day)}"`);
++  const rng = seedRng(parseInt(fnv1a64(`dw-daily:${day}`).slice(0, 8), 16));
++  const pick = <T>(a: readonly T[]): T => a[nextInt(rng, a.length)];
++  const chance = (pct: number): boolean => nextInt(rng, 100) < pct;
++
++  const map = pick(maps);
++  const difficulty: Difficulty = pick(['easy', 'medium', 'medium', 'hard'] as const);
++  const cap = DATA.difficulties[difficulty].endRound;
++  let span = pick([15, 20, 25]);
++  let start = pick([1, 1, 10, 20, 30, 40]);
++  const allTowers = challengeTowers();
++  const nTowers = pick([2, 3, 4, allTowers.length]);
++  const shuffled = [...allTowers];
++  for (let i = shuffled.length - 1; i > 0; i--) { const j = nextInt(rng, i + 1); [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]; }
++  const towers = nTowers >= allTowers.length ? null : (shuffled.slice(0, nTowers) as TowerType[]);
++  const hero = chance(75) ? 'any' : 'none';
++  const tierCap = pick([5, 5, 5, 4, 3, 2]);
++  const lives = pick([null, null, null, null, 50, 25, 1]);
++  const noSell = chance(30);
++  const incomeRoll = pick([100, 100, 100, 100, 100, 50, 0]);
++  const [hpPct, speedPct] = pick([[100, 100], [100, 100], [100, 100], [100, 100], [100, 100], [120, 100], [100, 115], [130, 110], [80, 100]] as const);
++  const seed = nextInt(rng, 1 << 20) * 4096 + nextInt(rng, 4096);
++
++  let incomePct = incomeRoll;
++  let cash: number | null = null;
++  if (incomePct === 0) { span = 10; start = Math.max(1, cap - 10); }
++  if (start + span - 1 > cap) start = Math.max(1, cap - span + 1);
++  const end = start + span - 1;
++  if (incomePct === 0) cash = 20_000;
++  else if (start > 1) cash = Math.round((wealthBefore(start) * 0.85) / 50) * 50;
++  if (incomePct === 50 && cash !== null) cash = Math.round(cash / 2 / 50) * 50;
++  // Drei Tuerme oder weniger und Stufenlimit: mit viel Geld bleibt das fuer Stufe 2 sonst ein Geldhaufen ohne Ziel
++  if (cash !== null && tierCap <= 3 && towers && towers.length <= 2) cash = Math.round((cash * 0.6) / 50) * 50;
++
++  const rules = normalizeRules({
++    map, difficulty, seed, startRound: start, endRound: end, towers, hero, maxTier: [tierCap, tierCap, tierCap] as Tiers,
++    startCash: cash, lives, incomePct, noSell, noPowers: true, noKnowledge: true, hpPct, speedPct,
++  });
++  const name = lives === 1 ? 'Flawless' : incomePct === 0 ? 'Frozen Purse' : noSell ? 'No Refunds' : towers && towers.length <= 2 ? 'Small Garrison'
++    : hero === 'none' ? 'Lone Towers' : tierCap <= 3 ? 'Low Ceiling' : hpPct > 100 ? 'Tough Hides' : speedPct > 100 ? 'Swift Dusk' : start >= 20 ? 'Late Arrival' : 'Open Road';
++  void incomePct;
++  return { day, name, rules, code: encodeChallenge(rules) };
++}
++
++// ---------------------------------------------------------------- Bestwerte und Belohnung
++
++const nat = z.number().int().min(0);
++/** Bestwerte einer Challenge: Runden (hoechste), Sieg, und bei Siegen je Kennzahl das Minimum (Geld, Leben, Zeit in Ticks). */
++export const ChallengeBestSchema = z.object({
++  plays: nat,
++  won: z.boolean(),
++  rounds: nat,
++  spent: nat.nullable().default(null),
++  livesLost: nat.nullable().default(null),
++  ticks: nat.nullable().default(null),
++});
++export type ChallengeBest = z.infer<typeof ChallengeBestSchema>;
++
++export const ChallengesSchema = z.object({
++  /** UTC-Tag der letzten ausgezahlten Tagesbelohnung ('' = nie). */
++  dailyClaimed: z.string().default(''),
++  /** Bestwert je UTC-Tag (juengste `DAILY_KEEP`). */
++  daily: z.record(z.string(), ChallengeBestSchema).default({}),
++  /** Bestwert je Code (juengste `CUSTOM_KEEP`). */
++  custom: z.record(z.string(), ChallengeBestSchema).default({}),
++});
++export type ChallengesState = z.infer<typeof ChallengesSchema>;
++export const emptyChallenges = (): ChallengesState => ({ dailyClaimed: '', daily: {}, custom: {} });
++
++export const ChallengeResultSchema = z.object({
++  matchId: z.string().min(1),
++  /** `daily`: `key` ist der UTC-Tag; `custom`: `key` ist der Code. */
++  kind: z.enum(['daily', 'custom']),
++  key: z.string().min(1).max(4000),
++  won: z.boolean(),
++  roundsCleared: nat.max(9999),
++  /** Kennzahlen fuer spaetere Bestenlisten. */
++  spent: nat,
++  livesLost: nat.max(99999),
++  ticks: nat,
++});
++export type ChallengeResult = z.input<typeof ChallengeResultSchema>;
++
++export interface ChallengeReport {
++  duplicate: boolean;
++  best: ChallengeBest;
++  /** Neuer Bestwert (mehr Runden, erster Sieg oder eine bessere Kennzahl). */
++  improved: boolean;
++  embersGained: number;
++  /** Tagesbelohnung wurde mit diesem Lauf ausgezahlt. */
++  claimedNow: boolean;
++}
++
++const minOr = (a: number | null, b: number): number => (a === null ? b : Math.min(a, b));
++
++/** Bestwerte und Tagesbelohnung verbuchen. Das uebergebene Profil bleibt unveraendert; dieselbe `matchId` zaehlt nur einmal. */
++export function applyChallenge(p: Profile, resultIn: ChallengeResult, today: string = utcDay()): { profile: Profile; report: ChallengeReport } {
++  const r = ChallengeResultSchema.parse(resultIn);
++  const ch = p.challenges ?? emptyChallenges();
++  const table = r.kind === 'daily' ? ch.daily : ch.custom;
++  const old = table[r.key];
++  const blank: ChallengeBest = { plays: 0, won: false, rounds: 0, spent: null, livesLost: null, ticks: null };
++  if (p.seenMatches.includes(r.matchId)) return { profile: p, report: { duplicate: true, best: old ?? blank, improved: false, embersGained: 0, claimedNow: false } };
++  const b = old ?? blank;
++  const next: ChallengeBest = {
++    plays: b.plays + 1,
++    won: b.won || r.won,
++    rounds: Math.max(b.rounds, r.roundsCleared),
++    spent: r.won ? minOr(b.spent, r.spent) : b.spent,
++    livesLost: r.won ? minOr(b.livesLost, r.livesLost) : b.livesLost,
++    ticks: r.won ? minOr(b.ticks, r.ticks) : b.ticks,
++  };
++  const improved = !old || next.rounds > b.rounds || (next.won && !b.won) || next.spent !== b.spent || next.livesLost !== b.livesLost || next.ticks !== b.ticks;
++  // Tagesbelohnung: nur fuer den Sieg der Tages-Challenge von heute, einmal je Tag
++  const claimNow = r.kind === 'daily' && r.won && r.key === today && ch.dailyClaimed !== today;
++  const keepLatest = <T>(t: Record<string, T>, key: string, n: number): Record<string, T> => {
++    const keys = Object.keys(t).filter((k) => k !== key);
++    const drop = r.kind === 'daily' ? keys.sort().slice(0, Math.max(0, keys.length + 1 - n)) : keys.slice(0, Math.max(0, keys.length + 1 - n));
++    const out: Record<string, T> = {};
++    for (const k of keys) if (!drop.includes(k)) out[k] = t[k];
++    out[key] = t[key];
++    return out;
++  };
++  const merged = { ...table, [r.key]: next };
++  const nextTable = keepLatest(merged, r.key, r.kind === 'daily' ? DAILY_KEEP : CUSTOM_KEEP);
++  const challenges: ChallengesState = {
++    dailyClaimed: claimNow ? today : ch.dailyClaimed,
++    daily: r.kind === 'daily' ? nextTable : ch.daily,
++    custom: r.kind === 'custom' ? nextTable : ch.custom,
++  };
++  const embersGained = claimNow ? DAILY_EMBERS : 0;
++  const profile: Profile = {
++    ...p,
++    challenges,
++    embers: p.embers + embersGained,
++    seenMatches: [...p.seenMatches, r.matchId].slice(-SEEN_MAX),
++  };
++  return { profile, report: { duplicate: false, best: next, improved, embersGained, claimedNow: claimNow } };
++}
++
++/** Stand der Tages-Challenge fuer die Anzeige. */
++export function dailyStatus(p: Profile, day: string): { claimed: boolean; best: ChallengeBest | undefined } {
++  return { claimed: (p.challenges?.dailyClaimed ?? '') === day, best: p.challenges?.daily[day] };
++}
+diff --git a/meta/src/index.ts b/meta/src/index.ts
+index de3c7be..4062519 100644
+--- a/meta/src/index.ts
++++ b/meta/src/index.ts
+@@ -6,3 +6,4 @@ export * from './data';
+ export * from './profile';
+ export * from './progress';
+ export * from './io';
++export * from './challenge';
+diff --git a/meta/src/profile.ts b/meta/src/profile.ts
+index cce3ccd..1455a0b 100644
+--- a/meta/src/profile.ts
++++ b/meta/src/profile.ts
+@@ -4,6 +4,7 @@
+  */
+ import { z } from 'zod';
+ import type { Difficulty, ModeId, PowerKey, TowerType, Tiers } from '../../sim/src/types';
++import { ChallengesSchema, emptyChallenges } from './challenge';
+ import { KNOWLEDGE, POWER_KEYS, STARTER_PACK, STARTER_TOWER_XP, emptyInventory, levelFromXp, nodeById } from './data';
+ 
+ export const SAVE_SCHEMA = 11;
+@@ -56,6 +57,8 @@ export const ProfileSchema = z.object({
+   inventory: inventorySchema.default(() => emptyInventory()),
+   /** Runde 12: Startpaket (100 Embers + 1 Gold Drop + 1 Lantern Bomb) schon vergeben. */
+   starterPack: z.boolean().default(false),
++  /** Runde 16 E: Tages-Challenge (Belohnung einmal je UTC-Tag) und Bestwerte der Challenges. Fehlt in aelteren Staenden = leer (Schema bleibt 11). */
++  challenges: ChallengesSchema.default(emptyChallenges),
+   settings: z.object({ volume: z.number().int().min(0).max(100), unlockAll: z.boolean() }),
+ });
+ export type Profile = z.infer<typeof ProfileSchema>;
+@@ -81,6 +84,7 @@ export function newProfile(now = new Date(0).toISOString()): Profile {
+     embers: STARTER_PACK.embers,
+     inventory: { ...emptyInventory(), ...STARTER_PACK.powers },
+     starterPack: true,
++    challenges: emptyChallenges(),
+     settings: { volume: 70, unlockAll: false },
+   };
+ }
+diff --git a/meta/test/challenge.test.ts b/meta/test/challenge.test.ts
+new file mode 100644
+index 0000000..2b0da5f
+--- /dev/null
++++ b/meta/test/challenge.test.ts
+@@ -0,0 +1,90 @@
++/** Runde 16 E (10.10.2026): Tages-Challenge, Belohnung einmal je Tag, Bestwerte. */
++import { describe, expect, it } from 'vitest';
++import { createGame, decodeChallenge, encodeChallenge } from '../../sim/src/index';
++import { DAILY_EMBERS, applyChallenge, dailyChallenge, dailyStatus, isDay, loadProfile, newProfile, utcDay, MAP_IDS } from '../src/index';
++
++const day = (i: number): string => new Date(Date.UTC(2026, 9, 10 + i)).toISOString().slice(0, 10);
++
++describe('Tages-Challenge: Generator', () => {
++  it('gleicher Tag gleiche Regeln, ohne Zustand', () => {
++    for (let i = 0; i < 40; i++) expect(dailyChallenge(day(i))).toEqual(dailyChallenge(day(i)));
++  });
++  it('gueltig, Code-Rundreise, spielbar angelegt, Karte aus der Liste', () => {
++    const names = new Set<string>(), maps = new Set<string>();
++    for (let i = 0; i < 200; i++) {
++      const d = dailyChallenge(day(i));
++      expect(decodeChallenge(d.code)).toEqual(d.rules);
++      expect(encodeChallenge(d.rules)).toBe(d.code);
++      expect(MAP_IDS).toContain(d.rules.map);
++      expect(d.rules.noPowers && d.rules.noKnowledge).toBe(true);
++      expect(d.rules.endRound - d.rules.startRound).toBeGreaterThanOrEqual(9);
++      const g = createGame({ map: d.rules.map, difficulty: d.rules.difficulty, seed: d.rules.seed, rules: d.rules });
++      expect(g.state.round).toBe(d.rules.startRound - 1);
++      names.add(d.name);
++      maps.add(d.rules.map);
++    }
++    expect(names.size).toBeGreaterThan(5);
++    expect(maps.size).toBe(MAP_IDS.length);
++  });
++  it('aufeinanderfolgende Tage unterscheiden sich', () => {
++    expect(new Set(Array.from({ length: 30 }, (_, i) => dailyChallenge(day(i)).code)).size).toBe(30);
++  });
++  it('Tag: Format und UTC', () => {
++    expect(utcDay(Date.UTC(2026, 9, 10, 23, 59))).toBe('2026-10-10');
++    expect(utcDay(Date.UTC(2026, 9, 11, 0, 1))).toBe('2026-10-11');
++    expect(isDay('2026-02-30')).toBe(false);
++    expect(() => dailyChallenge('heute')).toThrow();
++  });
++});
++
++describe('Tages-Challenge: Belohnung und Bestwerte', () => {
++  const win = (id: string, over: Record<string, unknown> = {}) => ({ matchId: id, kind: 'daily' as const, key: '2026-10-10', won: true, roundsCleared: 25, spent: 5000, livesLost: 3, ticks: 40000, ...over });
++  it('Embers genau einmal je Tag', () => {
++    const p = newProfile();
++    const a = applyChallenge(p, win('m1'), '2026-10-10');
++    expect(a.report.embersGained).toBe(DAILY_EMBERS);
++    expect(a.profile.embers).toBe(p.embers + DAILY_EMBERS);
++    expect(dailyStatus(a.profile, '2026-10-10').claimed).toBe(true);
++    const b = applyChallenge(a.profile, win('m2', { spent: 4000 }), '2026-10-10');
++    expect(b.report.embersGained).toBe(0);
++    expect(b.profile.embers).toBe(a.profile.embers);
++    expect(b.report.best.spent).toBe(4000);
++    expect(b.report.best.plays).toBe(2);
++    // naechster Tag zahlt wieder
++    const c = applyChallenge(b.profile, win('m3', { key: '2026-10-11' }), '2026-10-11');
++    expect(c.report.embersGained).toBe(DAILY_EMBERS);
++  });
++  it('keine Belohnung bei Niederlage, altem Tag oder Doppelmeldung', () => {
++    const p = newProfile();
++    expect(applyChallenge(p, win('m1', { won: false }), '2026-10-10').report.embersGained).toBe(0);
++    expect(applyChallenge(p, win('m1'), '2026-10-12').report.embersGained).toBe(0);
++    const a = applyChallenge(p, win('m1'), '2026-10-10');
++    const again = applyChallenge(a.profile, win('m1'), '2026-10-10');
++    expect(again.report.duplicate).toBe(true);
++    expect(again.profile).toBe(a.profile);
++  });
++  it('Bestwerte: Minimum bei Siegen, Runden hoechste', () => {
++    let p = applyChallenge(newProfile(), win('a', { won: false, roundsCleared: 12 }), '2026-10-10').profile;
++    p = applyChallenge(p, win('b', { spent: 9000, livesLost: 1, ticks: 50000 }), '2026-10-10').profile;
++    p = applyChallenge(p, win('c', { spent: 7000, livesLost: 5, ticks: 30000 }), '2026-10-10').profile;
++    expect(p.challenges.daily['2026-10-10']).toEqual({ plays: 3, won: true, rounds: 25, spent: 7000, livesLost: 1, ticks: 30000 });
++  });
++  it('alte Profile ohne Feld laden weiter; Tage werden begrenzt', () => {
++    const raw = JSON.parse(JSON.stringify(newProfile()));
++    delete raw.challenges;
++    const l = loadProfile(raw);
++    expect(l.reset).toBe(false);
++    expect(l.profile.challenges).toEqual({ dailyClaimed: '', daily: {}, custom: {} });
++    let p = newProfile();
++    for (let i = 0; i < 45; i++) p = applyChallenge(p, win(`x${i}`, { key: day(i) }), day(i)).profile;
++    expect(Object.keys(p.challenges.daily)).toHaveLength(30);
++    expect(p.challenges.daily[day(44)]).toBeDefined();
++    expect(p.challenges.daily[day(0)]).toBeUndefined();
++  });
++  it('custom: Bestwert je Code', () => {
++    const code = encodeChallenge(dailyChallenge('2026-10-10').rules);
++    const r = applyChallenge(newProfile(), { matchId: 'q', kind: 'custom', key: code, won: false, roundsCleared: 7, spent: 100, livesLost: 9, ticks: 1000 });
++    expect(r.profile.challenges.custom[code].rounds).toBe(7);
++    expect(r.report.embersGained).toBe(0);
++  });
++});
+-- 
+2.43.0
+

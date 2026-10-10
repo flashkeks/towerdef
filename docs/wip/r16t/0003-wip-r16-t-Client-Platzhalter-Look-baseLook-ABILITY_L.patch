@@ -1,0 +1,600 @@
+From 121bf376b58e7d717cec6de89bce53007ed78ddc Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Sat, 10 Oct 2026 12:26:28 +0000
+Subject: [PATCH 3/4] wip(r16-t): Client - Platzhalter-Look (baseLook,
+ ABILITY_LOOK, Geschosse), Held der Partie, 46 Knoten, Tests
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01Qw1eNus4A4pQXWKdhKHxPf
+---
+ client/src/audio/engine.ts         |  4 +-
+ client/src/match/info.ts           |  9 ++--
+ client/src/match/match.ts          | 12 +++---
+ client/src/match/r13.ts            |  6 ++-
+ client/src/match/renderer.ts       | 22 ++++++----
+ client/src/match/tower-text.ts     | 19 ++++++++-
+ client/src/meta/types.ts           |  2 +
+ client/src/pixel/sprites/icons.ts  | 11 ++---
+ client/src/pixel/sprites/towers.ts |  5 ++-
+ client/src/pixel/sprites/types.ts  | 24 +++++++++--
+ client/src/screens/app.ts          |  2 +-
+ client/src/screens/home.ts         |  4 +-
+ client/src/screens/knowledge.ts    |  2 +
+ client/src/screens/result.ts       |  2 +-
+ client/src/screens/text.ts         |  3 ++
+ client/src/screens/towers.ts       |  2 +-
+ client/test/meta-screens.test.ts   | 13 +++---
+ client/test/r14-knowledge.test.ts  |  6 +--
+ client/test/r16-client.test.ts     | 67 ++++++++++++++++++++++++++++++
+ 19 files changed, 169 insertions(+), 46 deletions(-)
+ create mode 100644 client/test/r16-client.test.ts
+
+diff --git a/client/src/audio/engine.ts b/client/src/audio/engine.ts
+index 19f4177..d6a3714 100644
+--- a/client/src/audio/engine.ts
++++ b/client/src/audio/engine.ts
+@@ -217,7 +217,7 @@ export class AudioEngine {
+         else if (!t) this.playTower('shoot.ranger', 'fire.ranger', 0, rnd());
+         else if (t.type === 'bombardier') this.playTower('shoot.bomb', 'fire.bombardier', top, rnd());
+         else if (t.type === 'frostcaller') this.playTower('shoot.frost', 'fire.frostcaller', top, rnd());
+-        else if (t.type === 'wren') this.play('shoot.hero', 0.6, rnd());
++        else if (t.type === 'wren' || t.type === 'bram' || t.type === 'sela') this.play('shoot.hero', 0.6, rnd());
+         else if (ev.kind === 'bigArrow' || ev.kind === 'bolt' || ev.kind === 'starBolt') this.playTower('shoot.ballista', `fire.${t.type}`, top, rnd());
+         else if (t.tiers[0] >= 3) this.playTower('shoot.volley', `fire.${t.type}`, top, rnd());
+         else this.playTower('shoot.ranger', `fire.${t.type}`, top, rnd());
+@@ -230,7 +230,7 @@ export class AudioEngine {
+         const id = ev.kind === 'quake' ? 'quake' : ev.kind === 'mini' ? 'explode.mini' : 'explode';
+         // Aufprall so laut wie der naechste Turm es verdient (Sim-Event hat keine Turm-ID)
+         let best: TowerState | null = null, bd = Infinity;
+-        for (const q of towers) { if (q.type === 'wren') continue; const d = (q.x - ev.x) ** 2 + (q.y - ev.y) ** 2; if (d < bd) { bd = d; best = q; } }
++        for (const q of towers) { if (q.type === 'wren' || q.type === 'bram' || q.type === 'sela') continue; const d = (q.x - ev.x) ** 2 + (q.y - ev.y) ** 2; if (d < bd) { bd = d; best = q; } }
+         this.playTower(id, `hit.${id}`, best ? topTier(best.tiers) : 0, rnd());
+         break;
+       }
+diff --git a/client/src/match/info.ts b/client/src/match/info.ts
+index 0fa7c1b..7ef90e5 100644
+--- a/client/src/match/info.ts
++++ b/client/src/match/info.ts
+@@ -1,9 +1,10 @@
+ /** Kleine Lese-Helfer auf die Sim-Daten (Namen, Fussabdruck), damit Renderer und UI nicht je Turm/Held unterscheiden muessen. */
+ import { DATA, type HeroType, type TowerType } from '../sim';
+ 
+-export const isHero = (t: TowerType | HeroType): t is HeroType => t === 'wren';
++/** Runde 16: drei Helden (Wren, Bram, Sela); gezeichnet werden alle vorerst mit der Wren-Figur (Platzhalter bis Paket TP). */
++export const isHero = (t: TowerType | HeroType): t is HeroType => t === 'wren' || t === 'bram' || t === 'sela';
+ /** Fussabdruck-Radius in Milli-px */
+-export const footMilli = (t: TowerType | HeroType): number => (isHero(t) ? DATA.hero.wren.radius : DATA.towers[t].radius) * 1000;
++export const footMilli = (t: TowerType | HeroType): number => (isHero(t) ? DATA.hero[t].radius : DATA.towers[t].radius) * 1000;
+ /** Reichweite der Basisstufe in px (nur fuer den Geist; die Sim rechnet Stufen und Wissensbaum selbst) */
+-export const baseRangePx = (t: TowerType | HeroType): number => Number((isHero(t) ? DATA.hero.wren.base : DATA.towers[t].base).range) / 1000;
+-export const displayName = (t: TowerType | HeroType): string => (isHero(t) ? DATA.hero.wren.name : DATA.towers[t].name);
++export const baseRangePx = (t: TowerType | HeroType): number => Number((isHero(t) ? DATA.hero[t].base : DATA.towers[t].base).range) / 1000;
++export const displayName = (t: TowerType | HeroType): string => (isHero(t) ? DATA.hero[t].name : DATA.towers[t].name);
+diff --git a/client/src/match/match.ts b/client/src/match/match.ts
+index 947591c..becf1fc 100644
+--- a/client/src/match/match.ts
++++ b/client/src/match/match.ts
+@@ -19,7 +19,7 @@ import { UnlockMenu } from './unlock-menu';
+ import { Renderer } from './renderer';
+ import { iconUpgrade, iconAbility, heroPortrait, towerPortrait, heroSprite, towerSprite } from './sprites';
+ import { canWithdraw, cooldownText, marketRadiusPx, rangeView, type RangeView } from './r13';
+-import { ABILITY_TEXT, HERO_TYPES, HOTKEY, ROLE, TOWER_TYPES } from './tower-text';
++import { ABILITY_TEXT, HERO_KEY, HERO_TYPES, HOTKEY, ROLE, TOWER_TYPES } from './tower-text';
+ import { copyCanvas, uiIcon } from './ui-icons';
+ import { volumeButton } from '../ui/volume';
+ import './match.css';
+@@ -36,6 +36,8 @@ export interface StartOptions {
+   towerXp?: GameOptions['towerXp'];
+   /** Power-Inventar aus dem Profil (Runde 12) */
+   powers?: GameOptions['powers'];
++  /** Runde 16: gewaehlter Held (Meta `activeHero`), Vorgabe Wren */
++  hero?: HeroType;
+   /** Text fuer gesperrte Tuerme, z. B. { bombardier: 'Unlocks at level 2' } (P4 liefert die Zahlen) */
+   lockInfo?: Partial<Record<TowerType | HeroType, string>>;
+   /** nur fuer Pruef-Skripte: Zugriff auf Game/Renderer unter window.__dw */
+@@ -72,7 +74,7 @@ const KEYS_ABILITY = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
+ 
+ export async function startMatch(root: HTMLElement, opts: StartOptions): Promise<MatchResult> {
+   const seed = opts.seed ?? (Math.floor(Math.random() * 2 ** 31) | 0);
+-  const game = createGame({ map: opts.map ?? 'meadow', mode: opts.mode ?? 'standard', difficulty: opts.difficulty, seed, unlocks: opts.unlocks, towerXp: opts.towerXp, mods: opts.mods, powers: opts.powers });
++  const game = createGame({ map: opts.map ?? 'meadow', mode: opts.mode ?? 'standard', difficulty: opts.difficulty, seed, unlocks: opts.unlocks, towerXp: opts.towerXp, mods: opts.mods, powers: opts.powers, hero: opts.hero });
+   const m = new Match(root, game, { ...opts, seed });
+   await m.init();
+   return m.done;
+@@ -214,7 +216,7 @@ class Match {
+     tw.append(list);
+     tw.append(h('div', 'm-side-h', t('match.hero')));
+     const hl = h('div', 'm-cards m-cards-hero');
+-    for (const ty of HERO_TYPES) hl.append(this.card(ty));
++    for (const ty of [this.game.info.hero]) hl.append(this.card(ty)); // Runde 16: nur der Held dieser Partie (Wren, Bram oder Sela)
+     tw.append(hl);
+     side.append(this.tabs.bar, this.tabs.panes);
+     // Start, Tempo, Auto
+@@ -275,7 +277,7 @@ class Match {
+   /** Hinweis auf gesperrten Karten, wenn der Modus den Turm oder den Helden verbietet. */
+   private modeLockText(ty: TowerType | HeroType): string {
+     const m = MODES[this.game.info.mode];
+-    return ty === 'wren' ? 'No hero in this mode' : `Not in ${m.name}`;
++    return isHero(ty) ? 'No hero in this mode' : `Not in ${m.name}`;
+   }
+ 
+   // ------------------------------------------------------------------ Aktionen
+@@ -529,7 +531,7 @@ class Match {
+     if (this.paused) return;
+     if (k === 'Tab') { e.preventDefault(); this.tabs.cycle(e.shiftKey ? -1 : 1); return; }
+     const lower = k.toLowerCase();
+-    const ty = [...TOWER_TYPES, ...HERO_TYPES].find((q) => HOTKEY[q].toLowerCase() === lower);
++    const ty = [...TOWER_TYPES, this.game.info.hero].find((q) => (isHero(q) ? HERO_KEY : HOTKEY[q]).toLowerCase() === lower);
+     if (ty) { this.beginPlace(ty); return; }
+     if (k === ' ') { e.preventDefault(); if (this.game.state.phase === 'wave' && this.game.state.groups.length > 0) this.setSpeed(this.speed >= 3 ? 1 : this.speed + 1); else this.startRound(); return; }
+     if (lower === 'b' && sel != null) { const tw = this.game.state.towers.find((q) => q.id === sel); if (tw?.type === 'market') this.withdraw(sel); return; }
+diff --git a/client/src/match/r13.ts b/client/src/match/r13.ts
+index 71aaaac..7dfacbb 100644
+--- a/client/src/match/r13.ts
++++ b/client/src/match/r13.ts
+@@ -30,8 +30,12 @@ export function marketRadiusPx(baseMilli: number, marketRadiusBp = 0): number {
+   return Math.floor((baseMilli * (10000 + marketRadiusBp)) / 10000) / 1000;
+ }
+ 
++const PLACEHOLDER_SHOT: Partial<Record<SimProjectile, ProjectileKind>> = { harpoon: 'bolt', hammer: 'bolt', cannonball: 'frag', nail: 'arrow', starlight: 'starBolt' };
++
+ /** Welches Bild der Longshot-Bolzen bekommt: Basis, schwerer Eisenbolzen (A1+, magic) oder Lanternbreaker (A5); Splitter. */
+-export function projectileLook(kind: SimProjectile, owner: { type: string; tiers: readonly number[] } | undefined, sub = 0): ProjectileKind {
++export function projectileLook(kindIn: SimProjectile, owner: { type: string; tiers: readonly number[] } | undefined, sub = 0): ProjectileKind {
++  // Runde 16: neue Geschosse zeichnen vorerst wie vorhandene (Platzhalter bis Paket TP): Harpune/Hammer = Bolzen, Kanonenkugel = Splitter, Nagel = Pfeil, Sternenlicht = Sternbolzen
++  const kind = (PLACEHOLDER_SHOT[kindIn] ?? kindIn) as ProjectileKind;
+   if (owner?.type === 'thornweaver') return kind === 'thorn' && (owner.tiers[2] ?? 0) >= 5 ? 'thornMagic' : kind;
+   if (owner?.type === 'alchemist') return kind === 'potion' && (owner.tiers[2] ?? 0) >= 3 ? 'potionGold' : kind;
+   if (owner?.type !== 'longshot') return kind;
+diff --git a/client/src/match/renderer.ts b/client/src/match/renderer.ts
+index d5cb89b..c1cc37b 100644
+--- a/client/src/match/renderer.ts
++++ b/client/src/match/renderer.ts
+@@ -15,7 +15,7 @@ import { type EnemyState, type EnemyType, type GameState, type ProjectileState,
+ import { glowKind, monsterScale, wallWear, zoneView, type GlowKind } from './r14';
+ import { rangeView, coinCount, coinDelay, coinPath, hasAura, isMarked, projectileLook, type RangeView } from './r13';
+ import { FxLayer, FRAMES } from './fx';
+-import { footMilli } from './info';
++import { footMilli, isHero } from './info';
+ import { TRAP_W, monsterSprite, bigHeart, bombLantern, bubbleSprite, coinSprite, trapSprite, discSprite, enemySprite, fx as P2, heroSprite, projectileSprite, ringSprite, shadowSprite, heroMuzzle, towerMuzzle, towerSprite, type HeroFrame, type Spr, type TowerFrame } from './sprites';
+ import { tex } from './textures';
+ import { ENEMY_LOOK, spriteStage } from './enemy-info';
+@@ -356,7 +356,7 @@ export class Renderer {
+       for (const t of state.towers) this.auraOf.set(t.id, t.type !== 'market' && hasAura(this.auraProbe(t.id)));
+     }
+     if (this.buffProbe && (newTick && state.tick % 10 === 0 || this.glowOf.size !== state.towers.length)) {
+-      for (const t of state.towers) this.glowOf.set(t.id, t.type === 'wren' || t.type === 'market' ? null : glowKind(this.buffProbe(t.id)));
++      for (const t of state.towers) this.glowOf.set(t.id, isHero(t.type) || t.type === 'market' ? null : glowKind(this.buffProbe(t.id)));
+     }
+ 
+     const seenE = new Set<number>();
+@@ -500,9 +500,13 @@ export class Renderer {
+   private towerSpr(t: TowerState): Spr {
+     const atk = t.attackTick;
+     const frame = (atk > 0 ? (atk < 4 ? 'atk0' : atk < 6 ? 'atk1' : atk < 11 ? 'atk2' : 'atk3') : `idle${(Math.floor(this.now / 166) + t.id) & 3}`) as TowerFrame;
+-    if (t.monsterTicks > 0 && t.type !== 'wren') return monsterSprite(t.facing, frame, monsterScale(t.type));
+-    if (t.type === 'wren' && this.now < this.heroCast) return heroSprite(t.heroLevel, t.facing, this.heroCast - this.now > 150 ? 'cast0' : 'cast1');
+-    return t.type === 'wren' ? heroSprite(t.heroLevel, t.facing, frame as HeroFrame) : towerSprite(t.type, t.tiers, t.facing, frame);
++    if (isHero(t.type)) {
++      // Runde 16: Bram und Sela zeichnen vorerst wie Wren (Platzhalter bis Paket TP)
++      if (this.now < this.heroCast) return heroSprite(t.heroLevel, t.facing, this.heroCast - this.now > 150 ? 'cast0' : 'cast1');
++      return heroSprite(t.heroLevel, t.facing, frame as HeroFrame);
++    }
++    if (t.monsterTicks > 0) return monsterSprite(t.facing, frame, monsterScale(t.type));
++    return towerSprite(t.type, t.tiers, t.facing, frame);
+   }
+ 
+   private syncTower(t: TowerState): void {
+@@ -671,7 +675,7 @@ export class Renderer {
+       // Start am Muendungspunkt der Waffe (Fuss-Anker + `towerMuzzle`), nicht in der Turmmitte; die Sim-Bahn bleibt, der
+       // Versatz klingt in den ersten Ticks auf null ab (nur Optik, der Treffer gehoert der Sim)
+       const own = this.latest?.towers.find((q) => q.id === p.owner);
+-      const mz = own ? (own.type === 'wren' ? heroMuzzle(own.heroLevel, own.facing) : towerMuzzle(own.type, own.tiers, own.facing)) : { x: 0, y: 0 };
++      const mz = own ? (isHero(own.type) ? heroMuzzle(own.heroLevel, own.facing) : towerMuzzle(own.type, own.tiers, own.facing)) : { x: 0, y: 0 };
+       v = { spr, key: '', px: cx, py: cy, cx, cy, mx: p.sub === 1 ? 0 : mz.x, my: p.sub === 1 ? 0 : mz.y };
+       if (p.kind === 'bomb' || p.kind === 'potion') { v.shadow = new Sprite(shadowTex(7, 3)); this.shadowC.addChild(v.shadow); }
+       this.projs.set(p.id, v);
+@@ -757,8 +761,8 @@ export class Renderer {
+       case 'fire': {
+         const t = this.latest?.towers.find((q) => q.id === ev.tower);
+         if (t) {
+-          const mz = t.type === 'wren' ? heroMuzzle(t.heroLevel, t.facing) : towerMuzzle(t.type, t.tiers, t.facing);
+-          const col = t.type === 'bombardier' ? [C.orange, C.stone, C.yellow] : t.type === 'frostcaller' ? [C.ice, C.white] : t.type === 'wren' ? [C.yellow, C.amber] : t.type === 'longshot' ? [C.yellow, C.white] : t.type === 'thornweaver' ? [C.leaf, C.grass, C.yellow] : t.type === 'alchemist' ? [C.leaf, C.yellow, C.white] : [C.sand, C.white];
++          const mz = isHero(t.type) ? heroMuzzle(t.heroLevel, t.facing) : towerMuzzle(t.type, t.tiers, t.facing);
++          const col = t.type === 'bombardier' ? [C.orange, C.stone, C.yellow] : t.type === 'frostcaller' ? [C.ice, C.white] : isHero(t.type) ? [C.yellow, C.amber] : t.type === 'longshot' ? [C.yellow, C.white] : t.type === 'thornweaver' ? [C.leaf, C.grass, C.yellow] : t.type === 'alchemist' ? [C.leaf, C.yellow, C.white] : [C.sand, C.white];
+           fx.burst(m(t.x) + mz.x, m(t.y) + mz.y, col, 3, 0.9, 1, 0.02, 8);
+           if (t.type === 'longshot') {
+             // Muendungsblitz: heller Ring plus Funken in Blickrichtung, dazu Rueckstoss am Sprite
+@@ -1209,7 +1213,7 @@ export class Renderer {
+         });
+         break;
+       case 'heroBoost': {
+-        const t = this.latest?.towers.find((q) => q.type === 'wren');
++        const t = this.latest?.towers.find((q) => isHero(q.type));
+         if (t) {
+           this.heroCast = this.now + 300;
+           fx.ring(m(t.x), m(t.y), 4, 40, C.leaf, 22);
+diff --git a/client/src/match/tower-text.ts b/client/src/match/tower-text.ts
+index ce389a6..db36b04 100644
+--- a/client/src/match/tower-text.ts
++++ b/client/src/match/tower-text.ts
+@@ -6,6 +6,10 @@ import type { HeroType, TowerType } from '../sim';
+ 
+ /** Reihenfolge der Turm-Leiste (Runde 14): die drei Basistuerme, dann die Spezialisten (Longshot, Market, Thornweaver, Alchemist). */
+ export const TOWER_TYPES: TowerType[] = ['ranger', 'bombardier', 'frostcaller', 'longshot', 'market', 'thornweaver', 'alchemist'];
++/**
++ * Runde 16 (Paket T): Riverkeeper, Bellringer, Tinker und die Helden Bram und Sela sind in Sim und Meta fertig, aber noch nicht in der Turm-Leiste -
++ * die Leiste, die Held-Auswahl und die Platzier-UI fuer Wasser bringt Paket TP. Der Held der Partie steht in `game.info.hero` (Held-Kachel in `match.ts`).
++ */
+ export const HERO_TYPES: HeroType[] = ['wren'];
+ export const ROLE: Record<TowerType | HeroType, string> = {
+   ranger: 'Cheap single target',
+@@ -15,9 +19,16 @@ export const ROLE: Record<TowerType | HeroType, string> = {
+   market: 'Earns gold, buffs towers',
+   thornweaver: 'Nature caster: thorns, vines, lightning',
+   alchemist: 'Acid splash, buffs nearby towers',
++  riverkeeper: 'Water tower: harpoons, sonar, cannons',
++  bellringer: 'Support: bells buff nearby towers',
++  tinker: 'Builder: sentries, caltrops, overclock',
+   wren: 'Hero: lights the way',
++  bram: 'Hero: cracks armor, forges',
++  sela: 'Hero: long range, sees camo',
+ };
+-export const HOTKEY: Record<TowerType | HeroType, string> = { ranger: 'Q', bombardier: 'W', frostcaller: 'E', longshot: 'T', market: 'Z', thornweaver: 'D', alchemist: 'A', wren: 'R' };
++export const HOTKEY: Record<TowerType | HeroType, string> = { ranger: 'Q', bombardier: 'W', frostcaller: 'E', longshot: 'T', market: 'Z', thornweaver: 'D', alchemist: 'A', riverkeeper: 'V', bellringer: 'U', tinker: 'I', wren: 'R', bram: 'H', sela: 'J' };
++/** Der Held-Platz laeuft immer ueber R, egal welcher Held gewaehlt ist (Paket TP: eigene Held-Kachel). */
++export const HERO_KEY = 'R';
+ export const ABILITY_TEXT: Record<string, { name: string; desc: string }> = {
+   arrowRain: { name: 'Arrow Rain', desc: 'All Rangers shoot 3x faster for a few seconds.' },
+   absoluteZero: { name: 'Absolute Zero', desc: 'Freezes every Glim for 4 seconds.' },
+@@ -28,6 +39,12 @@ export const ABILITY_TEXT: Record<string, { name: string; desc: string }> = {
+   wallOfTrees: { name: 'Wall of Trees', desc: 'A wall of trees rises on the path and swallows Glims.' },
+   tonic: { name: 'Transforming Tonic', desc: 'The Alchemist turns into a monster for 20 seconds.' },
+   grant: { name: 'Grant', desc: 'Your Grant Offices pay out a lump sum of gold.' },
++  alarm: { name: 'Alarm', desc: 'Every Glim stops for a moment. Bosses stop for half as long.' },
++  overclock: { name: 'Overclock', desc: 'Towers around your Tinkers attack much faster for a few seconds.' },
++  anvilDrop: { name: 'Anvil Drop', desc: 'Bram drops an anvil on the strongest Glim: big damage and a stun.' },
++  forgeOfDawn: { name: 'Forge of Dawn', desc: 'For 10 seconds every tower breaks armor.' },
++  starfall: { name: 'Starfall', desc: 'A beam of starlight along the road in Sela\'s range.' },
++  eclipse: { name: 'Eclipse', desc: 'Every Glim, ships and bosses too, moves at half speed for 4 seconds.' },
+ };
+ export const TARGET_TEXT: Record<string, string> = { first: 'First', last: 'Last', strong: 'Strong', close: 'Close' };
+ export const PATH_COLORS = ['#feae34', '#2ce8f5', '#f6757a'];
+diff --git a/client/src/meta/types.ts b/client/src/meta/types.ts
+index fb1b130..812ede0 100644
+--- a/client/src/meta/types.ts
++++ b/client/src/meta/types.ts
+@@ -43,6 +43,8 @@ export interface MatchStartOptions {
+   towerXp?: GameOptions['towerXp'];
+   /** Power-Inventar (Runde 12) */
+   powers?: GameOptions['powers'];
++  /** Runde 16: gewaehlter Held (Meta `activeHero`), Vorgabe Wren */
++  hero?: GameOptions['hero'];
+   /** Text fuer gesperrte Tuerme, z. B. { bombardier: 'Unlocks at level 2' }. */
+   lockInfo: Partial<Record<TowerType | HeroType, string>>;
+ }
+diff --git a/client/src/pixel/sprites/icons.ts b/client/src/pixel/sprites/icons.ts
+index c15ea2d..8d709ef 100644
+--- a/client/src/pixel/sprites/icons.ts
++++ b/client/src/pixel/sprites/icons.ts
+@@ -4,7 +4,7 @@ import { flame, flake, crystal, cloud, spark } from './parts';
+ import { RAMPS, type Ramp, Surface } from './surface';
+ import { flask } from './alchemist';
+ import { antler, leafAt } from './thornweaver';
+-import type { AbilityId, TowerType } from './types';
++import { ABILITY_LOOK, baseLook, type AbilityId, type BaseAbilityId, type BaseTowerType, type TowerType } from './types';
+ 
+ export const ICON = 16;
+ export const PATH_ACCENT: PalName[] = ['amber', 'sky', 'orchid'];
+@@ -65,7 +65,7 @@ const HULK_: Ramp = ['pine', 'grass', 'leaf'];
+ const coin = (s: Surface, x: number, y: number): void => { s.ball(x, y, 2.2, 2.2, ['rust', 'amber', 'yellow']); s.px(x - 1, y - 1, 'white'); };
+ const SKULL = (s: Surface, x: number, y: number) => { s.rect(x, y, 5, 4, 'white'); s.rect(x + 1, y + 4, 3, 1, 'white'); s.px(x + 1, y + 1, 'ink'); s.px(x + 3, y + 1, 'ink'); s.px(x + 2, y + 3, 'ink'); };
+ 
+-const DRAW: Record<TowerType, Draw[][]> = {
++const DRAW: Record<BaseTowerType, Draw[][]> = {
+   ranger: [
+     // A Volley
+     [
+@@ -256,14 +256,14 @@ export function iconUpgradeRaster(type: TowerType, path: 0 | 1 | 2, tier: number
+   const s = new Surface(ICON, ICON);
+   panel(s, PATH_ACCENT[path], t);
+   const d = new Surface(ICON, ICON);
+-  DRAW[type][path][t - 1](d);
++  DRAW[baseLook(type)][path][t - 1](d);
+   // Piktogramm nur in der oberen Flaeche (ueber den Pips)
+   d.mask((x, y) => y < 13 && x >= 0 && x < 16);
+   s.blit(d);
+   return { rows: s.toRows(), ax: 0, ay: 0 };
+ }
+ 
+-const ABIL: Record<AbilityId, Draw> = {
++const ABIL: Record<BaseAbilityId, Draw> = {
+   arrowRain: (s) => { for (const [x, y] of [[3, 3], [7, 1], [11, 4], [5, 7], [9, 8], [13, 9]]) { s.line(x, y, x, y + 4, 'yellow'); s.px(x, y + 5, 'white'); s.px(x - 1, y, 'red'); s.px(x + 1, y, 'red'); } s.rect(1, 12, 14, 1, 'amber'); },
+   absoluteZero: (s) => { snowI(s, 8, 8, 6, 'ice'); s.ring(8, 8, 7, 7, 'white'); s.px(8, 8, 'white'); },
+   flare: (s) => { s.ball(8, 8, 4, 4, ['yellow', 'white', 'white']); for (let i = 0; i < 8; i++) { const a = (i / 8) * 6.28; s.line(8 + Math.cos(a) * 5.5, 8 + Math.sin(a) * 5.5, 8 + Math.cos(a) * 7.5, 8 + Math.sin(a) * 7.5, i % 2 ? 'amber' : 'yellow'); } },
+@@ -275,7 +275,8 @@ const ABIL: Record<AbilityId, Draw> = {
+   dawnbreak: (s) => { s.rect(0, 5, 16, 6, 'amber'); s.rect(0, 6, 16, 4, 'yellow'); s.rect(0, 7, 16, 2, 'white'); for (const x of [2, 7, 12]) { s.px(x, 3, 'yellow'); s.px(x + 2, 12, 'amber'); } s.ellipse(14, 8, 2, 4, 'white'); },
+ };
+ 
+-export function iconAbilityRaster(id: AbilityId): { rows: string[]; ax: number; ay: number } {
++export function iconAbilityRaster(idIn: AbilityId): { rows: string[]; ax: number; ay: number } {
++  const id = ABILITY_LOOK[idIn];
+   const s = new Surface(ICON, ICON);
+   const col: PalName = { arrowRain: 'amber', absoluteZero: 'sky', flare: 'yellow', dawnbreak: 'orange', grant: 'yellow', focus: 'red', supplyDrop: 'sky', wallOfTrees: 'leaf', transformingTonic: 'orchid' }[id] as PalName;
+   s.rect(0, 0, 16, 16, 'night'); s.rect(0, 0, 16, 1, col); s.rect(0, 0, 1, 16, col); s.rect(0, 15, 16, 1, 'ink'); s.rect(15, 0, 1, 16, 'ink');
+diff --git a/client/src/pixel/sprites/towers.ts b/client/src/pixel/sprites/towers.ts
+index d810d61..5b648b3 100644
+--- a/client/src/pixel/sprites/towers.ts
++++ b/client/src/pixel/sprites/towers.ts
+@@ -9,14 +9,15 @@ import { drawThornweaver } from './thornweaver';
+ import { drawAlchemist, drawMonster, MONSTER_AX, MONSTER_AY, MONSTER_H, MONSTER_W } from './alchemist';
+ import { drawRanger, OX, OY, TH, TW } from './ranger';
+ import { outlineSurface, Surface } from './surface';
+-import type { Tiers, TowerType } from './types';
++import { baseLook, type Tiers, type TowerType } from './types';
+ 
+ export interface RasterSprite { rows: Rows; ax: number; ay: number; mx?: number; my?: number }
+ 
+ export const TOWER_W = TW;
+ export const TOWER_H = TH;
+ 
+-export function towerRaster(type: TowerType, tiers: Tiers, facing: number, frame: TowerFrame): RasterSprite {
++export function towerRaster(typeIn: TowerType, tiers: Tiers, facing: number, frame: TowerFrame): RasterSprite {
++  const type = baseLook(typeIn); // Runde 16: Platzhalter fuer Riverkeeper/Bellringer/Tinker
+   const d = dirOf(facing);
+   const p = poseOf(frame);
+   const L = type === 'ranger' ? drawRanger(tiers, d, p) : type === 'bombardier' ? drawBombardier(tiers, d, p) : type === 'frostcaller' ? drawFrost(tiers, d, p)
+diff --git a/client/src/pixel/sprites/types.ts b/client/src/pixel/sprites/types.ts
+index 2a19211..a0f3ed8 100644
+--- a/client/src/pixel/sprites/types.ts
++++ b/client/src/pixel/sprites/types.ts
+@@ -1,13 +1,31 @@
+ /** Lokale Typen passend zum Vertrag (docs/design/schnittstelle.md); keine Abhaengigkeit von der Sim. */
+-export type TowerType = 'ranger' | 'bombardier' | 'frostcaller' | 'market' | 'longshot' | 'thornweaver' | 'alchemist';
+-export type HeroType = 'wren';
++/** Tuerme mit eigener Figur (Runde 11-14). */
++export type BaseTowerType = 'ranger' | 'bombardier' | 'frostcaller' | 'market' | 'longshot' | 'thornweaver' | 'alchemist';
++/**
++ * Runde 16 (Paket T): Riverkeeper, Bellringer und Tinker haben noch keine eigene Figur - bis Paket TP zeichnet `baseLook` sie als vorhandene Tuerme
++ * (Riverkeeper = Longshot, Bellringer = Market, Tinker = Bombardier). Die Helden Bram und Sela zeichnen als Wren.
++ */
++export type TowerType = BaseTowerType | 'riverkeeper' | 'bellringer' | 'tinker';
++export type HeroType = 'wren' | 'bram' | 'sela';
++export const PLACEHOLDER_LOOK: Record<TowerType, BaseTowerType> = {
++  ranger: 'ranger', bombardier: 'bombardier', frostcaller: 'frostcaller', market: 'market', longshot: 'longshot', thornweaver: 'thornweaver', alchemist: 'alchemist',
++  riverkeeper: 'longshot', bellringer: 'market', tinker: 'bombardier',
++};
++/** Welche vorhandene Figur zeichnet `type` (Platzhalter bis Paket TP). */
++export const baseLook = (type: TowerType): BaseTowerType => PLACEHOLDER_LOOK[type];
+ /** Runde 15e: cruiser (Gloom Cruiser), duskrunner (immer Camo), dreadnought (Dusk Dreadnought). Runde 15: pink, frostling, crystal, gloomship (Blimp), wyrm und colossus (Bosse) — IDs wie in der Sim (docs/design/karten-gegner-r15.md). */
+ export type EnemyType = 'red' | 'blue' | 'green' | 'gold' | 'ironshell' | 'ember' | 'brute' | 'leviathan' | 'pink' | 'frostling' | 'crystal' | 'gloomship' | 'wyrm' | 'colossus' | 'cruiser' | 'duskrunner' | 'dreadnought';
+ /** Merkmale als Ueberlagerung (Runde 15): regrow = Blaetterkranz, fortified = Eisenbaender. Mit Camo kombinierbar. */
+ export type EnemyTrait = 'regrow' | 'fortified';
+ /** thorn/thornMagic: Thornweaver; potion/potionGold: Alchemist (Runde 14; bei potion* ist `dir16` die Drehung der Flasche). snipe/snipeHeavy/snipeGold/splinter: Longshot (Runde 13). */
+ export type ProjectileKind = 'arrow' | 'bigArrow' | 'bolt' | 'starBolt' | 'bomb' | 'frag' | 'frost' | 'shard' | 'lantern' | 'snipe' | 'snipeHeavy' | 'snipeGold' | 'splinter' | 'thorn' | 'thornMagic' | 'potion' | 'potionGold';
+-export type AbilityId = 'arrowRain' | 'absoluteZero' | 'flare' | 'dawnbreak' | 'grant' | 'focus' | 'supplyDrop' | 'wallOfTrees' | 'transformingTonic';
++export type BaseAbilityId = 'arrowRain' | 'absoluteZero' | 'flare' | 'dawnbreak' | 'grant' | 'focus' | 'supplyDrop' | 'wallOfTrees' | 'transformingTonic';
++/** Runde 16: alarm, overclock, anvilDrop, forgeOfDawn, starfall, eclipse zeichnen vorerst die Icons der Vorbilder (`ABILITY_LOOK`) bis Paket TP. */
++export type AbilityId = BaseAbilityId | 'alarm' | 'overclock' | 'anvilDrop' | 'forgeOfDawn' | 'starfall' | 'eclipse';
++export const ABILITY_LOOK: Record<AbilityId, BaseAbilityId> = {
++  arrowRain: 'arrowRain', absoluteZero: 'absoluteZero', flare: 'flare', dawnbreak: 'dawnbreak', grant: 'grant', focus: 'focus', supplyDrop: 'supplyDrop', wallOfTrees: 'wallOfTrees', transformingTonic: 'transformingTonic',
++  alarm: 'focus', overclock: 'arrowRain', anvilDrop: 'dawnbreak', forgeOfDawn: 'flare', starfall: 'flare', eclipse: 'absoluteZero',
++};
+ export type Tiers = [number, number, number];
+ export const TOWER_TYPES: TowerType[] = ['ranger', 'bombardier', 'frostcaller', 'market', 'longshot', 'thornweaver', 'alchemist'];
+ /** Tuerme, die zielen und schiessen (Market tut das nicht: nur Idle). */
+diff --git a/client/src/screens/app.ts b/client/src/screens/app.ts
+index 13f9ece..42b58bc 100644
+--- a/client/src/screens/app.ts
++++ b/client/src/screens/app.ts
+@@ -124,7 +124,7 @@ export async function runApp(root: HTMLElement, opts: AppOptions): Promise<AppHa
+     const map = ctx.map, mode = ctx.mode;
+     const before = store.profile;
+     const mo = matchOptions(before, mode);
+-    const startOpts: MatchStartOptions = { map, mode, difficulty, unlocks: mo.unlocks, towerXp: mo.towerXp, mods: mo.mods, powers: mo.powers, lockInfo: lockInfo(before) };
++    const startOpts: MatchStartOptions = { map, mode, difficulty, unlocks: mo.unlocks, towerXp: mo.towerXp, mods: mo.mods, powers: mo.powers, hero: mo.hero, lockInfo: lockInfo(before) };
+     view?.dispose?.();
+     view = null;
+     let outcome;
+diff --git a/client/src/screens/home.ts b/client/src/screens/home.ts
+index 2d2d1c0..3fa8ea8 100644
+--- a/client/src/screens/home.ts
++++ b/client/src/screens/home.ts
+@@ -165,11 +165,11 @@ export function homeView(ctx: Ctx): View {
+   const line = h('div', 'lineup');
+   line.append(h('div', 'h2', S.home.lineup));
+   const crew = h('div', 'crew');
+-  const names: Record<string, string> = { ranger: 'Ranger', bombardier: 'Bombardier', frostcaller: 'Frostcaller', longshot: 'Longshot', market: 'Lantern Market', thornweaver: 'Thornweaver', alchemist: 'Alchemist', wren: 'Wren' };
++  const names: Record<string, string> = { ranger: 'Ranger', bombardier: 'Bombardier', frostcaller: 'Frostcaller', longshot: 'Longshot', market: 'Lantern Market', thornweaver: 'Thornweaver', alchemist: 'Alchemist', riverkeeper: 'Riverkeeper', bellringer: 'Bellringer', tinker: 'Tinker', wren: 'Wren', bram: 'Bram', sela: 'Sela' };
+   for (const id of [...TOWER_TYPES, 'wren'] as (TowerType | HeroType)[]) {
+     const ok = isTowerUnlocked(p, id);
+     const c = h('div', `crew-i ${ok ? '' : 'locked'}`);
+-    const port = id === 'wren' ? heroPortrait() : towerPortrait(id);
++    const port = id === 'wren' || id === 'bram' || id === 'sela' ? heroPortrait() : towerPortrait(id);
+     const art = cv(port, 2, ok ? '' : 'dim');
+     c.append(art, h('div', 'crew-n', names[id]));
+     if (!ok) {
+diff --git a/client/src/screens/knowledge.ts b/client/src/screens/knowledge.ts
+index 0486f3e..c341d91 100644
+--- a/client/src/screens/knowledge.ts
++++ b/client/src/screens/knowledge.ts
+@@ -19,6 +19,8 @@ export const NODE_ICONS: Record<string, IconName> = {
+   'investor': 'coin', 'pop-bonus': 'star', 'sharper-arrows': 'arrow', 'fused-shells': 'bomb', 'icicle-edge': 'snow',
+   'deep-roots': 'leaf', 'bountiful-grove': 'leaf', 'potent-brews': 'flask', 'midas-hands': 'coin', 'field-medic': 'cross',
+   'sturdy-gate': 'shield', 'ember-rush': 'flame',
++  // Runde 16 (Platzhalter-Icons bis Paket TP)
++  'deep-water': 'snow', 'barbed-line': 'arrow', 'loud-bells': 'lantern', 'silver-tongue': 'coin', 'spare-parts': 'gear', 'sharp-caltrops': 'bolt',
+ };
+ let lastBought: string | null = null;
+ 
+diff --git a/client/src/screens/result.ts b/client/src/screens/result.ts
+index 45bfc8f..9ad6565 100644
+--- a/client/src/screens/result.ts
++++ b/client/src/screens/result.ts
+@@ -14,7 +14,7 @@ import { bar, cv, ptext, reducedMotion } from './px';
+ import { S, fmt } from './text';
+ import type { Ctx, ResultInfo, View } from './types';
+ 
+-const NAMES: Record<TowerType, string> = { ranger: 'Ranger', bombardier: 'Bombardier', frostcaller: 'Frostcaller', longshot: 'Longshot', market: 'Lantern Market', thornweaver: 'Thornweaver', alchemist: 'Alchemist' };
++const NAMES: Record<TowerType, string> = { ranger: 'Ranger', bombardier: 'Bombardier', frostcaller: 'Frostcaller', longshot: 'Longshot', market: 'Lantern Market', thornweaver: 'Thornweaver', alchemist: 'Alchemist', riverkeeper: 'Riverkeeper', bellringer: 'Bellringer', tinker: 'Tinker' };
+ const wait = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
+ 
+ /** Kosten der billigsten noch offenen Stufe eines Turms (null = alles frei). */
+diff --git a/client/src/screens/text.ts b/client/src/screens/text.ts
+index 4c87a02..eaa4fcd 100644
+--- a/client/src/screens/text.ts
++++ b/client/src/screens/text.ts
+@@ -121,6 +121,9 @@ export const S = {
+       market: ['Harvest', 'Bank', 'Town Square'],
+       thornweaver: ['Storm', 'Wild', 'Grove'],
+       alchemist: ['Brews', 'Unstable', 'Gold'],
++      riverkeeper: ['Harpoons', 'Sonar', 'Armada'],
++      bellringer: ['Chimes', 'Watch', 'Toll'],
++      tinker: ['Sentry', 'Caltrops', 'Overclock'],
+     } as Record<string, string[]>,
+   },
+   settings: {
+diff --git a/client/src/screens/towers.ts b/client/src/screens/towers.ts
+index 49ee621..b64a691 100644
+--- a/client/src/screens/towers.ts
++++ b/client/src/screens/towers.ts
+@@ -11,7 +11,7 @@ import { blit, cv, ptext, reducedMotion } from './px';
+ import { S, fmt } from './text';
+ import type { Ctx, View } from './types';
+ 
+-const NAMES: Record<TowerType, string> = { ranger: 'Ranger', bombardier: 'Bombardier', frostcaller: 'Frostcaller', longshot: 'Longshot', market: 'Lantern Market', thornweaver: 'Thornweaver', alchemist: 'Alchemist' };
++const NAMES: Record<TowerType, string> = { ranger: 'Ranger', bombardier: 'Bombardier', frostcaller: 'Frostcaller', longshot: 'Longshot', market: 'Lantern Market', thornweaver: 'Thornweaver', alchemist: 'Alchemist', riverkeeper: 'Riverkeeper', bellringer: 'Bellringer', tinker: 'Tinker' };
+ const FACING = 6;
+ 
+ let lastUnlocked: string | null = null;
+diff --git a/client/test/meta-screens.test.ts b/client/test/meta-screens.test.ts
+index fc57dab..4fdfb4e 100644
+--- a/client/test/meta-screens.test.ts
++++ b/client/test/meta-screens.test.ts
+@@ -17,8 +17,8 @@ describe('MatchOutcome -> MatchResult', () => {
+     expect(r.roundsCleared).toBe(11);
+     expect(r.livesLost).toBe(50);
+     expect(r.towerXp).toBeUndefined();
+-    const full = toMetaResult(outcome({ towerXp: { ranger: 5, bombardier: 0, frostcaller: 9, longshot: 0, market: 0, thornweaver: 0, alchemist: 0 }, towerTiers: { ranger: [1, 0, 0], bombardier: [0, 0, 0], frostcaller: [0, 0, 0], longshot: [0, 0, 0], market: [0, 0, 0], thornweaver: [0, 0, 0], alchemist: [0, 0, 0] }, towerXpGained: { ranger: 40, bombardier: 0, frostcaller: 9, longshot: 0, market: 0, thornweaver: 0, alchemist: 0 } }), ctx);
+-    expect(full.towerXp).toEqual({ ranger: 5, bombardier: 0, frostcaller: 9, longshot: 0, market: 0, thornweaver: 0, alchemist: 0 });
++    const full = toMetaResult(outcome({ towerXp: { ranger: 5, bombardier: 0, frostcaller: 9, longshot: 0, market: 0, thornweaver: 0, alchemist: 0, riverkeeper: 0, bellringer: 0, tinker: 0 }, towerTiers: { ranger: [1, 0, 0], bombardier: [0, 0, 0], frostcaller: [0, 0, 0], longshot: [0, 0, 0], market: [0, 0, 0], thornweaver: [0, 0, 0], alchemist: [0, 0, 0], riverkeeper: [0, 0, 0], bellringer: [0, 0, 0], tinker: [0, 0, 0] }, towerXpGained: { ranger: 40, bombardier: 0, frostcaller: 9, longshot: 0, market: 0, thornweaver: 0, alchemist: 0, riverkeeper: 0, bellringer: 0, tinker: 0 } }), ctx);
++    expect(full.towerXp).toEqual({ ranger: 5, bombardier: 0, frostcaller: 9, longshot: 0, market: 0, thornweaver: 0, alchemist: 0, riverkeeper: 0, bellringer: 0, tinker: 0 });
+     expect(full.towerTiers?.ranger).toEqual([1, 0, 0]);
+     expect(full.towerXpGained?.ranger).toBe(40);
+     expect(r.pops).toEqual({ ranger: 500, wren: 200 });
+@@ -47,7 +47,7 @@ describe('Bildschirm-Logik', () => {
+     const p: Profile = newProfile(); // Startguthaben 100 je Turm, nur Ranger frei
+     expect(readyUnlocks(p)).toBe(1); // genau Stufe 1 eines Pfads
+     expect(readyUnlocks({ ...p, towerXp: { ...p.towerXp, ranger: 99 } })).toBe(0);
+-    expect(readyUnlocks({ ...p, playerXp: xpForLevel(4) })).toBe(3);
++    expect(readyUnlocks({ ...p, playerXp: xpForLevel(4) })).toBe(4); // Ranger, Bombardier, Frostcaller, Riverkeeper (Runde 16)
+     expect(readyUnlocks({ ...p, settings: { ...p.settings, unlockAll: true } })).toBe(0);
+   });
+   it('legalTiers: Hauptpfad voll, ein Nebenpfad bis 2, der dritte 0', () => {
+@@ -56,8 +56,9 @@ describe('Bildschirm-Logik', () => {
+     expect(legalTiers([0, 0, 0])).toEqual([0, 0, 0]);
+   });
+   it('lockInfo nennt Freischalt-Level fuer gesperrte Tuerme', () => {
+-    expect(lockInfo(newProfile())).toEqual({ bombardier: 'Unlocks at level 2', frostcaller: 'Unlocks at level 4', longshot: 'Unlocks at level 5', market: 'Unlocks at level 6', thornweaver: 'Unlocks at level 7', alchemist: 'Unlocks at level 9', wren: 'Unlocks at level 3' });
+-    expect(lockInfo({ ...newProfile(), playerXp: xpForLevel(4) })).toEqual({ longshot: 'Unlocks at level 5', market: 'Unlocks at level 6', thornweaver: 'Unlocks at level 7', alchemist: 'Unlocks at level 9' });
+-    expect(lockInfo({ ...newProfile(), playerXp: xpForLevel(9) })).toEqual({});
++    expect(lockInfo(newProfile())).toEqual({ bombardier: 'Unlocks at level 2', frostcaller: 'Unlocks at level 4', longshot: 'Unlocks at level 5', market: 'Unlocks at level 6', thornweaver: 'Unlocks at level 7', alchemist: 'Unlocks at level 9', riverkeeper: 'Unlocks at level 4', tinker: 'Unlocks at level 11', bellringer: 'Unlocks at level 13', wren: 'Unlocks at level 3' });
++    expect(lockInfo({ ...newProfile(), playerXp: xpForLevel(4) })).toEqual({ longshot: 'Unlocks at level 5', market: 'Unlocks at level 6', thornweaver: 'Unlocks at level 7', alchemist: 'Unlocks at level 9', tinker: 'Unlocks at level 11', bellringer: 'Unlocks at level 13' });
++    expect(lockInfo({ ...newProfile(), playerXp: xpForLevel(9) })).toEqual({ tinker: 'Unlocks at level 11', bellringer: 'Unlocks at level 13' });
++    expect(lockInfo({ ...newProfile(), playerXp: xpForLevel(13) })).toEqual({});
+   });
+ });
+diff --git a/client/test/r14-knowledge.test.ts b/client/test/r14-knowledge.test.ts
+index 546bd85..5af6282 100644
+--- a/client/test/r14-knowledge.test.ts
++++ b/client/test/r14-knowledge.test.ts
+@@ -11,10 +11,10 @@ const board = (w: number, h: number) => ({ ...DEFAULT_OPTS, width: w - 72 - 8, h
+ const lay = layoutTree(KNOWLEDGE, BRANCHES as readonly string[], board(1920, 1080));
+ 
+ describe('Wissensbaum Runde 14b', () => {
+-  it('40 Knoten in fuenf Aesten', () => {
+-    expect(KNOWLEDGE).toHaveLength(40);
++  it('46 Knoten in fuenf Aesten (Runde 16: +6)', () => {
++    expect(KNOWLEDGE).toHaveLength(46);
+     expect(lay.branches).toHaveLength(5);
+-    expect(lay.branches.reduce((n, b) => n + b.nodes.length, 0)).toBe(40);
++    expect(lay.branches.reduce((n, b) => n + b.nodes.length, 0)).toBe(46);
+   });
+   it('Knoten skalieren mit dem Fenster, bei 1280 x 720 noch lesbar', () => {
+     const small = layoutTree(KNOWLEDGE, BRANCHES as readonly string[], board(1280, 720));
+diff --git a/client/test/r16-client.test.ts b/client/test/r16-client.test.ts
+new file mode 100644
+index 0000000..4b33631
+--- /dev/null
++++ b/client/test/r16-client.test.ts
+@@ -0,0 +1,67 @@
++/**
++ * Runde 16 (Paket T): Platzhalter-Look im Client. Riverkeeper, Bellringer, Tinker und die Helden Bram/Sela sind in Sim und Meta fertig;
++ * hier steht nur, dass sie auf vorhandene Figuren/Icons abgebildet werden und nichts bricht. Echte Pixel-Art und UI: Paket TP.
++ */
++import { describe, expect, it } from 'vitest';
++import { iconAbilityRaster } from '../src/pixel/sprites/icons';
++import { towerRaster } from '../src/pixel/sprites/towers';
++import { iconUpgradeRaster } from '../src/pixel/sprites/icons';
++import { ABILITY_LOOK, baseLook, type AbilityId } from '../src/pixel/sprites/types';
++import { projectileLook } from '../src/match/r13';
++import { ABILITY_TEXT, HERO_KEY, HOTKEY, ROLE } from '../src/match/tower-text';
++import { isHero, displayName, footMilli } from '../src/match/info';
++import { DATA, createGame, type TowerType } from '../src/sim';
++
++const NEW: TowerType[] = ['riverkeeper', 'bellringer', 'tinker'];
++
++describe('Platzhalter-Look Runde 16', () => {
++  it('neue Tuerme zeichnen wie ein vorhandener Turm (Riverkeeper = Longshot, Bellringer = Market, Tinker = Bombardier)', () => {
++    expect(NEW.map(baseLook)).toEqual(['longshot', 'market', 'bombardier']);
++    for (const t of NEW) {
++      const a = towerRaster(t, [0, 0, 0], 0, 'idle0');
++      const b = towerRaster(baseLook(t), [0, 0, 0], 0, 'idle0');
++      expect(a.rows).toEqual(b.rows);
++      const i = iconUpgradeRaster(t, 0, 1);
++      expect(i.rows.length).toBeGreaterThan(0);
++    }
++  });
++
++  it('Faehigkeits-Icons der neuen Faehigkeiten existieren (Vorbild-Icons)', () => {
++    for (const id of ['alarm', 'overclock', 'anvilDrop', 'forgeOfDawn', 'starfall', 'eclipse'] as AbilityId[]) {
++      expect(iconAbilityRaster(id).rows.length, id).toBeGreaterThan(0);
++      expect(ABILITY_LOOK[id]).not.toBe(id);
++      expect(ABILITY_TEXT[id].name.length, id).toBeGreaterThan(2);
++    }
++  });
++
++  it('neue Geschosse haben ein Bild', () => {
++    for (const k of ['harpoon', 'cannonball', 'nail', 'hammer', 'starlight'] as const) {
++      expect(projectileLook(k, { type: 'riverkeeper', tiers: [0, 0, 0] })).toBeTypeOf('string');
++    }
++    expect(projectileLook('harpoon', undefined)).toBe('bolt');
++    expect(projectileLook('nail', undefined)).toBe('arrow');
++  });
++
++  it('Texte und Hotkeys fuer neue Tuerme und Helden', () => {
++    for (const t of [...NEW, 'bram', 'sela'] as const) {
++      expect(ROLE[t].length).toBeGreaterThan(5);
++      expect(HOTKEY[t]).toMatch(/^[A-Z]$/);
++    }
++    expect(HERO_KEY).toBe('R');
++    expect(new Set(Object.values(HOTKEY)).size).toBe(Object.keys(HOTKEY).length);
++  });
++
++  it('isHero/displayName/footMilli kennen Bram und Sela', () => {
++    expect(isHero('bram')).toBe(true);
++    expect(isHero('sela')).toBe(true);
++    expect(isHero('tinker')).toBe(false);
++    expect(displayName('bram')).toBe(DATA.hero.bram.name);
++    expect(footMilli('sela')).toBe(DATA.hero.sela.radius * 1000);
++    expect(footMilli('riverkeeper')).toBe(DATA.towers.riverkeeper.radius * 1000);
++  });
++
++  it('Match-Start: createGame mit hero setzt den Helden der Partie', () => {
++    const g = createGame({ map: 'meadow', difficulty: 'easy', seed: 1, hero: 'sela' });
++    expect(g.info.hero).toBe('sela');
++  });
++});
+-- 
+2.43.0
+

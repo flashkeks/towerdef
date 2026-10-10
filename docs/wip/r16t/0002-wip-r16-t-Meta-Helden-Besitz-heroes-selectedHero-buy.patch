@@ -1,0 +1,1424 @@
+From 325613e448a132126552a8ebc2c22dcfb8003c91 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Sat, 10 Oct 2026 12:22:55 +0000
+Subject: [PATCH 2/4] wip(r16-t): Meta - Helden-Besitz (heroes, selectedHero,
+ buyHero, heroLock), Freischaltung L4/L11/L13, 6 Wissensknoten, Tests
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01Qw1eNus4A4pQXWKdhKHxPf
+---
+ meta/src/data.ts           |  45 ++-
+ meta/src/profile.ts        |  38 ++-
+ meta/src/progress.ts       | 100 +++++-
+ meta/test/progress.test.ts |  32 +-
+ meta/test/r13.test.ts      |  22 +-
+ meta/test/r16.test.ts      | 237 ++++++++++++++
+ sim/test/r16.test.ts       | 628 +++++++++++++++++++++++++++++++++++++
+ 7 files changed, 1057 insertions(+), 45 deletions(-)
+ create mode 100644 meta/test/r16.test.ts
+ create mode 100644 sim/test/r16.test.ts
+
+diff --git a/meta/src/data.ts b/meta/src/data.ts
+index 6ab930b..cf870fe 100644
+--- a/meta/src/data.ts
++++ b/meta/src/data.ts
+@@ -6,7 +6,7 @@ import type { Difficulty, HeroType, ModeId, PowerKey, TowerType } from '../../si
+ import { DATA, POWER_KEYS } from '../../sim/src/data';
+ import { MODE_IDS, MODES } from '../../sim/src/modes';
+ 
+-export const TOWER_TYPES: readonly TowerType[] = ['ranger', 'bombardier', 'frostcaller', 'longshot', 'market', 'thornweaver', 'alchemist'];
++export const TOWER_TYPES: readonly TowerType[] = ['ranger', 'bombardier', 'frostcaller', 'longshot', 'market', 'thornweaver', 'alchemist', 'riverkeeper', 'bellringer', 'tinker'];
+ export const DIFFICULTIES: readonly Difficulty[] = ['easy', 'medium', 'hard'];
+ /** Letzte Runde von Lanternfall Meadow (Freeplay-Grenze der alten Formeln). Je Karte: `MAPS[i].maxRound` / `maxRoundOf(map)`. */
+ export const MAX_ROUND = 20;
+@@ -117,6 +117,7 @@ export const LEVEL_UNLOCKS: readonly LevelUnlock[] = [
+   { level: 2, kind: 'tower', id: 'bombardier', title: 'Bombardier', text: 'Lobs bombs that burst in an area and crack armor.' },
+   { level: 3, kind: 'hero', id: 'wren', title: 'Wren, the Lamplighter', text: 'Your hero. One per match, levels up to 20 in the fight.' },
+   { level: 4, kind: 'tower', id: 'frostcaller', title: 'Frostcaller', text: 'Slows, freezes and shocks whole lanes.' },
++  { level: 4, kind: 'tower', id: 'riverkeeper', title: 'Riverkeeper', text: 'Water tower. Harpoons, sonar and a lantern ship. Can only be built on water.' },
+   { level: 5, kind: 'difficulty', id: 'hard', title: 'Hard difficulty', text: 'Faster Glims, tougher bosses, bigger medals.' },
+   { level: 5, kind: 'tower', id: 'longshot', title: 'Longshot', text: 'Sniper that sees the whole map. Slow, heavy shots.' },
+   { level: 6, kind: 'tower', id: 'market', title: 'Lantern Market', text: 'Does not attack. Pays gold every round, banks interest, or buffs nearby towers.' },
+@@ -124,7 +125,36 @@ export const LEVEL_UNLOCKS: readonly LevelUnlock[] = [
+   { level: 8, kind: 'map', id: 'frostfen', title: 'Frostfen Crossing', text: 'A frozen lake with two roads. Intermediate map.' },
+   { level: 12, kind: 'map', id: 'quarry', title: 'Ember Quarry', text: 'Lava, rock and a short road. Advanced map.' },
+   { level: 9, kind: 'tower', id: 'alchemist', title: 'Alchemist', text: 'Lobs acid, brews buffs for nearby towers, turns lead into gold.' },
++  // Runde 16 (Paket T): Helden Bram und Sela gibt es auch fuer Embers (`HEROES`), die Karte hier ist der Level-Weg
++  { level: 10, kind: 'hero', id: 'bram', title: 'Bram Ironwright', text: 'Hero. A smith whose hammers crack armor. Builds a forge, drops an anvil. Can also be bought with Embers.' },
++  { level: 11, kind: 'tower', id: 'tinker', title: 'Tinker', text: 'Builds sentries, lays caltrops on the road and overclocks nearby towers.' },
++  { level: 13, kind: 'tower', id: 'bellringer', title: 'Bellringer', text: 'Does not attack. Its bells speed up, reveal and cheapen the towers around it.' },
++  { level: 15, kind: 'hero', id: 'sela', title: 'Sela Nightglass', text: 'Hero. A seer with a long-range rifle. Sees camouflage, calls down Starfall. Can also be bought with Embers.' },
+ ];
++
++// ---------------------------------------------------------------- Helden (Runde 16, docs/design/runde16.md Abschnitt 3)
++
++export interface HeroMeta {
++  id: HeroType;
++  /** Anzeigename mit Beiname. */
++  name: string;
++  /** Kurzname. */
++  short: string;
++  role: string;
++  /** Spieler-Level, ab dem der Held ohne Embers offen ist. */
++  unlockLevel: number;
++  /** Preis im Store in Embers; null = nur ueber das Level (Wren). */
++  embers: number | null;
++  desc: string;
++}
++/** Reihenfolge der Anzeige. Preis im Match (Gold) steht in `sim/data/towers.json` (`DATA.hero[id].price`). */
++export const HEROES: readonly HeroMeta[] = [
++  { id: 'wren', name: 'Wren, the Lamplighter', short: 'Wren', role: 'Allrounder', unlockLevel: 3, embers: null, desc: 'Lantern bolts, Flare and Dawnbreak. Speeds up nearby towers.' },
++  { id: 'bram', name: 'Bram Ironwright', short: 'Bram', role: 'Armor breaker', unlockLevel: 10, embers: 1500, desc: 'Hammers that crack armor. Builds a forge that boosts nearby towers, drops an anvil, ends with the Forge of Dawn.' },
++  { id: 'sela', name: 'Sela Nightglass', short: 'Sela', role: 'Sharpshooter and seer', unlockLevel: 15, embers: 2500, desc: 'Long range, sees camouflage and lends her sight to nearby towers. Calls down Starfall and ends with Eclipse.' },
++];
++export const HERO_IDS: readonly HeroType[] = HEROES.map((h) => h.id);
++export const heroMeta = (id: HeroType): HeroMeta => HEROES.find((h) => h.id === id)!;
+ /** Level, ab dem Turm/Held/Schwierigkeit offen ist; fehlt = von Anfang an. */
+ export function unlockLevel(id: string): number {
+   return LEVEL_UNLOCKS.find((u) => u.id === id)?.level ?? 1;
+@@ -179,12 +209,19 @@ export const KNOWLEDGE: readonly KnowledgeNode[] = [
+   node('bountiful-grove', 'specialists', 'Bountiful Grove', 2, "Jungle's Bounty pays 50 more gold each round.", ['deep-roots'], 1, 1),
+   node('potent-brews', 'specialists', 'Potent Brews', 1, 'Alchemist buff potions last 25% longer.', [], 2, 0),
+   node('midas-hands', 'specialists', 'Midas Hands', 2, 'Lead to Gold pays 20 more gold per Ironshell.', ['potent-brews'], 2, 1),
++  // Runde 16: je ein kleiner Ast fuer Riverkeeper, Bellringer, Tinker (Spalten 3 bis 5 im Ast Specialists)
++  node('deep-water', 'specialists', 'Deep Water', 1, 'Riverkeepers reach 10% farther.', [], 3, 0),
++  node('barbed-line', 'specialists', 'Barbed Line', 2, 'Riverkeeper harpoons pierce 1 more enemy.', ['deep-water'], 3, 1),
++  node('loud-bells', 'specialists', 'Loud Bells', 1, 'Bellringer bells reach 15% farther.', [], 4, 0),
++  node('silver-tongue', 'specialists', 'Silver Tongue', 2, 'Toll of Coin pays 25 more gold each round.', ['loud-bells'], 4, 1),
++  node('spare-parts', 'specialists', 'Spare Parts', 1, 'Tinker sentries last 25% longer.', [], 5, 0),
++  node('sharp-caltrops', 'specialists', 'Sharp Caltrops', 2, 'Caltrops laid by the Tinker hold 2 more hits.', ['spare-parts'], 5, 1),
+   node('extra-lives', 'wardens', 'Extra Lives', 1, 'Start every match with 10 more lives.', [], 0, 0),
+-  node('veteran-hero', 'wardens', 'Veteran Hero', 2, 'Wren starts at level 3.', ['extra-lives'], 0, 1),
++  node('veteran-hero', 'wardens', 'Veteran Hero', 2, 'Your hero starts at level 3.', ['extra-lives'], 0, 1),
+   node('fast-learner', 'wardens', 'Fast Learner', 2, 'Towers earn 20% more Tower XP.', ['extra-lives'], 1, 1),
+   node('thick-walls', 'wardens', 'Thick Walls', 2, 'Start every match with 15 more lives.', ['veteran-hero', 'fast-learner'], 0, 2),
+-  node('hero-training', 'wardens', 'Hero Training', 2, 'Wren earns 15% more hero XP.', ['thick-walls'], 0, 3),
+-  node('legendary', 'wardens', 'Legendary', 3, 'Wren starts at level 5.', ['hero-training'], 0, 4),
++  node('hero-training', 'wardens', 'Hero Training', 2, 'Your hero earns 15% more hero XP.', ['thick-walls'], 0, 3),
++  node('legendary', 'wardens', 'Legendary', 3, 'Your hero starts at level 5.', ['hero-training'], 0, 4),
+   node('scholar', 'wardens', 'Scholar', 2, 'Matches give 10% more player XP.', ['legendary'], 0, 5),
+   node('sturdy-gate', 'wardens', 'Sturdy Gate', 3, 'Once per match the gate stops one leak.', ['thick-walls'], 1, 3),
+   node('ember-pouch', 'powers', 'Ember Pouch', 1, 'Matches give 10% more Embers.', [], 0, 0),
+diff --git a/meta/src/profile.ts b/meta/src/profile.ts
+index 9d78376..001e135 100644
+--- a/meta/src/profile.ts
++++ b/meta/src/profile.ts
+@@ -3,8 +3,8 @@
+  * Reine Funktionen, kein DOM. Ganzzahlen ueberall.
+  */
+ import { z } from 'zod';
+-import type { Difficulty, ModeId, PowerKey, TowerType, Tiers } from '../../sim/src/types';
+-import { KNOWLEDGE, POWER_KEYS, STARTER_PACK, STARTER_TOWER_XP, emptyInventory, levelFromXp, nodeById } from './data';
++import type { Difficulty, HeroType, ModeId, PowerKey, TowerType, Tiers } from '../../sim/src/types';
++import { HERO_IDS, HEROES, KNOWLEDGE, POWER_KEYS, STARTER_PACK, STARTER_TOWER_XP, emptyInventory, levelFromXp, nodeById } from './data';
+ 
+ export const SAVE_SCHEMA = 11;
+ export const SEEN_MATCHES_MAX = 100;
+@@ -14,7 +14,12 @@ const tierNum = z.number().int().min(0).max(5);
+ const tiers3 = z.tuple([tierNum, tierNum, tierNum]);
+ /** Runde 13/14: `longshot`, `market`, `thornweaver`, `alchemist` fehlen in aelteren Staenden und bekommen ihren Startwert (Migration, nichts wird zurueckgesetzt). */
+ const perTower = <T extends z.ZodType>(s: T, fresh: () => z.output<T>) =>
+-  z.object({ ranger: s, bombardier: s, frostcaller: s, longshot: s.default(fresh as never), market: s.default(fresh as never), thornweaver: s.default(fresh as never), alchemist: s.default(fresh as never) });
++  z.object({
++    ranger: s, bombardier: s, frostcaller: s, longshot: s.default(fresh as never), market: s.default(fresh as never), thornweaver: s.default(fresh as never), alchemist: s.default(fresh as never),
++    // Runde 16: aeltere Staende kennen die drei neuen Tuerme nicht
++    riverkeeper: s.default(fresh as never), bellringer: s.default(fresh as never), tinker: s.default(fresh as never),
++  });
++const heroId = z.enum(HERO_IDS as unknown as [HeroType, ...HeroType[]]);
+ const medalSet = z.object({ easy: z.boolean(), medium: z.boolean(), hard: z.boolean() });
+ const best = z.object({ round: nat, livesLost: nat });
+ const inventorySchema = z.object(Object.fromEntries(POWER_KEYS.map((k) => [k, nat.default(0)]))) as unknown as z.ZodType<Record<PowerKey, number>>;
+@@ -50,12 +55,18 @@ export const ProfileSchema = z.object({
+   inventory: inventorySchema.default(() => emptyInventory()),
+   /** Runde 12: Startpaket (100 Embers + 1 Gold Drop + 1 Lantern Bomb) schon vergeben. */
+   starterPack: z.boolean().default(false),
++  /** Runde 16: Helden, die der Spieler besitzt (Embers-Kaeufe; Wren steht immer drin, offen ist er aber erst ab Level 3, Bram ab Level 10 und Sela ab Level 15 auch ohne Kauf: `heroOwned`). Fehlt in aelteren Staenden = ['wren']. */
++  heroes: z.array(heroId).default(['wren']),
++  /** Runde 16: gewaehlter Held fuer das naechste Match (Vorgabe wren). */
++  selectedHero: heroId.default('wren'),
+   settings: z.object({ volume: z.number().int().min(0).max(100), unlockAll: z.boolean() }),
+ });
+ export type Profile = z.infer<typeof ProfileSchema>;
+ 
+ export function newProfile(now = new Date(0).toISOString()): Profile {
+-  const per = <T>(v: () => T): Record<TowerType, T> => ({ ranger: v(), bombardier: v(), frostcaller: v(), longshot: v(), market: v(), thornweaver: v(), alchemist: v() });
++  const per = <T>(v: () => T): Record<TowerType, T> => ({
++    ranger: v(), bombardier: v(), frostcaller: v(), longshot: v(), market: v(), thornweaver: v(), alchemist: v(), riverkeeper: v(), bellringer: v(), tinker: v(),
++  });
+   return {
+     schema: SAVE_SCHEMA,
+     createdAt: now,
+@@ -74,10 +85,23 @@ export function newProfile(now = new Date(0).toISOString()): Profile {
+     embers: STARTER_PACK.embers,
+     inventory: { ...emptyInventory(), ...STARTER_PACK.powers },
+     starterPack: true,
++    heroes: ['wren'],
++    selectedHero: 'wren',
+     settings: { volume: 70, unlockAll: false },
+   };
+ }
+ 
++/**
++ * Besitzt der Spieler den Helden? Wren ab Level 3, Bram ab Level 10, Sela ab Level 15 - oder (Bram, Sela) mit dem Embers-Kauf in `heroes`.
++ * "Alles freischalten" (`settings.unlockAll`) oeffnet alle drei.
++ */
++export function heroOwned(p: Pick<Profile, 'playerXp' | 'heroes' | 'settings'>, id: HeroType): boolean {
++  if (p.settings.unlockAll) return true;
++  const meta = HEROES.find((h) => h.id === id);
++  if (!meta) return false;
++  return levelFromXp(p.playerXp).level >= meta.unlockLevel || (meta.embers !== null && p.heroes.includes(id));
++}
++
+ export const emptyMedals = (): Record<Difficulty, boolean> => ({ easy: false, medium: false, hard: false });
+ /** Anzahl der ersten Medaillen (je Karte und Schwierigkeit eine) = Wissenspunkte aus Medaillen (Runde 13). */
+ export const medalCount = (p: Pick<Profile, 'medals'>): number =>
+@@ -127,7 +151,11 @@ export function sanitize(p: Profile): Profile {
+   const owned = KNOWLEDGE.filter((n) => bought.has(n.id));
+   const spent = owned.reduce((s, n) => s + n.cost, 0);
+   const knowledge = spent > levelFromXp(p.playerXp).level - 1 + medalCount(p) ? [] : owned.map((n) => n.id);
+-  return grantStarterPack({ ...p, knowledge });
++  // Runde 16: Helden - Unbekanntes raus, Wren immer drin, Auswahl nur ein besessener Held
++  const heroes = HERO_IDS.filter((h) => h === 'wren' || p.heroes.includes(h));
++  const withHeroes = { ...p, knowledge, heroes };
++  const selectedHero = heroOwned(withHeroes, p.selectedHero) ? p.selectedHero : 'wren';
++  return grantStarterPack({ ...withHeroes, selectedHero });
+ }
+ 
+ /** Startpaket genau einmal (Flag `starterPack`): bestehende 11er-Profile bekommen es beim Laden, nichts wird zurueckgesetzt. */
+diff --git a/meta/src/progress.ts b/meta/src/progress.ts
+index 96b2e05..cd850c4 100644
+--- a/meta/src/progress.ts
++++ b/meta/src/progress.ts
+@@ -3,19 +3,27 @@
+  * Alle Funktionen sind rein: das uebergebene Profil bleibt unveraendert.
+  */
+ import { z } from 'zod';
++import { DATA } from '../../sim/src/data';
+ import type { Difficulty, GameOptions, HeroType, ModeId, PowerKey, TowerType, Tiers } from '../../sim/src/types';
+ import {
+-  BULK_BUYER_BP, DIFFICULTIES, DIFFICULTY_XP_BP, EMBERS_FIRST_MEDAL, EMBERS_LEVEL_UP, EMBERS_WIN, POWER_KEYS, embersForRound, emptyInventory, powerPrice, FREEPLAY_BP, KNOWLEDGE, LEVEL_UNLOCKS, MAX_ROUND, TIER_COST, TOWER_TYPES, WIN_BONUS_XP,
++  BULK_BUYER_BP, DIFFICULTIES, DIFFICULTY_XP_BP, EMBERS_FIRST_MEDAL, EMBERS_LEVEL_UP, EMBERS_WIN, HERO_IDS, HEROES, POWER_KEYS, embersForRound, emptyInventory, powerPrice, FREEPLAY_BP, KNOWLEDGE, LEVEL_UNLOCKS, MAX_ROUND, TIER_COST, TOWER_TYPES, WIN_BONUS_XP,
+   MAPS, MODE_IDS, MODE_META, levelFromXp, mapById, maxRoundOf, nodeById, unlockLevel, xpForLevel, type LevelUnlock, type MapMeta,
+ } from './data';
+-import { SEEN_MATCHES_MAX, bestOf, emptyMedals, medalCount, medalsOf, type Profile } from './profile';
++import { SEEN_MATCHES_MAX, bestOf, emptyMedals, heroOwned, medalCount, medalsOf, type Profile } from './profile';
+ 
+ const nat = z.number().int().min(0);
+ const tierNum = z.number().int().min(0).max(5);
+ const tiers3 = z.tuple([tierNum, tierNum, tierNum]);
+ /** Runde 13/14: `longshot`/`market`/`thornweaver`/`alchemist` duerfen in aelteren Ergebnissen fehlen (zaehlen als 0 bzw. unveraendert). */
+-const perTowerAll = z.object({ ranger: nat, bombardier: nat, frostcaller: nat, longshot: nat.default(0), market: nat.default(0), thornweaver: nat.default(0), alchemist: nat.default(0) });
+-const perTowerNat = z.object({ ranger: nat.optional(), bombardier: nat.optional(), frostcaller: nat.optional(), longshot: nat.optional(), market: nat.optional(), thornweaver: nat.optional(), alchemist: nat.optional(), wren: nat.optional() });
++const perTowerAll = z.object({
++  ranger: nat, bombardier: nat, frostcaller: nat, longshot: nat.default(0), market: nat.default(0), thornweaver: nat.default(0), alchemist: nat.default(0),
++  // Runde 16
++  riverkeeper: nat.default(0), bellringer: nat.default(0), tinker: nat.default(0),
++});
++const perTowerNat = z.object({
++  ranger: nat.optional(), bombardier: nat.optional(), frostcaller: nat.optional(), longshot: nat.optional(), market: nat.optional(), thornweaver: nat.optional(), alchemist: nat.optional(),
++  riverkeeper: nat.optional(), bellringer: nat.optional(), tinker: nat.optional(), wren: nat.optional(), bram: nat.optional(), sela: nat.optional(),
++});
+ /** Was das Match meldet (P3 liefert es). */
+ export const MatchResultSchema = z.object({
+   matchId: z.string().min(1),
+@@ -34,7 +42,10 @@ export const MatchResultSchema = z.object({
+    * Fehlen sie (altes Format / Match ohne XP-System), bleibt das Turm-Profil unveraendert.
+    */
+   towerXp: perTowerAll.optional(),
+-  towerTiers: z.object({ ranger: tiers3, bombardier: tiers3, frostcaller: tiers3, longshot: tiers3.default([0, 0, 0]), market: tiers3.default([0, 0, 0]), thornweaver: tiers3.default([0, 0, 0]), alchemist: tiers3.default([0, 0, 0]) }).optional(),
++  towerTiers: z.object({
++    ranger: tiers3, bombardier: tiers3, frostcaller: tiers3, longshot: tiers3.default([0, 0, 0]), market: tiers3.default([0, 0, 0]), thornweaver: tiers3.default([0, 0, 0]), alchemist: tiers3.default([0, 0, 0]),
++    riverkeeper: tiers3.default([0, 0, 0]), bellringer: tiers3.default([0, 0, 0]), tinker: tiers3.default([0, 0, 0]),
++  }).optional(),
+   towerXpGained: perTowerAll.optional(),
+   /** Runde 12: erfolgreiche Power-Einsaetze (`state.stats.powersUsed`); werden vom Inventar abgezogen. */
+   powersUsed: z.record(z.string(), nat.max(9999)).optional(),
+@@ -45,6 +56,8 @@ export type MatchResult = z.input<typeof MatchResultSchema>;
+ export const playerLevel = (p: Profile): number => levelFromXp(p.playerXp).level;
+ 
+ export function isTowerUnlocked(p: Profile, id: TowerType | HeroType): boolean {
++  // Runde 16: Helden ueber `heroOwned` (Level oder Embers-Kauf)
++  if ((HERO_IDS as readonly string[]).includes(id)) return heroOwned(p, id as HeroType);
+   return p.settings.unlockAll || playerLevel(p) >= unlockLevel(id);
+ }
+ export function isDifficultyUnlocked(p: Profile, d: Difficulty): boolean {
+@@ -319,6 +332,66 @@ export function buyPower(p: Profile, key: PowerKey, count = 1): { ok: true; prof
+   return { ok: true, cost, profile: { ...p, embers: p.embers - cost, inventory } };
+ }
+ 
++// ---------------------------------------------------------------- Store: Heroes (Runde 16)
++
++export interface HeroLock {
++  owned: boolean;
++  /** Offen ueber das Spieler-Level. */
++  byLevel: boolean;
++  /** Offen ueber den Embers-Kauf (`Profile.heroes`). */
++  purchased: boolean;
++  unlockLevel: number;
++  /** Preis in Embers; null = nicht kaeuflich (Wren). */
++  embers: number | null;
++  /** Im Store kaufbar jetzt (nicht besessen, kaeuflich, genug Embers). */
++  canBuy: boolean;
++  /** Englischer Hinweis fuer das Schloss ("Reach level 10 or buy for 1,500 Embers."), leer wenn offen. */
++  text: string;
++}
++const fmt = (n: number): string => n.toLocaleString('en-US');
++/** Freischaltung eines Helden: Level **oder** Embers (Bram 1.500, Sela 2.500; Wren nur Level 3). */
++export function heroLock(p: Profile, id: HeroType): HeroLock {
++  const m = HEROES.find((h) => h.id === id);
++  if (!m) return { owned: false, byLevel: false, purchased: false, unlockLevel: 0, embers: null, canBuy: false, text: 'Unknown hero.' };
++  const byLevel = playerLevel(p) >= m.unlockLevel;
++  const purchased = m.embers !== null && p.heroes.includes(id);
++  const owned = heroOwned(p, id);
++  const text = owned ? '' : m.embers === null ? `Reach level ${m.unlockLevel}.` : `Reach level ${m.unlockLevel} or buy for ${fmt(m.embers)} Embers.`;
++  return { owned, byLevel, purchased, unlockLevel: m.unlockLevel, embers: m.embers, canBuy: !owned && m.embers !== null && p.embers >= m.embers, text };
++}
++
++/** Held im Store kaufen (Embers). Codes: `unknown-hero`, `not-for-sale` (Wren), `owned`, `not-enough-embers`. */
++export function buyHero(p: Profile, id: HeroType): { ok: true; profile: Profile; cost: number } | Fail {
++  const m = HEROES.find((h) => h.id === id);
++  if (!m) return fail('unknown-hero', 'Unknown hero.');
++  if (m.embers === null) return fail('not-for-sale', `${m.short} cannot be bought. Reach level ${m.unlockLevel}.`);
++  if (heroOwned(p, id)) return fail('owned', `${m.short} is already yours.`);
++  if (p.embers < m.embers) return fail('not-enough-embers', `Needs ${fmt(m.embers)} Embers.`);
++  return { ok: true, cost: m.embers, profile: { ...p, embers: p.embers - m.embers, heroes: HERO_IDS.filter((h) => h === 'wren' || h === id || p.heroes.includes(h)) } };
++}
++
++/** Held fuer die naechsten Matches waehlen. Codes: `unknown-hero`, `hero-locked`. */
++export function selectHero(p: Profile, id: HeroType): { ok: true; profile: Profile } | Fail {
++  if (!HEROES.some((h) => h.id === id)) return fail('unknown-hero', 'Unknown hero.');
++  if (!heroOwned(p, id)) return fail('hero-locked', heroLock(p, id).text);
++  return { ok: true, profile: { ...p, selectedHero: id } };
++}
++
++/** Der Held, mit dem das naechste Match startet: der gewaehlte, sonst Wren. */
++export const activeHero = (p: Profile): HeroType => (heroOwned(p, p.selectedHero) ? p.selectedHero : 'wren');
++
++export interface HeroStoreEntry {
++  meta: (typeof HEROES)[number];
++  lock: HeroLock;
++  selected: boolean;
++  /** Preis im Match in Gold. */
++  matchPrice: number;
++}
++/** Store-Rubrik "Heroes": alle drei Helden mit Schloss, Auswahl und Preis. */
++export function heroStore(p: Profile): HeroStoreEntry[] {
++  return HEROES.map((meta) => ({ meta, lock: heroLock(p, meta.id), selected: activeHero(p) === meta.id, matchPrice: DATA.hero[meta.id].price }));
++}
++
+ // ---------------------------------------------------------------- Wissensbaum
+ 
+ export function knowledgePoints(p: Profile): { total: number; spent: number; free: number } {
+@@ -367,7 +440,7 @@ export function unlockEverything(p: Profile): Profile {
+ 
+ // ---------------------------------------------------------------- Optionen fuer die Sim
+ 
+-export type MatchOptions = Required<Pick<GameOptions, 'unlocks' | 'towerXp'>> & { powers: Record<PowerKey, number> } & { mods: NonNullable<GameOptions['mods']>; mode: ModeId };
++export type MatchOptions = Required<Pick<GameOptions, 'unlocks' | 'towerXp'>> & { powers: Record<PowerKey, number> } & { mods: NonNullable<GameOptions['mods']>; mode: ModeId; /** Runde 16: gewaehlter Held. */ hero: HeroType };
+ 
+ /**
+  * `unlocks` + `towerXp` + `powers` (Inventar) + `mods` + `mode` (Runde 15, Vorgabe `standard`) fuer `createGame`; die Karte reicht der Aufrufer selbst weiter. `towerXp` ist das Konto (Sim fuehrt es im Match, `unlockTier` im Match),
+@@ -376,7 +449,7 @@ export type MatchOptions = Required<Pick<GameOptions, 'unlocks' | 'towerXp'>> &
+ export function matchOptions(p: Profile, mode: ModeId = 'standard'): MatchOptions {
+   const all = p.settings.unlockAll;
+   const towers: (TowerType | HeroType)[] = [...TOWER_TYPES.filter((t) => isTowerUnlocked(p, t))];
+-  if (isTowerUnlocked(p, 'wren')) towers.push('wren');
++  for (const h of HERO_IDS) if (heroOwned(p, h)) towers.push(h);
+   const full: Tiers = [5, 5, 5];
+   const maxTier = Object.fromEntries(TOWER_TYPES.map((t) => [t, all ? full : ([...p.towerTiers[t]] as Tiers)])) as Record<TowerType, Tiers>;
+ 
+@@ -392,6 +465,7 @@ export function matchOptions(p: Profile, mode: ModeId = 'standard'): MatchOption
+   const rangeBp: Partial<Record<TowerType, number>> = {};
+   if (k('sharp-eyes')) rangeBp.ranger = 800;
+   if (k('deep-roots')) rangeBp.thornweaver = 1000; // Runde 14
++  if (k('deep-water')) rangeBp.riverkeeper = 1000; // Runde 16
+   if (Object.keys(rangeBp).length) mods.rangeBp = rangeBp;
+   if (k('bigger-barrels')) mods.radiusBp = 1000;
+   if (k('cold-snap')) mods.slowDurBp = 2500;
+@@ -417,7 +491,10 @@ export function matchOptions(p: Profile, mode: ModeId = 'standard'): MatchOption
+   if (k('starter-kit')) mods.freePowers = { goldDrop: STARTER_KIT_GOLD_DROPS };
+   // Runde 14
+   if (k('pop-bonus')) mods.popCashBp = 500;
+-  if (k('sharper-arrows')) mods.pierceAdd = { ranger: 1 };
++  const pierceAdd: Partial<Record<TowerType, number>> = {};
++  if (k('sharper-arrows')) pierceAdd.ranger = 1;
++  if (k('barbed-line')) pierceAdd.riverkeeper = 1; // Runde 16
++  if (Object.keys(pierceAdd).length) mods.pierceAdd = pierceAdd;
+   if (k('fused-shells')) mods.fragAdd = { bombardier: 2 };
+   if (k('icicle-edge')) mods.icicleDmg = 1;
+   if (k('bountiful-grove')) mods.bountyGold = 50;
+@@ -425,7 +502,12 @@ export function matchOptions(p: Profile, mode: ModeId = 'standard'): MatchOption
+   if (k('midas-hands')) mods.leadGoldAdd = 20;
+   if (k('field-medic')) mods.roundLives = 1;
+   if (k('sturdy-gate')) mods.gate = 1;
+-  return { unlocks: { towers, maxTier }, towerXp: { ...p.towerXp }, powers: { ...emptyInventory(), ...p.inventory }, mods, mode };
++  // Runde 16: Riverkeeper, Bellringer, Tinker
++  if (k('loud-bells')) mods.auraRadiusBp = { bellringer: 1500 };
++  if (k('silver-tongue')) mods.tollAdd = 25;
++  if (k('spare-parts')) mods.sentryTtlBp = 2500;
++  if (k('sharp-caltrops')) mods.trapChargesAdd = 2;
++  return { unlocks: { towers, maxTier }, towerXp: { ...p.towerXp }, powers: { ...emptyInventory(), ...p.inventory }, mods, mode, hero: activeHero(p) };
+ }
+ 
+ export { DIFFICULTIES, KNOWLEDGE };
+diff --git a/meta/test/progress.test.ts b/meta/test/progress.test.ts
+index abc66ce..50fb07a 100644
+--- a/meta/test/progress.test.ts
++++ b/meta/test/progress.test.ts
+@@ -34,7 +34,7 @@ describe('Match anwenden', () => {
+     const { profile, report } = applyMatch(newProfile(), res());
+     expect(report.xpGained).toBe(2970);
+     expect(report.levelAfter).toBe(levelFromXp(2970).level);
+-    expect(report.unlocks.map((u) => u.id)).toEqual(['bombardier', 'wren', 'frostcaller', 'hard', 'longshot']);
++    expect(report.unlocks.map((u) => u.id)).toEqual(['bombardier', 'wren', 'frostcaller', 'riverkeeper', 'hard', 'longshot']);
+     expect(report.pointsGained).toBe(report.levelAfter - 1);
+     expect(report.newMedal).toBe('medium');
+     expect(profile.medals.meadow.medium).toBe(true);
+@@ -42,10 +42,10 @@ describe('Match anwenden', () => {
+   });
+   it('Turm-XP: Endkonto und Endstufen kommen aus dem Match, Bericht zeigt towerXpGained', () => {
+     const a = applyMatch(newProfile(), res({
+-      towerXp: { ranger: 480, bombardier: 20, frostcaller: 100, longshot: 0, market: 0, thornweaver: 0, alchemist: 0 }, towerXpGained: { ranger: 480, bombardier: 120, frostcaller: 0 },
++      towerXp: { ranger: 480, bombardier: 20, frostcaller: 100, longshot: 0, market: 0, thornweaver: 0, alchemist: 0, riverkeeper: 0, bellringer: 0, tinker: 0 }, towerXpGained: { ranger: 480, bombardier: 120, frostcaller: 0 },
+       towerTiers: { ranger: [1, 0, 2], bombardier: [0, 0, 0], frostcaller: [0, 0, 0] },
+     }));
+-    expect(a.profile.towerXp).toEqual({ ranger: 480, bombardier: 20, frostcaller: 100, longshot: 0, market: 0, thornweaver: 0, alchemist: 0 });
++    expect(a.profile.towerXp).toEqual({ ranger: 480, bombardier: 20, frostcaller: 100, longshot: 0, market: 0, thornweaver: 0, alchemist: 0, riverkeeper: 0, bellringer: 0, tinker: 0 });
+     expect(a.profile.towerTiers.ranger).toEqual([1, 0, 2]);
+     expect(a.report.towerXpGained).toEqual({ ranger: 480, bombardier: 120 });
+   });
+@@ -56,18 +56,18 @@ describe('Match anwenden', () => {
+     expect(a.report.towerXpGained).toEqual({});
+   });
+   it('Stufen sinken nie; mit "unlock everything" bleiben sie unangetastet', () => {
+-    const p: Profile = { ...newProfile(), towerTiers: { ranger: [3, 0, 0], bombardier: [0, 0, 0], frostcaller: [0, 0, 0], longshot: [0, 0, 0], market: [0, 0, 0], thornweaver: [0, 0, 0], alchemist: [0, 0, 0] } };
+-    const r = res({ towerXp: { ranger: 0, bombardier: 0, frostcaller: 0, longshot: 0, market: 0, thornweaver: 0, alchemist: 0 }, towerTiers: { ranger: [1, 2, 0], bombardier: [0, 0, 0], frostcaller: [0, 0, 0], longshot: [0, 0, 0], market: [0, 0, 0], thornweaver: [0, 0, 0], alchemist: [0, 0, 0] } });
++    const p: Profile = { ...newProfile(), towerTiers: { ranger: [3, 0, 0], bombardier: [0, 0, 0], frostcaller: [0, 0, 0], longshot: [0, 0, 0], market: [0, 0, 0], thornweaver: [0, 0, 0], alchemist: [0, 0, 0], riverkeeper: [0, 0, 0], bellringer: [0, 0, 0], tinker: [0, 0, 0] } };
++    const r = res({ towerXp: { ranger: 0, bombardier: 0, frostcaller: 0, longshot: 0, market: 0, thornweaver: 0, alchemist: 0, riverkeeper: 0, bellringer: 0, tinker: 0 }, towerTiers: { ranger: [1, 2, 0], bombardier: [0, 0, 0], frostcaller: [0, 0, 0], longshot: [0, 0, 0], market: [0, 0, 0], thornweaver: [0, 0, 0], alchemist: [0, 0, 0], riverkeeper: [0, 0, 0], bellringer: [0, 0, 0], tinker: [0, 0, 0] } });
+     expect(applyMatch(p, r).profile.towerTiers.ranger).toEqual([3, 2, 0]);
+     const u: Profile = { ...p, settings: { ...p.settings, unlockAll: true } };
+     const full = res({ towerTiers: { ranger: [5, 5, 5], bombardier: [5, 5, 5], frostcaller: [5, 5, 5] } });
+     expect(applyMatch(u, full).profile.towerTiers).toEqual(p.towerTiers);
+   });
+   it('Startguthaben 100 je Turm (genau Stufe 1)', () => {
+-    expect(newProfile().towerXp).toEqual({ ranger: 100, bombardier: 100, frostcaller: 100, longshot: 100, market: 100, thornweaver: 100, alchemist: 100 });
++    expect(newProfile().towerXp).toEqual({ ranger: 100, bombardier: 100, frostcaller: 100, longshot: 100, market: 100, thornweaver: 100, alchemist: 100, riverkeeper: 100, bellringer: 100, tinker: 100 });
+   });
+   it('alte 11er-Profile (Startguthaben 250) bleiben gueltig und werden nicht zurueckgesetzt', () => {
+-    const old = { ...newProfile(), towerXp: { ranger: 250, bombardier: 250, frostcaller: 250, longshot: 0, market: 0, thornweaver: 0, alchemist: 0 } };
++    const old = { ...newProfile(), towerXp: { ranger: 250, bombardier: 250, frostcaller: 250, longshot: 0, market: 0, thornweaver: 0, alchemist: 0, riverkeeper: 0, bellringer: 0, tinker: 0 } };
+     const l = loadProfile(JSON.parse(JSON.stringify(old)));
+     expect(l.reset).toBe(false);
+     expect(l.profile.towerXp.ranger).toBe(250);
+@@ -125,7 +125,7 @@ describe('Turm-Stufen', () => {
+     expect(!r.ok && r.code).toBe('tower-locked');
+   });
+   it('Stufe 5 kostet 8000', () => {
+-    let p: Profile = { ...newProfile(), towerXp: { ranger: 99999, bombardier: 0, frostcaller: 0, longshot: 0, market: 0, thornweaver: 0, alchemist: 0 } };
++    let p: Profile = { ...newProfile(), towerXp: { ranger: 99999, bombardier: 0, frostcaller: 0, longshot: 0, market: 0, thornweaver: 0, alchemist: 0, riverkeeper: 0, bellringer: 0, tinker: 0 } };
+     for (let i = 0; i < 5; i++) {
+       const r = unlockTier(p, 'ranger', 1);
+       expect(r.ok).toBe(true);
+@@ -176,23 +176,23 @@ describe('matchOptions', () => {
+     expect(o.mods).toEqual({});
+   });
+   it('Level und Wissensbaum wirken', () => {
+-    const p: Profile = { ...withXp(xpForLevel(4)), knowledge: ['extra-lives', 'veteran-hero', 'head-start'], towerTiers: { ranger: [2, 0, 1], bombardier: [0, 0, 0], frostcaller: [0, 0, 0], longshot: [0, 0, 0], market: [0, 0, 0], thornweaver: [0, 0, 0], alchemist: [0, 0, 0] } };
++    const p: Profile = { ...withXp(xpForLevel(4)), knowledge: ['extra-lives', 'veteran-hero', 'head-start'], towerTiers: { ranger: [2, 0, 1], bombardier: [0, 0, 0], frostcaller: [0, 0, 0], longshot: [0, 0, 0], market: [0, 0, 0], thornweaver: [0, 0, 0], alchemist: [0, 0, 0], riverkeeper: [0, 0, 0], bellringer: [0, 0, 0], tinker: [0, 0, 0] } };
+     const o = matchOptions(p);
+-    expect(o.unlocks.towers).toEqual(['ranger', 'bombardier', 'frostcaller', 'wren']);
++    expect(o.unlocks.towers).toEqual(['ranger', 'bombardier', 'frostcaller', 'riverkeeper', 'wren']);
+     expect(o.unlocks.maxTier.ranger).toEqual([2, 0, 1]);
+     expect(o.mods).toEqual({ startCash: 100, lives: 10, heroStartLevel: 3 });
+   });
+   it('liefert das Turm-XP-Konto; Fast Learner setzt mods.towerXpBp', () => {
+-    const p: Profile = { ...withXp(xpForLevel(4)), knowledge: ['extra-lives', 'fast-learner'], towerXp: { ranger: 120, bombardier: 5, frostcaller: 0, longshot: 0, market: 0, thornweaver: 0, alchemist: 0 } };
++    const p: Profile = { ...withXp(xpForLevel(4)), knowledge: ['extra-lives', 'fast-learner'], towerXp: { ranger: 120, bombardier: 5, frostcaller: 0, longshot: 0, market: 0, thornweaver: 0, alchemist: 0, riverkeeper: 0, bellringer: 0, tinker: 0 } };
+     const o = matchOptions(p);
+-    expect(o.towerXp).toEqual({ ranger: 120, bombardier: 5, frostcaller: 0, longshot: 0, market: 0, thornweaver: 0, alchemist: 0 });
++    expect(o.towerXp).toEqual({ ranger: 120, bombardier: 5, frostcaller: 0, longshot: 0, market: 0, thornweaver: 0, alchemist: 0, riverkeeper: 0, bellringer: 0, tinker: 0 });
+     expect(o.towerXp).not.toBe(p.towerXp);
+     expect(o.mods.towerXpBp).toBe(2000);
+     expect(matchOptions(newProfile()).mods.towerXpBp).toBeUndefined();
+   });
+   it('unlock everything', () => {
+     const o = matchOptions({ ...newProfile(), settings: { volume: 50, unlockAll: true } });
+-    expect(o.unlocks.towers).toHaveLength(8);
++    expect(o.unlocks.towers).toHaveLength(13); // zehn Türme und drei Helden
+     expect(o.unlocks.maxTier.frostcaller).toEqual([5, 5, 5]);
+   });
+ });
+@@ -230,7 +230,7 @@ describe('Laden, Reset, Export', () => {
+ describe('Testhilfe unlockEverything', () => {
+   it('alles offen, Wissensbaum voll kaufbar, Profil bleibt gueltig', () => {
+     const p = unlockEverything(newProfile());
+-    expect(matchOptions(p).unlocks.towers).toHaveLength(8);
++    expect(matchOptions(p).unlocks.towers).toHaveLength(13); // zehn Türme und drei Helden
+     expect(matchOptions(p).unlocks.maxTier.ranger).toEqual([5, 5, 5]);
+     expect(knowledgePoints(p).free).toBeGreaterThanOrEqual(14);
+     expect(loadProfile(JSON.parse(JSON.stringify(p))).reset).toBe(false);
+@@ -240,7 +240,7 @@ describe('Testhilfe unlockEverything', () => {
+ describe('matchOptions gegen die echte Sim', () => {
+   it('createGame nimmt unlocks + mods an: Startgeld/Leben, gesperrte Stufe, gesperrter Turm', () => {
+     const base = createGame({ map: 'meadow', difficulty: 'medium', seed: 1, ...matchOptions(newProfile()) });
+-    const p: Profile = { ...withXp(xpForLevel(4)), knowledge: ['head-start', 'extra-lives'], towerTiers: { ranger: [2, 0, 0], bombardier: [0, 0, 0], frostcaller: [0, 0, 0], longshot: [0, 0, 0], market: [0, 0, 0], thornweaver: [0, 0, 0], alchemist: [0, 0, 0] } };
++    const p: Profile = { ...withXp(xpForLevel(4)), knowledge: ['head-start', 'extra-lives'], towerTiers: { ranger: [2, 0, 0], bombardier: [0, 0, 0], frostcaller: [0, 0, 0], longshot: [0, 0, 0], market: [0, 0, 0], thornweaver: [0, 0, 0], alchemist: [0, 0, 0], riverkeeper: [0, 0, 0], bellringer: [0, 0, 0], tinker: [0, 0, 0] } };
+     const g = createGame({ map: 'meadow', difficulty: 'medium', seed: 1, ...matchOptions(p) });
+     expect(g.state.cash).toBe(base.state.cash + 100);
+     expect(g.state.lives).toBe(base.state.lives + 10);
+@@ -274,7 +274,7 @@ describe('Embers, Inventar und Store (Runde 12)', () => {
+   });
+ 
+   it('bestehendes 11er-Profil ohne die Felder wird migriert: nichts zurückgesetzt, Startpaket genau einmal', () => {
+-    const old = { ...newProfile('2026-10-01T00:00:00.000Z'), playerXp: 5000, matchesWon: 3, knowledge: [] as string[], towerTiers: { ranger: [2, 0, 1], bombardier: [0, 0, 0], frostcaller: [0, 0, 0], longshot: [0, 0, 0], market: [0, 0, 0], thornweaver: [0, 0, 0], alchemist: [0, 0, 0] } } as Record<string, unknown>;
++    const old = { ...newProfile('2026-10-01T00:00:00.000Z'), playerXp: 5000, matchesWon: 3, knowledge: [] as string[], towerTiers: { ranger: [2, 0, 1], bombardier: [0, 0, 0], frostcaller: [0, 0, 0], longshot: [0, 0, 0], market: [0, 0, 0], thornweaver: [0, 0, 0], alchemist: [0, 0, 0], riverkeeper: [0, 0, 0], bellringer: [0, 0, 0], tinker: [0, 0, 0] } } as Record<string, unknown>;
+     delete old.embers;
+     delete old.inventory;
+     delete old.starterPack;
+diff --git a/meta/test/r13.test.ts b/meta/test/r13.test.ts
+index 18b23a1..0570fe7 100644
+--- a/meta/test/r13.test.ts
++++ b/meta/test/r13.test.ts
+@@ -13,13 +13,13 @@ const res = (o: Partial<MatchResult> = {}): MatchResult => ({
+ });
+ 
+ describe('Wissensbaum: Struktur', () => {
+-  it('40 Knoten in 5 Ästen (R13: 28/52, R14: +12/+25), Summe 77 Punkte, Kosten 1-3, eindeutige IDs', () => {
+-    expect(KNOWLEDGE).toHaveLength(40);
+-    expect(new Set(KNOWLEDGE.map((n) => n.id)).size).toBe(40);
+-    expect(KNOWLEDGE.reduce((s, n) => s + n.cost, 0)).toBe(77);
++  it('46 Knoten in 5 Ästen (R13: 28/52, R14: +12/+25, R16: +6/+9), Summe 86 Punkte, Kosten 1-3, eindeutige IDs', () => {
++    expect(KNOWLEDGE).toHaveLength(46);
++    expect(new Set(KNOWLEDGE.map((n) => n.id)).size).toBe(46);
++    expect(KNOWLEDGE.reduce((s, n) => s + n.cost, 0)).toBe(86);
+     expect(BRANCHES).toEqual(['economy', 'primary', 'specialists', 'wardens', 'powers']);
+     const per = Object.fromEntries(BRANCHES.map((b) => [b, KNOWLEDGE.filter((n) => n.branch === b).length]));
+-    expect(per).toEqual({ economy: 8, primary: 10, specialists: 9, wardens: 8, powers: 5 });
++    expect(per).toEqual({ economy: 8, primary: 10, specialists: 15, wardens: 8, powers: 5 });
+     for (const n of KNOWLEDGE) {
+       expect(n.cost).toBeGreaterThanOrEqual(1);
+       expect(n.cost).toBeLessThanOrEqual(3);
+@@ -88,11 +88,11 @@ describe('Freischalt-Level und Migration', () => {
+   it('Longshot ab 5, Market ab 6', () => {
+     expect(unlockLevel('longshot')).toBe(5);
+     expect(unlockLevel('market')).toBe(6);
+-    expect(LEVEL_UNLOCKS.filter((u) => u.kind === 'tower').map((u) => u.id)).toEqual(['bombardier', 'frostcaller', 'longshot', 'market', 'thornweaver', 'alchemist']);
++    expect(LEVEL_UNLOCKS.filter((u) => u.kind === 'tower').map((u) => u.id)).toEqual(['bombardier', 'frostcaller', 'riverkeeper', 'longshot', 'market', 'thornweaver', 'alchemist', 'tinker', 'bellringer']);
+     expect(isTowerUnlocked(withLevel(4), 'longshot')).toBe(false);
+     expect(isTowerUnlocked(withLevel(5), 'longshot')).toBe(true);
+     expect(isTowerUnlocked(withLevel(5), 'market')).toBe(false);
+-    expect(matchOptions(withLevel(6)).unlocks.towers).toEqual(['ranger', 'bombardier', 'frostcaller', 'longshot', 'market', 'wren']);
++    expect(matchOptions(withLevel(6)).unlocks.towers).toEqual(['ranger', 'bombardier', 'frostcaller', 'longshot', 'market', 'riverkeeper', 'wren']);
+   });
+ 
+   it('Level-Up in einem Match meldet die neuen Türme', () => {
+@@ -107,7 +107,7 @@ describe('Freischalt-Level und Migration', () => {
+     old.towerTiers.ranger = [2, 0, 1];
+     const r = loadProfile(old);
+     expect(r.reset).toBe(false);
+-    expect(r.profile.towerXp).toEqual({ ranger: 333, bombardier: 100, frostcaller: 100, longshot: 100, market: 100, thornweaver: 100, alchemist: 100 });
++    expect(r.profile.towerXp).toEqual({ ranger: 333, bombardier: 100, frostcaller: 100, longshot: 100, market: 100, thornweaver: 100, alchemist: 100, riverkeeper: 100, bellringer: 100, tinker: 100 });
+     expect(r.profile.towerTiers.ranger).toEqual([2, 0, 1]);
+     expect(r.profile.towerTiers.longshot).toEqual([0, 0, 0]);
+     expect(r.profile.knowledge).toEqual(['head-start']);
+@@ -118,7 +118,7 @@ describe('Freischalt-Level und Migration', () => {
+   });
+ 
+   it('neue Profile: Startguthaben 100 für alle sieben Türme; Match-Ergebnis ohne neue Typen lässt sie unverändert', () => {
+-    expect(newProfile().towerXp).toEqual({ ranger: 100, bombardier: 100, frostcaller: 100, longshot: 100, market: 100, thornweaver: 100, alchemist: 100 });
++    expect(newProfile().towerXp).toEqual({ ranger: 100, bombardier: 100, frostcaller: 100, longshot: 100, market: 100, thornweaver: 100, alchemist: 100, riverkeeper: 100, bellringer: 100, tinker: 100 });
+     const r = applyMatch(newProfile(), res({ towerXp: { ranger: 200, bombardier: 100, frostcaller: 100 } as never }));
+     expect(r.profile.towerXp.ranger).toBe(200);
+     expect(r.profile.towerXp.longshot).toBe(0); // Sim meldet 0 Konto bei fehlendem Schlüssel
+@@ -139,9 +139,9 @@ describe('Freischalt-Level und Migration', () => {
+ 
+   it('unlockEverything öffnet alle sieben Türme', () => {
+     const p = unlockEverything(newProfile());
+-    expect(TOWER_TYPES).toHaveLength(7);
++    expect(TOWER_TYPES).toHaveLength(10);
+     expect(p.towerTiers.market).toEqual([5, 5, 5]);
+-    expect(matchOptions(p).unlocks.towers).toHaveLength(8);
++    expect(matchOptions(p).unlocks.towers).toHaveLength(13);
+     for (const n of KNOWLEDGE) expect(n.cost).toBeLessThanOrEqual(3);
+     expect(knowledgePoints(p).free).toBeGreaterThanOrEqual(29);
+   });
+diff --git a/meta/test/r16.test.ts b/meta/test/r16.test.ts
+new file mode 100644
+index 0000000..a023400
+--- /dev/null
++++ b/meta/test/r16.test.ts
+@@ -0,0 +1,237 @@
++/**
++ * Runde 16 (Paket T): Riverkeeper/Tinker/Bellringer freischalten, Helden (Auswahl, Level oder Embers), Migration, sechs neue Wissensknoten.
++ * 10.10.2026, Max: „… auch mehr Helden“ (Bram Level 10 oder 1.500 Embers, Sela Level 15 oder 2.500 Embers).
++ */
++import { describe, expect, it } from 'vitest';
++import { createGame } from '../../sim/src/index';
++import {
++  HEROES, KNOWLEDGE, LEVEL_UNLOCKS, applyMatch, buyHero, buyNode, exportProfile, heroLock, heroOwned, heroStore, importProfile, isTowerUnlocked, loadProfile, matchOptions,
++  newProfile, nodeById, selectHero, unlockEverything, unlockLevel, xpForLevel, activeHero, type MatchResult, type Profile,
++} from '../src/index';
++
++const withLevel = (n: number, p: Profile = newProfile()): Profile => ({ ...p, playerXp: xpForLevel(n) });
++const know = (p: Profile, ...ids: string[]): Profile => ({ ...p, knowledge: ids });
++const res = (o: Partial<MatchResult> = {}): MatchResult => ({ matchId: 'm1', map: 'meadow', difficulty: 'medium', won: true, roundsCleared: 20, livesLost: 3, pops: { ranger: 400 }, ...o });
++
++describe('Freischaltung der Türme', () => {
++  it('Riverkeeper L4, Tinker L11, Bellringer L13; bestehende Stufen unverändert', () => {
++    expect(unlockLevel('riverkeeper')).toBe(4);
++    expect(unlockLevel('tinker')).toBe(11);
++    expect(unlockLevel('bellringer')).toBe(13);
++    expect([unlockLevel('bombardier'), unlockLevel('frostcaller'), unlockLevel('longshot'), unlockLevel('market'), unlockLevel('thornweaver'), unlockLevel('alchemist')]).toEqual([2, 4, 5, 6, 7, 9]);
++    expect(isTowerUnlocked(withLevel(3), 'riverkeeper')).toBe(false);
++    expect(isTowerUnlocked(withLevel(4), 'riverkeeper')).toBe(true);
++    expect(isTowerUnlocked(withLevel(10), 'tinker')).toBe(false);
++    expect(isTowerUnlocked(withLevel(11), 'tinker')).toBe(true);
++    expect(isTowerUnlocked(withLevel(12), 'bellringer')).toBe(false);
++    expect(isTowerUnlocked(withLevel(13), 'bellringer')).toBe(true);
++    expect(matchOptions(withLevel(13)).unlocks.towers).toEqual(expect.arrayContaining(['riverkeeper', 'tinker', 'bellringer']));
++    expect(LEVEL_UNLOCKS.filter((u) => u.kind === 'hero').map((u) => [u.id, u.level])).toEqual([['wren', 3], ['bram', 10], ['sela', 15]]);
++  });
++
++  it('Profil aus Runde 14/15 ohne die neuen Felder lädt ohne Reset und bekommt Vorgaben', () => {
++    const old = JSON.parse(JSON.stringify({ ...withLevel(12), embers: 77, knowledge: ['head-start'] }));
++    for (const k of ['towerXp', 'towerTiers']) { delete old[k].riverkeeper; delete old[k].bellringer; delete old[k].tinker; }
++    delete old.heroes;
++    delete old.selectedHero;
++    old.towerXp.ranger = 333;
++    const r = loadProfile(old);
++    expect(r.reset).toBe(false);
++    expect(r.profile.schema).toBe(11);
++    expect(r.profile.towerXp.ranger).toBe(333);
++    expect(r.profile.towerXp.riverkeeper).toBe(100);
++    expect(r.profile.towerTiers.tinker).toEqual([0, 0, 0]);
++    expect(r.profile.heroes).toEqual(['wren']);
++    expect(r.profile.selectedHero).toBe('wren');
++    expect(r.profile.embers).toBe(77);
++    expect(r.profile.knowledge).toEqual(['head-start']);
++  });
++
++  it('Match-Ergebnis ohne die neuen Typen lässt sie unverändert; mit ihnen landen Stufen und XP im Profil', () => {
++    const p = withLevel(14);
++    const r = applyMatch(p, res());
++    expect(r.profile.towerTiers.riverkeeper).toEqual([0, 0, 0]);
++    const r2 = applyMatch(p, res({
++      matchId: 'm2',
++      towerTiers: { ranger: [0, 0, 0], bombardier: [0, 0, 0], frostcaller: [0, 0, 0], riverkeeper: [2, 0, 1], bellringer: [0, 3, 0], tinker: [1, 1, 1] },
++      towerXp: { ranger: 100, bombardier: 100, frostcaller: 100, riverkeeper: 40, bellringer: 0, tinker: 9 },
++      pops: { riverkeeper: 50, tinker: 10, bram: 5, sela: 2 },
++    }));
++    expect(r2.profile.towerTiers.riverkeeper).toEqual([2, 0, 1]);
++    expect(r2.profile.towerTiers.bellringer).toEqual([0, 3, 0]);
++    expect(r2.profile.towerXp.tinker).toBe(9);
++  });
++});
++
++describe('Helden: Besitz und Auswahl', () => {
++  it('Daten: Wren ab 3, Bram ab 10 oder 1.500 Embers, Sela ab 15 oder 2.500 Embers', () => {
++    expect(HEROES.map((h) => [h.id, h.unlockLevel, h.embers])).toEqual([['wren', 3, null], ['bram', 10, 1500], ['sela', 15, 2500]]);
++  });
++
++  it('neues Profil: heroes [wren], selectedHero wren; Wren erst ab Level 3 besessen', () => {
++    const p = newProfile();
++    expect(p.heroes).toEqual(['wren']);
++    expect(p.selectedHero).toBe('wren');
++    expect(heroOwned(p, 'wren')).toBe(false);
++    expect(heroOwned(withLevel(3), 'wren')).toBe(true);
++    expect(matchOptions(p).unlocks.towers).not.toContain('wren');
++    expect(matchOptions(withLevel(3)).unlocks.towers).toContain('wren');
++  });
++
++  it('Level öffnet Bram (10) und Sela (15) ohne Kauf', () => {
++    expect(heroOwned(withLevel(9), 'bram')).toBe(false);
++    expect(heroOwned(withLevel(10), 'bram')).toBe(true);
++    expect(heroOwned(withLevel(14), 'sela')).toBe(false);
++    expect(heroOwned(withLevel(15), 'sela')).toBe(true);
++    expect(isTowerUnlocked(withLevel(10), 'bram')).toBe(true);
++  });
++
++  it('heroLock: Text, Preis und canBuy je nach Embers', () => {
++    const p: Profile = { ...withLevel(5), embers: 1499 };
++    expect(heroLock(p, 'bram')).toMatchObject({ owned: false, byLevel: false, purchased: false, unlockLevel: 10, embers: 1500, canBuy: false, text: 'Reach level 10 or buy for 1,500 Embers.' });
++    expect(heroLock({ ...p, embers: 1500 }, 'bram').canBuy).toBe(true);
++    expect(heroLock(p, 'sela').text).toBe('Reach level 15 or buy for 2,500 Embers.');
++    expect(heroLock(p, 'wren')).toMatchObject({ owned: true, text: '', embers: null, canBuy: false });
++    expect(heroLock(withLevel(1), 'wren').text).toBe('Reach level 3.');
++    expect(heroLock(withLevel(10), 'bram')).toMatchObject({ owned: true, byLevel: true, text: '', canBuy: false });
++  });
++
++  it('buyHero: zieht Embers ab, Held bleibt dauerhaft; Fehler mit Code', () => {
++    const p: Profile = { ...newProfile(), embers: 1600 };
++    const r = buyHero(p, 'bram');
++    expect(r.ok).toBe(true);
++    if (!r.ok) return;
++    expect(r.cost).toBe(1500);
++    expect(r.profile.embers).toBe(100);
++    expect(r.profile.heroes).toEqual(['wren', 'bram']);
++    expect(heroOwned(r.profile, 'bram')).toBe(true);
++    expect(heroLock(r.profile, 'bram')).toMatchObject({ owned: true, purchased: true, byLevel: false });
++    // kein zweites Mal, nicht ohne Embers, Wren nicht kaufbar
++    expect(buyHero(r.profile, 'bram')).toMatchObject({ ok: false, code: 'owned' });
++    expect(buyHero(p, 'sela')).toMatchObject({ ok: false, code: 'not-enough-embers', message: 'Needs 2,500 Embers.' });
++    expect(buyHero(p, 'wren')).toMatchObject({ ok: false, code: 'not-for-sale' });
++    expect(buyHero(p, 'nobody' as never)).toMatchObject({ ok: false, code: 'unknown-hero' });
++    // Eingabeprofil bleibt unverändert
++    expect(p.embers).toBe(1600);
++    expect(p.heroes).toEqual(['wren']);
++  });
++
++  it('bereits per Level offener Held: kein Kauf nötig (owned)', () => {
++    expect(buyHero({ ...withLevel(10), embers: 9999 }, 'bram')).toMatchObject({ ok: false, code: 'owned' });
++  });
++
++  it('selectHero und activeHero: nur besessene Helden', () => {
++    const p: Profile = { ...withLevel(3), embers: 2000 };
++    expect(selectHero(p, 'bram')).toMatchObject({ ok: false, code: 'hero-locked' });
++    const bought = buyHero(p, 'bram');
++    if (!bought.ok) throw new Error('kauf');
++    const s = selectHero(bought.profile, 'bram');
++    expect(s.ok).toBe(true);
++    if (!s.ok) return;
++    expect(s.profile.selectedHero).toBe('bram');
++    expect(activeHero(s.profile)).toBe('bram');
++    expect(selectHero(p, 'nobody' as never)).toMatchObject({ ok: false, code: 'unknown-hero' });
++    // gewählt, aber nicht (mehr) besessen: Wren
++    expect(activeHero({ ...p, selectedHero: 'sela' })).toBe('wren');
++  });
++
++  it('Laden räumt auf: Unbekanntes raus, Wren immer drin, nicht besessene Auswahl -> wren', () => {
++    const raw = JSON.parse(JSON.stringify({ ...withLevel(5), heroes: ['sela'], selectedHero: 'sela' }));
++    const r = loadProfile(raw);
++    expect(r.reset).toBe(false);
++    expect(r.profile.heroes).toEqual(['wren', 'sela']);
++    // Sela ist per Kauf besessen, also bleibt die Auswahl
++    expect(r.profile.selectedHero).toBe('sela');
++    const raw2 = JSON.parse(JSON.stringify({ ...withLevel(5), heroes: ['wren'], selectedHero: 'sela' }));
++    expect(loadProfile(raw2).profile.selectedHero).toBe('wren');
++    const bad = JSON.parse(JSON.stringify({ ...withLevel(5), heroes: ['wren', 'zorro'] }));
++    expect(loadProfile(bad).reset).toBe(true); // unbekannte Id: Schema lehnt ab
++  });
++
++  it('heroStore: drei Zeilen mit Schloss, Auswahl und Match-Preis', () => {
++    const rows = heroStore({ ...withLevel(10), embers: 2600 });
++    expect(rows.map((r) => [r.meta.id, r.lock.owned, r.selected, r.matchPrice, r.lock.canBuy])).toEqual([
++      ['wren', true, true, 540, false],
++      ['bram', true, false, 650, false],
++      ['sela', false, false, 750, true],
++    ]);
++  });
++
++  it('matchOptions: alle besessenen Helden freigeschaltet, hero = Auswahl', () => {
++    const p = selectHero({ ...withLevel(10) }, 'bram');
++    if (!p.ok) throw new Error('auswahl');
++    const o = matchOptions(p.profile);
++    expect(o.hero).toBe('bram');
++    expect(o.unlocks.towers).toEqual(expect.arrayContaining(['wren', 'bram']));
++    expect(o.unlocks.towers).not.toContain('sela');
++    expect(matchOptions(newProfile()).hero).toBe('wren');
++  });
++
++  it('Sim: Match mit Bram als Auswahl lässt nur Bram setzen', () => {
++    const sel = selectHero(withLevel(10), 'bram');
++    if (!sel.ok) throw new Error('auswahl');
++    const o = matchOptions(sel.profile);
++    const g = createGame({ map: 'meadow', difficulty: 'medium', seed: 1, ...o });
++    expect(g.info.hero).toBe('bram');
++    let spot = { x: 0, y: 0 };
++    g.sandbox.setCash(5000);
++    for (let y = 20000; y < 340000 && !spot.x; y += 20000) for (let x = 20000; x < 620000 && !spot.x; x += 20000) if (g.canPlace('bram', x, y).ok) spot = { x, y };
++    expect(g.canPlace('wren', spot.x, spot.y)).toEqual({ ok: false, reason: 'wrong-hero' });
++    expect(g.apply({ type: 'place', tower: 'bram', x: spot.x, y: spot.y }).ok).toBe(true);
++  });
++
++  it('unlockEverything und unlockAll öffnen alle drei Helden', () => {
++    const p = unlockEverything(newProfile());
++    for (const h of ['wren', 'bram', 'sela'] as const) expect(heroOwned(p, h)).toBe(true);
++    const u: Profile = { ...newProfile(), settings: { volume: 50, unlockAll: true } };
++    for (const h of ['wren', 'bram', 'sela'] as const) expect(heroOwned(u, h)).toBe(true);
++    expect(matchOptions(u).unlocks.towers).toEqual(expect.arrayContaining(['wren', 'bram', 'sela']));
++  });
++
++  it('Export/Import behält heroes und selectedHero', () => {
++    const b = buyHero({ ...withLevel(5), embers: 3000 }, 'bram');
++    if (!b.ok) throw new Error('kauf');
++    const sel = selectHero(b.profile, 'bram');
++    if (!sel.ok) throw new Error('auswahl');
++    const back = importProfile(exportProfile(sel.profile, '2026-10-10T00:00:00Z'));
++    expect(back.ok).toBe(true);
++    if (back.ok) {
++      expect(back.profile.heroes).toEqual(['wren', 'bram']);
++      expect(back.profile.selectedHero).toBe('bram');
++    }
++  });
++});
++
++describe('Wissensbaum: Riverkeeper, Bellringer, Tinker', () => {
++  const NEW_IDS = ['deep-water', 'barbed-line', 'loud-bells', 'silver-tongue', 'spare-parts', 'sharp-caltrops'];
++  it('sechs neue Knoten im Ast Specialists, Kosten 1/2 je Turm, Folgeknoten in früherer Zeile', () => {
++    const nodes = KNOWLEDGE.filter((n) => NEW_IDS.includes(n.id));
++    expect(nodes).toHaveLength(6);
++    expect(nodes.every((n) => n.branch === 'specialists')).toBe(true);
++    expect(nodes.map((n) => n.cost)).toEqual([1, 2, 1, 2, 1, 2]);
++    for (const n of nodes) for (const r of n.requires) expect(nodeById(r)!.row).toBeLessThan(n.row);
++    expect(new Set(nodes.map((n) => `${n.col}/${n.row}`)).size).toBe(6);
++  });
++
++  it('Mods kommen in den Optionen an', () => {
++    const p = know(withLevel(40), ...NEW_IDS);
++    const m = matchOptions(p).mods;
++    expect(m.rangeBp?.riverkeeper).toBe(1000);
++    expect(m.pierceAdd).toEqual({ riverkeeper: 1 });
++    expect(m.auraRadiusBp).toEqual({ bellringer: 1500 });
++    expect(m.tollAdd).toBe(25);
++    expect(m.sentryTtlBp).toBe(2500);
++    expect(m.trapChargesAdd).toBe(2);
++    // gemeinsam mit Sharper Arrows
++    expect(matchOptions(know(withLevel(40), 'sharp-eyes', 'sharper-arrows', 'deep-water', 'barbed-line')).mods.pierceAdd).toEqual({ ranger: 1, riverkeeper: 1 });
++    expect(matchOptions(withLevel(40)).mods.tollAdd).toBeUndefined();
++  });
++
++  it('kaufbar nach Voraussetzung', () => {
++    const p: Profile = withLevel(40);
++    expect(buyNode(p, 'barbed-line')).toMatchObject({ ok: false, code: 'locked' });
++    const a = buyNode(p, 'deep-water');
++    expect(a.ok).toBe(true);
++    if (a.ok) expect(buyNode(a.profile, 'barbed-line').ok).toBe(true);
++  });
++});
+diff --git a/sim/test/r16.test.ts b/sim/test/r16.test.ts
+new file mode 100644
+index 0000000..d5ff64c
+--- /dev/null
++++ b/sim/test/r16.test.ts
+@@ -0,0 +1,628 @@
++/**
++ * Runde 16 (Paket T): Wasser-Platzierung, Riverkeeper, Bellringer, Tinker (Sentries, Fallen, Overclock), Helden Bram und Sela.
++ * 10.10.2026, Max: „füge noch mehr Türme hinzu und auch mehr Helden“ / „Wassertürme, die man nur in bestimmten Wasserbereichen setzen kann“.
++ */
++import { describe, expect, it } from 'vitest';
++import './setup';
++import { createGame, DATA, DATA as D, type AbilityId, type Game, type HeroType, type SimEvent, type Tiers } from '../src/index';
++import { runBot, parseStrategy } from '../src/bot';
++import { buy, clearRound, newGame, place, run, statsOf } from './helpers';
++
++// Testkarte `pond`: Wiese mit einem Teich zwischen den Wegen (x 150..246, y 120..200) und einem Lavasee (x 370..430, y 245..285).
++(DATA.maps as Record<string, unknown>).pond = {
++  ...DATA.maps.meadow, id: 'pond', blockers: [],
++  water: [[[150, 120], [246, 120], [246, 200], [150, 200]]],
++  lava: [[[370, 245], [430, 245], [430, 285], [370, 285]]],
++};
++const pond = (over: Parameters<typeof createGame>[0] extends infer O ? Partial<O> : never = {}): Game =>
++  createGame({ map: 'pond', difficulty: 'medium', seed: 1, mods: { startCash: 200000 }, ...over });
++
++const abilityReady = (g: Game, id: AbilityId): boolean => g.state.abilities.find((a) => a.id === id)?.ready === true;
++/** Springt in einer leeren Welt, bis die Fähigkeit bereit ist. */
++function waitAbility(g: Game, id: AbilityId): void {
++  const a = g.state.abilities.find((x) => x.id === id);
++  if (!a) throw new Error(`Fähigkeit ${id} fehlt`);
++  g.step(a.cdLeft + 1);
++  if (!abilityReady(g, id)) throw new Error(`${id} nicht bereit`);
++}
++const ev = (all: SimEvent[], type: SimEvent['type']) => all.filter((e) => e.type === type);
++
++describe('Platzierung: Wasser und Land', () => {
++  it('Wasserturm nur ganz im Wasser, Fehlergrund needs-water', () => {
++    const g = pond();
++    expect(DATA.towers.riverkeeper.placement).toBe('water');
++    expect(DATA.towers.ranger.placement).toBe('land');
++    expect(g.canPlace('riverkeeper', 60000, 122000)).toEqual({ ok: false, reason: 'needs-water' });
++    expect(g.canPlace('riverkeeper', 195000, 160000)).toEqual({ ok: true });
++    // Kreis ragt 2 px über die Teichkante (x = 150): nicht ganz im Wasser
++    expect(g.canPlace('riverkeeper', 158000, 160000)).toEqual({ ok: false, reason: 'needs-water' });
++    // genau am Rand, Kreis noch innen
++    expect(g.canPlace('riverkeeper', 161000, 160000)).toEqual({ ok: true });
++    const c0 = g.state.cash;
++    const r = g.apply({ type: 'place', tower: 'riverkeeper', x: 195000, y: 160000 });
++    expect(r.ok).toBe(true);
++    expect(g.state.cash).toBe(c0 - 400);
++  });
++
++  it('Landturm nie im Wasser, auch nicht am Teichrand', () => {
++    const g = pond();
++    expect(g.canPlace('ranger', 195000, 160000)).toEqual({ ok: false, reason: 'water' });
++    expect(g.canPlace('tinker', 195000, 160000)).toEqual({ ok: false, reason: 'water' });
++    expect(g.canPlace('ranger', 60000, 122000)).toEqual({ ok: true });
++  });
++
++  it('Lava ist kein Wasser: Wasserturm braucht Wasser, Landturm bekommt weiter lava', () => {
++    const g = pond();
++    expect(g.canPlace('riverkeeper', 400000, 265000)).toEqual({ ok: false, reason: 'needs-water' });
++    expect(g.canPlace('ranger', 400000, 265000)).toEqual({ ok: false, reason: 'lava' });
++  });
++
++  it('Wasserturm gilt auch für Weg, Überlappung und Geld', () => {
++    const g = pond();
++    g.sandbox.setCash(399);
++    expect(g.canPlace('riverkeeper', 195000, 160000)).toEqual({ ok: false, reason: 'no-cash' });
++    const h = pond();
++    place(h, 'riverkeeper', 195, 160);
++    expect(h.canPlace('riverkeeper', 200000, 160000)).toEqual({ ok: false, reason: 'overlap' });
++    expect(h.canPlace('riverkeeper', 215000, 160000)).toEqual({ ok: true });
++  });
++
++  it('echte Karten: Meadow-Bach und Frostfen-See tragen Wassertürme, Quarry (nur Lava) keinen', () => {
++    const count = (map: string): number => {
++      const g = createGame({ map, difficulty: 'medium', seed: 1, mods: { startCash: 100000 } });
++      let n = 0;
++      for (let y = 5000; y < 355000; y += 6000) for (let x = 5000; x < 635000; x += 6000) if (g.canPlace('riverkeeper', x, y).ok) n++;
++      return n;
++    };
++    expect(count('meadow')).toBeGreaterThan(0);
++    expect(count('frostfen')).toBeGreaterThan(50);
++    expect(count('quarry')).toBe(0);
++  });
++});
++
++describe('Daten Runde 16', () => {
++  it('Preise, Fußabdruck, Pfade', () => {
++    expect([DATA.towers.riverkeeper.price, DATA.towers.bellringer.price, DATA.towers.tinker.price]).toEqual([400, 1000, 450]);
++    expect([DATA.hero.bram.price, DATA.hero.sela.price]).toEqual([650, 750]);
++    expect(DATA.towers.riverkeeper.paths.map((p) => p.name)).toEqual(['Harpoons', 'Sonar', 'Armada']);
++    expect(DATA.towers.bellringer.paths.map((p) => p.name)).toEqual(['Chimes', 'Watch', 'Toll']);
++    expect(DATA.towers.tinker.paths.map((p) => p.name)).toEqual(['Sentry', 'Caltrops', 'Overclock']);
++    expect(DATA.towers.riverkeeper.paths[0].tiers.map((t) => t.name)).toEqual(['Barbed Harpoons', 'Harpoon Volley', 'Tidal Steel', 'Whaler', 'Tidal Lance']);
++    expect(DATA.towers.bellringer.paths[0].tiers[0].name).toBe('Swift Chime');
++    expect(DATA.towers.bellringer.paths[1].tiers[2].name).toBe('Alarm');
++    expect(DATA.towers.tinker.paths[2].tiers[2].name).toBe('Overclock');
++    expect(DATA.hero.bram.levels).toHaveLength(20);
++    expect(DATA.hero.sela.levels).toHaveLength(20);
++  });
++});
++
++describe('Riverkeeper', () => {
++  it('Harpunen: A2 = 3er-Fächer, A3 trifft Ironshell, A5 Lanze mit Boss-Schaden', () => {
++    expect(statsOf('riverkeeper', [0, 0, 0])).toMatchObject({ pk: 'harpoon', dmg: 2, pierce: 3, count: 1 });
++    expect(statsOf('riverkeeper', [2, 0, 0])).toMatchObject({ count: 3, pierce: 5 });
++    expect(statsOf('riverkeeper', [3, 0, 0])).toMatchObject({ dtype: 'magic', dmg: 4 });
++    expect(statsOf('riverkeeper', [5, 0, 0])).toMatchObject({ count: 1, dmg: 40, bonusBoss: 210 });
++  });
++
++  it('schießt vom Teich auf den Weg und holt Pops', () => {
++    const g = pond();
++    place(g, 'riverkeeper', 230, 160);
++    g.sandbox.spawn('red', 520000);
++    const events = run(g, 240);
++    expect(ev(events, 'fire').length).toBeGreaterThan(0);
++    expect(ev(events, 'pop').length).toBeGreaterThan(0);
++    expect(g.state.stats.pops.riverkeeper).toBeGreaterThan(0);
++  });
++
++  it('Sonar Array: Türme im Radius sehen Camo, Riptide verlangsamt', () => {
++    const g = pond();
++    const rk = place(g, 'riverkeeper', 230, 160);
++    const r = place(g, 'ranger', 215, 105);
++    expect(g.canPlace('ranger', 215000, 105000)).toMatchObject({ ok: false });
++    buy(g, rk, [0, 2, 0]);
++    g.step(2);
++    expect(g.state.towers.find((t) => t.id === r)!.camo).toBe(true);
++    expect(g.auraOf(r).camo).toBe(true);
++    // weit weg: keine Aura
++    const far = place(g, 'ranger', 60, 122);
++    g.step(1);
++    expect(g.state.towers.find((t) => t.id === far)!.camo).toBe(false);
++    // Riptide (B3): Gegner im Radius langsamer
++    buy(g, rk, [0, 1, 0]);
++    const e = g.sandbox.spawn('green', 520000);
++    g.step(3);
++    const en = g.state.enemies.find((x) => x.id === e)!;
++    expect(en.slowBp).toBeGreaterThanOrEqual(3000);
++  });
++
++  it('Leviathan Call schlägt alle 4 s auf das stärkste Ziel', () => {
++    const g = pond();
++    const rk = place(g, 'riverkeeper', 230, 160);
++    buy(g, rk, [0, 5, 0]);
++    expect(statsOf('riverkeeper', [0, 5, 0])).toMatchObject({ thunderInterval: 240, thunderDmg: 150 });
++    g.sandbox.spawn('brute', 520000);
++    const events = run(g, 10);
++    expect(events.some((e) => e.type === 'chain' && e.tower === rk)).toBe(true);
++  });
++
++  it('Armada: Lantern Ship wirft Kanonenkugeln mit Splitterkreis, Broadside vier davon', () => {
++    expect(statsOf('riverkeeper', [0, 0, 2])).toMatchObject({ pk: 'cannonball', dtype: 'explosive', endR: 18000 });
++    expect(statsOf('riverkeeper', [0, 0, 3])).toMatchObject({ count: 4, endR: 22000 });
++    const g = pond();
++    const rk = place(g, 'riverkeeper', 230, 160);
++    buy(g, rk, [0, 0, 3]);
++    g.sandbox.spawn('green', 520000);
++    const events = run(g, 60, () => g.state.projectiles.length >= 4);
++    expect(g.state.projectiles.filter((p) => p.kind === 'cannonball').length).toBeGreaterThanOrEqual(4);
++    void events;
++  });
++
++  it('Crosspath gilt (zwei Pfade, nur einer ab Stufe 3)', () => {
++    const g = pond();
++    const rk = place(g, 'riverkeeper', 230, 160);
++    buy(g, rk, [3, 2, 0]);
++    expect(g.upgradeInfo(rk)[2].reason).toBe('crosspath'); // dritter Pfad
++    expect(g.upgradeInfo(rk)[1].reason).toBe('crosspath'); // zweiter Pfad nicht auch noch auf 3
++    expect(g.upgradeInfo(rk)[0].reason).toBeUndefined();
++  });
++});
++
++describe('Bellringer', () => {
++  it('Aura: Basis +8 % Reichweite, Swift Chime +10 % Tempo, Auren stapeln mit Markets nicht', () => {
++    const g = newGame();
++    const b = place(g, 'bellringer', 60, 200);
++    const r = place(g, 'ranger', 60, 122);
++    expect(g.auraOf(r)).toMatchObject({ rangeBp: 800, speedBp: 0 });
++    buy(g, b, [1, 0, 0]);
++    expect(g.auraOf(r).speedBp).toBe(1000);
++    buy(g, b, [1, 0, 0]);
++    expect(g.auraOf(r).speedBp).toBe(1800);
++    // ein Market mit Drum Hall (1500) liegt darunter: der stärkste Wert zählt
++    const m = place(g, 'market', 60, 170);
++    buy(g, m, [0, 0, 3]);
++    expect(g.auraOf(r).speedBp).toBe(1800);
++    // außerhalb des Radius: nichts
++    const far = place(g, 'ranger', 300, 110);
++    expect(g.auraOf(far).speedBp).toBe(0);
++  });
++
++  it('Tempo-Aura macht den Ranger tatsächlich schneller; Bellringer selbst empfängt keine Aura', () => {
++    const shots = (withBell: boolean): number => {
++      const g = newGame();
++      place(g, 'ranger', 60, 122);
++      if (withBell) buy(g, place(g, 'bellringer', 60, 200), [3, 0, 0]);
++      g.sandbox.spawn('brute', 20000);
++      return ev(run(g, 600), 'windup').length;
++    };
++    expect(shots(true)).toBeGreaterThan(shots(false));
++  });
++
++  it('Watch: Camo-Sicht und Rabatt auf Upgrades im Radius', () => {
++    const g = newGame();
++    const b = place(g, 'bellringer', 60, 200);
++    const r = place(g, 'ranger', 60, 122);
++    const before = g.upgradeInfo(r)[0].price;
++    buy(g, b, [0, 2, 0]);
++    expect(g.auraOf(r).camo).toBe(true);
++    expect(g.upgradeInfo(r)[0].price).toBeLessThan(before);
++  });
++
++  it('Alarm: alle Gegner stehen 2 s (Boss 1 s), Abklingzeit 60 s, startet nicht sofort bereit', () => {
++    const g = newGame();
++    const b = place(g, 'bellringer', 60, 200);
++    buy(g, b, [0, 3, 0]);
++    const a = g.state.abilities.find((x) => x.id === 'alarm')!;
++    expect(a).toMatchObject({ ready: false, cdTotal: 3600 });
++    expect(g.apply({ type: 'ability', ability: 'alarm' })).toEqual({ ok: false, reason: 'cooldown' });
++    waitAbility(g, 'alarm');
++    const e1 = g.sandbox.spawn('green', 90000);
++    const boss = g.sandbox.spawn('leviathan', 60000);
++    const p1 = g.state.enemies.find((x) => x.id === e1)!.progress;
++    expect(g.apply({ type: 'ability', ability: 'alarm' })).toEqual({ ok: true });
++    expect(g.state.abilities.find((x) => x.id === 'alarm')).toMatchObject({ ready: false, cdLeft: 3600 });
++    expect(g.state.enemies.find((x) => x.id === e1)!.stunTicks).toBe(120);
++    expect(g.state.enemies.find((x) => x.id === boss)!.stunTicks).toBe(60);
++    g.step(100);
++    expect(g.state.enemies.find((x) => x.id === e1)!.progress).toBe(p1);
++    g.step(40);
++    expect(g.state.enemies.find((x) => x.id === e1)!.progress).toBeGreaterThan(p1);
++  });
++
++  it('Dusk Siren: Alarmierte nehmen kurz +1 Schaden', () => {
++    const g = newGame();
++    buy(g, place(g, 'bellringer', 60, 200), [0, 5, 0]);
++    waitAbility(g, 'alarm');
++    const e = g.sandbox.spawn('green', 90000);
++    g.apply({ type: 'ability', ability: 'alarm' });
++    const en = g.state.enemies.find((x) => x.id === e)!;
++    expect(en.brittleTicks).toBe(240);
++    expect(en.stunTicks).toBe(240);
++  });
++
++  it('Toll of Coin: Einkommen am Rundenende, Event income, kein Market-Bonus', () => {
++    const g = newGame({ mods: { startCash: 100000, marketBp: 5000 } });
++    const b = place(g, 'bellringer', 60, 200);
++    buy(g, b, [0, 0, 2]);
++    expect(statsOf('bellringer', [0, 0, 2]).income).toBe(80);
++    const cash0 = g.state.cash;
++    const events = clearRound(g);
++    const inc = events.filter((e): e is Extract<SimEvent, { type: 'income' }> => e.type === 'income' && e.tower === b);
++    expect(inc).toHaveLength(1);
++    expect(inc[0]).toMatchObject({ amount: 80, cash: 80, bank: 0 });
++    expect(g.state.cash).toBeGreaterThan(cash0 + 80);
++  });
++
++  it('Wissensbaum: Silver Tongue (+Toll) und Loud Bells (Radius)', () => {
++    const g = newGame({ mods: { startCash: 100000, tollAdd: 25, auraRadiusBp: { bellringer: 1500 } } });
++    const b = place(g, 'bellringer', 60, 200);
++    buy(g, b, [0, 0, 1]);
++    expect(g.state.towers.find((t) => t.id === b)!.range).toBe(92000);
++    const events = clearRound(g);
++    expect(events.find((e) => e.type === 'income' && e.tower === b)).toMatchObject({ amount: 55 });
++  });
++});
++
++describe('Tinker', () => {
++  it('Sentry Kit: baut erst bei Gegnern in Reichweite, höchstens sentryN, löst sich nach der Lebensdauer auf', () => {
++    const g = newGame();
++    const t = place(g, 'tinker', 60, 122);
++    buy(g, t, [1, 0, 0]);
++    g.step(10);
++    expect(g.state.sentries).toHaveLength(0);
++    g.sandbox.spawn('brute', 20000);
++    const events = run(g, 400);
++    expect(g.state.sentries).toHaveLength(1);
++    const built = ev(events, 'sentry')[0] as Extract<SimEvent, { type: 'sentry' }>;
++    expect(built).toMatchObject({ tower: t, ttl: 1500 });
++    const s = g.state.sentries[0];
++    expect(Math.hypot(s.x - 60000, s.y - 122000)).toBeLessThanOrEqual(13100);
++    // Sentries schießen: fire mit sentry-Feld
++    expect(ev(events, 'fire').some((e) => (e as Extract<SimEvent, { type: 'fire' }>).sentry === s.id)).toBe(true);
++    // läuft ab (Gegner weg, Bau nur bei Gegnern)
++    for (const e of g.state.enemies.slice()) while (g.state.enemies.some((x) => x.id === e.id)) g.sandbox.hurt(e.id, 1_000_000);
++    const events2 = run(g, 1600);
++    expect(ev(events2, 'sentryGone').some((e) => (e as Extract<SimEvent, { type: 'sentryGone' }>).reason === 'expired')).toBe(true);
++    expect(g.state.sentries).toHaveLength(0);
++  });
++
++  it('Sentries zählen Pops dem Tinker, mehrere Stufen = mehr Sentries', () => {
++    const g = newGame();
++    const t = place(g, 'tinker', 60, 122);
++    buy(g, t, [3, 0, 0]);
++    expect(statsOf('tinker', [3, 0, 0])).toMatchObject({ sentryN: 3, sentryDmg: 2, sentryDtype: 'magic' });
++    for (let i = 0; i < 6; i++) g.sandbox.spawn('brute', 20000 + i * 3000);
++    for (const e of g.state.enemies) e.stunTicks = 5000; // bleiben in Reichweite stehen
++    run(g, 700);
++    expect(g.state.sentries.length).toBeGreaterThan(1);
++    expect(g.state.sentries.length).toBeLessThanOrEqual(3);
++    expect(g.state.stats.pops.tinker).toBeGreaterThan(0);
++    // Slots sind verschieden
++    expect(new Set(g.state.sentries.map((s) => s.slot)).size).toBe(g.state.sentries.length);
++  });
++
++  it('Verkauf entfernt die Sentries mit Event', () => {
++    const g = newGame();
++    const t = place(g, 'tinker', 60, 122);
++    buy(g, t, [2, 0, 0]);
++    g.sandbox.spawn('brute', 20000);
++    run(g, 500);
++    const n = g.state.sentries.length;
++    expect(n).toBeGreaterThan(0);
++    g.apply({ type: 'sell', towerId: t });
++    expect(g.state.sentries).toHaveLength(0);
++    expect(ev(g.drainEvents(), 'sentryGone')).toHaveLength(n);
++  });
++
++  it('Caltrop Layer: legt Fallen auf den Weg in Reichweite, höchstens trapMax, mit Abstand', () => {
++    const g = newGame();
++    const t = place(g, 'tinker', 60, 122);
++    buy(g, t, [0, 1, 0]);
++    const events = run(g, 2400);
++    const mine = g.state.traps.filter((x) => x.owner === t);
++    expect(mine).toHaveLength(3);
++    expect(ev(events, 'trapSet')).toHaveLength(3);
++    for (const a of mine) {
++      expect(a.kind).toBe('caltrops');
++      expect(a.charges).toBe(6);
++      expect(a.dmg).toBe(1);
++      expect(Math.hypot(a.x - 60000, a.y - 122000)).toBeLessThanOrEqual(64000);
++      // liegt auf dem Weg (Bare-Karte: erst y = 92 bis x = 120, dann nach unten)
++      expect(a.y === 92000 || a.x === 120000).toBe(true);
++      for (const b of mine) if (a !== b) expect(Math.hypot(a.x - b.x, a.y - b.y)).toBeGreaterThanOrEqual(14000);
++    }
++    // vorderste Falle liegt am Ende der Reichweite (nach rechts)
++    expect(Math.max(...mine.map((x) => x.x))).toBeGreaterThan(100000);
++  });
++
++  it('Fallen treffen Gegner (Schaden pro Stufe) und zählen für den Tinker', () => {
++    const g = newGame();
++    const t = place(g, 'tinker', 60, 122);
++    buy(g, t, [0, 3, 0]);
++    expect(statsOf('tinker', [0, 3, 0])).toMatchObject({ trapMax: 5, trapCharges: 14, trapDmg: 3 });
++    run(g, 2400);
++    const n = g.state.traps.filter((x) => x.owner === t).length;
++    expect(n).toBeGreaterThanOrEqual(3);
++    // Ironshell prallt an den Nägeln des Tinkers ab (sharp), die Fallen (magic) knacken ihn
++    const e = g.sandbox.spawn('ironshell', 0);
++    const events = run(g, 900, () => !g.state.enemies.some((x) => x.id === e));
++    expect(ev(events, 'trap').length).toBeGreaterThan(0);
++    expect(g.state.traps.some((x) => x.charges < 14 && x.owner === t)).toBe(true);
++    expect(g.state.stats.pops.tinker).toBeGreaterThan(0);
++  });
++
++  it('Power-Fallen bleiben unverändert (owner 0, Schaden aus der Power)', () => {
++    const g = newGame({ powers: { caltrops: 1 } });
++    g.apply({ type: 'power', power: 'caltrops', x: 90000, y: 92000 });
++    expect(g.state.traps[0]).toMatchObject({ owner: 0, dmg: 0, charges: 20 });
++  });
++
++  it('Overclock: Fähigkeit, die nächsten Türme im Radius doppelt so schnell für 10 s', () => {
++    const g = newGame();
++    const t = place(g, 'tinker', 60, 122);
++    buy(g, t, [0, 0, 3]);
++    const r = place(g, 'ranger', 90, 122);
++    const far = place(g, 'ranger', 300, 110);
++    const a = g.state.abilities.find((x) => x.id === 'overclock')!;
++    expect(a).toMatchObject({ ready: false, cdTotal: 3000 });
++    waitAbility(g, 'overclock');
++    expect(g.apply({ type: 'ability', ability: 'overclock' })).toEqual({ ok: true });
++    const tw = (id: number) => g.state.towers.find((x) => x.id === id)!;
++    expect(tw(r)).toMatchObject({ boostTicks: 600, boostBp: 10000 });
++    expect(tw(t)).toMatchObject({ boostTicks: 600 });
++    expect(tw(far).boostTicks).toBe(0);
++    const events = g.drainEvents();
++    expect(events.filter((e) => e.type === 'overclock')).toHaveLength(2);
++    g.step(601);
++    expect(tw(r)).toMatchObject({ boostTicks: 0, boostBp: 0 });
++  });
++
++  it('Overclock wirkt: Ranger schießt in 5 s fast doppelt so oft', () => {
++    const shots = (oc: boolean): number => {
++      const g = newGame();
++      const t = place(g, 'tinker', 60, 122);
++      buy(g, t, [0, 0, 3]);
++      place(g, 'ranger', 90, 122);
++      waitAbility(g, 'overclock');
++      if (oc) g.apply({ type: 'ability', ability: 'overclock' });
++      g.sandbox.spawn('brute', 20000);
++      g.drainEvents();
++      const events = run(g, 300);
++      return events.filter((e) => e.type === 'windup' && e.tower === g.state.towers[1].id).length;
++    };
++    expect(shots(true)).toBeGreaterThanOrEqual(shots(false) * 1.6);
++  });
++
++  it('Ultra-Overclock: 20 Türme, 15 s, Dauer-Aura +10 % Tempo', () => {
++    expect(statsOf('tinker', [0, 0, 5])).toMatchObject({ ocMax: 20, ocDur: 900, ocCd: 2100, aSpeedBp: 1000, aR: 70000 });
++    const g = newGame();
++    const t = place(g, 'tinker', 60, 122);
++    buy(g, t, [0, 0, 3]);
++    const r = place(g, 'ranger', 90, 122);
++    buy(g, t, [0, 0, 2]);
++    g.step(2);
++    expect(g.auraOf(r).speedBp).toBe(1000);
++  });
++
++  it('Wissensbaum: Spare Parts und Sharp Caltrops', () => {
++    const g = newGame({ mods: { startCash: 100000, sentryTtlBp: 2500, trapChargesAdd: 2 } });
++    const t = place(g, 'tinker', 60, 122);
++    buy(g, t, [1, 1, 0]);
++    run(g, 10);
++    expect(g.state.traps.find((x) => x.owner === t)!.charges).toBe(8);
++    g.sandbox.spawn('brute', 20000);
++    run(g, 10);
++    expect(g.state.sentries[0].ttl).toBeGreaterThan(1850);
++  });
++});
++
++describe('Helden: Auswahl', () => {
++  it('Vorgabe wren; nur der gewählte Held ist platzierbar (wrong-hero)', () => {
++    const g = newGame();
++    expect(g.info.hero).toBe('wren');
++    expect(g.canPlace('bram', 60000, 122000)).toEqual({ ok: false, reason: 'wrong-hero' });
++    expect(g.canPlace('wren', 60000, 122000)).toEqual({ ok: true });
++    const b = newGame({ hero: 'bram' });
++    expect(b.info.hero).toBe('bram');
++    expect(b.canPlace('wren', 60000, 122000)).toEqual({ ok: false, reason: 'wrong-hero' });
++    expect(b.priceOf('bram')).toBe(650);
++    const s = newGame({ hero: 'sela' });
++    expect(s.priceOf('sela')).toBe(750);
++    expect(() => createGame({ map: 'bare', difficulty: 'medium', seed: 1, hero: 'nobody' as HeroType })).toThrow();
++  });
++
++  it('ein Held pro Match, nicht verkaufbar, keine Upgrades; Modus no-hero sperrt alle', () => {
++    const g = newGame({ hero: 'sela' });
++    const id = place(g, 'sela', 60, 122);
++    expect(g.canPlace('sela', 200000, 200000)).toEqual({ ok: false, reason: 'hero-limit' });
++    expect(g.apply({ type: 'sell', towerId: id })).toEqual({ ok: false, reason: 'hero' });
++    expect(g.upgradeInfo(id)).toEqual([]);
++    const n = newGame({ hero: 'bram', mode: 'no-hero' });
++    expect(n.canPlace('bram', 60000, 122000)).toEqual({ ok: false, reason: 'mode-locked' });
++  });
++
++  it('Held-XP am Rundenende gleich wie bei Wren (60 + 20 x Runde), Level aus der Tabelle des Helden', () => {
++    for (const h of ['bram', 'sela'] as const) {
++      const g = newGame({ hero: h });
++      place(g, h, 60, 122);
++      clearRound(g);
++      expect(g.state.towers[0].heroXp).toBe(80);
++      clearRound(g);
++      expect(g.state.towers[0].heroXp).toBe(180);
++      expect(g.state.towers[0].heroLevel).toBe(2);
++    }
++  });
++
++  it('heroStartLevel und heroBoost nutzen die Tabelle des gewählten Helden', () => {
++    const g = newGame({ hero: 'bram', mods: { startCash: 100000, heroStartLevel: 5 }, powers: { heroBoost: 1 } });
++    place(g, 'bram', 60, 122);
++    expect(g.state.towers[0].heroXp).toBe(DATA.hero.bram.levels[4].xp);
++    g.apply({ type: 'power', power: 'heroBoost' });
++    const to = Math.min(20, 5 + DATA.powers.heroBoost.params.levels);
++    expect(g.state.towers[0].heroLevel).toBe(to);
++    expect(g.state.towers[0].heroXp).toBe(DATA.hero.bram.levels[to - 1].xp);
++  });
++});
++
++describe('Bram Ironwright', () => {
++  const bram = (level: number, extra: Parameters<typeof newGame>[0] = {}): Game => {
++    const g = newGame({ hero: 'bram', mods: { startCash: 100000, heroStartLevel: level }, ...extra });
++    place(g, 'bram', 60, 122);
++    return g;
++  };
++  it('Grundwerte: Hammer magic, +2 gegen Brute und Ironshell', () => {
++    const g = bram(1);
++    expect(g.state.towers[0].range).toBe(70000);
++    expect(g.state.towers[0].camo).toBe(false);
++    expect(D.hero.bram.base).toMatchObject({ pk: 'hammer', dtype: 'magic', dmg: 2, pierce: 2, bonusBrute: 2, bonusIron: 2 });
++  });
++
++  it('L3 Schmiede: Türme im Radius machen +1 Schaden, L12 +2; Hero selbst nicht', () => {
++    const g = bram(3);
++    const r = place(g, 'ranger', 90, 122);
++    expect(g.auraOf(r).dmg).toBe(1);
++    const far = place(g, 'ranger', 300, 110);
++    expect(g.auraOf(far).dmg).toBe(0);
++    const h = bram(12);
++    const r2 = place(h, 'ranger', 90, 122);
++    expect(h.auraOf(r2).dmg).toBe(2);
++  });
++
++  it('Fähigkeiten: Anvil Drop ab L10 (55 s, später 45 s), Forge of Dawn L20 (80 s)', () => {
++    expect(bram(9).state.abilities).toHaveLength(0);
++    expect(bram(10).state.abilities).toEqual([{ id: 'anvilDrop', ready: false, cdLeft: 3300, cdTotal: 3300 }]);
++    expect(bram(15).state.abilities.find((a) => a.id === 'anvilDrop')).toMatchObject({ cdTotal: 2700 });
++    const g20 = bram(20);
++    expect(g20.state.abilities.map((a) => a.id)).toEqual(['anvilDrop', 'forgeOfDawn']);
++    expect(g20.state.abilities.find((a) => a.id === 'forgeOfDawn')).toMatchObject({ cdTotal: 4800 });
++  });
++
++  it('Anvil Drop: Schaden im Radius, Boss mehr, Betäubung 2 s (Boss 0,6 s)', () => {
++    const g = bram(10);
++    waitAbility(g, 'anvilDrop');
++    const a = g.sandbox.spawn('brute', 30000);
++    const b = g.sandbox.spawn('leviathan', 30500);
++    const hpBoss = g.state.enemies.find((e) => e.id === b)!.hp;
++    expect(g.apply({ type: 'ability', ability: 'anvilDrop' })).toEqual({ ok: true });
++    const bo = g.state.enemies.find((e) => e.id === b)!;
++    expect(hpBoss - bo.hp).toBe(150);
++    expect(bo.stunTicks).toBe(36);
++    // Brute (HP 8?) stirbt, Kinder erben Betäubung nicht; Pops zählen für Bram
++    expect(g.state.enemies.find((e) => e.id === a)).toBeUndefined();
++    expect(g.state.stats.pops.bram).toBeGreaterThan(0);
++  });
++
++  it('Anvil Drop ohne Ziel in Reichweite: no-target', () => {
++    const g = bram(10);
++    waitAbility(g, 'anvilDrop');
++    expect(g.apply({ type: 'ability', ability: 'anvilDrop' })).toEqual({ ok: false, reason: 'no-target' });
++  });
++
++  it('Forge of Dawn: sharp trifft Ironshell, Panzerträger nehmen +3, endet nach 10 s', () => {
++    const g = bram(20);
++    waitAbility(g, 'forgeOfDawn');
++    // ohne Schmiede prallt sharp ab
++    const iron = g.sandbox.spawn('ironshell', 30000);
++    expect(g.sandbox.hurt(iron, 1, 'sharp')).toBe(false);
++    expect(g.apply({ type: 'ability', ability: 'forgeOfDawn' })).toEqual({ ok: true });
++    expect(g.state.forgeLeft).toBe(600);
++    expect(g.sandbox.hurt(iron, 1, 'sharp')).toBe(true);
++    g.step(601);
++    expect(g.state.forgeLeft).toBe(0);
++    const iron2 = g.sandbox.spawn('ironshell', 30000);
++    expect(g.sandbox.hurt(iron2, 1, 'sharp')).toBe(false);
++  });
++});
++
++describe('Sela Nightglass', () => {
++  const sela = (level: number): Game => {
++    const g = newGame({ hero: 'sela', mods: { startCash: 100000, heroStartLevel: level } });
++    place(g, 'sela', 60, 122);
++    return g;
++  };
++  it('Grundwerte: große Reichweite, sieht Camo', () => {
++    const g = sela(1);
++    expect(g.state.towers[0]).toMatchObject({ range: 110000, camo: true });
++  });
++
++  it('L5 Camo-Aura: Türme im Radius sehen Camo; L12 +10 % Reichweite', () => {
++    const g = sela(5);
++    const r = place(g, 'ranger', 90, 122);
++    expect(g.auraOf(r).camo).toBe(true);
++    const far = place(g, 'ranger', 300, 110);
++    expect(g.auraOf(far).camo).toBe(false);
++    g.step(2);
++    expect(g.state.towers.find((t) => t.id === r)!.camo).toBe(true);
++    const h = sela(12);
++    const r2 = place(h, 'ranger', 90, 122);
++    h.step(2);
++    expect(h.state.towers.find((t) => t.id === r2)!.range).toBe(Math.floor(68000 * 1.1));
++  });
++
++  it('Fähigkeiten: Starfall L10 (50 s), L15 (40 s), Eclipse L20 (70 s)', () => {
++    expect(sela(10).state.abilities).toEqual([{ id: 'starfall', ready: false, cdLeft: 3000, cdTotal: 3000 }]);
++    expect(sela(15).state.abilities[0]).toMatchObject({ cdTotal: 2400 });
++    expect(sela(20).state.abilities.map((a) => a.id)).toEqual(['starfall', 'eclipse']);
++    expect(sela(20).state.abilities.find((a) => a.id === 'eclipse')).toMatchObject({ cdTotal: 4200 });
++  });
++
++  it('Starfall trifft alle Gegner in ihrer Reichweite, Boss mehr, aber niemanden außerhalb', () => {
++    const g = sela(10);
++    waitAbility(g, 'starfall');
++    const near = g.sandbox.spawn('ironshell', 30000);
++    const nb = g.sandbox.spawn('leviathan', 33000);
++    const far = g.sandbox.spawn('ironshell', 900000);
++    const hp = (id: number) => g.state.enemies.find((e) => e.id === id)!.hp;
++    const hFar = hp(far), hBoss = hp(nb);
++    const events = [] as SimEvent[];
++    expect(g.apply({ type: 'ability', ability: 'starfall' })).toEqual({ ok: true });
++    events.push(...g.drainEvents());
++    expect(g.state.enemies.find((e) => e.id === near)).toBeUndefined(); // Ironshell (HP 6?) unter 20 Schaden
++    expect(hBoss - hp(nb)).toBe(120);
++    expect(hp(far)).toBe(hFar);
++    expect(ev(events, 'starfall')[0]).toMatchObject({ tower: g.state.towers[0].id });
++  });
++
++  it('Eclipse: alle Gegner halbes Tempo für 4 s, auch Blimps, Bosse und Emberlinge', () => {
++    const g = sela(20);
++    waitAbility(g, 'eclipse');
++    const ids = ['green', 'ember', 'gloomship', 'leviathan'].map((t) => g.sandbox.spawn(t as 'green', 50000));
++    expect(g.apply({ type: 'ability', ability: 'eclipse' })).toEqual({ ok: true });
++    for (const id of ids) {
++      const e = g.state.enemies.find((x) => x.id === id)!;
++      expect(e).toMatchObject({ slowBp: 5000, slowTicks: 240 });
++    }
++    g.step(241);
++    for (const id of ids) {
++      const e = g.state.enemies.find((x) => x.id === id);
++      if (e) expect(e.slowTicks).toBe(0); // Sela schießt mit; wer noch lebt, ist nicht mehr verlangsamt
++    }
++  });
++});
++
++describe('Bot und Determinismus', () => {
++  it('Bot kennt die neuen Türme und Helden; zwei Läufe = gleicher Hash', () => {
++    const text = 'ranger 0-0-0 + ranger 0-2-4 + tinker 2-2-0 + bram';
++    const a = runBot(parseStrategy(text), { difficulty: 'easy', seed: 3 });
++    const b = runBot(parseStrategy(text), { difficulty: 'easy', seed: 3 });
++    expect(a.hash).toBe(b.hash);
++    expect(a.heroLevel).toBeGreaterThan(0);
++    expect(a.pops.bram).toBeGreaterThan(0);
++    expect(a.pops.tinker).toBeGreaterThan(0);
++  });
++
++  it('Bot setzt Riverkeeper ins Wasser (Meadow-Bach)', () => {
++    const r = runBot(parseStrategy('riverkeeper 2-0-0 + ranger 0-0-0'), { difficulty: 'easy', seed: 1, maxTicks: 60 * 60 * 3 });
++    expect(r.spent.riverkeeper).toBeGreaterThan(0);
++    expect(r.pops.riverkeeper).toBeGreaterThan(0);
++  });
++
++  it('Zustand bleibt ganzzahlig (hash wirft sonst) mit Sentries, Fallen, Auren', () => {
++    const g = newGame({ hero: 'bram', mods: { startCash: 200000, heroStartLevel: 10 } });
++    const t = place(g, 'tinker', 60, 122);
++    buy(g, t, [3, 2, 0]);
++    place(g, 'bram', 90, 122);
++    for (let i = 0; i < 8; i++) g.sandbox.spawn('brute', 20000 + i * 2000);
++    run(g, 900);
++    expect(() => g.hash()).not.toThrow();
++  });
++});
+-- 
+2.43.0
+
