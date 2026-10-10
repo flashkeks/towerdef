@@ -296,3 +296,11 @@ Kettenblitz des Thornweavers nutzt das vorhandene Event `chain`. Fähigkeit `wal
 Meta: `TOWER_TYPES` hat sieben Einträge; `Profile.towerXp` / `towerTiers` je sieben (Stände bis Runde 13 werden beim Laden ergänzt: Startwert 100 bzw. `[0,0,0]`, nichts wird zurückgesetzt); `MatchResult.towerXp`/`towerTiers`/`pops` dürfen die neuen Typen weglassen;
 `LEVEL_UNLOCKS` mit `thornweaver` (7) und `alchemist` (9); `KNOWLEDGE` hat **40** Knoten (Summe 77 Punkte, jeder mit `branch/col/row/requires/cost/desc`, jede Voraussetzung steht in einer **früheren Zeile** desselben Asts);
 `MatchReport.embers.rush` (Ember Rush); `matchEmbers(…, pouchBp, rush)`. Neue IDs: `investor`, `pop-bonus` (economy) · `sharper-arrows`, `fused-shells`, `icicle-edge` (primary) · `deep-roots`, `bountiful-grove`, `potent-brews`, `midas-hands`, `field-medic` (specialists) · `sturdy-gate` (wardens) · `ember-rush` (powers).
+
+## Runde 15 (Karten, Gegner, Modi) — Schnittstelle Sim/Meta (Paket A)
+
+Spezifikation: `docs/design/karten-gegner-r15.md`. Alles abwaertskompatibel: ohne `mode` laeuft Standard, ohne neue Felder verhalten sich alte Profile wie vorher.
+
+- **Sim:** `createGame({ map: 'meadow'|'frostfen'|'quarry', mode?: ModeId, ... })`. `ModeId = 'standard'|'primary-only'|'specialists-only'|'no-hero'|'half-cash'|'deflation'`; `MODES`/`MODE_IDS` aus `sim/src/modes.ts` (Name, Beschreibung, erlaubte Tuerme, Held, Powers). `EnemyType` neu: `pink|frostling|crystal|gloomship|wyrm|colossus`. `RoundPreview.groups[]` hat `regrow`/`fortified`, `RoundPreview` neu `hasFrostling|hasBlimp|hasRegrow|hasFortified`. Karten haben `paths` (mehrere Wegaeste); `path` bleibt der erste.
+- **Meta:** `MAPS`/`MAP_IDS`/`MAP_NAMES`/`mapById`/`maxRoundOf`, `mapLock`/`isMapUnlocked`/`unlockedMaps`, `MODE_META`/`modeLock`/`isModeUnlocked`, `rewardFactors(map, mode)`, `medalsOf(p, map, mode?)`, `bestOf(p, map, difficulty, mode?)`, `allMedalCount`. `MatchResult.mode` (Vorgabe `standard`). `matchOptions(p, mode?)` liefert zusaetzlich `mode`; die Karte reicht der Aufrufer weiter. Profil: `modeMedals`/`modeBest` (Karte -> Modus -> Schwierigkeit), Schema weiter 11.
+- **Client-Platzhalter:** `client/src/match/enemy-look.ts` (`spriteType`) bis B2.

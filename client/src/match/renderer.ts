@@ -16,6 +16,7 @@ import { FxLayer, FRAMES } from './fx';
 import { footMilli } from './info';
 import { TRAP_W, monsterSprite, bigHeart, bombLantern, bubbleSprite, coinSprite, trapSprite, discSprite, enemySprite, fx as P2, heroSprite, projectileSprite, ringSprite, shadowSprite, heroMuzzle, towerMuzzle, towerSprite, type HeroFrame, type Spr, type TowerFrame } from './sprites';
 import { tex } from './textures';
+import { spriteType } from './enemy-look';
 import { PATH } from '../pixel/map/layout';
 import { TRAP_CHARGES, trapPieces } from '../powers/info';
 import type { PowerKey, TrapState } from '../sim';
@@ -25,7 +26,7 @@ export const VIEW_H = 360;
 const hex = (c: number): number => parseInt(PAL[NAME_OF(c)].slice(1), 16);
 const R = rng(77);
 
-const SHARD_COL: Record<EnemyType, number[]> = {
+const SHARD_COL: Partial<Record<EnemyType, number[]>> = {
   red: [C.red, C.crimson, C.coral], blue: [C.sky, C.navy, C.ice], green: [C.leaf, C.grass, C.yellow], gold: [C.amber, C.yellow, C.orange],
   ironshell: [C.stone, C.silver, C.slate], ember: [C.orange, C.yellow, C.red], brute: [C.slate, C.dusk, C.stone], leviathan: [C.navy, C.stone, C.sky],
 };
@@ -548,7 +549,7 @@ export class Renderer {
     const hitFlash = this.now < v.flash;
     const fr = (Math.floor(this.now / (e.type === 'gold' ? 110 : 170)) + e.id) & 3;
     const camo = e.camo && !e.revealed;
-    const s = enemySprite(e.type, fr, { camo: e.camo, damageStage: e.damageStage, hitFlash, flip: v.flip });
+    const s = enemySprite(spriteType(e.type), fr, { camo: e.camo, damageStage: e.damageStage, hitFlash, flip: v.flip });
     v.spr.texture = tex(s.canvas);
     v.spr.position.set(x - s.ax, y - s.ay + (e.type === 'leviathan' ? Math.round(Math.sin(this.now / 400) * 2) - 8 : 0));
     v.spr.zIndex = y + (e.type === 'leviathan' ? 40 : 0);
@@ -731,7 +732,7 @@ export class Renderer {
       case 'pop': {
         const x = m(ev.x), y = m(ev.y);
         fx.pop(x, y - 4, ev.etype);
-        if (ev.etype === 'brute' || ev.etype === 'leviathan') fx.burst(x, y - 6, SHARD_COL[ev.etype], 12, 1.8, 2, 0.07, 22);
+        if (ev.etype === 'brute' || ev.etype === 'leviathan') fx.burst(x, y - 6, SHARD_COL[ev.etype] ?? SHARD_COL.brute!, 12, 1.8, 2, 0.07, 22);
         if (ev.cash >= 3) fx.float(x, y - 14, `+${ev.cash}`, C.yellow, 30, 0.4);
         break;
       }
@@ -846,7 +847,7 @@ export class Renderer {
       }
       case 'shrink': {
         const x = m(ev.x), y = m(ev.y);
-        fx.anim(x, y, FRAMES.SHRINK_FRAMES, (f) => P2.shrink(ev.from, f), { per: 3 });
+        fx.anim(x, y, FRAMES.SHRINK_FRAMES, (f) => P2.shrink(spriteType(ev.from), f), { per: 3 });
         if (ev.cash >= 3) fx.float(x, y - 22, `+${ev.cash}`, C.yellow, 30, 0.4);
         break;
       }
@@ -909,7 +910,7 @@ export class Renderer {
           break;
         }
         const dur = kind === 'freeze' ? 60 : kind === 'stun' ? 30 : kind === 'burn' ? 36 : kind === 'reveal' ? 20 : 16;
-        fx.anim(0, 0, FRAMES.STATUS_FRAMES, (f) => P2.status(kind, f, etype), {
+        fx.anim(0, 0, FRAMES.STATUS_FRAMES, (f) => P2.status(kind, f, spriteType(etype)), {
           per: 4, loop: Math.max(1, Math.round(dur / (FRAMES.STATUS_FRAMES * 4))),
           follow: () => { const v = this.enemies.get(id); return v ? { x: v.cx, y: v.cy - (kind === 'freeze' ? 6 : etype === 'leviathan' ? 40 : etype === 'brute' ? 24 : 16) } : null; },
         });

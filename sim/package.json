@@ -14,7 +14,8 @@
     "bot": "tsx scripts/bot.ts",
     "typecheck": "tsc --noEmit",
     "build": "tsc -p tsconfig.build.json",
-    "matrix": "tsx scripts/matrix.ts"
+    "matrix": "tsx scripts/matrix.ts",
+    "matrix:maps": "tsx scripts/matrix-maps.ts"
   },
   "dependencies": {
     "zod": "^4.6.5"

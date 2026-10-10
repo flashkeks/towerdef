@@ -111,7 +111,7 @@ export function createBot(game: Game, mapId: string, strategy: Strategy): Bot {
   const S = game.state;
 
   // Grobe Wegstichprobe (alle 500 Milli-px) für die Platzwahl; "covered" = von schon gesetzten Türmen abgedeckt.
-  const coarse = map.path.samples.filter((_, i) => i % 5 === 0);
+  const coarse = map.paths.flatMap((p) => p.samples.filter((_, i) => i % 5 === 0));
   const covered = new Uint8Array(coarse.length);
 
   function bestSpot(type: TowerType | HeroType): { x: number; y: number } | null {
@@ -225,7 +225,7 @@ export function createBot(game: Game, mapId: string, strategy: Strategy): Bot {
     let boss = false;
     let hidden = false;
     for (const e of S.enemies) {
-      if (e.type === 'leviathan') boss = true;
+      if (e.type === 'leviathan' || e.type === 'wyrm' || e.type === 'colossus') boss = true;
       if (e.camo && !e.revealed) hidden = true;
     }
     const n = S.enemies.length;
@@ -254,7 +254,7 @@ export function createBot(game: Game, mapId: string, strategy: Strategy): Bot {
     think() {
       buy();
       abilities();
-      if (S.groups.length === 0 && S.round < 20 && S.enemies.length <= (strategy.maxField ?? 0)) game.apply({ type: 'startRound' });
+      if (S.groups.length === 0 && S.round < game.info.maxRound && S.enemies.length <= (strategy.maxField ?? 0)) game.apply({ type: 'startRound' });
     },
   };
 }

@@ -3,7 +3,7 @@
  * Reine Funktionen, kein DOM. Ganzzahlen ueberall.
  */
 import { z } from 'zod';
-import type { Difficulty, PowerKey, TowerType, Tiers } from '../../sim/src/types';
+import type { Difficulty, ModeId, PowerKey, TowerType, Tiers } from '../../sim/src/types';
 import { KNOWLEDGE, POWER_KEYS, STARTER_PACK, STARTER_TOWER_XP, emptyInventory, levelFromXp, nodeById } from './data';
 
 export const SAVE_SCHEMA = 11;
@@ -20,6 +20,10 @@ const best = z.object({ round: nat, livesLost: nat });
 const inventorySchema = z.object(Object.fromEntries(POWER_KEYS.map((k) => [k, nat.default(0)]))) as unknown as z.ZodType<Record<PowerKey, number>>;
 const bestSet = z.object({ easy: best.optional(), medium: best.optional(), hard: best.optional() });
 
+/** Runde 15: Zusatzmodi je Karte (Standard bleibt in `medals`/`best`). Karte -> Modus -> Medaillen. Fehlt in aelteren Staenden = leer. */
+const modeMedalsSchema = z.record(z.string(), z.record(z.string(), medalSet));
+const modeBestSchema = z.record(z.string(), z.record(z.string(), bestSet));
+
 export const ProfileSchema = z.object({
   schema: z.literal(SAVE_SCHEMA),
   createdAt: z.string().min(1),
@@ -31,6 +35,10 @@ export const ProfileSchema = z.object({
   knowledge: z.array(z.string()),
   medals: z.record(z.string(), medalSet),
   best: z.record(z.string(), bestSet),
+  /** Runde 15: Medaillen der Zusatzmodi (Primary Only ... Deflation) je Karte. Standard-Medaillen stehen in `medals`. */
+  modeMedals: modeMedalsSchema.default({}),
+  /** Runde 15: Bestleistung der Zusatzmodi je Karte. Standard in `best`. */
+  modeBest: modeBestSchema.default({}),
   /** Match-IDs, die schon verbucht sind (juengste hinten). */
   seenMatches: z.array(z.string()).max(SEEN_MATCHES_MAX),
   matchesPlayed: nat,
@@ -57,6 +65,8 @@ export function newProfile(now = new Date(0).toISOString()): Profile {
     knowledge: [],
     medals: {},
     best: {},
+    modeMedals: {},
+    modeBest: {},
     seenMatches: [],
     matchesPlayed: 0,
     matchesWon: 0,
@@ -72,6 +82,19 @@ export const emptyMedals = (): Record<Difficulty, boolean> => ({ easy: false, me
 /** Anzahl der ersten Medaillen (je Karte und Schwierigkeit eine) = Wissenspunkte aus Medaillen (Runde 13). */
 export const medalCount = (p: Pick<Profile, 'medals'>): number =>
   Object.values(p.medals).reduce((s, m) => s + (m.easy ? 1 : 0) + (m.medium ? 1 : 0) + (m.hard ? 1 : 0), 0);
+
+/** Medaillen einer Karte in einem Modus (`standard` = die alten `medals`). Immer ein vollstaendiges Objekt. */
+export function medalsOf(p: Pick<Profile, 'medals' | 'modeMedals'>, map: string, mode: ModeId = 'standard'): Record<Difficulty, boolean> {
+  const m = mode === 'standard' ? p.medals[map] : p.modeMedals[map]?.[mode];
+  return m ? { easy: !!m.easy, medium: !!m.medium, hard: !!m.hard } : emptyMedals();
+}
+/** Bestleistung einer Karte in einem Modus und auf einer Schwierigkeit. */
+export function bestOf(p: Pick<Profile, 'best' | 'modeBest'>, map: string, difficulty: Difficulty, mode: ModeId = 'standard'): { round: number; livesLost: number } | undefined {
+  return (mode === 'standard' ? p.best[map] : p.modeBest[map]?.[mode])?.[difficulty];
+}
+/** Alle Medaillen (Standard und Modi), z. B. fuer die Anzeige. Wissenspunkte zaehlt nur `medalCount` (Standard). */
+export const allMedalCount = (p: Pick<Profile, 'medals' | 'modeMedals'>): number =>
+  medalCount(p) + Object.values(p.modeMedals).reduce((s, byMode) => s + Object.values(byMode).reduce((t, m) => t + (m.easy ? 1 : 0) + (m.medium ? 1 : 0) + (m.hard ? 1 : 0), 0), 0);
 
 export type LoadResult = { profile: Profile; reset: boolean; reason?: 'old-schema' | 'invalid' };
 

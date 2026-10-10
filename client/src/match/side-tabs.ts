@@ -5,6 +5,7 @@
 import { MAX_ROUND, type Game, type GameState } from '../sim';
 import { t } from '../i18n/t';
 import { slotHint, slotUsable, powerSlots, cycleTab, SIDE_TABS, type PowerSlot, type SideTab } from '../powers/info';
+import { spriteType } from './enemy-look';
 import { ENEMY_NAMES, WARNING_TEXT, previewRound, totalEnemies, waveRows, warnings, type Warning } from '../powers/wave';
 import { h, setClass } from '../ui/dom';
 import { enemySprite, iconPower } from './sprites';
@@ -125,7 +126,7 @@ export class SideTabs {
       const e = h('div', `wv-row${row.camo ? ' camo' : ''}`);
       e.dataset.type = row.type;
       const art = h('div', 'wv-art');
-      art.append(copyCanvas(enemySprite(row.type, 0, { camo: row.camo }).canvas, row.type === 'leviathan' ? 1 : 2));
+      art.append(copyCanvas(enemySprite(spriteType(row.type), 0, { camo: row.camo }).canvas, row.type === 'leviathan' ? 1 : 2));
       const nm = h('div', 'wv-name', ENEMY_NAMES[row.type] ?? row.type);
       if (row.camo) nm.append(h('span', 'wv-tag', ' camo'));
       e.append(art, nm, h('div', 'wv-n num', `x${row.n}`));

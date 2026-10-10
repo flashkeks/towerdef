@@ -42,7 +42,8 @@
    "gold",
    "gold"
   ],
-  "armor": true
+  "armor": true,
+  "heavy": true
  },
  "ember": {
   "name": "Emberling",
@@ -67,7 +68,8 @@
   "stages": [
    70,
    40
-  ]
+  ],
+  "heavy": true
  },
  "leviathan": {
   "name": "Dusk Leviathan",
@@ -85,6 +87,109 @@
    75,
    50,
    25
+  ],
+  "heavy": true,
+  "hullCash": 100
+ },
+ "pink": {
+  "name": "Pink Glim",
+  "hp": 1,
+  "tempo": 350,
+  "radius": 6,
+  "children": [
+   "gold"
   ]
+ },
+ "frostling": {
+  "name": "Frostling",
+  "hp": 1,
+  "tempo": 180,
+  "radius": 7,
+  "children": [
+   "pink",
+   "pink"
+  ],
+  "immuneExplosive": true
+ },
+ "crystal": {
+  "name": "Crystal Brute",
+  "hp": 20,
+  "tempo": 120,
+  "radius": 10,
+  "children": [
+   "brute",
+   "brute"
+  ],
+  "stages": [
+   75,
+   50,
+   25
+  ],
+  "heavy": true
+ },
+ "gloomship": {
+  "name": "Gloomship",
+  "hp": 200,
+  "tempo": 80,
+  "radius": 16,
+  "children": [
+   "crystal",
+   "crystal",
+   "crystal"
+  ],
+  "blimp": true,
+  "hullCash": 50,
+  "heavy": true
+ },
+ "wyrm": {
+  "name": "Frost Wyrm",
+  "hp": 900,
+  "tempo": 50,
+  "radius": 24,
+  "children": [
+   "gloomship",
+   "gloomship"
+  ],
+  "boss": true,
+  "stages": [
+   66,
+   33
+  ],
+  "bossHp": {
+   "easy": 600,
+   "medium": 900,
+   "hard": 1200
+  },
+  "hullCash": 150,
+  "heavy": true
+ },
+ "colossus": {
+  "name": "Ember Colossus",
+  "hp": 2500,
+  "tempo": 40,
+  "radius": 26,
+  "children": [
+   "gloomship",
+   "gloomship",
+   "crystal",
+   "crystal",
+   "crystal",
+   "crystal"
+  ],
+  "boss": true,
+  "stages": [
+   80,
+   60,
+   40,
+   20
+  ],
+  "bossHp": {
+   "easy": 1700,
+   "medium": 2500,
+   "hard": 3200
+  },
+  "immuneStun": true,
+  "hullCash": 150,
+  "heavy": true
  }
 }

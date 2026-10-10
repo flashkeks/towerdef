@@ -18,12 +18,15 @@ function fmt(r: BotResult, ms: number): string {
 }
 
 const [, , stratArg, diffArg, seedArg] = process.argv;
+// Runde 15: BOT_MAP=frostfen|quarry, BOT_MODE=primary-only|...
+const MAP = process.env.BOT_MAP ?? 'meadow';
+const MODE = (process.env.BOT_MODE ?? 'standard') as import('../src/types.js').ModeId;
 const strategies = stratArg ? [stratArg] : DEFAULTS;
 const diffs: Difficulty[] = diffArg ? [diffArg as Difficulty] : ['easy', 'medium', 'hard'];
 for (const s of strategies) {
   for (const d of diffs) {
     const t0 = Date.now();
-    const r = runBot(parseStrategy(s), { difficulty: d, seed: Number(seedArg ?? 1), towerXp: { ranger: 0, bombardier: 0, frostcaller: 0, longshot: 0, market: 0, thornweaver: 0, alchemist: 0 } });
+    const r = runBot(parseStrategy(s), { difficulty: d, seed: Number(seedArg ?? 1), map: MAP, mode: MODE, towerXp: { ranger: 0, bombardier: 0, frostcaller: 0, longshot: 0, market: 0, thornweaver: 0, alchemist: 0 } });
     console.log(fmt(r, Date.now() - t0));
   }
 }

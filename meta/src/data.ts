@@ -2,14 +2,69 @@
  * Feste Zahlen des Fortschritts (docs/design/meta.md). Reine Daten, kein Zustand.
  * Spielersichtbare Texte sind Englisch.
  */
-import type { Difficulty, HeroType, PowerKey, TowerType } from '../../sim/src/types';
+import type { Difficulty, HeroType, ModeId, PowerKey, TowerType } from '../../sim/src/types';
 import { DATA, POWER_KEYS } from '../../sim/src/data';
+import { MODE_IDS, MODES } from '../../sim/src/modes';
 
 export const TOWER_TYPES: readonly TowerType[] = ['ranger', 'bombardier', 'frostcaller', 'longshot', 'market', 'thornweaver', 'alchemist'];
 export const DIFFICULTIES: readonly Difficulty[] = ['easy', 'medium', 'hard'];
-export const MAP_IDS: readonly string[] = ['meadow'];
-export const MAP_NAMES: Record<string, string> = { meadow: 'Lanternfall Meadow' };
+/** Letzte Runde von Lanternfall Meadow (Freeplay-Grenze der alten Formeln). Je Karte: `MAPS[i].maxRound` / `maxRoundOf(map)`. */
 export const MAX_ROUND = 20;
+
+// ---------------------------------------------------------------- Karten und Modi (Runde 15, docs/design/karten-gegner-r15.md)
+
+export type MapTier = 'beginner' | 'intermediate' | 'advanced';
+export interface MapUnlockRule {
+  /** Spieler-Level, ab dem die Karte offen ist. */
+  level: number;
+  /** ... oder diese Medaille (Standard-Modus) auf der Vorgaengerkarte. */
+  medal: { map: string; difficulty: Difficulty };
+}
+export interface MapMeta {
+  id: string;
+  name: string;
+  tier: MapTier;
+  /** Anzeigename der Stufe (Englisch). */
+  tierName: string;
+  /** Anzahl Runden = letzte Runde (Sieg). */
+  maxRound: number;
+  /** Boss der letzten Runde (Anzeige). */
+  boss: string;
+  /** Keine Regel = von Anfang an offen. */
+  unlock: MapUnlockRule | null;
+  /** Belohnungsfaktor Spieler-XP in Basispunkten (10000 = x1,0). */
+  xpBp: number;
+  /** Belohnungsfaktor Embers in Basispunkten. */
+  embersBp: number;
+  desc: string;
+}
+export const MAPS: readonly MapMeta[] = [
+  { id: 'meadow', name: 'Lanternfall Meadow', tier: 'beginner', tierName: 'Beginner', maxRound: DATA.roundsByMap.meadow.length, boss: 'Dusk Leviathan', unlock: null, xpBp: 10000, embersBp: 10000, desc: 'A long road through a summer meadow. Plenty of room to build.' },
+  { id: 'frostfen', name: 'Frostfen Crossing', tier: 'intermediate', tierName: 'Intermediate', maxRound: DATA.roundsByMap.frostfen.length, boss: 'Frost Wyrm', unlock: { level: 8, medal: { map: 'meadow', difficulty: 'medium' } }, xpBp: 11500, embersBp: 12000, desc: 'Two roads over a frozen lake meet in the middle. The ice cannot be built on.' },
+  { id: 'quarry', name: 'Ember Quarry', tier: 'advanced', tierName: 'Advanced', maxRound: DATA.roundsByMap.quarry.length, boss: 'Ember Colossus', unlock: { level: 12, medal: { map: 'frostfen', difficulty: 'medium' } }, xpBp: 13000, embersBp: 14000, desc: 'A short, winding road through lava and rock. Very little room to build.' },
+];
+export const MAP_IDS: readonly string[] = MAPS.map((m) => m.id);
+export const MAP_NAMES: Record<string, string> = Object.fromEntries(MAPS.map((m) => [m.id, m.name]));
+export const mapById = (id: string): MapMeta | undefined => MAPS.find((m) => m.id === id);
+/** Letzte Runde der Karte; unbekannte Karten zaehlen wie Meadow. */
+export const maxRoundOf = (map: string): number => mapById(map)?.maxRound ?? MAX_ROUND;
+
+export { MODE_IDS };
+/** Bonus auf Spieler-XP und Embers in den Zusatzmodi (+20 %). */
+export const MODE_BONUS_BP = 2000;
+export interface ModeMeta {
+  id: ModeId;
+  name: string;
+  desc: string;
+  /** Frei ab Standard-Medaille dieser Schwierigkeit (oder haerter) auf derselben Karte; null = immer offen. */
+  unlockMedal: Difficulty | null;
+  /** Bonus-Basispunkte auf XP und Embers. */
+  bonusBp: number;
+}
+const MODE_UNLOCK: Record<ModeId, Difficulty | null> = { standard: null, 'primary-only': 'easy', 'specialists-only': 'medium', 'no-hero': 'medium', 'half-cash': 'hard', deflation: 'hard' };
+export const MODE_META: Record<ModeId, ModeMeta> = Object.fromEntries(
+  MODE_IDS.map((id) => [id, { id, name: MODES[id].name, desc: MODES[id].desc, unlockMedal: MODE_UNLOCK[id], bonusBp: id === 'standard' ? 0 : MODE_BONUS_BP }]),
+) as Record<ModeId, ModeMeta>;
 
 /** Turm-XP-Kosten je Stufe 1..5 (Index 0 = Stufe 1). */
 export const TIER_COST: readonly number[] = [100, 250, 900, 2500, 8000];
@@ -50,11 +105,11 @@ export function xpForLevel(l: number): number {
   return s;
 }
 
-export type UnlockKind = 'tower' | 'hero' | 'difficulty';
+export type UnlockKind = 'tower' | 'hero' | 'difficulty' | 'map';
 export interface LevelUnlock {
   level: number;
   kind: UnlockKind;
-  id: TowerType | HeroType | Difficulty;
+  id: TowerType | HeroType | Difficulty | string;
   title: string;
   text: string;
 }
@@ -66,6 +121,8 @@ export const LEVEL_UNLOCKS: readonly LevelUnlock[] = [
   { level: 5, kind: 'tower', id: 'longshot', title: 'Longshot', text: 'Sniper that sees the whole map. Slow, heavy shots.' },
   { level: 6, kind: 'tower', id: 'market', title: 'Lantern Market', text: 'Does not attack. Pays gold every round, banks interest, or buffs nearby towers.' },
   { level: 7, kind: 'tower', id: 'thornweaver', title: 'Thornweaver', text: 'Nature caster. Thorn fans, chain lightning, vines and a wall of trees.' },
+  { level: 8, kind: 'map', id: 'frostfen', title: 'Frostfen Crossing', text: 'A frozen lake with two roads. Intermediate map.' },
+  { level: 12, kind: 'map', id: 'quarry', title: 'Ember Quarry', text: 'Lava, rock and a short road. Advanced map.' },
   { level: 9, kind: 'tower', id: 'alchemist', title: 'Alchemist', text: 'Lobs acid, brews buffs for nearby towers, turns lead into gold.' },
 ];
 /** Level, ab dem Turm/Held/Schwierigkeit offen ist; fehlt = von Anfang an. */

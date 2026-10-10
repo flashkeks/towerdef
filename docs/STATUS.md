@@ -4,6 +4,26 @@ Arbeitsauftrag: [`/run.md`](../run.md) (**Runde 13 abgeschlossen** (Market, Long
 Frühere Aufträge: [archiv/run-runde1.md](archiv/run-runde1.md), [archiv/run-runde2.md](archiv/run-runde2.md), [archiv/run-runde3.md](archiv/run-runde3.md), [archiv/run-runde4.md](archiv/run-runde4.md), [archiv/run-runde5.md](archiv/run-runde5.md), [archiv/run-runde6.md](archiv/run-runde6.md), [archiv/run-runde7.md](archiv/run-runde7.md), [archiv/run-runde8-verworfen.md](archiv/run-runde8-verworfen.md), [archiv/run-runde8.md](archiv/run-runde8.md), [archiv/run-runde9.md](archiv/run-runde9.md).
 
 
+## Runde 15 A (Sim + Meta, 10.10.2026) — fertig, wartet auf Merge
+
+- **Sim:** Karten `meadow`/`frostfen`/`quarry` (`createGame({ map, mode })`), Frostfen mit zwei Wegaesten (je 1.356 px), Quarry ein Weg (1.052 px); Gegner pink/frostling/crystal/gloomship, Merkmale Regrow/Fortified, Bosse wyrm (R25 Frostfen) und colossus (R30 Quarry); Modi `primary-only`, `specialists-only`, `no-hero`, `half-cash`, `deflation`. Rundenlisten `sim/data/rounds/<karte>.json` (Frostfen 25, Quarry 30). Wasser/Lava/Blocker in den Kartendateien kommen aus Branch r15-b1.
+- **Meta:** Schema bleibt 11; `modeMedals`/`modeBest` sind neu mit Vorgabe `{}` — alte Profile laden unveraendert. Medaillen je Karte x Schwierigkeit x Modus (`medalsOf`, `bestOf`, `allMedalCount`), Wissenspunkte zaehlen nur Standard-Medaillen, Karten-Freischaltung (`mapLock`/`isMapUnlocked`, Level 8 / 12 oder Medium auf der Vorgaengerkarte), Modus-Freischaltung (`modeLock`), Belohnungsfaktoren (`rewardFactors`: XP 1,0/1,15/1,3, Embers 1,0/1,2/1,4, Modus +20 %).
+- **Client (nur Uebergangsstand):** `client/src/match/enemy-look.ts` bildet die neuen Gegner auf alte Sprites ab (Platzhalter bis B2), Namen in `powers/wave.ts`; tsc/Tests/Build gruen. Kartenwahl, Modus-Auswahl, Boss-Effekte sind Paket C.
+
+**Bot-Matrix je Karte** (`cd sim && MAP=frostfen|quarry MATRIX_SEEDS=1 npm run matrix:maps`; Sim und Bot deterministisch, Seeds geben gleiche Zahlen):
+
+| Aufstellung (Auszug) | Held | Frostfen easy / medium / hard | Quarry easy / medium / hard |
+|---|---|---|---|
+| Ranger + Bombardier (T4) | ja | ✔ / R25 / R24 | R28 / R26 / R21 |
+| nur Ranger (T4) | ja | ✔ / ✔ (64 L) / R25 | R26 / R21 / R14 |
+| Ranger + Longshot (T4) | ja | ✔ / ✔ (94 L) / R9 | R29 / R13 / R8 |
+| Ranger + Bombardier + Frostcaller (T4) | ja | ✔ / R25 / R25 | R28 / R28 / R24 |
+| dieselben, ohne Held | nein | Medium nur R14–R25, kein Sieg ausser Longshot-Kombi bis R17 | Medium R10–R24 |
+| Ranger + Bombardier + Frostcaller (T5) | ja | Medium ✔ (138 L) | Medium ✔ (118 L) |
+| Ranger + Longshot + Bombardier (T5) | ja | Medium ✔ (150 L) | Medium ✔ (140 L) |
+
+Lesart: **Frostfen Medium** schaffen 2 von 10 T4-Aufstellungen mit Held knapp (Rest stirbt am Frost Wyrm R25), mit T5 sicher. **Quarry Medium** schafft keine T4-Aufstellung (bester R28 am Colossus-Vorlauf), mit T5 und Held ja, T5-Aufstellung ohne Planung (Reihenfolge vertauscht) faellt bei R28. Passt zu § 2 der Spezifikation. Hard auf beiden Karten ohne T5 nicht machbar. Hard mit T5 nicht eigens gemessen.
+
 **Runde 13 C (Client-Einbau, 09.10.2026):** Turm-Leiste mit fuenf Tuermen (T = Longshot, Z = Market, B = Withdraw), Market im Match (Aura-Ring statt Schussring, Faehnchen an Tuermen in der Aura, Muenzflug zur Geldanzeige, Bank mit Withdraw im Panel), Longshot (kein Ring, Muendungsblitz/Rueckstoss, Ricochet, Boss-Markierung, Focus/Supply Drop/Grant mit Icons), Wissensbaum fuer 28 Knoten in 5 Aesten (`screens/knowledge-layout.ts`), Projektile starten am Muendungspunkt, Menue ohne Musik, AudioContext ab dem ersten Klick, Mix Effekte x0,7 / Musik x0,8. Tests `client/test/r13-match.test.ts`, Bilder `client/docs/r13/c-*.png`, Skript `client/scripts/shots-r13-c.mjs`.
 
 **Runde 14b (Feinschliff nach Max' Playtest, 09.10.2026):** Wissensbaum als eine Tafel (fuenf Aeste nebeneinander, Abzeichen mit leuchtenden Ranken, Infofeld unten, Kauf-Funken, kein Scrollen bei 1280 x 720 und 1920 x 1080; Layout `knowledge-layout.ts` skaliert mit dem Fenster). Turm-Leiste: Porträts zugeschnitten, ganzzahlig, mittig; ab 1000 px Hoehe Kacheln mit 2x-Figuren. Bilder `client/docs/r14/polish-*.png`, Skript `client/scripts/shots-r14-polish.mjs`.
