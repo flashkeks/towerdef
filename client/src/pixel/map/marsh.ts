@@ -28,7 +28,7 @@ function isWater(x: number, y: number, pd: number): boolean {
   if (pd < MA_HW + 2.5) return false;
   const e = Math.min(x, MAP_W - 1 - x, y, MAP_H - 1 - y);
   if (e < 6 + 20 * vnoise(x, y, 30, 71)) return false;
-  const land = 18 + 30 * sm(0.38, 0.7, vnoise(x, y, 42, 72));
+  const land = 30 + 30 * sm(0.34, 0.66, vnoise(x, y, 42, 72));
   if (pd < land) return false;
   if (vnoise(x, y, 24, 73) > 0.8 && pd < 130) return false;
   for (const [ix, iy, ir] of ISLANDS) if (Math.hypot(x - ix, (y - iy) * 1.1) < ir + 4 * vnoise(x, y, 8, 74)) return false;
@@ -49,7 +49,7 @@ export const waterAreas = (): number[] => maskAreas(WATER_MASK);
 // ---------- Dinge ----------
 export type MarshProp = SceneProp<MarshKind>;
 export const MARSH_R: Record<MarshKind, number> = {
-  cypress: 7, dead: 4, mangrove: 9, sbush: 3, reeds: 0, hut: 20, lantern: 2, mushroom: 2, mosslog: 0, rock: 5, stump: 4, boat: 0,
+  cypress: 5, dead: 3, mangrove: 7, sbush: 3, reeds: 0, hut: 20, lantern: 2, mushroom: 2, mosslog: 0, rock: 5, stump: 4, boat: 0,
   heron: 0, totem: 4, fern: 0, bones: 0,
 };
 const P = (kind: MarshKind, x: number, y: number, v = 0): MarshProp => ({ kind, x, y, v, r: MARSH_R[kind] });
@@ -100,7 +100,7 @@ export const MARSH_PROPS: MarshProp[] = (() => [...HAND, ...scatterProps()].sort
 
 /** Blocker: alle Dinge mit Radius auf Land (was im Wasser steht, braucht die Sim nicht zu kennen). */
 export function blockers(): [number, number, number][] {
-  return blockersOf(MARSH_PROPS, raw.buildArea, (q) => waterAt(q.x, q.y) < -2);
+  return blockersOf(MARSH_PROPS, raw.buildArea, (q) => waterAt(q.x, q.y) < -2 || ['sbush', 'lantern', 'mushroom', 'fern', 'stump', 'rock'].includes(q.kind));
 }
 
 // ---------- Malen ----------

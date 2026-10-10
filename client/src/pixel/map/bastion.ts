@@ -151,9 +151,11 @@ function scatterProps(): BastionProp[] {
 }
 export const BASTION_PROPS: BastionProp[] = (() => [...HAND, ...scatterProps()].sort((a, b) => a.y - b.y))();
 
+/** Kleinkram sperrt keinen Bauplatz (Zierde): Busch, Stein, Fass, Kiste, Laterne, Grab, Schutt, Saeule, Feuerschale, Banner. */
+const SMALL = new Set<string>(['bush', 'rock', 'barrel', 'crate', 'lamp', 'grave', 'rubble', 'pillar', 'brazier', 'banner']);
 /** Alle Blocker: Dinge, Mauer-Kreisketten und die Grundflaeche des Bergfrieds. */
 export function blockers(): [number, number, number][] {
-  const props = blockersOf(BASTION_PROPS, raw.buildArea, (q) => q.kind === 'tower' && false);
+  const props = blockersOf(BASTION_PROPS, raw.buildArea, (q) => SMALL.has(q.kind));
   return [...props, ...wallBlockers(), ...fillCircles(KEEP_POLY.map(([x, y]) => [x, y] as Pt), 9)];
 }
 

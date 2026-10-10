@@ -73,7 +73,7 @@ const onBridge = (x: number, y: number): boolean => BRIDGES.some((b) => pathDist
 // ---------- Dinge ----------
 export type SkyProp = SceneProp<SkyKind>;
 export const SKY_R: Record<SkyKind, number> = {
-  pine: 5, larch: 4, boulder: 9, spire: 8, cairn: 3, hut: 15, watchtower: 10, beacon: 3, goat: 0, tent: 11, banner: 2, campfire: 5,
+  pine: 4, larch: 3, boulder: 7, spire: 7, cairn: 3, hut: 15, watchtower: 10, beacon: 3, goat: 0, tent: 11, banner: 2, campfire: 5,
   gatepost: 4, sign: 2, shrub: 3, snowrock: 5, plank: 5, flagpole: 2,
 };
 const P = (kind: SkyKind, x: number, y: number, v = 0): SkyProp => ({ kind, x, y, v, r: SKY_R[kind] });
@@ -139,9 +139,11 @@ function scatterProps(): SkyProp[] {
 }
 export const SKY_PROPS: SkyProp[] = (() => [...HAND, ...scatterProps()].sort((a, b) => a.y - b.y))();
 
+/** Kleinkram sperrt keinen Bauplatz (Zierde). */
+const SMALL = new Set<string>(['shrub', 'cairn', 'snowrock', 'sign', 'plank', 'campfire', 'flagpole', 'banner', 'goat']);
 /** Blocker: Dinge mit Radius, Schluchten und Massiv als gefuellte Kreise, der Bach als Kette. */
 export function blockers(): [number, number, number][] {
-  const props = blockersOf(SKY_PROPS, raw.buildArea, (q) => inMassif(q.x, q.y));
+  const props = blockersOf(SKY_PROPS, raw.buildArea, (q) => inMassif(q.x, q.y) || SMALL.has(q.kind));
   const far = (x: number, y: number): boolean => at(pcs.dist, x, y) < SK_HW + 1;
   const gorges = GORGES.flatMap((g) => fillCircles(g, 7, far));
   const massif = fillCircles(MASSIF, 8, (x, y) => at(pcs.dist, x, y) < SK_HW + 8 || x < 0 || y < 0);

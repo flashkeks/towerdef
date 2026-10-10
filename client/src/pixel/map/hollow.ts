@@ -43,7 +43,7 @@ const plotAt = (x: number, y: number, pad = 0): Plot | null => PLOTS.find((p) =>
 // ---------- Dinge ----------
 export type HollowProp = SceneProp<HollowKind>;
 export const HOLLOW_R: Record<HollowKind, number> = {
-  maple: 6, oak: 8, birch: 4, fir: 5, willow: 8, apple: 5, bush: 3, rock: 4, boulder: 8, stump: 4, log: 5,
+  maple: 4, oak: 5, birch: 2, fir: 3, willow: 6, apple: 3, bush: 2, rock: 3, boulder: 8, stump: 4, log: 5,
   barn: 22, farmhouse: 17, windmill: 16, haystack: 7, bale: 5, balestack: 8, pumpkin: 5, scarecrow: 3, cornshock: 2, wagon: 12,
   well: 7, lamp: 2, sign: 2, crate: 4, barrel: 3, cattail: 0, beehive: 3, basket: 3, dock: 0, boat: 0, coop: 10,
 };
@@ -109,10 +109,12 @@ function scatterProps(): HollowProp[] {
 }
 export const HOLLOW_PROPS: HollowProp[] = (() => [...HAND, ...scatterProps()].filter((p) => p.kind !== 'windmill').sort((a, b) => a.y - b.y))();
 
-/** Blocker: alle Dinge mit Radius plus die gebackene Muehle. */
+/** Kleinkram (Busch, Stein, Laterne, Kuerbis ...) sperrt keinen Bauplatz: er ist Zierde, der Turm darf davor stehen. */
+const SMALL = new Set<string>(['bush', 'rock', 'stump', 'log', 'lamp', 'sign', 'cornshock', 'crate', 'barrel', 'basket', 'beehive', 'scarecrow', 'pumpkin', 'bale', 'apple']);
+/** Blocker: Baeume, Gebaeude und grosse Dinge plus die gebackene Muehle. */
 export function blockers(): [number, number, number][] {
   const [bx, by, bw, bh] = raw.buildArea;
-  return [...blockersOf(HOLLOW_PROPS, [bx, by, bw, bh], (q) => inPond(q.x, q.y, -3)), [MILL.x, MILL.y - 2, HOLLOW_R.windmill]];
+  return [...blockersOf(HOLLOW_PROPS, [bx, by, bw, bh], (q) => inPond(q.x, q.y, -3) || SMALL.has(q.kind)), [MILL.x, MILL.y - 2, HOLLOW_R.windmill]];
 }
 
 // ---------- Malen ----------
