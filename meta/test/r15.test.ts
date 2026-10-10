@@ -11,12 +11,12 @@ const res = (o: Partial<MatchResult> = {}): MatchResult => ({ matchId: 'm1', map
 const medal = (p: Profile, map: string, ...ds: ('easy' | 'medium' | 'hard')[]): Profile => ({ ...p, medals: { ...p.medals, [map]: { easy: ds.includes('easy'), medium: ds.includes('medium'), hard: ds.includes('hard') } } });
 
 describe('Karten: Export MAPS', () => {
-  it('drei Karten, Stufen, Faktoren; Endrunde gilt je Schwierigkeit (Runde 15b)', () => {
-    expect(MAP_IDS).toEqual(['meadow', 'frostfen', 'quarry']);
+  it('zehn Karten (Runde 16), Stufen, Faktoren; Endrunde gilt je Schwierigkeit (Runde 15b)', () => {
+    expect(MAP_IDS).toEqual(['meadow', 'hollow', 'marsh', 'frostfen', 'bastion', 'quarry', 'skyreach', 'dunes', 'harbor', 'spire']);
     expect(END_ROUND).toEqual({ easy: 40, medium: 60, hard: 80 });
-    expect(MAPS.map((m) => m.tierName)).toEqual(['Beginner', 'Intermediate', 'Advanced']);
-    expect(MAPS.map((m) => m.xpBp)).toEqual([10000, 11500, 13000]);
-    expect(MAPS.map((m) => m.embersBp)).toEqual([10000, 12000, 14000]);
+    expect(MAPS.map((m) => m.tierName)).toEqual(['Beginner', 'Beginner', 'Intermediate', 'Intermediate', 'Intermediate', 'Advanced', 'Advanced', 'Advanced', 'Expert', 'Expert']);
+    expect(MAPS.map((m) => m.xpBp)).toEqual([10000, 10000, 11500, 11500, 11500, 13000, 13000, 13000, 15000, 15000]);
+    expect(MAPS.map((m) => m.embersBp)).toEqual([10000, 10000, 12000, 12000, 12000, 14000, 14000, 14000, 16000, 16000]);
     expect(MAP_NAMES).toMatchObject({ meadow: 'Lanternfall Meadow', frostfen: 'Frostfen Crossing', quarry: 'Ember Quarry' });
     expect(maxRoundOf('quarry', 'easy')).toBe(40);
     expect(maxRoundOf('quarry', 'hard')).toBe(80);
@@ -35,20 +35,22 @@ describe('Karten-Freischaltung', () => {
     expect(unlockLevel('quarry')).toBe(12);
   });
   it('oder Medium-Medaille auf der Vorgaengerkarte (Easy genuegt nicht, Hard zaehlt mit)', () => {
-    expect(isMapUnlocked(medal(newProfile(), 'meadow', 'easy'), 'frostfen')).toBe(false);
-    expect(isMapUnlocked(medal(newProfile(), 'meadow', 'medium'), 'frostfen')).toBe(true);
-    expect(isMapUnlocked(medal(newProfile(), 'meadow', 'hard'), 'frostfen')).toBe(true);
-    const p = medal(newProfile(), 'meadow', 'medium');
+    // Runde 16: Leiter meadow → hollow → marsh → frostfen → bastion → quarry …
+    expect(isMapUnlocked(medal(newProfile(), 'meadow', 'easy'), 'hollow')).toBe(false);
+    expect(isMapUnlocked(medal(newProfile(), 'meadow', 'medium'), 'hollow')).toBe(true);
+    expect(isMapUnlocked(medal(newProfile(), 'meadow', 'hard'), 'hollow')).toBe(true);
+    expect(isMapUnlocked(medal(newProfile(), 'marsh', 'medium'), 'frostfen')).toBe(true);
+    const p = medal(newProfile(), 'frostfen', 'medium');
     expect(isMapUnlocked(p, 'quarry')).toBe(false);
-    expect(isMapUnlocked(medal(p, 'frostfen', 'medium'), 'quarry')).toBe(true);
+    expect(isMapUnlocked(medal(p, 'bastion', 'medium'), 'quarry')).toBe(true);
     const l = mapLock(newProfile(), 'quarry');
     expect(l.unlocked).toBe(false);
     expect(l.text).toContain('level 12');
-    expect(l.text).toContain('Frostfen Crossing');
+    expect(l.text).toContain('Sunken Bastion');
   });
   it('unlockAll oeffnet alles; unlockedMaps listet die offenen', () => {
     expect(unlockedMaps(newProfile()).map((m) => m.id)).toEqual(['meadow']);
-    expect(unlockedMaps({ ...newProfile(), settings: { volume: 70, unlockAll: true } })).toHaveLength(3);
+    expect(unlockedMaps({ ...newProfile(), settings: { volume: 70, unlockAll: true } })).toHaveLength(10);
   });
 });
 
@@ -222,9 +224,9 @@ describe('Belohnungsfaktoren', () => {
 });
 
 describe('Neu geoeffnet im Bericht', () => {
-  it('Medium-Sieg auf Meadow oeffnet Frostfen und Standard-Modi dort nicht (nur Meadow)', () => {
+  it('Medium-Sieg auf Meadow oeffnet Harvest Hollow und Standard-Modi dort nicht (nur Meadow)', () => {
     const r = applyMatch(newProfile(), res());
-    expect(r.report.unlockedMaps).toEqual(['frostfen']);
+    expect(r.report.unlockedMaps).toEqual(['hollow']);
     expect(r.report.unlockedModes.map((m) => `${m.map}:${m.mode}`).sort()).toEqual(['meadow:no-hero', 'meadow:primary-only', 'meadow:specialists-only']);
   });
   it('Level-Up auf 8 oeffnet Frostfen', () => {

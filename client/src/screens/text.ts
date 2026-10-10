@@ -37,7 +37,7 @@ export const S = {
   },
   maps: {
     title: 'Choose a map',
-    tier: { beginner: 'Beginner', intermediate: 'Intermediate', advanced: 'Advanced' } as Record<string, string>,
+    tier: { beginner: 'Beginner', intermediate: 'Intermediate', advanced: 'Advanced', expert: 'Expert' } as Record<string, string>,
     // Runde 15b: alle Karten teilen die Rundenliste, die Endrunde haengt an der Schwierigkeit
     rounds: (e: number, m: number, h: number): string => `${e} / ${m} / ${h} rounds`,
     freeplayBest: (r: number): string => `Freeplay best: round ${r}`,

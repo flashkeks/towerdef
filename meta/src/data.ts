@@ -24,7 +24,7 @@ export const roundRewardBp = (endRound: number): number => (endRound <= 20 ? 100
 
 // ---------------------------------------------------------------- Karten und Modi (Runde 15, docs/design/karten-gegner-r15.md)
 
-export type MapTier = 'beginner' | 'intermediate' | 'advanced';
+export type MapTier = 'beginner' | 'intermediate' | 'advanced' | 'expert';
 export interface MapUnlockRule {
   /** Spieler-Level, ab dem die Karte offen ist. */
   level: number;
@@ -48,9 +48,17 @@ export interface MapMeta {
   desc: string;
 }
 export const MAPS: readonly MapMeta[] = [
+  // Runde 16 (10.10.2026, Max: „Karten … mindestens um die 10 … der Reihe nach freischalten, die halt auch schwieriger werden“)
   { id: 'meadow', name: 'Lanternfall Meadow', tier: 'beginner', tierName: 'Beginner', boss: 'Dusk Leviathan', unlock: null, xpBp: 10000, embersBp: 10000, desc: 'A long road through a summer meadow. Plenty of room to build.' },
-  { id: 'frostfen', name: 'Frostfen Crossing', tier: 'intermediate', tierName: 'Intermediate', boss: 'Frost Wyrm', unlock: { level: 8, medal: { map: 'meadow', difficulty: 'medium' } }, xpBp: 11500, embersBp: 12000, desc: 'Two roads over a frozen lake meet in the middle. The ice cannot be built on.' },
-  { id: 'quarry', name: 'Ember Quarry', tier: 'advanced', tierName: 'Advanced', boss: 'Ember Colossus', unlock: { level: 12, medal: { map: 'frostfen', difficulty: 'medium' } }, xpBp: 13000, embersBp: 14000, desc: 'A short, winding road through lava and rock. Very little room to build.' },
+  { id: 'hollow', name: 'Harvest Hollow', tier: 'beginner', tierName: 'Beginner', boss: 'Dusk Leviathan', unlock: { level: 3, medal: { map: 'meadow', difficulty: 'medium' } }, xpBp: 10000, embersBp: 10000, desc: 'Autumn fields, a windmill and a pond for water towers. A long, gentle road.' },
+  { id: 'marsh', name: 'Mistwood Marsh', tier: 'intermediate', tierName: 'Intermediate', boss: 'Frost Wyrm', unlock: { level: 5, medal: { map: 'hollow', difficulty: 'medium' } }, xpBp: 11500, embersBp: 12000, desc: 'Foggy swamp with lots of water and little dry land. Water towers shine here.' },
+  { id: 'frostfen', name: 'Frostfen Crossing', tier: 'intermediate', tierName: 'Intermediate', boss: 'Frost Wyrm', unlock: { level: 8, medal: { map: 'marsh', difficulty: 'medium' } }, xpBp: 11500, embersBp: 12000, desc: 'Two roads over a frozen lake meet in the middle. The ice cannot be built on.' },
+  { id: 'bastion', name: 'Sunken Bastion', tier: 'intermediate', tierName: 'Intermediate', boss: 'Frost Wyrm', unlock: { level: 10, medal: { map: 'frostfen', difficulty: 'medium' } }, xpBp: 11500, embersBp: 12000, desc: 'A ruined castle with a moat. Two roads, and the walls leave little room.' },
+  { id: 'quarry', name: 'Ember Quarry', tier: 'advanced', tierName: 'Advanced', boss: 'Ember Colossus', unlock: { level: 12, medal: { map: 'bastion', difficulty: 'medium' } }, xpBp: 13000, embersBp: 14000, desc: 'A short, winding road through lava and rock. Very little room to build.' },
+  { id: 'skyreach', name: 'Skyreach Cliffs', tier: 'advanced', tierName: 'Advanced', boss: 'Ember Colossus', unlock: { level: 14, medal: { map: 'quarry', difficulty: 'medium' } }, xpBp: 13000, embersBp: 14000, desc: 'Mountain switchbacks over deep chasms. Two roads, small plateaus.' },
+  { id: 'dunes', name: 'Ashra Dunes', tier: 'advanced', tierName: 'Advanced', boss: 'Ember Colossus', unlock: { level: 16, medal: { map: 'skyreach', difficulty: 'medium' } }, xpBp: 13000, embersBp: 14000, desc: 'Three roads through the desert meet at the ruins. A small oasis for water towers.' },
+  { id: 'harbor', name: 'Gloomharbor', tier: 'expert', tierName: 'Expert', boss: 'Dusk Dreadnought', unlock: { level: 18, medal: { map: 'dunes', difficulty: 'medium' } }, xpBp: 15000, embersBp: 16000, desc: 'A harbor town at night. Big docks for water towers, but the streets are tight.' },
+  { id: 'spire', name: 'Duskspire Keep', tier: 'expert', tierName: 'Expert', boss: 'Dusk Dreadnought', unlock: { level: 20, medal: { map: 'harbor', difficulty: 'medium' } }, xpBp: 15000, embersBp: 16000, desc: 'The final fortress. Three short roads, lava moats and almost no room to build.' },
 ];
 export const MAP_IDS: readonly string[] = MAPS.map((m) => m.id);
 export const MAP_NAMES: Record<string, string> = Object.fromEntries(MAPS.map((m) => [m.id, m.name]));
@@ -131,8 +139,15 @@ export const LEVEL_UNLOCKS: readonly LevelUnlock[] = [
   { level: 5, kind: 'tower', id: 'longshot', title: 'Longshot', text: 'Sniper that sees the whole map. Slow, heavy shots.' },
   { level: 6, kind: 'tower', id: 'market', title: 'Lantern Market', text: 'Does not attack. Pays gold every round, banks interest, or buffs nearby towers.' },
   { level: 7, kind: 'tower', id: 'thornweaver', title: 'Thornweaver', text: 'Nature caster. Thorn fans, chain lightning, vines and a wall of trees.' },
+  { level: 3, kind: 'map', id: 'hollow', title: 'Harvest Hollow', text: 'Autumn fields and a pond. Beginner map.' },
+  { level: 5, kind: 'map', id: 'marsh', title: 'Mistwood Marsh', text: 'A foggy swamp full of water. Intermediate map.' },
   { level: 8, kind: 'map', id: 'frostfen', title: 'Frostfen Crossing', text: 'A frozen lake with two roads. Intermediate map.' },
+  { level: 10, kind: 'map', id: 'bastion', title: 'Sunken Bastion', text: 'A ruined castle with a moat. Intermediate map.' },
   { level: 12, kind: 'map', id: 'quarry', title: 'Ember Quarry', text: 'Lava, rock and a short road. Advanced map.' },
+  { level: 14, kind: 'map', id: 'skyreach', title: 'Skyreach Cliffs', text: 'Switchbacks over deep chasms. Advanced map.' },
+  { level: 16, kind: 'map', id: 'dunes', title: 'Ashra Dunes', text: 'Three roads through the desert. Advanced map.' },
+  { level: 18, kind: 'map', id: 'harbor', title: 'Gloomharbor', text: 'A harbor town at night. Expert map.' },
+  { level: 20, kind: 'map', id: 'spire', title: 'Duskspire Keep', text: 'The final fortress. Expert map.' },
   { level: 9, kind: 'tower', id: 'alchemist', title: 'Alchemist', text: 'Lobs acid, brews buffs for nearby towers, turns lead into gold.' },
 ];
 /** Level, ab dem Turm/Held/Schwierigkeit offen ist; fehlt = von Anfang an. */

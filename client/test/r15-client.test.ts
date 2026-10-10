@@ -77,15 +77,15 @@ describe('Kartenwahl und Modi (Meta im Client)', () => {
   const p0 = newProfile('2026-10-10T00:00:00Z');
   it('Schloss-Text nennt Level und Medaille auf Englisch', () => {
     const f = MAPS.find((m) => m.id === 'frostfen')!;
-    expect(mapLockText(f)).toBe('Reach level 8 or earn Medium on Lanternfall Meadow');
+    expect(mapLockText(f)).toBe('Reach level 8 or earn Medium on Mistwood Marsh');
     expect(mapLockText(MAPS[0])).toBe('');
-    expect(mapLockText(MAPS.find((m) => m.id === 'quarry')!)).toBe('Reach level 12 or earn Medium on Frostfen Crossing');
+    expect(mapLockText(MAPS.find((m) => m.id === 'quarry')!)).toBe('Reach level 12 or earn Medium on Sunken Bastion');
   });
   it('neue Spieler: nur Meadow offen; Level 8 oeffnet Frostfen; Medium-Medaille ebenso', () => {
     expect([mapLock(p0, 'meadow').unlocked, mapLock(p0, 'frostfen').unlocked, mapLock(p0, 'quarry').unlocked]).toEqual([true, false, false]);
     const lv8: Profile = { ...p0, playerXp: xpForLevel(8) };
     expect(mapLock(lv8, 'frostfen').unlocked).toBe(true);
-    const med: Profile = { ...p0, medals: { meadow: { easy: true, medium: true, hard: false } } };
+    const med: Profile = { ...p0, medals: { marsh: { easy: true, medium: true, hard: false } } };
     expect(mapLock(med, 'frostfen').unlocked).toBe(true);
     expect(mapLock(med, 'quarry').unlocked).toBe(false);
   });
