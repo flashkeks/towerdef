@@ -296,6 +296,175 @@ export function gloomCrashRaster(frame: number): FxRaster {
   return fin(s, Math.floor(cx), gy);
 }
 
+// ---------------------------------------------------------------- Runde 15e: Cruiser, Duskrunner, Dreadnought
+
+export type ShipKind = 'gloomship' | 'cruiser' | 'duskrunner' | 'dreadnought';
+export type BigShipKind = 'cruiser' | 'dreadnought';
+export const SHIP_CRASH_FRAMES = 10;
+export const DUSK_TRAIL_FRAMES = 4;
+const SHADOW_DIM: Record<ShipKind, [number, number]> = { gloomship: [27, 6], cruiser: [36, 8], duskrunner: [18, 4], dreadnought: [47, 10] };
+
+/** Schatten am Boden unter einem schwebenden Schiff (ink; Alpha setzt die Sprite-Schicht), atmet mit der Schwebe. Anker = Mitte. gloomship = gloomShadowRaster. */
+export function shipShadowRaster(kind: ShipKind, frame: number): FxRaster {
+  if (kind === 'gloomship') return gloomShadowRaster(frame);
+  const f = wrap(frame, GLOOM_SHADOW_FRAMES);
+  const [bx, by] = SHADOW_DIM[kind];
+  const rx = bx - [0, 1, 2, 1][f], ry = by - (f === 2 ? 1 : 0);
+  const W = bx * 2 + 4, H = by * 2 + 4;
+  const s = new Surface(W, H);
+  s.ellipse(W / 2, H / 2, rx, ry, 'ink');
+  return fin(s, Math.floor(W / 2), Math.floor(H / 2));
+}
+
+/**
+ * Duskrunner-Nachzieher: Tempo-Streifen und verblassende Nachbilder (Schachbrett-Raster) hinter dem Schiff, 4 Frames.
+ * Anker = Bodenpunkt wie bei enemySprite('duskrunner'): an derselben Stelle zeichnen, vor dem Schiff (z-Reihenfolge darunter).
+ * `flip` fuer Blick nach links. Laenge ca. 60 px nach hinten.
+ */
+export function duskTrailRaster(frame: number, flip = false): FxRaster {
+  const f = wrap(frame, DUSK_TRAIL_FRAMES);
+  const W = 84, H = 34, ax = 80, cy = 13;
+  const s = new Surface(W, H);
+  const tail = ax - 21; // x der Duese (Schiffsheck)
+  // Nachbilder: kleine Pfeilspitzen, immer duenner gesetzt
+  for (let g = 0; g < 3; g++) {
+    const gx = tail - 10 - g * 14 - (f * 3 + g * 2) % 6;
+    const dens = g;
+    const col: PalName = g === 0 ? 'dusk' : g === 1 ? 'night' : 'plum';
+    for (let dx = 0; dx < 12; dx++) {
+      const hh = Math.max(0, 4 - Math.floor(dx / 3));
+      for (let dy = -hh; dy <= hh; dy++) {
+        if (dens > 0 && (dx + dy + f + g) % (dens + 1) !== 0) continue;
+        s.px(gx - dx, cy + dy * (g === 2 ? 0.8 : 1), (dx === 0 && Math.abs(dy) === hh ? 'sky' : col));
+      }
+    }
+    s.px(gx + 1, cy, g === 0 ? 'red' : 'crimson');
+  }
+  // Tempo-Linien
+  const lines: [number, number, number][] = [[-7, 26, 0], [-4, 38, 3], [4, 34, 5], [7, 22, 2], [0, 50, 1]];
+  for (const [dy, len, off] of lines) {
+    const x1 = tail - 4 - ((f * 5 + off * 3) % 9);
+    const x0 = x1 - len;
+    for (let x = Math.max(0, x0); x <= x1; x++) {
+      const k = (x - x0) / len;
+      if (k < 0.5 && (x + f) % 2) continue; // loest sich nach hinten auf
+      if (k < 0.2 && (x + dy) % 3) continue;
+      s.px(x, cy + dy, k > 0.85 ? 'white' : k > 0.55 ? 'ice' : k > 0.3 ? 'sky' : 'navy');
+    }
+  }
+  const fl = fin(s, ax, cy + 17);
+  if (!flip) return fl;
+  const fs = Surface.fromRows(fl.rows).flipX();
+  return { rows: fs.toRows(), ax: W - 1 - ax, ay: fl.ay };
+}
+
+/**
+ * Absturz eines grossen Schiffs (cruiser / dreadnought), 10 Frames: der Rumpf kippt nach vorn (0-3), Kettenexplosionen am Rumpf,
+ * schlaegt ein (4), Feuerball, Qualmsaeule, Trummer, Wrack brennt (5-9). Anker = Aufschlagpunkt am Boden.
+ */
+export function shipCrashRaster(kind: BigShipKind, frame: number): FxRaster {
+  const f = clampF(frame, SHIP_CRASH_FRAMES);
+  const dread = kind === 'dreadnought';
+  const W = dread ? 220 : 170, H = dread ? 160 : 126;
+  const s = new Surface(W, H);
+  const cx = W / 2, gy = H - 14;
+  const sc = dread ? 1.35 : 1;
+  const rnd = irnd((dread ? 63 : 41) + f * 3);
+  const rx = dread ? 46 : 37, ry = dread ? 15 : 13;
+  const col = (burn: boolean, x: number, y: number, nx: number, ny: number): PalName => {
+    const l = -nx * 0.35 - ny * 0.85;
+    if (burn && (x * 3 + y * 5 + f) % 19 === 0) return 'orange';
+    if (dread) return l > 0.62 ? 'violet' : l > 0.05 ? 'dusk' : l > -0.5 ? 'night' : 'ink';
+    return l > 0.58 ? 'orchid' : l > -0.15 ? 'violet' : l > -0.62 ? 'night' : 'ink';
+  };
+  const hull = (hx: number, hy: number, slope: number, rrx: number, rry: number, burn: boolean): void => {
+    // spaltenweise gefuellt (kein Loch bei Schraeglage)
+    for (let x = -Math.floor(rrx); x <= Math.floor(rrx); x++) {
+      const nx = x / rrx, hh = rry * Math.sqrt(Math.max(0, 1 - nx * nx));
+      const off = Math.round(slope * x);
+      for (let y = -Math.ceil(hh); y <= Math.ceil(hh); y++) {
+        const ny = y / Math.max(1, hh);
+        if (Math.abs(ny) > 1.0001) continue;
+        s.px(hx + x, hy + y + off, col(burn, x, y, nx, ny * 0.9));
+      }
+    }
+  };
+  const fireball = (fx0: number, fy0: number, r: number): void => {
+    s.ellipseFn(fx0, fy0, r, r * 0.72, (x, y, nx, ny) => {
+      const d = Math.hypot(nx, ny);
+      if (d > 0.72 && (x + y + f) % 2) return null;
+      return d < 0.35 ? 'yellow' : d < 0.65 ? 'amber' : d < 0.9 ? 'orange' : 'red';
+    });
+  };
+  if (f <= 3) {
+    const k = f / 4;
+    const hy = gy - 70 + k * 56, slope = 0.1 + k * 0.5;
+    hull(cx, hy, slope, rx, ry, true);
+    // Panzerplatten fliegen ab, Deck/Gondeln trennen sich
+    if (dread) {
+      s.rect(cx - 30 + f * 4, hy + 14 + f * 6, 60, 10, 'bark'); s.rect(cx - 30 + f * 4, hy + 14 + f * 6, 60, 2, 'night');
+      for (let i = 0; i < 5; i++) s.rect(cx - 26 + f * 4 + i * 12, hy + 18 + f * 6, 4, 3, i % 2 ? 'yellow' : 'ink');
+      for (const dx of [-24, -12, 0]) { s.rect(cx + dx, hy - ry - 8 + dx * slope, 6, 10, 'slate'); s.rect(cx + dx, hy - ry - 8 + dx * slope, 6, 1, 'stone'); }
+    } else {
+      for (const [dx, w] of [[-24, 12], [0, 18], [24, 12]]) { s.rect(cx + dx - w / 2 + f * (dx / 12), hy + 14 + f * 7 + (dx === 0 ? 0 : f), w, 7, 'wood'); s.rect(cx + dx - w / 2 + f * (dx / 12), hy + 14 + f * 7 + (dx === 0 ? 0 : f), w, 1, 'tan'); }
+      s.poly([[cx - 30, hy], [cx - 44, hy - 10], [cx - 36, hy + 8]], 'violet');
+    }
+    for (let i = 0; i < (dread ? 6 : 4); i++) {
+      const fx0 = cx - rx * 0.75 + (i / (dread ? 5 : 3)) * rx * 1.5;
+      flame(s, fx0, hy - ry * 0.7 + (fx0 - cx) * slope, 8 + f * 2, f + i, 'red', 'orange', 'yellow');
+    }
+    // Kettenexplosionen am Rumpf (Blitz-Stellen)
+    for (let i = 0; i < (dread ? 3 : 2); i++) {
+      if ((f + i) % 2) continue;
+      const ex0 = cx - rx * 0.6 + i * rx * 0.55, ey0 = hy - 2 + (ex0 - cx) * slope;
+      s.ellipse(ex0, ey0, 5, 4, 'yellow'); s.ellipse(ex0, ey0, 2.5, 2, 'white'); s.ring(ex0, ey0, 7, 5.5, 'orange');
+    }
+    // Rauchfahne nach hinten oben
+    for (let i = 0; i < 9; i++) { const x = cx - rx - 4 - i * 5 - f * 2, y = hy - 6 - i * 3.2 + (i % 2); s.ellipse(x, y, 3.4 - i * 0.18, 2.8 - i * 0.16, i < 3 ? 'dusk' : 'slate'); }
+    for (let i = 0; i < 6; i++) s.px(cx - rx * 0.6 + rnd() * rx * 1.4, hy - 9 + rnd() * 26, i % 2 ? 'yellow' : 'amber');
+  } else if (f === 4) {
+    // Einschlag: Blitz, Staubring, Rumpf bricht in zwei Haelften
+    s.ellipse(cx, gy - 6, 36 * sc, 12 * sc, 'white'); s.ellipse(cx, gy - 7, 28 * sc, 9.5 * sc, 'yellow'); s.ellipse(cx, gy - 7, 16 * sc, 6 * sc, 'white');
+    s.ring(cx, gy - 4, 42 * sc, 14 * sc, 'orange'); s.ring(cx, gy - 4, 46 * sc, 16 * sc, 'amber');
+    hull(cx - rx * 0.45, gy - 12, 0.35, rx * 0.5, ry * 0.8, false);
+    hull(cx + rx * 0.5, gy - 11, -0.3, rx * 0.5, ry * 0.8, false);
+    for (let i = 0; i < 14; i++) { const a = (i / 14) * Math.PI; s.px(cx + Math.cos(a) * 48 * sc * (i % 2 ? 1 : -1), gy - 4 - Math.sin(a) * 22 * sc, 'white'); }
+  } else {
+    const t = f - 5; // 0..4
+    const fr = (30 - t * 3.5) * sc;
+    if (t < 4) fireball(cx, gy - 12 - t * 7 * sc, fr);
+    if (t < 3) fireball(cx - 24 * sc, gy - 10 - t * 3, fr * 0.6);
+    if (dread && t < 4) { fireball(cx + 30, gy - 12 - t * 5, fr * 0.55); fireball(cx - 8, gy - 22 - t * 8, fr * 0.5); }
+    // Qualmsaeule: dicke Wolken steigen, werden heller
+    const n = (dread ? 10 : 7) + t;
+    for (let i = 0; i < n; i++) {
+      const a = (i / n) * Math.PI * 2 + 0.5;
+      const r = (10 + t * 9) * sc * (0.7 + rnd() * 0.5);
+      const x = cx + Math.cos(a) * r * 1.5, y = gy - 18 * sc - t * 9 * sc + Math.sin(a) * r * 0.8;
+      s.ellipse(x, y, (5 - t * 0.5) * sc, (4.2 - t * 0.5) * sc, t < 2 ? 'dusk' : t === 2 ? 'slate' : 'stone');
+    }
+    // Trummer: Rumpfscherben, Platten, Holz, Laternenglas
+    for (let i = 0; i < (dread ? 22 : 15); i++) {
+      const a = Math.PI + (i / (dread ? 21 : 14)) * Math.PI + (rnd() - 0.5) * 0.3, sp = (12 + rnd() * 22) * sc;
+      const x = cx + Math.cos(a) * sp * (0.7 + t * 0.45) * 1.55, y = gy - 4 + Math.sin(a) * sp * (0.8 + t * 0.2) + t * t * 2.4;
+      const kd = i % 5;
+      const big = kd === 0 && dread;
+      if (big) { s.rect(x, y, 4, 3, 'slate'); s.rect(x, y, 4, 1, 'stone'); }
+      else s.rect(x, y, kd === 0 ? 3 : 2, 2, kd === 0 ? (dread ? 'dusk' : 'violet') : kd === 1 ? (dread ? 'night' : 'orchid') : kd === 2 ? 'wood' : kd === 3 ? 'night' : 'stone');
+      if (kd === 3) s.px(x, y, 'amber');
+      if (i % 5 === 0) spark(s, x + 2, y - 3, 'yellow');
+    }
+    // brennendes Wrack am Boden
+    if (t >= 1) {
+      const wr = (dread ? 30 : 22) - t * 2;
+      s.ellipse(cx, gy - 1, wr, 4, 'night'); s.ellipse(cx, gy - 2, wr * 0.75, 3, dread ? 'dusk' : 'violet');
+      for (let i = 0; i < (dread ? 4 : 3); i++) flame(s, cx - wr * 0.7 + i * (wr * 1.4 / (dread ? 3 : 2)), gy - 3, 6 - t * 0.5, f + i, 'red', 'orange', 'yellow');
+    }
+    for (let i = 0; i < 6; i++) s.px(cx - 18 * sc + rnd() * 36 * sc, gy - 14 - t * 5 - rnd() * 14, 'amber');
+  }
+  return fin(s, Math.floor(cx), gy);
+}
+
 // ---------------------------------------------------------------- Boss-Tod
 
 export type BossKind = 'wyrm' | 'colossus';

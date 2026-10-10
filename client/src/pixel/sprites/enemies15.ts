@@ -455,6 +455,7 @@ const WREATH: Record<EnemyType, { x: number; hw: number }> = {
   red: { x: 12, hw: 5 }, blue: { x: 12, hw: 5 }, green: { x: 12, hw: 5 }, gold: { x: 12, hw: 5 }, pink: { x: 12, hw: 5 }, frostling: { x: 12, hw: 5 },
   ironshell: { x: 13, hw: 6 }, ember: { x: 12, hw: 5 }, brute: { x: 17, hw: 9 }, crystal: { x: 21, hw: 11 }, leviathan: { x: 40, hw: 20 },
   gloomship: { x: 33, hw: 20 }, wyrm: { x: 56, hw: 10 }, colossus: { x: 40, hw: 22 },
+  cruiser: { x: 48, hw: 28 }, duskrunner: { x: 36, hw: 12 }, dreadnought: { x: 56, hw: 34 },
 };
 
 /** Regrow: Blaetterkranz auf der Oberkante der Figur, kleine Knospen, pulsiert ueber die Lauf-Frames. */
@@ -497,6 +498,9 @@ const BANDS: Record<EnemyType, Band[]> = {
   gloomship: [{ v: [19, 14, 36, 3] }, { v: [31, 11, 36, 3] }, { v: [43, 13, 36, 3] }],
   wyrm: [{ v: [22, 24, 58, 3] }, { v: [32, 20, 58, 3] }, { v: [43, 18, 58, 3] }],
   colossus: [{ h: [14, 66, 31, 4] }, { v: [26, 18, 50, 3] }, { v: [54, 18, 50, 3] }],
+  cruiser: [{ v: [28, 14, 40, 3] }, { v: [46, 11, 40, 3] }, { v: [64, 14, 40, 3] }],
+  duskrunner: [{ v: [26, 8, 20, 2] }, { v: [36, 8, 20, 2] }, { v: [46, 9, 20, 2] }],
+  dreadnought: [{ v: [32, 10, 40, 3] }, { v: [54, 8, 40, 3] }, { v: [76, 10, 40, 3] }],
 };
 
 /** Fortified: Eisenbaender mit Nieten (nur auf der Figur). */

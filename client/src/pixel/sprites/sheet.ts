@@ -1,6 +1,7 @@
 /** Testseite fuer Sprite-Boegen (nur Entwicklung/Screenshots, wird nicht ins Spiel gebundelt). */
 import * as api from './index';
 import type { Tiers, TowerType, TowerFrame } from './index';
+import { sheetFx2R15e, sheetFxR15e, sheetGegnerR15e, sheetVergleichR15e } from './sheet15e';
 import { sheetBosseR15, sheetFxR15, sheetGegnerR15 } from './sheet15';
 
 const q = new URLSearchParams(location.search);
@@ -569,6 +570,10 @@ function sheetFxR14(): HTMLCanvasElement {
 }
 
 const sheets: Record<string, () => HTMLCanvasElement> = {
+  'e-gegner': sheetGegnerR15e,
+  'e-vergleich': sheetVergleichR15e,
+  'e-fx': sheetFxR15e,
+  'e-fx2': sheetFx2R15e,
   'b2-gegner': sheetGegnerR15,
   'b2-bosse': sheetBosseR15,
   'b2-fx': sheetFxR15,
