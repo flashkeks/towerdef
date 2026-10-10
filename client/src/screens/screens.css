@@ -458,3 +458,8 @@ canvas.pop { animation: pop-in 0.5s steps(6) both; }
 .setup .play { margin-top: 4px; min-height: 68px; }
 .setup-reward { text-align: center; font-size: 14px; color: var(--p-silver); letter-spacing: 0.05em; }
 .res-factors { margin-top: 8px; font-size: 14px; color: var(--p-silver); letter-spacing: 0.05em; }
+
+/* Runde 15b: Rundenzahl je Schwierigkeit, Freeplay-Bestrunde (Max, 10.10.2026) */
+.mt-free { font-size: 13px; color: var(--p-silver); letter-spacing: 0.04em; margin-top: 2px; }
+.mt-free.on { color: var(--p-amber, #f5b942); }
+.diff-r { font-size: 14px; color: var(--p-amber, #f5b942); letter-spacing: 0.04em; }

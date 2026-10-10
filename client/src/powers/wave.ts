@@ -50,9 +50,11 @@ export function waveRows(p: RoundPreview): WaveRow[] {
 }
 
 /** Welche Runde zeigt der Reiter? Vor dem Start die naechste, waehrend der Welle die laufende; nach der letzten Runde der Karte nichts. */
-export function previewRound(phase: string, round: number, maxRound: number): number | null {
+export function previewRound(phase: string, round: number, maxRound: number, freeplay = false): number | null {
+  if (phase === 'won' || phase === 'lost') return null;
   const r = phase === 'wave' ? round : round + 1;
-  return r >= 1 && r <= maxRound ? r : null;
+  // Runde 15b: im Freeplay gibt es keine letzte Runde mehr (die Sim liefert auch Formel-Runden ab R121)
+  return r >= 1 && (freeplay || r <= maxRound) ? r : null;
 }
 
 export const totalEnemies = (p: RoundPreview): number => p.groups.reduce((a, g) => a + Math.max(0, g.n), 0);

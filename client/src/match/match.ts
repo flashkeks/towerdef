@@ -117,6 +117,8 @@ class Match {
   private raf = 0;
   private last = 0;
   private ended = false;
+  /** Runde 15b: die Endrunde der Schwierigkeit war geschafft (Sieg), auch wenn danach im Freeplay weitergespielt wurde. */
+  private wonOnce = false;
   private upgrades: MatchResult['upgrades'] = [];
   private tiersSeen = new Map<number, Tiers>();
   private abSig = '';
@@ -600,7 +602,7 @@ class Match {
     audio.onEvent(ev, st.towers);
     switch (ev.type) {
       case 'roundStart':
-        this.banner(t('match.round', { n: ev.round, max: this.game.info.maxRound }), this.bossLine(ev.round));
+        this.banner(this.roundText(ev.round), this.bossLine(ev.round));
         break;
       case 'upgrade': {
         const prev = this.tiersSeen.get(ev.tower) ?? [0, 0, 0];
@@ -637,22 +639,50 @@ class Match {
     return boss ? t('match.bossIncoming', { name: BOSS_NAMES[boss.type] ?? 'A boss' }) : '';
   }
 
+  /** "Round 12/60" bis zur Endrunde, danach im Freeplay "Round 61". */
+  private roundText(n: number): string {
+    return this.game.state.freeplay || n > this.game.info.maxRound ? t('match.roundFree', { n }) : t('match.round', { n: Math.max(n, 0), max: this.game.info.maxRound });
+  }
+
   private onGameOver(won: boolean): void {
     if (this.ended) return;
     this.ended = true;
+    if (won) this.wonOnce = true;
+    const fp = this.wonOnce && !won;
     const box = h('div', `ov-box ${won ? 'won' : 'lost'}`);
-    const cont = h('button', 'm-start small', t('match.continue'));
+    const cont = h('button', 'm-start small', t(won ? 'match.finish' : 'match.continue'));
     cont.onclick = () => this.end(false);
-    box.append(h('div', 'ov-t', t(won ? 'match.victory' : 'match.defeat')), h('div', 'ov-s', t('match.round', { n: this.game.state.round, max: this.game.info.maxRound })), cont);
+    box.append(h('div', 'ov-t', t(won ? 'match.victory' : fp ? 'match.freeplayOver' : 'match.defeat')), h('div', 'ov-s', won ? t('match.victoryNote', { n: this.game.state.round }) : this.roundText(this.game.state.round)));
+    if (won) {
+      // Runde 15b: wie BTD6, "Continue in Freeplay" nach dem Sieg (Max, 10.10.2026)
+      const more = h('button', 'm-start small free-btn', t('match.freeplayBtn'));
+      more.dataset.act = 'freeplay';
+      more.onclick = () => this.continueFreeplay();
+      cont.dataset.act = 'finish';
+      box.append(more, cont);
+    } else {
+      box.append(cont);
+      this.endTimer = window.setTimeout(() => this.end(false), 6000);
+    }
     this.overlay.replaceChildren(box);
     this.overlay.classList.remove('hidden');
-    this.endTimer = window.setTimeout(() => this.end(false), 6000);
+  }
+
+  /** Nach dem Sieg weiterspielen: die Sim laeuft mit derselben Liste weiter, ab R121 aus der Formel. */
+  private continueFreeplay(): void {
+    if (this.endTimer) clearTimeout(this.endTimer);
+    const res = this.game.apply({ type: 'continue' });
+    if (!res.ok) return;
+    this.ended = false;
+    this.overlay.classList.add('hidden');
+    this.toast(t('match.freeplayStart'), 'gain');
   }
 
   private hud(st: GameState): void {
     setText(this.livesEl, String(st.lives));
     setText(this.cashEl, String(st.cash));
-    setText(this.roundEl, t('match.round', { n: Math.max(st.round, 0), max: this.game.info.maxRound }));
+    setText(this.roundEl, this.roundText(st.round));
+    setClass(this.roundEl, 'free', st.freeplay);
     this.startBtn.disabled = this.ended;
     setClass(this.autoBtn, 'on', st.autoStart);
     setClass(this.cashBox, 'oil', st.oilRound > 0 && st.round <= st.oilRound);
@@ -702,7 +732,7 @@ class Match {
       map: this.opts.map ?? 'meadow',
       mode: this.game.info.mode,
       roundsCleared: st.roundsCleared,
-      won: st.phase === 'won',
+      won: this.wonOnce || st.phase === 'won',
       round: st.round,
       difficulty: this.opts.difficulty,
       seed: this.opts.seed,

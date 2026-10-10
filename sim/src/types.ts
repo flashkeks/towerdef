@@ -8,7 +8,9 @@ export type HeroType = 'wren';
 export type EnemyType =
   | 'red' | 'blue' | 'green' | 'gold' | 'ironshell' | 'ember' | 'brute' | 'leviathan'
   // Runde 15
-  | 'pink' | 'frostling' | 'crystal' | 'gloomship' | 'wyrm' | 'colossus';
+  | 'pink' | 'frostling' | 'crystal' | 'gloomship' | 'wyrm' | 'colossus'
+  // Runde 15b (Max, 10.10.2026): drei späte Blimps fuer R82-R120
+  | 'cruiser' | 'duskrunner' | 'dreadnought';
 /** Runde 15: Spielmodi (Zusatzmodi je Karte). `standard` = normales Spiel. */
 export type ModeId = 'standard' | 'primary-only' | 'specialists-only' | 'no-hero' | 'half-cash' | 'deflation';
 export type Difficulty = 'easy' | 'medium' | 'hard';
@@ -107,6 +109,8 @@ export type Command =
   /** Runde 12: Power einsetzen. `x`/`y` (Milli-px) nur bei Ziel-Powers (Lantern Bomb, Fallen, Insta-Warden). */
   | { type: 'power'; power: PowerKey; x?: number; y?: number }
   | { type: 'startRound' }
+  /** Runde 15b: nach dem Sieg weiterspielen (Freeplay). Nur in Phase `won`; sonst `not-won`. */
+  | { type: 'continue' }
   | { type: 'autoStart'; on: boolean };
 
 export type CommandResult = { ok: true; id?: number } | { ok: false; reason: string };
@@ -389,6 +393,8 @@ export type AbilityState = { id: AbilityId; ready: boolean; cdLeft: number; cdTo
 export interface GameState {
   tick: number;
   phase: 'build' | 'wave' | 'won' | 'lost' | 'freeplay';
+  /** Runde 15b: Freeplay laeuft (nach `continue`): keine Endrunde mehr, Runden ueber `info.maxRound` zaehlen als Freeplay. */
+  freeplay: boolean;
   round: number;
   roundsCleared: number;
   cash: number;
@@ -435,6 +441,8 @@ export interface GameState {
   gateLeft: number;
   /** Runde 14: Bruchrest von Pop Bonus (0..9999). */
   popCarry: number;
+  /** Runde 15b: Bruchrest der Einkommens-Daempfung ab R21 (`popBp`). */
+  incCarry: number;
   /** Runde 15: Half Cash, Bruchrest der Halbierung (0 oder 1). */
   halfCarry: number;
   /** Runde 15: Runde vor der ersten Runde des Matches (0; Deflation: letzte Runde - 11). */
@@ -523,6 +531,8 @@ export type SimEvent =
   | { type: 'stomp'; tick: number; enemy: number; x: number; y: number; radius: number; ticks: number; enemies: number[] }
   /** Runde 15: Regrow, `enemy` wurde von `from` zu `to` (gleiche Id). */
   | { type: 'regrow'; tick: number; enemy: number; from: EnemyType; to: EnemyType; x: number; y: number }
+  /** Runde 15b: Spieler spielt nach dem Sieg weiter (Freeplay). */
+  | { type: 'continue'; tick: number; round: number }
   | { type: 'gameOver'; tick: number; result: 'won' | 'lost'; round: number };
 
 /** Runde 15: Rahmendaten des Matches (aendern sich nicht). */
@@ -530,8 +540,10 @@ export interface GameInfo {
   map: string;
   mode: ModeId;
   difficulty: Difficulty;
-  /** Letzte Runde dieser Karte (Meadow 20, Frostfen 25, Quarry 30); Sieg nach dieser Runde. */
+  /** Runde 15b: Endrunde der Schwierigkeit (Easy 40, Medium 60, Hard 80); Sieg nach dieser Runde, danach optional Freeplay (`continue`). */
   maxRound: number;
+  /** Runde 15b: Laenge der festen Rundenliste (120); darueber Formel. */
+  listRounds: number;
   /** Runde vor der ersten Runde des Matches (0; Deflation: maxRound - 11). */
   baseRound: number;
   /** Anzahl der Wegaeste der Karte (Frostfen 2, sonst 1). */

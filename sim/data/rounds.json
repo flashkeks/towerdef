@@ -1,0 +1,2660 @@
+[
+ {
+  "round": 1,
+  "groups": [
+   {
+    "type": "red",
+    "n": 20,
+    "gapMs": 900,
+    "startMs": 0
+   }
+  ]
+ },
+ {
+  "round": 2,
+  "groups": [
+   {
+    "type": "red",
+    "n": 35,
+    "gapMs": 700,
+    "startMs": 0
+   }
+  ]
+ },
+ {
+  "round": 3,
+  "groups": [
+   {
+    "type": "red",
+    "n": 25,
+    "gapMs": 700,
+    "startMs": 0
+   },
+   {
+    "type": "blue",
+    "n": 10,
+    "gapMs": 900,
+    "startMs": 6000
+   }
+  ]
+ },
+ {
+  "round": 4,
+  "groups": [
+   {
+    "type": "red",
+    "n": 30,
+    "gapMs": 500,
+    "startMs": 0
+   },
+   {
+    "type": "blue",
+    "n": 20,
+    "gapMs": 700,
+    "startMs": 5000
+   }
+  ]
+ },
+ {
+  "round": 5,
+  "groups": [
+   {
+    "type": "blue",
+    "n": 35,
+    "gapMs": 600,
+    "startMs": 0
+   },
+   {
+    "type": "green",
+    "n": 8,
+    "gapMs": 1000,
+    "startMs": 10000
+   }
+  ]
+ },
+ {
+  "round": 6,
+  "groups": [
+   {
+    "type": "blue",
+    "n": 25,
+    "gapMs": 500,
+    "startMs": 0
+   },
+   {
+    "type": "green",
+    "n": 20,
+    "gapMs": 700,
+    "startMs": 4000
+   }
+  ]
+ },
+ {
+  "round": 7,
+  "groups": [
+   {
+    "type": "blue",
+    "n": 10,
+    "gapMs": 600,
+    "startMs": 0
+   },
+   {
+    "type": "green",
+    "n": 50,
+    "gapMs": 400,
+    "startMs": 3000
+   }
+  ]
+ },
+ {
+  "round": 8,
+  "groups": [
+   {
+    "type": "blue",
+    "n": 40,
+    "gapMs": 350,
+    "startMs": 0
+   },
+   {
+    "type": "gold",
+    "n": 18,
+    "gapMs": 800,
+    "startMs": 8000
+   }
+  ]
+ },
+ {
+  "round": 9,
+  "groups": [
+   {
+    "type": "green",
+    "n": 30,
+    "gapMs": 400,
+    "startMs": 0
+   },
+   {
+    "type": "gold",
+    "n": 24,
+    "gapMs": 600,
+    "startMs": 6000
+   }
+  ]
+ },
+ {
+  "round": 10,
+  "groups": [
+   {
+    "type": "blue",
+    "n": 120,
+    "gapMs": 150,
+    "startMs": 0
+   }
+  ]
+ },
+ {
+  "round": 11,
+  "groups": [
+   {
+    "type": "ironshell",
+    "n": 8,
+    "gapMs": 1400,
+    "startMs": 0
+   },
+   {
+    "type": "green",
+    "n": 30,
+    "gapMs": 500,
+    "startMs": 2000
+   }
+  ]
+ },
+ {
+  "round": 12,
+  "groups": [
+   {
+    "type": "ember",
+    "n": 14,
+    "gapMs": 1000,
+    "startMs": 0
+   },
+   {
+    "type": "gold",
+    "n": 40,
+    "gapMs": 400,
+    "startMs": 4000
+   }
+  ]
+ },
+ {
+  "round": 13,
+  "groups": [
+   {
+    "type": "green",
+    "n": 20,
+    "gapMs": 600,
+    "startMs": 0,
+    "camo": true
+   },
+   {
+    "type": "gold",
+    "n": 50,
+    "gapMs": 350,
+    "startMs": 3000
+   }
+  ]
+ },
+ {
+  "round": 14,
+  "groups": [
+   {
+    "type": "ironshell",
+    "n": 24,
+    "gapMs": 700,
+    "startMs": 0
+   },
+   {
+    "type": "green",
+    "n": 50,
+    "gapMs": 300,
+    "startMs": 4000
+   }
+  ]
+ },
+ {
+  "round": 15,
+  "groups": [
+   {
+    "type": "brute",
+    "n": 8,
+    "gapMs": 1800,
+    "startMs": 0
+   },
+   {
+    "type": "gold",
+    "n": 40,
+    "gapMs": 400,
+    "startMs": 5000
+   }
+  ]
+ },
+ {
+  "round": 16,
+  "groups": [
+   {
+    "type": "ember",
+    "n": 20,
+    "gapMs": 600,
+    "startMs": 0
+   },
+   {
+    "type": "ironshell",
+    "n": 20,
+    "gapMs": 600,
+    "startMs": 3000
+   },
+   {
+    "type": "gold",
+    "n": 16,
+    "gapMs": 500,
+    "startMs": 10000,
+    "camo": true
+   }
+  ]
+ },
+ {
+  "round": 17,
+  "groups": [
+   {
+    "type": "brute",
+    "n": 14,
+    "gapMs": 1200,
+    "startMs": 0
+   },
+   {
+    "type": "gold",
+    "n": 60,
+    "gapMs": 250,
+    "startMs": 4000
+   }
+  ]
+ },
+ {
+  "round": 18,
+  "groups": [
+   {
+    "type": "gold",
+    "n": 120,
+    "gapMs": 120,
+    "startMs": 0
+   },
+   {
+    "type": "gold",
+    "n": 24,
+    "gapMs": 300,
+    "startMs": 8000,
+    "camo": true
+   }
+  ]
+ },
+ {
+  "round": 19,
+  "groups": [
+   {
+    "type": "brute",
+    "n": 22,
+    "gapMs": 800,
+    "startMs": 0
+   },
+   {
+    "type": "ironshell",
+    "n": 20,
+    "gapMs": 500,
+    "startMs": 6000
+   },
+   {
+    "type": "ember",
+    "n": 14,
+    "gapMs": 600,
+    "startMs": 12000
+   }
+  ]
+ },
+ {
+  "round": 20,
+  "groups": [
+   {
+    "type": "leviathan",
+    "n": 1,
+    "gapMs": 1000,
+    "startMs": 0
+   },
+   {
+    "type": "brute",
+    "n": 10,
+    "gapMs": 1500,
+    "startMs": 8000
+   },
+   {
+    "type": "gold",
+    "n": 60,
+    "gapMs": 300,
+    "startMs": 2000
+   }
+  ]
+ },
+ {
+  "round": 21,
+  "groups": [
+   {
+    "type": "pink",
+    "n": 121,
+    "gapMs": 130,
+    "startMs": 0
+   },
+   {
+    "type": "brute",
+    "n": 14,
+    "gapMs": 1200,
+    "startMs": 6000
+   }
+  ]
+ },
+ {
+  "round": 22,
+  "groups": [
+   {
+    "type": "ironshell",
+    "n": 62,
+    "gapMs": 320,
+    "startMs": 0
+   },
+   {
+    "type": "ember",
+    "n": 62,
+    "gapMs": 320,
+    "startMs": 7000,
+    "camo": true
+   }
+  ]
+ },
+ {
+  "round": 23,
+  "groups": [
+   {
+    "type": "gold",
+    "n": 139,
+    "gapMs": 120,
+    "startMs": 0,
+    "camo": true
+   },
+   {
+    "type": "brute",
+    "n": 25,
+    "gapMs": 960,
+    "startMs": 8000
+   }
+  ]
+ },
+ {
+  "round": 24,
+  "groups": [
+   {
+    "type": "ember",
+    "n": 70,
+    "gapMs": 290,
+    "startMs": 0
+   },
+   {
+    "type": "ironshell",
+    "n": 42,
+    "gapMs": 480,
+    "startMs": 5000
+   },
+   {
+    "type": "pink",
+    "n": 76,
+    "gapMs": 210,
+    "startMs": 9000,
+    "camo": true
+   }
+  ]
+ },
+ {
+  "round": 25,
+  "groups": [
+   {
+    "type": "frostling",
+    "n": 85,
+    "gapMs": 210,
+    "startMs": 0
+   },
+   {
+    "type": "brute",
+    "n": 22,
+    "gapMs": 1090,
+    "startMs": 6000
+   }
+  ]
+ },
+ {
+  "round": 26,
+  "groups": [
+   {
+    "type": "gold",
+    "n": 200,
+    "gapMs": 80,
+    "startMs": 0
+   },
+   {
+    "type": "ironshell",
+    "n": 88,
+    "gapMs": 250,
+    "startMs": 7000
+   }
+  ]
+ },
+ {
+  "round": 27,
+  "groups": [
+   {
+    "type": "pink",
+    "n": 200,
+    "gapMs": 80,
+    "startMs": 0
+   },
+   {
+    "type": "brute",
+    "n": 27,
+    "gapMs": 890,
+    "startMs": 8000
+   }
+  ]
+ },
+ {
+  "round": 28,
+  "groups": [
+   {
+    "type": "ironshell",
+    "n": 120,
+    "gapMs": 250,
+    "startMs": 0
+   },
+   {
+    "type": "ember",
+    "n": 120,
+    "gapMs": 170,
+    "startMs": 5000,
+    "camo": true
+   }
+  ]
+ },
+ {
+  "round": 29,
+  "groups": [
+   {
+    "type": "gold",
+    "n": 200,
+    "gapMs": 80,
+    "startMs": 0,
+    "camo": true
+   },
+   {
+    "type": "brute",
+    "n": 48,
+    "gapMs": 500,
+    "startMs": 6000
+   }
+  ]
+ },
+ {
+  "round": 30,
+  "groups": [
+   {
+    "type": "pink",
+    "n": 200,
+    "gapMs": 80,
+    "startMs": 0,
+    "regrow": true
+   },
+   {
+    "type": "gold",
+    "n": 154,
+    "gapMs": 100,
+    "startMs": 7000,
+    "regrow": true
+   },
+   {
+    "type": "brute",
+    "n": 35,
+    "gapMs": 690,
+    "startMs": 11000
+   },
+   {
+    "type": "gold",
+    "n": 34,
+    "gapMs": 400,
+    "startMs": 15000,
+    "camo": true,
+    "regrow": true
+   }
+  ]
+ },
+ {
+  "round": 31,
+  "groups": [
+   {
+    "type": "frostling",
+    "n": 120,
+    "gapMs": 150,
+    "startMs": 0
+   },
+   {
+    "type": "brute",
+    "n": 43,
+    "gapMs": 560,
+    "startMs": 8000
+   }
+  ]
+ },
+ {
+  "round": 32,
+  "groups": [
+   {
+    "type": "gold",
+    "n": 200,
+    "gapMs": 80,
+    "startMs": 0,
+    "regrow": true
+   },
+   {
+    "type": "ironshell",
+    "n": 120,
+    "gapMs": 250,
+    "startMs": 5000
+   }
+  ]
+ },
+ {
+  "round": 33,
+  "groups": [
+   {
+    "type": "pink",
+    "n": 200,
+    "gapMs": 80,
+    "startMs": 0,
+    "regrow": true
+   },
+   {
+    "type": "brute",
+    "n": 53,
+    "gapMs": 450,
+    "startMs": 6000
+   },
+   {
+    "type": "gold",
+    "n": 47,
+    "gapMs": 340,
+    "startMs": 10000,
+    "camo": true,
+    "regrow": true
+   }
+  ]
+ },
+ {
+  "round": 34,
+  "groups": [
+   {
+    "type": "ironshell",
+    "n": 120,
+    "gapMs": 250,
+    "startMs": 0
+   },
+   {
+    "type": "ember",
+    "n": 120,
+    "gapMs": 170,
+    "startMs": 7000,
+    "camo": true
+   }
+  ]
+ },
+ {
+  "round": 35,
+  "groups": [
+   {
+    "type": "gold",
+    "n": 200,
+    "gapMs": 80,
+    "startMs": 0,
+    "camo": true,
+    "regrow": true
+   },
+   {
+    "type": "brute",
+    "n": 92,
+    "gapMs": 300,
+    "startMs": 8000
+   }
+  ]
+ },
+ {
+  "round": 36,
+  "groups": [
+   {
+    "type": "ember",
+    "n": 120,
+    "gapMs": 170,
+    "startMs": 0
+   },
+   {
+    "type": "ironshell",
+    "n": 120,
+    "gapMs": 250,
+    "startMs": 5000
+   },
+   {
+    "type": "pink",
+    "n": 200,
+    "gapMs": 80,
+    "startMs": 9000,
+    "camo": true
+   },
+   {
+    "type": "gold",
+    "n": 65,
+    "gapMs": 250,
+    "startMs": 13000,
+    "camo": true,
+    "regrow": true
+   }
+  ]
+ },
+ {
+  "round": 37,
+  "groups": [
+   {
+    "type": "frostling",
+    "n": 120,
+    "gapMs": 150,
+    "startMs": 0
+   },
+   {
+    "type": "brute",
+    "n": 82,
+    "gapMs": 300,
+    "startMs": 6000
+   }
+  ]
+ },
+ {
+  "round": 38,
+  "groups": [
+   {
+    "type": "crystal",
+    "n": 38,
+    "gapMs": 680,
+    "startMs": 0
+   },
+   {
+    "type": "brute",
+    "n": 100,
+    "gapMs": 300,
+    "startMs": 7000
+   }
+  ]
+ },
+ {
+  "round": 39,
+  "groups": [
+   {
+    "type": "brute",
+    "n": 100,
+    "gapMs": 300,
+    "startMs": 0
+   },
+   {
+    "type": "crystal",
+    "n": 25,
+    "gapMs": 1040,
+    "startMs": 8000
+   },
+   {
+    "type": "ember",
+    "n": 120,
+    "gapMs": 170,
+    "startMs": 12000,
+    "camo": true
+   },
+   {
+    "type": "gold",
+    "n": 90,
+    "gapMs": 180,
+    "startMs": 16000,
+    "camo": true,
+    "regrow": true
+   }
+  ]
+ },
+ {
+  "round": 40,
+  "groups": [
+   {
+    "type": "wyrm",
+    "n": 1,
+    "gapMs": 0,
+    "startMs": 0
+   },
+   {
+    "type": "frostling",
+    "n": 120,
+    "gapMs": 150,
+    "startMs": 12000
+   },
+   {
+    "type": "crystal",
+    "n": 32,
+    "gapMs": 810,
+    "startMs": 17000
+   }
+  ]
+ },
+ {
+  "round": 41,
+  "groups": [
+   {
+    "type": "frostling",
+    "n": 120,
+    "gapMs": 150,
+    "startMs": 0
+   },
+   {
+    "type": "crystal",
+    "n": 74,
+    "gapMs": 500,
+    "startMs": 6000
+   }
+  ]
+ },
+ {
+  "round": 42,
+  "groups": [
+   {
+    "type": "brute",
+    "n": 100,
+    "gapMs": 300,
+    "startMs": 0
+   },
+   {
+    "type": "frostling",
+    "n": 120,
+    "gapMs": 150,
+    "startMs": 7000,
+    "camo": true
+   },
+   {
+    "type": "crystal",
+    "n": 27,
+    "gapMs": 960,
+    "startMs": 11000
+   },
+   {
+    "type": "gold",
+    "n": 116,
+    "gapMs": 140,
+    "startMs": 15000,
+    "camo": true,
+    "regrow": true
+   }
+  ]
+ },
+ {
+  "round": 43,
+  "groups": [
+   {
+    "type": "crystal",
+    "n": 52,
+    "gapMs": 500,
+    "startMs": 0
+   },
+   {
+    "type": "ember",
+    "n": 120,
+    "gapMs": 170,
+    "startMs": 8000,
+    "camo": true
+   },
+   {
+    "type": "crystal",
+    "n": 52,
+    "gapMs": 500,
+    "startMs": 12000
+   }
+  ]
+ },
+ {
+  "round": 44,
+  "groups": [
+   {
+    "type": "crystal",
+    "n": 62,
+    "gapMs": 500,
+    "startMs": 0
+   },
+   {
+    "type": "frostling",
+    "n": 120,
+    "gapMs": 150,
+    "startMs": 5000
+   }
+  ]
+ },
+ {
+  "round": 45,
+  "groups": [
+   {
+    "type": "gloomship",
+    "n": 18,
+    "gapMs": 1670,
+    "startMs": 0
+   },
+   {
+    "type": "ironshell",
+    "n": 120,
+    "gapMs": 250,
+    "startMs": 6000
+   },
+   {
+    "type": "gold",
+    "n": 144,
+    "gapMs": 110,
+    "startMs": 10000,
+    "camo": true,
+    "regrow": true
+   }
+  ]
+ },
+ {
+  "round": 46,
+  "groups": [
+   {
+    "type": "gloomship",
+    "n": 16,
+    "gapMs": 1880,
+    "startMs": 0
+   },
+   {
+    "type": "ironshell",
+    "n": 120,
+    "gapMs": 250,
+    "startMs": 7000
+   }
+  ]
+ },
+ {
+  "round": 47,
+  "groups": [
+   {
+    "type": "frostling",
+    "n": 120,
+    "gapMs": 150,
+    "startMs": 0
+   },
+   {
+    "type": "crystal",
+    "n": 114,
+    "gapMs": 500,
+    "startMs": 8000
+   }
+  ]
+ },
+ {
+  "round": 48,
+  "groups": [
+   {
+    "type": "brute",
+    "n": 100,
+    "gapMs": 300,
+    "startMs": 0
+   },
+   {
+    "type": "frostling",
+    "n": 120,
+    "gapMs": 150,
+    "startMs": 5000,
+    "camo": true
+   },
+   {
+    "type": "crystal",
+    "n": 42,
+    "gapMs": 620,
+    "startMs": 9000
+   },
+   {
+    "type": "gold",
+    "n": 178,
+    "gapMs": 90,
+    "startMs": 13000,
+    "camo": true,
+    "regrow": true
+   }
+  ]
+ },
+ {
+  "round": 49,
+  "groups": [
+   {
+    "type": "gloomship",
+    "n": 14,
+    "gapMs": 2140,
+    "startMs": 0
+   },
+   {
+    "type": "ember",
+    "n": 120,
+    "gapMs": 170,
+    "startMs": 6000,
+    "camo": true
+   },
+   {
+    "type": "crystal",
+    "n": 81,
+    "gapMs": 500,
+    "startMs": 10000
+   }
+  ]
+ },
+ {
+  "round": 50,
+  "groups": [
+   {
+    "type": "crystal",
+    "n": 96,
+    "gapMs": 500,
+    "startMs": 0
+   },
+   {
+    "type": "frostling",
+    "n": 120,
+    "gapMs": 150,
+    "startMs": 7000
+   }
+  ]
+ },
+ {
+  "round": 51,
+  "groups": [
+   {
+    "type": "brute",
+    "n": 100,
+    "gapMs": 300,
+    "startMs": 0
+   },
+   {
+    "type": "crystal",
+    "n": 62,
+    "gapMs": 500,
+    "startMs": 8000
+   },
+   {
+    "type": "ember",
+    "n": 120,
+    "gapMs": 170,
+    "startMs": 12000,
+    "camo": true
+   },
+   {
+    "type": "gold",
+    "n": 200,
+    "gapMs": 80,
+    "startMs": 16000,
+    "camo": true,
+    "regrow": true
+   }
+  ]
+ },
+ {
+  "round": 52,
+  "groups": [
+   {
+    "type": "gloomship",
+    "n": 24,
+    "gapMs": 1250,
+    "startMs": 0
+   },
+   {
+    "type": "ironshell",
+    "n": 120,
+    "gapMs": 250,
+    "startMs": 5000
+   }
+  ]
+ },
+ {
+  "round": 53,
+  "groups": [
+   {
+    "type": "frostling",
+    "n": 120,
+    "gapMs": 150,
+    "startMs": 0
+   },
+   {
+    "type": "crystal",
+    "n": 176,
+    "gapMs": 500,
+    "startMs": 6000
+   }
+  ]
+ },
+ {
+  "round": 54,
+  "groups": [
+   {
+    "type": "brute",
+    "n": 100,
+    "gapMs": 300,
+    "startMs": 0
+   },
+   {
+    "type": "frostling",
+    "n": 120,
+    "gapMs": 150,
+    "startMs": 7000,
+    "camo": true
+   },
+   {
+    "type": "crystal",
+    "n": 65,
+    "gapMs": 500,
+    "startMs": 11000
+   },
+   {
+    "type": "gold",
+    "n": 200,
+    "gapMs": 80,
+    "startMs": 15000,
+    "camo": true,
+    "regrow": true
+   }
+  ]
+ },
+ {
+  "round": 55,
+  "groups": [
+   {
+    "type": "brute",
+    "n": 100,
+    "gapMs": 300,
+    "startMs": 0,
+    "fortified": true
+   },
+   {
+    "type": "ironshell",
+    "n": 120,
+    "gapMs": 250,
+    "startMs": 8000,
+    "fortified": true
+   }
+  ]
+ },
+ {
+  "round": 56,
+  "groups": [
+   {
+    "type": "crystal",
+    "n": 149,
+    "gapMs": 500,
+    "startMs": 0
+   },
+   {
+    "type": "frostling",
+    "n": 120,
+    "gapMs": 150,
+    "startMs": 5000
+   }
+  ]
+ },
+ {
+  "round": 57,
+  "groups": [
+   {
+    "type": "brute",
+    "n": 100,
+    "gapMs": 300,
+    "startMs": 0,
+    "fortified": true
+   },
+   {
+    "type": "crystal",
+    "n": 96,
+    "gapMs": 500,
+    "startMs": 6000
+   },
+   {
+    "type": "ember",
+    "n": 120,
+    "gapMs": 170,
+    "startMs": 10000,
+    "camo": true
+   },
+   {
+    "type": "gold",
+    "n": 200,
+    "gapMs": 80,
+    "startMs": 14000,
+    "camo": true,
+    "regrow": true
+   }
+  ]
+ },
+ {
+  "round": 58,
+  "groups": [
+   {
+    "type": "gloomship",
+    "n": 38,
+    "gapMs": 790,
+    "startMs": 0
+   },
+   {
+    "type": "ironshell",
+    "n": 120,
+    "gapMs": 250,
+    "startMs": 7000,
+    "fortified": true
+   }
+  ]
+ },
+ {
+  "round": 59,
+  "groups": [
+   {
+    "type": "frostling",
+    "n": 120,
+    "gapMs": 150,
+    "startMs": 0
+   },
+   {
+    "type": "crystal",
+    "n": 175,
+    "gapMs": 500,
+    "startMs": 8000,
+    "fortified": true
+   }
+  ]
+ },
+ {
+  "round": 60,
+  "groups": [
+   {
+    "type": "colossus",
+    "n": 1,
+    "gapMs": 0,
+    "startMs": 0
+   },
+   {
+    "type": "gloomship",
+    "n": 13,
+    "gapMs": 2310,
+    "startMs": 10000,
+    "fortified": true
+   },
+   {
+    "type": "crystal",
+    "n": 64,
+    "gapMs": 500,
+    "startMs": 15000,
+    "fortified": true
+   }
+  ]
+ },
+ {
+  "round": 61,
+  "groups": [
+   {
+    "type": "frostling",
+    "n": 120,
+    "gapMs": 150,
+    "startMs": 0,
+    "camo": true
+   },
+   {
+    "type": "crystal",
+    "n": 123,
+    "gapMs": 500,
+    "startMs": 6000,
+    "fortified": true
+   },
+   {
+    "type": "brute",
+    "n": 100,
+    "gapMs": 300,
+    "startMs": 10000,
+    "fortified": true
+   }
+  ]
+ },
+ {
+  "round": 62,
+  "groups": [
+   {
+    "type": "crystal",
+    "n": 145,
+    "gapMs": 500,
+    "startMs": 0,
+    "fortified": true
+   },
+   {
+    "type": "gloomship",
+    "n": 30,
+    "gapMs": 1000,
+    "startMs": 7000
+   },
+   {
+    "type": "ironshell",
+    "n": 120,
+    "gapMs": 250,
+    "startMs": 11000,
+    "fortified": true
+   }
+  ]
+ },
+ {
+  "round": 63,
+  "groups": [
+   {
+    "type": "gloomship",
+    "n": 30,
+    "gapMs": 1000,
+    "startMs": 0,
+    "fortified": true
+   },
+   {
+    "type": "frostling",
+    "n": 120,
+    "gapMs": 150,
+    "startMs": 8000,
+    "camo": true
+   },
+   {
+    "type": "gold",
+    "n": 200,
+    "gapMs": 80,
+    "startMs": 12000,
+    "camo": true,
+    "regrow": true
+   }
+  ]
+ },
+ {
+  "round": 64,
+  "groups": [
+   {
+    "type": "gloomship",
+    "n": 44,
+    "gapMs": 680,
+    "startMs": 0,
+    "fortified": true
+   },
+   {
+    "type": "ember",
+    "n": 120,
+    "gapMs": 170,
+    "startMs": 5000,
+    "camo": true
+   }
+  ]
+ },
+ {
+  "round": 65,
+  "groups": [
+   {
+    "type": "crystal",
+    "n": 137,
+    "gapMs": 500,
+    "startMs": 0,
+    "fortified": true
+   },
+   {
+    "type": "gloomship",
+    "n": 71,
+    "gapMs": 420,
+    "startMs": 6000
+   }
+  ]
+ },
+ {
+  "round": 66,
+  "groups": [
+   {
+    "type": "gloomship",
+    "n": 43,
+    "gapMs": 700,
+    "startMs": 0,
+    "fortified": true
+   },
+   {
+    "type": "crystal",
+    "n": 146,
+    "gapMs": 500,
+    "startMs": 7000,
+    "fortified": true
+   },
+   {
+    "type": "gold",
+    "n": 200,
+    "gapMs": 80,
+    "startMs": 11000,
+    "camo": true,
+    "regrow": true
+   }
+  ]
+ },
+ {
+  "round": 67,
+  "groups": [
+   {
+    "type": "frostling",
+    "n": 120,
+    "gapMs": 150,
+    "startMs": 0,
+    "camo": true
+   },
+   {
+    "type": "crystal",
+    "n": 179,
+    "gapMs": 500,
+    "startMs": 8000,
+    "fortified": true
+   },
+   {
+    "type": "brute",
+    "n": 100,
+    "gapMs": 300,
+    "startMs": 12000,
+    "fortified": true
+   }
+  ]
+ },
+ {
+  "round": 68,
+  "groups": [
+   {
+    "type": "crystal",
+    "n": 200,
+    "gapMs": 500,
+    "startMs": 0,
+    "fortified": true
+   },
+   {
+    "type": "gloomship",
+    "n": 44,
+    "gapMs": 680,
+    "startMs": 5000
+   },
+   {
+    "type": "ironshell",
+    "n": 120,
+    "gapMs": 250,
+    "startMs": 9000,
+    "fortified": true
+   }
+  ]
+ },
+ {
+  "round": 69,
+  "groups": [
+   {
+    "type": "gloomship",
+    "n": 44,
+    "gapMs": 680,
+    "startMs": 0,
+    "fortified": true
+   },
+   {
+    "type": "frostling",
+    "n": 120,
+    "gapMs": 150,
+    "startMs": 6000,
+    "camo": true
+   },
+   {
+    "type": "gold",
+    "n": 200,
+    "gapMs": 80,
+    "startMs": 10000,
+    "camo": true,
+    "regrow": true
+   }
+  ]
+ },
+ {
+  "round": 70,
+  "groups": [
+   {
+    "type": "gloomship",
+    "n": 64,
+    "gapMs": 470,
+    "startMs": 0,
+    "fortified": true
+   },
+   {
+    "type": "ember",
+    "n": 120,
+    "gapMs": 170,
+    "startMs": 7000,
+    "camo": true
+   }
+  ]
+ },
+ {
+  "round": 71,
+  "groups": [
+   {
+    "type": "crystal",
+    "n": 200,
+    "gapMs": 500,
+    "startMs": 0,
+    "fortified": true
+   },
+   {
+    "type": "gloomship",
+    "n": 104,
+    "gapMs": 400,
+    "startMs": 8000
+   }
+  ]
+ },
+ {
+  "round": 72,
+  "groups": [
+   {
+    "type": "gloomship",
+    "n": 63,
+    "gapMs": 480,
+    "startMs": 0,
+    "fortified": true
+   },
+   {
+    "type": "crystal",
+    "n": 200,
+    "gapMs": 500,
+    "startMs": 5000,
+    "fortified": true
+   },
+   {
+    "type": "pink",
+    "n": 200,
+    "gapMs": 80,
+    "startMs": 9000,
+    "camo": true,
+    "regrow": true
+   }
+  ]
+ },
+ {
+  "round": 73,
+  "groups": [
+   {
+    "type": "frostling",
+    "n": 120,
+    "gapMs": 150,
+    "startMs": 0,
+    "camo": true
+   },
+   {
+    "type": "crystal",
+    "n": 200,
+    "gapMs": 500,
+    "startMs": 6000,
+    "fortified": true
+   },
+   {
+    "type": "brute",
+    "n": 100,
+    "gapMs": 300,
+    "startMs": 10000,
+    "fortified": true
+   }
+  ]
+ },
+ {
+  "round": 74,
+  "groups": [
+   {
+    "type": "crystal",
+    "n": 200,
+    "gapMs": 500,
+    "startMs": 0,
+    "fortified": true
+   },
+   {
+    "type": "gloomship",
+    "n": 64,
+    "gapMs": 470,
+    "startMs": 7000
+   },
+   {
+    "type": "ironshell",
+    "n": 120,
+    "gapMs": 250,
+    "startMs": 11000,
+    "fortified": true
+   }
+  ]
+ },
+ {
+  "round": 75,
+  "groups": [
+   {
+    "type": "gloomship",
+    "n": 65,
+    "gapMs": 460,
+    "startMs": 0,
+    "fortified": true
+   },
+   {
+    "type": "frostling",
+    "n": 120,
+    "gapMs": 150,
+    "startMs": 8000,
+    "camo": true
+   },
+   {
+    "type": "pink",
+    "n": 200,
+    "gapMs": 80,
+    "startMs": 12000,
+    "camo": true,
+    "regrow": true
+   }
+  ]
+ },
+ {
+  "round": 76,
+  "groups": [
+   {
+    "type": "gloomship",
+    "n": 93,
+    "gapMs": 400,
+    "startMs": 0,
+    "fortified": true
+   },
+   {
+    "type": "ember",
+    "n": 120,
+    "gapMs": 170,
+    "startMs": 5000,
+    "camo": true
+   }
+  ]
+ },
+ {
+  "round": 77,
+  "groups": [
+   {
+    "type": "crystal",
+    "n": 200,
+    "gapMs": 500,
+    "startMs": 0,
+    "fortified": true
+   },
+   {
+    "type": "gloomship",
+    "n": 151,
+    "gapMs": 400,
+    "startMs": 6000
+   }
+  ]
+ },
+ {
+  "round": 78,
+  "groups": [
+   {
+    "type": "gloomship",
+    "n": 91,
+    "gapMs": 400,
+    "startMs": 0,
+    "fortified": true
+   },
+   {
+    "type": "crystal",
+    "n": 200,
+    "gapMs": 500,
+    "startMs": 7000,
+    "fortified": true
+   },
+   {
+    "type": "pink",
+    "n": 200,
+    "gapMs": 80,
+    "startMs": 11000,
+    "camo": true,
+    "regrow": true
+   }
+  ]
+ },
+ {
+  "round": 79,
+  "groups": [
+   {
+    "type": "frostling",
+    "n": 120,
+    "gapMs": 150,
+    "startMs": 0,
+    "camo": true
+   },
+   {
+    "type": "crystal",
+    "n": 200,
+    "gapMs": 500,
+    "startMs": 8000,
+    "fortified": true
+   },
+   {
+    "type": "brute",
+    "n": 100,
+    "gapMs": 300,
+    "startMs": 12000,
+    "fortified": true
+   }
+  ]
+ },
+ {
+  "round": 80,
+  "groups": [
+   {
+    "type": "leviathan",
+    "n": 1,
+    "gapMs": 0,
+    "startMs": 0,
+    "fortified": true
+   },
+   {
+    "type": "wyrm",
+    "n": 1,
+    "gapMs": 0,
+    "startMs": 9000,
+    "fortified": true
+   },
+   {
+    "type": "colossus",
+    "n": 1,
+    "gapMs": 0,
+    "startMs": 18000,
+    "fortified": true
+   },
+   {
+    "type": "gloomship",
+    "n": 35,
+    "gapMs": 860,
+    "startMs": 6000,
+    "fortified": true
+   },
+   {
+    "type": "crystal",
+    "n": 200,
+    "gapMs": 500,
+    "startMs": 11000,
+    "fortified": true
+   }
+  ]
+ },
+ {
+  "round": 81,
+  "groups": [
+   {
+    "type": "gloomship",
+    "n": 94,
+    "gapMs": 400,
+    "startMs": 0,
+    "fortified": true
+   },
+   {
+    "type": "frostling",
+    "n": 120,
+    "gapMs": 150,
+    "startMs": 6000,
+    "camo": true
+   },
+   {
+    "type": "pink",
+    "n": 200,
+    "gapMs": 80,
+    "startMs": 10000,
+    "camo": true,
+    "regrow": true
+   }
+  ]
+ },
+ {
+  "round": 82,
+  "groups": [
+   {
+    "type": "cruiser",
+    "n": 25,
+    "gapMs": 1360,
+    "startMs": 0
+   },
+   {
+    "type": "gloomship",
+    "n": 72,
+    "gapMs": 420,
+    "startMs": 7000,
+    "fortified": true
+   }
+  ]
+ },
+ {
+  "round": 83,
+  "groups": [
+   {
+    "type": "gloomship",
+    "n": 104,
+    "gapMs": 400,
+    "startMs": 0,
+    "fortified": true
+   },
+   {
+    "type": "crystal",
+    "n": 200,
+    "gapMs": 500,
+    "startMs": 8000,
+    "fortified": true
+   }
+  ]
+ },
+ {
+  "round": 84,
+  "groups": [
+   {
+    "type": "cruiser",
+    "n": 14,
+    "gapMs": 2430,
+    "startMs": 0,
+    "fortified": true
+   },
+   {
+    "type": "frostling",
+    "n": 120,
+    "gapMs": 150,
+    "startMs": 5000,
+    "camo": true
+   },
+   {
+    "type": "brute",
+    "n": 100,
+    "gapMs": 300,
+    "startMs": 9000,
+    "fortified": true
+   },
+   {
+    "type": "pink",
+    "n": 200,
+    "gapMs": 80,
+    "startMs": 13000,
+    "camo": true,
+    "regrow": true
+   }
+  ]
+ },
+ {
+  "round": 85,
+  "groups": [
+   {
+    "type": "gloomship",
+    "n": 129,
+    "gapMs": 400,
+    "startMs": 0,
+    "fortified": true
+   },
+   {
+    "type": "crystal",
+    "n": 200,
+    "gapMs": 500,
+    "startMs": 6000,
+    "fortified": true
+   },
+   {
+    "type": "frostling",
+    "n": 120,
+    "gapMs": 150,
+    "startMs": 10000,
+    "camo": true
+   }
+  ]
+ },
+ {
+  "round": 86,
+  "groups": [
+   {
+    "type": "cruiser",
+    "n": 18,
+    "gapMs": 1890,
+    "startMs": 0,
+    "fortified": true
+   },
+   {
+    "type": "crystal",
+    "n": 200,
+    "gapMs": 500,
+    "startMs": 7000,
+    "fortified": true
+   }
+  ]
+ },
+ {
+  "round": 87,
+  "groups": [
+   {
+    "type": "cruiser",
+    "n": 33,
+    "gapMs": 1200,
+    "startMs": 0
+   },
+   {
+    "type": "gloomship",
+    "n": 96,
+    "gapMs": 400,
+    "startMs": 8000,
+    "fortified": true
+   },
+   {
+    "type": "pink",
+    "n": 200,
+    "gapMs": 80,
+    "startMs": 12000,
+    "camo": true,
+    "regrow": true
+   }
+  ]
+ },
+ {
+  "round": 88,
+  "groups": [
+   {
+    "type": "gloomship",
+    "n": 155,
+    "gapMs": 400,
+    "startMs": 0,
+    "fortified": true
+   },
+   {
+    "type": "crystal",
+    "n": 200,
+    "gapMs": 500,
+    "startMs": 5000,
+    "fortified": true
+   }
+  ]
+ },
+ {
+  "round": 89,
+  "groups": [
+   {
+    "type": "cruiser",
+    "n": 15,
+    "gapMs": 2270,
+    "startMs": 0,
+    "fortified": true
+   },
+   {
+    "type": "frostling",
+    "n": 120,
+    "gapMs": 150,
+    "startMs": 6000,
+    "camo": true
+   },
+   {
+    "type": "brute",
+    "n": 100,
+    "gapMs": 300,
+    "startMs": 10000,
+    "fortified": true
+   }
+  ]
+ },
+ {
+  "round": 90,
+  "groups": [
+   {
+    "type": "duskrunner",
+    "n": 100,
+    "gapMs": 250,
+    "startMs": 0
+   },
+   {
+    "type": "gloomship",
+    "n": 74,
+    "gapMs": 410,
+    "startMs": 7000,
+    "fortified": true
+   },
+   {
+    "type": "pink",
+    "n": 200,
+    "gapMs": 80,
+    "startMs": 11000,
+    "camo": true,
+    "regrow": true
+   }
+  ]
+ },
+ {
+  "round": 91,
+  "groups": [
+   {
+    "type": "cruiser",
+    "n": 26,
+    "gapMs": 1310,
+    "startMs": 0,
+    "fortified": true
+   },
+   {
+    "type": "crystal",
+    "n": 200,
+    "gapMs": 500,
+    "startMs": 8000,
+    "fortified": true
+   }
+  ]
+ },
+ {
+  "round": 92,
+  "groups": [
+   {
+    "type": "cruiser",
+    "n": 37,
+    "gapMs": 1200,
+    "startMs": 0
+   },
+   {
+    "type": "gloomship",
+    "n": 160,
+    "gapMs": 400,
+    "startMs": 5000,
+    "fortified": true
+   }
+  ]
+ },
+ {
+  "round": 93,
+  "groups": [
+   {
+    "type": "gloomship",
+    "n": 160,
+    "gapMs": 400,
+    "startMs": 0,
+    "fortified": true
+   },
+   {
+    "type": "crystal",
+    "n": 200,
+    "gapMs": 500,
+    "startMs": 6000,
+    "fortified": true
+   },
+   {
+    "type": "pink",
+    "n": 200,
+    "gapMs": 80,
+    "startMs": 10000,
+    "camo": true,
+    "regrow": true
+   }
+  ]
+ },
+ {
+  "round": 94,
+  "groups": [
+   {
+    "type": "cruiser",
+    "n": 22,
+    "gapMs": 1550,
+    "startMs": 0,
+    "fortified": true
+   },
+   {
+    "type": "frostling",
+    "n": 120,
+    "gapMs": 150,
+    "startMs": 7000,
+    "camo": true
+   },
+   {
+    "type": "brute",
+    "n": 100,
+    "gapMs": 300,
+    "startMs": 11000,
+    "fortified": true
+   }
+  ]
+ },
+ {
+  "round": 95,
+  "groups": [
+   {
+    "type": "gloomship",
+    "n": 160,
+    "gapMs": 400,
+    "startMs": 0,
+    "fortified": true
+   },
+   {
+    "type": "crystal",
+    "n": 200,
+    "gapMs": 500,
+    "startMs": 8000,
+    "fortified": true
+   },
+   {
+    "type": "frostling",
+    "n": 120,
+    "gapMs": 150,
+    "startMs": 12000,
+    "camo": true
+   }
+  ]
+ },
+ {
+  "round": 96,
+  "groups": [
+   {
+    "type": "cruiser",
+    "n": 38,
+    "gapMs": 1200,
+    "startMs": 0,
+    "fortified": true
+   },
+   {
+    "type": "crystal",
+    "n": 200,
+    "gapMs": 500,
+    "startMs": 5000,
+    "fortified": true
+   },
+   {
+    "type": "pink",
+    "n": 200,
+    "gapMs": 80,
+    "startMs": 9000,
+    "camo": true,
+    "regrow": true
+   }
+  ]
+ },
+ {
+  "round": 97,
+  "groups": [
+   {
+    "type": "cruiser",
+    "n": 55,
+    "gapMs": 1200,
+    "startMs": 0
+   },
+   {
+    "type": "gloomship",
+    "n": 160,
+    "gapMs": 400,
+    "startMs": 6000,
+    "fortified": true
+   }
+  ]
+ },
+ {
+  "round": 98,
+  "groups": [
+   {
+    "type": "gloomship",
+    "n": 160,
+    "gapMs": 400,
+    "startMs": 0,
+    "fortified": true
+   },
+   {
+    "type": "crystal",
+    "n": 200,
+    "gapMs": 500,
+    "startMs": 7000,
+    "fortified": true
+   }
+  ]
+ },
+ {
+  "round": 99,
+  "groups": [
+   {
+    "type": "cruiser",
+    "n": 34,
+    "gapMs": 1200,
+    "startMs": 0,
+    "fortified": true
+   },
+   {
+    "type": "frostling",
+    "n": 120,
+    "gapMs": 150,
+    "startMs": 8000,
+    "camo": true
+   },
+   {
+    "type": "brute",
+    "n": 100,
+    "gapMs": 300,
+    "startMs": 12000,
+    "fortified": true
+   },
+   {
+    "type": "pink",
+    "n": 200,
+    "gapMs": 80,
+    "startMs": 16000,
+    "camo": true,
+    "regrow": true
+   }
+  ]
+ },
+ {
+  "round": 100,
+  "groups": [
+   {
+    "type": "dreadnought",
+    "n": 1,
+    "gapMs": 0,
+    "startMs": 0
+   },
+   {
+    "type": "cruiser",
+    "n": 32,
+    "gapMs": 1200,
+    "startMs": 10000,
+    "fortified": true
+   },
+   {
+    "type": "gloomship",
+    "n": 160,
+    "gapMs": 400,
+    "startMs": 15000,
+    "fortified": true
+   }
+  ]
+ },
+ {
+  "round": 101,
+  "groups": [
+   {
+    "type": "gloomship",
+    "n": 160,
+    "gapMs": 400,
+    "startMs": 0,
+    "fortified": true
+   },
+   {
+    "type": "cruiser",
+    "n": 45,
+    "gapMs": 1200,
+    "startMs": 6000,
+    "fortified": true
+   }
+  ]
+ },
+ {
+  "round": 102,
+  "groups": [
+   {
+    "type": "duskrunner",
+    "n": 100,
+    "gapMs": 250,
+    "startMs": 0
+   },
+   {
+    "type": "gloomship",
+    "n": 160,
+    "gapMs": 400,
+    "startMs": 7000,
+    "fortified": true
+   },
+   {
+    "type": "pink",
+    "n": 200,
+    "gapMs": 80,
+    "startMs": 11000,
+    "camo": true,
+    "regrow": true
+   }
+  ]
+ },
+ {
+  "round": 103,
+  "groups": [
+   {
+    "type": "cruiser",
+    "n": 60,
+    "gapMs": 1200,
+    "startMs": 0,
+    "fortified": true
+   },
+   {
+    "type": "crystal",
+    "n": 200,
+    "gapMs": 500,
+    "startMs": 8000,
+    "fortified": true
+   }
+  ]
+ },
+ {
+  "round": 104,
+  "groups": [
+   {
+    "type": "cruiser",
+    "n": 37,
+    "gapMs": 1200,
+    "startMs": 0,
+    "fortified": true
+   },
+   {
+    "type": "duskrunner",
+    "n": 100,
+    "gapMs": 250,
+    "startMs": 5000
+   },
+   {
+    "type": "gloomship",
+    "n": 154,
+    "gapMs": 400,
+    "startMs": 9000,
+    "fortified": true
+   }
+  ]
+ },
+ {
+  "round": 105,
+  "groups": [
+   {
+    "type": "cruiser",
+    "n": 58,
+    "gapMs": 1200,
+    "startMs": 0,
+    "fortified": true
+   },
+   {
+    "type": "duskrunner",
+    "n": 100,
+    "gapMs": 250,
+    "startMs": 6000
+   },
+   {
+    "type": "pink",
+    "n": 200,
+    "gapMs": 80,
+    "startMs": 10000,
+    "camo": true,
+    "regrow": true
+   }
+  ]
+ },
+ {
+  "round": 106,
+  "groups": [
+   {
+    "type": "gloomship",
+    "n": 160,
+    "gapMs": 400,
+    "startMs": 0,
+    "fortified": true
+   },
+   {
+    "type": "cruiser",
+    "n": 57,
+    "gapMs": 1200,
+    "startMs": 7000,
+    "fortified": true
+   }
+  ]
+ },
+ {
+  "round": 107,
+  "groups": [
+   {
+    "type": "duskrunner",
+    "n": 100,
+    "gapMs": 250,
+    "startMs": 0
+   },
+   {
+    "type": "gloomship",
+    "n": 160,
+    "gapMs": 400,
+    "startMs": 8000,
+    "fortified": true
+   }
+  ]
+ },
+ {
+  "round": 108,
+  "groups": [
+   {
+    "type": "cruiser",
+    "n": 60,
+    "gapMs": 1200,
+    "startMs": 0,
+    "fortified": true
+   },
+   {
+    "type": "crystal",
+    "n": 200,
+    "gapMs": 500,
+    "startMs": 5000,
+    "fortified": true
+   },
+   {
+    "type": "pink",
+    "n": 200,
+    "gapMs": 80,
+    "startMs": 9000,
+    "camo": true,
+    "regrow": true
+   }
+  ]
+ },
+ {
+  "round": 109,
+  "groups": [
+   {
+    "type": "cruiser",
+    "n": 58,
+    "gapMs": 1200,
+    "startMs": 0,
+    "fortified": true
+   },
+   {
+    "type": "duskrunner",
+    "n": 100,
+    "gapMs": 250,
+    "startMs": 6000
+   },
+   {
+    "type": "gloomship",
+    "n": 160,
+    "gapMs": 400,
+    "startMs": 10000,
+    "fortified": true
+   }
+  ]
+ },
+ {
+  "round": 110,
+  "groups": [
+   {
+    "type": "dreadnought",
+    "n": 1,
+    "gapMs": 0,
+    "startMs": 0
+   },
+   {
+    "type": "dreadnought",
+    "n": 1,
+    "gapMs": 0,
+    "startMs": 20000,
+    "fortified": true
+   },
+   {
+    "type": "duskrunner",
+    "n": 100,
+    "gapMs": 250,
+    "startMs": 0
+   },
+   {
+    "type": "cruiser",
+    "n": 57,
+    "gapMs": 1200,
+    "startMs": 7000,
+    "fortified": true
+   }
+  ]
+ },
+ {
+  "round": 111,
+  "groups": [
+   {
+    "type": "gloomship",
+    "n": 160,
+    "gapMs": 400,
+    "startMs": 0,
+    "fortified": true
+   },
+   {
+    "type": "cruiser",
+    "n": 60,
+    "gapMs": 1200,
+    "startMs": 8000,
+    "fortified": true
+   },
+   {
+    "type": "pink",
+    "n": 200,
+    "gapMs": 80,
+    "startMs": 12000,
+    "camo": true,
+    "regrow": true
+   }
+  ]
+ },
+ {
+  "round": 112,
+  "groups": [
+   {
+    "type": "duskrunner",
+    "n": 100,
+    "gapMs": 250,
+    "startMs": 0
+   },
+   {
+    "type": "gloomship",
+    "n": 160,
+    "gapMs": 400,
+    "startMs": 5000,
+    "fortified": true
+   }
+  ]
+ },
+ {
+  "round": 113,
+  "groups": [
+   {
+    "type": "cruiser",
+    "n": 60,
+    "gapMs": 1200,
+    "startMs": 0,
+    "fortified": true
+   },
+   {
+    "type": "crystal",
+    "n": 200,
+    "gapMs": 500,
+    "startMs": 6000,
+    "fortified": true
+   }
+  ]
+ },
+ {
+  "round": 114,
+  "groups": [
+   {
+    "type": "cruiser",
+    "n": 60,
+    "gapMs": 1200,
+    "startMs": 0,
+    "fortified": true
+   },
+   {
+    "type": "duskrunner",
+    "n": 100,
+    "gapMs": 250,
+    "startMs": 7000
+   },
+   {
+    "type": "gloomship",
+    "n": 160,
+    "gapMs": 400,
+    "startMs": 11000,
+    "fortified": true
+   },
+   {
+    "type": "pink",
+    "n": 200,
+    "gapMs": 80,
+    "startMs": 15000,
+    "camo": true,
+    "regrow": true
+   }
+  ]
+ },
+ {
+  "round": 115,
+  "groups": [
+   {
+    "type": "cruiser",
+    "n": 60,
+    "gapMs": 1200,
+    "startMs": 0,
+    "fortified": true
+   },
+   {
+    "type": "duskrunner",
+    "n": 100,
+    "gapMs": 250,
+    "startMs": 8000
+   }
+  ]
+ },
+ {
+  "round": 116,
+  "groups": [
+   {
+    "type": "gloomship",
+    "n": 160,
+    "gapMs": 400,
+    "startMs": 0,
+    "fortified": true
+   },
+   {
+    "type": "cruiser",
+    "n": 60,
+    "gapMs": 1200,
+    "startMs": 5000,
+    "fortified": true
+   }
+  ]
+ },
+ {
+  "round": 117,
+  "groups": [
+   {
+    "type": "duskrunner",
+    "n": 100,
+    "gapMs": 250,
+    "startMs": 0
+   },
+   {
+    "type": "gloomship",
+    "n": 160,
+    "gapMs": 400,
+    "startMs": 6000,
+    "fortified": true
+   },
+   {
+    "type": "pink",
+    "n": 200,
+    "gapMs": 80,
+    "startMs": 10000,
+    "camo": true,
+    "regrow": true
+   }
+  ]
+ },
+ {
+  "round": 118,
+  "groups": [
+   {
+    "type": "cruiser",
+    "n": 60,
+    "gapMs": 1200,
+    "startMs": 0,
+    "fortified": true
+   },
+   {
+    "type": "crystal",
+    "n": 200,
+    "gapMs": 500,
+    "startMs": 7000,
+    "fortified": true
+   }
+  ]
+ },
+ {
+  "round": 119,
+  "groups": [
+   {
+    "type": "cruiser",
+    "n": 60,
+    "gapMs": 1200,
+    "startMs": 0,
+    "fortified": true
+   },
+   {
+    "type": "duskrunner",
+    "n": 100,
+    "gapMs": 250,
+    "startMs": 8000
+   },
+   {
+    "type": "gloomship",
+    "n": 160,
+    "gapMs": 400,
+    "startMs": 12000,
+    "fortified": true
+   }
+  ]
+ },
+ {
+  "round": 120,
+  "groups": [
+   {
+    "type": "dreadnought",
+    "n": 2,
+    "gapMs": 14000,
+    "startMs": 0,
+    "fortified": true
+   },
+   {
+    "type": "duskrunner",
+    "n": 100,
+    "gapMs": 250,
+    "startMs": 8000
+   },
+   {
+    "type": "cruiser",
+    "n": 60,
+    "gapMs": 1200,
+    "startMs": 13000,
+    "fortified": true
+   },
+   {
+    "type": "pink",
+    "n": 200,
+    "gapMs": 80,
+    "startMs": 17000,
+    "camo": true,
+    "regrow": true
+   },
+   {
+    "type": "duskrunner",
+    "n": 60,
+    "gapMs": 300,
+    "startMs": 40000
+   }
+  ]
+ }
+]

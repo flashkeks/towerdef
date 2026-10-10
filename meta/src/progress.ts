@@ -6,7 +6,7 @@ import { z } from 'zod';
 import type { Difficulty, GameOptions, HeroType, ModeId, PowerKey, TowerType, Tiers } from '../../sim/src/types';
 import {
   BULK_BUYER_BP, DIFFICULTIES, DIFFICULTY_XP_BP, EMBERS_FIRST_MEDAL, EMBERS_LEVEL_UP, EMBERS_WIN, POWER_KEYS, embersForRound, emptyInventory, powerPrice, FREEPLAY_BP, KNOWLEDGE, LEVEL_UNLOCKS, MAX_ROUND, TIER_COST, TOWER_TYPES, WIN_BONUS_XP,
-  MAPS, MODE_IDS, MODE_META, levelFromXp, mapById, maxRoundOf, nodeById, unlockLevel, xpForLevel, type LevelUnlock, type MapMeta,
+  MAPS, MODE_IDS, MODE_META, levelFromXp, roundRewardBp, mapById, maxRoundOf, nodeById, unlockLevel, xpForLevel, type LevelUnlock, type MapMeta,
 } from './data';
 import { SEEN_MATCHES_MAX, bestOf, emptyMedals, medalCount, medalsOf, type Profile } from './profile';
 
@@ -113,6 +113,8 @@ export interface RewardCtx {
   mapBp?: number;
   /** Modus-Bonus in Basispunkten (2000 = +20 %). */
   modeBp?: number;
+  /** Runde 15b: Daempfung je Runde (`roundRewardBp(Endrunde)`), Vorgabe 10000 = keine (damit 80 Runden die Level-Kurve nicht sprengen). */
+  roundBp?: number;
 }
 
 /** Spieler-XP eines Matches. Reihenfolge: Schwierigkeit, Scholar, Kartenfaktor, Modus-Bonus; erst am Ende gerundet. */
@@ -120,7 +122,7 @@ export function matchXp(roundsCleared: number, difficulty: Difficulty, won: bool
   const maxRound = ctx.maxRound ?? MAX_ROUND;
   let base = 0;
   for (let r = 1; r <= roundsCleared; r++) {
-    const v = 20 + 10 * r;
+    const v = Math.floor(((20 + 10 * r) * (ctx.roundBp ?? 10000)) / 10000);
     base += r > maxRound ? Math.floor((v * FREEPLAY_BP) / 10000) : v;
   }
   if (won) base += WIN_BONUS_XP;
@@ -141,6 +143,9 @@ export interface MatchReport {
   unlocks: LevelUnlock[];
   newMedal: Difficulty | null;
   newBest: boolean;
+  /** Runde 15b: neue Freeplay-Bestrunde dieser Karte, und ihr Stand nach dem Match (0 = nie im Freeplay). */
+  newFreeplayBest: boolean;
+  freeplayBest: number;
   /** Runde 15: Karte und Modus dieses Matches und ihre Belohnungsfaktoren (Basispunkte). */
   map: string;
   mode: ModeId;
@@ -165,11 +170,13 @@ export function matchEmbers(roundsCleared: number, difficulty: Difficulty, won: 
   const maxRound = ctx.maxRound ?? MAX_ROUND;
   let rounds = 0;
   for (let r = 1; r <= Math.min(roundsCleared, maxRound); r++) rounds += embersForRound(r);
+  // Runde 15b: bei 40/60/80 Runden gedaempft (Summe, abgerundet), Level-Kurve und Embers-Wirtschaft bleiben im Rahmen
+  rounds = Math.floor((rounds * (ctx.roundBp ?? 10000)) / 10000);
   const win = won ? EMBERS_WIN[difficulty] : 0;
   const medal = newMedal ? EMBERS_FIRST_MEDAL : 0;
   const levelUp = levelUps * EMBERS_LEVEL_UP;
   // Ember Rush (Runde 14): +1 Ember je geschaffter Runde
-  const rushEmbers = rush ? Math.min(roundsCleared, maxRound) : 0;
+  const rushEmbers = rush ? Math.floor((Math.min(roundsCleared, maxRound) * (ctx.roundBp ?? 10000)) / 10000) : 0;
   const core = rounds + win + medal + rushEmbers;
   const scaled = Math.floor(((core * (ctx.mapBp ?? 10000)) / 10000) * ((10000 + (ctx.modeBp ?? 0)) / 10000) + 1e-9);
   const bonus = scaled - core;
@@ -193,10 +200,11 @@ export function applyMatch(p: Profile, resultIn: MatchResult): { profile: Profil
   if (p.seenMatches.includes(res.matchId)) {
     return {
       profile: p,
-      report: { duplicate: true, xpGained: 0, xpBefore: p.playerXp, xpAfter: p.playerXp, levelBefore: lv0.level, levelAfter: lv0.level, pointsGained: 0, unlocks: [], newMedal: null, newBest: false, towerXpGained: {}, embersGained: 0, embers: { rounds: 0, win: 0, medal: 0, levelUp: 0, pouch: 0, rush: 0 }, powersUsed: 0, map: res.map, mode: res.mode, rewardBp: rewardOf(res.map, res.mode), unlockedMaps: [], unlockedModes: [] },
+      report: { duplicate: true, xpGained: 0, xpBefore: p.playerXp, xpAfter: p.playerXp, levelBefore: lv0.level, levelAfter: lv0.level, pointsGained: 0, unlocks: [], newMedal: null, newBest: false, newFreeplayBest: false, freeplayBest: p.freeplayBest[res.map] ?? 0, towerXpGained: {}, embersGained: 0, embers: { rounds: 0, win: 0, medal: 0, levelUp: 0, pouch: 0, rush: 0 }, powersUsed: 0, map: res.map, mode: res.mode, rewardBp: rewardOf(res.map, res.mode), unlockedMaps: [], unlockedModes: [] },
     };
   }
-  const ctx: RewardCtx = { maxRound: maxRoundOf(res.map), mapBp: rewardFactors(res.map).xpBp, modeBp: rewardFactors(res.map, res.mode).modeBp };
+  const endRound = maxRoundOf(res.map, res.difficulty);
+  const ctx: RewardCtx = { maxRound: endRound, roundBp: roundRewardBp(endRound), mapBp: rewardFactors(res.map).xpBp, modeBp: rewardFactors(res.map, res.mode).modeBp };
   const ectx: RewardCtx = { ...ctx, mapBp: rewardFactors(res.map).embersBp };
   const xpGained = matchXp(res.roundsCleared, res.difficulty, res.won, hasKnow(p, 'scholar') ? SCHOLAR_BP : 0, ctx);
   const playerXp = p.playerXp + xpGained;
@@ -228,9 +236,17 @@ export function applyMatch(p: Profile, resultIn: MatchResult): { profile: Profil
   const bestMap = { ...p.best };
   const modeBest = { ...p.modeBest };
   const prev = bestOf(p, res.map, res.difficulty, res.mode);
-  const better = !prev || res.roundsCleared > prev.round || (res.roundsCleared === prev.round && res.livesLost < prev.livesLost);
+  // Runde 15b: die Bestleistung der Schwierigkeit endet bei der Endrunde; was darueber geschafft wurde, ist Freeplay (eigene Bestrunde)
+  const roundsBest = Math.min(res.roundsCleared, endRound);
+  const better = !prev || roundsBest > prev.round || (roundsBest === prev.round && res.livesLost < prev.livesLost);
+  const freeplayBest = { ...p.freeplayBest };
+  let newFreeplayBest = false;
+  if (res.mode === 'standard' && res.roundsCleared > endRound && res.roundsCleared > (freeplayBest[res.map] ?? 0)) {
+    freeplayBest[res.map] = res.roundsCleared;
+    newFreeplayBest = true;
+  }
   if (better) {
-    const rec = { round: res.roundsCleared, livesLost: res.livesLost };
+    const rec = { round: roundsBest, livesLost: res.livesLost };
     if (res.mode === 'standard') bestMap[res.map] = { ...bestMap[res.map], [res.difficulty]: rec };
     else modeBest[res.map] = { ...modeBest[res.map], [res.mode]: { ...modeBest[res.map]?.[res.mode], [res.difficulty]: rec } };
   }
@@ -260,6 +276,7 @@ export function applyMatch(p: Profile, resultIn: MatchResult): { profile: Profil
     best: bestMap,
     modeMedals,
     modeBest,
+    freeplayBest,
     seenMatches: [...p.seenMatches, res.matchId].slice(-SEEN_MATCHES_MAX),
     matchesPlayed: p.matchesPlayed + 1,
     matchesWon: p.matchesWon + (res.won ? 1 : 0),
@@ -273,7 +290,7 @@ export function applyMatch(p: Profile, resultIn: MatchResult): { profile: Profil
     report: {
       map: res.map, mode: res.mode, rewardBp: rewardOf(res.map, res.mode), unlockedMaps: unlockedMapsNow, unlockedModes: unlockedModesNow,
       duplicate: false, xpGained, xpBefore: p.playerXp, xpAfter: playerXp, levelBefore: lv0.level, levelAfter: lv1.level,
-      pointsGained: lv1.level - lv0.level, unlocks, newMedal, newBest: better, towerXpGained, embersGained, embers: emb, powersUsed,
+      pointsGained: lv1.level - lv0.level, unlocks, newMedal, newBest: better, newFreeplayBest, freeplayBest: freeplayBest[res.map] ?? 0, towerXpGained, embersGained, embers: emb, powersUsed,
     },
   };
 }

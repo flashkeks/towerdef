@@ -2,7 +2,7 @@
  * Duskwardens-Kern (Runde 11): deterministisch, Ganzzahl-Zustand, 60 Ticks/s.
  * Tick-Reihenfolge: siehe sim/README.md und `tick()` unten.
  */
-import { DATA, POWER_KEYS, baseStats } from './data.js';
+import { DATA, POWER_KEYS, baseStats, type RoundData } from './data.js';
 import { dist2, isqrt } from './fixed.js';
 import { hashState } from './hash.js';
 import { branchAt, clearOfPaths, getMap, nearestOnPaths, pointInPolygon } from './map.js';
@@ -10,6 +10,7 @@ import { DEFLATION_CASH, MODES, firstRound, isModeId, modeAllows } from './modes
 import { towerXpPot, splitTowerXp } from './xp.js';
 import { COVERAGE_STEP, positionAt } from './path.js';
 import { nextInt, seedRng } from './prng.js';
+import { roundBonus, LIST_ROUNDS, freeplayGroups, fpHpBp, fpSpeedBp, popBp } from './freeplay.js';
 import { applyMod, pathOrder, type Mod, type Stats } from './stats.js';
 import { cosBp, rotate, sinBp } from './trig.js';
 import type {
@@ -48,7 +49,7 @@ const ABILITY_ORDER: AbilityId[] = ['arrowRain', 'absoluteZero', 'flare', 'dawnb
 /** Reichweite ab hier = ganze Karte (Longshot): Zielwahl über alle Gegner, keine Reichweiten-Boni. */
 export const GLOBAL_RANGE = 1_000_000;
 const perTower = <T,>(v: () => T): Record<TowerType, T> => ({ ranger: v(), bombardier: v(), frostcaller: v(), longshot: v(), market: v(), thornweaver: v(), alchemist: v() });
-const STRONG_RANK: Record<EnemyType, number> = { colossus: 8, wyrm: 8, gloomship: 8, leviathan: 8, crystal: 7, brute: 7, frostling: 6, ironshell: 6, ember: 6, pink: 4, gold: 4, green: 3, blue: 2, red: 1 };
+const STRONG_RANK: Record<EnemyType, number> = { dreadnought: 9, cruiser: 8, duskrunner: 8, colossus: 8, wyrm: 8, gloomship: 8, leviathan: 8, crystal: 7, brute: 7, frostling: 6, ironshell: 6, ember: 6, pink: 4, gold: 4, green: 3, blue: 2, red: 1 };
 
 const isHero = (t: TowerType | HeroType): t is HeroType => t === 'wren';
 
@@ -72,6 +73,10 @@ interface EnemyRt {
   blimp: boolean;
   immuneExplosive: boolean;
   immuneStun: boolean;
+  /** Runde 15b: nie verlangsamt/eingefroren (Dusk Dreadnought). */
+  immuneSlow: boolean;
+  /** Runde 15b: immer getarnt (Duskrunner). */
+  alwaysCamo: boolean;
   heavy: boolean;
   /** Pop-Gold der Huelle (Boss/Blimp), 0 = Pop-Cash der Schwierigkeit. */
   hullCash: number;
@@ -88,18 +93,23 @@ export function createGame(opts: GameOptions): Game {
   if (!isModeId(mode)) throw new Error(`Unbekannter Modus: ${String(opts.mode)}`);
   const halfCash = mode === 'half-cash';
   const deflation = mode === 'deflation';
-  const rounds = DATA.roundsByMap[opts.map] ?? DATA.rounds;
-  const maxRound = rounds.length;
+  // Runde 15b (Max, 10.10.2026: "eine Rundenliste fuer alle Karten ... bis Runde 60 oder 80 und danach Free Play"):
+  // gemeinsame Liste (`DATA.rounds`, 120 feste Runden), Sieg nach der Endrunde der Schwierigkeit (40/60/80),
+  // danach optional Weiterspielen (`continue`) auf derselben Liste, ab R121 Formel (`freeplay.ts`).
+  const maxRound = diff.endRound;
   const baseRound = firstRound(mode, maxRound) - 1;
   const nBranches = map.paths.length;
-  const info: GameInfo = { map: opts.map, mode, difficulty: opts.difficulty, maxRound, baseRound, branches: nBranches };
+  const info: GameInfo = { map: opts.map, mode, difficulty: opts.difficulty, maxRound, baseRound, branches: nBranches, listRounds: LIST_ROUNDS };
+  const fpSeed = Math.floor(opts.seed ?? 0);
+  /** Gruppen der Runde `r` (Liste bis R120, danach Formel). */
+  const roundGroups = (r: number): RoundData['groups'] => (r <= LIST_ROUNDS ? DATA.rounds[r - 1].groups : freeplayGroups(r, fpSeed));
   /** Weg des Astes (Gegner, Fallen). */
   const pathOf = (branch: number) => map.paths[branch] ?? map.path;
 
   // ---- Gegnertabelle dieser Partie ----
   const etab = {} as Record<EnemyType, EnemyRt>;
   for (const [k, d] of Object.entries(DATA.enemies) as [EnemyType, (typeof DATA.enemies)[EnemyType]][]) {
-    const hp = d.boss ? (d.bossHp?.[opts.difficulty as Difficulty] ?? diff.bossHp) : d.hp;
+    const hp = d.bossHp ? d.bossHp[opts.difficulty as Difficulty] : d.boss ? diff.bossHp : d.hp;
     etab[k] = {
       hp,
       sp: Math.floor((52_000_000 * d.tempo * diff.speedBp) / (60 * 100 * 10000)),
@@ -113,6 +123,8 @@ export function createGame(opts: GameOptions): Game {
       blimp: !!d.blimp || !!d.boss,
       immuneExplosive: !!d.immuneExplosive,
       immuneStun: !!d.immuneStun,
+      immuneSlow: !!d.immuneSlow,
+      alwaysCamo: !!d.alwaysCamo,
       heavy: !!d.heavy,
       hullCash: d.hullCash ?? (d.boss ? 100 : 0),
       nodes: 0,
@@ -125,10 +137,14 @@ export function createGame(opts: GameOptions): Game {
     etab[k].nodes = cnt(k);
   }
   /** Huelle eines Typs (Fortified: doppelt bei schweren Typen). */
-  const hpOf = (type: EnemyType, fort: boolean): number => etab[type].hp * (fort && etab[type].heavy ? 2 : 1);
-  /** RBE des ganzen Baums (Huelle + Kinder), mit Fortified. */
-  const treeRbe = (type: EnemyType, fort: boolean): number => hpOf(type, fort) + etab[type].children.reduce((a, c) => a + treeRbe(c, fort), 0);
-  const kidsRbe = (type: EnemyType, fort: boolean): number => etab[type].children.reduce((a, c) => a + treeRbe(c, fort), 0);
+  const hpOf = (type: EnemyType, fort: boolean, round = 0): number => {
+    const base = etab[type].hp * (fort && etab[type].heavy ? 2 : 1);
+    // Runde 15b: ab R121 (Formel) wachsen Huelle ab 10 HP (Brute, Crystal, Blimps, Bosse); die 1-HP-Typen bleiben bei 1
+    return round > LIST_ROUNDS && base >= 10 ? Math.max(1, Math.round((base * fpHpBp(round)) / 10000)) : base;
+  };
+  /** RBE des ganzen Baums (Huelle + Kinder), mit Fortified und Freeplay-Skalierung der Runde. */
+  const treeRbe = (type: EnemyType, fort: boolean, round = 0): number => hpOf(type, fort, round) + etab[type].children.reduce((a, c) => a + treeRbe(c, fort, round), 0);
+  const kidsRbe = (type: EnemyType, fort: boolean, round = 0): number => etab[type].children.reduce((a, c) => a + treeRbe(c, fort, round), 0);
 
   const zeroPowers = (v: number): Record<PowerKey, number> => {
     const o = {} as Record<PowerKey, number>;
@@ -143,6 +159,7 @@ export function createGame(opts: GameOptions): Game {
     tick: 0,
     phase: 'build',
     round: baseRound,
+    freeplay: false,
     roundsCleared: 0,
     cash: deflation ? DEFLATION_CASH : halfCash ? Math.floor((diff.startCash + (kmods.startCash ?? 0)) / 2) : diff.startCash + (kmods.startCash ?? 0),
     lives: lives0,
@@ -173,6 +190,7 @@ export function createGame(opts: GameOptions): Game {
     puddles: [],
     gateLeft: Math.max(0, Math.floor(kmods.gate ?? 0)),
     popCarry: 0,
+    incCarry: 0,
     halfCarry: 0,
     baseRound,
     warpLeft: 0,
@@ -202,6 +220,16 @@ export function createGame(opts: GameOptions): Game {
    * Runde 15: Einkommen durch die Modi schleusen. Deflation: nichts. Half Cash: halbiert, der Rest (0/1) wandert in `halfCarry`,
    * damit nichts verloren geht. Rueckgabe = tatsaechlich gutgeschriebene Menge. Verkaufserloese und Bankabhebungen laufen nicht hier durch.
    */
+  /**
+   * Runde 15b (Max, 10.10.2026: "T5 um R50-60 bezahlbar"): Pop-Gold ab R21 gedaempft (`popBp`), mit Bruchrest, damit 80+ Runden
+   * nicht in Geld ersticken. Gilt fuer Pops, Waende und Shrink; Rundenbonus bleibt eigen (`roundBonus`).
+   */
+  const dampen = (cash: number, round: number): number => {
+    if (round <= 20 || cash <= 0) return cash;
+    const t = cash * popBp(round) + S.incCarry;
+    S.incCarry = t % 10000;
+    return Math.floor(t / 10000);
+  };
   const earn = (n: number): number => {
     if (deflation) return 0;
     if (!halfCash) return n;
@@ -366,7 +394,8 @@ export function createGame(opts: GameOptions): Game {
   // ---------- Gegner ----------
 
   function spawnEnemy(type: EnemyType, progress: number, camo: boolean, round: number, revealed: boolean, branch = 0, fortified = false, regrowTo: EnemyType | null = null): EnemyState {
-    const hp = hpOf(type, fortified);
+    const hp = hpOf(type, fortified, round);
+    camo = camo || etab[type].alwaysCamo;
     const pos = positionAt(pathOf(branch), progress);
     const e: EnemyState = {
       id: S.nextId++, type, x: pos.x, y: pos.y, progress, hp, maxHp: hp, camo, revealed,
@@ -410,7 +439,9 @@ export function createGame(opts: GameOptions): Game {
   const enemySpeed = (e: EnemyState): number => {
     const base = etab[e.type].sp;
     let v = e.slowTicks > 0 ? Math.floor((base * (10000 - e.slowBp)) / 10000) : base;
-    if (S.warpLeft > 0) {
+    // Runde 15b: ab R121 steigt das Tempo je Runde (Formel in freeplay.ts)
+    if (e.round > LIST_ROUNDS) v = Math.floor((v * fpSpeedBp(e.round)) / 10000);
+    if (S.warpLeft > 0 && !etab[e.type].immuneSlow) {
       const bp = DATA.powers.timeWarp.params[etab[e.type].blimp ? 'bossSlowBp' : 'slowBp'];
       v = Math.floor((v * (10000 - bp)) / 10000);
     }
@@ -498,7 +529,7 @@ export function createGame(opts: GameOptions): Game {
     }
     // Rubber to Gold: markierte Gegner (und ihre Kinder) geben +1 Gold je Schicht
     if (e.goldTicks > 0) cash += 1;
-    cash = earn(cash);
+    cash = earn(dampen(cash, e.round));
     S.cash += cash;
     const owner = towerById(src);
     if (owner) {
@@ -521,7 +552,7 @@ export function createGame(opts: GameOptions): Game {
       const off = (2 * i - (n - 1)) * 3000;
       const ct = d.children[i];
       // Regrow: Kinder einer Regrow-Leiter-Gruppe wachsen bis zum Ursprungstyp nach, sonst bis zu ihrem eigenen Typ
-      const rg = e.regrowTo === null ? null : LADDER.includes(e.regrowTo) && LADDER.includes(ct) ? e.regrowTo : ct;
+      const rg = e.type === 'duskrunner' ? ct : e.regrowTo === null ? null : LADDER.includes(e.regrowTo) && LADDER.includes(ct) ? e.regrowTo : ct;
       const k = spawnEnemy(ct, Math.max(0, e.progress + off), e.camo, e.round, e.revealed, e.branch, e.fortified, rg);
       k.goldTicks = e.goldTicks;
       kids.push(k);
@@ -561,7 +592,7 @@ export function createGame(opts: GameOptions): Game {
 
   function applySlow(e: EnemyState, bp: number, ticks: number, brittle: boolean, raw = false): void {
     const d = etab[e.type];
-    if (d.immuneCold || e.dead) return;
+    if (d.immuneCold || d.immuneSlow || e.dead) return;
     if (d.blimp && !raw) {
       bp = Math.floor(bp / 2);
       ticks = Math.floor(ticks / 2);
@@ -851,9 +882,9 @@ export function createGame(opts: GameOptions): Game {
     if (etab[e.type].blimp) return;
     const hit = S.walls.filter((w) => (w.branch < 0 || w.branch === e.branch) && w.progress > a && w.progress <= b).sort((x, y) => x.progress - y.progress || x.id - y.id);
     for (const w of hit) {
-      const rbe = e.hp + kidsRbe(e.type, e.fortified);
+      const rbe = e.hp + kidsRbe(e.type, e.fortified, e.round);
       const nodes = etab[e.type].nodes;
-      const cash = earn(nodes * diff.popCash);
+      const cash = earn(dampen(nodes * diff.popCash, e.round));
       e.dead = true;
       S.cash += cash;
       w.left -= rbe;
@@ -875,7 +906,7 @@ export function createGame(opts: GameOptions): Game {
   /** Shrink Potion: der Gegner wird zum Red Glim (gleiche Id/Position). Die abgetragenen Schichten zahlen wie Pops. */
   function shrinkEnemy(t: TowerState, e: EnemyState): void {
     const removed = etab[e.type].nodes - 1;
-    const cash = earn(removed * diff.popCash);
+    const cash = earn(dampen(removed * diff.popCash, e.round));
     const from = e.type;
     S.cash += cash;
     t.pops += removed;
@@ -1054,7 +1085,7 @@ export function createGame(opts: GameOptions): Game {
       if (st.snareEvery > 0) {
         if (t.snareCd > 0) t.snareCd--;
         if (t.snareCd <= 0) {
-          const v = pickTarget(t, t.range, t.camo, 'first', true, (o) => !etab[o.type].boss && o.stunTicks <= 0 && o.frozenTicks <= 0);
+          const v = pickTarget(t, t.range, t.camo, 'first', true, (o) => !etab[o.type].boss && !etab[o.type].immuneStun && o.stunTicks <= 0 && o.frozenTicks <= 0);
           if (v) {
             t.snareCd = st.snareEvery;
             v.stunTicks = Math.max(v.stunTicks, st.snareTicks);
@@ -1306,7 +1337,7 @@ export function createGame(opts: GameOptions): Game {
       emit({ type: 'gate', tick: S.tick, enemy: e.id, etype: e.type });
       return;
     }
-    const lost = e.hp + kidsRbe(e.type, e.fortified);
+    const lost = e.hp + kidsRbe(e.type, e.fortified, e.round);
     e.dead = true;
     S.lives = Math.max(0, S.lives - lost);
     S.stats.leaked += lost;
@@ -1327,7 +1358,7 @@ export function createGame(opts: GameOptions): Game {
         damage(e, DATA.powers.caltrops.params.damage, 'magic', 0);
       } else {
         const d = etab[e.type];
-        if (d.blimp || d.immuneCold || e.frozenTicks > 0) continue;
+        if (d.blimp || d.immuneCold || d.immuneSlow || e.frozenTicks > 0) continue;
         e.frozenTicks = DATA.powers.frostTrap.params.freezeTicks;
         emit({ type: 'status', tick: S.tick, enemy: e.id, kind: 'freeze' });
       }
@@ -1370,7 +1401,7 @@ export function createGame(opts: GameOptions): Game {
             const to = LADDER[ri + 1];
             emit({ type: 'regrow', tick: S.tick, enemy: e.id, from: e.type, to, x: e.x, y: e.y });
             e.type = to;
-            e.hp = hpOf(to, e.fortified);
+            e.hp = hpOf(to, e.fortified, e.round);
             e.maxHp = e.hp;
             e.damageStage = 0;
             e.regrowTicks = REGROW_TICKS;
@@ -1421,8 +1452,7 @@ export function createGame(opts: GameOptions): Game {
 
   function startRoundInternal(): void {
     S.round++;
-    const r = rounds[S.round - 1];
-    for (const g of r.groups) {
+    for (const g of roundGroups(S.round)) {
       S.groups.push({
         round: S.round, type: g.type, camo: !!g.camo, regrow: !!g.regrow, fortified: !!g.fortified,
         lane: g.lane === undefined ? -1 : g.lane % nBranches, spawned: 0, left: g.n,
@@ -1511,7 +1541,7 @@ export function createGame(opts: GameOptions): Game {
   }
 
   function endRound(r: number): void {
-    const bonus = earn(100 + r + (r <= 10 ? (kmods.earlyBonus ?? 0) : 0));
+    const bonus = earn(roundBonus(r) + (r <= 10 ? (kmods.earlyBonus ?? 0) : 0));
     S.cash += bonus;
     S.roundsCleared++;
     S.activeRounds = S.activeRounds.filter((x) => x !== r);
@@ -1572,7 +1602,7 @@ export function createGame(opts: GameOptions): Game {
       for (const g of S.groups) present.add(g.round);
       for (const r of S.activeRounds.slice()) if (!present.has(r)) endRound(r);
     }
-    if (S.round >= maxRound && S.activeRounds.length === 0 && S.groups.length === 0 && S.enemies.length === 0) {
+    if (S.round >= maxRound && !S.freeplay && S.activeRounds.length === 0 && S.groups.length === 0 && S.enemies.length === 0) {
       S.phase = 'won';
       emit({ type: 'gameOver', tick: S.tick, result: 'won', round: S.round });
       return;
@@ -1583,7 +1613,7 @@ export function createGame(opts: GameOptions): Game {
   function tick(): void {
     if (S.phase === 'won' || S.phase === 'lost') return;
     // 1. Auto-Start, Spawns
-    if (S.autoStart && S.round > baseRound && S.round < maxRound && S.groups.length === 0) startRoundInternal();
+    if (S.autoStart && S.round > baseRound && (S.freeplay || S.round < maxRound) && S.groups.length === 0) startRoundInternal();
     spawnTick();
     // 2. Fähigkeits-Abklingzeiten
     for (const a of S.abilities) if (!a.ready && --a.cdLeft <= 0) { a.cdLeft = 0; a.ready = true; }
@@ -1961,7 +1991,7 @@ export function createGame(opts: GameOptions): Game {
   }
 
   function roundPreview(r: number): RoundPreview | null {
-    if (!Number.isInteger(r) || r < 1 || r > rounds.length) return null;
+    if (!Number.isInteger(r) || r < 1 || r > 9999) return null;
     const groups: RoundPreview['groups'] = [];
     let rbe = 0, hasCamo = false, hasArmor = false, hasEmber = false, hasBoss = false, hasFrostling = false, hasBlimp = false, hasRegrow = false, hasFortified = false;
     const tree = (e: EnemyType, depth: number): void => {
@@ -1971,12 +2001,12 @@ export function createGame(opts: GameOptions): Game {
       if (etab[e].blimp) hasBlimp = true;
       if (depth < 10) for (const c of etab[e].children) tree(c, depth + 1);
     };
-    for (const g of rounds[r - 1].groups) {
-      const camo = !!g.camo, regrow = !!g.regrow, fortified = !!g.fortified;
+    for (const g of roundGroups(r)) {
+      const camo = !!g.camo || etab[g.type].alwaysCamo, regrow = !!g.regrow, fortified = !!g.fortified;
       const old = groups.find((x) => x.type === g.type && x.camo === camo && x.regrow === regrow && x.fortified === fortified);
       if (old) old.n += g.n;
       else groups.push({ type: g.type, n: g.n, camo, regrow, fortified });
-      rbe += g.n * treeRbe(g.type, fortified);
+      rbe += g.n * treeRbe(g.type, fortified, r);
       if (camo) hasCamo = true;
       if (regrow) hasRegrow = true;
       if (fortified) hasFortified = true;
@@ -1987,7 +2017,15 @@ export function createGame(opts: GameOptions): Game {
   }
 
   function apply(cmd: Command): CommandResult {
+    if (S.phase === 'won' && cmd.type === 'continue') {
+      // Runde 15b: nach dem Sieg weiterspielen ("Continue in Freeplay"); ohne Medaillen-Einfluss
+      S.freeplay = true;
+      S.phase = 'build';
+      emit({ type: 'continue', tick: S.tick, round: S.round });
+      return { ok: true, id: S.round };
+    }
     if (S.phase === 'won' || S.phase === 'lost') return { ok: false, reason: 'game-over' };
+    if (cmd.type === 'continue') return { ok: false, reason: 'not-won' };
     const res = applyInner(cmd);
     sweep();
     return res;
@@ -2072,9 +2110,11 @@ export function createGame(opts: GameOptions): Game {
         return usePower(cmd);
       case 'startRound':
         if (S.groups.length > 0) return { ok: false, reason: 'spawning' };
-        if (S.round >= maxRound) return { ok: false, reason: 'no-more-rounds' };
+        if (S.round >= maxRound && !S.freeplay) return { ok: false, reason: 'no-more-rounds' };
         startRoundInternal();
         return { ok: true, id: S.round };
+      case 'continue':
+        return { ok: false, reason: 'not-won' };
       case 'autoStart':
         S.autoStart = !!cmd.on;
         return { ok: true };
