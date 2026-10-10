@@ -61,18 +61,18 @@ const HAND: SpireProp[] = [
   P('gatetower', 236, 28), P('gatetower', 236, 148), P('gatetower', 236, 290),
   P('brazier', 270, 36), P('brazier', 270, 160), P('brazier', 270, 292),
   // Innenhof: Kaserne, Waffenkammer, Stall, Zisterne
-  P('hall', 448, 80, 0), P('hall', 440, 330, 1), P('roundtower', 372, 98), P('roundtower', 372, 270), P('roundtower', 536, 330),
+  P('hall', 448, 80, 0), P('hall', 440, 330, 1), P('roundtower', 380, 98), P('roundtower', 380, 270), P('roundtower', 536, 330),
   P('cisternarch', 452, 254), P('crate', 390, 240), P('barrel', 398, 236), P('crate', 500, 236), P('barrel', 508, 244), P('rack', 392, 214), P('banner', 468, 228),
-  P('statue', 436, 104), P('brazier', 520, 150), P('brazier', 420, 214),
+  P('statue', 436, 104), P('brazier', 470, 160), P('brazier', 420, 214),
   P('banner', 366, 40), P('banner', 540, 40), P('banner', 536, 300), P('brazier', 510, 60), P('brazier', 388, 130), P('crate', 520, 316), P('barrel', 392, 306), P('stakes', 500, 286),
   // Bergfried auf der Insel im Lavagraben
   P('keep', 606, 226), P('statue', 584, 136), P('statue', 628, 136), P('brazier', 606, 128), P('brazier', 586, 248), P('brazier', 626, 248),
   // Aussenwerke: Belagerungsgeraet, Zelte, Palisaden, Truemmer
   P('catapult', 60, 90), P('tent', 140, 88, 0), P('stakes', 200, 80), P('crate', 30, 78), P('barrel', 38, 84), P('rack', 100, 84), P('banner', 28, 100),
   P('catapult', 100, 148), P('tent', 190, 146, 1), P('stakes', 40, 150), P('rubble', 150, 130), P('barrel', 70, 128), P('brazier', 214, 128),
-  P('tent', 50, 232, 0), P('rack', 30, 214), P('stakes', 40, 290), P('deadtree', 140, 232, 0), P('rubble', 120, 296), P('brazier', 74, 290), P('crate', 60, 302),
-  P('tent', 224, 250, 1), P('stakes', 220, 300), P('barrel', 210, 330), P('rock', 150, 326), P('rock', 100, 332), P('bones', 170, 266), P('rock', 20, 338, 1),
-  P('bones', 130, 108), P('rock', 16, 44), P('deadtree', 206, 22, 0), P('rubble', 120, 28), P('stakes', 160, 28),
+  P('tent', 50, 232, 0), P('rack', 30, 214), P('stakes', 40, 290), P('deadtree', 140, 232, 0), P('rubble', 128, 288), P('brazier', 74, 290), P('crate', 100, 288),
+  P('tent', 224, 250, 1), P('stakes', 224, 288), P('barrel', 210, 330), P('rock', 160, 290), P('rock', 100, 332), P('bones', 170, 266), P('rock', 20, 338, 1),
+  P('bones', 130, 108), P('rock', 16, 72), P('deadtree', 206, 22, 0), P('rubble', 120, 28), P('stakes', 160, 28),
 ];
 export const SP_PROPS: SpireProp[] = [...HAND].sort((a, b) => a.y - b.y);
 

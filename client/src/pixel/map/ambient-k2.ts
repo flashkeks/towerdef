@@ -7,6 +7,7 @@ import { C, hash2 } from './buf';
 import { MAP_H, MAP_W } from './layout';
 import type { AmbientPoint } from './ambient';
 import { HB_PROPS } from './harbor-layout';
+import { SP_PROPS } from './spire-layout';
 import type { MapId } from './types';
 
 const S = (t: number): number => t / 1000;
@@ -73,9 +74,42 @@ function harborAir(t: number): AmbientPoint[] {
   return out;
 }
 
+
+// ---------- Duskspire Keep: Glut aus dem Lavagraben, Funken ueber den Feuerschalen, kalter Dunst ----------
+const SP_BRAZIERS: [number, number][] = SP_PROPS.filter((p) => p.kind === 'brazier').map((p) => [p.x, p.y - 14]);
+/** Lavagraben-Spalten: [x0, x1, y0, y1] (West-Graben, Nordteil des Bergfried-Grabens, Ostteil). */
+const SP_GLOW: [number, number, number, number][] = [[262, 288, 0, 360], [536, 650, 82, 102], [558, 650, 258, 278], [536, 554, 106, 254]];
+export const SP_EMBERS = 70;
+
+function spireAir(t: number): AmbientPoint[] {
+  const out: AmbientPoint[] = [];
+  const s = S(t);
+  for (let i = 0; i < SP_EMBERS; i++) {
+    const [x0, x1, y0, y1] = SP_GLOW[i % SP_GLOW.length];
+    const life = 3 + hash2(i, 1, 140) * 3;
+    const ph = ((s / life + hash2(i, 2, 140)) % 1 + 1) % 1;
+    const x = x0 + hash2(i, 3, 140) * (x1 - x0) + Math.sin(s * 1.3 + i) * 4;
+    const y = y0 + hash2(i, 4, 140) * (y1 - y0) - ph * 22;
+    out.push({ kind: 'ember', x: Math.round(x), y: Math.round(y), w: 1, c: ph < 0.5 ? C.orange : C.amber, a: 0.95 * (1 - ph) });
+  }
+  SP_BRAZIERS.forEach(([bx, by], k) => {
+    for (let m = 0; m < 2; m++) {
+      const ph = ((s / (1.2 + m * 0.5) + hash2(k, m, 141)) % 1 + 1) % 1;
+      out.push({ kind: 'ember', x: Math.round(bx + Math.sin(s * 2 + k + m * 3) * 3), y: Math.round(by - ph * 14), w: 1, c: m ? C.yellow : C.orange, a: 1 - ph });
+    }
+  });
+  for (let i = 0; i < 8; i++) {
+    const ph = ((s / 58 + hash2(i, 1, 142)) % 1 + 1) % 1;
+    const w = 100 + Math.floor(hash2(i, 2, 142) * 90);
+    out.push({ kind: 'haze', x: Math.round(-w + ph * (MAP_W + 2 * w)), y: Math.round(20 + hash2(i, 3, 142) * (MAP_H - 50) + Math.sin(s * 0.4 + i) * 4), w, h: 6 + Math.floor(hash2(i, 4, 142) * 7), c: i % 2 ? C.stone : C.silver, a: 0.04 + 0.015 * Math.sin(s * 0.5 + i) });
+  }
+  return out;
+}
+
 /** Alle bewegten Luftteilchen der K2-Karten; leer fuer fremde Karten. */
 export function ambientK2(id: MapId, tMs: number): AmbientPoint[] {
   if (id === 'dunes') return sandstorm(tMs);
   if (id === 'harbor') return harborAir(tMs);
+  if (id === 'spire') return spireAir(tMs);
   return [];
 }
