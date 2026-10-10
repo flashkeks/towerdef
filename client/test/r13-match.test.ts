@@ -12,7 +12,7 @@ const mi = (o: Partial<MarketInfo> = {}): MarketInfo => ({ income: 80, hasBank: 
 
 describe('Turm-Leiste', () => {
   it('Reihenfolge und Hotkeys', () => {
-    expect(TOWER_TYPES).toEqual(['ranger', 'bombardier', 'frostcaller', 'longshot', 'market', 'thornweaver', 'alchemist']);
+    expect(TOWER_TYPES).toEqual(['ranger', 'bombardier', 'frostcaller', 'longshot', 'market', 'thornweaver', 'alchemist', 'riverkeeper', 'bellringer', 'tinker']);
     expect(HOTKEY.longshot).toBe('T');
     expect(HOTKEY.market).toBe('Z');
     expect(new Set(Object.values(HOTKEY)).size).toBe(Object.keys(HOTKEY).length);

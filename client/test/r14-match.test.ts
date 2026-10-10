@@ -12,8 +12,8 @@ const tw = (type: string, tiers: [number, number, number] = [0, 0, 0], id = 1): 
 
 describe('Turm-Leiste Runde 14', () => {
   it('sieben Tuerme, Thornweaver D, Alchemist A, Hotkeys eindeutig', () => {
-    expect(TOWER_TYPES).toHaveLength(7);
-    expect(TOWER_TYPES.slice(5)).toEqual(['thornweaver', 'alchemist']);
+    expect(TOWER_TYPES).toHaveLength(10); // Runde 16 TP: + Riverkeeper, Bellringer, Tinker
+    expect(TOWER_TYPES.slice(5, 7)).toEqual(['thornweaver', 'alchemist']);
     expect(HOTKEY.thornweaver).toBe('D');
     expect(HOTKEY.alchemist).toBe('A');
     expect(new Set(Object.values(HOTKEY)).size).toBe(Object.keys(HOTKEY).length);
