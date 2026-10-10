@@ -11,7 +11,7 @@ export const WARNING_TEXT: Record<Warning, { name: string; tip: string }> = {
   ember: { name: 'Ember', tip: 'Emberlings burn out and cannot be frozen.' },
   boss: { name: 'Boss', tip: 'A boss walks this round.' },
   frostling: { name: 'Blast-proof', tip: 'Frostlings shrug off explosions. Use arrows, frost or magic.' },
-  blimp: { name: 'Blimp', tip: 'Gloomships cannot be frozen, slow down by half, and their children take no damage until the hull breaks.' },
+  blimp: { name: 'Blimp', tip: 'Gloomships, Cruisers and Duskrunners cannot be frozen, slow down by half, and their children take no damage until the hull breaks.' },
   regrow: { name: 'Regrow', tip: 'Bloom foes grow a layer back every 3 seconds. Pop them fast.' },
   fortified: { name: 'Fortified', tip: 'Fortified foes have double hull. Bring heavy hitters.' },
 };
@@ -19,6 +19,7 @@ export const WARNING_TEXT: Record<Warning, { name: string; tip: string }> = {
 export const ENEMY_NAMES: Record<EnemyKind, string> = {
   red: 'Red Glim', blue: 'Blue Glim', green: 'Green Glim', gold: 'Gold Glim', ironshell: 'Ironshell', ember: 'Emberling', brute: 'Brute', leviathan: 'Dusk Leviathan',
   pink: 'Pink Glim', frostling: 'Frostling', crystal: 'Crystal Brute', gloomship: 'Gloomship', wyrm: 'Frost Wyrm', colossus: 'Ember Colossus',
+  cruiser: 'Gloom Cruiser', duskrunner: 'Duskrunner', dreadnought: 'Dusk Dreadnought',
 };
 
 export function warnings(p: RoundPreview): Warning[] {

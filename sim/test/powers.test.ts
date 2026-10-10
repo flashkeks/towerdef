@@ -313,7 +313,8 @@ describe('Powers: Vorschau', () => {
     const g = newGame();
     expect(g.roundPreview(1)).toEqual({ round: 1, groups: [{ type: 'red', n: 20, camo: false, regrow: false, fortified: false }], rbe: 20, hasCamo: false, hasArmor: false, hasEmber: false, hasBoss: false, hasFrostling: false, hasBlimp: false, hasRegrow: false, hasFortified: false });
     expect(g.roundPreview(0)).toBeNull();
-    expect(g.roundPreview(21)).toBeNull();
+    expect(g.roundPreview(21)).not.toBeNull(); // Runde 15b: 120 feste Runden + Formel, kein Ende bei R20
+    expect(g.roundPreview(0.5)).toBeNull();
   });
   it('alle Runden: Gruppen passen zu rounds.json, RBE = Summe, Warnsymbole', () => {
     const g = newGame();

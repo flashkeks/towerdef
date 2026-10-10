@@ -17,10 +17,10 @@ export const MAX_ROUND = 20;
 export const END_ROUND: Record<Difficulty, number> = { easy: DATA.difficulties.easy.endRound, medium: DATA.difficulties.medium.endRound, hard: DATA.difficulties.hard.endRound };
 /**
  * Daempfung von Spieler-XP und Embers je Runde in Basispunkten, damit 40/60/80 Runden die Level-Kurve nicht sprengen:
- * bis 20 Runden unveraendert, darueber (20 / Endrunde)^1,25 (Easy 4204, Medium 2495, Hard 1768). Eine volle Partie bleibt so bei
- * rund 3.800 / 4.900 / 6.000 Basis-XP (frueher R20 = 2.500).
+ * bis 20 Runden unveraendert, darueber (20 / Endrunde)^1,5 (Easy 3536, Medium 1925, Hard 1250). Eine volle Partie bleibt so bei
+ * rund 3.400 / 4.300 / 5.300 XP (Medium; frueher R20 = 2.970).
  */
-export const roundRewardBp = (endRound: number): number => (endRound <= 20 ? 10000 : Math.round(10000 * Math.pow(20 / endRound, 1.25)));
+export const roundRewardBp = (endRound: number): number => (endRound <= 20 ? 10000 : Math.round(10000 * Math.pow(20 / endRound, 1.5)));
 
 // ---------------------------------------------------------------- Karten und Modi (Runde 15, docs/design/karten-gegner-r15.md)
 

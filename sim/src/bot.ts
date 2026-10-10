@@ -325,9 +325,9 @@ export function parseStrategy(text: string): Strategy {
 /**
  * Kaufreihenfolge "gestaffelt" (so spielt ein Mensch eher): zwei Tuerme + Held zuerst, dann stufenweise upgraden,
  * weitere Tuerme paarweise nach Stufe 1/2/3 dazu; ab Stufe 4 sind alle platziert. Jeder Pfad wird genau bis zum Ziel gekauft.
- * Der Standard-Bot kauft sonst erst alle Tuerme und dann alle Stufe 1 usw. (Runde 15b, Bot-Matrix.)
+ * Der Standard-Bot kauft sonst erst alle Tuerme und dann alle Stufe 1 usw. (Runde 15b, Bot-Matrix.) `delay` verschiebt das Nachsetzen der weiteren Tuerme um so viele Stufen.
  */
-export function staged(st: Strategy): Strategy {
+export function staged(st: Strategy, delay = 0): Strategy {
   const n = st.towers.length;
   const toks: string[] = ['p0'];
   if (n > 1) toks.push('p1');
@@ -341,7 +341,8 @@ export function staged(st: Strategy): Strategy {
         while (bought[i][k] < lvl) { toks.push(`u${i}${'ABC'[k]}`); bought[i][k]++; }
       }
     }
-    if (lvl <= 3) while (placed < n && placed < 2 + 2 * lvl) toks.push(`p${placed++}`);
+    // delay > 0: weitere Tuerme erst nach Stufe 1 + delay (Hard: erst die ersten Tuerme ausbauen)
+    if (lvl > delay && lvl <= 3 + delay) while (placed < n && placed < 2 + 2 * (lvl - delay)) toks.push(`p${placed++}`);
   }
   while (placed < n) {
     const i = placed;

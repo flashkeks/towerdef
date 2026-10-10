@@ -29,11 +29,11 @@ for (const [label, text] of COMBOS) {
   if (only && !only.includes(label.split(' ')[0] + label.split(' ')[1] + (label.split(' ')[2] ?? '')) && !only.includes(label)) { /* kein Filter-Treffer */ }
   for (const map of maps) {
     const cells = diffs.map((d) => {
-      // je Zelle die bessere von zwei Kaufreihenfolgen (Standard-Bot und gestaffelt): ein Mensch waehlt die passende
+      // je Zelle die bessere von drei Kaufreihenfolgen (Standard-Bot, gestaffelt, gestaffelt mit spaetem Nachsetzen): ein Mensch waehlt die passende
       const rs = seeds.map((seed) => {
         const a = runBot(parseStrategy(`${text} + hero`), { difficulty: d, seed, map, freeplay: true });
-        const b = runBot(staged(parseStrategy(`${text} + hero`)), { difficulty: d, seed, map, freeplay: true });
-        return b.round > a.round ? b : a;
+        const rs3 = [0, 2].map((dl) => runBot(staged(parseStrategy(`${text} + hero`), dl), { difficulty: d, seed, map, freeplay: true }));
+        return [a, ...rs3].reduce((x, y) => (y.round > x.round ? y : x));
       });
       const cell = rs.map((r) => (r.wonAt > 0 ? `Sieg+${r.round - r.wonAt}${r.result === 'won' && r.round === r.wonAt ? '' : ''}` : `R${r.round}`));
       return cell.join('/');

@@ -48,10 +48,10 @@ describe('Daten', () => {
     expect(DATA.rbe).toMatchObject({ red: 1, blue: 2, green: 3, gold: 4, ironshell: 9, ember: 9, brute: 28, leviathan: 412 });
   });
 
-  it('20 Runden: RBE wie runden.md', () => {
+  it('R1-20: RBE wie runden.md (Runde 15b: die Liste hat 120, R1-20 bleiben die alte Meadow-Liste)', () => {
     const expected = [20, 35, 45, 70, 94, 110, 170, 152, 186, 240, 162, 286, 260, 366, 384, 424, 632, 576, 922, 932];
     // Tabellenwerte sind "RBE"; Runde 15/17/19/20 enthalten Brutes (28), Tabelle nennt 384/632/922/932 (P5: R17 14 statt 16, R19 22 statt 26 Brutes)
-    const got = DATA.rounds.map((r) => r.groups.reduce((a, g) => a + g.n * DATA.rbe[g.type], 0));
+    const got = DATA.rounds.slice(0, 20).map((r) => r.groups.reduce((a, g) => a + g.n * DATA.rbe[g.type], 0));
     expect(got).toEqual(expected);
   });
 
@@ -59,7 +59,7 @@ describe('Daten', () => {
     const cash = [20, 35, 45, 70, 94, 110, 170, 152, 186, 240, 162, 286, 260, 366, 312, 424, 506, 576, 724, 606];
     // Schichten je Runde (Cash = Schichten x popCash 2), Boss-Hülle 100: brute 19, leviathan 176 (Boss-Hülle 100 + 4 Brutes)
     const per: Record<string, number> = { red: 1, blue: 2, green: 3, gold: 4, ironshell: 9, ember: 9, brute: 19, leviathan: 176 };
-    const got = DATA.rounds.map((r) => r.groups.reduce((a, g) => a + g.n * per[g.type], 0));
+    const got = DATA.rounds.slice(0, 20).map((r) => r.groups.reduce((a, g) => a + g.n * per[g.type], 0));
     expect(got).toEqual(cash);
   });
 
