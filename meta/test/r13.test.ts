@@ -13,13 +13,13 @@ const res = (o: Partial<MatchResult> = {}): MatchResult => ({
 });
 
 describe('Wissensbaum: Struktur', () => {
-  it('40 Knoten in 5 Ästen (R13: 28/52, R14: +12/+25), Summe 77 Punkte, Kosten 1-3, eindeutige IDs', () => {
-    expect(KNOWLEDGE).toHaveLength(40);
-    expect(new Set(KNOWLEDGE.map((n) => n.id)).size).toBe(40);
-    expect(KNOWLEDGE.reduce((s, n) => s + n.cost, 0)).toBe(77);
+  it('46 Knoten in 5 Ästen (R13: 28/52, R14: +12/+25, R16: +6/+9), Summe 86 Punkte, Kosten 1-3, eindeutige IDs', () => {
+    expect(KNOWLEDGE).toHaveLength(46);
+    expect(new Set(KNOWLEDGE.map((n) => n.id)).size).toBe(46);
+    expect(KNOWLEDGE.reduce((s, n) => s + n.cost, 0)).toBe(86);
     expect(BRANCHES).toEqual(['economy', 'primary', 'specialists', 'wardens', 'powers']);
     const per = Object.fromEntries(BRANCHES.map((b) => [b, KNOWLEDGE.filter((n) => n.branch === b).length]));
-    expect(per).toEqual({ economy: 8, primary: 10, specialists: 9, wardens: 8, powers: 5 });
+    expect(per).toEqual({ economy: 8, primary: 10, specialists: 15, wardens: 8, powers: 5 });
     for (const n of KNOWLEDGE) {
       expect(n.cost).toBeGreaterThanOrEqual(1);
       expect(n.cost).toBeLessThanOrEqual(3);
@@ -88,11 +88,11 @@ describe('Freischalt-Level und Migration', () => {
   it('Longshot ab 5, Market ab 6', () => {
     expect(unlockLevel('longshot')).toBe(5);
     expect(unlockLevel('market')).toBe(6);
-    expect(LEVEL_UNLOCKS.filter((u) => u.kind === 'tower').map((u) => u.id)).toEqual(['bombardier', 'frostcaller', 'longshot', 'market', 'thornweaver', 'alchemist']);
+    expect(LEVEL_UNLOCKS.filter((u) => u.kind === 'tower').map((u) => u.id)).toEqual(['bombardier', 'frostcaller', 'riverkeeper', 'longshot', 'market', 'thornweaver', 'alchemist', 'tinker', 'bellringer']);
     expect(isTowerUnlocked(withLevel(4), 'longshot')).toBe(false);
     expect(isTowerUnlocked(withLevel(5), 'longshot')).toBe(true);
     expect(isTowerUnlocked(withLevel(5), 'market')).toBe(false);
-    expect(matchOptions(withLevel(6)).unlocks.towers).toEqual(['ranger', 'bombardier', 'frostcaller', 'longshot', 'market', 'wren']);
+    expect(matchOptions(withLevel(6)).unlocks.towers).toEqual(['ranger', 'bombardier', 'frostcaller', 'longshot', 'market', 'riverkeeper', 'wren']);
   });
 
   it('Level-Up in einem Match meldet die neuen Türme', () => {
@@ -107,7 +107,7 @@ describe('Freischalt-Level und Migration', () => {
     old.towerTiers.ranger = [2, 0, 1];
     const r = loadProfile(old);
     expect(r.reset).toBe(false);
-    expect(r.profile.towerXp).toEqual({ ranger: 333, bombardier: 100, frostcaller: 100, longshot: 100, market: 100, thornweaver: 100, alchemist: 100 });
+    expect(r.profile.towerXp).toEqual({ ranger: 333, bombardier: 100, frostcaller: 100, longshot: 100, market: 100, thornweaver: 100, alchemist: 100, riverkeeper: 100, bellringer: 100, tinker: 100 });
     expect(r.profile.towerTiers.ranger).toEqual([2, 0, 1]);
     expect(r.profile.towerTiers.longshot).toEqual([0, 0, 0]);
     expect(r.profile.knowledge).toEqual(['head-start']);
@@ -118,7 +118,7 @@ describe('Freischalt-Level und Migration', () => {
   });
 
   it('neue Profile: Startguthaben 100 für alle sieben Türme; Match-Ergebnis ohne neue Typen lässt sie unverändert', () => {
-    expect(newProfile().towerXp).toEqual({ ranger: 100, bombardier: 100, frostcaller: 100, longshot: 100, market: 100, thornweaver: 100, alchemist: 100 });
+    expect(newProfile().towerXp).toEqual({ ranger: 100, bombardier: 100, frostcaller: 100, longshot: 100, market: 100, thornweaver: 100, alchemist: 100, riverkeeper: 100, bellringer: 100, tinker: 100 });
     const r = applyMatch(newProfile(), res({ towerXp: { ranger: 200, bombardier: 100, frostcaller: 100 } as never }));
     expect(r.profile.towerXp.ranger).toBe(200);
     expect(r.profile.towerXp.longshot).toBe(0); // Sim meldet 0 Konto bei fehlendem Schlüssel
@@ -139,9 +139,9 @@ describe('Freischalt-Level und Migration', () => {
 
   it('unlockEverything öffnet alle sieben Türme', () => {
     const p = unlockEverything(newProfile());
-    expect(TOWER_TYPES).toHaveLength(7);
+    expect(TOWER_TYPES).toHaveLength(10);
     expect(p.towerTiers.market).toEqual([5, 5, 5]);
-    expect(matchOptions(p).unlocks.towers).toHaveLength(8);
+    expect(matchOptions(p).unlocks.towers).toHaveLength(13);
     for (const n of KNOWLEDGE) expect(n.cost).toBeLessThanOrEqual(3);
     expect(knowledgePoints(p).free).toBeGreaterThanOrEqual(29);
   });

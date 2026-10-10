@@ -3,8 +3,8 @@
  * Reine Funktionen, kein DOM. Ganzzahlen ueberall.
  */
 import { z } from 'zod';
-import type { Difficulty, ModeId, PowerKey, TowerType, Tiers } from '../../sim/src/types';
-import { KNOWLEDGE, POWER_KEYS, STARTER_PACK, STARTER_TOWER_XP, emptyInventory, levelFromXp, nodeById } from './data';
+import type { Difficulty, HeroType, ModeId, PowerKey, TowerType, Tiers } from '../../sim/src/types';
+import { HERO_IDS, HEROES, KNOWLEDGE, POWER_KEYS, STARTER_PACK, STARTER_TOWER_XP, emptyInventory, levelFromXp, nodeById } from './data';
 
 export const SAVE_SCHEMA = 11;
 export const SEEN_MATCHES_MAX = 100;
@@ -14,7 +14,12 @@ const tierNum = z.number().int().min(0).max(5);
 const tiers3 = z.tuple([tierNum, tierNum, tierNum]);
 /** Runde 13/14: `longshot`, `market`, `thornweaver`, `alchemist` fehlen in aelteren Staenden und bekommen ihren Startwert (Migration, nichts wird zurueckgesetzt). */
 const perTower = <T extends z.ZodType>(s: T, fresh: () => z.output<T>) =>
-  z.object({ ranger: s, bombardier: s, frostcaller: s, longshot: s.default(fresh as never), market: s.default(fresh as never), thornweaver: s.default(fresh as never), alchemist: s.default(fresh as never) });
+  z.object({
+    ranger: s, bombardier: s, frostcaller: s, longshot: s.default(fresh as never), market: s.default(fresh as never), thornweaver: s.default(fresh as never), alchemist: s.default(fresh as never),
+    // Runde 16: aeltere Staende kennen die drei neuen Tuerme nicht
+    riverkeeper: s.default(fresh as never), bellringer: s.default(fresh as never), tinker: s.default(fresh as never),
+  });
+const heroId = z.enum(HERO_IDS as unknown as [HeroType, ...HeroType[]]);
 const medalSet = z.object({ easy: z.boolean(), medium: z.boolean(), hard: z.boolean() });
 const best = z.object({ round: nat, livesLost: nat });
 const inventorySchema = z.object(Object.fromEntries(POWER_KEYS.map((k) => [k, nat.default(0)]))) as unknown as z.ZodType<Record<PowerKey, number>>;
@@ -50,12 +55,18 @@ export const ProfileSchema = z.object({
   inventory: inventorySchema.default(() => emptyInventory()),
   /** Runde 12: Startpaket (100 Embers + 1 Gold Drop + 1 Lantern Bomb) schon vergeben. */
   starterPack: z.boolean().default(false),
+  /** Runde 16: Helden, die der Spieler besitzt (Embers-Kaeufe; Wren steht immer drin, offen ist er aber erst ab Level 3, Bram ab Level 10 und Sela ab Level 15 auch ohne Kauf: `heroOwned`). Fehlt in aelteren Staenden = ['wren']. */
+  heroes: z.array(heroId).default(['wren']),
+  /** Runde 16: gewaehlter Held fuer das naechste Match (Vorgabe wren). */
+  selectedHero: heroId.default('wren'),
   settings: z.object({ volume: z.number().int().min(0).max(100), unlockAll: z.boolean() }),
 });
 export type Profile = z.infer<typeof ProfileSchema>;
 
 export function newProfile(now = new Date(0).toISOString()): Profile {
-  const per = <T>(v: () => T): Record<TowerType, T> => ({ ranger: v(), bombardier: v(), frostcaller: v(), longshot: v(), market: v(), thornweaver: v(), alchemist: v() });
+  const per = <T>(v: () => T): Record<TowerType, T> => ({
+    ranger: v(), bombardier: v(), frostcaller: v(), longshot: v(), market: v(), thornweaver: v(), alchemist: v(), riverkeeper: v(), bellringer: v(), tinker: v(),
+  });
   return {
     schema: SAVE_SCHEMA,
     createdAt: now,
@@ -74,8 +85,21 @@ export function newProfile(now = new Date(0).toISOString()): Profile {
     embers: STARTER_PACK.embers,
     inventory: { ...emptyInventory(), ...STARTER_PACK.powers },
     starterPack: true,
+    heroes: ['wren'],
+    selectedHero: 'wren',
     settings: { volume: 70, unlockAll: false },
   };
+}
+
+/**
+ * Besitzt der Spieler den Helden? Wren ab Level 3, Bram ab Level 10, Sela ab Level 15 - oder (Bram, Sela) mit dem Embers-Kauf in `heroes`.
+ * "Alles freischalten" (`settings.unlockAll`) oeffnet alle drei.
+ */
+export function heroOwned(p: Pick<Profile, 'playerXp' | 'heroes' | 'settings'>, id: HeroType): boolean {
+  if (p.settings.unlockAll) return true;
+  const meta = HEROES.find((h) => h.id === id);
+  if (!meta) return false;
+  return levelFromXp(p.playerXp).level >= meta.unlockLevel || (meta.embers !== null && p.heroes.includes(id));
 }
 
 export const emptyMedals = (): Record<Difficulty, boolean> => ({ easy: false, medium: false, hard: false });
@@ -127,7 +151,11 @@ export function sanitize(p: Profile): Profile {
   const owned = KNOWLEDGE.filter((n) => bought.has(n.id));
   const spent = owned.reduce((s, n) => s + n.cost, 0);
   const knowledge = spent > levelFromXp(p.playerXp).level - 1 + medalCount(p) ? [] : owned.map((n) => n.id);
-  return grantStarterPack({ ...p, knowledge });
+  // Runde 16: Helden - Unbekanntes raus, Wren immer drin, Auswahl nur ein besessener Held
+  const heroes = HERO_IDS.filter((h) => h === 'wren' || p.heroes.includes(h));
+  const withHeroes = { ...p, knowledge, heroes };
+  const selectedHero = heroOwned(withHeroes, p.selectedHero) ? p.selectedHero : 'wren';
+  return grantStarterPack({ ...withHeroes, selectedHero });
 }
 
 /** Startpaket genau einmal (Flag `starterPack`): bestehende 11er-Profile bekommen es beim Laden, nichts wird zurueckgesetzt. */
