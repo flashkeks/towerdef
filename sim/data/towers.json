@@ -2256,7 +2256,7 @@
      {
       "name": "Tidal Steel",
       "price": 2200,
-      "desc": "Steel tips hit Ironshell. +2 damage, +4 against Brutes and ships.",
+      "desc": "Steel tips hit Ironshell. +3 damage, +4 against Brutes and ships.",
       "mods": [
        {
         "op": "set",
@@ -2266,7 +2266,7 @@
        {
         "op": "add",
         "stat": "dmg",
-        "v": 2
+        "v": 3
        },
        {
         "op": "add",
@@ -2944,7 +2944,7 @@
    "dtype": "sharp",
    "dmg": 1,
    "pierce": 2,
-   "interval": 78000,
+   "interval": 60000,
    "range": 64000,
    "speed": 650,
    "count": 1,
@@ -3326,7 +3326,7 @@
      {
       "name": "Overclock",
       "price": 2300,
-      "desc": "Ability: the 4 nearest towers in range attack twice as fast for 10 s. Cooldown 50 s.",
+      "desc": "Ability: the 4 nearest towers in range attack twice as fast for 10 s. Cooldown 45 s.",
       "mods": [
        {
         "op": "set",
@@ -3336,7 +3336,7 @@
        {
         "op": "set",
         "stat": "ocCd",
-        "v": 3000
+        "v": 2700
        },
        {
         "op": "set",
@@ -3353,7 +3353,7 @@
      {
       "name": "Overclock Lab",
       "price": 5500,
-      "desc": "Overclock reaches 8 towers, lasts 12 s, cooldown 40 s.",
+      "desc": "Overclock reaches 8 towers, lasts 12 s, cooldown 35 s.",
       "mods": [
        {
         "op": "set",
@@ -3363,7 +3363,7 @@
        {
         "op": "set",
         "stat": "ocCd",
-        "v": 2400
+        "v": 2100
        },
        {
         "op": "set",
@@ -3375,7 +3375,7 @@
      {
       "name": "Ultra-Overclock",
       "price": 20000,
-      "desc": "Overclock reaches 20 towers, lasts 15 s, cooldown 35 s. Towers within 70 px always attack 10% faster.",
+      "desc": "Overclock reaches 20 towers, lasts 15 s, cooldown 30 s. Towers within 70 px always attack 10% faster.",
       "mods": [
        {
         "op": "set",
@@ -3385,7 +3385,7 @@
        {
         "op": "set",
         "stat": "ocCd",
-        "v": 2100
+        "v": 1800
        },
        {
         "op": "set",
@@ -3723,8 +3723,8 @@
    "atk": "projectile",
    "pk": "hammer",
    "dtype": "magic",
-   "dmg": 2,
-   "pierce": 2,
+   "dmg": 4,
+   "pierce": 3,
    "interval": 72000,
    "range": 70000,
    "speed": 520,
@@ -3737,7 +3737,7 @@
    {
     "level": 1,
     "xp": 0,
-    "desc": "Hammer throws: 2 damage, pierces 2, magic. +2 against Brutes and Ironshell.",
+    "desc": "Hammer throws: 4 damage, pierces 3, magic. +2 against Brutes and Ironshell.",
     "mods": []
    },
    {
@@ -4055,9 +4055,9 @@
    "atk": "projectile",
    "pk": "starlight",
    "dtype": "magic",
-   "dmg": 3,
-   "pierce": 1,
-   "interval": 84000,
+   "dmg": 4,
+   "pierce": 2,
+   "interval": 72000,
    "range": 110000,
    "speed": 1100,
    "count": 1,
@@ -4068,7 +4068,7 @@
    {
     "level": 1,
     "xp": 0,
-    "desc": "Starlight shots: 3 damage, pierces 1, magic, long range. Sees camouflage.",
+    "desc": "Starlight shots: 4 damage, pierces 2, magic, long range. Sees camouflage.",
     "mods": []
    },
    {
