@@ -3,6 +3,7 @@ import * as api from './index';
 import type { Tiers, TowerType, TowerFrame } from './index';
 import { sheetFx2R15e, sheetFxR15e, sheetGegnerR15e, sheetVergleichR15e } from './sheet15e';
 import { sheetBosseR15, sheetFxR15, sheetGegnerR15 } from './sheet15';
+import { sheets16tp } from './sheet16tp';
 
 const q = new URLSearchParams(location.search);
 const which = q.get('sheet') ?? 'towers';
@@ -570,6 +571,7 @@ function sheetFxR14(): HTMLCanvasElement {
 }
 
 const sheets: Record<string, () => HTMLCanvasElement> = {
+  ...sheets16tp,
   'e-gegner': sheetGegnerR15e,
   'e-vergleich': sheetVergleichR15e,
   'e-fx': sheetFxR15e,

@@ -15,12 +15,13 @@ import { DATA, createGame, type TowerType } from '../src/sim';
 const NEW: TowerType[] = ['riverkeeper', 'bellringer', 'tinker'];
 
 describe('Platzhalter-Look Runde 16', () => {
-  it('neue Tuerme zeichnen wie ein vorhandener Turm (Riverkeeper = Longshot, Bellringer = Market, Tinker = Bombardier)', () => {
-    expect(NEW.map(baseLook)).toEqual(['longshot', 'market', 'bombardier']);
+  it('Riverkeeper zeichnet noch wie der Longshot (Platzhalter); Bellringer und Tinker haben eigene Figuren (Paket TP, r16-tp-sprites.test.ts)', () => {
+    expect(NEW.map(baseLook)).toEqual(['longshot', 'bellringer', 'tinker']);
     for (const t of NEW) {
       const a = towerRaster(t, [0, 0, 0], 0, 'idle0');
       const b = towerRaster(baseLook(t), [0, 0, 0], 0, 'idle0');
       expect(a.rows).toEqual(b.rows);
+      if (t !== 'riverkeeper') expect(a.rows).not.toEqual(towerRaster(t === 'tinker' ? 'bombardier' : 'market', [0, 0, 0], 0, 'idle0').rows);
       const i = iconUpgradeRaster(t, 0, 1);
       expect(i.rows.length).toBeGreaterThan(0);
     }
@@ -29,7 +30,7 @@ describe('Platzhalter-Look Runde 16', () => {
   it('Faehigkeits-Icons der neuen Faehigkeiten existieren (Vorbild-Icons)', () => {
     for (const id of ['alarm', 'overclock', 'anvilDrop', 'forgeOfDawn', 'starfall', 'eclipse'] as AbilityId[]) {
       expect(iconAbilityRaster(id).rows.length, id).toBeGreaterThan(0);
-      expect(ABILITY_LOOK[id]).not.toBe(id);
+      if (id !== 'alarm' && id !== 'overclock') expect(ABILITY_LOOK[id]).not.toBe(id); // alarm/overclock haben eigene Icons (Paket TP)
       expect(ABILITY_TEXT[id].name.length, id).toBeGreaterThan(2);
     }
   });
@@ -39,7 +40,7 @@ describe('Platzhalter-Look Runde 16', () => {
       expect(projectileLook(k, { type: 'riverkeeper', tiers: [0, 0, 0] })).toBeTypeOf('string');
     }
     expect(projectileLook('harpoon', undefined)).toBe('bolt');
-    expect(projectileLook('nail', undefined)).toBe('arrow');
+    expect(projectileLook('nail', undefined)).toBe('nail'); // eigenes Geschoss (Paket TP)
   });
 
   it('Texte und Hotkeys fuer neue Tuerme und Helden', () => {

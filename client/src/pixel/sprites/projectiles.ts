@@ -139,6 +139,14 @@ export function projectileRaster(kind: ProjectileKind, dir16: number, spin = 0):
       if (gold) { s.px(C + 4, C - 4, 'white'); s.px(C - 4, C + 3, 'yellow'); }
       break;
     }
+    case 'nail': {
+      // Nagel (Tinker, Sentries): kurzer Eisenschaft, helle Spitze, Kopf mit Messingpunkt, kleine Funkenspur
+      for (let i = 1; i <= 3; i++) { const q = P(-3 - i, (i % 2 ? 0.3 : -0.3)); if (i !== 2) s.px(q[0], q[1], i < 2 ? 'yellow' : 'amber'); }
+      L(-3, 2, 0, 'stone'); L(-3, 1, 0.8, 'slate');
+      const hd = P(-3.5); s.px(hd[0], hd[1], 'amber');
+      const tip = P(3.2); s.px(tip[0], tip[1], 'white'); const t2 = P(2.4); s.px(t2[0], t2[1], 'silver');
+      break;
+    }
     case 'lantern': {
       for (let i = 1; i <= 6; i++) { const q = P(-3 - i, ((spin + i) % 3 - 1) * 0.6); s.px(q[0], q[1], i < 3 ? 'orange' : i < 5 ? 'red' : 'crimson'); }
       s.ball(C, C, 3, 3, ['orange', 'amber', 'yellow']);
