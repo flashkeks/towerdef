@@ -217,7 +217,7 @@ export class AudioEngine {
         else if (!t) this.playTower('shoot.ranger', 'fire.ranger', 0, rnd());
         else if (t.type === 'bombardier') this.playTower('shoot.bomb', 'fire.bombardier', top, rnd());
         else if (t.type === 'frostcaller') this.playTower('shoot.frost', 'fire.frostcaller', top, rnd());
-        else if (t.type === 'wren') this.play('shoot.hero', 0.6, rnd());
+        else if (t.type === 'wren' || t.type === 'bram' || t.type === 'sela') this.play('shoot.hero', 0.6, rnd());
         else if (ev.kind === 'bigArrow' || ev.kind === 'bolt' || ev.kind === 'starBolt') this.playTower('shoot.ballista', `fire.${t.type}`, top, rnd());
         else if (t.tiers[0] >= 3) this.playTower('shoot.volley', `fire.${t.type}`, top, rnd());
         else this.playTower('shoot.ranger', `fire.${t.type}`, top, rnd());
@@ -230,7 +230,7 @@ export class AudioEngine {
         const id = ev.kind === 'quake' ? 'quake' : ev.kind === 'mini' ? 'explode.mini' : 'explode';
         // Aufprall so laut wie der naechste Turm es verdient (Sim-Event hat keine Turm-ID)
         let best: TowerState | null = null, bd = Infinity;
-        for (const q of towers) { if (q.type === 'wren') continue; const d = (q.x - ev.x) ** 2 + (q.y - ev.y) ** 2; if (d < bd) { bd = d; best = q; } }
+        for (const q of towers) { if (q.type === 'wren' || q.type === 'bram' || q.type === 'sela') continue; const d = (q.x - ev.x) ** 2 + (q.y - ev.y) ** 2; if (d < bd) { bd = d; best = q; } }
         this.playTower(id, `hit.${id}`, best ? topTier(best.tiers) : 0, rnd());
         break;
       }

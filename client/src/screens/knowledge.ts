@@ -19,6 +19,8 @@ export const NODE_ICONS: Record<string, IconName> = {
   'investor': 'coin', 'pop-bonus': 'star', 'sharper-arrows': 'arrow', 'fused-shells': 'bomb', 'icicle-edge': 'snow',
   'deep-roots': 'leaf', 'bountiful-grove': 'leaf', 'potent-brews': 'flask', 'midas-hands': 'coin', 'field-medic': 'cross',
   'sturdy-gate': 'shield', 'ember-rush': 'flame',
+  // Runde 16 (Platzhalter-Icons bis Paket TP)
+  'deep-water': 'snow', 'barbed-line': 'arrow', 'loud-bells': 'lantern', 'silver-tongue': 'coin', 'spare-parts': 'gear', 'sharp-caltrops': 'bolt',
 };
 let lastBought: string | null = null;
 

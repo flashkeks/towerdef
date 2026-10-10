@@ -9,14 +9,15 @@ import { drawThornweaver } from './thornweaver';
 import { drawAlchemist, drawMonster, MONSTER_AX, MONSTER_AY, MONSTER_H, MONSTER_W } from './alchemist';
 import { drawRanger, OX, OY, TH, TW } from './ranger';
 import { outlineSurface, Surface } from './surface';
-import type { Tiers, TowerType } from './types';
+import { baseLook, type Tiers, type TowerType } from './types';
 
 export interface RasterSprite { rows: Rows; ax: number; ay: number; mx?: number; my?: number }
 
 export const TOWER_W = TW;
 export const TOWER_H = TH;
 
-export function towerRaster(type: TowerType, tiers: Tiers, facing: number, frame: TowerFrame): RasterSprite {
+export function towerRaster(typeIn: TowerType, tiers: Tiers, facing: number, frame: TowerFrame): RasterSprite {
+  const type = baseLook(typeIn); // Runde 16: Platzhalter fuer Riverkeeper/Bellringer/Tinker
   const d = dirOf(facing);
   const p = poseOf(frame);
   const L = type === 'ranger' ? drawRanger(tiers, d, p) : type === 'bombardier' ? drawBombardier(tiers, d, p) : type === 'frostcaller' ? drawFrost(tiers, d, p)

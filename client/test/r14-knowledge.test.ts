@@ -11,10 +11,10 @@ const board = (w: number, h: number) => ({ ...DEFAULT_OPTS, width: w - 72 - 8, h
 const lay = layoutTree(KNOWLEDGE, BRANCHES as readonly string[], board(1920, 1080));
 
 describe('Wissensbaum Runde 14b', () => {
-  it('40 Knoten in fuenf Aesten', () => {
-    expect(KNOWLEDGE).toHaveLength(40);
+  it('46 Knoten in fuenf Aesten (Runde 16: +6)', () => {
+    expect(KNOWLEDGE).toHaveLength(46);
     expect(lay.branches).toHaveLength(5);
-    expect(lay.branches.reduce((n, b) => n + b.nodes.length, 0)).toBe(40);
+    expect(lay.branches.reduce((n, b) => n + b.nodes.length, 0)).toBe(46);
   });
   it('Knoten skalieren mit dem Fenster, bei 1280 x 720 noch lesbar', () => {
     const small = layoutTree(KNOWLEDGE, BRANCHES as readonly string[], board(1280, 720));

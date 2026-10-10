@@ -121,6 +121,9 @@ export const S = {
       market: ['Harvest', 'Bank', 'Town Square'],
       thornweaver: ['Storm', 'Wild', 'Grove'],
       alchemist: ['Brews', 'Unstable', 'Gold'],
+      riverkeeper: ['Harpoons', 'Sonar', 'Armada'],
+      bellringer: ['Chimes', 'Watch', 'Toll'],
+      tinker: ['Sentry', 'Caltrops', 'Overclock'],
     } as Record<string, string[]>,
   },
   settings: {

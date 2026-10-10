@@ -14,7 +14,7 @@ import { bar, cv, ptext, reducedMotion } from './px';
 import { S, fmt } from './text';
 import type { Ctx, ResultInfo, View } from './types';
 
-const NAMES: Record<TowerType, string> = { ranger: 'Ranger', bombardier: 'Bombardier', frostcaller: 'Frostcaller', longshot: 'Longshot', market: 'Lantern Market', thornweaver: 'Thornweaver', alchemist: 'Alchemist' };
+const NAMES: Record<TowerType, string> = { ranger: 'Ranger', bombardier: 'Bombardier', frostcaller: 'Frostcaller', longshot: 'Longshot', market: 'Lantern Market', thornweaver: 'Thornweaver', alchemist: 'Alchemist', riverkeeper: 'Riverkeeper', bellringer: 'Bellringer', tinker: 'Tinker' };
 const wait = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
 
 /** Kosten der billigsten noch offenen Stufe eines Turms (null = alles frei). */

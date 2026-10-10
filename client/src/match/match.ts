@@ -19,7 +19,7 @@ import { UnlockMenu } from './unlock-menu';
 import { Renderer } from './renderer';
 import { iconUpgrade, iconAbility, heroPortrait, towerPortrait, heroSprite, towerSprite } from './sprites';
 import { canWithdraw, cooldownText, marketRadiusPx, rangeView, type RangeView } from './r13';
-import { ABILITY_TEXT, HERO_TYPES, HOTKEY, ROLE, TOWER_TYPES } from './tower-text';
+import { ABILITY_TEXT, HERO_KEY, HERO_TYPES, HOTKEY, ROLE, TOWER_TYPES } from './tower-text';
 import { copyCanvas, uiIcon } from './ui-icons';
 import { volumeButton } from '../ui/volume';
 import './match.css';
@@ -36,6 +36,8 @@ export interface StartOptions {
   towerXp?: GameOptions['towerXp'];
   /** Power-Inventar aus dem Profil (Runde 12) */
   powers?: GameOptions['powers'];
+  /** Runde 16: gewaehlter Held (Meta `activeHero`), Vorgabe Wren */
+  hero?: HeroType;
   /** Text fuer gesperrte Tuerme, z. B. { bombardier: 'Unlocks at level 2' } (P4 liefert die Zahlen) */
   lockInfo?: Partial<Record<TowerType | HeroType, string>>;
   /** nur fuer Pruef-Skripte: Zugriff auf Game/Renderer unter window.__dw */
@@ -72,7 +74,7 @@ const KEYS_ABILITY = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
 
 export async function startMatch(root: HTMLElement, opts: StartOptions): Promise<MatchResult> {
   const seed = opts.seed ?? (Math.floor(Math.random() * 2 ** 31) | 0);
-  const game = createGame({ map: opts.map ?? 'meadow', mode: opts.mode ?? 'standard', difficulty: opts.difficulty, seed, unlocks: opts.unlocks, towerXp: opts.towerXp, mods: opts.mods, powers: opts.powers });
+  const game = createGame({ map: opts.map ?? 'meadow', mode: opts.mode ?? 'standard', difficulty: opts.difficulty, seed, unlocks: opts.unlocks, towerXp: opts.towerXp, mods: opts.mods, powers: opts.powers, hero: opts.hero });
   const m = new Match(root, game, { ...opts, seed });
   await m.init();
   return m.done;
@@ -214,7 +216,7 @@ class Match {
     tw.append(list);
     tw.append(h('div', 'm-side-h', t('match.hero')));
     const hl = h('div', 'm-cards m-cards-hero');
-    for (const ty of HERO_TYPES) hl.append(this.card(ty));
+    for (const ty of [this.game.info.hero]) hl.append(this.card(ty)); // Runde 16: nur der Held dieser Partie (Wren, Bram oder Sela)
     tw.append(hl);
     side.append(this.tabs.bar, this.tabs.panes);
     // Start, Tempo, Auto
@@ -275,7 +277,7 @@ class Match {
   /** Hinweis auf gesperrten Karten, wenn der Modus den Turm oder den Helden verbietet. */
   private modeLockText(ty: TowerType | HeroType): string {
     const m = MODES[this.game.info.mode];
-    return ty === 'wren' ? 'No hero in this mode' : `Not in ${m.name}`;
+    return isHero(ty) ? 'No hero in this mode' : `Not in ${m.name}`;
   }
 
   // ------------------------------------------------------------------ Aktionen
@@ -529,7 +531,7 @@ class Match {
     if (this.paused) return;
     if (k === 'Tab') { e.preventDefault(); this.tabs.cycle(e.shiftKey ? -1 : 1); return; }
     const lower = k.toLowerCase();
-    const ty = [...TOWER_TYPES, ...HERO_TYPES].find((q) => HOTKEY[q].toLowerCase() === lower);
+    const ty = [...TOWER_TYPES, this.game.info.hero].find((q) => (isHero(q) ? HERO_KEY : HOTKEY[q]).toLowerCase() === lower);
     if (ty) { this.beginPlace(ty); return; }
     if (k === ' ') { e.preventDefault(); if (this.game.state.phase === 'wave' && this.game.state.groups.length > 0) this.setSpeed(this.speed >= 3 ? 1 : this.speed + 1); else this.startRound(); return; }
     if (lower === 'b' && sel != null) { const tw = this.game.state.towers.find((q) => q.id === sel); if (tw?.type === 'market') this.withdraw(sel); return; }
