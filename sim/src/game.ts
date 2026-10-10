@@ -7,6 +7,7 @@ import { dist2, isqrt } from './fixed.js';
 import { hashState } from './hash.js';
 import { branchAt, clearOfPaths, getMap, nearestOnPaths, pointInPolygon } from './map.js';
 import { DEFLATION_CASH, MODES, firstRound, isModeId, modeAllows } from './modes.js';
+import { normalizeRules, rulesAllow } from './challenge.js';
 import { towerXpPot, splitTowerXp } from './xp.js';
 import { COVERAGE_STEP, positionAt } from './path.js';
 import { nextInt, seedRng } from './prng.js';
@@ -84,11 +85,15 @@ interface EnemyRt {
   nodes: number;
 }
 
-export function createGame(opts: GameOptions): Game {
+export function createGame(optsIn: GameOptions): Game {
+  // Runde 16 E (10.10.2026): Challenge-Regeln ersetzen Karte, Schwierigkeit und Seed und schliessen einen Modus aus.
+  const rules = optsIn.rules ? normalizeRules(optsIn.rules) : undefined;
+  if (rules && optsIn.mode && optsIn.mode !== 'standard') throw new Error('Challenge-Regeln und Modus schliessen sich aus');
+  const opts: GameOptions = rules ? { ...optsIn, map: rules.map, difficulty: rules.difficulty, seed: rules.seed, mode: 'standard' } : optsIn;
   const map = getMap(opts.map);
   const diff = DATA.difficulties[opts.difficulty as Difficulty];
   if (!diff) throw new Error(`Unbekannte Schwierigkeit: ${opts.difficulty}`);
-  const kmods = opts.mods ?? {};
+  const kmods = rules?.noKnowledge ? {} : opts.mods ?? {};
   const mode: ModeId = opts.mode ?? 'standard';
   if (!isModeId(mode)) throw new Error(`Unbekannter Modus: ${String(opts.mode)}`);
   const halfCash = mode === 'half-cash';
@@ -96,23 +101,28 @@ export function createGame(opts: GameOptions): Game {
   // Runde 15b (Max, 10.10.2026: "eine Rundenliste fuer alle Karten ... bis Runde 60 oder 80 und danach Free Play"):
   // gemeinsame Liste (`DATA.rounds`, 120 feste Runden), Sieg nach der Endrunde der Schwierigkeit (40/60/80),
   // danach optional Weiterspielen (`continue`) auf derselben Liste, ab R121 Formel (`freeplay.ts`).
-  const maxRound = diff.endRound;
-  const baseRound = firstRound(mode, maxRound) - 1;
+  const maxRound = rules ? rules.endRound : diff.endRound;
+  const baseRound = rules ? rules.startRound - 1 : firstRound(mode, maxRound) - 1;
   const nBranches = map.paths.length;
-  const info: GameInfo = { map: opts.map, mode, difficulty: opts.difficulty, maxRound, baseRound, branches: nBranches, listRounds: LIST_ROUNDS };
+  const info: GameInfo = { map: opts.map, mode, difficulty: opts.difficulty, maxRound, baseRound, branches: nBranches, listRounds: LIST_ROUNDS, ...(rules ? { rules } : {}) };
   const fpSeed = Math.floor(opts.seed ?? 0);
   /** Gruppen der Runde `r` (Liste bis R120, danach Formel). */
-  const roundGroups = (r: number): RoundData['groups'] => (r <= LIST_ROUNDS ? DATA.rounds[r - 1].groups : freeplayGroups(r, fpSeed));
+  const roundGroups = (r: number): RoundData['groups'] => {
+    if (rules?.waves) return (rules.waves[r - rules.startRound] ?? []).map((g) => ({ type: g.type, n: g.n, startMs: g.startMs ?? 0, gapMs: g.gapMs ?? 500, ...(g.camo ? { camo: true } : {}), ...(g.regrow ? { regrow: true } : {}), ...(g.fortified ? { fortified: true } : {}) }));
+    return r <= LIST_ROUNDS ? DATA.rounds[r - 1].groups : freeplayGroups(r, fpSeed);
+  };
+  const hpPct = rules?.hpPct ?? 100, speedPct = rules?.speedPct ?? 100;
   /** Weg des Astes (Gegner, Fallen). */
   const pathOf = (branch: number) => map.paths[branch] ?? map.path;
 
   // ---- Gegnertabelle dieser Partie ----
   const etab = {} as Record<EnemyType, EnemyRt>;
   for (const [k, d] of Object.entries(DATA.enemies) as [EnemyType, (typeof DATA.enemies)[EnemyType]][]) {
-    const hp = d.bossHp ? d.bossHp[opts.difficulty as Difficulty] : d.boss ? diff.bossHp : d.hp;
+    const hp0 = d.bossHp ? d.bossHp[opts.difficulty as Difficulty] : d.boss ? diff.bossHp : d.hp;
+    const hp = hpPct === 100 ? hp0 : Math.max(1, Math.floor((hp0 * hpPct) / 100));
     etab[k] = {
       hp,
-      sp: Math.floor((52_000_000 * d.tempo * diff.speedBp) / (60 * 100 * 10000)),
+      sp: speedPct === 100 ? Math.floor((52_000_000 * d.tempo * diff.speedBp) / (60 * 100 * 10000)) : Math.floor((52_000_000 * d.tempo * diff.speedBp * speedPct) / (60 * 100 * 10000 * 100)),
       radius: d.radius * 1000,
       children: d.children,
       armor: !!d.armor,
@@ -154,14 +164,14 @@ export function createGame(opts: GameOptions): Game {
   const powers0 = zeroPowers(0);
   for (const k of POWER_KEYS) powers0[k] = Math.max(0, Math.floor(opts.powers?.[k] ?? 0)) + Math.max(0, Math.floor(kmods.freePowers?.[k] ?? 0));
 
-  const lives0 = diff.lives + (kmods.lives ?? 0);
+  const lives0 = rules?.lives ?? diff.lives + (kmods.lives ?? 0);
   const S: GameState = {
     tick: 0,
     phase: 'build',
     round: baseRound,
     freeplay: false,
     roundsCleared: 0,
-    cash: deflation ? DEFLATION_CASH : halfCash ? Math.floor((diff.startCash + (kmods.startCash ?? 0)) / 2) : diff.startCash + (kmods.startCash ?? 0),
+    cash: rules && rules.startCash !== null ? rules.startCash : deflation ? DEFLATION_CASH : halfCash ? Math.floor((diff.startCash + (kmods.startCash ?? 0)) / 2) : diff.startCash + (kmods.startCash ?? 0),
     lives: lives0,
     towers: [],
     enemies: [],
@@ -231,7 +241,12 @@ export function createGame(opts: GameOptions): Game {
     return Math.floor(t / 10000);
   };
   const earn = (n: number): number => {
-    if (deflation) return 0;
+    if (deflation || rules?.incomePct === 0) return 0;
+    if (rules && rules.incomePct !== 100) {
+      const t = n * rules.incomePct + S.halfCarry;
+      S.halfCarry = t % 100;
+      return Math.floor(t / 100);
+    }
     if (!halfCash) return n;
     const t = n + S.halfCarry;
     S.halfCarry = t % 2;
@@ -1643,7 +1658,7 @@ export function createGame(opts: GameOptions): Game {
   function canPlaceCore(type: TowerType | HeroType, x: number, y: number, needCash: boolean): PlaceCheck {
     if (!isHero(type) && !TOWER_TYPES.includes(type)) return { ok: false, reason: 'unknown-tower' };
     if (opts.unlocks && !opts.unlocks.towers.includes(type)) return { ok: false, reason: 'locked' };
-    if (!modeAllows(mode, type)) return { ok: false, reason: 'mode-locked' };
+    if (!modeAllows(mode, type) || !rulesAllow(rules, type)) return { ok: false, reason: 'mode-locked' };
     if (isHero(type) && S.heroPlaced) return { ok: false, reason: 'hero-limit' };
     const r = towerDef(type).radius * 1000;
     const b = map.build;
@@ -1681,6 +1696,7 @@ export function createGame(opts: GameOptions): Game {
     const nt = t.tiers.slice() as Tiers;
     nt[path_]++;
     if (!tiersAllowed(nt)) return 'crosspath';
+    if (rules && nt[path_] > rules.maxTier[path_]) return 'rule-cap';
     if (S.maxTier[t.type as TowerType][path_] < nt[path_]) return 'locked';
     if (S.cash < price) return 'no-cash';
     return undefined;
@@ -1888,7 +1904,7 @@ export function createGame(opts: GameOptions): Game {
   /** Prüft einen Einsatz ohne etwas zu ändern. Reihenfolge der Gründe: unknown-power, no-power, used-this-round, dann Ziel/Voraussetzung. */
   function powerCheck(power: PowerKey, xIn?: number, yIn?: number): PlaceCheck {
     if (!isPowerKey(power)) return { ok: false, reason: 'unknown-power' };
-    if (!MODES[mode].powers) return { ok: false, reason: 'mode-locked' };
+    if (!MODES[mode].powers || rules?.noPowers) return { ok: false, reason: 'mode-locked' };
     if (S.powers[power] <= 0) return { ok: false, reason: 'no-power' };
     if (S.powerUsedRound[power] === S.round && S.powerUses[power] >= Math.max(1, kmods.powerUses ?? 1)) return { ok: false, reason: 'used-this-round' };
     const d = DATA.powers[power];
@@ -2017,7 +2033,7 @@ export function createGame(opts: GameOptions): Game {
   }
 
   function apply(cmd: Command): CommandResult {
-    if (S.phase === 'won' && cmd.type === 'continue') {
+    if (S.phase === 'won' && cmd.type === 'continue' && !rules) {
       // Runde 15b: nach dem Sieg weiterspielen ("Continue in Freeplay"); ohne Medaillen-Einfluss
       S.freeplay = true;
       S.phase = 'build';
@@ -2078,6 +2094,7 @@ export function createGame(opts: GameOptions): Game {
         const t = towerById(cmd.towerId);
         if (!t) return { ok: false, reason: 'no-tower' };
         if (isHero(t.type)) return { ok: false, reason: 'hero' };
+        if (rules?.noSell) return { ok: false, reason: 'no-sell' };
         const v = sellValue(t.id);
         S.cash += v;
         S.towers = S.towers.filter((x) => x !== t);

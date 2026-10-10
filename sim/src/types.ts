@@ -3,6 +3,8 @@
  * Positionen in Milli-px, Zeit in Ticks (60/s), Faktoren in Basispunkten, Zustand nur Ganzzahlen.
  */
 
+import type { ChallengeRules } from './challenge.js';
+
 export type TowerType = 'ranger' | 'bombardier' | 'frostcaller' | 'longshot' | 'market' | 'thornweaver' | 'alchemist';
 export type HeroType = 'wren';
 export type EnemyType =
@@ -30,6 +32,8 @@ export interface GameOptions {
   seed: number;
   /** Runde 15: Spielmodus (Standard `standard`). Regeln: sim/README.md "Runde 15". */
   mode?: ModeId;
+  /** Runde 16 E: Challenge-Regelwerk (ersetzt Karte, Schwierigkeit, Seed; kein Modus). Siehe `challenge.ts`. */
+  rules?: ChallengeRules;
   /** Was das Profil freigeschaltet hat (P4). Fehlt = alles frei (Tests, Sandbox). */
   unlocks?: { towers: (TowerType | HeroType)[]; maxTier: Partial<Record<TowerType, Tiers>> };
   /**
@@ -548,6 +552,8 @@ export interface GameInfo {
   baseRound: number;
   /** Anzahl der Wegaeste der Karte (Frostfen 2, sonst 1). */
   branches: number;
+  /** Runde 16 E: Regeln der Challenge, fehlt im normalen Spiel. */
+  rules?: ChallengeRules;
 }
 
 export interface Game {

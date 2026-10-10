@@ -19,3 +19,8 @@ export { towerXpPot, splitTowerXp } from './xp.js';
 export { runBot, createBot, parseStrategy, buildSteps, staged } from './bot.js';
 export type { Strategy, TowerPlan, BotResult, Bot } from './bot.js';
 export { LIST_ROUNDS, popBp, roundBonus, freeplayGroups, fpHpBp, fpSpeedBp, fpCountBp } from './freeplay.js';
+export {
+  CHALLENGE_PREFIX, CHALLENGE_LIMITS, ChallengeError, defaultRules, normalizeRules, rulesAllow, rulesTierCap, describeRules, modeRules,
+  encodeChallenge, decodeChallenge, tryDecodeChallenge, challengeLink, challengeFromQuery, challengeMaps, challengeTowers, challengeHeroes, challengeEnemies,
+} from './challenge.js';
+export type { ChallengeRules, ChallengeGroup } from './challenge.js';
