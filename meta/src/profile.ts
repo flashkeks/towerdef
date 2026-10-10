@@ -4,6 +4,7 @@
  */
 import { z } from 'zod';
 import type { Difficulty, ModeId, PowerKey, TowerType, Tiers } from '../../sim/src/types';
+import { ChallengesSchema, emptyChallenges } from './challenge';
 import { KNOWLEDGE, POWER_KEYS, STARTER_PACK, STARTER_TOWER_XP, emptyInventory, levelFromXp, nodeById } from './data';
 
 export const SAVE_SCHEMA = 11;
@@ -56,6 +57,8 @@ export const ProfileSchema = z.object({
   inventory: inventorySchema.default(() => emptyInventory()),
   /** Runde 12: Startpaket (100 Embers + 1 Gold Drop + 1 Lantern Bomb) schon vergeben. */
   starterPack: z.boolean().default(false),
+  /** Runde 16 E: Tages-Challenge (Belohnung einmal je UTC-Tag) und Bestwerte der Challenges. Fehlt in aelteren Staenden = leer (Schema bleibt 11). */
+  challenges: ChallengesSchema.default(emptyChallenges),
   settings: z.object({ volume: z.number().int().min(0).max(100), unlockAll: z.boolean() }),
 });
 export type Profile = z.infer<typeof ProfileSchema>;
@@ -81,6 +84,7 @@ export function newProfile(now = new Date(0).toISOString()): Profile {
     embers: STARTER_PACK.embers,
     inventory: { ...emptyInventory(), ...STARTER_PACK.powers },
     starterPack: true,
+    challenges: emptyChallenges(),
     settings: { volume: 70, unlockAll: false },
   };
 }

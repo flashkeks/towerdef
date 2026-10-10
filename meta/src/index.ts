@@ -6,3 +6,4 @@ export * from './data';
 export * from './profile';
 export * from './progress';
 export * from './io';
+export * from './challenge';
