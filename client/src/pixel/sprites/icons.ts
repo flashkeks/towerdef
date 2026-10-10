@@ -3,6 +3,7 @@ import type { PalName } from '../palette';
 import { flame, flake, crystal, cloud, spark } from './parts';
 import { RAMPS, type Ramp, Surface } from './surface';
 import { flask } from './alchemist';
+import { HERO_ICONS, HERO_ICON_COL } from './icons-heroes';
 import { antler, leafAt } from './thornweaver';
 import { ABILITY_LOOK, baseLook, type AbilityId, type BaseAbilityId, type BaseTowerType, type TowerType } from './types';
 
@@ -276,6 +277,18 @@ const ABIL: Record<BaseAbilityId, Draw> = {
 };
 
 export function iconAbilityRaster(idIn: AbilityId): { rows: string[]; ax: number; ay: number } {
+  const own = HERO_ICONS[idIn];
+  if (own) {
+    // Runde 16 TP: eigenes Icon (Bram/Sela)
+    const c = HERO_ICON_COL[idIn] as PalName;
+    const f = new Surface(ICON, ICON);
+    f.rect(0, 0, 16, 16, 'night'); f.rect(0, 0, 16, 1, c); f.rect(0, 0, 1, 16, c); f.rect(0, 15, 16, 1, 'ink'); f.rect(15, 0, 1, 16, 'ink');
+    for (const [x, y] of [[0, 0], [15, 0], [0, 15], [15, 15]]) f.px(x, y, null);
+    const dd = new Surface(16, 16);
+    own(dd);
+    f.blit(dd);
+    return { rows: f.toRows(), ax: 0, ay: 0 };
+  }
   const id = ABILITY_LOOK[idIn];
   const s = new Surface(ICON, ICON);
   const col: PalName = { arrowRain: 'amber', absoluteZero: 'sky', flare: 'yellow', dawnbreak: 'orange', grant: 'yellow', focus: 'red', supplyDrop: 'sky', wallOfTrees: 'leaf', transformingTonic: 'orchid' }[id] as PalName;

@@ -16,6 +16,7 @@ import { glowKind, monsterScale, wallWear, zoneView, type GlowKind } from './r14
 import { rangeView, coinCount, coinDelay, coinPath, hasAura, isMarked, projectileLook, type RangeView } from './r13';
 import { FxLayer, FRAMES } from './fx';
 import { footMilli, isHero } from './info';
+import { heroAbilityFx, isHeroAbility, starfallFx, type HeroFxCtx } from './r16-heroes';
 import { TRAP_W, monsterSprite, bigHeart, bombLantern, bubbleSprite, coinSprite, trapSprite, discSprite, enemySprite, fx as P2, heroSprite, projectileSprite, ringSprite, shadowSprite, heroMuzzle, towerMuzzle, towerSprite, type HeroFrame, type Spr, type TowerFrame } from './sprites';
 import { tex } from './textures';
 import { ENEMY_LOOK, spriteStage } from './enemy-info';
@@ -124,6 +125,8 @@ export class Renderer {
   private selectedId: number | null = null;
   private latest: GameState | null = null;
   private heroCast = 0;
+  /** Runde 16 TP: Daten fuer die Helden-Effekte (`r16-heroes.ts`). */
+  private readonly heroFxCtx: HeroFxCtx = { paths: [], towers: () => (this.latest?.towers ?? []).map((q) => ({ x: q.x / 1000, y: q.y / 1000 })) };
   /** Anzeige-Zeit in Millisekunden (nur fuer Idle-Animationen) */
   private now = 0;
   private canvasEl!: HTMLCanvasElement;
@@ -132,6 +135,7 @@ export class Renderer {
 
   constructor(readonly mapId: MapId = 'meadow') {
     this.geo = mapGeometry(mapId);
+    this.heroFxCtx.paths = this.geo.paths;
     this.art = mapArt(mapId);
   }
 
@@ -503,9 +507,9 @@ export class Renderer {
     const atk = t.attackTick;
     const frame = (atk > 0 ? (atk < 4 ? 'atk0' : atk < 6 ? 'atk1' : atk < 11 ? 'atk2' : 'atk3') : `idle${(Math.floor(this.now / 166) + t.id) & 3}`) as TowerFrame;
     if (isHero(t.type)) {
-      // Runde 16: Bram und Sela zeichnen vorerst wie Wren (Platzhalter bis Paket TP)
-      if (this.now < this.heroCast) return heroSprite(t.heroLevel, t.facing, this.heroCast - this.now > 150 ? 'cast0' : 'cast1');
-      return heroSprite(t.heroLevel, t.facing, frame as HeroFrame);
+      // Runde 16 TP: Wren, Bram und Sela haben eigene Figuren (`t.type` ist der Held)
+      if (this.now < this.heroCast) return heroSprite(t.type, t.heroLevel, t.facing, this.heroCast - this.now > 150 ? 'cast0' : 'cast1');
+      return heroSprite(t.type, t.heroLevel, t.facing, frame as HeroFrame);
     }
     if (t.monsterTicks > 0) return monsterSprite(t.facing, frame, monsterScale(t.type));
     return towerSprite(t.type, t.tiers, t.facing, frame);
@@ -685,7 +689,7 @@ export class Renderer {
       // Start am Muendungspunkt der Waffe (Fuss-Anker + `towerMuzzle`), nicht in der Turmmitte; die Sim-Bahn bleibt, der
       // Versatz klingt in den ersten Ticks auf null ab (nur Optik, der Treffer gehoert der Sim)
       const own = this.latest?.towers.find((q) => q.id === p.owner);
-      const mz = own ? (isHero(own.type) ? heroMuzzle(own.heroLevel, own.facing) : towerMuzzle(own.type, own.tiers, own.facing)) : { x: 0, y: 0 };
+      const mz = own ? (isHero(own.type) ? heroMuzzle(own.type, own.heroLevel, own.facing) : towerMuzzle(own.type, own.tiers, own.facing)) : { x: 0, y: 0 };
       v = { spr, key: '', px: cx, py: cy, cx, cy, mx: p.sub === 1 ? 0 : mz.x, my: p.sub === 1 ? 0 : mz.y };
       if (p.kind === 'bomb' || p.kind === 'potion') { v.shadow = new Sprite(shadowTex(7, 3)); this.shadowC.addChild(v.shadow); }
       this.projs.set(p.id, v);
@@ -700,7 +704,7 @@ export class Renderer {
     const ang = Math.atan2(-p.vy, p.vx);
     const dir16 = ((Math.round((ang / (Math.PI * 2)) * 16) % 16) + 16) % 16;
     const look = projectileLook(p.kind, this.latest?.towers.find((q) => q.id === p.owner), p.sub);
-    const s = projectileSprite(look, p.kind === 'bomb' || p.kind === 'potion' ? Math.floor(this.now / 70) & 15 : dir16);
+    const s = projectileSprite(look, p.kind === 'bomb' || p.kind === 'potion' ? Math.floor(this.now / 70) & 15 : p.kind === 'hammer' ? Math.floor(this.now / 45) & 15 : dir16);
     v.spr.texture = tex(s.canvas);
     v.spr.position.set(Math.round(gx) - s.ax, Math.round(gy - lift) - s.ay);
     v.spr.zIndex = 0;
@@ -771,7 +775,7 @@ export class Renderer {
       case 'fire': {
         const t = this.latest?.towers.find((q) => q.id === ev.tower);
         if (t) {
-          const mz = isHero(t.type) ? heroMuzzle(t.heroLevel, t.facing) : towerMuzzle(t.type, t.tiers, t.facing);
+          const mz = isHero(t.type) ? heroMuzzle(t.type, t.heroLevel, t.facing) : towerMuzzle(t.type, t.tiers, t.facing);
           const col = t.type === 'bombardier' ? [C.orange, C.stone, C.yellow] : t.type === 'frostcaller' ? [C.ice, C.white] : isHero(t.type) ? [C.yellow, C.amber] : t.type === 'longshot' ? [C.yellow, C.white] : t.type === 'thornweaver' ? [C.leaf, C.grass, C.yellow] : t.type === 'alchemist' ? [C.leaf, C.yellow, C.white] : [C.sand, C.white];
           fx.burst(m(t.x) + mz.x, m(t.y) + mz.y, col, 3, 0.9, 1, 0.02, 8);
           if (t.type === 'longshot') {
@@ -1038,7 +1042,11 @@ export class Renderer {
         if (t) { fx.ring(m(t.x), m(t.y), 4, 30, C.yellow, 20); fx.burst(m(t.x), m(t.y) - 16, [C.yellow, C.white, C.amber], 16, 1.8, 2, -0.02, 30); fx.float(m(t.x), m(t.y) - 44, 'LEVEL UP', C.yellow, 50, 0.3); }
         break;
       }
-      case 'ability': if (ev.id === 'flare' || ev.id === 'dawnbreak') this.heroCast = this.now + 300; this.abilityFx(ev.id, ev.x, ev.y, ev.cash); break;
+      case 'ability':
+        if (isHeroAbility(ev.id)) this.heroCast = this.now + 300;
+        if (!heroAbilityFx(ev.id, this.fx, this.heroFxCtx, ev.x, ev.y)) this.abilityFx(ev.id, ev.x, ev.y, ev.cash);
+        break;
+      case 'starfall': starfallFx(this.fx, this.heroFxCtx, m(ev.x), m(ev.y), m(ev.radius)); break;
       case 'power': this.powerFx(ev.power, ev.x, ev.y); break;
       case 'trap': {
         const v = this.traps.get(ev.id);

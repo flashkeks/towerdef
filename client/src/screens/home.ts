@@ -208,7 +208,7 @@ export function homeView(ctx: Ctx): View {
   for (const id of [...TOWER_TYPES, 'wren'] as (TowerType | HeroType)[]) {
     const ok = isTowerUnlocked(p, id);
     const c = h('div', `crew-i ${ok ? '' : 'locked'}`);
-    const port = id === 'wren' || id === 'bram' || id === 'sela' ? heroPortrait() : towerPortrait(id);
+    const port = id === 'wren' || id === 'bram' || id === 'sela' ? heroPortrait(id as HeroType) : towerPortrait(id as TowerType);
     const art = cv(port, 2, ok ? '' : 'dim');
     c.append(art, h('div', 'crew-n', names[id]));
     if (!ok) {

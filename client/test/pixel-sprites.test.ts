@@ -89,15 +89,15 @@ describe('Held Wren', () => {
   it('fuenf sichtbare Stufen, Level innerhalb einer Stufe gleich', () => {
     const lv = [1, 5, 10, 15, 20];
     expect(lv.map(heroStage)).toEqual([0, 1, 2, 3, 4]);
-    expect(new Set(lv.map((l) => sig(heroRaster(l, 0, 'idle0').rows))).size).toBe(5);
-    expect(sig(heroRaster(1, 0, 'idle0').rows)).toBe(sig(heroRaster(4, 0, 'idle0').rows));
-    expect(sig(heroRaster(10, 0, 'idle0').rows)).toBe(sig(heroRaster(14, 0, 'idle0').rows));
+    expect(new Set(lv.map((l) => sig(heroRaster('wren', l, 0, 'idle0').rows))).size).toBe(5);
+    expect(sig(heroRaster('wren', 1, 0, 'idle0').rows)).toBe(sig(heroRaster('wren', 4, 0, 'idle0').rows));
+    expect(sig(heroRaster('wren', 10, 0, 'idle0').rows)).toBe(sig(heroRaster('wren', 14, 0, 'idle0').rows));
   });
   it('Idle, Angriff und Faehigkeits-Pose sind gueltig und verschieden', () => {
     const fr = ['idle0', 'idle1', 'atk0', 'atk2', 'cast0', 'cast1'] as const;
-    const s = new Set(fr.map((f) => sig(heroRaster(12, 0, f).rows)));
+    const s = new Set(fr.map((f) => sig(heroRaster('wren', 12, 0, f).rows)));
     expect(s.size).toBe(fr.length);
-    for (const f of fr) valid(heroRaster(12, 3, f).rows);
+    for (const f of fr) valid(heroRaster('wren', 12, 3, f).rows);
   });
 });
 

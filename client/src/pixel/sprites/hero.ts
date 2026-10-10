@@ -6,13 +6,10 @@ import { dirOf, poseOf, type Dir, type Pose, type TowerFrame } from './pose';
 import { GY, OX, OY, TH, TW, type TowerLayers } from './ranger';
 import { outlineSurface, RAMPS, Surface } from './surface';
 
-export type HeroFrame = TowerFrame | 'cast0' | 'cast1';
-export const HERO_FRAMES: HeroFrame[] = ['idle0', 'idle1', 'idle2', 'idle3', 'atk0', 'atk1', 'atk2', 'atk3', 'cast0', 'cast1'];
-
-/** 0 = Level 1-4, 1 = 5-9, 2 = 10-14, 3 = 15-19, 4 = 20. */
-export function heroStage(level: number): number {
-  return level >= 20 ? 4 : level >= 15 ? 3 : level >= 10 ? 2 : level >= 5 ? 1 : 0;
-}
+import { drawBram } from './bram';
+import { drawSela } from './sela';
+import { heroStage, type HeroFrame, type HeroKind } from './hero-stage';
+export { HERO_FRAMES, heroStage, type HeroFrame, type HeroKind } from './hero-stage';
 
 function lantern(s: Surface, front: Surface, x: number, y: number, size: number, ph: number, big: boolean): void {
   // Aufhaenger
@@ -153,12 +150,13 @@ export function drawWren(level: number, d: Dir, p: Pose, cast: number): TowerLay
   return { fig: s, back, front, muzzle };
 }
 
-export function heroRaster(level: number, facing: number, frame: HeroFrame): { rows: string[]; ax: number; ay: number; mx: number; my: number } {
+/** Raster eines Helden (Rahmen 96 x 80, Anker = Fuesse). `hero` waehlt die Figur; Wren ist der Standard der alten Aufrufe. */
+export function heroRaster(hero: HeroKind, level: number, facing: number, frame: HeroFrame): { rows: string[]; ax: number; ay: number; mx: number; my: number } {
   const d = dirOf(facing);
   const cast = frame === 'cast0' ? 0 : frame === 'cast1' ? 1 : -1;
   const p = poseOf(cast >= 0 ? 'idle0' : (frame as TowerFrame));
   if (cast >= 0) { p.ph = cast * 2; p.up = cast; }
-  const L = drawWren(level, d, p, cast);
+  const L = hero === 'bram' ? drawBram(level, d, p, cast) : hero === 'sela' ? drawSela(level, d, p, cast) : drawWren(level, d, p, cast);
   const out = new Surface(TW, TH);
   out.blit(L.back); out.blit(outlineSurface(L.fig)); out.blit(L.front);
   const fin = d.flip ? out.flipX() : out;

@@ -2,6 +2,7 @@
 import * as api from './index';
 import type { Tiers, TowerType, TowerFrame } from './index';
 import { sheetFx2R15e, sheetFxR15e, sheetGegnerR15e, sheetVergleichR15e } from './sheet15e';
+import { sheetFxHeroesR16, sheetHeroR16, sheetHeroZoomR16 } from './sheet16';
 import { sheetBosseR15, sheetFxR15, sheetGegnerR15 } from './sheet15';
 
 const q = new URLSearchParams(location.search);
@@ -136,23 +137,23 @@ function sheetHero(): HTMLCanvasElement {
   lv.forEach((l, i) => {
     const x = 10 + i * CW, y = 10;
     tile(g, x, y, CW - 4, CH - 4);
-    blit(g, api.heroSprite(l, 0, 'idle0'), x + 50 * K, y + 76 * K, K);
+    blit(g, api.heroSprite('wren', l, 0, 'idle0'), x + 50 * K, y + 76 * K, K);
     label(g, `Level ${l}`, x + 4, y + 14, '#fff');
     tile(g, x, y + CH, CW - 4, CH - 4);
-    blit(g, api.heroSprite(l, 7, 'atk1'), x + 50 * K, y + CH + 76 * K, K);
+    blit(g, api.heroSprite('wren', l, 7, 'atk1'), x + 50 * K, y + CH + 76 * K, K);
     label(g, `L${l} atk`, x + 4, y + CH + 14, '#fff');
   });
   const fr = api.HERO_FRAMES;
   fr.forEach((f, i) => {
     const x = 10 + i * CW, y = 10 + 2 * CH;
     tile(g, x, y, CW - 4, CH - 4);
-    blit(g, api.heroSprite(20, 0, f), x + 50 * K, y + 76 * K, K);
+    blit(g, api.heroSprite('wren', 20, 0, f), x + 50 * K, y + 76 * K, K);
     label(g, `L20 ${f}`, x + 4, y + 14, '#fff');
   });
   for (let d = 0; d < 8; d++) {
     const x = 10 + d * CW, y = 10 + 3 * CH;
     tile(g, x, y, CW - 4, CH - 4);
-    blit(g, api.heroSprite(10, d, 'idle0'), x + 50 * K, y + 76 * K, K);
+    blit(g, api.heroSprite('wren', 10, d, 'idle0'), x + 50 * K, y + 76 * K, K);
     label(g, `L10 facing ${d}`, x + 4, y + 14, '#fff');
   }
   return c;
@@ -570,6 +571,11 @@ function sheetFxR14(): HTMLCanvasElement {
 }
 
 const sheets: Record<string, () => HTMLCanvasElement> = {
+  'tp-bram': () => sheetHeroR16('bram'),
+  'tp-sela': () => sheetHeroR16('sela'),
+  'tp-fx': sheetFxHeroesR16,
+  'tp-bram-zoom': () => sheetHeroZoomR16('bram'),
+  'tp-sela-zoom': () => sheetHeroZoomR16('sela'),
   'e-gegner': sheetGegnerR15e,
   'e-vergleich': sheetVergleichR15e,
   'e-fx': sheetFxR15e,

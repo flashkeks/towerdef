@@ -257,7 +257,7 @@ class Match {
 
   private card(ty: TowerType | HeroType): HTMLElement {
     const c = h('button', 'm-card');
-    const spr = isHero(ty) ? heroPortrait() : towerPortrait(ty);
+    const spr = isHero(ty) ? heroPortrait(ty) : towerPortrait(ty);
     const port = h('div', 'm-port');
     // Runde 14b: auf sichtbare Pixel zuschneiden, ganzzahlig und mittig. Zwei Fassungen (1x/2x), das CSS waehlt je nach Fensterhoehe.
     const f1 = fitFigure(spr.canvas, 99, 99, 1), f2 = fitFigure(spr.canvas, 76, 78, 2);
@@ -495,7 +495,7 @@ class Match {
     const ty = this.placing;
     const x = Math.round(this.mouse.x), y = Math.round(this.mouse.y);
     const chk = this.game.canPlace(ty, x * 1000, y * 1000);
-    const spr = isHero(ty) ? heroSprite(1, 6, 'idle0') : towerSprite(ty, [0, 0, 0], 6, 'idle0');
+    const spr = isHero(ty) ? heroSprite(ty, 1, 6, 'idle0') : towerSprite(ty, [0, 0, 0], 6, 'idle0');
     this.r.setGhost({ x, y, spr, view: this.ghostView(ty), foot: footMilli(ty) / 1000, ok: chk.ok });
     this.lastGhostReason = chk.ok ? null : chk.reason;
   }
