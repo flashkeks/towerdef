@@ -13,6 +13,7 @@ import './ui/kit/kit.css';
 import { startMatch } from './match/match';
 import { audio } from './audio/engine';
 import { runApp, type SoundId } from './screens';
+import { challengeFromQuery } from '../../sim/src/index';
 import { newProfile, xpForLevel } from './meta';
 import { openStore } from './meta/store';
 
@@ -40,6 +41,8 @@ export async function startGame(root: HTMLElement): Promise<GameHandle> {
     startMatch: (r, o) => startMatch(r, { ...o, debug: q.has('debug') || hooks, seed: q.has('seed') ? Number(q.get('seed')) : undefined }),
     sound: (id) => audio.play(SOUND[id]),
     audio: audio.volumeApi,
+    // Runde 16 E: ?challenge=CODE oeffnet die Challenge (kaputte Codes zeigen die Meldung dort)
+    initial: challengeFromQuery(location.search) ? { name: 'challenges', code: challengeFromQuery(location.search)! } : undefined,
     adoptLegacyVolume: (pct) => audio.adoptLegacy(pct),
     // Menue-Musik entfernt (Max, 09.10.2026): im Menue nur Klick-/UI-Toene, Musik nur im Match
     theme: () => undefined,

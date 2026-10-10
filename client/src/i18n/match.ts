@@ -145,6 +145,8 @@ export const matchStrings = {
   'start.play': 'Play',
   'start.map': 'Lanternfall Meadow',
   'reason.mode-locked': "Not allowed in this mode",
+  'reason.rule-cap': 'This challenge caps upgrades here',
+  'reason.no-sell': 'Selling is off in this challenge',
   'start.sub': 'Defend the lanterns of Lanternfall against the Glims of the dusk.',
   'start.controls': 'Q/W/E/R place towers   Space start round   , . / upgrade paths   1-3 abilities   Esc cancel',
 

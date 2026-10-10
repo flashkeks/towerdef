@@ -147,6 +147,8 @@ export class Panel {
     const sellB = h('button', 'p-sell');
     sellB.append(h('span', 'lbl', t('panel.sell')), uiIcon('coin', 2), h('b', 'num', String(sell)));
     sellB.onclick = () => this.cb.sell(tw.id);
+    // Runde 16 E: Challenge ohne Verkaufen
+    if (this.game.info.rules?.noSell) { sellB.classList.add('off'); sellB.title = t('reason.no-sell'); }
     return sellB;
   }
 
@@ -242,7 +244,7 @@ export class Panel {
         if (btn.kind === 'buy') this.cb.upgrade(tw.id, p);
         else if (btn.kind === 'unlock') this.cb.askUnlock(ty, p);
         else if (btn.kind === 'needxp') this.cb.toast(t('panel.needXp', { n: btn.xpMissing }));
-        else if (btn.kind === 'closed') this.cb.toast(t('reason.crosspath'));
+        else if (btn.kind === 'closed') this.cb.toast(t(info.reason === 'rule-cap' ? 'reason.rule-cap' : 'reason.crosspath'));
         else if (btn.kind === 'poor') this.cb.toast(t('reason.no-cash'));
       };
       row.append(own, nb);

@@ -1,0 +1,79 @@
+/* Runde 16 E (10.10.2026): Challenges (Startseite, Editor, Ergebnis) und Match-Anzeige. Palette wie die anderen Meta-Bildschirme. */
+.ch-body { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 24px; align-items: start; }
+.ch-sel { display: flex; flex-direction: column; gap: 10px; }
+.ch-kicker { font: 800 14px 'Rajdhani', sans-serif; letter-spacing: .18em; text-transform: uppercase; color: var(--p-amber); }
+.ch-name { font: 800 34px 'Rajdhani', sans-serif; letter-spacing: .06em; text-transform: uppercase; color: var(--p-yellow); line-height: 1; }
+.ch-sub { color: var(--p-silver); font-size: 17px; }
+.ch-rules { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 4px 18px; }
+.ch-rules li { font-size: 17px; padding-left: 14px; position: relative; color: var(--p-white); }
+.ch-rules li::before { content: ''; position: absolute; left: 0; top: .55em; width: 6px; height: 6px; background: var(--p-amber); }
+.ch-meta { display: flex; gap: 14px; flex-wrap: wrap; color: var(--p-silver); font-size: 16px; }
+.ch-meta b { color: var(--p-yellow); }
+.ch-reward { color: var(--p-yellow); font-weight: 800; letter-spacing: .04em; }
+.ch-reward.done { color: var(--p-stone); }
+.ch-side { display: flex; flex-direction: column; gap: 10px; }
+.ch-side .btn-big { justify-content: flex-start; }
+.ch-code-row { display: flex; gap: 8px; align-items: stretch; }
+.ch-input {
+  flex: 1 1 auto; min-width: 0; background: var(--p-ink); color: var(--p-white); border: 0; padding: 8px 12px; margin: 3px; font: 700 18px 'Rajdhani', monospace; letter-spacing: .08em;
+  box-shadow: 0 -3px 0 0 var(--p-dusk), 0 3px 0 0 var(--p-dusk), -3px 0 0 0 var(--p-dusk), 3px 0 0 0 var(--p-dusk);
+}
+.ch-input::placeholder { color: var(--p-stone); }
+.ch-err { color: #ff8a90; font-weight: 700; min-height: 22px; font-size: 16px; }
+.ch-recent { display: flex; flex-direction: column; gap: 6px; }
+.ch-recent button { display: flex; justify-content: space-between; gap: 12px; text-align: left; padding: 6px 12px; background: var(--p-ink); margin: 2px 3px; font-size: 16px; }
+.ch-recent button:hover { background: var(--p-dusk); }
+.ch-recent .num { color: var(--p-silver); }
+.ch-pv { align-self: flex-start; }
+
+/* ---- Editor: eine Seite, kein Scrollen bei 1280 x 720 ---- */
+.ch-edit { height: 100%; padding: 10px 28px 12px; gap: 8px; overflow: hidden; }
+.ch-edit .subtop { margin-bottom: 0; }
+.ed-grid { display: grid; grid-template-columns: 1fr 1.25fr 1fr; gap: 12px; flex: 1 1 auto; min-height: 0; }
+.ed-col { display: flex; flex-direction: column; gap: 7px; min-height: 0; }
+.ed-col .card { padding: 9px 12px 10px; margin: 3px 4px; display: flex; flex-direction: column; gap: 6px; }
+.ed-col .h2 { margin-bottom: 0; font-size: 13px; }
+.ed-row { display: flex; align-items: center; gap: 8px; justify-content: space-between; font-size: 16px; }
+.ed-row > span:first-child { color: var(--p-silver); }
+.seg { display: flex; flex-wrap: wrap; gap: 2px; }
+.seg button { padding: 3px 9px; margin: 3px; min-width: 38px; background: var(--p-ink); font-weight: 800; font-size: 15px; box-shadow: 0 -3px 0 0 var(--p-dusk), 0 3px 0 0 var(--p-dusk), -3px 0 0 0 var(--p-dusk), 3px 0 0 0 var(--p-dusk); }
+.seg button:hover:not(:disabled) { background: var(--p-dusk); }
+.seg button.sel { background: var(--p-dusk); color: var(--p-yellow); box-shadow: 0 -3px 0 0 var(--p-amber), 0 3px 0 0 var(--p-amber), -3px 0 0 0 var(--p-amber), 3px 0 0 0 var(--p-amber); }
+.seg button:disabled { opacity: .4; }
+.seg.maps button { flex: 1 1 calc(50% - 8px); }
+.ed-num { width: 84px; flex: none; text-align: right; padding: 4px 8px; font-size: 16px; }
+.ed-tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+.ed-tile { position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 4px 2px 3px; margin: 3px; background: var(--p-night); font-size: 13px; font-weight: 800; letter-spacing: .03em; text-align: center; line-height: 1.05;
+  box-shadow: 0 -3px 0 0 var(--p-ink), 0 3px 0 0 var(--p-ink), -3px 0 0 0 var(--p-ink), 3px 0 0 0 var(--p-ink), inset 0 3px 0 0 var(--p-dusk); }
+.ed-tile canvas { height: 56px; width: auto; object-fit: contain; }
+.ed-tile.off { opacity: .4; filter: grayscale(1); }
+.ed-tile.off canvas { filter: grayscale(1); }
+.ed-tile:not(.off) { box-shadow: 0 -3px 0 0 var(--p-ink), 0 3px 0 0 var(--p-ink), -3px 0 0 0 var(--p-ink), 3px 0 0 0 var(--p-ink), inset 0 0 0 3px var(--p-amber); }
+.ed-tile:hover { background: var(--p-dusk); }
+.ed-switches { display: grid; grid-template-columns: 1fr 1fr; gap: 0 6px; }
+.ed-sw { display: flex; align-items: center; gap: 8px; padding: 4px 4px; text-align: left; font-size: 15px; font-weight: 700; }
+.ed-sw i { flex: none; width: 18px; height: 18px; background: var(--p-ink); box-shadow: 0 -2px 0 0 var(--p-dusk), 0 2px 0 0 var(--p-dusk), -2px 0 0 0 var(--p-dusk), 2px 0 0 0 var(--p-dusk); }
+.ed-sw.on i { background: var(--p-amber); }
+.ed-sw.on { color: var(--p-yellow); }
+.ed-foot { display: flex; align-items: center; gap: 10px; }
+.ed-foot .ch-input { font-size: 17px; }
+.ed-foot .btn-big { min-height: 48px; font-size: 19px; padding: 6px 20px; }
+.ed-hint { color: var(--p-stone); font-size: 14px; }
+.ed-err { color: #ff8a90; font-weight: 700; font-size: 15px; min-height: 18px; }
+
+/* ---- Ergebnis ---- */
+.chr-title { text-align: center; }
+.chr-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.chr-stat { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 12px 8px; }
+.chr-stat b { font: 800 34px 'Rajdhani', sans-serif; color: var(--p-yellow); }
+.chr-stat span { color: var(--p-silver); letter-spacing: .08em; text-transform: uppercase; font-size: 14px; }
+.chr-stat em { font-style: normal; color: var(--p-leaf); font-weight: 800; font-size: 14px; }
+.chr-code { display: flex; gap: 8px; align-items: center; }
+
+/* ---- Match ---- */
+.m-mode.mode-challenge { color: var(--yellow); border-color: var(--orange, #e0662b); }
+.p-sell.off { opacity: .45; cursor: not-allowed; }
+@media (max-width: 760px) { .ch-body { grid-template-columns: 1fr; } .ed-grid { grid-template-columns: 1fr; } .ch-edit { overflow: auto; height: auto; } }
+.challenge-result > * { flex: none; }
+.challenge-result .card .ch-rules { margin-bottom: 10px; }
+.challenge-result .res-btns { justify-content: center; }

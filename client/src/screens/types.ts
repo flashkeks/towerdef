@@ -1,5 +1,6 @@
 import type { Difficulty, ModeId, PowerKey, TowerType } from '../../../sim/src/types';
-import type { MatchReport, Profile } from '../meta';
+import type { MatchReport, Profile, ChallengeBest } from '../meta';
+import type { ChallengeRules } from '../../../sim/src/index';
 import type { MetaStore } from '../meta/store';
 import type { VolumeApi } from '../audio/settings';
 
@@ -27,6 +28,24 @@ export interface ResultInfo {
   embersAfter: number;
 }
 
+/** Runde 16 E: Woher eine Challenge kommt (Tages-Challenge: `key` = UTC-Tag; sonst der Code). */
+export interface ChallengeSource { kind: 'daily' | 'custom'; key: string; title: string; from: 'hub' | 'editor' }
+export interface ChallengeResultInfo {
+  rules: ChallengeRules;
+  source: ChallengeSource;
+  code: string;
+  won: boolean;
+  quit: boolean;
+  roundsCleared: number;
+  spent: number;
+  livesLost: number;
+  ticks: number;
+  best: ChallengeBest;
+  improved: boolean;
+  embersGained: number;
+  duplicate: boolean;
+}
+
 export type Route =
   | { name: 'home' }
   | { name: 'setup'; map: string }
@@ -35,6 +54,9 @@ export type Route =
   | { name: 'store' }
   | { name: 'settings' }
   | { name: 'notice' }
+  | { name: 'challenges'; code?: string }
+  | { name: 'challenge-edit'; rules?: ChallengeRules }
+  | { name: 'challenge-result'; info: ChallengeResultInfo }
   | { name: 'result'; info: ResultInfo };
 
 export interface Ctx {
@@ -48,6 +70,8 @@ export interface Ctx {
   audio: VolumeApi;
   /** Startet ein Match auf `ctx.map` im Modus `ctx.mode` (Runde 15). */
   play(d: Difficulty): void;
+  /** Runde 16 E: Challenge spielen (Tages-Challenge, Code oder Test aus dem Editor). */
+  playChallenge(rules: ChallengeRules, source: ChallengeSource): void;
   difficulty: Difficulty;
   /** Gewaehlte Karte und Modus (bleiben fuer "Again" erhalten) */
   map: string;

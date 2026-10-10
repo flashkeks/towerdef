@@ -32,7 +32,7 @@ export interface TierBtn {
 export function tierButton(info: UpgradeInfo, towerXp: number): TierBtn {
   const base = { tier: info.next ?? 0, hidden: !info.revealed, price: 0, xpCost: 0, xpMissing: 0, clickable: false };
   if (info.next == null || info.reason === 'maxed') return { ...base, kind: 'maxed', tier: 0, hidden: false };
-  if (info.reason === 'crosspath') return { ...base, kind: 'closed' };
+  if (info.reason === 'crosspath' || info.reason === 'rule-cap') return { ...base, kind: 'closed' };
   if (info.unlocked < info.next) {
     const can = towerXp >= info.unlockCost;
     return { ...base, kind: can ? 'unlock' : 'needxp', xpCost: info.unlockCost, xpMissing: can ? 0 : info.unlockCost - towerXp, clickable: can };

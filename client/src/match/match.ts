@@ -3,7 +3,7 @@
  * Renderer, Ton und HUD weiter und nimmt Eingaben entgegen. Keine Spielregeln hier: alles entscheidet `Game`.
  * Einstieg fuer die App: `startMatch(root, opts) -> Promise<MatchResult>`.
  */
-import { createGame, DATA, MODES, modeAllows, type ModeId, type AbilityId, type PowerKey, type CommandResult, type Difficulty, type Game, type GameOptions, type GameState, type HeroType, type SimEvent, type TargetMode, type Tiers, type TowerType } from '../sim';
+import { createGame, DATA, MODES, modeAllows, rulesAllow, describeRules, type ChallengeRules, type ModeId, type AbilityId, type PowerKey, type CommandResult, type Difficulty, type Game, type GameOptions, type GameState, type HeroType, type SimEvent, type TargetMode, type Tiers, type TowerType } from '../sim';
 import { audio } from '../audio/engine';
 import { t } from '../i18n/t';
 import { h, setClass, setText } from '../ui/dom';
@@ -28,6 +28,8 @@ export interface StartOptions {
   map?: string;
   /** Spielmodus (Runde 15), Vorgabe Standard */
   mode?: ModeId;
+  /** Runde 16 E: Challenge-Regeln (ersetzen Karte, Schwierigkeit, Seed und Modus) */
+  rules?: ChallengeRules;
   difficulty: Difficulty;
   seed?: number;
   unlocks?: GameOptions['unlocks'];
@@ -65,14 +67,17 @@ export interface MatchResult {
   upgrades: { tower: TowerType | HeroType; path: number; tier: number }[];
   ticks: number;
   quit: boolean;
+  /** Runde 16 E: Kennzahlen fuer Challenges (Gold ausgegeben, Leben verloren) */
+  spent: number;
+  livesLost: number;
 }
 
 const TICKS_PER_S = 60;
 const KEYS_ABILITY = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
 
 export async function startMatch(root: HTMLElement, opts: StartOptions): Promise<MatchResult> {
-  const seed = opts.seed ?? (Math.floor(Math.random() * 2 ** 31) | 0);
-  const game = createGame({ map: opts.map ?? 'meadow', mode: opts.mode ?? 'standard', difficulty: opts.difficulty, seed, unlocks: opts.unlocks, towerXp: opts.towerXp, mods: opts.mods, powers: opts.powers });
+  const seed = opts.rules ? opts.rules.seed : opts.seed ?? (Math.floor(Math.random() * 2 ** 31) | 0);
+  const game = createGame({ rules: opts.rules, map: opts.map ?? 'meadow', mode: opts.rules ? undefined : opts.mode ?? 'standard', difficulty: opts.difficulty, seed, unlocks: opts.unlocks, towerXp: opts.towerXp, mods: opts.mods, powers: opts.powers });
   const m = new Match(root, game, { ...opts, seed });
   await m.init();
   return m.done;
@@ -126,6 +131,8 @@ class Match {
   private hoverTower: number | null = null;
   private keyHandler = (e: KeyboardEvent): void => this.onKey(e);
   private endTimer = 0;
+  /** Runde 16 E: verlorene Leben (Summe der `leak`-Ereignisse) */
+  private lostLives = 0;
 
   constructor(private readonly root: HTMLElement, private readonly game: Game, private readonly opts: StartOptions & { seed: number }) {
     this.r = new Renderer((opts.map ?? 'meadow') as MapId);
@@ -159,7 +166,8 @@ class Match {
     this.fit();
     audio.attach();
     audio.setTheme('match');
-    if (this.game.info.mode !== 'standard') this.toast(MODES[this.game.info.mode].desc, 'gain');
+    if (this.game.info.rules) this.toast('Challenge: ' + describeRules(this.game.info.rules).slice(0, 3).join(', '), 'gain');
+    else if (this.game.info.mode !== 'standard') this.toast(MODES[this.game.info.mode].desc, 'gain');
     window.addEventListener('keydown', this.keyHandler);
     this.bindBoard();
     this.r.setAuraProbe((id) => this.game.auraOf(id));
@@ -199,9 +207,11 @@ class Match {
     const map = h('div', 'm-mapname', this.game.info.map in DATA.maps ? DATA.maps[this.game.info.map].name : 'Lanternfall Meadow');
     const mode = this.game.info.mode;
     // Modus-Hinweis neben dem Kartennamen; Deflation und Half Cash sagen dazu, was mit dem Einkommen ist
-    const chip = h('div', `m-mode mode-${mode}${mode === 'standard' ? ' hidden' : ''}`, MODES[mode].name);
-    chip.title = MODES[mode].desc;
-    if (mode === 'deflation') cash.append(h('span', 'm-income-note', 'no income'));
+    const rl = this.game.info.rules;
+    const chip = h('div', `m-mode mode-${rl ? 'challenge' : mode}${mode === 'standard' && !rl ? ' hidden' : ''}`, rl ? 'Challenge' : MODES[mode].name);
+    chip.title = rl ? describeRules(rl).join('\n') : MODES[mode].desc;
+    if (rl) { if (rl.incomePct === 0) cash.append(h('span', 'm-income-note', 'no income')); else if (rl.incomePct !== 100) cash.append(h('span', 'm-income-note', `${rl.incomePct}% income`)); }
+    else if (mode === 'deflation') cash.append(h('span', 'm-income-note', 'no income'));
     else if (mode === 'half-cash') cash.append(h('span', 'm-income-note', 'half income'));
     this.pauseBtn.append(uiIcon('pause', 2));
     this.pauseBtn.title = t('match.pause') + ' (P)';
@@ -260,7 +270,7 @@ class Match {
     const key = h('kbd', 'm-key', HOTKEY[ty]);
     c.append(port, txt, key);
     // Modus-Sperre (Runde 15) geht vor der Level-Sperre: ausgegraut mit Hinweis, welcher Modus es verbietet
-    const modeOk = modeAllows(this.game.info.mode, ty);
+    const modeOk = this.allowed(ty);
     const unlocked = !this.opts.unlocks || this.opts.unlocks.towers.includes(ty);
     if (!modeOk || !unlocked) {
       c.classList.add('locked');
@@ -275,7 +285,12 @@ class Match {
   }
 
   /** Hinweis auf gesperrten Karten, wenn der Modus den Turm oder den Helden verbietet. */
+  private allowed(ty: TowerType | HeroType): boolean {
+    return modeAllows(this.game.info.mode, ty) && rulesAllow(this.game.info.rules, ty);
+  }
+
   private modeLockText(ty: TowerType | HeroType): string {
+    if (this.game.info.rules) return isHero(ty) ? 'No hero in this challenge' : 'Not in this challenge';
     const m = MODES[this.game.info.mode];
     return ty === 'wren' ? 'No hero in this mode' : `Not in ${m.name}`;
   }
@@ -367,7 +382,7 @@ class Match {
   /** Platte im Powers-Reiter angeklickt: Knopf-Powers sofort, Ziel-Powers wechseln in den Zielmodus. */
   private pickPower(slot: PowerSlot): void {
     if (this.ended) return;
-    if (!MODES[this.game.info.mode].powers) { this.toast(t('reason.mode-locked')); audio.play('error'); return; }
+    if (!MODES[this.game.info.mode].powers || this.game.info.rules?.noPowers) { this.toast(t('reason.mode-locked')); audio.play('error'); return; }
     if (!slotUsable(slot)) {
       this.toast(t(slot.state === 'empty' ? 'reason.no-power' : slot.state === 'used' ? 'reason.used-this-round' : 'reason.no-hero'));
       audio.play('error');
@@ -440,7 +455,7 @@ class Match {
 
   private beginPlace(ty: TowerType | HeroType | null): void {
     if (ty) this.cancelAim();
-    if (ty && !modeAllows(this.game.info.mode, ty)) { this.toast(this.modeLockText(ty)); audio.play('error'); return; }
+    if (ty && !this.allowed(ty)) { this.toast(this.modeLockText(ty)); audio.play('error'); return; }
     if (ty && this.opts.unlocks && !this.opts.unlocks.towers.includes(ty)) { this.toast(this.opts.lockInfo?.[ty] ?? t('match.locked')); audio.play('error'); return; }
     this.placing = this.placing === ty ? null : ty;
     if (this.placing) { this.select(null); this.toast(t('match.placeHint')); }
@@ -626,6 +641,7 @@ class Match {
         else if (ev.power === 'extraLives') this.pulse(this.livesBox, 'pulse-life');
         this.toast(powerName(ev.power), 'gain');
         break;
+      case 'leak': this.lostLives += ev.lives; break;
       case 'heal': this.pulse(this.livesBox, 'pulse-life'); break;
       case 'gate': this.toast('Gate held: leak stopped', 'gain'); break;
       case 'gameOver': this.onGameOver(ev.result === 'won'); break;
@@ -653,7 +669,11 @@ class Match {
     const cont = h('button', 'm-start small', t(won ? 'match.finish' : 'match.continue'));
     cont.onclick = () => this.end(false);
     box.append(h('div', 'ov-t', t(won ? 'match.victory' : fp ? 'match.freeplayOver' : 'match.defeat')), h('div', 'ov-s', won ? t('match.victoryNote', { n: this.game.state.round }) : this.roundText(this.game.state.round)));
-    if (won) {
+    if (won && this.game.info.rules) {
+      // Runde 16 E: Challenges kennen kein Freeplay
+      cont.dataset.act = 'finish';
+      box.append(cont);
+    } else if (won) {
       // Runde 15b: wie BTD6, "Continue in Freeplay" nach dem Sieg (Max, 10.10.2026)
       const more = h('button', 'm-start small free-btn', t('match.freeplayBtn'));
       more.dataset.act = 'freeplay';
@@ -745,6 +765,8 @@ class Match {
       upgrades: this.upgrades,
       ticks: st.tick,
       quit,
+      spent: Object.values(st.stats.spent).reduce((a, b) => a + b, 0),
+      livesLost: this.lostLives,
     };
     this.r.destroy();
     this.el.remove();

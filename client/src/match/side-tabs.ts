@@ -74,13 +74,13 @@ export class SideTabs {
 
   // ------------------------------------------------------------------ Powers
   /** Deflation: keine Powers (Sim lehnt mit `mode-locked` ab); der Reiter zeigt nur einen Hinweis. */
-  private get powersOff(): boolean { return !MODES[this.game.info.mode].powers; }
+  private get powersOff(): boolean { return !MODES[this.game.info.mode].powers || !!this.game.info.rules?.noPowers; }
 
   private updatePowers(st: GameState): void {
     if (this.powersOff) {
       if (this.powerSig !== 'off') {
         this.powerSig = 'off';
-        this.powers.replaceChildren(h('div', 'pw-off', t('powers.off', { mode: MODES[this.game.info.mode].name })));
+        this.powers.replaceChildren(h('div', 'pw-off', t('powers.off', { mode: this.game.info.rules ? 'this challenge' : MODES[this.game.info.mode].name })));
       }
       return;
     }

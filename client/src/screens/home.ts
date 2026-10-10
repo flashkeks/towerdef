@@ -2,7 +2,7 @@
 import type { Difficulty, HeroType, TowerType } from '../../../sim/src/types';
 import {
   BRANCH_NAMES, DIFFICULTIES, END_ROUND, MAPS, MODE_IDS, TIER_COST, TOWER_TYPES, bestOf, isTowerUnlocked, knowledgePoints,
-  levelFromXp, mapLock, mapById, medalsOf, unlockLevel, type MapMeta, type Profile,
+  levelFromXp, mapLock, mapById, medalsOf, unlockLevel, dailyStatus, utcDay, type MapMeta, type Profile,
 } from '../meta';
 import { heroPortrait, towerPortrait } from '../pixel/sprites';
 import { h } from '../ui/dom';
@@ -163,6 +163,7 @@ export function homeView(ctx: Ctx): View {
     mk(S.home.towers, 'bolt', readyUnlocks(p), () => ctx.go({ name: 'towers' })),
     mk(S.home.knowledge, 'book', pts, () => ctx.go({ name: 'knowledge' })),
     mk(S.home.store, 'tag', 0, () => ctx.go({ name: 'store' })),
+    mk('Challenges', 'flag', dailyStatus(p, utcDay()).claimed ? 0 : 1, () => ctx.go({ name: 'challenges' })),
     mk(S.home.settings, 'gear', 0, () => ctx.go({ name: 'settings' })),
   );
   const line = h('div', 'lineup');

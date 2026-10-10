@@ -4,13 +4,17 @@
  * Das Match selbst (P3) kommt von aussen; hier wird nur Profil -> Optionen und Ergebnis -> Profil uebersetzt.
  */
 import type { Difficulty, TowerType } from '../../../sim/src/types';
-import { applyMatch, isTowerUnlocked, matchOptions, unlockLevel, TOWER_TYPES, type Profile } from '../meta';
+import { applyChallenge, utcDay, applyMatch, isTowerUnlocked, matchOptions, unlockLevel, TOWER_TYPES, type Profile } from '../meta';
 import type { ModeId } from '../../../sim/src/types';
 import { openStore, type MetaStore } from '../meta/store';
 import { startLives, toMetaResult, type MatchStartOptions, type StartMatch } from '../meta/types';
 import { h } from '../ui/dom';
 import { volumeButton } from '../ui/volume';
 import { uiIcon } from '../match/ui-icons';
+import { encodeChallenge, type ChallengeRules } from '../../../sim/src/index';
+import { challengesView } from './challenges';
+import { challengeEditView } from './challenge-edit';
+import { challengeResultView } from './challenge-result';
 import { homeView } from './home';
 import { knowledgeView } from './knowledge';
 import { noticeView } from './notice';
@@ -21,7 +25,7 @@ import { setupView } from './setup';
 import { warmPreviews } from './previews';
 import { storeView } from './store';
 import { towersView } from './towers';
-import type { Ctx, MenuTheme, Route, SoundId, View } from './types';
+import type { ChallengeSource, Ctx, MenuTheme, Route, SoundId, View } from './types';
 import type { VolumeApi } from '../audio/settings';
 import './screens.css';
 
@@ -111,12 +115,20 @@ export async function runApp(root: HTMLElement, opts: AppOptions): Promise<AppHa
         case 'settings': return mount(settingsView(ctx));
         case 'notice': return mount(noticeView(ctx));
         case 'result': return mount(resultView(ctx, r.info));
+        case 'challenges': return mount(challengesView(ctx, r.code));
+        case 'challenge-edit': return mount(challengeEditView(ctx, r.rules));
+        case 'challenge-result': return mount(challengeResultView(ctx, r.info));
       }
     },
     play(d: Difficulty) {
       if (playing) return;
       playing = true;
       void playMatch(d).finally(() => { playing = false; });
+    },
+    playChallenge(rules, source) {
+      if (playing) return;
+      playing = true;
+      void playChallengeMatch(rules, source).finally(() => { playing = false; });
     },
   };
 
@@ -151,6 +163,38 @@ export async function runApp(root: HTMLElement, opts: AppOptions): Promise<AppHa
         towerXpBefore: { ...before.towerXp }, towerXpAfter: { ...profile.towerXp }, livesLost: res.livesLost, powersUsed: outcome.powersUsed, embersBefore: before.embers, embersAfter: profile.embers,
       },
     });
+  }
+
+  /** Runde 16 E: Challenge spielen. Kein Turm-XP, keine Medaillen; Powers werden aus dem Profil verbraucht, Bestwerte und Tagesbelohnung verbucht. */
+  async function playChallengeMatch(rules: ChallengeRules, source: ChallengeSource): Promise<void> {
+    const before = store.profile;
+    const mo = matchOptions(before);
+    const code = encodeChallenge(rules);
+    const startOpts: MatchStartOptions = { map: rules.map, mode: 'standard', difficulty: rules.difficulty, rules, unlocks: undefined, towerXp: undefined, mods: mo.mods, powers: rules.noPowers ? {} : mo.powers, lockInfo: {} };
+    const back = (): void => ctx.go(source.from === 'editor' ? { name: 'challenge-edit', rules } : { name: 'challenges', code: source.kind === 'custom' ? code : undefined });
+    view?.dispose?.();
+    view = null;
+    let outcome;
+    try {
+      outcome = await opts.startMatch(root, startOpts);
+    } catch (e) {
+      console.error('startMatch failed', e);
+      root.replaceChildren(shell);
+      ctx.go({ name: 'home' });
+      return;
+    }
+    root.replaceChildren(shell);
+    const usedAny = Object.values(outcome.powersUsed ?? {}).some((n) => (n ?? 0) > 0);
+    const cleared = Math.max(0, outcome.roundsCleared ?? 0);
+    if (outcome.quit && cleared === 0 && !usedAny) return back();
+    const spent = Math.max(0, Math.round(outcome.spent ?? 0)), livesLost = Math.max(0, Math.round(outcome.livesLost ?? 0)), ticks = Math.max(0, Math.round(outcome.ticks ?? 0));
+    // Der Tag zaehlt, an dem die Challenge gestartet wurde (Lauf ueber Mitternacht verliert die Belohnung nicht)
+    const { profile, report } = applyChallenge(before, { matchId: newId(), kind: source.kind, key: source.key, won: outcome.won, roundsCleared: cleared, spent, livesLost, ticks }, source.kind === 'daily' ? source.key : utcDay());
+    // verbrauchte Powers vom Inventar abziehen
+    const inventory = { ...profile.inventory };
+    for (const [k, n] of Object.entries(outcome.powersUsed ?? {})) inventory[k as keyof typeof inventory] = Math.max(0, (inventory[k as keyof typeof inventory] ?? 0) - (n ?? 0));
+    await store.update({ ...profile, inventory });
+    ctx.go({ name: 'challenge-result', info: { rules, source, code, won: outcome.won, quit: !!outcome.quit, roundsCleared: cleared, spent, livesLost, ticks, best: report.best, improved: report.improved, embersGained: report.embersGained, duplicate: report.duplicate } });
   }
 
   root.replaceChildren(shell);

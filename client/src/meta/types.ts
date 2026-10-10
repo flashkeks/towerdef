@@ -4,6 +4,7 @@
  * Optionale Felder `roundsCleared`, `livesLost`, `matchId` werden bevorzugt, wenn P3 sie genau liefert.
  */
 import type { Difficulty, GameOptions, HeroType, ModeId, PowerKey, Tiers, TowerType } from '../../../sim/src/types';
+import type { ChallengeRules } from '../../../sim/src/index';
 import { DATA } from '../../../sim/src/data';
 import { maxRoundOf, type MatchResult } from '../../../meta/src/index';
 
@@ -28,6 +29,8 @@ export interface MatchOutcome {
   quit?: boolean;
   roundsCleared?: number;
   livesLost?: number;
+  /** Runde 16 E: Gold ausgegeben (Challenge-Kennzahl) */
+  spent?: number;
   matchId?: string;
 }
 
@@ -37,6 +40,8 @@ export interface MatchStartOptions {
   /** Spielmodus (Runde 15) */
   mode: ModeId;
   difficulty: Difficulty;
+  /** Runde 16 E: Challenge-Regeln (ersetzen Karte, Schwierigkeit, Seed, Modus) */
+  rules?: ChallengeRules;
   unlocks: GameOptions['unlocks'];
   mods: GameOptions['mods'];
   /** Turm-XP-Konto aus dem Profil; die Sim fuehrt es im Match (Freischalten, Rundenende). */
