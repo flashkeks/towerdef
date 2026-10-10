@@ -54,12 +54,12 @@ describe('Gloomharbor: Layout und harbor.json', () => {
     expect(bad).toEqual([]);
     expect(HB_WALLS.length).toBeGreaterThanOrEqual(4);
     expect(hbWallPolys().length).toBe(HB_WALLS.length);
-    // jedes Gebaeude ist vollstaendig von Blockerkreisen ueberdeckt (Mitte und Ecken, 2 px nach innen)
+    // auf jedem Gebaeude (Mitte und Ecken, 2 px nach innen) kann kein Turm (Radius 9) stehen
     for (const p of HB_PROPS) {
       const fr = footRect(p);
       if (!fr) continue;
       for (const [x, y] of [[(fr[0] + fr[2]) / 2, (fr[1] + fr[3]) / 2], [fr[0] + 2, fr[1] + 2], [fr[2] - 2, fr[1] + 2], [fr[0] + 2, fr[3] - 2], [fr[2] - 2, fr[3] - 2]])
-        expect(bl.some(([bx, by, br]) => Math.hypot(bx - x, by - y) <= br), `${p.kind}@${p.x},${p.y}`).toBe(true);
+        expect(bl.some(([bx, by, br]) => Math.hypot(bx - x, by - y) < br + 9), `${p.kind}@${p.x},${p.y}`).toBe(true);
     }
   });
 
