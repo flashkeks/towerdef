@@ -55,3 +55,24 @@ Modi zählen für Embers/XP mit Bonus (+20 %), Powers sind in Modi erlaubt auße
 - **B1 Pixel-Karten:** Frostfen Crossing und Ember Quarry so schön wie Meadow (Animationen: Schnee, Eis, Lava, Funken), Vorschaubilder.
 - **B2 Pixel-Gegner:** Pink, Frostling, Crystal (Risse), Gloomship, Regrow-/Fortified-Look, Frost Wyrm (Frosthauch, Phasen), Ember Colossus (Platten, Stampfer).
 - **C Client:** Kartenwahl mit Leiter/Medaillen/Modi, Modus-Auswahl, Match auf allen Karten, Wellen-Vorschau mit neuen Gegnern, Boss-Effekte.
+
+## 5. Nachtrag 15b — Runden wie BTD6 (Max, 10.10.2026, vor dem Deploy von Runde 15)
+
+Max: „jede Welle hat dieselben Gegner immer … egal auf welcher Map … macht es für dich einfacher, viele neue Maps zu bauen …
+die neuen Gegner nicht wasten … bis Runde 60 oder 80 und danach Free Play.“ Gewählt: **40 / 60 / 80 (wie BTD6)**.
+
+- **Eine Rundenliste für alle Karten** (`sim/data/rounds.json`, 80 Runden). Die Karten-Rundenlisten (`rounds/<karte>.json`) entfallen.
+  Karten unterscheiden sich nur durch Weg, Look, Stufe und Belohnungsfaktor. Neue Karte = Weg + Bild.
+- **Ende je Schwierigkeit:** Easy R40, Medium R60, Hard R80 (= Sieg, Medaille). Hard-Faktoren (Tempo/HP) wie bisher obendrauf.
+- **Freeplay** nach dem Sieg (Knopf „Continue in Freeplay“ wie BTD6): Runden darüber hinaus aus einer Formel (Liste ab R61–80 zyklisch
+  wiederverwendet, HP/Tempo steigen je Runde, BTD6-artige Rampe ab R81/R101). Kein Medaillen-Einfluss; **Bestrunde Freeplay je Karte**
+  wird gespeichert und auf der Kachel gezeigt. Powers im Freeplay erlaubt.
+- **Gegner-Einführung (grob):** R1–20 wie die bisherige Meadow-Liste (bleibt vertraut), Pink ~R15, Frostling ~R25, Regrow ~R30,
+  Crystal ~R38, Gloomship ~R45, Fortified ~R55, danach Mischungen, Gloomship-Wellen, R70+ Fortified Blimps.
+- **Bosse fest in der Liste:** Dusk Leviathan R20, Frost Wyrm R40, Ember Colossus R60, R80 alle drei nacheinander (Finale Hard).
+  Boss-HP-Werte je Schwierigkeit bleiben; Wyrm/Colossus ggf. an die neue Runde anpassen.
+- **Zusatzmodi** bleiben (Deflation: ab Runde Ende − 10 → Easy R31, Medium R51, Hard R71; Endrunde gilt je Schwierigkeit).
+- **Balance-Ziel (Bot-Matrix, mit Held):** Meadow Easy R40 mit 2 Türmen T3/T4 machbar; Medium R60 braucht T4 + Planung, T5 sicher;
+  Hard R80 nur mit T5. Frostfen/Quarry entsprechend härter durch den Weg (nicht durch eigene Runden). Einkommen pro Runde nach
+  BTD6-Kurve, damit T5 um R50–60 bezahlbar ist.
+- Spieler-XP/Embers je Runde bleiben formelbasiert; ggf. dämpfen, damit 80 Runden nicht die Level-Kurve sprengen.
