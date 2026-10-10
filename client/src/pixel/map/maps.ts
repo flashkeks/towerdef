@@ -8,6 +8,7 @@ import { meadowArt } from './compose';
 import { MAP_H, MAP_W } from './layout';
 import { paintFrostfen } from './frostfen';
 import { paintQuarry } from './quarry';
+import { paintDunes } from './dunes';
 import { ambientPoints, smokePoints } from './ambient';
 import { bayer } from './buf';
 import type { MapArt, MapId } from './types';
@@ -28,7 +29,7 @@ function meadowAsMap(): MapArt {
 export function mapArt(id: MapId): MapArt {
   let a = cache.get(id);
   if (!a) {
-    a = id === 'meadow' ? meadowAsMap() : id === 'frostfen' ? paintFrostfen() : paintQuarry();
+    a = id === 'meadow' ? meadowAsMap() : id === 'frostfen' ? paintFrostfen() : id === 'quarry' ? paintQuarry() : id === 'dunes' ? paintDunes() : (() => { throw new Error('Karte noch nicht gemalt: ' + id); })();
     cache.set(id, a);
   }
   return a;
@@ -45,7 +46,7 @@ export function composeMap(id: MapId, frame = 0, tMs?: number): Buf {
     // Rauch und Luftteilchen (im Spiel eigene Ebenen; hier mit Raster-Deckkraft in den Puffer gedithert)
     for (const p of [...smokePoints(art.smoke, tMs, id !== 'quarry'), ...ambientPoints(id, tMs)]) {
       if (p.kind === 'haze') {
-        for (let y = 0; y < (p.h ?? 4); y++) for (let x = 0; x < p.w; x++) if (bayer(p.x + x, p.y + y) < p.a * 3) out.set(p.x + x, p.y + y, C.orange);
+        for (let y = 0; y < (p.h ?? 4); y++) for (let x = 0; x < p.w; x++) if (bayer(p.x + x, p.y + y) < p.a * 3) out.set(p.x + x, p.y + y, p.c);
       } else if (bayer(p.x, p.y) < p.a + 0.15) out.rect(p.x, p.y, p.w, p.w, p.c);
     }
   }

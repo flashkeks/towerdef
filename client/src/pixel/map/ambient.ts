@@ -7,6 +7,7 @@
 import { C, hash2 } from './buf';
 import { MAP_H, MAP_W } from './layout';
 import { EMBER_SEEDS } from './quarry';
+import { ambientK2 } from './ambient-k2';
 import type { MapId } from './types';
 
 export interface AmbientPoint {
@@ -83,7 +84,7 @@ function haze(t: number): AmbientPoint[] {
 export function ambientPoints(id: MapId, tMs: number): AmbientPoint[] {
   if (id === 'frostfen') return snow(tMs);
   if (id === 'quarry') return [...haze(tMs), ...embers(tMs)];
-  return [];
+  return ambientK2(id, tMs);
 }
 
 /** Rauchfahnen: je Quelle vier Wolken, die aufsteigen, mit dem Wind abdriften, wachsen und verblassen. */

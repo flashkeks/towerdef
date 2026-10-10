@@ -6,8 +6,8 @@ import { PAL_NAMES } from '../src/pixel/palette';
 vi.setConfig({ testTimeout: 60000 });
 
 describe('Kartenwahl ueber die ID', () => {
-  it('drei Karten, jede mit gemeinsamer Form', () => {
-    expect(MAP_IDS).toEqual(['meadow', 'frostfen', 'quarry']);
+  it('alle Karten, jede mit gemeinsamer Form', () => {
+    expect(MAP_IDS).toEqual(['meadow', 'frostfen', 'quarry', 'dunes', 'harbor', 'spire']);
     for (const id of MAP_IDS) {
       const a = mapArt(id);
       expect(a.id).toBe(id);
@@ -27,7 +27,7 @@ describe('Kartenwahl ueber die ID', () => {
       expect(p.h).toBe(PREVIEW_H);
       expect(p.d.every((c) => c >= 1 && c <= PAL_NAMES.length)).toBe(true);
     }
-    for (let i = 0; i < 3; i++) for (let j = i + 1; j < 3; j++) {
+    for (let i = 0; i < imgs.length; i++) for (let j = i + 1; j < imgs.length; j++) {
       let diff = 0;
       for (let k = 0; k < imgs[i].d.length; k++) if (imgs[i].d[k] !== imgs[j].d[k]) diff++;
       expect(diff / imgs[i].d.length).toBeGreaterThan(0.5);
