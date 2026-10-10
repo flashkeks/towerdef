@@ -3,19 +3,27 @@
  * Alle Funktionen sind rein: das uebergebene Profil bleibt unveraendert.
  */
 import { z } from 'zod';
+import { DATA } from '../../sim/src/data';
 import type { Difficulty, GameOptions, HeroType, ModeId, PowerKey, TowerType, Tiers } from '../../sim/src/types';
 import {
-  BULK_BUYER_BP, DIFFICULTIES, DIFFICULTY_XP_BP, EMBERS_FIRST_MEDAL, EMBERS_LEVEL_UP, EMBERS_WIN, POWER_KEYS, embersForRound, emptyInventory, powerPrice, FREEPLAY_BP, KNOWLEDGE, LEVEL_UNLOCKS, MAX_ROUND, TIER_COST, TOWER_TYPES, WIN_BONUS_XP,
+  BULK_BUYER_BP, DIFFICULTIES, DIFFICULTY_XP_BP, EMBERS_FIRST_MEDAL, EMBERS_LEVEL_UP, EMBERS_WIN, HERO_IDS, HEROES, POWER_KEYS, embersForRound, emptyInventory, powerPrice, FREEPLAY_BP, KNOWLEDGE, LEVEL_UNLOCKS, MAX_ROUND, TIER_COST, TOWER_TYPES, WIN_BONUS_XP,
   MAPS, MODE_IDS, MODE_META, levelFromXp, roundRewardBp, mapById, maxRoundOf, nodeById, unlockLevel, xpForLevel, type LevelUnlock, type MapMeta,
 } from './data';
-import { SEEN_MATCHES_MAX, bestOf, emptyMedals, medalCount, medalsOf, type Profile } from './profile';
+import { SEEN_MATCHES_MAX, bestOf, emptyMedals, heroOwned, medalCount, medalsOf, type Profile } from './profile';
 
 const nat = z.number().int().min(0);
 const tierNum = z.number().int().min(0).max(5);
 const tiers3 = z.tuple([tierNum, tierNum, tierNum]);
 /** Runde 13/14: `longshot`/`market`/`thornweaver`/`alchemist` duerfen in aelteren Ergebnissen fehlen (zaehlen als 0 bzw. unveraendert). */
-const perTowerAll = z.object({ ranger: nat, bombardier: nat, frostcaller: nat, longshot: nat.default(0), market: nat.default(0), thornweaver: nat.default(0), alchemist: nat.default(0) });
-const perTowerNat = z.object({ ranger: nat.optional(), bombardier: nat.optional(), frostcaller: nat.optional(), longshot: nat.optional(), market: nat.optional(), thornweaver: nat.optional(), alchemist: nat.optional(), wren: nat.optional() });
+const perTowerAll = z.object({
+  ranger: nat, bombardier: nat, frostcaller: nat, longshot: nat.default(0), market: nat.default(0), thornweaver: nat.default(0), alchemist: nat.default(0),
+  // Runde 16
+  riverkeeper: nat.default(0), bellringer: nat.default(0), tinker: nat.default(0),
+});
+const perTowerNat = z.object({
+  ranger: nat.optional(), bombardier: nat.optional(), frostcaller: nat.optional(), longshot: nat.optional(), market: nat.optional(), thornweaver: nat.optional(), alchemist: nat.optional(),
+  riverkeeper: nat.optional(), bellringer: nat.optional(), tinker: nat.optional(), wren: nat.optional(), bram: nat.optional(), sela: nat.optional(),
+});
 /** Was das Match meldet (P3 liefert es). */
 export const MatchResultSchema = z.object({
   matchId: z.string().min(1),
@@ -34,7 +42,10 @@ export const MatchResultSchema = z.object({
    * Fehlen sie (altes Format / Match ohne XP-System), bleibt das Turm-Profil unveraendert.
    */
   towerXp: perTowerAll.optional(),
-  towerTiers: z.object({ ranger: tiers3, bombardier: tiers3, frostcaller: tiers3, longshot: tiers3.default([0, 0, 0]), market: tiers3.default([0, 0, 0]), thornweaver: tiers3.default([0, 0, 0]), alchemist: tiers3.default([0, 0, 0]) }).optional(),
+  towerTiers: z.object({
+    ranger: tiers3, bombardier: tiers3, frostcaller: tiers3, longshot: tiers3.default([0, 0, 0]), market: tiers3.default([0, 0, 0]), thornweaver: tiers3.default([0, 0, 0]), alchemist: tiers3.default([0, 0, 0]),
+    riverkeeper: tiers3.default([0, 0, 0]), bellringer: tiers3.default([0, 0, 0]), tinker: tiers3.default([0, 0, 0]),
+  }).optional(),
   towerXpGained: perTowerAll.optional(),
   /** Runde 12: erfolgreiche Power-Einsaetze (`state.stats.powersUsed`); werden vom Inventar abgezogen. */
   powersUsed: z.record(z.string(), nat.max(9999)).optional(),
@@ -45,6 +56,8 @@ export type MatchResult = z.input<typeof MatchResultSchema>;
 export const playerLevel = (p: Profile): number => levelFromXp(p.playerXp).level;
 
 export function isTowerUnlocked(p: Profile, id: TowerType | HeroType): boolean {
+  // Runde 16: Helden ueber `heroOwned` (Level oder Embers-Kauf)
+  if ((HERO_IDS as readonly string[]).includes(id)) return heroOwned(p, id as HeroType);
   return p.settings.unlockAll || playerLevel(p) >= unlockLevel(id);
 }
 export function isDifficultyUnlocked(p: Profile, d: Difficulty): boolean {
@@ -336,6 +349,66 @@ export function buyPower(p: Profile, key: PowerKey, count = 1): { ok: true; prof
   return { ok: true, cost, profile: { ...p, embers: p.embers - cost, inventory } };
 }
 
+// ---------------------------------------------------------------- Store: Heroes (Runde 16)
+
+export interface HeroLock {
+  owned: boolean;
+  /** Offen ueber das Spieler-Level. */
+  byLevel: boolean;
+  /** Offen ueber den Embers-Kauf (`Profile.heroes`). */
+  purchased: boolean;
+  unlockLevel: number;
+  /** Preis in Embers; null = nicht kaeuflich (Wren). */
+  embers: number | null;
+  /** Im Store kaufbar jetzt (nicht besessen, kaeuflich, genug Embers). */
+  canBuy: boolean;
+  /** Englischer Hinweis fuer das Schloss ("Reach level 10 or buy for 1,500 Embers."), leer wenn offen. */
+  text: string;
+}
+const fmt = (n: number): string => n.toLocaleString('en-US');
+/** Freischaltung eines Helden: Level **oder** Embers (Bram 1.500, Sela 2.500; Wren nur Level 3). */
+export function heroLock(p: Profile, id: HeroType): HeroLock {
+  const m = HEROES.find((h) => h.id === id);
+  if (!m) return { owned: false, byLevel: false, purchased: false, unlockLevel: 0, embers: null, canBuy: false, text: 'Unknown hero.' };
+  const byLevel = playerLevel(p) >= m.unlockLevel;
+  const purchased = m.embers !== null && p.heroes.includes(id);
+  const owned = heroOwned(p, id);
+  const text = owned ? '' : m.embers === null ? `Reach level ${m.unlockLevel}.` : `Reach level ${m.unlockLevel} or buy for ${fmt(m.embers)} Embers.`;
+  return { owned, byLevel, purchased, unlockLevel: m.unlockLevel, embers: m.embers, canBuy: !owned && m.embers !== null && p.embers >= m.embers, text };
+}
+
+/** Held im Store kaufen (Embers). Codes: `unknown-hero`, `not-for-sale` (Wren), `owned`, `not-enough-embers`. */
+export function buyHero(p: Profile, id: HeroType): { ok: true; profile: Profile; cost: number } | Fail {
+  const m = HEROES.find((h) => h.id === id);
+  if (!m) return fail('unknown-hero', 'Unknown hero.');
+  if (m.embers === null) return fail('not-for-sale', `${m.short} cannot be bought. Reach level ${m.unlockLevel}.`);
+  if (heroOwned(p, id)) return fail('owned', `${m.short} is already yours.`);
+  if (p.embers < m.embers) return fail('not-enough-embers', `Needs ${fmt(m.embers)} Embers.`);
+  return { ok: true, cost: m.embers, profile: { ...p, embers: p.embers - m.embers, heroes: HERO_IDS.filter((h) => h === 'wren' || h === id || p.heroes.includes(h)) } };
+}
+
+/** Held fuer die naechsten Matches waehlen. Codes: `unknown-hero`, `hero-locked`. */
+export function selectHero(p: Profile, id: HeroType): { ok: true; profile: Profile } | Fail {
+  if (!HEROES.some((h) => h.id === id)) return fail('unknown-hero', 'Unknown hero.');
+  if (!heroOwned(p, id)) return fail('hero-locked', heroLock(p, id).text);
+  return { ok: true, profile: { ...p, selectedHero: id } };
+}
+
+/** Der Held, mit dem das naechste Match startet: der gewaehlte, sonst Wren. */
+export const activeHero = (p: Profile): HeroType => (heroOwned(p, p.selectedHero) ? p.selectedHero : 'wren');
+
+export interface HeroStoreEntry {
+  meta: (typeof HEROES)[number];
+  lock: HeroLock;
+  selected: boolean;
+  /** Preis im Match in Gold. */
+  matchPrice: number;
+}
+/** Store-Rubrik "Heroes": alle drei Helden mit Schloss, Auswahl und Preis. */
+export function heroStore(p: Profile): HeroStoreEntry[] {
+  return HEROES.map((meta) => ({ meta, lock: heroLock(p, meta.id), selected: activeHero(p) === meta.id, matchPrice: DATA.hero[meta.id].price }));
+}
+
 // ---------------------------------------------------------------- Wissensbaum
 
 export function knowledgePoints(p: Profile): { total: number; spent: number; free: number } {
@@ -384,7 +457,7 @@ export function unlockEverything(p: Profile): Profile {
 
 // ---------------------------------------------------------------- Optionen fuer die Sim
 
-export type MatchOptions = Required<Pick<GameOptions, 'unlocks' | 'towerXp'>> & { powers: Record<PowerKey, number> } & { mods: NonNullable<GameOptions['mods']>; mode: ModeId };
+export type MatchOptions = Required<Pick<GameOptions, 'unlocks' | 'towerXp'>> & { powers: Record<PowerKey, number> } & { mods: NonNullable<GameOptions['mods']>; mode: ModeId; /** Runde 16: gewaehlter Held. */ hero: HeroType };
 
 /**
  * `unlocks` + `towerXp` + `powers` (Inventar) + `mods` + `mode` (Runde 15, Vorgabe `standard`) fuer `createGame`; die Karte reicht der Aufrufer selbst weiter. `towerXp` ist das Konto (Sim fuehrt es im Match, `unlockTier` im Match),
@@ -393,7 +466,7 @@ export type MatchOptions = Required<Pick<GameOptions, 'unlocks' | 'towerXp'>> & 
 export function matchOptions(p: Profile, mode: ModeId = 'standard'): MatchOptions {
   const all = p.settings.unlockAll;
   const towers: (TowerType | HeroType)[] = [...TOWER_TYPES.filter((t) => isTowerUnlocked(p, t))];
-  if (isTowerUnlocked(p, 'wren')) towers.push('wren');
+  for (const h of HERO_IDS) if (heroOwned(p, h)) towers.push(h);
   const full: Tiers = [5, 5, 5];
   const maxTier = Object.fromEntries(TOWER_TYPES.map((t) => [t, all ? full : ([...p.towerTiers[t]] as Tiers)])) as Record<TowerType, Tiers>;
 
@@ -409,6 +482,7 @@ export function matchOptions(p: Profile, mode: ModeId = 'standard'): MatchOption
   const rangeBp: Partial<Record<TowerType, number>> = {};
   if (k('sharp-eyes')) rangeBp.ranger = 800;
   if (k('deep-roots')) rangeBp.thornweaver = 1000; // Runde 14
+  if (k('deep-water')) rangeBp.riverkeeper = 1000; // Runde 16
   if (Object.keys(rangeBp).length) mods.rangeBp = rangeBp;
   if (k('bigger-barrels')) mods.radiusBp = 1000;
   if (k('cold-snap')) mods.slowDurBp = 2500;
@@ -434,7 +508,10 @@ export function matchOptions(p: Profile, mode: ModeId = 'standard'): MatchOption
   if (k('starter-kit')) mods.freePowers = { goldDrop: STARTER_KIT_GOLD_DROPS };
   // Runde 14
   if (k('pop-bonus')) mods.popCashBp = 500;
-  if (k('sharper-arrows')) mods.pierceAdd = { ranger: 1 };
+  const pierceAdd: Partial<Record<TowerType, number>> = {};
+  if (k('sharper-arrows')) pierceAdd.ranger = 1;
+  if (k('barbed-line')) pierceAdd.riverkeeper = 1; // Runde 16
+  if (Object.keys(pierceAdd).length) mods.pierceAdd = pierceAdd;
   if (k('fused-shells')) mods.fragAdd = { bombardier: 2 };
   if (k('icicle-edge')) mods.icicleDmg = 1;
   if (k('bountiful-grove')) mods.bountyGold = 50;
@@ -442,7 +519,12 @@ export function matchOptions(p: Profile, mode: ModeId = 'standard'): MatchOption
   if (k('midas-hands')) mods.leadGoldAdd = 20;
   if (k('field-medic')) mods.roundLives = 1;
   if (k('sturdy-gate')) mods.gate = 1;
-  return { unlocks: { towers, maxTier }, towerXp: { ...p.towerXp }, powers: { ...emptyInventory(), ...p.inventory }, mods, mode };
+  // Runde 16: Riverkeeper, Bellringer, Tinker
+  if (k('loud-bells')) mods.auraRadiusBp = { bellringer: 1500 };
+  if (k('silver-tongue')) mods.tollAdd = 25;
+  if (k('spare-parts')) mods.sentryTtlBp = 2500;
+  if (k('sharp-caltrops')) mods.trapChargesAdd = 2;
+  return { unlocks: { towers, maxTier }, towerXp: { ...p.towerXp }, powers: { ...emptyInventory(), ...p.inventory }, mods, mode, hero: activeHero(p) };
 }
 
 export { DIFFICULTIES, KNOWLEDGE };

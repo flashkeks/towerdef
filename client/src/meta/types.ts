@@ -48,6 +48,8 @@ export interface MatchStartOptions {
   towerXp?: GameOptions['towerXp'];
   /** Power-Inventar (Runde 12) */
   powers?: GameOptions['powers'];
+  /** Runde 16: gewaehlter Held (Meta `activeHero`), Vorgabe Wren */
+  hero?: GameOptions['hero'];
   /** Text fuer gesperrte Tuerme, z. B. { bombardier: 'Unlocks at level 2' }. */
   lockInfo: Partial<Record<TowerType | HeroType, string>>;
 }

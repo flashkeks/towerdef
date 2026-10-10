@@ -1,6 +1,7 @@
 /** Runde 16 E (10.10.2026): Tages-Challenge, Belohnung einmal je Tag, Bestwerte. */
 import { describe, expect, it } from 'vitest';
-import { createGame, decodeChallenge, encodeChallenge } from '../../sim/src/index';
+import { DATA, createGame, decodeChallenge, encodeChallenge } from '../../sim/src/index';
+import { getMap } from '../../sim/src/map';
 import { DAILY_EMBERS, applyChallenge, dailyChallenge, dailyStatus, isDay, loadProfile, newProfile, utcDay, MAP_IDS } from '../src/index';
 
 const day = (i: number): string => new Date(Date.UTC(2026, 9, 10 + i)).toISOString().slice(0, 10);
@@ -86,5 +87,20 @@ describe('Tages-Challenge: Belohnung und Bestwerte', () => {
     const r = applyChallenge(newProfile(), { matchId: 'q', kind: 'custom', key: code, won: false, roundsCleared: 7, spent: 100, livesLost: 9, ticks: 1000 });
     expect(r.profile.challenges.custom[code].rounds).toBe(7);
     expect(r.report.embersGained).toBe(0);
+  });
+});
+
+describe('Tages-Challenge mit den Tuermen aus Runde 16', () => {
+  it('ueber 3.000 Tage: immer ein angreifender Landturm, Wassertuerme nur auf Karten mit Wasser', () => {
+    let withRiver = 0;
+    for (let i = 0; i < 3000; i++) {
+      const day = new Date(Date.UTC(2026, 9, 10) + i * 86_400_000).toISOString().slice(0, 10);
+      const { rules } = dailyChallenge(day);
+      if (!rules.towers) continue;
+      expect(rules.towers.some((t) => DATA.towers[t].base.atk !== 'none' && DATA.towers[t].placement !== 'water'), day).toBe(true);
+      if (rules.towers.includes('riverkeeper')) { withRiver++; expect(getMap(rules.map).water.length, day).toBeGreaterThan(0); }
+      expect(new Set(rules.towers).size).toBe(rules.towers.length);
+    }
+    expect(withRiver).toBeGreaterThan(0);
   });
 });

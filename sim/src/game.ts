@@ -5,7 +5,7 @@
 import { DATA, POWER_KEYS, baseStats, type RoundData } from './data.js';
 import { dist2, isqrt } from './fixed.js';
 import { hashState } from './hash.js';
-import { branchAt, clearOfPaths, getMap, nearestOnPaths, pointInPolygon } from './map.js';
+import { branchAt, circleInPolygon, clearOfPaths, getMap, nearestOnPaths, pointInPolygon } from './map.js';
 import { DEFLATION_CASH, MODES, firstRound, isModeId, modeAllows } from './modes.js';
 import { normalizeRules, rulesAllow } from './challenge.js';
 import { towerXpPot, splitTowerXp } from './xp.js';
@@ -16,7 +16,7 @@ import { applyMod, pathOrder, type Mod, type Stats } from './stats.js';
 import { cosBp, rotate, sinBp } from './trig.js';
 import type {
   AbilityId, Command, CommandResult, DamageType, Difficulty, EnemyState, EnemyType, Game, GameInfo, GameOptions, GameState, ModeId,
-  HeroType, MarketInfo, PlaceCheck, PuddleState, TowerAura, TowerBuff, PowerKey, ProjectileKind, ProjectileState, RoundPreview, SimEvent, TargetMode, TowerState, TowerType, Tiers, TrapState, UnlockPathInfo, UpgradeInfo, WallState,
+  HeroType, MarketInfo, PlaceCheck, PuddleState, TowerAura, TowerBuff, PowerKey, ProjectileKind, ProjectileState, RoundPreview, SentryState, SimEvent, TargetMode, TowerState, TowerType, Tiers, TrapState, UnlockPathInfo, UpgradeInfo, WallState,
 } from './types.js';
 
 /** Letzte Runde der Karte `meadow` (Frostfen 25, Quarry 30: `Game.info.maxRound`). */
@@ -43,16 +43,27 @@ const PUDDLE_TTL = 1800;
 const MONSTER_EVERY = 12;
 const MONSTER_HIT = 6;
 const CELL = 24000;
-const TOWER_TYPES: readonly TowerType[] = ['ranger', 'bombardier', 'frostcaller', 'longshot', 'market', 'thornweaver', 'alchemist'];
+const TOWER_TYPES: readonly TowerType[] = ['ranger', 'bombardier', 'frostcaller', 'longshot', 'market', 'thornweaver', 'alchemist', 'riverkeeper', 'bellringer', 'tinker'];
+/** Runde 16: Helden (einer je Match). */
+export const HERO_TYPES: readonly HeroType[] = ['wren', 'bram', 'sela'];
+/** Runde 16: Tuerme ohne eigenen Angriff, die selbst keine Auren empfangen (Auren-Quellen). */
+const AURA_ONLY: readonly TowerType[] = ['market', 'bellringer'];
+/** Runde 16: Sentries stehen auf einem Kreis (Milli-px) um den Tinker; Schussgeschwindigkeit der Sentry-Nagel (px/s). */
+const SENTRY_RING = 13000;
+const SENTRY_SPEED = 650;
+/** Runde 16: Abstand (Wegfortschritt, Milli-px), den zwei Fallen desselben Tinkers mindestens haben. */
+const TRAP_GAP = 14000;
 /** Die drei "Primary"-Türme (Wissensbaum-Ast Primary). */
 const PRIMARY: readonly TowerType[] = ['ranger', 'bombardier', 'frostcaller'];
-const ABILITY_ORDER: AbilityId[] = ['arrowRain', 'absoluteZero', 'flare', 'dawnbreak', 'focus', 'supplyDrop', 'grant', 'wallOfTrees', 'tonic'];
+const ABILITY_ORDER: AbilityId[] = ['arrowRain', 'absoluteZero', 'flare', 'dawnbreak', 'focus', 'supplyDrop', 'grant', 'wallOfTrees', 'tonic', 'alarm', 'overclock', 'anvilDrop', 'forgeOfDawn', 'starfall', 'eclipse'];
 /** Reichweite ab hier = ganze Karte (Longshot): Zielwahl über alle Gegner, keine Reichweiten-Boni. */
 export const GLOBAL_RANGE = 1_000_000;
-const perTower = <T,>(v: () => T): Record<TowerType, T> => ({ ranger: v(), bombardier: v(), frostcaller: v(), longshot: v(), market: v(), thornweaver: v(), alchemist: v() });
+const perTower = <T,>(v: () => T): Record<TowerType, T> => ({
+  ranger: v(), bombardier: v(), frostcaller: v(), longshot: v(), market: v(), thornweaver: v(), alchemist: v(), riverkeeper: v(), bellringer: v(), tinker: v(),
+});
 const STRONG_RANK: Record<EnemyType, number> = { dreadnought: 9, cruiser: 8, duskrunner: 8, colossus: 8, wyrm: 8, gloomship: 8, leviathan: 8, crystal: 7, brute: 7, frostling: 6, ironshell: 6, ember: 6, pink: 4, gold: 4, green: 3, blue: 2, red: 1 };
 
-const isHero = (t: TowerType | HeroType): t is HeroType => t === 'wren';
+const isHero = (t: TowerType | HeroType): t is HeroType => t === 'wren' || t === 'bram' || t === 'sela';
 
 /** Preis x Faktor (Basispunkte), kaufmännisch auf 5 gerundet. */
 export function round5(price: number, bp: number): number {
@@ -94,6 +105,10 @@ export function createGame(optsIn: GameOptions): Game {
   const diff = DATA.difficulties[opts.difficulty as Difficulty];
   if (!diff) throw new Error(`Unbekannte Schwierigkeit: ${opts.difficulty}`);
   const kmods = rules?.noKnowledge ? {} : opts.mods ?? {};
+  // Challenge mit festem Helden (rules.hero = HeroType) schlaegt die Wahl des Spielers; 'any'/'none' lassen sie stehen ('none' sperrt rulesAllow)
+  const ruleHero = rules && rules.hero !== 'any' && rules.hero !== 'none' ? rules.hero : undefined;
+  const heroId: HeroType = ruleHero ?? opts.hero ?? 'wren';
+  if (!HERO_TYPES.includes(heroId)) throw new Error(`Unbekannter Held: ${String(opts.hero)}`);
   const mode: ModeId = opts.mode ?? 'standard';
   if (!isModeId(mode)) throw new Error(`Unbekannter Modus: ${String(opts.mode)}`);
   const halfCash = mode === 'half-cash';
@@ -104,7 +119,7 @@ export function createGame(optsIn: GameOptions): Game {
   const maxRound = rules ? rules.endRound : diff.endRound;
   const baseRound = rules ? rules.startRound - 1 : firstRound(mode, maxRound) - 1;
   const nBranches = map.paths.length;
-  const info: GameInfo = { map: opts.map, mode, difficulty: opts.difficulty, maxRound, baseRound, branches: nBranches, listRounds: LIST_ROUNDS, ...(rules ? { rules } : {}) };
+  const info: GameInfo = { map: opts.map, mode, difficulty: opts.difficulty, maxRound, baseRound, branches: nBranches, listRounds: LIST_ROUNDS, hero: heroId, ...(rules ? { rules } : {}) };
   const fpSeed = Math.floor(opts.seed ?? 0);
   /** Gruppen der Runde `r` (Liste bis R120, danach Formel). */
   const roundGroups = (r: number): RoundData['groups'] => {
@@ -182,9 +197,9 @@ export function createGame(optsIn: GameOptions): Game {
     maxTier: perTower((): Tiers => [5, 5, 5]),
     roundPops: perTower(() => 0),
     stats: {
-      pops: { ...perTower(() => 0), wren: 0 },
+      pops: { ...perTower(() => 0), wren: 0, bram: 0, sela: 0 },
       leaked: 0,
-      spent: { ...perTower(() => 0), wren: 0 },
+      spent: { ...perTower(() => 0), wren: 0, bram: 0, sela: 0 },
       powersUsed: zeroPowers(0),
       income: 0,
       abilityCash: 0,
@@ -203,6 +218,8 @@ export function createGame(optsIn: GameOptions): Game {
     incCarry: 0,
     halfCarry: 0,
     baseRound,
+    sentries: [],
+    forgeLeft: 0,
     warpLeft: 0,
     oilRound: 0,
     oilCarry: 0,
@@ -258,6 +275,8 @@ export function createGame(optsIn: GameOptions): Game {
   const tstats = new Map<number, Stats>();
   const pstats = new WeakMap<ProjectileState, Stats>();
   let grid = new Map<number, EnemyState[]>();
+  /** Runde 16: Tempo-Zuwachs (Milli-Ticks je Tick) der Tuerme im laufenden Tick, fuer Sentries und Bauzeiten. Wird jeden Tick neu gefuellt. */
+  const tickDec = new Map<number, number>();
 
   const sellRate = kmods.sellBp ?? 7000;
 
@@ -267,7 +286,7 @@ export function createGame(optsIn: GameOptions): Game {
     for (const t of S.towers) if (t.id === id) return t;
     return undefined;
   };
-  const heroTower = (): TowerState | undefined => S.towers.find((t) => t.type === 'wren');
+  const heroTower = (): TowerState | undefined => S.towers.find((t) => isHero(t.type));
 
   function towerDef(type: TowerType | HeroType): { price: number; radius: number } {
     return isHero(type) ? DATA.hero[type] : DATA.towers[type];
@@ -287,13 +306,26 @@ export function createGame(optsIn: GameOptions): Game {
     return round5(base, diff.priceBp);
   }
 
-  /** Auren der Markets auf einen Turm: je Feld der stärkste Wert, keine Stapelung. Der Market selbst gehört nicht dazu. */
+  /**
+   * Auren auf einen Turm: je Feld der stärkste Wert, keine Stapelung. Quellen (Runde 16): Markets und Bellringer (Radius = `range`),
+   * Riverkeeper-Sonar und Tinker-Ultra-Overclock (Radius `aR`) sowie der Held (Schmiede von Bram, Camo-Sicht von Sela, Radius `buffRadius`).
+   * Der Turm selbst bekommt seine eigene Aura nicht. Market und Bellringer empfangen keine Auren.
+   */
   function auraOf(t: TowerState): TowerAura {
     const a: TowerAura = { rangeBp: 0, camo: false, speedBp: 0, armor: false, pierce: 0, dmg: 0, discountBp: 0 };
     for (const m of S.towers) {
-      if (m === t || m.type !== 'market') continue;
+      if (m === t) continue;
       const ms = tstats.get(m.id);
-      if (!ms || dist2(t.x, t.y, m.x, m.y) > ms.range * ms.range) continue;
+      if (!ms) continue;
+      if (isHero(m.type)) {
+        if (ms.buffRadius <= 0 || dist2(t.x, t.y, m.x, m.y) > ms.buffRadius * ms.buffRadius) continue;
+        a.dmg = Math.max(a.dmg, ms.forgeDmg);
+        if (ms.heroCamo > 0) a.camo = true;
+        continue;
+      }
+      if (!AURA_ONLY.includes(m.type as TowerType) && ms.aR <= 0) continue;
+      const rad = ms.aR > 0 ? ms.aR : ms.range;
+      if (dist2(t.x, t.y, m.x, m.y) > rad * rad) continue;
       a.rangeBp = Math.max(a.rangeBp, ms.aRangeBp);
       if (ms.aCamo > 0) a.camo = true;
       a.speedBp = Math.max(a.speedBp, ms.aSpeedBp);
@@ -334,6 +366,17 @@ export function createGame(optsIn: GameOptions): Game {
     }
     if (kmods.supplyBonus && st.supplyCash > 0) st.supplyCash += kmods.supplyBonus;
     if (kmods.marketRadiusBp && t.type === 'market') st.range = Math.floor((st.range * (10000 + kmods.marketRadiusBp)) / 10000);
+    // Runde 16 (Wissensbaum): Aura-Radius (Bellringer = `range`, sonst `aR`), Toll, Sentry-Zeit, Fallen-Ladungen
+    if (!isHero(t.type)) {
+      const ab = kmods.auraRadiusBp?.[t.type];
+      if (ab) {
+        if (st.aR > 0) st.aR = Math.floor((st.aR * (10000 + ab)) / 10000);
+        else if (AURA_ONLY.includes(t.type)) st.range = Math.floor((st.range * (10000 + ab)) / 10000);
+      }
+      if (kmods.tollAdd && t.type === 'bellringer' && st.income > 0) st.income += kmods.tollAdd;
+    }
+    if (kmods.sentryTtlBp && st.sentryTtl > 0) st.sentryTtl = Math.floor((st.sentryTtl * (10000 + kmods.sentryTtlBp)) / 10000);
+    if (kmods.trapChargesAdd && st.trapCharges > 0) st.trapCharges += kmods.trapChargesAdd;
     // Runde 14 (Wissensbaum)
     if (!isHero(t.type)) {
       const pa = kmods.pierceAdd?.[t.type];
@@ -377,6 +420,15 @@ export function createGame(optsIn: GameOptions): Game {
       }
       return cd > 0 ? { cd } : null;
     }
+    if (id === 'alarm' || id === 'overclock') {
+      let cd = 0;
+      for (const t of S.towers) {
+        const st = tstats.get(t.id)!;
+        if (id === 'alarm' && t.type === 'bellringer' && st.alarmStun > 0) cd = Math.max(cd, st.alarmCd);
+        if (id === 'overclock' && t.type === 'tinker' && st.ocDur > 0) cd = Math.max(cd, st.ocCd);
+      }
+      return cd > 0 ? { cd } : null;
+    }
     if (id === 'wallOfTrees' || id === 'tonic') {
       let cd = 0;
       for (const t of S.towers) {
@@ -389,8 +441,10 @@ export function createGame(optsIn: GameOptions): Game {
     const h = heroTower();
     if (!h) return null;
     const st = tstats.get(h.id)!;
-    if (id === 'flare') return st.flareCd > 0 ? { cd: st.flareCd } : null;
-    return st.dawnCd > 0 ? { cd: st.dawnCd } : null;
+    // Heldenfaehigkeiten: jede Abklingzeit ist nur beim passenden Helden gesetzt (die anderen Helden haben 0)
+    const cd = id === 'flare' ? st.flareCd : id === 'dawnbreak' ? st.dawnCd : id === 'anvilDrop' ? st.anvilCd : id === 'forgeOfDawn' ? st.forgeCd
+      : id === 'starfall' ? st.starCd : id === 'eclipse' ? st.eclipseCd : 0;
+    return cd > 0 ? { cd } : null;
   }
 
   /** Fähigkeiten an den vorhandenen Türmen ausrichten; Abklingzeit startet beim Erwerb voll. */
@@ -474,12 +528,20 @@ export function createGame(optsIn: GameOptions): Game {
     return positionAt(p, prog);
   }
 
-  const bonusFor = (e: EnemyState, st: Stats): number =>
-    e.type === 'brute' || e.type === 'crystal' || e.type === 'gloomship'
+  const bonusFor = (e: EnemyState, st: Stats): number => {
+    const armored = e.type === 'brute' || e.type === 'crystal' || e.type === 'gloomship' || e.type === 'ironshell';
+    const forge = armored && S.forgeLeft > 0 ? forgeArmorBonus() : 0;
+    return forge + (e.type === 'brute' || e.type === 'crystal' || e.type === 'gloomship'
       ? st.bonusBrute
       : e.type === 'leviathan' || e.type === 'wyrm' || e.type === 'colossus'
         ? st.bonusBrute + st.bonusBoss
-        : e.type === 'ironshell' ? st.bonusIron : 0;
+        : e.type === 'ironshell' ? st.bonusIron : 0);
+  };
+  /** Forge of Dawn (Bram L20): Zusatzschaden gegen Panzertraeger, solange die Schmiede brennt. */
+  function forgeArmorBonus(): number {
+    const h = heroTower();
+    return h ? tstats.get(h.id)?.forgeArmor ?? 0 : 0;
+  }
 
   // ---------- Schaden ----------
 
@@ -487,7 +549,7 @@ export function createGame(optsIn: GameOptions): Game {
   function damage(e: EnemyState, amount: number, dtype: DamageType, src: number, created?: number[], silent = false): boolean {
     if (e.dead) return false;
     const d = etab[e.type];
-    if (dtype === 'sharp' && (d.armor || e.frozenTicks > 0)) {
+    if (dtype === 'sharp' && ((d.armor && S.forgeLeft <= 0) || e.frozenTicks > 0)) {
       if (!silent) emit({ type: 'blocked', tick: S.tick, enemy: e.id, x: e.x, y: e.y, reason: 'armor' });
       return false;
     }
@@ -605,9 +667,10 @@ export function createGame(optsIn: GameOptions): Game {
     void stage;
   }
 
-  function applySlow(e: EnemyState, bp: number, ticks: number, brittle: boolean, raw = false): void {
+  function applySlow(e: EnemyState, bp: number, ticks: number, brittle: boolean, raw = false, cosmic = false): void {
     const d = etab[e.type];
-    if (d.immuneCold || d.immuneSlow || e.dead) return;
+    // `cosmic` (Eclipse, Sela L20): ignoriert Kaelte-Immunitaet; Slow-Immunitaet (Dreadnought, 15b) bleibt
+    if ((d.immuneCold && !cosmic) || d.immuneSlow || e.dead) return;
     if (d.blimp && !raw) {
       bp = Math.floor(bp / 2);
       ticks = Math.floor(ticks / 2);
@@ -722,7 +785,7 @@ export function createGame(optsIn: GameOptions): Game {
 
   // ---------- Zielwahl ----------
 
-  function pickTarget(t: TowerState, range: number, detect: boolean, mode: TargetMode, requireDetect = true, filter?: (e: EnemyState) => boolean): EnemyState | null {
+  function pickTarget(t: Pick<TowerState, 'id' | 'x' | 'y'>, range: number, detect: boolean, mode: TargetMode, requireDetect = true, filter?: (e: EnemyState) => boolean): EnemyState | null {
     let best: EnemyState | null = null;
     let bestKey = 0;
     const r2 = range * range;
@@ -946,7 +1009,7 @@ export function createGame(optsIn: GameOptions): Game {
     return up ? 3 : 5;
   }
 
-  function aimAt(t: TowerState, e: EnemyState, speedMilli: number): { x: number; y: number } {
+  function aimAt(t: Pick<TowerState, 'x' | 'y'>, e: EnemyState, speedMilli: number): { x: number; y: number } {
     let tx = e.x, ty = e.y;
     for (let i = 0; i < 3; i++) {
       const d = isqrt(dist2(t.x, t.y, tx, ty));
@@ -1016,7 +1079,114 @@ export function createGame(optsIn: GameOptions): Game {
     emit({ type: 'fire', tick: S.tick, tower: t.id, projectile: first, kind: st.pk });
   }
 
+  // ================= Runde 16: Tinker (Sentries, Fallen) =================
+
+  function removeSentry(s: SentryState, reason: 'expired' | 'sold'): void {
+    S.sentries = S.sentries.filter((x) => x !== s);
+    emit({ type: 'sentryGone', tick: S.tick, id: s.id, tower: s.owner, reason });
+  }
+
+  /**
+   * Sentry Kit ff.: der Tinker baut eine Sentry, wenn weniger als `sentryN` stehen, die Bauzeit um ist und ein Gegner in Reichweite ist.
+   * Sentries stehen auf einem Kreis um den Tinker (Platz = freier Index, Winkel 30 + 60 x Platz). `t.sentryCd` zaehlt in Milli-Ticks
+   * und laeuft mit dem Tempo des Tinkers (Overclock).
+   */
+  function buildSentry(t: TowerState, st: Stats, tdec: number): void {
+    if (t.sentryCd > 0) t.sentryCd = Math.max(0, t.sentryCd - tdec);
+    if (t.sentryCd > 0) return;
+    const mine = S.sentries.filter((s) => s.owner === t.id);
+    if (mine.length >= st.sentryN) return;
+    if (!pickTarget(t, t.range, true, 'first')) return;
+    let slot = 0;
+    while (mine.some((s) => s.slot === slot)) slot++;
+    const deg = 30 + slot * 60;
+    const s: SentryState = {
+      id: S.nextId++, owner: t.id, slot,
+      x: t.x + Math.round((SENTRY_RING * cosBp(deg)) / 10000), y: t.y + Math.round((SENTRY_RING * sinBp(deg)) / 10000),
+      ttl: st.sentryTtl, cd: 30000,
+    };
+    S.sentries.push(s);
+    t.sentryCd = st.sentryEvery * 1000;
+    emit({ type: 'sentry', tick: S.tick, id: s.id, tower: t.id, x: s.x, y: s.y, ttl: s.ttl });
+  }
+
+  /** Sentries schiessen mit den Werten ihres Tinkers (Upgrades wirken sofort auch auf stehende Sentries) und seinem Targeting. */
+  function updateSentries(): void {
+    if (!S.sentries.length) return;
+    for (const s of S.sentries.slice()) {
+      const o = towerById(s.owner);
+      if (!o) {
+        removeSentry(s, 'sold');
+        continue;
+      }
+      if (--s.ttl <= 0) {
+        removeSentry(s, 'expired');
+        continue;
+      }
+      if (o.frozen > 0) continue;
+      const st = tstats.get(o.id)!;
+      const dec = tickDec.get(o.id) ?? 1000;
+      s.cd -= dec;
+      if (s.cd < -dec) s.cd = -dec;
+      if (s.cd > 0) continue;
+      const e = pickTarget(s, st.sentryRange, o.camo, o.target);
+      if (!e) continue;
+      const v = Math.max(1, Math.floor((SENTRY_SPEED * 50) / 3));
+      const aim = aimAt(s, e, v);
+      const dx = aim.x - s.x, dy = aim.y - s.y;
+      const len = Math.max(1, isqrt(dx * dx + dy * dy));
+      const aura = auraOf(o);
+      const life = Math.max(1, Math.ceil((st.sentryRange * 3) / 2 / v));
+      const p = makeProj(o.id, 'nail', s.x, s.y, Math.round((dx * v) / len), Math.round((dy * v) / len), st.sentryDmg + aura.dmg + buffOf(o).dmg,
+        aura.armor && st.sentryDtype === 'sharp' ? 'magic' : st.sentryDtype, st.sentryPierce + aura.pierce, life, 0, st);
+      s.cd += st.sentryInterval;
+      emit({ type: 'fire', tick: S.tick, tower: o.id, projectile: p.id, kind: 'nail', sentry: s.id });
+    }
+  }
+
+  /**
+   * Caltrop Layer ff.: alle `trapEvery` Ticks eine Falle auf das vorderste freie Wegstueck in Reichweite (mindestens `TRAP_GAP` von
+   * den eigenen Fallen, erst ab `MIN_SPAWN_PROGRESS`), solange weniger als `trapMax` eigene Fallen liegen. Die Falle ist eine
+   * Caltrops-Falle der Powers (`TrapState`), zaehlt Pops aber dem Tinker (`owner`).
+   */
+  function layTrap(t: TowerState, st: Stats, tdec: number): void {
+    if (t.trapCd > 0) t.trapCd = Math.max(0, t.trapCd - tdec);
+    if (t.trapCd > 0) return;
+    const mine = S.traps.filter((x) => x.owner === t.id);
+    if (mine.length >= st.trapMax) return;
+    const r2 = t.range * t.range;
+    let bestProg = -1;
+    let bestBranch = 0;
+    map.paths.forEach((p, b) => {
+      const smp = p.samples;
+      for (let i = smp.length - 1; i >= 0; i--) {
+        const prog = i * COVERAGE_STEP;
+        if (prog < MIN_SPAWN_PROGRESS) break;
+        if (dist2(t.x, t.y, smp[i].x, smp[i].y) > r2) continue;
+        if (mine.some((m) => dist2(m.x, m.y, smp[i].x, smp[i].y) < TRAP_GAP * TRAP_GAP)) continue;
+        if (prog > bestProg) {
+          bestProg = prog;
+          bestBranch = b;
+        }
+        break;
+      }
+    });
+    if (bestProg < 0) {
+      t.trapCd = 60000; // nichts frei: in einer Sekunde neu versuchen
+      return;
+    }
+    const pos = positionAt(pathOf(bestBranch), bestProg);
+    const tr: TrapState = {
+      id: S.nextId++, kind: 'caltrops', progress: bestProg, branch: branchAt(map, pos.x, pos.y), x: pos.x, y: pos.y,
+      charges: st.trapCharges, until: 0, owner: t.id, dmg: st.trapDmg,
+    };
+    S.traps.push(tr);
+    t.trapCd = st.trapEvery * 1000;
+    emit({ type: 'trapSet', tick: S.tick, id: tr.id, tower: t.id, x: tr.x, y: tr.y, charges: tr.charges });
+  }
+
   function updateTowers(): void {
+    tickDec.clear();
     const hero = heroTower();
     const hst = hero ? tstats.get(hero.id)! : null;
     // Elite Sniper: das beste Tempo-Angebot gilt für alle Longshots
@@ -1037,7 +1207,7 @@ export function createGame(optsIn: GameOptions): Game {
         rangeBuff = hst.buffRangeBp;
       }
       // Auren der Markets, Wissensbaum-Tempo, Elite Sniper (additiv in Basispunkten)
-      const aura = t.type === 'market' ? null : auraOf(t);
+      const aura = AURA_ONLY.includes(t.type as TowerType) ? null : auraOf(t);
       if (aura) {
         speedBuff += aura.speedBp;
         rangeBuff += aura.rangeBp;
@@ -1053,7 +1223,14 @@ export function createGame(optsIn: GameOptions): Game {
       const bf = buffOf(t);
       speedBuff += bf.speedBp + bf.groveSpeedBp;
       rangeBuff += bf.rangeBp;
-      t.range = t.type === 'market' || st.range >= GLOBAL_RANGE || !rangeBuff ? st.range : Math.floor((st.range * (10000 + rangeBuff)) / 10000);
+      // Runde 16: Overclock (Tinker)
+      if (t.boostTicks > 0) {
+        speedBuff += t.boostBp;
+        if (--t.boostTicks === 0) t.boostBp = 0;
+      }
+      const tdec = Math.floor((1000 * (10000 + speedBuff)) / 10000);
+      tickDec.set(t.id, tdec);
+      t.range = AURA_ONLY.includes(t.type as TowerType) || st.range >= GLOBAL_RANGE || !rangeBuff ? st.range : Math.floor((st.range * (10000 + rangeBuff)) / 10000);
       t.camo = st.camo === 1 || !!aura?.camo;
 
       t.zone = st.zoneBp > 0 ? Math.floor((t.range * st.zoneBp) / 10000) : 0;
@@ -1191,8 +1368,12 @@ export function createGame(optsIn: GameOptions): Game {
         }
       }
 
+      // Runde 16: Tinker baut Sentries und legt Fallen
+      if (st.sentryN > 0) buildSentry(t, st, tdec);
+      if (st.trapMax > 0) layTrap(t, st, tdec);
+
       if (st.atk === 'none') continue;
-      let dec = Math.floor((1000 * (10000 + speedBuff)) / 10000);
+      let dec = tdec;
       if (t.type === 'ranger' && S.rainLeft > 0) dec *= 3;
       if (t.type === 'longshot' && S.focusLeft > 0) dec *= 2;
       t.cd -= dec;
@@ -1370,7 +1551,7 @@ export function createGame(optsIn: GameOptions): Game {
     for (const t of hit) {
       if (e.dead) return;
       if (t.kind === 'caltrops') {
-        damage(e, DATA.powers.caltrops.params.damage, 'magic', 0);
+        damage(e, t.dmg > 0 ? t.dmg : DATA.powers.caltrops.params.damage, 'magic', t.owner);
       } else {
         const d = etab[e.type];
         if (d.blimp || d.immuneCold || d.immuneSlow || e.frozenTicks > 0) continue;
@@ -1497,7 +1678,7 @@ export function createGame(optsIn: GameOptions): Game {
     const h = heroTower();
     if (!h) return;
     h.heroXp += kmods.heroXpBp ? Math.floor((amount * (10000 + kmods.heroXpBp)) / 10000) : amount;
-    const lv = DATA.hero.wren.levels;
+    const lv = DATA.hero[h.type as HeroType].levels;
     let changed = false;
     while (h.heroLevel < 20 && h.heroXp >= lv[h.heroLevel].xp) {
       h.heroLevel++;
@@ -1510,12 +1691,13 @@ export function createGame(optsIn: GameOptions): Game {
   /** Market-Einkommen am Rundenende (Runde 13): Zinsen auf das Konto, Einnahmen dazu, Deckel; Überlauf geht als Geld raus. */
   function payMarkets(r: number): void {
     const markets = S.towers.filter((t) => t.type === 'market');
-    for (const m of markets) {
+    // Runde 16: der Bellringer (Toll of Coin) zahlt wie ein Market, aber ohne Bank, Market Savvy und Golden Exchange
+    for (const m of S.towers.filter((t) => t.type === 'market' || t.type === 'bellringer')) {
       const st = tstats.get(m.id)!;
       if (st.income <= 0 && m.bank <= 0) continue;
       let golden = 0;
-      for (const o of markets) if (o !== m) golden = Math.max(golden, tstats.get(o.id)!.goldenBp);
-      const gross = earn(Math.floor((st.income * (10000 + (kmods.marketBp ?? 0) + golden)) / 10000));
+      if (m.type === 'market') for (const o of markets) if (o !== m) golden = Math.max(golden, tstats.get(o.id)!.goldenBp);
+      const gross = earn(Math.floor((st.income * (10000 + (m.type === 'market' ? (kmods.marketBp ?? 0) + golden : 0))) / 10000));
       let amount = gross;
       let cash = gross;
       if (st.bankOn > 0) {
@@ -1635,11 +1817,14 @@ export function createGame(optsIn: GameOptions): Game {
     if (S.rainLeft > 0) S.rainLeft--;
     if (S.focusLeft > 0) S.focusLeft--;
     if (S.warpLeft > 0) S.warpLeft--;
+    if (S.forgeLeft > 0) S.forgeLeft--;
     // 3. Gegner bewegen, Status
     updateEnemies();
     rebuildGrid();
     // 4. Türme
     updateTowers();
+    // 4b. Runde 16: Sentries der Tinker
+    updateSentries();
     // 5. Projektile
     updateProjectiles();
     // 5b. Runde 14: Säurepfützen, Lebensdauer der Wände
@@ -1659,14 +1844,20 @@ export function createGame(optsIn: GameOptions): Game {
     if (!isHero(type) && !TOWER_TYPES.includes(type)) return { ok: false, reason: 'unknown-tower' };
     if (opts.unlocks && !opts.unlocks.towers.includes(type)) return { ok: false, reason: 'locked' };
     if (!modeAllows(mode, type) || !rulesAllow(rules, type)) return { ok: false, reason: 'mode-locked' };
+    if (isHero(type) && type !== heroId) return { ok: false, reason: 'wrong-hero' };
     if (isHero(type) && S.heroPlaced) return { ok: false, reason: 'hero-limit' };
     const r = towerDef(type).radius * 1000;
     const b = map.build;
     if (x - r < b.x0 || x + r > b.x1 || y - r < b.y0 || y + r > b.y1) return { ok: false, reason: 'out-of-bounds' };
     if (!clearOfPaths(map, x, y, map.halfWidth + r)) return { ok: false, reason: 'on-path' };
-    for (const poly of map.water) {
-      if (pointInPolygon(x, y, poly) || pointInPolygon(x + r, y, poly) || pointInPolygon(x - r, y, poly) || pointInPolygon(x, y + r, poly) || pointInPolygon(x, y - r, poly)) {
-        return { ok: false, reason: 'water' };
+    if (!isHero(type) && DATA.towers[type].placement === 'water') {
+      // Runde 16: Wasserturm - der ganze Turmkreis muss in einem Wasser-Polygon liegen (Lava ist kein Wasser)
+      if (!map.water.some((poly) => circleInPolygon(x, y, r, poly))) return { ok: false, reason: 'needs-water' };
+    } else {
+      for (const poly of map.water) {
+        if (pointInPolygon(x, y, poly) || pointInPolygon(x + r, y, poly) || pointInPolygon(x - r, y, poly) || pointInPolygon(x, y + r, poly) || pointInPolygon(x, y - r, poly)) {
+          return { ok: false, reason: 'water' };
+        }
       }
     }
     for (const poly of map.lava) {
@@ -1814,6 +2005,38 @@ export function createGame(optsIn: GameOptions): Game {
           }
         }
       }
+    } else if (id === 'alarm') {
+      // Runde 16: Bellringer - alle Gegner stehen still (Boss kuerzer), Dusk Siren: Gegner nehmen kurz +1 Schaden
+      let stun = 0, boss = 0, brittle = 0;
+      for (const t of S.towers) {
+        if (t.type !== 'bellringer') continue;
+        const st = tstats.get(t.id)!;
+        stun = Math.max(stun, st.alarmStun);
+        boss = Math.max(boss, st.alarmBoss);
+        brittle = Math.max(brittle, st.alarmBrittle);
+      }
+      emit({ type: 'ability', tick: S.tick, id });
+      for (const e of S.enemies) {
+        if (e.dead || e.progress < MIN_SPAWN_PROGRESS) continue;
+        applyStun(e, stun, boss);
+        if (brittle > 0) e.brittleTicks = Math.max(e.brittleTicks, brittle);
+      }
+    } else if (id === 'overclock') {
+      // Runde 16: Tinker - die naechsten `ocMax` Tuerme mit Angriff im Radius des Tinkers (er selbst zuerst) bekommen Zusatztempo
+      emit({ type: 'ability', tick: S.tick, id });
+      for (const a of S.towers) {
+        const as = tstats.get(a.id)!;
+        if (a.type !== 'tinker' || as.ocDur <= 0) continue;
+        const near = S.towers
+          .filter((o) => tstats.get(o.id)!.atk !== 'none' && dist2(a.x, a.y, o.x, o.y) <= a.range * a.range)
+          .sort((p, q) => dist2(a.x, a.y, p.x, p.y) - dist2(a.x, a.y, q.x, q.y) || p.id - q.id)
+          .slice(0, as.ocMax);
+        for (const o of near) {
+          o.boostTicks = Math.max(o.boostTicks, as.ocDur);
+          o.boostBp = Math.max(o.boostBp, as.ocBp);
+          emit({ type: 'overclock', tick: S.tick, tower: o.id, source: a.id, ticks: as.ocDur, bp: as.ocBp });
+        }
+      }
     } else if (id === 'focus') {
       let dur = 0;
       for (const t of S.towers) if (t.type === 'longshot') dur = Math.max(dur, tstats.get(t.id)!.focusDur);
@@ -1866,13 +2089,51 @@ export function createGame(optsIn: GameOptions): Game {
           }
         }
         explodeAt(e.x, e.y, radius, st.flareDmg, 'magic', st.flareMax, h.id, null, 'star');
-      } else {
+      } else if (id === 'dawnbreak') {
         emit({ type: 'ability', tick: S.tick, id });
         for (const e of S.enemies.slice()) {
           if (e.dead || e.progress < MIN_SPAWN_PROGRESS) continue;
           damage(e, etab[e.type].boss ? st.dawnBoss : st.dawnDmg, 'magic', h.id);
         }
-      }
+      } else if (id === 'anvilDrop') {
+        // Bram L10: Amboss auf das staerkste Ziel in Reichweite, Flaechenschaden und Betaeubung
+        const e = pickTarget(h, h.range, true, 'strong', false);
+        if (!e) return { ok: false, reason: 'no-target' };
+        emit({ type: 'ability', tick: S.tick, id, x: e.x, y: e.y });
+        emit({ type: 'explode', tick: S.tick, x: e.x, y: e.y, radius: st.anvilR, kind: 'bomb' });
+        const list: { o: EnemyState; d2: number }[] = [];
+        for (const o of queryBox(e.x - st.anvilR - 30000, e.y - st.anvilR - 30000, e.x + st.anvilR + 30000, e.y + st.anvilR + 30000)) {
+          const rr = st.anvilR + etab[o.type].radius;
+          const d2 = dist2(e.x, e.y, o.x, o.y);
+          if (d2 <= rr * rr) list.push({ o, d2 });
+        }
+        list.sort((a, b) => a.d2 - b.d2 || a.o.id - b.o.id);
+        for (const { o } of list.slice(0, st.anvilMax)) {
+          damage(o, etab[o.type].boss ? st.anvilBoss : st.anvilDmg, 'magic', h.id);
+          applyStun(o, st.anvilStun, st.anvilStunBoss);
+        }
+      } else if (id === 'forgeOfDawn') {
+        // Bram L20: alle Tuerme brechen Panzer (sharp trifft Ironshell, Zusatzschaden gegen Panzertraeger), solange die Schmiede brennt
+        S.forgeLeft = st.forgeDur;
+        emit({ type: 'ability', tick: S.tick, id });
+      } else if (id === 'starfall') {
+        // Sela L10: Strahl ueber den Weg im Radius der Heldin, jeder gesehene Gegner darin wird getroffen
+        emit({ type: 'ability', tick: S.tick, id, x: h.x, y: h.y });
+        let hits = 0;
+        const r2 = h.range * h.range;
+        for (const e of S.enemies.slice()) {
+          if (e.dead || e.progress < MIN_SPAWN_PROGRESS || dist2(h.x, h.y, e.x, e.y) > r2) continue;
+          if (damage(e, etab[e.type].boss ? st.starBoss : st.starDmg, 'magic', h.id)) hits++;
+        }
+        emit({ type: 'starfall', tick: S.tick, tower: h.id, x: h.x, y: h.y, radius: h.range, hits });
+      } else if (id === 'eclipse') {
+        // Sela L20: alle Gegner (auch Blimps, Bosse, Emberlinge) kurz mit halbem Tempo
+        emit({ type: 'ability', tick: S.tick, id });
+        for (const e of S.enemies) {
+          if (e.dead || e.progress < MIN_SPAWN_PROGRESS) continue;
+          applySlow(e, st.eclipseBp, st.eclipseDur, false, true, true);
+        }
+      } else return { ok: false, reason: 'no-ability' };
     }
     a.ready = false;
     a.cdLeft = a.cdTotal;
@@ -1885,10 +2146,10 @@ export function createGame(optsIn: GameOptions): Game {
     const lvl = hero ? Math.max(1, Math.min(20, kmods.heroStartLevel ?? 1)) : 0;
     const t: TowerState = {
       id: S.nextId++, type, x, y, tiers: [...tiers] as Tiers, heroLevel: lvl,
-      heroXp: hero ? DATA.hero.wren.levels[lvl - 1].xp : 0, target: 'first', facing: 0, attackTick: 0, pops: 0, spent,
+      heroXp: hero ? DATA.hero[type].levels[lvl - 1].xp : 0, target: 'first', facing: 0, attackTick: 0, pops: 0, spent,
       camo: false, range: 0, cd: 0, windupLeft: 0, windupTarget: 0, shots: 0, auraCd: 0, thunderCd: 0, bank: 0,
       zone: 0, buffTicks: 0, buffDmg: 0, buffRangeBp: 0, buffSpeedBp: 0, monsterTicks: 0,
-      zapCd: 0, whirlCd: 0, snareCd: 0, zoneCd: 0, brewCd: 0, shrinkCd: 0, frozen: 0,
+      zapCd: 0, whirlCd: 0, snareCd: 0, zoneCd: 0, brewCd: 0, shrinkCd: 0, frozen: 0, boostTicks: 0, boostBp: 0, sentryCd: 0, trapCd: 0,
     };
     S.towers.push(t);
     if (hero) S.heroPlaced = true;
@@ -1965,7 +2226,7 @@ export function createGame(optsIn: GameOptions): Game {
         const pos = positionAt(pathOf(n.branch), n.progress);
         const t: TrapState = {
           id: S.nextId++, kind: key, progress: n.progress, branch: branchAt(map, pos.x, pos.y), x: pos.x, y: pos.y, charges: d.params.charges,
-          until: key === 'caltrops' ? S.round + d.params.extraRounds : 0,
+          until: key === 'caltrops' ? S.round + d.params.extraRounds : 0, owner: 0, dmg: 0,
         };
         S.traps.push(t);
         id = t.id;
@@ -1990,7 +2251,7 @@ export function createGame(optsIn: GameOptions): Game {
         emit({ type: 'power', tick: S.tick, power: key });
         for (let l = h.heroLevel + 1; l <= to; l++) emit({ type: 'heroLevel', tick: S.tick, tower: h.id, level: l });
         h.heroLevel = to;
-        h.heroXp = DATA.hero.wren.levels[to - 1].xp;
+        h.heroXp = DATA.hero[h.type as HeroType].levels[to - 1].xp;
         refreshTower(h);
         id = h.id;
         break;
@@ -2099,6 +2360,7 @@ export function createGame(optsIn: GameOptions): Game {
         S.cash += v;
         S.towers = S.towers.filter((x) => x !== t);
         tstats.delete(t.id);
+        for (const s of S.sentries.filter((x) => x.owner === t.id)) removeSentry(s, 'sold');
         syncAbilities();
         emit({ type: 'sell', tick: S.tick, tower: t.id, ttype: t.type, cash: S.cash });
         return { ok: true, id: t.id };

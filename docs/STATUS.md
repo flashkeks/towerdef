@@ -4,6 +4,38 @@ Arbeitsauftrag: [`/run.md`](../run.md) (**Runde 13 abgeschlossen** (Market, Long
 Frühere Aufträge: [archiv/run-runde1.md](archiv/run-runde1.md), [archiv/run-runde2.md](archiv/run-runde2.md), [archiv/run-runde3.md](archiv/run-runde3.md), [archiv/run-runde4.md](archiv/run-runde4.md), [archiv/run-runde5.md](archiv/run-runde5.md), [archiv/run-runde6.md](archiv/run-runde6.md), [archiv/run-runde7.md](archiv/run-runde7.md), [archiv/run-runde8-verworfen.md](archiv/run-runde8-verworfen.md), [archiv/run-runde8.md](archiv/run-runde8.md), [archiv/run-runde9.md](archiv/run-runde9.md).
 
 
+## Runde 16 E (Challenges, Issue #4, 10.10.2026) — fertig, in `dev`
+
+Beschreibung `design/challenges.md`, Bilder `client/docs/r16/e-*.png` (Skript `client/scripts/shots-r16-e.mjs`).
+
+- **Sim**: `ChallengeRules` (Karte, Schwierigkeit, Seed, Rundenspanne, Turmliste, Held, Stufenlimit, Geld, Leben, Einkommen, Schalter, Gegner-HP/-Tempo, eigene Wellen), Code `DW1-...` und Link `?challenge=`, Modi als Regelwerke (`modeRules`).
+- **Meta**: Tages-Challenge aus dem UTC-Datum, 40 Embers fuer den ersten Sieg je Tag, Bestwerte je Tag und je Code.
+- **Client**: Knopf "Challenges" auf der Startseite, Hub, Editor, Code-Eingabe, Regel-Chip im Match, Ergebnisseite.
+- **Merge mit T**: fester Held einer Challenge schlaegt die Wahl des Spielers, `any` nimmt die Wahl (`selectedHero`); Tages-Challenge zieht Wassertuerme nur auf Karten mit Wasser und immer mindestens einen angreifenden Landturm.
+- **Pruefung**: sim 345, meta 127, client 240 Tests, tsc in allen drei, build, smoke gruen (neu: Challenges erreichbar, Editor ohne Scrollen, Tages-Challenge startet).
+- Offen: Wellen-Editor (Regelwerk kann es schon), Bestenliste ueber Spieler = Issue #5. **Ember Quarry hat keine Wasserflaeche** (`runde16.md` §2 verlangt einen Kuehlteich) — Riverkeeper ist dort nutzlos.
+
+## Runde 16 T (Riverkeeper, Bellringer, Tinker, Helden Bram + Sela; Sim + Meta, 10.10.2026) — fertig, in `dev`
+
+Spezifikation `design/runde16.md` §2/§3, Werte und Matrix `design/tuerme-r16.md`.
+
+- **Sim**: `placement: 'water'` (nur ganz im Wasser-Polygon), Riverkeeper/Bellringer/Tinker mit je drei Pfaden à fünf Stufen, Sentries und Caltrops, Overclock; Helden generalisiert (`HERO_TYPES`, `GameOptions.hero`, `GameInfo.hero`), Bram (Schmiede-Aura, Anvil Drop, Forge of Dawn) und Sela (Camo-Aura, Starfall, Eclipse). Bot kann Wassertuerme setzen und Helden waehlen (`+ bram` / `+ sela`).
+- **Meta**: Freischaltung L4 Riverkeeper, L10 Bram, L11 Tinker, L13 Bellringer, L15 Sela; Helden auch mit Embers kaufbar (`buyHero`, 1.500 / 2.500), Profil `heroes` + `selectedHero`; Wissensbaum 46 Knoten (+6 Specialists, Helden-Knoten im Ast Wardens).
+- **Client**: nur Platzhalter-Look (bestehende Figuren als Basis), damit nichts abstuerzt. Echte Pixel-Figuren, Wasser-Platzier-UI, Helden-Auswahl und Store-Rubrik = Paket **TP**.
+- **Merge**: Paket war vom K1-Stand abgezweigt (vor 15b/K2). Konflikte geloest: `perTower`/`STRONG_RANK` mit neuen Tuermen **und** spaeten Schiffen, `GameInfo` mit `listRounds` **und** `hero`, Eclipse bricht Kaelte-, nicht Slow-Immunitaet (Dreadnought bleibt immun), Meta-Importe vereinigt, Progress-Test auf 15b-Werte.
+- **Pruefung**: sim 314, meta 117, client 240 Tests, tsc in allen drei, build, smoke gruen. Vier Sim-Tests hingen dem letzten Balancing-Patch hinterher (Tidal Steel, Overclock-Abklingzeit, Ultra-Overclock, Bram-Grundwerte) und sind auf die Daten nachgezogen; Smoke zaehlt 46 Wissensknoten.
+
+## Runde 16 H (Startseite fuer zehn Karten, 10.10.2026) — fertig, in `dev`
+
+Bilder `client/docs/r16/h-start-{1280,1366,1920}-{beginner,intermediate,advanced,expert}.png` (Skript `client/scripts/shots-r16-h.mjs`).
+
+- **Kartenwahl mit Reitern je Stufe** (`screens/home.ts`): Beginner / Intermediate / Advanced / Expert, Zaehler offen/gesamt je Reiter, Punkt am Reiter der naechsten Freischaltung. Nur die Kacheln der gewaehlten Stufe stehen im DOM (ihre Vorschauen kommen in der Malschlange zuerst dran). Der zuletzt gewaehlte Reiter bleibt beim Zurueckkommen.
+- **Kachel kompakt**: Medaillen als Symbole mit Bestrunde, Freeplay-Bestrunde und Modus-Medaillen in einer Zeile, Schloss mit englischer Bedingung, Marke "Next unlock" auf der naechsten Karte. Ab 1600x900 Vorschau x3 statt x2.
+- **Ohne Scrollen** bei 1280x720, 1366x768, 1920x1080 in allen vier Reitern (Bildskript bricht bei Scrollen ab).
+- **Smoke**: vier Reiter, Kacheln einer Stufe, Schloss auf Expert (Profil kurz ohne `unlockAll`), Startseite ohne Scrollen.
+- **Pruefung**: client tsc, 234 Tests, build, smoke gruen.
+- Offen fuer T/E: Platz fuer den Knopf "Challenges" in der Fussleiste (E), Leiste "Your wardens" wird mit drei neuen Tuermen + zwei Helden zu breit fuer 1280 (T/TP).
+
 ## Runde 15b (eine Rundenliste 120, Endrunde 40/60/80, Freeplay, 10.10.2026) — fertig, wartet auf Merge
 
 Branch `r15-d`. Spezifikation: `design/karten-gegner-r15.md` §5 Nachtrag 15b-2. Bilder `client/docs/r15/d-*.png` (Skript `client/scripts/shots-r15-d.mjs`).

@@ -6,7 +6,7 @@ import type { Difficulty, HeroType, ModeId, PowerKey, TowerType } from '../../si
 import { DATA, POWER_KEYS } from '../../sim/src/data';
 import { MODE_IDS, MODES } from '../../sim/src/modes';
 
-export const TOWER_TYPES: readonly TowerType[] = ['ranger', 'bombardier', 'frostcaller', 'longshot', 'market', 'thornweaver', 'alchemist'];
+export const TOWER_TYPES: readonly TowerType[] = ['ranger', 'bombardier', 'frostcaller', 'longshot', 'market', 'thornweaver', 'alchemist', 'riverkeeper', 'bellringer', 'tinker'];
 export const DIFFICULTIES: readonly Difficulty[] = ['easy', 'medium', 'hard'];
 /** Alte Rechengrenze (20 Runden): Vorgabe der Belohnungsformeln, wenn kein `maxRound` im Kontext steht. Echte Endrunde: `maxRoundOf(map, difficulty)`. */
 export const MAX_ROUND = 20;
@@ -135,6 +135,7 @@ export const LEVEL_UNLOCKS: readonly LevelUnlock[] = [
   { level: 2, kind: 'tower', id: 'bombardier', title: 'Bombardier', text: 'Lobs bombs that burst in an area and crack armor.' },
   { level: 3, kind: 'hero', id: 'wren', title: 'Wren, the Lamplighter', text: 'Your hero. One per match, levels up to 20 in the fight.' },
   { level: 4, kind: 'tower', id: 'frostcaller', title: 'Frostcaller', text: 'Slows, freezes and shocks whole lanes.' },
+  { level: 4, kind: 'tower', id: 'riverkeeper', title: 'Riverkeeper', text: 'Water tower. Harpoons, sonar and a lantern ship. Can only be built on water.' },
   { level: 5, kind: 'difficulty', id: 'hard', title: 'Hard difficulty', text: 'Faster Glims, tougher bosses, bigger medals.' },
   { level: 5, kind: 'tower', id: 'longshot', title: 'Longshot', text: 'Sniper that sees the whole map. Slow, heavy shots.' },
   { level: 6, kind: 'tower', id: 'market', title: 'Lantern Market', text: 'Does not attack. Pays gold every round, banks interest, or buffs nearby towers.' },
@@ -149,7 +150,36 @@ export const LEVEL_UNLOCKS: readonly LevelUnlock[] = [
   { level: 18, kind: 'map', id: 'harbor', title: 'Gloomharbor', text: 'A harbor town at night. Expert map.' },
   { level: 20, kind: 'map', id: 'spire', title: 'Duskspire Keep', text: 'The final fortress. Expert map.' },
   { level: 9, kind: 'tower', id: 'alchemist', title: 'Alchemist', text: 'Lobs acid, brews buffs for nearby towers, turns lead into gold.' },
+  // Runde 16 (Paket T): Helden Bram und Sela gibt es auch fuer Embers (`HEROES`), die Karte hier ist der Level-Weg
+  { level: 10, kind: 'hero', id: 'bram', title: 'Bram Ironwright', text: 'Hero. A smith whose hammers crack armor. Builds a forge, drops an anvil. Can also be bought with Embers.' },
+  { level: 11, kind: 'tower', id: 'tinker', title: 'Tinker', text: 'Builds sentries, lays caltrops on the road and overclocks nearby towers.' },
+  { level: 13, kind: 'tower', id: 'bellringer', title: 'Bellringer', text: 'Does not attack. Its bells speed up, reveal and cheapen the towers around it.' },
+  { level: 15, kind: 'hero', id: 'sela', title: 'Sela Nightglass', text: 'Hero. A seer with a long-range rifle. Sees camouflage, calls down Starfall. Can also be bought with Embers.' },
 ];
+
+// ---------------------------------------------------------------- Helden (Runde 16, docs/design/runde16.md Abschnitt 3)
+
+export interface HeroMeta {
+  id: HeroType;
+  /** Anzeigename mit Beiname. */
+  name: string;
+  /** Kurzname. */
+  short: string;
+  role: string;
+  /** Spieler-Level, ab dem der Held ohne Embers offen ist. */
+  unlockLevel: number;
+  /** Preis im Store in Embers; null = nur ueber das Level (Wren). */
+  embers: number | null;
+  desc: string;
+}
+/** Reihenfolge der Anzeige. Preis im Match (Gold) steht in `sim/data/towers.json` (`DATA.hero[id].price`). */
+export const HEROES: readonly HeroMeta[] = [
+  { id: 'wren', name: 'Wren, the Lamplighter', short: 'Wren', role: 'Allrounder', unlockLevel: 3, embers: null, desc: 'Lantern bolts, Flare and Dawnbreak. Speeds up nearby towers.' },
+  { id: 'bram', name: 'Bram Ironwright', short: 'Bram', role: 'Armor breaker', unlockLevel: 10, embers: 1500, desc: 'Hammers that crack armor. Builds a forge that boosts nearby towers, drops an anvil, ends with the Forge of Dawn.' },
+  { id: 'sela', name: 'Sela Nightglass', short: 'Sela', role: 'Sharpshooter and seer', unlockLevel: 15, embers: 2500, desc: 'Long range, sees camouflage and lends her sight to nearby towers. Calls down Starfall and ends with Eclipse.' },
+];
+export const HERO_IDS: readonly HeroType[] = HEROES.map((h) => h.id);
+export const heroMeta = (id: HeroType): HeroMeta => HEROES.find((h) => h.id === id)!;
 /** Level, ab dem Turm/Held/Schwierigkeit offen ist; fehlt = von Anfang an. */
 export function unlockLevel(id: string): number {
   return LEVEL_UNLOCKS.find((u) => u.id === id)?.level ?? 1;
@@ -173,7 +203,7 @@ export interface KnowledgeNode {
 const node = (id: string, branch: Branch, name: string, cost: number, desc: string, requires: string[], col: number, row: number): KnowledgeNode =>
   ({ id, branch, name, cost, desc, requires, col, row });
 /**
- * Wissensbaum Runde 13/14 (docs/design/tuerme-r13.md): 40 Knoten in 5 Aesten, Summe 77 Punkte (Runde 13: 28 Knoten / 52 Punkte, Runde 14: +12). Die 10 alten Knoten
+ * Wissensbaum Runde 13/14 (docs/design/tuerme-r13.md): 40 Knoten in 5 Aesten (Runde 16: +6 = 46, docs/design/tuerme-r16.md), Summe 77 Punkte (Runde 13: 28 Knoten / 52 Punkte, Runde 14: +12). Die 10 alten Knoten
  * behalten ID und Wirkung (Ast `towers` heisst jetzt `primary`). Reihenfolge: Voraussetzungen stehen vor den Folgeknoten.
  */
 export const KNOWLEDGE: readonly KnowledgeNode[] = [
@@ -204,12 +234,19 @@ export const KNOWLEDGE: readonly KnowledgeNode[] = [
   node('bountiful-grove', 'specialists', 'Bountiful Grove', 2, "Jungle's Bounty pays 50 more gold each round.", ['deep-roots'], 1, 1),
   node('potent-brews', 'specialists', 'Potent Brews', 1, 'Alchemist buff potions last 25% longer.', [], 2, 0),
   node('midas-hands', 'specialists', 'Midas Hands', 2, 'Lead to Gold pays 20 more gold per Ironshell.', ['potent-brews'], 2, 1),
+  // Runde 16: je ein kleiner Ast fuer Riverkeeper, Bellringer, Tinker (Spalten 3 bis 5 im Ast Specialists)
+  node('deep-water', 'specialists', 'Deep Water', 1, 'Riverkeepers reach 10% farther.', [], 3, 0),
+  node('barbed-line', 'specialists', 'Barbed Line', 2, 'Riverkeeper harpoons pierce 1 more enemy.', ['deep-water'], 3, 1),
+  node('loud-bells', 'specialists', 'Loud Bells', 1, 'Bellringer bells reach 15% farther.', [], 4, 0),
+  node('silver-tongue', 'specialists', 'Silver Tongue', 2, 'Toll of Coin pays 25 more gold each round.', ['loud-bells'], 4, 1),
+  node('spare-parts', 'specialists', 'Spare Parts', 1, 'Tinker sentries last 25% longer.', [], 5, 0),
+  node('sharp-caltrops', 'specialists', 'Sharp Caltrops', 2, 'Caltrops laid by the Tinker hold 2 more hits.', ['spare-parts'], 5, 1),
   node('extra-lives', 'wardens', 'Extra Lives', 1, 'Start every match with 10 more lives.', [], 0, 0),
-  node('veteran-hero', 'wardens', 'Veteran Hero', 2, 'Wren starts at level 3.', ['extra-lives'], 0, 1),
+  node('veteran-hero', 'wardens', 'Veteran Hero', 2, 'Your hero starts at level 3.', ['extra-lives'], 0, 1),
   node('fast-learner', 'wardens', 'Fast Learner', 2, 'Towers earn 20% more Tower XP.', ['extra-lives'], 1, 1),
   node('thick-walls', 'wardens', 'Thick Walls', 2, 'Start every match with 15 more lives.', ['veteran-hero', 'fast-learner'], 0, 2),
-  node('hero-training', 'wardens', 'Hero Training', 2, 'Wren earns 15% more hero XP.', ['thick-walls'], 0, 3),
-  node('legendary', 'wardens', 'Legendary', 3, 'Wren starts at level 5.', ['hero-training'], 0, 4),
+  node('hero-training', 'wardens', 'Hero Training', 2, 'Your hero earns 15% more hero XP.', ['thick-walls'], 0, 3),
+  node('legendary', 'wardens', 'Legendary', 3, 'Your hero starts at level 5.', ['hero-training'], 0, 4),
   node('scholar', 'wardens', 'Scholar', 2, 'Matches give 10% more player XP.', ['legendary'], 0, 5),
   node('sturdy-gate', 'wardens', 'Sturdy Gate', 3, 'Once per match the gate stops one leak.', ['thick-walls'], 1, 3),
   node('ember-pouch', 'powers', 'Ember Pouch', 1, 'Matches give 10% more Embers.', [], 0, 0),

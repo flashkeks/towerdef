@@ -45,6 +45,7 @@ export const S = {
     modeMedals: (n: number, of: number): string => `Mode medals ${n}/${of}`,
     lockedBy: (level: number, prev: string, d: string): string => `Reach level ${level} or earn ${d} on ${prev}`,
     allMedals: 'All medals earned',
+    next: 'Next unlock',
   },
   setup: {
     change: 'Maps',
@@ -127,6 +128,9 @@ export const S = {
       market: ['Harvest', 'Bank', 'Town Square'],
       thornweaver: ['Storm', 'Wild', 'Grove'],
       alchemist: ['Brews', 'Unstable', 'Gold'],
+      riverkeeper: ['Harpoons', 'Sonar', 'Armada'],
+      bellringer: ['Chimes', 'Watch', 'Toll'],
+      tinker: ['Sentry', 'Caltrops', 'Overclock'],
     } as Record<string, string[]>,
   },
   settings: {

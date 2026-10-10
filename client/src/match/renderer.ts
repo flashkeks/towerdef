@@ -15,7 +15,7 @@ import { type EnemyState, type EnemyType, type GameState, type ProjectileState, 
 import { glowKind, monsterScale, wallWear, zoneView, type GlowKind } from './r14';
 import { rangeView, coinCount, coinDelay, coinPath, hasAura, isMarked, projectileLook, type RangeView } from './r13';
 import { FxLayer, FRAMES } from './fx';
-import { footMilli } from './info';
+import { footMilli, isHero } from './info';
 import { TRAP_W, monsterSprite, bigHeart, bombLantern, bubbleSprite, coinSprite, trapSprite, discSprite, enemySprite, fx as P2, heroSprite, projectileSprite, ringSprite, shadowSprite, heroMuzzle, towerMuzzle, towerSprite, type HeroFrame, type Spr, type TowerFrame } from './sprites';
 import { tex } from './textures';
 import { ENEMY_LOOK, spriteStage } from './enemy-info';
@@ -358,7 +358,7 @@ export class Renderer {
       for (const t of state.towers) this.auraOf.set(t.id, t.type !== 'market' && hasAura(this.auraProbe(t.id)));
     }
     if (this.buffProbe && (newTick && state.tick % 10 === 0 || this.glowOf.size !== state.towers.length)) {
-      for (const t of state.towers) this.glowOf.set(t.id, t.type === 'wren' || t.type === 'market' ? null : glowKind(this.buffProbe(t.id)));
+      for (const t of state.towers) this.glowOf.set(t.id, isHero(t.type) || t.type === 'market' ? null : glowKind(this.buffProbe(t.id)));
     }
 
     const seenE = new Set<number>();
@@ -502,9 +502,13 @@ export class Renderer {
   private towerSpr(t: TowerState): Spr {
     const atk = t.attackTick;
     const frame = (atk > 0 ? (atk < 4 ? 'atk0' : atk < 6 ? 'atk1' : atk < 11 ? 'atk2' : 'atk3') : `idle${(Math.floor(this.now / 166) + t.id) & 3}`) as TowerFrame;
-    if (t.monsterTicks > 0 && t.type !== 'wren') return monsterSprite(t.facing, frame, monsterScale(t.type));
-    if (t.type === 'wren' && this.now < this.heroCast) return heroSprite(t.heroLevel, t.facing, this.heroCast - this.now > 150 ? 'cast0' : 'cast1');
-    return t.type === 'wren' ? heroSprite(t.heroLevel, t.facing, frame as HeroFrame) : towerSprite(t.type, t.tiers, t.facing, frame);
+    if (isHero(t.type)) {
+      // Runde 16: Bram und Sela zeichnen vorerst wie Wren (Platzhalter bis Paket TP)
+      if (this.now < this.heroCast) return heroSprite(t.heroLevel, t.facing, this.heroCast - this.now > 150 ? 'cast0' : 'cast1');
+      return heroSprite(t.heroLevel, t.facing, frame as HeroFrame);
+    }
+    if (t.monsterTicks > 0) return monsterSprite(t.facing, frame, monsterScale(t.type));
+    return towerSprite(t.type, t.tiers, t.facing, frame);
   }
 
   private syncTower(t: TowerState): void {
@@ -681,7 +685,7 @@ export class Renderer {
       // Start am Muendungspunkt der Waffe (Fuss-Anker + `towerMuzzle`), nicht in der Turmmitte; die Sim-Bahn bleibt, der
       // Versatz klingt in den ersten Ticks auf null ab (nur Optik, der Treffer gehoert der Sim)
       const own = this.latest?.towers.find((q) => q.id === p.owner);
-      const mz = own ? (own.type === 'wren' ? heroMuzzle(own.heroLevel, own.facing) : towerMuzzle(own.type, own.tiers, own.facing)) : { x: 0, y: 0 };
+      const mz = own ? (isHero(own.type) ? heroMuzzle(own.heroLevel, own.facing) : towerMuzzle(own.type, own.tiers, own.facing)) : { x: 0, y: 0 };
       v = { spr, key: '', px: cx, py: cy, cx, cy, mx: p.sub === 1 ? 0 : mz.x, my: p.sub === 1 ? 0 : mz.y };
       if (p.kind === 'bomb' || p.kind === 'potion') { v.shadow = new Sprite(shadowTex(7, 3)); this.shadowC.addChild(v.shadow); }
       this.projs.set(p.id, v);
@@ -767,8 +771,8 @@ export class Renderer {
       case 'fire': {
         const t = this.latest?.towers.find((q) => q.id === ev.tower);
         if (t) {
-          const mz = t.type === 'wren' ? heroMuzzle(t.heroLevel, t.facing) : towerMuzzle(t.type, t.tiers, t.facing);
-          const col = t.type === 'bombardier' ? [C.orange, C.stone, C.yellow] : t.type === 'frostcaller' ? [C.ice, C.white] : t.type === 'wren' ? [C.yellow, C.amber] : t.type === 'longshot' ? [C.yellow, C.white] : t.type === 'thornweaver' ? [C.leaf, C.grass, C.yellow] : t.type === 'alchemist' ? [C.leaf, C.yellow, C.white] : [C.sand, C.white];
+          const mz = isHero(t.type) ? heroMuzzle(t.heroLevel, t.facing) : towerMuzzle(t.type, t.tiers, t.facing);
+          const col = t.type === 'bombardier' ? [C.orange, C.stone, C.yellow] : t.type === 'frostcaller' ? [C.ice, C.white] : isHero(t.type) ? [C.yellow, C.amber] : t.type === 'longshot' ? [C.yellow, C.white] : t.type === 'thornweaver' ? [C.leaf, C.grass, C.yellow] : t.type === 'alchemist' ? [C.leaf, C.yellow, C.white] : [C.sand, C.white];
           fx.burst(m(t.x) + mz.x, m(t.y) + mz.y, col, 3, 0.9, 1, 0.02, 8);
           if (t.type === 'longshot') {
             // Muendungsblitz: heller Ring plus Funken in Blickrichtung, dazu Rueckstoss am Sprite
@@ -1224,7 +1228,7 @@ export class Renderer {
         });
         break;
       case 'heroBoost': {
-        const t = this.latest?.towers.find((q) => q.type === 'wren');
+        const t = this.latest?.towers.find((q) => isHero(q.type));
         if (t) {
           this.heroCast = this.now + 300;
           fx.ring(m(t.x), m(t.y), 4, 40, C.leaf, 22);

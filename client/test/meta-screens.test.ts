@@ -17,8 +17,8 @@ describe('MatchOutcome -> MatchResult', () => {
     expect(r.roundsCleared).toBe(11);
     expect(r.livesLost).toBe(50);
     expect(r.towerXp).toBeUndefined();
-    const full = toMetaResult(outcome({ towerXp: { ranger: 5, bombardier: 0, frostcaller: 9, longshot: 0, market: 0, thornweaver: 0, alchemist: 0 }, towerTiers: { ranger: [1, 0, 0], bombardier: [0, 0, 0], frostcaller: [0, 0, 0], longshot: [0, 0, 0], market: [0, 0, 0], thornweaver: [0, 0, 0], alchemist: [0, 0, 0] }, towerXpGained: { ranger: 40, bombardier: 0, frostcaller: 9, longshot: 0, market: 0, thornweaver: 0, alchemist: 0 } }), ctx);
-    expect(full.towerXp).toEqual({ ranger: 5, bombardier: 0, frostcaller: 9, longshot: 0, market: 0, thornweaver: 0, alchemist: 0 });
+    const full = toMetaResult(outcome({ towerXp: { ranger: 5, bombardier: 0, frostcaller: 9, longshot: 0, market: 0, thornweaver: 0, alchemist: 0, riverkeeper: 0, bellringer: 0, tinker: 0 }, towerTiers: { ranger: [1, 0, 0], bombardier: [0, 0, 0], frostcaller: [0, 0, 0], longshot: [0, 0, 0], market: [0, 0, 0], thornweaver: [0, 0, 0], alchemist: [0, 0, 0], riverkeeper: [0, 0, 0], bellringer: [0, 0, 0], tinker: [0, 0, 0] }, towerXpGained: { ranger: 40, bombardier: 0, frostcaller: 9, longshot: 0, market: 0, thornweaver: 0, alchemist: 0, riverkeeper: 0, bellringer: 0, tinker: 0 } }), ctx);
+    expect(full.towerXp).toEqual({ ranger: 5, bombardier: 0, frostcaller: 9, longshot: 0, market: 0, thornweaver: 0, alchemist: 0, riverkeeper: 0, bellringer: 0, tinker: 0 });
     expect(full.towerTiers?.ranger).toEqual([1, 0, 0]);
     expect(full.towerXpGained?.ranger).toBe(40);
     expect(r.pops).toEqual({ ranger: 500, wren: 200 });
@@ -49,7 +49,7 @@ describe('Bildschirm-Logik', () => {
     const p: Profile = newProfile(); // Startguthaben 100 je Turm, nur Ranger frei
     expect(readyUnlocks(p)).toBe(1); // genau Stufe 1 eines Pfads
     expect(readyUnlocks({ ...p, towerXp: { ...p.towerXp, ranger: 99 } })).toBe(0);
-    expect(readyUnlocks({ ...p, playerXp: xpForLevel(4) })).toBe(3);
+    expect(readyUnlocks({ ...p, playerXp: xpForLevel(4) })).toBe(4); // Ranger, Bombardier, Frostcaller, Riverkeeper (Runde 16)
     expect(readyUnlocks({ ...p, settings: { ...p.settings, unlockAll: true } })).toBe(0);
   });
   it('legalTiers: Hauptpfad voll, ein Nebenpfad bis 2, der dritte 0', () => {
@@ -58,8 +58,9 @@ describe('Bildschirm-Logik', () => {
     expect(legalTiers([0, 0, 0])).toEqual([0, 0, 0]);
   });
   it('lockInfo nennt Freischalt-Level fuer gesperrte Tuerme', () => {
-    expect(lockInfo(newProfile())).toEqual({ bombardier: 'Unlocks at level 2', frostcaller: 'Unlocks at level 4', longshot: 'Unlocks at level 5', market: 'Unlocks at level 6', thornweaver: 'Unlocks at level 7', alchemist: 'Unlocks at level 9', wren: 'Unlocks at level 3' });
-    expect(lockInfo({ ...newProfile(), playerXp: xpForLevel(4) })).toEqual({ longshot: 'Unlocks at level 5', market: 'Unlocks at level 6', thornweaver: 'Unlocks at level 7', alchemist: 'Unlocks at level 9' });
-    expect(lockInfo({ ...newProfile(), playerXp: xpForLevel(9) })).toEqual({});
+    expect(lockInfo(newProfile())).toEqual({ bombardier: 'Unlocks at level 2', frostcaller: 'Unlocks at level 4', longshot: 'Unlocks at level 5', market: 'Unlocks at level 6', thornweaver: 'Unlocks at level 7', alchemist: 'Unlocks at level 9', riverkeeper: 'Unlocks at level 4', tinker: 'Unlocks at level 11', bellringer: 'Unlocks at level 13', wren: 'Unlocks at level 3' });
+    expect(lockInfo({ ...newProfile(), playerXp: xpForLevel(4) })).toEqual({ longshot: 'Unlocks at level 5', market: 'Unlocks at level 6', thornweaver: 'Unlocks at level 7', alchemist: 'Unlocks at level 9', tinker: 'Unlocks at level 11', bellringer: 'Unlocks at level 13' });
+    expect(lockInfo({ ...newProfile(), playerXp: xpForLevel(9) })).toEqual({ tinker: 'Unlocks at level 11', bellringer: 'Unlocks at level 13' });
+    expect(lockInfo({ ...newProfile(), playerXp: xpForLevel(13) })).toEqual({});
   });
 });

@@ -180,6 +180,63 @@ export interface Stats {
   rubberTicks: number;
   /** Shrink Potion: Takt in Ticks. */
   shrinkEvery: number;
+  // ---- Runde 16 (Paket T) ----
+  /** Auren: Wirkradius in Milli-px (0 = `range`, wie beim Market). Riverkeeper-Sonar und Bellringer. */
+  aR: number;
+  // Bellringer: Alarm (Fähigkeit) = alle Gegner stehen still
+  /** Stillstand in Ticks (Boss: `alarmBoss`), Abklingzeit, Zusatzschaden (Gegner nehmen +1, Ticks) wie Brittle. */
+  alarmStun: number;
+  alarmBoss: number;
+  alarmCd: number;
+  alarmBrittle: number;
+  // Tinker: Sentries (temporäre Mini-Türme)
+  /** Höchstens so viele gleichzeitig (0 = keine), Bauzeit in Ticks, Lebensdauer in Ticks. */
+  sentryN: number;
+  sentryEvery: number;
+  sentryTtl: number;
+  sentryDmg: number;
+  sentryPierce: number;
+  /** Schussabstand der Sentry in Milli-Ticks und Reichweite in Milli-px. */
+  sentryInterval: number;
+  sentryRange: number;
+  sentryDtype: DamageType;
+  // Tinker: Caltrop Layer (Fallen auf dem Weg)
+  /** Höchstens so viele eigene Fallen gleichzeitig (0 = keine), Legetakt in Ticks, Ladungen und Schaden je Auslösung. */
+  trapMax: number;
+  trapEvery: number;
+  trapCharges: number;
+  trapDmg: number;
+  // Tinker: Overclock (Fähigkeit) = Türme in Reichweite schneller
+  /** Dauer in Ticks, Abklingzeit, Zusatztempo in Basispunkten, höchstens so viele Türme (nächste zuerst). */
+  ocDur: number;
+  ocCd: number;
+  ocBp: number;
+  ocMax: number;
+  // Helden Bram und Sela (Runde 16)
+  /** Schmiede (Bram): Türme im Radius `buffRadius` +Schaden. */
+  forgeDmg: number;
+  /** Camo-Aura des Helden (Sela L5): Türme im Radius `buffRadius` sehen Camo. */
+  heroCamo: number;
+  /** Anvil Drop: Schaden, Schaden am Boss, Radius, höchstens Ziele, Betäubung (Boss), Abklingzeit. */
+  anvilDmg: number;
+  anvilBoss: number;
+  anvilR: number;
+  anvilMax: number;
+  anvilStun: number;
+  anvilStunBoss: number;
+  anvilCd: number;
+  /** Forge of Dawn: Dauer in Ticks, Abklingzeit, Zusatzschaden gegen Panzerträger. */
+  forgeDur: number;
+  forgeCd: number;
+  forgeArmor: number;
+  /** Starfall: Schaden, Schaden am Boss, Abklingzeit. */
+  starDmg: number;
+  starBoss: number;
+  starCd: number;
+  /** Eclipse: Dauer in Ticks und Verlangsamung in Basispunkten (alle Gegner, auch Blimps und Bosse), Abklingzeit. */
+  eclipseDur: number;
+  eclipseBp: number;
+  eclipseCd: number;
 }
 
 export const STAT_DEFAULTS: Stats = {
@@ -202,9 +259,14 @@ export const STAT_DEFAULTS: Stats = {
   roundGold: 0, bountyGold: 0, roundLives: 0, groveSpeedBp: 0,
   bonusIron: 0, brewEvery: 0, brewDmg: 0, brewRangeBp: 0, brewSpeedBp: 0, brewTicks: 0, brewPerm: 0,
   unstR: 0, unstDmg: 0, tonicDur: 0, tonicCd: 0, tonicOthers: 0, poolN: 0, leadGold: 0, rubberTicks: 0, shrinkEvery: 0,
+  aR: 0, alarmStun: 0, alarmBoss: 0, alarmCd: 0, alarmBrittle: 0,
+  sentryN: 0, sentryEvery: 0, sentryTtl: 0, sentryDmg: 0, sentryPierce: 0, sentryInterval: 60000, sentryRange: 0, sentryDtype: 'sharp',
+  trapMax: 0, trapEvery: 0, trapCharges: 0, trapDmg: 0, ocDur: 0, ocCd: 0, ocBp: 0, ocMax: 0,
+  forgeDmg: 0, heroCamo: 0, anvilDmg: 0, anvilBoss: 0, anvilR: 0, anvilMax: 0, anvilStun: 0, anvilStunBoss: 0, anvilCd: 0,
+  forgeDur: 0, forgeCd: 0, forgeArmor: 0, starDmg: 0, starBoss: 0, starCd: 0, eclipseDur: 0, eclipseBp: 0, eclipseCd: 0,
 };
 
-export const STRING_STATS: ReadonlySet<string> = new Set(['atk', 'pk', 'dtype', 'fragKind', 'fragDtype']);
+export const STRING_STATS: ReadonlySet<string> = new Set(['atk', 'pk', 'dtype', 'fragKind', 'fragDtype', 'sentryDtype']);
 
 export type ModOp = 'add' | 'mul' | 'set' | 'max';
 export interface Mod {

@@ -40,6 +40,8 @@ const towerSchema = z.object({
   desc: z.string(),
   price: z.number().int().positive(),
   radius: z.number().int().positive(),
+  /** Runde 16: Landturm (Vorgabe) oder Wasserturm (nur ganz im Wasser). */
+  placement: z.enum(['land', 'water']).default('land'),
   base: baseSchema,
   paths: z.array(pathSchema).length(3),
 });
@@ -66,7 +68,12 @@ const towersSchema = z.object({
   market: towerSchema,
   thornweaver: towerSchema,
   alchemist: towerSchema,
+  riverkeeper: towerSchema,
+  bellringer: towerSchema,
+  tinker: towerSchema,
   wren: heroSchema,
+  bram: heroSchema,
+  sela: heroSchema,
 });
 
 const ENEMY_TYPES = ['red', 'blue', 'green', 'gold', 'ironshell', 'ember', 'brute', 'leviathan', 'pink', 'frostling', 'crystal', 'gloomship', 'wyrm', 'colossus', 'cruiser', 'duskrunner', 'dreadnought'] as const;
@@ -197,7 +204,8 @@ export interface GameData {
   rbe: Record<EnemyType, number>;
 }
 
-const ALL_TOWERS = ['ranger', 'bombardier', 'frostcaller', 'longshot', 'market', 'thornweaver', 'alchemist'] as const;
+const ALL_TOWERS = ['ranger', 'bombardier', 'frostcaller', 'longshot', 'market', 'thornweaver', 'alchemist', 'riverkeeper', 'bellringer', 'tinker'] as const;
+const ALL_HEROES = ['wren', 'bram', 'sela'] as const;
 
 function check(cond: boolean, msg: string): void {
   if (!cond) throw new Error(`Spieldaten inkonsistent: ${msg}`);
@@ -233,8 +241,10 @@ function load(): GameData {
       }
     }
   }
-  t.wren.levels.forEach((l, i) => check(l.level === i + 1, 'Held-Level nicht fortlaufend'));
-  for (let i = 1; i < 20; i++) check(t.wren.levels[i].xp > t.wren.levels[i - 1].xp, 'Held-XP nicht steigend');
+  for (const h of ALL_HEROES) {
+    t[h].levels.forEach((l, i) => check(l.level === i + 1, `${h}: Held-Level nicht fortlaufend`));
+    for (let i = 1; i < 20; i++) check(t[h].levels[i].xp > t[h].levels[i - 1].xp, `${h}: Held-XP nicht steigend`);
+  }
   // Stat-Werte: Typ muss zum Default passen
   const typeOk = (stat: string, v: unknown): boolean => typeof v === typeof (STAT_DEFAULTS as unknown as Record<string, unknown>)[stat];
   const checkMods = (mods: Mod[], where: string): void => {
@@ -244,7 +254,10 @@ function load(): GameData {
     for (const [stat, v] of Object.entries(t[k].base)) check(typeOk(stat, v), `${k} base ${stat}`);
     t[k].paths.forEach((p) => p.tiers.forEach((tier) => checkMods(tier.mods as Mod[], `${k}/${tier.name}`)));
   }
-  t.wren.levels.forEach((l) => checkMods(l.mods as Mod[], `wren L${l.level}`));
+  for (const h of ALL_HEROES) {
+    for (const [stat, v] of Object.entries(t[h].base)) check(typeOk(stat, v), `${h} base ${stat}`);
+    t[h].levels.forEach((l) => checkMods(l.mods as Mod[], `${h} L${l.level}`));
+  }
 
   // RBE-Baum
   const rbe = {} as Record<EnemyType, number>;
@@ -256,8 +269,11 @@ function load(): GameData {
   for (const e of ENEMY_TYPES) rbe[e] = calc(e, 0);
 
   return {
-    towers: { ranger: t.ranger, bombardier: t.bombardier, frostcaller: t.frostcaller, longshot: t.longshot, market: t.market, thornweaver: t.thornweaver, alchemist: t.alchemist },
-    hero: { wren: t.wren },
+    towers: {
+      ranger: t.ranger, bombardier: t.bombardier, frostcaller: t.frostcaller, longshot: t.longshot, market: t.market, thornweaver: t.thornweaver, alchemist: t.alchemist,
+      riverkeeper: t.riverkeeper, bellringer: t.bellringer, tinker: t.tinker,
+    },
+    hero: { wren: t.wren, bram: t.bram, sela: t.sela },
     enemies,
     rounds,
     difficulties,

@@ -9,6 +9,7 @@ import { DATA } from '../../sim/src/data';
 import { fnv1a64 } from '../../sim/src/hash';
 import { nextInt, seedRng } from '../../sim/src/prng';
 import { challengeTowers, encodeChallenge, normalizeRules, type ChallengeRules } from '../../sim/src/challenge';
+import { getMap } from '../../sim/src/map';
 import type { Difficulty, Tiers, TowerType } from '../../sim/src/types';
 import { MAP_IDS } from './data';
 import type { Profile } from './profile';
@@ -76,7 +77,14 @@ export function dailyChallenge(day: string, maps: readonly string[] = MAP_IDS): 
   const nTowers = pick([2, 3, 4, allTowers.length]);
   const shuffled = [...allTowers];
   for (let i = shuffled.length - 1; i > 0; i--) { const j = nextInt(rng, i + 1); [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]; }
-  const towers = nTowers >= allTowers.length ? null : (shuffled.slice(0, nTowers) as TowerType[]);
+  // Runde 16: Wassertuerme nur auf Karten mit Wasser, und immer mindestens ein angreifender Landturm (Market/Bellringer greifen
+  // nicht an). Ohne weiteren Wurf: aus der gemischten Liste nachruecken, die Reihenfolge der Wuerfe bleibt fest.
+  const hasWater = getMap(map).water.length > 0;
+  const usable = shuffled.filter((t) => hasWater || DATA.towers[t].placement !== 'water');
+  const fighter = (t: TowerType): boolean => DATA.towers[t].base.atk !== 'none' && DATA.towers[t].placement !== 'water';
+  let pickT = usable.slice(0, nTowers) as TowerType[];
+  if (!pickT.some(fighter)) pickT = [...pickT.slice(0, -1), usable.find(fighter) as TowerType];
+  const towers = nTowers >= allTowers.length ? null : pickT;
   const hero = chance(75) ? 'any' : 'none';
   const tierCap = pick([5, 5, 5, 4, 3, 2]);
   const lives = pick([null, null, null, null, 50, 25, 1]);

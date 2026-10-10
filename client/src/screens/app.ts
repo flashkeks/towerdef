@@ -136,7 +136,7 @@ export async function runApp(root: HTMLElement, opts: AppOptions): Promise<AppHa
     const map = ctx.map, mode = ctx.mode;
     const before = store.profile;
     const mo = matchOptions(before, mode);
-    const startOpts: MatchStartOptions = { map, mode, difficulty, unlocks: mo.unlocks, towerXp: mo.towerXp, mods: mo.mods, powers: mo.powers, lockInfo: lockInfo(before) };
+    const startOpts: MatchStartOptions = { map, mode, difficulty, unlocks: mo.unlocks, towerXp: mo.towerXp, mods: mo.mods, powers: mo.powers, hero: mo.hero, lockInfo: lockInfo(before) };
     view?.dispose?.();
     view = null;
     let outcome;
@@ -170,7 +170,7 @@ export async function runApp(root: HTMLElement, opts: AppOptions): Promise<AppHa
     const before = store.profile;
     const mo = matchOptions(before);
     const code = encodeChallenge(rules);
-    const startOpts: MatchStartOptions = { map: rules.map, mode: 'standard', difficulty: rules.difficulty, rules, unlocks: undefined, towerXp: undefined, mods: mo.mods, powers: rules.noPowers ? {} : mo.powers, lockInfo: {} };
+    const startOpts: MatchStartOptions = { map: rules.map, mode: 'standard', difficulty: rules.difficulty, rules, unlocks: undefined, towerXp: undefined, mods: mo.mods, powers: rules.noPowers ? {} : mo.powers, hero: mo.hero, lockInfo: {} };
     const back = (): void => ctx.go(source.from === 'editor' ? { name: 'challenge-edit', rules } : { name: 'challenges', code: source.kind === 'custom' ? code : undefined });
     view?.dispose?.();
     view = null;

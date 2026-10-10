@@ -72,48 +72,54 @@ export function previewCanvas(id: string, scale: number, cls = ''): HTMLElement 
   return box;
 }
 
-/** Eine Kachel der Kartenwahl. */
-function mapTile(ctx: Ctx, p: Profile, m: MapMeta): HTMLElement {
+/** Eine Kachel der Kartenwahl (Runde 16 H: kompakt, Medaillen als Symbole, Schloss mit Bedingung, `next` = naechste Freischaltung). */
+function mapTile(ctx: Ctx, p: Profile, m: MapMeta, scale: number, next: boolean): HTMLElement {
   const lock = mapLock(p, m.id);
   const medals = medalsOf(p, m.id);
   const all = medals.easy && medals.medium && medals.hard;
-  const tile = h('button', `maptile tier-${m.tier} ${lock.unlocked ? '' : 'locked'} ${all ? 'gold' : ''}`.trim());
+  const tile = h('button', `maptile tier-${m.tier} ${lock.unlocked ? '' : 'locked'} ${all ? 'gold' : ''} ${next ? 'next' : ''}`.trim());
   tile.dataset.map = m.id;
+  tile.style.width = `${160 * scale}px`;
   tile.disabled = !lock.unlocked;
   const art = h('div', 'mt-art');
-  art.append(previewCanvas(m.id, 2, lock.unlocked ? '' : 'dim'));
+  art.append(previewCanvas(m.id, scale, lock.unlocked ? '' : 'dim'));
   art.append(h('div', 'mt-tier', S.maps.tier[m.tier] ?? m.tierName));
-  if (all) {
+  if (next) art.append(h('div', 'mt-next', S.maps.next));
+  else if (all) {
     const tag = h('div', 'mapflag');
     tag.append(cv(icon('star'), 2), h('span', '', S.maps.allMedals));
     art.append(tag);
   }
   if (!lock.unlocked) {
     const l = h('div', 'mt-lock');
-    l.append(cv(icon('lock'), 3), h('span', '', mapLockText(m)));
+    l.append(cv(icon('lock'), 2), h('span', '', mapLockText(m)));
     art.append(l);
   }
   const info = h('div', 'mt-info');
-  info.append(h('div', 'map-name', m.name), h('div', 'mt-sub', S.maps.rounds(END_ROUND.easy, END_ROUND.medium, END_ROUND.hard)));
+  const top = h('div', 'mt-row');
+  top.append(h('div', 'map-name', m.name));
   const row = h('div', 'medals');
   for (const d of DIFFICULTIES) {
     const mm = h('div', `medal ${medals[d] ? 'on' : 'off'}`);
     mm.dataset.diff = d;
     const best = bestOf(p, m.id, d);
-    mm.append(cv(medal(MEDAL_OF[d], medals[d]), 2), h('div', 'medal-d', S.home.difficulty[d]), h('div', 'medal-b num', best ? `Best R${best.round}` : '-'));
-    mm.title = best ? S.home.best(best.round) : S.home.noBest;
+    mm.append(cv(medal(MEDAL_OF[d], medals[d]), 2), h('div', 'medal-b num', best ? `R${best.round}` : '-'));
+    mm.title = `${S.home.difficulty[d]}: ${best ? S.home.best(best.round) : S.home.noBest}`;
     row.append(mm);
   }
-  const modeTotal = (MODE_IDS.length - 1) * 3;
-  info.append(row);
+  top.append(row);
+  info.append(top);
   // Runde 15b: Bestrunde im Freeplay je Karte
   const fp = p.freeplayBest[m.id] ?? 0;
-  info.append(h('div', `mt-free num ${fp ? 'on' : ''}`.trim(), fp ? S.maps.freeplayBest(fp) : S.maps.freeplayNone));
-  art.append(h('div', 'mt-modes num', S.maps.modeMedals(countModeMedals(p, m.id), modeTotal)));
+  const modeTotal = (MODE_IDS.length - 1) * 3;
+  info.append(h('div', `mt-free num ${fp ? 'on' : ''}`.trim(), `${fp ? S.maps.freeplayBest(fp) : S.maps.freeplayNone} \u00b7 ${S.maps.modeMedals(countModeMedals(p, m.id), modeTotal)}`));
   tile.append(art, info);
   tile.onclick = () => { if (lock.unlocked) { ctx.sound('click'); ctx.map = m.id; ctx.go({ name: 'setup', map: m.id }); } else ctx.sound('error'); };
   return tile;
 }
+
+/** Reiter der Kartenwahl: zuletzt gewaehlte Stufe bleibt beim Zurueckkommen erhalten. */
+let lastTier = '';
 
 /** Medaillen der Zusatzmodi auf einer Karte (ohne Standard). */
 export function countModeMedals(p: Profile, map: string): number {
@@ -142,12 +148,41 @@ export function homeView(ctx: Ctx): View {
   embers.el.classList.add('home-embers');
   top.append(logo, embers.el, head);
 
-  // ---- Mitte: Kartenwahl (Runde 15): drei Kacheln mit Vorschau, Stufe, Medaillen und Schloss
+  // ---- Mitte: Kartenwahl (Runde 16 H): Reiter je Stufe (Beginner bis Expert), darunter die Kacheln dieser Stufe.
+  // Gesperrte Karten bleiben sichtbar (Schloss + Bedingung), die naechste Freischaltung ist hervorgehoben.
   const mid = h('div', 'mid maps');
-  mid.append(h('div', 'h2', S.maps.title));
+  const tiers = [...new Set(MAPS.map((m) => m.tier))];
+  const nextMap = MAPS.find((m) => !mapLock(p, m.id).unlocked);
+  const firstTier = nextMap?.tier ?? MAPS[0].tier; // alles offen: bei Beginner anfangen
+  let tier = tiers.includes(lastTier as MapMeta['tier']) ? lastTier : firstTier;
+  // grosse Fenster (1920x1080): Vorschau dreifach statt zweifach vergroessert, sonst 2
+  const scale = window.innerWidth >= 1600 && window.innerHeight >= 900 ? 3 : 2;
+  const head2 = h('div', 'maps-head');
+  head2.append(h('div', 'h2', S.maps.title));
+  const tabs = h('div', 'maptabs');
+  tabs.setAttribute('role', 'tablist');
   const grid = h('div', 'maptiles');
-  for (const m of MAPS) grid.append(mapTile(ctx, p, m));
-  mid.append(grid);
+  const tabBtns = new Map<string, HTMLButtonElement>();
+  const fill = (): void => {
+    for (const [t, b] of tabBtns) { b.classList.toggle('on', t === tier); b.setAttribute('aria-selected', String(t === tier)); }
+    // nur die Kacheln der sichtbaren Stufe bauen: ihre Vorschauen kommen in der Malschlange zuerst dran
+    grid.replaceChildren(...MAPS.filter((m) => m.tier === tier).map((m) => mapTile(ctx, p, m, scale, m === nextMap)));
+  };
+  for (const t of tiers) {
+    const maps = MAPS.filter((m) => m.tier === t);
+    const open = maps.filter((m) => mapLock(p, m.id).unlocked).length;
+    const b = h('button', 'maptab');
+    b.dataset.tier = t;
+    b.setAttribute('role', 'tab');
+    b.append(h('span', 'mtab-n', S.maps.tier[t] ?? t), h('span', `mtab-c num ${open === maps.length ? 'full' : ''}`.trim(), `${open}/${maps.length}`));
+    if (nextMap?.tier === t) b.append(h('i', 'mtab-dot'));
+    b.onclick = () => { ctx.sound('click'); tier = t; lastTier = t; fill(); };
+    tabBtns.set(t, b);
+    tabs.append(b);
+  }
+  head2.append(tabs);
+  fill();
+  mid.append(head2, grid);
 
   // ---- Fuss: Navigation und Aufstellung
   const foot = h('footer', 'foot');
@@ -169,11 +204,11 @@ export function homeView(ctx: Ctx): View {
   const line = h('div', 'lineup');
   line.append(h('div', 'h2', S.home.lineup));
   const crew = h('div', 'crew');
-  const names: Record<string, string> = { ranger: 'Ranger', bombardier: 'Bombardier', frostcaller: 'Frostcaller', longshot: 'Longshot', market: 'Lantern Market', thornweaver: 'Thornweaver', alchemist: 'Alchemist', wren: 'Wren' };
+  const names: Record<string, string> = { ranger: 'Ranger', bombardier: 'Bombardier', frostcaller: 'Frostcaller', longshot: 'Longshot', market: 'Lantern Market', thornweaver: 'Thornweaver', alchemist: 'Alchemist', riverkeeper: 'Riverkeeper', bellringer: 'Bellringer', tinker: 'Tinker', wren: 'Wren', bram: 'Bram', sela: 'Sela' };
   for (const id of [...TOWER_TYPES, 'wren'] as (TowerType | HeroType)[]) {
     const ok = isTowerUnlocked(p, id);
     const c = h('div', `crew-i ${ok ? '' : 'locked'}`);
-    const port = id === 'wren' ? heroPortrait() : towerPortrait(id);
+    const port = id === 'wren' || id === 'bram' || id === 'sela' ? heroPortrait() : towerPortrait(id);
     const art = cv(port, 2, ok ? '' : 'dim');
     c.append(art, h('div', 'crew-n', names[id]));
     if (!ok) {

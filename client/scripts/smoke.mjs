@@ -16,7 +16,25 @@ try {
   await page.goto(url + '?debug');
   await page.waitForSelector('.maptile[data-map="meadow"]', { timeout: 20000 });
   check(true, 'Startbildschirm da (Kartenwahl)');
-  check(await page.locator('.maptile').count() === 3, 'Kartenwahl zeigt drei Karten');
+  // Runde 16 H: Reiter je Stufe, nur die Kacheln der gewaehlten Stufe stehen im DOM; alle sichtbaren Vorschauen werden gemalt
+  check(await page.locator('.maptab').count() === 4, 'Kartenwahl: vier Reiter (Beginner bis Expert)');
+  const nTiles = await page.locator('.maptile').count();
+  check(nTiles >= 2 && nTiles <= 3, `Kartenwahl zeigt die Karten einer Stufe (${nTiles})`);
+  await page.waitForFunction(() => document.querySelectorAll('.maptile canvas.pv').length >= document.querySelectorAll('.maptile').length, null, { timeout: 60000 });
+  check(true, 'Vorschauen der sichtbaren Kacheln gemalt');
+  // ?debug schaltet alles frei: fuer die Schloss-Pruefung kurz echtes Profil (Level 1), danach wieder alles offen
+  const setUnlockAll = (on) => page.evaluate(async (v) => { const s = __app.store; await s.update({ ...s.profile, settings: { ...s.profile.settings, unlockAll: v } }); __app.go({ name: 'home' }); }, on);
+  await setUnlockAll(false);
+  await page.waitForSelector('.maptab[data-tier="expert"]');
+  await page.click('.maptab[data-tier="expert"]');
+  await page.waitForSelector('.maptile[data-map="spire"]');
+  check(await page.locator('.maptile.locked[data-map="spire"]').count() === 1 && await page.locator('.mt-lock').count() >= 1, 'Expert-Reiter: gesperrte Karten mit Schloss sichtbar');
+  const homeFit = await page.evaluate(() => { const sc = document.querySelector('.dw-screens'); return sc.scrollHeight <= sc.clientHeight + 1; });
+  check(homeFit, 'Startseite 1280x720 ohne Scrollen');
+  await setUnlockAll(true);
+  await page.waitForSelector('.maptab[data-tier="beginner"]');
+  await page.click('.maptab[data-tier="beginner"]');
+  await page.waitForSelector('.maptile[data-map="meadow"]:not(.locked)');
   await page.click('.maptile[data-map="meadow"]');
   await page.waitForSelector('.app-play');
   await page.click('.diff[data-diff="easy"]');
@@ -136,7 +154,7 @@ try {
   await p3.waitForSelector('.knode');
   check(await p3.evaluate(() => __audio.ctxState) !== null, 'erster Klick im Menue erzeugt den AudioContext');
   check(await p3.evaluate(() => __audio.log.includes('ui.click')), 'Klick-Ton im Menue ausgeloest');
-  check(await p3.locator('.knode').count() === 40, 'Wissensbaum zeigt 40 Knoten');
+  check(await p3.locator('.knode').count() === 46, 'Wissensbaum zeigt 46 Knoten (Runde 16: +6 fuer Riverkeeper/Bellringer/Tinker/Helden)');
   check(await p3.locator('.kband').count() === 5, 'Wissensbaum zeigt fuenf Aeste');
   check(await p3.evaluate(() => { const sc = document.querySelector('.dw-screens'); return sc.scrollWidth <= sc.clientWidth; }), 'Wissensbaum bei 1280 x 720 ohne Quer-Scrollen');
   check(await p3.evaluate(() => { const sc = document.querySelector('.dw-screens'); return sc.scrollHeight <= sc.clientHeight; }), 'Wissensbaum bei 1280 x 720 ohne Scrollen (alle Aeste auf einer Flaeche)');
@@ -199,7 +217,7 @@ try {
   await p4.mouse.click(...vis);
   await p4.waitForSelector('.knode.bought');
   await p4.waitForTimeout(250);
-  check(await p4.evaluate(() => { const sc = document.querySelector('.dw-screens'); return sc.scrollTop === 0 && document.querySelectorAll('.knode').length === 40; }), 'Wissensbaum nach einem Kauf neu gezeichnet, weiter ohne Scrollen');
+  check(await p4.evaluate(() => { const sc = document.querySelector('.dw-screens'); return sc.scrollTop === 0 && document.querySelectorAll('.knode').length === 46; }), 'Wissensbaum nach einem Kauf neu gezeichnet, weiter ohne Scrollen');
   await p4.click('.subtop .btn-small');
   await p4.click('.maptile[data-map="meadow"]');
   await p4.waitForSelector('.app-play');
@@ -236,6 +254,28 @@ try {
   await p4.evaluate(() => { const r = __dw.r; r.handle({ type: 'gate', tick: 0, enemy: 1, etype: 'red' }); r.handle({ type: 'heal', tick: 0, tower: 0, lives: 1 }); r.handle({ type: 'bounty', tick: 0, tower: 1, x: 200000, y: 200000, gold: 40, reason: 'lead' }); });
   await p4.waitForTimeout(500);
   check(err4.length === 0, `keine Konsolenfehler mit Thornweaver/Alchemist (${err4.join(' | ')})`);
+
+  // Runde 16 E: Challenges von der Startseite (Hub, Editor ohne Scrollen mit neuen Tuermen, Tages-Challenge startet ein Match mit Regeln)
+  const p5 = await browser.newPage({ viewport: { width: 1280, height: 720 } });
+  const err5 = watchErrors(p5);
+  const toHub = async () => {
+    await p5.goto(url + '?debug');
+    await p5.waitForSelector('.maptile');
+    await p5.locator('.navbtn', { hasText: 'Challenges' }).click();
+    await p5.waitForSelector('.scr.challenges .btn-big.play');
+  };
+  await toHub();
+  check(true, 'Challenges-Seite von der Startseite erreichbar');
+  await p5.click('[data-act="create"]');
+  await p5.waitForSelector('[data-tower="tinker"]');
+  check(await p5.evaluate(() => { const sc = document.querySelector('.dw-screens'); return sc.scrollHeight <= sc.clientHeight + 1 && sc.scrollWidth <= sc.clientWidth + 1; }), 'Challenge-Editor bei 1280 x 720 ohne Scrollen, neue Tuerme dabei');
+  await toHub();
+  await p5.click('.scr.challenges .btn-big.play');
+  await p5.waitForSelector('.m-canvas', { timeout: 20000 });
+  await p5.waitForFunction(() => !!window.__dw?.game?.info?.rules, null, { timeout: 5000 });
+  check(true, 'Tages-Challenge startet ein Match mit Regeln');
+  await p5.waitForTimeout(500);
+  check(err5.length === 0, `keine Konsolenfehler in Challenges (${err5.join(' | ')})`);
 } finally {
   await browser.close();
   stop();

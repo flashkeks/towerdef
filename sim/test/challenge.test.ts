@@ -215,3 +215,19 @@ describe('Code', () => {
     expect(Object.keys(DATA.enemies)[0]).toBe('red');
   });
 });
+
+describe('Challenge und Held (Runde 16 T + E)', () => {
+  it('fester Held der Challenge schlaegt die Wahl des Spielers, andere Helden sind gesperrt', () => {
+    const g = mk({ hero: 'sela', startCash: 5000 }, { hero: 'bram' });
+    expect(g.info.hero).toBe('sela');
+    expect(put(g, 'wren')).toMatchObject({ ok: false });
+  });
+  it("'any' nimmt den Helden des Spielers, Code-Rundlauf mit Bram/Sela", () => {
+    expect(mk({ hero: 'any' }, { hero: 'bram' }).info.hero).toBe('bram');
+    expect(mk({ hero: 'any' }).info.hero).toBe('wren');
+    for (const hero of ['bram', 'sela'] as const) {
+      const r = { ...defaultRules('marsh'), hero };
+      expect(decodeChallenge(encodeChallenge(r)).hero).toBe(hero);
+    }
+  });
+});
