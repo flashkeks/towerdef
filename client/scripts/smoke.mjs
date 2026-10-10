@@ -16,7 +16,25 @@ try {
   await page.goto(url + '?debug');
   await page.waitForSelector('.maptile[data-map="meadow"]', { timeout: 20000 });
   check(true, 'Startbildschirm da (Kartenwahl)');
-  check(await page.locator('.maptile').count() === 3, 'Kartenwahl zeigt drei Karten');
+  // Runde 16 H: Reiter je Stufe, nur die Kacheln der gewaehlten Stufe stehen im DOM; alle sichtbaren Vorschauen werden gemalt
+  check(await page.locator('.maptab').count() === 4, 'Kartenwahl: vier Reiter (Beginner bis Expert)');
+  const nTiles = await page.locator('.maptile').count();
+  check(nTiles >= 2 && nTiles <= 3, `Kartenwahl zeigt die Karten einer Stufe (${nTiles})`);
+  await page.waitForFunction(() => document.querySelectorAll('.maptile canvas.pv').length >= document.querySelectorAll('.maptile').length, null, { timeout: 60000 });
+  check(true, 'Vorschauen der sichtbaren Kacheln gemalt');
+  // ?debug schaltet alles frei: fuer die Schloss-Pruefung kurz echtes Profil (Level 1), danach wieder alles offen
+  const setUnlockAll = (on) => page.evaluate(async (v) => { const s = __app.store; await s.update({ ...s.profile, settings: { ...s.profile.settings, unlockAll: v } }); __app.go({ name: 'home' }); }, on);
+  await setUnlockAll(false);
+  await page.waitForSelector('.maptab[data-tier="expert"]');
+  await page.click('.maptab[data-tier="expert"]');
+  await page.waitForSelector('.maptile[data-map="spire"]');
+  check(await page.locator('.maptile.locked[data-map="spire"]').count() === 1 && await page.locator('.mt-lock').count() >= 1, 'Expert-Reiter: gesperrte Karten mit Schloss sichtbar');
+  const homeFit = await page.evaluate(() => { const sc = document.querySelector('.dw-screens'); return sc.scrollHeight <= sc.clientHeight + 1; });
+  check(homeFit, 'Startseite 1280x720 ohne Scrollen');
+  await setUnlockAll(true);
+  await page.waitForSelector('.maptab[data-tier="beginner"]');
+  await page.click('.maptab[data-tier="beginner"]');
+  await page.waitForSelector('.maptile[data-map="meadow"]:not(.locked)');
   await page.click('.maptile[data-map="meadow"]');
   await page.waitForSelector('.app-play');
   await page.click('.diff[data-diff="easy"]');

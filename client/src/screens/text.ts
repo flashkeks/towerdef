@@ -45,6 +45,7 @@ export const S = {
     modeMedals: (n: number, of: number): string => `Mode medals ${n}/${of}`,
     lockedBy: (level: number, prev: string, d: string): string => `Reach level ${level} or earn ${d} on ${prev}`,
     allMedals: 'All medals earned',
+    next: 'Next unlock',
   },
   setup: {
     change: 'Maps',

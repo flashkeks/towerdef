@@ -18,7 +18,7 @@ async function open(q = '?debug&seed=7') {
   errorsAll.push(watchErrors(page));
   await page.goto(url + q);
   await page.waitForSelector('.maptile', { timeout: 20000 });
-  await page.waitForFunction(() => document.querySelectorAll('.maptile canvas.pv').length === 3, null, { timeout: 60000 });
+  await page.waitForFunction(() => (document.querySelectorAll('.maptile').length > 0 && document.querySelectorAll('.maptile canvas.pv').length >= document.querySelectorAll('.maptile').length), null, { timeout: 60000 });
   return page;
 }
 async function startMatch(page, { map = 'meadow', diff = 'easy' } = {}) {
@@ -41,7 +41,7 @@ if (want('menu') || want('setup')) {
   });
   await page.evaluate(() => __app.go({ name: 'home' }));
   await page.waitForSelector('.maptile');
-  await page.waitForFunction(() => document.querySelectorAll('.maptile canvas.pv').length === 3, null, { timeout: 60000 });
+  await page.waitForFunction(() => (document.querySelectorAll('.maptile').length > 0 && document.querySelectorAll('.maptile canvas.pv').length >= document.querySelectorAll('.maptile').length), null, { timeout: 60000 });
   await page.waitForTimeout(300);
   if (want('menu')) { await shot(page, 'd-kartenwahl'); console.log('menu'); }
   if (want('setup')) {
