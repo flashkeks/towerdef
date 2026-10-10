@@ -10,6 +10,7 @@ import { paintFrostfen } from './frostfen';
 import { paintQuarry } from './quarry';
 import { paintDunes } from './dunes';
 import { paintHarbor } from './harbor';
+import { paintSpire } from './spire';
 import { ambientPoints, smokePoints } from './ambient';
 import { bayer } from './buf';
 import type { MapArt, MapId } from './types';
@@ -30,7 +31,7 @@ function meadowAsMap(): MapArt {
 export function mapArt(id: MapId): MapArt {
   let a = cache.get(id);
   if (!a) {
-    a = id === 'meadow' ? meadowAsMap() : id === 'frostfen' ? paintFrostfen() : id === 'quarry' ? paintQuarry() : id === 'dunes' ? paintDunes() : id === 'harbor' ? paintHarbor() : (() => { throw new Error('Karte noch nicht gemalt: ' + id); })();
+    a = id === 'meadow' ? meadowAsMap() : id === 'frostfen' ? paintFrostfen() : id === 'quarry' ? paintQuarry() : id === 'dunes' ? paintDunes() : id === 'harbor' ? paintHarbor() : id === 'spire' ? paintSpire() : (() => { throw new Error('Karte noch nicht gemalt: ' + id); })();
     cache.set(id, a);
   }
   return a;

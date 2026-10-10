@@ -61,10 +61,10 @@ const P = (kind: HarborKind, x: number, y: number, v = 0): HarborProp => ({ kind
 
 const HAND: HarborProp[] = [
   // Tore
-  P('gatetower', 20, 24), P('gatetower', 20, 74), P('gatetower', 552, 22), P('gatetower', 608, 22), P('gatetower', 622, 298), P('gatetower', 622, 353),
+  P('gatetower', 20, 24), P('gatetower', 552, 22), P('gatetower', 608, 22), P('gatetower', 622, 298), P('crate', 626, 342), P('barrel', 612, 346),
   // Westviertel: Fischer und Wirtshaus
   P('cottage', 54, 100, 0), P('house', 54, 138, 1), P('tavern', 52, 182, 0), P('cottage', 48, 222, 2), P('net', 78, 208), P('barrel', 26, 118), P('crate', 28, 200),
-  P('lamp', 82, 66), P('lamp', 84, 160),
+  P('lamp', 82, 80), P('lamp', 84, 160),
   // Altstadt: obere Reihe, Platz, Kaihaeuser
   P('house', 150, 52, 0), P('house', 186, 52, 2), P('house', 224, 52, 1), P('tavern', 268, 54, 1), P('house', 314, 52, 3), P('house', 354, 52, 0),
   P('cottage', 160, 104, 2), P('house', 160, 150, 3), P('cottage', 354, 104, 1), P('house', 354, 150, 2), P('house', 204, 104, 1), P('cottage', 316, 104, 3), P('house', 204, 152, 0), P('cottage', 312, 152, 2),
@@ -75,14 +75,14 @@ const HAND: HarborProp[] = [
   P('house', 612, 100, 3), P('house', 612, 150, 0), P('lamp', 600, 120), P('cottage', 608, 200, 1),
   // Ostkai: Zollhaus, Leuchtturm, Kran
   P('customs', 584, 214), P('lighthouse', 596, 288), P('crane', 560, 262), P('crate', 548, 238), P('crate', 556, 244), P('barrel', 572, 250), P('lamp', 550, 200), P('lamp', 548, 282),
-  P('lamp', 500, 214), P('crane', 476, 214), P('bollard', 464, 206), P('bollard', 492, 206),
+  P('lamp', 498, 232), P('bollard', 464, 206), P('bollard', 492, 206),
   // Kai: Poller, Laternen, Kisten, Netze
   P('lamp', 140, 207), P('lamp', 270, 207), P('lamp', 382, 207), P('lamp', 206, 211), P('lamp', 332, 211), P('lamp', 440, 211), P('bollard', 112, 207), P('bollard', 160, 208), P('bollard', 214, 208), P('bollard', 300, 208), P('bollard', 342, 208), P('bollard', 430, 208),
-  P('crate', 176, 210), P('barrel', 186, 210), P('net', 226, 210), P('coil', 316, 210), P('anchor', 410, 210), P('crate', 350, 211), P('barrel', 360, 211),
+  P('crate', 176, 210), P('barrel', 186, 210), P('coil', 316, 210), P('anchor', 410, 210), P('crate', 350, 211), P('barrel', 360, 211),
   // Schiffe, vertaeut an den Stegen
   P('ship', 216, 268, 0), P('ship', 322, 262, 1), P('ship', 98, 262, 2), P('ship', 426, 258, 2), P('rowboat', 150, 252), P('rowboat', 392, 262), P('rowboat', 262, 296),
   // Suedrand
-  P('lamp', 530, 338), P('crate', 560, 338), P('barrel', 572, 340), P('crate', 590, 340), P('net', 610, 340),
+  P('lamp', 548, 300), P('crate', 560, 342), P('barrel', 572, 344), P('crate', 590, 344),
 ];
 export const HB_PROPS: HarborProp[] = [...HAND].sort((a, b) => a.y - b.y);
 void scatterProps; void pathDistAll;

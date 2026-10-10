@@ -139,10 +139,10 @@ function tavern(v: number): PropArt {
 
 function warehouse(v: number): PropArt {
   const len = [134, 72, 54][v] ?? 72;
-  const W = len + 8, H = 46;
+  const W = len + 8, H = 36;
   const b = mk(W, H);
   const R = ROOFS[0];
-  const wl = 4, wr = W - 5, wallTop = 22, wallBot = H - 3;
+  const wl = 4, wr = W - 5, wallTop = 15, wallBot = H - 3;
   // Bretterwand mit Querleisten
   for (let y = wallTop; y <= wallBot; y++) for (let x = wl; x <= wr; x++) {
     const i = x - wl;
@@ -152,24 +152,21 @@ function warehouse(v: number): PropArt {
     b.set(x, y, c);
   }
   b.rect(wl, wallBot - 1, wr - wl + 1, 2, STONE.mid);
-  // Tore: je ~36 px ein grosses Doppeltor mit Eisenbaendern
+  // Tore: je ~44 px ein grosses Doppeltor mit Eisenbaendern
   const gates = Math.max(1, Math.round(len / 44));
   for (let g = 0; g < gates; g++) {
     const gx = Math.round(wl + (len / gates) * (g + 0.5)) - 9;
-    b.rect(gx - 1, wallTop + 4, 20, wallBot - wallTop - 4, C.night);
-    b.rect(gx, wallTop + 5, 18, wallBot - wallTop - 5, C.wood); b.rect(gx, wallTop + 5, 9, wallBot - wallTop - 5, C.tan); b.rect(gx + 9, wallTop + 5, 1, wallBot - wallTop - 5, C.bark);
-    for (const y of [wallTop + 9, wallBot - 6]) b.rect(gx, y, 18, 1, C.slate);
-    b.line(gx + 1, wallTop + 6, gx + 8, wallBot - 3, C.bark); b.line(gx + 17, wallTop + 6, gx + 10, wallBot - 3, C.bark);
-    // Lampe ueber dem Tor
-    b.rect(gx + 8, wallTop + 1, 3, 3, C.night); b.set(gx + 9, wallTop + 2, C.amber);
+    b.rect(gx - 1, wallTop + 3, 20, wallBot - wallTop - 3, C.night);
+    b.rect(gx, wallTop + 4, 18, wallBot - wallTop - 4, C.wood); b.rect(gx, wallTop + 4, 9, wallBot - wallTop - 4, C.tan); b.rect(gx + 9, wallTop + 4, 1, wallBot - wallTop - 4, C.bark);
+    for (const y of [wallTop + 7, wallBot - 5]) b.rect(gx, y, 18, 1, C.slate);
+    b.line(gx + 1, wallTop + 5, gx + 8, wallBot - 3, C.bark); b.line(gx + 17, wallTop + 5, gx + 10, wallBot - 3, C.bark);
+    b.rect(gx + 8, wallTop, 3, 3, C.night); b.set(gx + 9, wallTop + 1, C.amber); // Lampe ueber dem Tor
   }
-  // Luke und Haken
-  b.rect(wr - 14, wallTop - 1, 8, 8, C.night); b.rect(wr - 13, wallTop, 6, 6, C.dusk);
-  tileRoof(b, Math.floor(W / 2), 5, wallTop, Math.floor(len / 2) - 6, Math.floor(len / 2) + 4, R, 60 + v);
-  b.rect(Math.floor(W / 2) - Math.floor(len / 2) + 6, 5, len - 12, 1, R.light);
+  // niedriges Satteldach (nur 11 px hoch), Hebebalken
+  tileRoof(b, Math.floor(W / 2), 3, wallTop, Math.floor(len / 2) - 4, Math.floor(len / 2) + 4, R, 60 + v);
+  b.rect(Math.floor(W / 2) - Math.floor(len / 2) + 4, 3, len - 8, 1, R.light);
   b.rect(wl, wallTop, wr - wl + 1, 1, R.dark);
-  // Hebebalken mit Seil
-  if (len >= 72) { b.rect(wl + 8, 8, 12, 2, TIMBER.mid); b.rect(wl + 8, 8, 12, 1, TIMBER.light); b.line(wl + 9, 10, wl + 9, 19, C.stone); b.rect(wl + 8, 19, 3, 2, C.slate); }
+  if (len >= 72) { b.rect(wr - 12, 1, 9, 2, TIMBER.mid); b.rect(wr - 12, 1, 9, 1, TIMBER.light); b.line(wr - 11, 3, wr - 11, 12, C.stone); b.rect(wr - 12, 12, 3, 2, C.slate); }
   b.outline(C.ink);
   return { buf: b, ax: Math.floor(W / 2), ay: wallBot + 1, shadow: { ox: 9, oy: -1, rx: Math.floor(W / 2) + 2, ry: 6 }, hook: { x: 0, y: -(wallBot + 1) + 4 } };
 }

@@ -53,7 +53,7 @@ const HAND: DunesProp[] = [
   P('well', 140, 196), P('banner', 150, 112), P('cart', 124, 262), P('tent', 52, 266, 1), P('camel', 90, 276, 1), P('torch', 84, 250), P('jar', 20, 288, 1),
   P('cactus', 142, 232, 0), P('cactusround', 150, 252, 0), P('rock', 160, 130, 0),
   // Ruinentor vor der Kreuzung (Mitte)
-  P('columnbroken', 218, 176, 0), P('columnfallen', 262, 197, 0), P('torch', 238, 176), P('column', 224, 202, 0),
+  P('columnbroken', 218, 176, 0), P('columnfallen', 262, 197, 0), P('torch', 240, 198), P('column', 224, 202, 0),
   // Ruinen im Norden (Mitte oben)
   P('arch', 322, 118), P('ruinwall', 272, 84, 0), P('statue', 356, 80), P('ruinwall', 372, 112, 1), P('cactus', 292, 112, 1), P('shrub', 312, 78, 0), P('bones', 266, 126, 0),
   // Tempel im Osten
@@ -63,8 +63,8 @@ const HAND: DunesProp[] = [
   P('mesa', 304, 308, 0), P('mesa', 476, 322, 1), P('mesa', 600, 316, 2), P('camel', 372, 300, 1), P('camel', 398, 308, 0), P('boulder', 540, 302, 0), P('cactus', 440, 296, 2),
   P('crate', 358, 290, 0), P('jar', 348, 298, 0), P('deadtree', 262, 290, 0), P('cactus', 270, 258, 0), P('rock', 330, 264, 1), P('palmsmall', 420, 330, 0),
   // Norden und Osten
-  P('rock', 470, 20, 2), P('rock', 380, 22, 0), P('boulder', 560, 18, 0), P('deadtree', 440, 74, 1), P('cactus', 520, 76, 1), P('cactus', 626, 74, 0), P('rock', 622, 120, 1), P('mesa', 618, 214, 1),
-  P('deadtree', 610, 150, 0), P('shrub', 420, 124, 0), P('cactusround', 560, 128, 1), P('rock', 360, 152, 1), P('boulder', 28, 316, 0), P('deadtree', 170, 340, 1), P('rock', 210, 340, 1), P('cactus', 230, 296, 1),
+  P('rock', 470, 20, 2), P('rock', 380, 22, 0), P('boulder', 560, 18, 0), P('rock', 440, 72, 1), P('cactus', 520, 76, 1), P('cactus', 626, 74, 0), P('rock', 622, 120, 1), P('mesa', 618, 214, 1),
+  P('deadtree', 610, 150, 0), P('shrub', 420, 124, 0), P('cactusround', 560, 128, 1), P('rock', 360, 152, 1), P('boulder', 28, 316, 0), P('rock', 170, 342, 1), P('rock', 210, 340, 1), P('cactus', 230, 296, 1),
 ];
 
 /** Streu: trockene Struppen, Steinchen, Kakteen, Knochen auf freiem Sand (fester Seed). */
