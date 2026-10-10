@@ -16,7 +16,8 @@ describe('Gegner-Darstellung (Runde 15 C)', () => {
       expect(ENEMY_LOOK[t], t).toBeTruthy();
       expect(ENEMY_NAMES[t], t).toBeTruthy();
     }
-    expect(ALL).toHaveLength(14);
+    expect(ALL).toHaveLength(17);
+    for (const t of ['cruiser', 'duskrunner', 'dreadnought'] as const) expect(ENEMY_LOOK[t].barAlways, t).toBe(true);
   });
   it('Bosse und Blimps zeigen den Lebensbalken immer, Gloomship hat einen eigenen Schatten', () => {
     for (const t of ['leviathan', 'wyrm', 'colossus', 'gloomship'] as const) expect(ENEMY_LOOK[t].barAlways, t).toBe(true);
@@ -126,7 +127,7 @@ describe('Modus-Regeln im Match', () => {
     expect(modeAllows('no-hero', 'wren')).toBe(false);
     expect(MODES.deflation.powers).toBe(false);
     const g = createGame({ map: 'quarry', mode: 'deflation', difficulty: 'medium', seed: 1 });
-    expect(g.info.baseRound).toBe(19);
+    expect(g.info.baseRound).toBe(49); // Runde 15b: Medium endet bei R60, Deflation startet bei R50
     expect(g.state.cash).toBe(20000);
   });
   it('Texte fuer Modus-Sperren und Boss-Banner existieren', () => {

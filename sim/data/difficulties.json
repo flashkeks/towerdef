@@ -6,7 +6,8 @@
   "bossHp": 200,
   "startCash": 650,
   "popCash": 2,
-  "towerXpBp": 10000
+  "towerXpBp": 10000,
+  "endRound": 40
  },
  "medium": {
   "lives": 150,
@@ -15,7 +16,8 @@
   "bossHp": 300,
   "startCash": 650,
   "popCash": 2,
-  "towerXpBp": 11000
+  "towerXpBp": 11000,
+  "endRound": 60
  },
  "hard": {
   "lives": 100,
@@ -24,6 +26,7 @@
   "bossHp": 400,
   "startCash": 650,
   "popCash": 2,
-  "towerXpBp": 12000
+  "towerXpBp": 12000,
+  "endRound": 80
  }
 }

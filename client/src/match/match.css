@@ -413,3 +413,9 @@ kbd { font: 700 10px var(--font-num); background: var(--ink); color: var(--silve
 .m-card.mode-off { filter: grayscale(1) brightness(.8); }
 .m-card.mode-off .m-lock { background: rgba(24,20,37,.78); }
 .pw-off { padding: 24px 12px; text-align: center; font: 700 15px var(--font-num); letter-spacing: .06em; color: var(--stone); }
+
+/* Runde 15b: Freeplay (Max, 10.10.2026) */
+.m-round.free { color: var(--amber); }
+.m-round.free::after { content: ' \00b7 FREEPLAY'; font-size: 14px; letter-spacing: .12em; color: var(--silver); }
+.ov-box .ov-s { max-width: 420px; text-align: center; line-height: 1.35; text-transform: none; font-size: 17px; }
+.ov-box .free-btn { background: var(--leaf, #5fae4a); color: #fff; }

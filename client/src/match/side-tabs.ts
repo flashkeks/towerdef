@@ -112,7 +112,7 @@ export class SideTabs {
 
   // ------------------------------------------------------------------ Wave
   private updateWave(st: GameState): void {
-    const r = previewRound(st.phase, st.round, this.game.info.maxRound);
+    const r = previewRound(st.phase, st.round, this.game.info.maxRound, st.freeplay);
     const sig = `${r}|${st.phase}`;
     if (sig === this.waveSig) return;
     this.waveSig = sig;

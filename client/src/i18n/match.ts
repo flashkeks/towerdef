@@ -39,6 +39,15 @@ export const matchStrings = {
   'match.roundCleared': 'Round {n} cleared',
   'match.bossIncoming': '{name} approaches',
   'match.freeplay': 'Endless',
+  // Runde 15b (Max, 10.10.2026): Endrunde je Schwierigkeit, danach Freeplay
+  'match.roundFree': 'Round {n}',
+  'match.freeTag': 'FREEPLAY',
+  'match.freeplayBtn': 'Continue in Freeplay',
+  'match.finish': 'Finish',
+  'match.victoryNote': 'You cleared round {n}. Your medal is safe: keep going for a better Freeplay round.',
+  'match.freeplayOver': 'Freeplay over',
+  'match.freeplayStart': 'Freeplay: no medals, but your best round is saved.',
+  'match.freeplayBest': 'Best Freeplay round: {n}',
 
   'panel.sell': 'Sell',
   'panel.pops': 'Pops',

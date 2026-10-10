@@ -1,8 +1,8 @@
 /** Runde 15: Karten, Modi, Freischaltung, Medaillen je Karte x Schwierigkeit x Modus, Bestleistung, Belohnungsfaktoren, Migration. */
 import { describe, expect, it } from 'vitest';
 import {
-  MAPS, MAP_IDS, MAP_NAMES, MODE_IDS, MODE_META, allMedalCount, applyMatch, bestOf, exportProfile, importProfile, isMapUnlocked, isModeUnlocked, knowledgePoints, loadProfile,
-  mapLock, matchEmbers, matchOptions, matchXp, maxRoundOf, medalCount, medalsOf, modeLock, newProfile, playerLevel, rewardFactors, unlockLevel, unlockedMaps, xpForLevel,
+  END_ROUND, MAPS, MAP_IDS, MAP_NAMES, MODE_IDS, MODE_META, allMedalCount, applyMatch, bestOf, exportProfile, importProfile, isMapUnlocked, isModeUnlocked, knowledgePoints, loadProfile,
+  mapLock, matchEmbers, matchOptions, matchXp, maxRoundOf, roundRewardBp, medalCount, medalsOf, modeLock, newProfile, playerLevel, rewardFactors, unlockLevel, unlockedMaps, xpForLevel,
   type MatchResult, type Profile,
 } from '../src/index';
 
@@ -11,15 +11,16 @@ const res = (o: Partial<MatchResult> = {}): MatchResult => ({ matchId: 'm1', map
 const medal = (p: Profile, map: string, ...ds: ('easy' | 'medium' | 'hard')[]): Profile => ({ ...p, medals: { ...p.medals, [map]: { easy: ds.includes('easy'), medium: ds.includes('medium'), hard: ds.includes('hard') } } });
 
 describe('Karten: Export MAPS', () => {
-  it('drei Karten mit Runden 20 / 25 / 30, Stufen, Faktoren', () => {
+  it('drei Karten, Stufen, Faktoren; Endrunde gilt je Schwierigkeit (Runde 15b)', () => {
     expect(MAP_IDS).toEqual(['meadow', 'frostfen', 'quarry']);
-    expect(MAPS.map((m) => m.maxRound)).toEqual([20, 25, 30]);
+    expect(END_ROUND).toEqual({ easy: 40, medium: 60, hard: 80 });
     expect(MAPS.map((m) => m.tierName)).toEqual(['Beginner', 'Intermediate', 'Advanced']);
     expect(MAPS.map((m) => m.xpBp)).toEqual([10000, 11500, 13000]);
     expect(MAPS.map((m) => m.embersBp)).toEqual([10000, 12000, 14000]);
     expect(MAP_NAMES).toMatchObject({ meadow: 'Lanternfall Meadow', frostfen: 'Frostfen Crossing', quarry: 'Ember Quarry' });
-    expect(maxRoundOf('quarry')).toBe(30);
-    expect(maxRoundOf('unbekannt')).toBe(20);
+    expect(maxRoundOf('quarry', 'easy')).toBe(40);
+    expect(maxRoundOf('quarry', 'hard')).toBe(80);
+    expect(maxRoundOf('unbekannt')).toBe(60); // Vorgabe Medium
   });
 });
 
@@ -152,10 +153,41 @@ describe('Belohnungsfaktoren', () => {
     expect(matchXp(20, 'medium', true, 0, { modeBp: 2000 })).toBe(Math.round(base * 1.2));
     expect(matchXp(20, 'medium', true, 0, { mapBp: 13000, modeBp: 2000 })).toBe(Math.round(base * 1.3 * 1.2));
   });
-  it('XP: Freeplay beginnt nach der letzten Runde der Karte', () => {
+  it('XP: Freeplay beginnt nach der Endrunde der Schwierigkeit', () => {
     const a = matchXp(25, 'medium', false, 0, { maxRound: 25 });
     const b = matchXp(25, 'medium', false, 0, { maxRound: 20 });
     expect(a).toBeGreaterThan(b);
+  });
+  it('Runde 15b: 40/60/80 Runden daempfen Runden-XP und -Embers, volle Partien bleiben bei etwa 3.400 / 4.300 / 5.300 XP', () => {
+    expect(roundRewardBp(20)).toBe(10000);
+    expect(roundRewardBp(40)).toBeLessThan(roundRewardBp(20));
+    expect(roundRewardBp(80)).toBeLessThan(roundRewardBp(60));
+    for (const [d, lo, hi] of [['easy', 3000, 3800], ['medium', 3900, 4800], ['hard', 4800, 5800]] as const) {
+      const E = END_ROUND[d];
+      const xp = matchXp(E, d, true, 0, { maxRound: E, roundBp: roundRewardBp(E) });
+      expect(xp).toBeGreaterThan(lo);
+      expect(xp).toBeLessThan(hi);
+    }
+  });
+  it('Freeplay-Bestrunde je Karte (Standardmodus), Best der Schwierigkeit endet bei der Endrunde, alte Profile laden', () => {
+    const p0 = newProfile();
+    expect(p0.freeplayBest).toEqual({});
+    const raw = JSON.parse(JSON.stringify(p0)) as Record<string, unknown>;
+    delete raw.freeplayBest; // altes Profil ohne das Feld
+    expect(loadProfile(raw).profile.freeplayBest).toEqual({});
+    const a = applyMatch(p0, res({ matchId: 'fp1', difficulty: 'easy', roundsCleared: 52 }));
+    expect(a.profile.freeplayBest).toEqual({ meadow: 52 });
+    expect(a.report.newFreeplayBest).toBe(true);
+    expect(a.profile.best.meadow.easy).toEqual({ round: 40, livesLost: 3 });
+    expect(a.profile.medals.meadow.easy).toBe(true);
+    const b = applyMatch(a.profile, res({ matchId: 'fp2', difficulty: 'easy', roundsCleared: 47 }));
+    expect(b.profile.freeplayBest.meadow).toBe(52);
+    expect(b.report.newFreeplayBest).toBe(false);
+    const c = applyMatch(b.profile, res({ matchId: 'fp3', difficulty: 'medium', roundsCleared: 70 }));
+    expect(c.profile.freeplayBest.meadow).toBe(70);
+    // kein Freeplay in der Endrunde selbst und nicht in Zusatzmodi
+    expect(applyMatch(p0, res({ matchId: 'x1', difficulty: 'easy', roundsCleared: 40 })).profile.freeplayBest).toEqual({});
+    expect(applyMatch(p0, res({ matchId: 'x2', difficulty: 'easy', roundsCleared: 50, mode: 'no-hero' })).profile.freeplayBest).toEqual({});
   });
   it('Embers: Meadow wie bisher (54 + Sieg), Karte und Modus skalieren, Level-Ups nicht', () => {
     expect(matchEmbers(20, 'medium', true, false, 0)).toEqual({ rounds: 54, win: 30, medal: 0, levelUp: 0, pouch: 0, rush: 0 });
@@ -173,10 +205,10 @@ describe('Belohnungsfaktoren', () => {
     const plain = applyMatch(newProfile(), res({ matchId: 'p' }));
     const fr = applyMatch(newProfile(), res({ matchId: 'f', map: 'frostfen', roundsCleared: 25 }));
     expect(fr.report.rewardBp).toEqual({ xp: 11500, embers: 12000, mode: 0 });
-    expect(fr.report.xpGained).toBe(matchXp(25, 'medium', true, 0, { maxRound: 25, mapBp: 11500 }));
+    expect(fr.report.xpGained).toBe(matchXp(25, 'medium', true, 0, { maxRound: 60, roundBp: roundRewardBp(60), mapBp: 11500 }));
     expect(fr.report.xpGained).toBeGreaterThan(plain.report.xpGained);
     const mo = applyMatch(newProfile(), res({ matchId: 'm', mode: 'deflation' }));
-    expect(mo.report.xpGained).toBe(matchXp(20, 'medium', true, 0, { modeBp: 2000 }));
+    expect(mo.report.xpGained).toBe(matchXp(20, 'medium', true, 0, { maxRound: 60, roundBp: roundRewardBp(60), modeBp: 2000 }));
     expect(mo.report.embers.bonus).toBeGreaterThan(0);
     expect(mo.report.embersGained).toBe(mo.profile.embers - newProfile().embers);
   });

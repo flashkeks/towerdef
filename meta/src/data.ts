@@ -8,8 +8,19 @@ import { MODE_IDS, MODES } from '../../sim/src/modes';
 
 export const TOWER_TYPES: readonly TowerType[] = ['ranger', 'bombardier', 'frostcaller', 'longshot', 'market', 'thornweaver', 'alchemist'];
 export const DIFFICULTIES: readonly Difficulty[] = ['easy', 'medium', 'hard'];
-/** Letzte Runde von Lanternfall Meadow (Freeplay-Grenze der alten Formeln). Je Karte: `MAPS[i].maxRound` / `maxRoundOf(map)`. */
+/** Alte Rechengrenze (20 Runden): Vorgabe der Belohnungsformeln, wenn kein `maxRound` im Kontext steht. Echte Endrunde: `maxRoundOf(map, difficulty)`. */
 export const MAX_ROUND = 20;
+/**
+ * Runde 15b (Max, 10.10.2026: "Easy 40, Medium 60, Hard 80 wie BTD6"): eine Rundenliste fuer alle Karten, Endrunde nach Schwierigkeit
+ * (`sim/data/difficulties.json`). Erreicht = Sieg und Medaille; danach optional Freeplay.
+ */
+export const END_ROUND: Record<Difficulty, number> = { easy: DATA.difficulties.easy.endRound, medium: DATA.difficulties.medium.endRound, hard: DATA.difficulties.hard.endRound };
+/**
+ * Daempfung von Spieler-XP und Embers je Runde in Basispunkten, damit 40/60/80 Runden die Level-Kurve nicht sprengen:
+ * bis 20 Runden unveraendert, darueber (20 / Endrunde)^1,5 (Easy 3536, Medium 1925, Hard 1250). Eine volle Partie bleibt so bei
+ * rund 3.400 / 4.300 / 5.300 XP (Medium; frueher R20 = 2.970).
+ */
+export const roundRewardBp = (endRound: number): number => (endRound <= 20 ? 10000 : Math.round(10000 * Math.pow(20 / endRound, 1.5)));
 
 // ---------------------------------------------------------------- Karten und Modi (Runde 15, docs/design/karten-gegner-r15.md)
 
@@ -26,9 +37,7 @@ export interface MapMeta {
   tier: MapTier;
   /** Anzeigename der Stufe (Englisch). */
   tierName: string;
-  /** Anzahl Runden = letzte Runde (Sieg). */
-  maxRound: number;
-  /** Boss der letzten Runde (Anzeige). */
+  /** Boss der Karte (Anzeige, Flavour); die Bosse stehen fest in der gemeinsamen Liste (R20 Leviathan, R40 Wyrm, R60 Colossus, R80 alle). */
   boss: string;
   /** Keine Regel = von Anfang an offen. */
   unlock: MapUnlockRule | null;
@@ -39,15 +48,15 @@ export interface MapMeta {
   desc: string;
 }
 export const MAPS: readonly MapMeta[] = [
-  { id: 'meadow', name: 'Lanternfall Meadow', tier: 'beginner', tierName: 'Beginner', maxRound: DATA.roundsByMap.meadow.length, boss: 'Dusk Leviathan', unlock: null, xpBp: 10000, embersBp: 10000, desc: 'A long road through a summer meadow. Plenty of room to build.' },
-  { id: 'frostfen', name: 'Frostfen Crossing', tier: 'intermediate', tierName: 'Intermediate', maxRound: DATA.roundsByMap.frostfen.length, boss: 'Frost Wyrm', unlock: { level: 8, medal: { map: 'meadow', difficulty: 'medium' } }, xpBp: 11500, embersBp: 12000, desc: 'Two roads over a frozen lake meet in the middle. The ice cannot be built on.' },
-  { id: 'quarry', name: 'Ember Quarry', tier: 'advanced', tierName: 'Advanced', maxRound: DATA.roundsByMap.quarry.length, boss: 'Ember Colossus', unlock: { level: 12, medal: { map: 'frostfen', difficulty: 'medium' } }, xpBp: 13000, embersBp: 14000, desc: 'A short, winding road through lava and rock. Very little room to build.' },
+  { id: 'meadow', name: 'Lanternfall Meadow', tier: 'beginner', tierName: 'Beginner', boss: 'Dusk Leviathan', unlock: null, xpBp: 10000, embersBp: 10000, desc: 'A long road through a summer meadow. Plenty of room to build.' },
+  { id: 'frostfen', name: 'Frostfen Crossing', tier: 'intermediate', tierName: 'Intermediate', boss: 'Frost Wyrm', unlock: { level: 8, medal: { map: 'meadow', difficulty: 'medium' } }, xpBp: 11500, embersBp: 12000, desc: 'Two roads over a frozen lake meet in the middle. The ice cannot be built on.' },
+  { id: 'quarry', name: 'Ember Quarry', tier: 'advanced', tierName: 'Advanced', boss: 'Ember Colossus', unlock: { level: 12, medal: { map: 'frostfen', difficulty: 'medium' } }, xpBp: 13000, embersBp: 14000, desc: 'A short, winding road through lava and rock. Very little room to build.' },
 ];
 export const MAP_IDS: readonly string[] = MAPS.map((m) => m.id);
 export const MAP_NAMES: Record<string, string> = Object.fromEntries(MAPS.map((m) => [m.id, m.name]));
 export const mapById = (id: string): MapMeta | undefined => MAPS.find((m) => m.id === id);
-/** Letzte Runde der Karte; unbekannte Karten zaehlen wie Meadow. */
-export const maxRoundOf = (map: string): number => mapById(map)?.maxRound ?? MAX_ROUND;
+/** Endrunde (= Sieg) auf der Schwierigkeit; seit 15b gleich fuer alle Karten (`map` bleibt fuer spaetere Sonderkarten). Vorgabe Medium. */
+export const maxRoundOf = (_map: string, difficulty: Difficulty = 'medium'): number => END_ROUND[difficulty];
 
 export { MODE_IDS };
 /** Bonus auf Spieler-XP und Embers in den Zusatzmodi (+20 %). */
@@ -76,6 +85,7 @@ export const STARTER_TOWER_XP = 100;
 
 export const DIFFICULTY_XP_BP: Record<Difficulty, number> = { easy: 10000, medium: 11000, hard: 12000 };
 export const WIN_BONUS_XP = 200;
+/** Freeplay-Runden (ueber der Endrunde) zaehlen 30 % der Runden-XP. */
 export const FREEPLAY_BP = 3000;
 
 /** XP bis zum naechsten Level, von Level `l` aus. */

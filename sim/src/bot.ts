@@ -44,6 +44,8 @@ export interface BotResult {
   strategy: string;
   difficulty: Difficulty;
   result: 'won' | 'lost' | 'timeout';
+  /** Runde 15b: Endrunde, bei der der Sieg fiel (0 = nicht gewonnen); nur mit `freeplay` gesetzt. */
+  wonAt: number;
   round: number;
   lives: number;
   cash: number;
@@ -101,6 +103,8 @@ export interface Bot {
   /** Einmal pro Denkschritt aufrufen (z. B. alle 6 Ticks). */
   think(): void;
   readonly done: boolean;
+  /** Index des naechsten Kaufschritts (fuer Diagnose). */
+  readonly nextIndex: number;
 }
 
 export function createBot(game: Game, mapId: string, strategy: Strategy): Bot {
@@ -251,21 +255,29 @@ export function createBot(game: Game, mapId: string, strategy: Strategy): Bot {
     get done() {
       return S.phase === 'won' || S.phase === 'lost';
     },
+    get nextIndex() {
+      return next;
+    },
     think() {
       buy();
       abilities();
-      if (S.groups.length === 0 && S.round < game.info.maxRound && S.enemies.length <= (strategy.maxField ?? 0)) game.apply({ type: 'startRound' });
+      if (S.groups.length === 0 && (S.freeplay || S.round < game.info.maxRound) && S.enemies.length <= (strategy.maxField ?? 0)) game.apply({ type: 'startRound' });
     },
   };
 }
 
-export function runBot(strategy: Strategy, opts: Partial<GameOptions> & { difficulty: Difficulty; maxTicks?: number }): BotResult {
+export function runBot(strategy: Strategy, opts: Partial<GameOptions> & { difficulty: Difficulty; maxTicks?: number; /** Runde 15b: nach dem Sieg mit `continue` weiterspielen bis zum Tod (Ergebnis: `wonAt` = Endrunde, `round` = letzte erreichte Runde). */ freeplay?: boolean }): BotResult {
   const mapId = opts.map ?? 'meadow';
   const game = createGame({ map: mapId, seed: 1, ...opts });
   const bot = createBot(game, mapId, strategy);
-  const max = opts.maxTicks ?? 60 * 60 * 40;
+  const max = opts.maxTicks ?? 60 * 60 * 150;
   const S = game.state;
-  while (!bot.done && S.tick < max) {
+  let wonAt = 0;
+  while ((!bot.done || (opts.freeplay && S.phase === 'won')) && S.tick < max) {
+    if (S.phase === 'won') {
+      wonAt = S.round;
+      game.apply({ type: 'continue' });
+    }
     bot.think();
     game.step(6);
     game.drainEvents();
@@ -274,7 +286,8 @@ export function runBot(strategy: Strategy, opts: Partial<GameOptions> & { diffic
   return {
     strategy: strategy.name,
     difficulty: opts.difficulty,
-    result: S.phase === 'won' ? 'won' : S.phase === 'lost' ? 'lost' : 'timeout',
+    result: S.phase === 'won' || wonAt > 0 ? 'won' : S.phase === 'lost' ? 'lost' : 'timeout',
+    wonAt,
     round: S.round,
     lives: S.lives,
     cash: S.cash,
@@ -307,4 +320,34 @@ export function parseStrategy(text: string): Strategy {
     towers.push({ type: m[1] as TowerType, tiers: [Number(m[2]), Number(m[3]), Number(m[4])], target: m[5] as TargetMode | undefined });
   }
   return { name: text, towers, hero };
+}
+
+/**
+ * Kaufreihenfolge "gestaffelt" (so spielt ein Mensch eher): zwei Tuerme + Held zuerst, dann stufenweise upgraden,
+ * weitere Tuerme paarweise nach Stufe 1/2/3 dazu; ab Stufe 4 sind alle platziert. Jeder Pfad wird genau bis zum Ziel gekauft.
+ * Der Standard-Bot kauft sonst erst alle Tuerme und dann alle Stufe 1 usw. (Runde 15b, Bot-Matrix.) `delay` verschiebt das Nachsetzen der weiteren Tuerme um so viele Stufen.
+ */
+export function staged(st: Strategy, delay = 0): Strategy {
+  const n = st.towers.length;
+  const toks: string[] = ['p0'];
+  if (n > 1) toks.push('p1');
+  if (st.hero) toks.push('h');
+  let placed = Math.min(2, n);
+  const bought = st.towers.map(() => [0, 0, 0]);
+  for (let lvl = 1; lvl <= 5; lvl++) {
+    for (let i = 0; i < placed; i++) {
+      const order = [0, 1, 2].filter((k) => st.towers[i].tiers[k] >= lvl).sort((a, b) => st.towers[i].tiers[b] - st.towers[i].tiers[a] || a - b);
+      for (const k of order) {
+        while (bought[i][k] < lvl) { toks.push(`u${i}${'ABC'[k]}`); bought[i][k]++; }
+      }
+    }
+    // delay > 0: weitere Tuerme erst nach Stufe 1 + delay (Hard: erst die ersten Tuerme ausbauen)
+    if (lvl > delay && lvl <= 3 + delay) while (placed < n && placed < 2 + 2 * (lvl - delay)) toks.push(`p${placed++}`);
+  }
+  while (placed < n) {
+    const i = placed;
+    toks.push(`p${placed++}`);
+    for (let k = 0; k < 3; k++) while (bought[i][k] < st.towers[i].tiers[k]) { toks.push(`u${i}${'ABC'[k]}`); bought[i][k]++; }
+  }
+  return { ...st, script: toks.join(' ') };
 }

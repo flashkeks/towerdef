@@ -76,3 +76,21 @@ die neuen Gegner nicht wasten … bis Runde 60 oder 80 und danach Free Play.“ 
   Hard R80 nur mit T5. Frostfen/Quarry entsprechend härter durch den Weg (nicht durch eigene Runden). Einkommen pro Runde nach
   BTD6-Kurve, damit T5 um R50–60 bezahlbar ist.
 - Spieler-XP/Embers je Runde bleiben formelbasiert; ggf. dämpfen, damit 80 Runden nicht die Level-Kurve sprengen.
+
+### Nachtrag 15b-2 (Max, 10.10.2026, nach den ersten Rundenlisten) — gilt vor den Zahlen oben
+
+1. **Continue = einfach weiterspielen.** Max: „wenn man mit Easy Mode fertig ist … einfach weiterspielen kann und dann halt dieselben Gegner kriegt wie im Hard Mode …
+   trotzdem den 60er-Boss, 80er-Boss und so weiter.“ Nach dem Sieg (Easy R40 / Medium R60) laeuft „Continue in Freeplay“ auf **derselben Liste** weiter
+   (Easy R41, Wyrm/Colossus/R80-Bosse inklusive, auf der gewaehlten Schwierigkeit). Keine Spruenge, keine Sonderliste. Die Freeplay-Bestrunde zaehlt ab der
+   Endrunde der gespielten Schwierigkeit (ein Wert je Karte, Standardmodus).
+2. **Feste Liste bis R120, Formel erst ab R121.** Max: „ab Runde 81 nicht jede Runde gleich … bei Runde 100 dieser ganz große Mob … bei Runde 90 diese schwarzen,
+   extrem schnellen Schiffe … Runden trotzdem fest spezifiziert … reine Formel ab Runde 120 … fast unmöglich, extremst schwer, soll lange dauern.“
+   `sim/data/rounds.json` hat 120 Runden (Quelle `sim/scripts/gen-rounds.mjs`), `sim/src/freeplay.ts` liefert R121+ (HP-/Tempo-/Anzahl-Rampe, Seed, jede 10. Runde Finale).
+3. **Drei neue Blimps** (IDs fest): `cruiser` „Gloom Cruiser“ (Huelle 1.600, Tempo 0,6, 4 x gloomship, ab R82), `duskrunner` „Duskrunner“ (400, Tempo 2,6, immer camo,
+   explosions-immun, 4 x frostling mit camo+Regrow, ab R90), `dreadnought` „Dusk Dreadnought“ (20.000, Easy 15.000 / Hard 30.000, Tempo 0,25, immun gegen
+   Einfrieren/Verlangsamen/Betaeubung, 2 x cruiser + 3 x duskrunner, nur R100/R110/R120). Fortified gilt fuer cruiser/dreadnought, nicht fuer den Duskrunner.
+   Der Dreadnought ist ein Blimp, kein Boss (keine Boss-Phasen, Boss-Banner nur Leviathan/Wyrm/Colossus).
+4. **Abweichungen von §5 oben, mit Grund:** (a) R1–20 bleiben **exakt** die alte Meadow-Liste, Pink Glim erscheint erst in R21 (ein Pink-Trupp in R15 liess Hard bei R20 kippen,
+   ein Leck kostet 5 Leben je Pink). (b) Deflation startet bei **Ende − 10** = R30 / R50 / R70 (die Zahlen R31/R51/R71 in §5 waeren Ende − 9; die Regel „Ende − 10“ wie in Runde 15 A gilt).
+   (c) Pop-Gold wird ab R21 gedaempft (`popBp`: R40 x0,4, R80 x0,2, ab R120 x0,12) und der Rundenbonus waechst (+5 je Runde ueber 20), sonst waere T5 schon um R30 bezahlt.
+   (d) Spieler-XP/Embers je Runde sind auf (20/Endrunde)^1,5 gedaempft (`roundRewardBp`), volle Partie ca. 3.400 / 4.300 / 5.300 XP statt 2.970 (R20).

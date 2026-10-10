@@ -1,7 +1,7 @@
 /** Startseite: Spieler-Level, Kartenkachel mit Medaillen, Schwierigkeit, Knoepfe zu Tuermen, Wissen, Einstellungen. */
 import type { Difficulty, HeroType, TowerType } from '../../../sim/src/types';
 import {
-  BRANCH_NAMES, DIFFICULTIES, MAPS, MODE_IDS, TIER_COST, TOWER_TYPES, bestOf, isTowerUnlocked, knowledgePoints,
+  BRANCH_NAMES, DIFFICULTIES, END_ROUND, MAPS, MODE_IDS, TIER_COST, TOWER_TYPES, bestOf, isTowerUnlocked, knowledgePoints,
   levelFromXp, mapLock, mapById, medalsOf, unlockLevel, type MapMeta, type Profile,
 } from '../meta';
 import { heroPortrait, towerPortrait } from '../pixel/sprites';
@@ -94,7 +94,7 @@ function mapTile(ctx: Ctx, p: Profile, m: MapMeta): HTMLElement {
     art.append(l);
   }
   const info = h('div', 'mt-info');
-  info.append(h('div', 'map-name', m.name), h('div', 'mt-sub', S.maps.rounds(m.maxRound, m.boss)));
+  info.append(h('div', 'map-name', m.name), h('div', 'mt-sub', S.maps.rounds(END_ROUND.easy, END_ROUND.medium, END_ROUND.hard)));
   const row = h('div', 'medals');
   for (const d of DIFFICULTIES) {
     const mm = h('div', `medal ${medals[d] ? 'on' : 'off'}`);
@@ -106,6 +106,9 @@ function mapTile(ctx: Ctx, p: Profile, m: MapMeta): HTMLElement {
   }
   const modeTotal = (MODE_IDS.length - 1) * 3;
   info.append(row);
+  // Runde 15b: Bestrunde im Freeplay je Karte
+  const fp = p.freeplayBest[m.id] ?? 0;
+  info.append(h('div', `mt-free num ${fp ? 'on' : ''}`.trim(), fp ? S.maps.freeplayBest(fp) : S.maps.freeplayNone));
   art.append(h('div', 'mt-modes num', S.maps.modeMedals(countModeMedals(p, m.id), modeTotal)));
   tile.append(art, info);
   tile.onclick = () => { if (lock.unlocked) { ctx.sound('click'); ctx.map = m.id; ctx.go({ name: 'setup', map: m.id }); } else ctx.sound('error'); };
