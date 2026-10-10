@@ -4,6 +4,51 @@ Arbeitsauftrag: [`/run.md`](../run.md) (**Runde 13 abgeschlossen** (Market, Long
 Frühere Aufträge: [archiv/run-runde1.md](archiv/run-runde1.md), [archiv/run-runde2.md](archiv/run-runde2.md), [archiv/run-runde3.md](archiv/run-runde3.md), [archiv/run-runde4.md](archiv/run-runde4.md), [archiv/run-runde5.md](archiv/run-runde5.md), [archiv/run-runde6.md](archiv/run-runde6.md), [archiv/run-runde7.md](archiv/run-runde7.md), [archiv/run-runde8-verworfen.md](archiv/run-runde8-verworfen.md), [archiv/run-runde8.md](archiv/run-runde8.md), [archiv/run-runde9.md](archiv/run-runde9.md).
 
 
+## Runde 15b (eine Rundenliste 120, Endrunde 40/60/80, Freeplay, 10.10.2026) — fertig, wartet auf Merge
+
+Branch `r15-d`. Spezifikation: `design/karten-gegner-r15.md` §5 Nachtrag 15b-2. Bilder `client/docs/r15/d-*.png` (Skript `client/scripts/shots-r15-d.mjs`).
+
+- **Eine Liste fuer alle Karten**: `sim/data/rounds.json` (120 Runden, Quelle `sim/scripts/gen-rounds.mjs`), ab R121 `sim/src/freeplay.ts` (Formel, jede 10. Runde Finale). Die Kartenlisten je Karte sind weg.
+- **Endrunde je Schwierigkeit**: Easy R40, Medium R60, Hard R80 = Sieg + Medaille. "Continue in Freeplay" laeuft auf derselben Liste weiter (gleiche Gegner wie Hard, Bosse R40 Wyrm, R60 Colossus, R80 alle drei). Freeplay-Bestrunde je Karte in der Meta, auf der Kartenwahl und im Setup sichtbar.
+- **Neue Blimps**: `cruiser` (ab R82), `duskrunner` (R90, camo, explosions-immun), `dreadnought` (R100/110/120, immun gegen Freeze/Slow/Stun). Client-Sprites und Wellen-Vorschau vorhanden.
+- **Pruefung**: sim 258, meta 98, client 202 Tests, `tsc --noEmit` in allen drei, `npm run build`, `npm run smoke` gruen.
+
+**Bot-Matrix** (`cd sim && MATRIX_SEEDS=1 npx tsx scripts/matrix-r15b.ts`, je Zelle beste von drei Kaufreihenfolgen, Held immer dabei). `Sieg+N` = Endrunde geschafft, danach N Freeplay-Runden bis zum Tod; `Rn` = Tod in Runde n.
+
+| Aufstellung | Karte | Easy (40) | Medium (60) | Hard (80) |
+|---|---|---|---|---|
+| 2 Tuerme T3 | meadow | R36 | R20 | R19 |
+| 2 Tuerme T3 | frostfen | R38 | R23 | R17 |
+| 2 Tuerme T3 | quarry | R21 | R18 | R15 |
+| 2 Tuerme T4 | meadow | Sieg+5 | R40 | R40 |
+| 2 Tuerme T4 | frostfen | Sieg+5 | R40 | R40 |
+| 2 Tuerme T4 | quarry | Sieg+4 | R29 | R18 |
+| 3 Tuerme T4 | meadow | Sieg+5 | R40 | R40 |
+| 3 Tuerme T4 | frostfen | Sieg+5 | R45 | R40 |
+| 3 Tuerme T4 | quarry | Sieg+5 | R40 | R40 |
+| 6 Tuerme T4 | meadow | Sieg+20 | R46 | R40 |
+| 6 Tuerme T4 | frostfen | Sieg+20 | R60 | R60 |
+| 6 Tuerme T4 | quarry | Sieg+20 | R60 | R40 |
+| 10 Tuerme T4 | meadow | Sieg+23 | R60 | R40 |
+| 10 Tuerme T4 | frostfen | Sieg+26 | Sieg+3 | R45 |
+| 10 Tuerme T4 | quarry | Sieg+24 | R60 | R60 |
+| 3 Tuerme T5 | meadow / frostfen / quarry | Sieg+20 | R60 | R60 |
+| 6 Tuerme T5 | meadow | Sieg+36 | Sieg+10 | R60 |
+| 6 Tuerme T5 | frostfen | Sieg+47 | Sieg+27 | R80 |
+| 6 Tuerme T5 | quarry | Sieg+42 | Sieg+20 | R60 |
+| 10 Tuerme T5 | meadow | Sieg+42 | Sieg+22 | R76 |
+| 10 Tuerme T5 | frostfen | Sieg+50 | Sieg+30 | R80 |
+| 10 Tuerme T5 | quarry | Sieg+50 | Sieg+30 | R80 |
+| 12 Tuerme T5 gemischt | meadow | Sieg+42 | Sieg+22 | R63 |
+| 12 Tuerme T5 gemischt | frostfen | Sieg+56 | Sieg+32 | Sieg+7 |
+| 12 Tuerme T5 gemischt | quarry | Sieg+42 | Sieg+22 | Sieg+2 |
+
+Lesart: Easy mit 2 Tuermen T4 geschafft (T3 reicht knapp nicht, R36-38 auf Meadow/Frostfen), Medium braucht T5 oder 10 T4 mit Planung, Hard nur mit vielen T5 gemischt (Bot schafft R80 nur auf Frostfen/Quarry mit 12 gemischten). Freeplay: R81-100 mit starkem T5 erreichbar (Easy bis ~R96), R100+ bricht der Bot, R120 nie gesehen.
+
+Partiedauer (Schaetzung, ca. 25-30 s je Runde bei 2x-3x mit Auto-Start): Easy ~20-25 min, Medium ~30-40 min, Hard ~45-60 min.
+
+Offen: Bot-Matrix kennt keine Powers/Wissensbaum-Boni und plant nicht wie ein Mensch, die Hard-Zahlen sind eher Untergrenze; Medium mit nur T4 knapp zu hart (R40-R60 Tod, Spec: T4 + Planung) — bei Bedarf Pop-Gold-Daempfung (`popBp`) lockern.
+
 ## Runde 15 C (Client: Kartenwahl, Modi, Match auf drei Karten, Boss-Effekte, 10.10.2026) — fertig, wartet auf Merge
 
 Branch `r15-c` (Stand = dev `f52a95e` + Paket C). Bilder `client/docs/r15/c-*.png`, Skript `client/scripts/shots-r15-c.mjs` (`npm run build && node scripts/shots-r15-c.mjs [menu|meadow|frostfen|quarry|boss|wave|result|modes]`, Matches starten ueber Menueklicks).
