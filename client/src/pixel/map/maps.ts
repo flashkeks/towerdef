@@ -10,6 +10,7 @@ import { paintFrostfen } from './frostfen';
 import { paintQuarry } from './quarry';
 import { paintHollow } from './hollow';
 import { paintMarsh } from './marsh';
+import { paintBastion } from './bastion';
 import { ambientPoints, smokePoints } from './ambient';
 import { bayer } from './buf';
 import type { MapArt, MapId } from './types';
@@ -32,7 +33,7 @@ const PAINTERS: Record<MapId, () => MapArt> = {
   hollow: paintHollow,
   marsh: paintMarsh,
   frostfen: paintFrostfen,
-  bastion: () => { throw new Error('bastion folgt'); },
+  bastion: paintBastion,
   quarry: paintQuarry,
   skyreach: () => { throw new Error('skyreach folgt'); },
 };

@@ -5,6 +5,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { blockers as ffBlockers, waterPolygons } from '../src/pixel/map/frostfen';
 import { blockers as qBlockers } from '../src/pixel/map/quarry';
+import { blockers as baBlockers, waterPolygons as baWater, wallPolygons as baWalls } from '../src/pixel/map/bastion';
 import { blockers as maBlockers, waterPolygons as maWater } from '../src/pixel/map/marsh';
 import { blockers as hoBlockers, waterPolygons as hoWater } from '../src/pixel/map/hollow';
 
@@ -19,3 +20,4 @@ patch('frostfen', (j) => { j.water = waterPolygons(); j.blockers = ffBlockers();
 patch('quarry', (j) => { j.blockers = qBlockers(); });
 patch('hollow', (j) => { j.water = hoWater(); j.blockers = hoBlockers(); });
 patch('marsh', (j) => { j.water = maWater(); j.blockers = maBlockers(); });
+patch('bastion', (j) => { j.water = baWater(); j.walls = baWalls(); j.blockers = baBlockers(); });
