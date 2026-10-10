@@ -22,8 +22,8 @@ function tile(g: CanvasRenderingContext2D, x: number, y: number, w: number, h: n
 }
 
 export function sheetGegnerR15(): HTMLCanvasElement {
-  const { c, g } = mk(1700, 1180);
-  tile(g, 0, 0, 1700, 1180);
+  const { c, g } = mk(1700, 1340);
+  tile(g, 0, 0, 1700, 1340);
   // Zeile 1: Lauf-Frames
   label(g, 'pink (4 Frames)', 20, 18); label(g, 'frostling', 420, 18); label(g, 'crystal', 820, 18);
   for (let f = 0; f < 4; f++) {
@@ -32,7 +32,7 @@ export function sheetGegnerR15(): HTMLCanvasElement {
     blit(g, api.enemySprite('crystal', f), 850 + f * 150, 160, 3);
   }
   // Zeile 2: Risse, Treffer-Blitz, Camo
-  label(g, 'Crystal Brute: Risse 0 / 1 / 2 / 3 | Camo darunter | Treffer-Blitz | Camo je Typ', 20, 205);
+  label(g, 'Crystal Brute: Risse 0 / 1 / 2 / 3 | Camo darunter | Treffer-Blitz | Camo je Typ', 20, 215);
   for (let k = 0; k < 4; k++) {
     blit(g, api.enemySprite('crystal', 0, { damageStage: k }), 80 + k * 150, 330, 3);
     blit(g, api.enemySprite('crystal', 0, { damageStage: k, camo: true }), 80 + k * 150, 450, 3);
@@ -44,21 +44,21 @@ export function sheetGegnerR15(): HTMLCanvasElement {
   blit(g, api.enemySprite('pink', 0, { camo: true }), 700, 450, 4);
   blit(g, api.enemySprite('frostling', 1, { camo: true }), 800, 450, 4);
   // Zeile 3: Gloomship
-  label(g, 'Gloomship: Stufen 0 / 1 / 2, Camo, Frame 0-3 (Anker = Bodenpunkt, Schatten darunter)', 20, 505);
+  label(g, 'Gloomship: Stufen 0 / 1 / 2, Camo, Frame 0-3 (Anker = Bodenpunkt, Schatten darunter)', 20, 560);
   for (let k = 0; k < 3; k++) {
-    blit(g, api.fx.gloomShadow(k), 70 + k * 220, 628, 3);
-    blit(g, api.enemySprite('gloomship', k, { damageStage: k }), 70 + k * 220, 628, 3);
+    blit(g, api.fx.gloomShadow(k), 130 + k * 260, 770, 3);
+    blit(g, api.enemySprite('gloomship', k, { damageStage: k }), 130 + k * 260, 770, 3);
   }
-  blit(g, api.fx.gloomShadow(2), 740, 628, 3);
-  blit(g, api.enemySprite('gloomship', 1, { camo: true }), 740, 628, 3);
-  for (let f = 0; f < 4; f++) blit(g, api.enemySprite('gloomship', f), 1000 + (f % 2) * 150, 540 + Math.floor(f / 2) * 90 + 60, 2);
+  blit(g, api.fx.gloomShadow(2), 910, 770, 3);
+  blit(g, api.enemySprite('gloomship', 1, { camo: true }), 910, 770, 3);
+  for (let f = 0; f < 4; f++) blit(g, api.enemySprite('gloomship', f), 1200 + (f % 2) * 170, 640 + Math.floor(f / 2) * 100 + 40, 2);
   // Zeile 4: Merkmale
-  label(g, 'Merkmale: normal | Regrow | Fortified | beide | beide + Camo  (je Typ)', 20, 700);
+  label(g, 'Merkmale: normal | Regrow | Fortified | beide | beide + Camo  (je Typ)', 20, 850);
   const types: EnemyType[] = ['red', 'green', 'pink', 'frostling', 'ironshell', 'ember', 'brute', 'crystal', 'gloomship'];
   types.forEach((t, row) => {
     const big = t === 'gloomship' || t === 'crystal';
     const k = big ? 1 : 2;
-    const x0 = 40 + (row % 3) * 560, y0 = 780 + Math.floor(row / 3) * 130;
+    const x0 = 40 + (row % 3) * 560, y0 = 930 + Math.floor(row / 3) * 130;
     const variants: api.EnemySpriteOpts[] = [{}, { regrow: true }, { fortified: true }, { regrow: true, fortified: true }, { regrow: true, fortified: true, camo: true }];
     variants.forEach((o, i) => blit(g, api.enemySprite(t, 1, o), x0 + i * (big ? 100 : 64), y0 + (big ? 50 : 40) * (big ? 1 : 1) - 8, k));
     label(g, t, x0 - 30, y0 - 22);
@@ -67,26 +67,26 @@ export function sheetGegnerR15(): HTMLCanvasElement {
 }
 
 export function sheetBosseR15(): HTMLCanvasElement {
-  const { c, g } = mk(1700, 1330);
-  tile(g, 0, 0, 1700, 1330);
+  const { c, g } = mk(1700, 1500);
+  tile(g, 0, 0, 1700, 1500);
   label(g, 'Frost Wyrm: Phase 0 (4 Frames) | Phase 1 (<66 %) | Phase 2 (<33 %)  -- Rahmen max 80 x 64', 20, 16);
   for (let f = 0; f < 4; f++) blit(g, api.enemySprite('wyrm', f), 130 + f * 320, 150, 3);
   for (let k = 1; k <= 2; k++) blit(g, api.enemySprite('wyrm', 0, { damageStage: k }), 130 + (k - 1) * 320, 330, 3);
   blit(g, api.enemySprite('wyrm', 1, { hitFlash: true }), 770, 330, 3);
   blit(g, api.enemySprite('wyrm', 1, { regrow: true, fortified: true }), 1090, 330, 3);
-  label(g, 'Ember Colossus: Platten 0..4 gefallen', 20, 400);
-  for (let k = 0; k <= 4; k++) blit(g, api.enemySprite('colossus', k % 4, { damageStage: k }), 110 + k * 330, 505, 3);
-  label(g, 'Colossus Lauf-Frames 0-3 | Treffer-Blitz | Regrow+Fortified | Camo', 20, 740);
-  for (let f = 0; f < 4; f++) blit(g, api.enemySprite('colossus', f, { damageStage: 0 }), 70 + f * 175, 850, 2);
-  blit(g, api.enemySprite('colossus', 1, { hitFlash: true }), 780, 850, 2);
-  blit(g, api.enemySprite('colossus', 1, { regrow: true, fortified: true }), 960, 850, 2);
-  blit(g, api.enemySprite('colossus', 2, { camo: true, damageStage: 2 }), 1140, 850, 2);
-  label(g, 'Spielmassstab x2 : Glims, Brute, Crystal, Gloomship, Wyrm, Colossus, Leviathan', 20, 940);
+  label(g, 'Ember Colossus: Platten 0..4 gefallen', 20, 440);
+  for (let k = 0; k <= 4; k++) blit(g, api.enemySprite('colossus', k % 4, { damageStage: k }), 110 + k * 330, 660, 3);
+  label(g, 'Colossus Lauf-Frames 0-3 | Treffer-Blitz | Regrow+Fortified | Camo', 20, 780);
+  for (let f = 0; f < 4; f++) blit(g, api.enemySprite('colossus', f, { damageStage: 0 }), 70 + f * 175, 1010, 2);
+  blit(g, api.enemySprite('colossus', 1, { hitFlash: true }), 780, 1010, 2);
+  blit(g, api.enemySprite('colossus', 1, { regrow: true, fortified: true }), 960, 1010, 2);
+  blit(g, api.enemySprite('colossus', 2, { camo: true, damageStage: 2 }), 1140, 1010, 2);
+  label(g, 'Spielmassstab x2 : Glims, Brute, Crystal, Gloomship, Wyrm, Colossus, Leviathan', 20, 1100);
   const lineup: EnemyType[] = ['pink', 'frostling', 'brute', 'crystal', 'gloomship', 'wyrm', 'colossus', 'leviathan'];
   let x = 50;
   lineup.forEach((t) => {
     const s = api.enemySprite(t, 1);
-    blit(g, s, x + s.ax, 1100, 2);
+    blit(g, s, x + s.ax, 1280, 2);
     x += s.canvas.width * 2 + 8;
   });
   void api;

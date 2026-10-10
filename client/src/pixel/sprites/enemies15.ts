@@ -121,6 +121,8 @@ export function drawCrystalBrute(f: number, stage: number, s: Surface): void {
     const hh = h - (stage >= 2 && i % 2 ? 2 : 0) - crest * (i === 1 ? 2 : 0);
     crystal(s, cx + dx, cy + dy - 1, hh, CRY, 1);
   });
+  // Glitzern wandert ueber den Kamm (macht alle 4 Lauf-Frames verschieden)
+  s.px(cx - 8 + (f & 3) * 5 + sway, cy - 14 - ((f & 3) % 3), f & 1 ? 'white' : 'ice');
   // Schulterpanzer aus Kristall
   for (const sg of [-1, 1]) {
     const broken = stage >= 2 && sg > 0;
