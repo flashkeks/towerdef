@@ -3,8 +3,13 @@
  * Positionen in Milli-px, Zeit in Ticks (60/s), Faktoren in Basispunkten, Zustand nur Ganzzahlen.
  */
 
-export type TowerType = 'ranger' | 'bombardier' | 'frostcaller' | 'longshot' | 'market' | 'thornweaver' | 'alchemist';
-export type HeroType = 'wren';
+export type TowerType = 'ranger' | 'bombardier' | 'frostcaller' | 'longshot' | 'market' | 'thornweaver' | 'alchemist'
+  // Runde 16 (Paket T): Wasserturm, Unterstuetzung, Bauer/Fallen
+  | 'riverkeeper' | 'bellringer' | 'tinker';
+/** Runde 16: drei Helden, einer je Match (`GameOptions.hero`, Vorgabe `wren`). */
+export type HeroType = 'wren' | 'bram' | 'sela';
+/** Runde 16: Wo ein Turm steht. `water` nur vollstaendig in einem `water`-Polygon der Karte (Lava zaehlt nicht). */
+export type Placement = 'land' | 'water';
 export type EnemyType =
   | 'red' | 'blue' | 'green' | 'gold' | 'ironshell' | 'ember' | 'brute' | 'leviathan'
   // Runde 15
@@ -14,13 +19,17 @@ export type ModeId = 'standard' | 'primary-only' | 'specialists-only' | 'no-hero
 export type Difficulty = 'easy' | 'medium' | 'hard';
 export type TargetMode = 'first' | 'last' | 'strong' | 'close';
 export type Tiers = [number, number, number];
-export type AbilityId = 'arrowRain' | 'absoluteZero' | 'flare' | 'dawnbreak' | 'focus' | 'supplyDrop' | 'grant' | 'wallOfTrees' | 'tonic';
+export type AbilityId = 'arrowRain' | 'absoluteZero' | 'flare' | 'dawnbreak' | 'focus' | 'supplyDrop' | 'grant' | 'wallOfTrees' | 'tonic'
+  // Runde 16: Alarm (Bellringer), Overclock (Tinker), Held Bram (Anvil Drop, Forge of Dawn), Held Sela (Starfall, Eclipse)
+  | 'alarm' | 'overclock' | 'anvilDrop' | 'forgeOfDawn' | 'starfall' | 'eclipse';
 export type DamageType = 'sharp' | 'cold' | 'explosive' | 'energy' | 'magic';
 export type PowerKey =
   | 'goldDrop' | 'lanternBomb' | 'caltrops' | 'frostTrap' | 'timeWarp' | 'lanternOil' | 'extraLives' | 'heroBoost'
   | 'instaWarden:ranger' | 'instaWarden:bombardier' | 'instaWarden:frostcaller';
 export type TrapKind = 'caltrops' | 'frostTrap';
-export type ProjectileKind = 'arrow' | 'bigArrow' | 'bolt' | 'starBolt' | 'bomb' | 'frag' | 'frost' | 'shard' | 'lantern' | 'snipe' | 'thorn' | 'potion';
+export type ProjectileKind = 'arrow' | 'bigArrow' | 'bolt' | 'starBolt' | 'bomb' | 'frag' | 'frost' | 'shard' | 'lantern' | 'snipe' | 'thorn' | 'potion'
+  // Runde 16: Harpune, Kanonenkugel (Riverkeeper), Nagel (Tinker/Sentries), Hammer (Bram), Sternenlicht (Sela)
+  | 'harpoon' | 'cannonball' | 'nail' | 'hammer' | 'starlight';
 
 export interface GameOptions {
   map: string;
@@ -28,6 +37,8 @@ export interface GameOptions {
   seed: number;
   /** Runde 15: Spielmodus (Standard `standard`). Regeln: sim/README.md "Runde 15". */
   mode?: ModeId;
+  /** Runde 16: gewaehlter Held (Vorgabe `wren`). Nur dieser Held ist in diesem Match platzierbar (`wrong-hero` sonst). */
+  hero?: HeroType;
   /** Was das Profil freigeschaltet hat (P4). Fehlt = alles frei (Tests, Sandbox). */
   unlocks?: { towers: (TowerType | HeroType)[]; maxTier: Partial<Record<TowerType, Tiers>> };
   /**
@@ -92,10 +103,20 @@ export interface GameOptions {
     roundLives?: number;
     /** Leckschutz: so viele Lecks werden je Match verhindert ("Sturdy Gate" 1). */
     gate?: number;
+    // --- Runde 16 (Wissensbaum) ---
+    /** Wirkradius der Auren in Basispunkten je Turmtyp ("Loud Bells": bellringer 1500). */
+    auraRadiusBp?: Partial<Record<TowerType, number>>;
+    /** Zusatzgold je Rundenende fuer Bellringer mit Toll of Coin ("Silver Tongue" 25). */
+    tollAdd?: number;
+    /** Tinker-Sentries halten so viele Basispunkte laenger ("Spare Parts" 2500). */
+    sentryTtlBp?: number;
+    /** Zusaetzliche Ladungen je Tinker-Falle ("Sharp Caltrops" 2). */
+    trapChargesAdd?: number;
   };
 }
 
 export type Command =
+  /** Gruende (Runde 16 neu): `needs-water` (Wasserturm nicht ganz im Wasser), `wrong-hero` (nicht der gewaehlte Held). */
   | { type: 'place'; tower: TowerType | HeroType; x: number; y: number }
   | { type: 'upgrade'; towerId: number; path: 0 | 1 | 2 }
   | { type: 'unlockTier'; tower: TowerType; path: 0 | 1 | 2 }
@@ -197,6 +218,10 @@ export interface TowerState {
   monsterTicks: number;
   /** Runde 15: Frost Wyrm hat den Turm eingefroren, Restticks (0 = nicht eingefroren): der Turm tut nichts. */
   frozen: number;
+  // --- Runde 16 ---
+  /** Overclock (Tinker C3+): Restticks und Zusatztempo in Basispunkten auf diesem Turm (0 = keiner). */
+  boostTicks: number;
+  boostBp: number;
   // --- Innenleben Runde 14 ---
   zapCd: number;
   whirlCd: number;
@@ -204,6 +229,24 @@ export interface TowerState {
   zoneCd: number;
   brewCd: number;
   shrinkCd: number;
+  /** Runde 16 (Innenleben): Bauzeit der naechsten Sentry / Falle des Tinkers, Ticks. */
+  sentryCd: number;
+  trapCd: number;
+}
+
+/** Runde 16: Sentry des Tinkers, temporaerer Mini-Turm neben dem Tinker (ohne Platzierung, nicht verkaufbar). */
+export interface SentryState {
+  id: number;
+  /** Id des Tinkers. */
+  owner: number;
+  /** Platz neben dem Tinker (0..sentryN-1), Position = Kreis um den Tinker. */
+  slot: number;
+  x: number;
+  y: number;
+  /** Restticks bis zum Abbau. */
+  ttl: number;
+  /** Abklingzaehler in Milli-Ticks. */
+  cd: number;
 }
 
 /** Wall of Trees (Thornweaver B3): Weg-Objekt, schluckt Gegner bis `left` RBE aufgebraucht sind. */
@@ -323,6 +366,10 @@ export interface TrapState {
   branch: number;
   /** Innenleben: Falle verschwindet am Ende dieser Runde (0 = nie). */
   until: number;
+  /** Runde 16: Tinker, der die Falle gelegt hat (0 = Power). */
+  owner: number;
+  /** Runde 16: Schaden je Ausloesung (0 = Wert der Power Caltrops). */
+  dmg: number;
 }
 
 /** Vorschau einer Runde (`Game.roundPreview`). */
@@ -439,6 +486,10 @@ export interface GameState {
   halfCarry: number;
   /** Runde 15: Runde vor der ersten Runde des Matches (0; Deflation: letzte Runde - 11). */
   baseRound: number;
+  /** Runde 16: Sentries der Tinker, aufsteigende id. */
+  sentries: SentryState[];
+  /** Runde 16: Forge of Dawn (Bram L20), Restticks: alle Tuerme brechen Panzer. */
+  forgeLeft: number;
   // --- Innenleben ---
   /** Time Warp: Restticks. */
   warpLeft: number;
@@ -461,7 +512,8 @@ export interface GameState {
 
 export type SimEvent =
   | { type: 'windup'; tick: number; tower: number; target: number }
-  | { type: 'fire'; tick: number; tower: number; projectile?: number; kind: ProjectileKind | 'chain' }
+  /** `sentry` (Runde 16): der Schuss kam von dieser Sentry des Tinkers `tower`, nicht vom Turm selbst. */
+  | { type: 'fire'; tick: number; tower: number; projectile?: number; kind: ProjectileKind | 'chain'; sentry?: number }
   | { type: 'hit'; tick: number; enemy: number; tower: number; dmg: number; dtype: DamageType; x: number; y: number }
   | { type: 'blocked'; tick: number; enemy: number; x: number; y: number; reason: 'armor' | 'immune' | 'explosion' }
   | { type: 'pop'; tick: number; enemy: number; etype: EnemyType; x: number; y: number; children: number[]; cash: number }
@@ -501,6 +553,15 @@ export type SimEvent =
   /** Sturdy Gate hat ein Leck verhindert. */
   | { type: 'gate'; tick: number; enemy: number; etype: EnemyType }
   | { type: 'leak'; tick: number; enemy: number; etype: EnemyType; lives: number }
+  /** Runde 16: Tinker baut / verliert eine Sentry (`reason`: Zeit abgelaufen, Tinker verkauft). */
+  | { type: 'sentry'; tick: number; id: number; tower: number; x: number; y: number; ttl: number }
+  | { type: 'sentryGone'; tick: number; id: number; tower: number; reason: 'expired' | 'sold' }
+  /** Runde 16: Tinker legt eine Falle (Caltrop Layer) auf den Weg. */
+  | { type: 'trapSet'; tick: number; id: number; tower: number; x: number; y: number; charges: number }
+  /** Runde 16: Overclock beschleunigt `tower` fuer `ticks` um `bp` Basispunkte; `source` = Tinker. */
+  | { type: 'overclock'; tick: number; tower: number; source: number; ticks: number; bp: number }
+  /** Runde 16: Starfall (Sela): Strahl ueber den Weg im Radius, `hits` = getroffene Gegner. */
+  | { type: 'starfall'; tick: number; tower: number; x: number; y: number; radius: number; hits: number }
   | { type: 'place'; tick: number; tower: number; ttype: TowerType | HeroType; cash: number }
   | { type: 'upgrade'; tick: number; tower: number; ttype: TowerType | HeroType; tiers: Tiers; cash: number }
   | { type: 'sell'; tick: number; tower: number; ttype: TowerType | HeroType; cash: number }
@@ -536,6 +597,8 @@ export interface GameInfo {
   baseRound: number;
   /** Anzahl der Wegaeste der Karte (Frostfen 2, sonst 1). */
   branches: number;
+  /** Runde 16: gewaehlter Held dieses Matches. */
+  hero: HeroType;
 }
 
 export interface Game {

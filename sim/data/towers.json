@@ -2202,6 +2202,1212 @@
    }
   ]
  },
+ "riverkeeper": {
+  "name": "Riverkeeper",
+  "price": 400,
+  "radius": 10,
+  "placement": "water",
+  "desc": "Water tower. Harpoons, sonar and a lantern ship. Can only be built on water.",
+  "base": {
+   "atk": "projectile",
+   "pk": "harpoon",
+   "dtype": "sharp",
+   "dmg": 2,
+   "pierce": 3,
+   "interval": 66000,
+   "range": 72000,
+   "speed": 520,
+   "count": 1,
+   "spread": 12
+  },
+  "paths": [
+   {
+    "name": "Harpoons",
+    "tiers": [
+     {
+      "name": "Barbed Harpoons",
+      "price": 250,
+      "desc": "Harpoons pierce 2 more enemies.",
+      "mods": [
+       {
+        "op": "add",
+        "stat": "pierce",
+        "v": 2
+       }
+      ]
+     },
+     {
+      "name": "Harpoon Volley",
+      "price": 500,
+      "desc": "Fires 3 harpoons in a fan.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "count",
+        "v": 3
+       },
+       {
+        "op": "set",
+        "stat": "spread",
+        "v": 14
+       }
+      ]
+     },
+     {
+      "name": "Tidal Steel",
+      "price": 2200,
+      "desc": "Steel tips hit Ironshell. +2 damage, +4 against Brutes and ships.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "dtype",
+        "v": "magic"
+       },
+       {
+        "op": "add",
+        "stat": "dmg",
+        "v": 2
+       },
+       {
+        "op": "add",
+        "stat": "bonusBrute",
+        "v": 4
+       }
+      ]
+     },
+     {
+      "name": "Whaler",
+      "price": 5500,
+      "desc": "+3 damage, +10 against Brutes and ships, +10 against bosses.",
+      "mods": [
+       {
+        "op": "add",
+        "stat": "dmg",
+        "v": 3
+       },
+       {
+        "op": "add",
+        "stat": "bonusBrute",
+        "v": 10
+       },
+       {
+        "op": "add",
+        "stat": "bonusBoss",
+        "v": 10
+       },
+       {
+        "op": "mul",
+        "stat": "interval",
+        "v": 8500
+       }
+      ]
+     },
+     {
+      "name": "Tidal Lance",
+      "price": 22000,
+      "desc": "One huge lance: 40 damage, pierces 25. +40 against Brutes and ships, +200 against bosses.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "count",
+        "v": 1
+       },
+       {
+        "op": "set",
+        "stat": "dmg",
+        "v": 40
+       },
+       {
+        "op": "set",
+        "stat": "pierce",
+        "v": 25
+       },
+       {
+        "op": "set",
+        "stat": "speed",
+        "v": 900
+       },
+       {
+        "op": "set",
+        "stat": "interval",
+        "v": 84000
+       },
+       {
+        "op": "add",
+        "stat": "bonusBrute",
+        "v": 40
+       },
+       {
+        "op": "add",
+        "stat": "bonusBoss",
+        "v": 200
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "name": "Sonar",
+    "tiers": [
+     {
+      "name": "Sonar Ping",
+      "price": 200,
+      "desc": "Detects camouflage. Range +10%.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "camo",
+        "v": 1
+       },
+       {
+        "op": "mul",
+        "stat": "range",
+        "v": 11000
+       }
+      ]
+     },
+     {
+      "name": "Sonar Array",
+      "price": 450,
+      "desc": "Towers within 80 px detect camouflage.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "aR",
+        "v": 80000
+       },
+       {
+        "op": "set",
+        "stat": "aCamo",
+        "v": 1
+       }
+      ]
+     },
+     {
+      "name": "Riptide",
+      "price": 1600,
+      "desc": "Enemies in range move 30% slower (bosses 15%, ships 15%).",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "auraSlowBp",
+        "v": 3000
+       },
+       {
+        "op": "set",
+        "stat": "auraBossSlowBp",
+        "v": 1500
+       }
+      ]
+     },
+     {
+      "name": "Deep Current",
+      "price": 4200,
+      "desc": "Slow 45% (bosses 20%). Towers within 80 px get +15% range.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "auraSlowBp",
+        "v": 4500
+       },
+       {
+        "op": "set",
+        "stat": "auraBossSlowBp",
+        "v": 2000
+       },
+       {
+        "op": "set",
+        "stat": "aRangeBp",
+        "v": 1500
+       }
+      ]
+     },
+     {
+      "name": "Leviathan Call",
+      "price": 17000,
+      "desc": "Every 4 s the Leviathan strikes the strongest enemy in range for 150 damage. Slow 55%.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "thunderInterval",
+        "v": 240
+       },
+       {
+        "op": "set",
+        "stat": "thunderDmg",
+        "v": 150
+       },
+       {
+        "op": "set",
+        "stat": "auraSlowBp",
+        "v": 5500
+       },
+       {
+        "op": "set",
+        "stat": "auraBossSlowBp",
+        "v": 2500
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "name": "Armada",
+    "tiers": [
+     {
+      "name": "Deck Gun",
+      "price": 300,
+      "desc": "Attacks 20% faster.",
+      "mods": [
+       {
+        "op": "mul",
+        "stat": "interval",
+        "v": 8000
+       }
+      ]
+     },
+     {
+      "name": "Lantern Ship",
+      "price": 700,
+      "desc": "Cannonballs: 3 damage, pierce 4, burst on the last hit (18 px, 2 damage).",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "pk",
+        "v": "cannonball"
+       },
+       {
+        "op": "set",
+        "stat": "dtype",
+        "v": "explosive"
+       },
+       {
+        "op": "set",
+        "stat": "dmg",
+        "v": 3
+       },
+       {
+        "op": "set",
+        "stat": "pierce",
+        "v": 4
+       },
+       {
+        "op": "set",
+        "stat": "speed",
+        "v": 480
+       },
+       {
+        "op": "set",
+        "stat": "endR",
+        "v": 18000
+       },
+       {
+        "op": "set",
+        "stat": "endDmg",
+        "v": 2
+       },
+       {
+        "op": "set",
+        "stat": "endMax",
+        "v": 8
+       }
+      ]
+     },
+     {
+      "name": "Broadside",
+      "price": 2600,
+      "desc": "Fires 4 cannonballs at once. Bursts 22 px.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "count",
+        "v": 4
+       },
+       {
+        "op": "set",
+        "stat": "spread",
+        "v": 18
+       },
+       {
+        "op": "set",
+        "stat": "endR",
+        "v": 22000
+       }
+      ]
+     },
+     {
+      "name": "Man o' War",
+      "price": 6500,
+      "desc": "+3 damage, attacks 20% faster. Bursts 26 px for 5 damage. +6 against Brutes and ships.",
+      "mods": [
+       {
+        "op": "add",
+        "stat": "dmg",
+        "v": 3
+       },
+       {
+        "op": "mul",
+        "stat": "interval",
+        "v": 8000
+       },
+       {
+        "op": "set",
+        "stat": "endR",
+        "v": 26000
+       },
+       {
+        "op": "set",
+        "stat": "endDmg",
+        "v": 5
+       },
+       {
+        "op": "set",
+        "stat": "endMax",
+        "v": 12
+       },
+       {
+        "op": "add",
+        "stat": "bonusBrute",
+        "v": 6
+       }
+      ]
+     },
+     {
+      "name": "Dusk Armada",
+      "price": 25000,
+      "desc": "A whole fleet: 8 cannonballs per volley, bursts 30 px for 10 damage. +10 against Brutes and ships, +20 against bosses.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "count",
+        "v": 8
+       },
+       {
+        "op": "set",
+        "stat": "spread",
+        "v": 14
+       },
+       {
+        "op": "add",
+        "stat": "dmg",
+        "v": 3
+       },
+       {
+        "op": "mul",
+        "stat": "interval",
+        "v": 7500
+       },
+       {
+        "op": "set",
+        "stat": "endR",
+        "v": 30000
+       },
+       {
+        "op": "set",
+        "stat": "endDmg",
+        "v": 10
+       },
+       {
+        "op": "set",
+        "stat": "endMax",
+        "v": 16
+       },
+       {
+        "op": "add",
+        "stat": "bonusBrute",
+        "v": 10
+       },
+       {
+        "op": "add",
+        "stat": "bonusBoss",
+        "v": 20
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ },
+ "bellringer": {
+  "name": "Bellringer",
+  "price": 1000,
+  "radius": 12,
+  "placement": "land",
+  "desc": "Does not attack. Its bells buff every tower within 80 px: speed, sight, cheaper upgrades, or a toll of gold.",
+  "base": {
+   "atk": "none",
+   "range": 80000,
+   "aRangeBp": 800
+  },
+  "paths": [
+   {
+    "name": "Chimes",
+    "tiers": [
+     {
+      "name": "Swift Chime",
+      "price": 350,
+      "desc": "Towers in range attack 10% faster.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "aSpeedBp",
+        "v": 1000
+       }
+      ]
+     },
+     {
+      "name": "Resonant Bronze",
+      "price": 750,
+      "desc": "Towers in range attack 18% faster. Radius +15%.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "aSpeedBp",
+        "v": 1800
+       },
+       {
+        "op": "mul",
+        "stat": "range",
+        "v": 11500
+       }
+      ]
+     },
+     {
+      "name": "Grand Peal",
+      "price": 2600,
+      "desc": "Attack speed +25%. Towers in range pierce 1 more enemy.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "aSpeedBp",
+        "v": 2500
+       },
+       {
+        "op": "set",
+        "stat": "aPierce",
+        "v": 1
+       }
+      ]
+     },
+     {
+      "name": "Cathedral Bells",
+      "price": 6500,
+      "desc": "Attack speed +35%, +1 damage for towers in range.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "aSpeedBp",
+        "v": 3500
+       },
+       {
+        "op": "set",
+        "stat": "aDmg",
+        "v": 1
+       }
+      ]
+     },
+     {
+      "name": "Grand Carillon",
+      "price": 26000,
+      "desc": "Attack speed +50%, +2 damage, pierce +2 for towers in range. Radius +40%.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "aSpeedBp",
+        "v": 5000
+       },
+       {
+        "op": "set",
+        "stat": "aDmg",
+        "v": 2
+       },
+       {
+        "op": "set",
+        "stat": "aPierce",
+        "v": 2
+       },
+       {
+        "op": "mul",
+        "stat": "range",
+        "v": 14000
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "name": "Watch",
+    "tiers": [
+     {
+      "name": "Watch Bell",
+      "price": 300,
+      "desc": "Towers in range detect camouflage.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "aCamo",
+        "v": 1
+       }
+      ]
+     },
+     {
+      "name": "Haggler's Bell",
+      "price": 600,
+      "desc": "Upgrades for towers in range cost 8% less. Radius +10%.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "aDiscBp",
+        "v": 800
+       },
+       {
+        "op": "mul",
+        "stat": "range",
+        "v": 11000
+       }
+      ]
+     },
+     {
+      "name": "Alarm",
+      "price": 2000,
+      "desc": "Ability: every enemy stops for 2 s (bosses 1 s). Cooldown 60 s.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "alarmStun",
+        "v": 120
+       },
+       {
+        "op": "set",
+        "stat": "alarmBoss",
+        "v": 60
+       },
+       {
+        "op": "set",
+        "stat": "alarmCd",
+        "v": 3600
+       }
+      ]
+     },
+     {
+      "name": "Town Crier",
+      "price": 4800,
+      "desc": "Upgrades cost 15% less. Alarm lasts 3 s (bosses 1.5 s), cooldown 50 s.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "aDiscBp",
+        "v": 1500
+       },
+       {
+        "op": "set",
+        "stat": "alarmStun",
+        "v": 180
+       },
+       {
+        "op": "set",
+        "stat": "alarmBoss",
+        "v": 90
+       },
+       {
+        "op": "set",
+        "stat": "alarmCd",
+        "v": 3000
+       }
+      ]
+     },
+     {
+      "name": "Dusk Siren",
+      "price": 15000,
+      "desc": "Alarm lasts 4 s (bosses 2 s), cooldown 40 s; alarmed enemies take +1 damage for 4 s. Upgrades cost 20% less. Sharp hits crack Ironshell.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "alarmStun",
+        "v": 240
+       },
+       {
+        "op": "set",
+        "stat": "alarmBoss",
+        "v": 120
+       },
+       {
+        "op": "set",
+        "stat": "alarmCd",
+        "v": 2400
+       },
+       {
+        "op": "set",
+        "stat": "alarmBrittle",
+        "v": 240
+       },
+       {
+        "op": "set",
+        "stat": "aDiscBp",
+        "v": 2000
+       },
+       {
+        "op": "set",
+        "stat": "aArmor",
+        "v": 1
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "name": "Toll",
+    "tiers": [
+     {
+      "name": "Toll of Coin",
+      "price": 400,
+      "desc": "+30 gold at the end of every round.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "income",
+        "v": 30
+       }
+      ]
+     },
+     {
+      "name": "Silver Bell",
+      "price": 700,
+      "desc": "+80 gold per round.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "income",
+        "v": 80
+       }
+      ]
+     },
+     {
+      "name": "Merchants' Peal",
+      "price": 2200,
+      "desc": "+220 gold per round.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "income",
+        "v": 220
+       }
+      ]
+     },
+     {
+      "name": "Bell Foundry",
+      "price": 5500,
+      "desc": "+520 gold per round. Upgrades for towers in range cost 5% less.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "income",
+        "v": 520
+       },
+       {
+        "op": "set",
+        "stat": "aDiscBp",
+        "v": 500
+       }
+      ]
+     },
+     {
+      "name": "Golden Belfry",
+      "price": 18000,
+      "desc": "+1,400 gold per round. Upgrades for towers in range cost 10% less.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "income",
+        "v": 1400
+       },
+       {
+        "op": "set",
+        "stat": "aDiscBp",
+        "v": 1000
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ },
+ "tinker": {
+  "name": "Tinker",
+  "price": 450,
+  "radius": 9,
+  "placement": "land",
+  "desc": "Builds things. Nail gun at the start; sentries, caltrops on the road and Overclock come with upgrades.",
+  "base": {
+   "atk": "projectile",
+   "pk": "nail",
+   "dtype": "sharp",
+   "dmg": 1,
+   "pierce": 2,
+   "interval": 78000,
+   "range": 64000,
+   "speed": 650,
+   "count": 1,
+   "spread": 12
+  },
+  "paths": [
+   {
+    "name": "Sentry",
+    "tiers": [
+     {
+      "name": "Sentry Kit",
+      "price": 350,
+      "desc": "Builds a sentry every 7 s (one at a time, 25 s each). It shoots nails.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "sentryN",
+        "v": 1
+       },
+       {
+        "op": "set",
+        "stat": "sentryEvery",
+        "v": 420
+       },
+       {
+        "op": "set",
+        "stat": "sentryTtl",
+        "v": 1500
+       },
+       {
+        "op": "set",
+        "stat": "sentryDmg",
+        "v": 1
+       },
+       {
+        "op": "set",
+        "stat": "sentryPierce",
+        "v": 2
+       },
+       {
+        "op": "set",
+        "stat": "sentryInterval",
+        "v": 66000
+       },
+       {
+        "op": "set",
+        "stat": "sentryRange",
+        "v": 60000
+       },
+       {
+        "op": "set",
+        "stat": "sentryDtype",
+        "v": "sharp"
+       }
+      ]
+     },
+     {
+      "name": "Twin Sentries",
+      "price": 600,
+      "desc": "Two sentries at once, built every 6 s, shooting faster.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "sentryN",
+        "v": 2
+       },
+       {
+        "op": "set",
+        "stat": "sentryEvery",
+        "v": 360
+       },
+       {
+        "op": "set",
+        "stat": "sentryInterval",
+        "v": 54000
+       }
+      ]
+     },
+     {
+      "name": "Sentry Guns",
+      "price": 2200,
+      "desc": "Three sentries, 2 damage, pierce 3, magic nails (hit Ironshell).",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "sentryN",
+        "v": 3
+       },
+       {
+        "op": "set",
+        "stat": "sentryEvery",
+        "v": 300
+       },
+       {
+        "op": "set",
+        "stat": "sentryDmg",
+        "v": 2
+       },
+       {
+        "op": "set",
+        "stat": "sentryPierce",
+        "v": 3
+       },
+       {
+        "op": "set",
+        "stat": "sentryInterval",
+        "v": 42000
+       },
+       {
+        "op": "set",
+        "stat": "sentryTtl",
+        "v": 1800
+       },
+       {
+        "op": "set",
+        "stat": "sentryDtype",
+        "v": "magic"
+       }
+      ]
+     },
+     {
+      "name": "Clockwork Turrets",
+      "price": 5200,
+      "desc": "Four sentries, 3 damage, fast. +3 against Brutes and ships.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "sentryN",
+        "v": 4
+       },
+       {
+        "op": "set",
+        "stat": "sentryEvery",
+        "v": 240
+       },
+       {
+        "op": "set",
+        "stat": "sentryDmg",
+        "v": 3
+       },
+       {
+        "op": "set",
+        "stat": "sentryInterval",
+        "v": 30000
+       },
+       {
+        "op": "set",
+        "stat": "sentryTtl",
+        "v": 2100
+       },
+       {
+        "op": "add",
+        "stat": "bonusBrute",
+        "v": 3
+       }
+      ]
+     },
+     {
+      "name": "Clockwork Fort",
+      "price": 20000,
+      "desc": "Five sentries, 3 damage, pierce 3, a shot every 0.25 s, 45 s each. +8 against Brutes and ships, +10 against bosses.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "sentryN",
+        "v": 5
+       },
+       {
+        "op": "set",
+        "stat": "sentryEvery",
+        "v": 180
+       },
+       {
+        "op": "set",
+        "stat": "sentryDmg",
+        "v": 3
+       },
+       {
+        "op": "set",
+        "stat": "sentryPierce",
+        "v": 3
+       },
+       {
+        "op": "set",
+        "stat": "sentryInterval",
+        "v": 15000
+       },
+       {
+        "op": "set",
+        "stat": "sentryTtl",
+        "v": 2700
+       },
+       {
+        "op": "add",
+        "stat": "bonusBrute",
+        "v": 8
+       },
+       {
+        "op": "add",
+        "stat": "bonusBoss",
+        "v": 10
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "name": "Caltrops",
+    "tiers": [
+     {
+      "name": "Caltrop Layer",
+      "price": 250,
+      "desc": "Lays caltrops on the road in range every 8 s (3 at a time): each pops 6 layers.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "trapMax",
+        "v": 3
+       },
+       {
+        "op": "set",
+        "stat": "trapEvery",
+        "v": 480
+       },
+       {
+        "op": "set",
+        "stat": "trapCharges",
+        "v": 6
+       },
+       {
+        "op": "set",
+        "stat": "trapDmg",
+        "v": 1
+       }
+      ]
+     },
+     {
+      "name": "Spiked Caltrops",
+      "price": 450,
+      "desc": "Caltrops hold 10 hits and deal 2 damage. Laid every 7 s.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "trapCharges",
+        "v": 10
+       },
+       {
+        "op": "set",
+        "stat": "trapDmg",
+        "v": 2
+       },
+       {
+        "op": "set",
+        "stat": "trapEvery",
+        "v": 420
+       }
+      ]
+     },
+     {
+      "name": "Spike Mat",
+      "price": 1800,
+      "desc": "Five mats at once, 14 hits each, 3 damage, laid every 6 s.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "trapMax",
+        "v": 5
+       },
+       {
+        "op": "set",
+        "stat": "trapCharges",
+        "v": 14
+       },
+       {
+        "op": "set",
+        "stat": "trapDmg",
+        "v": 3
+       },
+       {
+        "op": "set",
+        "stat": "trapEvery",
+        "v": 360
+       }
+      ]
+     },
+     {
+      "name": "Heavy Spikes",
+      "price": 4200,
+      "desc": "Six mats, 20 hits each, 5 damage, laid every 5 s.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "trapMax",
+        "v": 6
+       },
+       {
+        "op": "set",
+        "stat": "trapCharges",
+        "v": 20
+       },
+       {
+        "op": "set",
+        "stat": "trapDmg",
+        "v": 5
+       },
+       {
+        "op": "set",
+        "stat": "trapEvery",
+        "v": 300
+       }
+      ]
+     },
+     {
+      "name": "Iron Thorn Field",
+      "price": 18000,
+      "desc": "Ten mats at once, 30 hits each, 8 damage, laid every 2.5 s.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "trapMax",
+        "v": 10
+       },
+       {
+        "op": "set",
+        "stat": "trapCharges",
+        "v": 30
+       },
+       {
+        "op": "set",
+        "stat": "trapDmg",
+        "v": 8
+       },
+       {
+        "op": "set",
+        "stat": "trapEvery",
+        "v": 150
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "name": "Overclock",
+    "tiers": [
+     {
+      "name": "Oiled Gears",
+      "price": 200,
+      "desc": "Attacks 15% faster.",
+      "mods": [
+       {
+        "op": "mul",
+        "stat": "interval",
+        "v": 8500
+       }
+      ]
+     },
+     {
+      "name": "Gear Sight",
+      "price": 400,
+      "desc": "Detects camouflage. Range +15%.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "camo",
+        "v": 1
+       },
+       {
+        "op": "mul",
+        "stat": "range",
+        "v": 11500
+       },
+       {
+        "op": "mul",
+        "stat": "sentryRange",
+        "v": 11500
+       }
+      ]
+     },
+     {
+      "name": "Overclock",
+      "price": 2300,
+      "desc": "Ability: the 4 nearest towers in range attack twice as fast for 10 s. Cooldown 50 s.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "ocDur",
+        "v": 600
+       },
+       {
+        "op": "set",
+        "stat": "ocCd",
+        "v": 3000
+       },
+       {
+        "op": "set",
+        "stat": "ocBp",
+        "v": 10000
+       },
+       {
+        "op": "set",
+        "stat": "ocMax",
+        "v": 4
+       }
+      ]
+     },
+     {
+      "name": "Overclock Lab",
+      "price": 5500,
+      "desc": "Overclock reaches 8 towers, lasts 12 s, cooldown 40 s.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "ocDur",
+        "v": 720
+       },
+       {
+        "op": "set",
+        "stat": "ocCd",
+        "v": 2400
+       },
+       {
+        "op": "set",
+        "stat": "ocMax",
+        "v": 8
+       }
+      ]
+     },
+     {
+      "name": "Ultra-Overclock",
+      "price": 20000,
+      "desc": "Overclock reaches 20 towers, lasts 15 s, cooldown 35 s. Towers within 70 px always attack 10% faster.",
+      "mods": [
+       {
+        "op": "set",
+        "stat": "ocDur",
+        "v": 900
+       },
+       {
+        "op": "set",
+        "stat": "ocCd",
+        "v": 2100
+       },
+       {
+        "op": "set",
+        "stat": "ocMax",
+        "v": 20
+       },
+       {
+        "op": "set",
+        "stat": "aSpeedBp",
+        "v": 1000
+       },
+       {
+        "op": "set",
+        "stat": "aR",
+        "v": 70000
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ },
  "wren": {
   "name": "Wren",
   "title": "the Lamplighter",
@@ -2502,6 +3708,639 @@
       "op": "set",
       "stat": "dawnCd",
       "v": 2700
+     }
+    ]
+   }
+  ]
+ },
+ "bram": {
+  "name": "Bram",
+  "title": "Ironwright",
+  "price": 650,
+  "radius": 11,
+  "desc": "Hero. A smith who throws hammers that crack armor. Builds a forge, drops an anvil, ends with the Forge of Dawn.",
+  "base": {
+   "atk": "projectile",
+   "pk": "hammer",
+   "dtype": "magic",
+   "dmg": 2,
+   "pierce": 2,
+   "interval": 72000,
+   "range": 70000,
+   "speed": 520,
+   "count": 1,
+   "spread": 12,
+   "bonusBrute": 2,
+   "bonusIron": 2
+  },
+  "levels": [
+   {
+    "level": 1,
+    "xp": 0,
+    "desc": "Hammer throws: 2 damage, pierces 2, magic. +2 against Brutes and Ironshell.",
+    "mods": []
+   },
+   {
+    "level": 2,
+    "xp": 100,
+    "desc": "Range +10%.",
+    "mods": [
+     {
+      "op": "mul",
+      "stat": "range",
+      "v": 11000
+     }
+    ]
+   },
+   {
+    "level": 3,
+    "xp": 230,
+    "desc": "The Forge: towers within 80 px deal +1 damage.",
+    "mods": [
+     {
+      "op": "set",
+      "stat": "buffRadius",
+      "v": 80000
+     },
+     {
+      "op": "set",
+      "stat": "forgeDmg",
+      "v": 1
+     }
+    ]
+   },
+   {
+    "level": 4,
+    "xp": 400,
+    "desc": "Damage +1.",
+    "mods": [
+     {
+      "op": "add",
+      "stat": "dmg",
+      "v": 1
+     }
+    ]
+   },
+   {
+    "level": 5,
+    "xp": 600,
+    "desc": "Pierce +1.",
+    "mods": [
+     {
+      "op": "add",
+      "stat": "pierce",
+      "v": 1
+     }
+    ]
+   },
+   {
+    "level": 6,
+    "xp": 850,
+    "desc": "Throws 15% faster.",
+    "mods": [
+     {
+      "op": "mul",
+      "stat": "interval",
+      "v": 8500
+     }
+    ]
+   },
+   {
+    "level": 7,
+    "xp": 1150,
+    "desc": "+3 against Brutes, +2 against Ironshell.",
+    "mods": [
+     {
+      "op": "add",
+      "stat": "bonusBrute",
+      "v": 3
+     },
+     {
+      "op": "add",
+      "stat": "bonusIron",
+      "v": 2
+     }
+    ]
+   },
+   {
+    "level": 8,
+    "xp": 1500,
+    "desc": "Forge bellows: towers within the forge attack 10% faster.",
+    "mods": [
+     {
+      "op": "set",
+      "stat": "buffSpeedBp",
+      "v": 1000
+     }
+    ]
+   },
+   {
+    "level": 9,
+    "xp": 1900,
+    "desc": "Range +10%.",
+    "mods": [
+     {
+      "op": "mul",
+      "stat": "range",
+      "v": 11000
+     }
+    ]
+   },
+   {
+    "level": 10,
+    "xp": 2350,
+    "desc": "Ability: Anvil Drop - an anvil crushes the strongest target: 30 damage (150 to bosses) in 30 px, stuns 2 s. Cooldown 55 s.",
+    "mods": [
+     {
+      "op": "set",
+      "stat": "anvilDmg",
+      "v": 30
+     },
+     {
+      "op": "set",
+      "stat": "anvilBoss",
+      "v": 150
+     },
+     {
+      "op": "set",
+      "stat": "anvilR",
+      "v": 30000
+     },
+     {
+      "op": "set",
+      "stat": "anvilMax",
+      "v": 12
+     },
+     {
+      "op": "set",
+      "stat": "anvilStun",
+      "v": 120
+     },
+     {
+      "op": "set",
+      "stat": "anvilStunBoss",
+      "v": 36
+     },
+     {
+      "op": "set",
+      "stat": "anvilCd",
+      "v": 3300
+     }
+    ]
+   },
+   {
+    "level": 11,
+    "xp": 2850,
+    "desc": "Damage +1.",
+    "mods": [
+     {
+      "op": "add",
+      "stat": "dmg",
+      "v": 1
+     }
+    ]
+   },
+   {
+    "level": 12,
+    "xp": 3400,
+    "desc": "The Forge gives +2 damage.",
+    "mods": [
+     {
+      "op": "set",
+      "stat": "forgeDmg",
+      "v": 2
+     }
+    ]
+   },
+   {
+    "level": 13,
+    "xp": 4000,
+    "desc": "Pierce +2.",
+    "mods": [
+     {
+      "op": "add",
+      "stat": "pierce",
+      "v": 2
+     }
+    ]
+   },
+   {
+    "level": 14,
+    "xp": 4650,
+    "desc": "Throws 15% faster.",
+    "mods": [
+     {
+      "op": "mul",
+      "stat": "interval",
+      "v": 8500
+     }
+    ]
+   },
+   {
+    "level": 15,
+    "xp": 5300,
+    "desc": "Anvil Drop: 60 damage (400 to bosses), cooldown 45 s.",
+    "mods": [
+     {
+      "op": "set",
+      "stat": "anvilDmg",
+      "v": 60
+     },
+     {
+      "op": "set",
+      "stat": "anvilBoss",
+      "v": 400
+     },
+     {
+      "op": "set",
+      "stat": "anvilCd",
+      "v": 2700
+     }
+    ]
+   },
+   {
+    "level": 16,
+    "xp": 5950,
+    "desc": "+5 against Brutes, +3 against Ironshell.",
+    "mods": [
+     {
+      "op": "add",
+      "stat": "bonusBrute",
+      "v": 5
+     },
+     {
+      "op": "add",
+      "stat": "bonusIron",
+      "v": 3
+     }
+    ]
+   },
+   {
+    "level": 17,
+    "xp": 6600,
+    "desc": "The Forge reaches 30% farther.",
+    "mods": [
+     {
+      "op": "mul",
+      "stat": "buffRadius",
+      "v": 13000
+     }
+    ]
+   },
+   {
+    "level": 18,
+    "xp": 7200,
+    "desc": "Damage +2.",
+    "mods": [
+     {
+      "op": "add",
+      "stat": "dmg",
+      "v": 2
+     }
+    ]
+   },
+   {
+    "level": 19,
+    "xp": 7750,
+    "desc": "Throws 15% faster.",
+    "mods": [
+     {
+      "op": "mul",
+      "stat": "interval",
+      "v": 8500
+     }
+    ]
+   },
+   {
+    "level": 20,
+    "xp": 8250,
+    "desc": "Ability: Forge of Dawn - for 10 s every tower breaks armor (sharp hits crack Ironshell, +3 damage against armored foes). Cooldown 80 s. Anvil Drop: 100 damage (800 to bosses).",
+    "mods": [
+     {
+      "op": "set",
+      "stat": "forgeDur",
+      "v": 600
+     },
+     {
+      "op": "set",
+      "stat": "forgeCd",
+      "v": 4800
+     },
+     {
+      "op": "set",
+      "stat": "forgeArmor",
+      "v": 3
+     },
+     {
+      "op": "set",
+      "stat": "anvilDmg",
+      "v": 100
+     },
+     {
+      "op": "set",
+      "stat": "anvilBoss",
+      "v": 800
+     }
+    ]
+   }
+  ]
+ },
+ "sela": {
+  "name": "Sela",
+  "title": "Nightglass",
+  "price": 750,
+  "radius": 9,
+  "desc": "Hero. A seer with a long-range starlight rifle. Sees camouflage, lends her sight to nearby towers, calls down Starfall and ends with Eclipse.",
+  "base": {
+   "atk": "projectile",
+   "pk": "starlight",
+   "dtype": "magic",
+   "dmg": 3,
+   "pierce": 1,
+   "interval": 84000,
+   "range": 110000,
+   "speed": 1100,
+   "count": 1,
+   "spread": 12,
+   "camo": 1
+  },
+  "levels": [
+   {
+    "level": 1,
+    "xp": 0,
+    "desc": "Starlight shots: 3 damage, pierces 1, magic, long range. Sees camouflage.",
+    "mods": []
+   },
+   {
+    "level": 2,
+    "xp": 100,
+    "desc": "Range +10%.",
+    "mods": [
+     {
+      "op": "mul",
+      "stat": "range",
+      "v": 11000
+     }
+    ]
+   },
+   {
+    "level": 3,
+    "xp": 230,
+    "desc": "Damage +1.",
+    "mods": [
+     {
+      "op": "add",
+      "stat": "dmg",
+      "v": 1
+     }
+    ]
+   },
+   {
+    "level": 4,
+    "xp": 400,
+    "desc": "Shoots 10% faster.",
+    "mods": [
+     {
+      "op": "mul",
+      "stat": "interval",
+      "v": 9000
+     }
+    ]
+   },
+   {
+    "level": 5,
+    "xp": 600,
+    "desc": "Nightglass sight: towers within 80 px detect camouflage.",
+    "mods": [
+     {
+      "op": "set",
+      "stat": "buffRadius",
+      "v": 80000
+     },
+     {
+      "op": "set",
+      "stat": "heroCamo",
+      "v": 1
+     }
+    ]
+   },
+   {
+    "level": 6,
+    "xp": 850,
+    "desc": "Pierce +1.",
+    "mods": [
+     {
+      "op": "add",
+      "stat": "pierce",
+      "v": 1
+     }
+    ]
+   },
+   {
+    "level": 7,
+    "xp": 1150,
+    "desc": "Damage +2.",
+    "mods": [
+     {
+      "op": "add",
+      "stat": "dmg",
+      "v": 2
+     }
+    ]
+   },
+   {
+    "level": 8,
+    "xp": 1500,
+    "desc": "Shoots 10% faster.",
+    "mods": [
+     {
+      "op": "mul",
+      "stat": "interval",
+      "v": 9000
+     }
+    ]
+   },
+   {
+    "level": 9,
+    "xp": 1900,
+    "desc": "Range +10%.",
+    "mods": [
+     {
+      "op": "mul",
+      "stat": "range",
+      "v": 11000
+     }
+    ]
+   },
+   {
+    "level": 10,
+    "xp": 2350,
+    "desc": "Ability: Starfall - a beam of starlight along the road in her range: 20 damage to every foe (120 to bosses). Cooldown 50 s.",
+    "mods": [
+     {
+      "op": "set",
+      "stat": "starDmg",
+      "v": 20
+     },
+     {
+      "op": "set",
+      "stat": "starBoss",
+      "v": 120
+     },
+     {
+      "op": "set",
+      "stat": "starCd",
+      "v": 3000
+     }
+    ]
+   },
+   {
+    "level": 11,
+    "xp": 2850,
+    "desc": "Damage +2.",
+    "mods": [
+     {
+      "op": "add",
+      "stat": "dmg",
+      "v": 2
+     }
+    ]
+   },
+   {
+    "level": 12,
+    "xp": 3400,
+    "desc": "Towers within her sight get +10% range.",
+    "mods": [
+     {
+      "op": "set",
+      "stat": "buffRangeBp",
+      "v": 1000
+     }
+    ]
+   },
+   {
+    "level": 13,
+    "xp": 4000,
+    "desc": "Pierce +1.",
+    "mods": [
+     {
+      "op": "add",
+      "stat": "pierce",
+      "v": 1
+     }
+    ]
+   },
+   {
+    "level": 14,
+    "xp": 4650,
+    "desc": "Shoots 15% faster.",
+    "mods": [
+     {
+      "op": "mul",
+      "stat": "interval",
+      "v": 8500
+     }
+    ]
+   },
+   {
+    "level": 15,
+    "xp": 5300,
+    "desc": "Starfall: 40 damage (300 to bosses), cooldown 40 s.",
+    "mods": [
+     {
+      "op": "set",
+      "stat": "starDmg",
+      "v": 40
+     },
+     {
+      "op": "set",
+      "stat": "starBoss",
+      "v": 300
+     },
+     {
+      "op": "set",
+      "stat": "starCd",
+      "v": 2400
+     }
+    ]
+   },
+   {
+    "level": 16,
+    "xp": 5950,
+    "desc": "Damage +3.",
+    "mods": [
+     {
+      "op": "add",
+      "stat": "dmg",
+      "v": 3
+     }
+    ]
+   },
+   {
+    "level": 17,
+    "xp": 6600,
+    "desc": "Her sight reaches 30% farther.",
+    "mods": [
+     {
+      "op": "mul",
+      "stat": "buffRadius",
+      "v": 13000
+     }
+    ]
+   },
+   {
+    "level": 18,
+    "xp": 7200,
+    "desc": "Shoots 15% faster.",
+    "mods": [
+     {
+      "op": "mul",
+      "stat": "interval",
+      "v": 8500
+     }
+    ]
+   },
+   {
+    "level": 19,
+    "xp": 7750,
+    "desc": "Damage +3.",
+    "mods": [
+     {
+      "op": "add",
+      "stat": "dmg",
+      "v": 3
+     }
+    ]
+   },
+   {
+    "level": 20,
+    "xp": 8250,
+    "desc": "Ability: Eclipse - for 4 s every foe moves at half speed, ships and bosses too. Cooldown 70 s. Starfall: 70 damage (600 to bosses).",
+    "mods": [
+     {
+      "op": "set",
+      "stat": "eclipseDur",
+      "v": 240
+     },
+     {
+      "op": "set",
+      "stat": "eclipseBp",
+      "v": 5000
+     },
+     {
+      "op": "set",
+      "stat": "eclipseCd",
+      "v": 4200
+     },
+     {
+      "op": "set",
+      "stat": "starDmg",
+      "v": 70
+     },
+     {
+      "op": "set",
+      "stat": "starBoss",
+      "v": 600
      }
     ]
    }

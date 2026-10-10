@@ -9,7 +9,7 @@ export * from './types.js';
 export { createGame, MAX_ROUND, round5 } from './game.js';
 export { DATA, POWER_KEYS } from './data.js';
 export type { GameData, TowerData, HeroData, EnemyData, RoundData, PowerData, DifficultyData, MapFile } from './data.js';
-export { getMap, loadMap, pointInPolygon, branchAt, nearestOnPaths, clearOfPaths } from './map.js';
+export { getMap, loadMap, pointInPolygon, circleInPolygon, branchAt, nearestOnPaths, clearOfPaths } from './map.js';
 export { MODES, MODE_IDS, DEFLATION_CASH, DEFLATION_BACK, isModeId, modeAllows, firstRound } from './modes.js';
 export type { ModeInfo } from './modes.js';
 export type { MapRt } from './map.js';

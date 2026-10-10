@@ -22,7 +22,8 @@ export interface TowerPlan {
 export interface Strategy {
   name: string;
   towers: TowerPlan[];
-  hero?: boolean;
+  /** `true` = Wren (wie bisher), sonst der genannte Held (Runde 16). */
+  hero?: boolean | HeroType;
   /** Held nach allen Upgrades bis zu dieser Stufe kaufen (0 = direkt nach den Türmen). Standard 1. */
   heroAfter?: number;
   /** Nächste Runde erst starten, wenn höchstens so viele Gegner auf dem Feld sind (Standard 0: erst wenn das Feld leer ist). */
@@ -114,19 +115,34 @@ export function createBot(game: Game, mapId: string, strategy: Strategy): Bot {
   const coarse = map.paths.flatMap((p) => p.samples.filter((_, i) => i % 5 === 0));
   const covered = new Uint8Array(coarse.length);
 
+  /** Runde 16: Wasserflaeche aller Wasser-Polygone (Bounding Box), Basis fuer die feinere Suche der Wassertuerme. */
+  const waterBox = map.water.length
+    ? map.water.reduce(
+        (b, poly) => poly.reduce((a, [x, y]) => ({ x0: Math.min(a.x0, x), y0: Math.min(a.y0, y), x1: Math.max(a.x1, x), y1: Math.max(a.y1, y) }), b),
+        { x0: Infinity, y0: Infinity, x1: -Infinity, y1: -Infinity },
+      )
+    : null;
+
   function bestSpot(type: TowerType | HeroType): { x: number; y: number } | null {
-    const def = type === 'wren' ? DATA.hero.wren : DATA.towers[type];
+    const isHeroType = type === 'wren' || type === 'bram' || type === 'sela';
+    const def = isHeroType ? DATA.hero[type] : DATA.towers[type];
+    const water = !isHeroType && DATA.towers[type].placement === 'water';
     const baseRange = (def.base.range as number | undefined) ?? 60000;
     // Longshot (ganze Karte) und Market (kein Angriff) sollen gute Wegplätze nicht belegen: abseits des Wegs, der Market
-    // mit Aura-Pfad C mitten zwischen den Türmen.
-    const support = baseRange >= GLOBAL_RANGE || type === 'market';
-    const auraMarket = type === 'market' && strategy.towers.some((p) => p.type === 'market' && p.tiers[2] > 0);
+    // mit Aura-Pfad C mitten zwischen den Türmen. Runde 16: der Bellringer (Aura-Turm) immer mitten zwischen den Türmen.
+    const support = baseRange >= GLOBAL_RANGE || type === 'market' || type === 'bellringer';
+    const auraMarket = type === 'bellringer' || (type === 'market' && strategy.towers.some((p) => p.type === 'market' && p.tiers[2] > 0));
     const range = Math.floor((baseRange * 12) / 10);
     const r2 = range * range;
     let best: { x: number; y: number } | null = null;
     let bestScore = -Infinity;
-    for (let y = 14000; y <= 350000; y += 12000) {
-      for (let x = 14000; x <= 600000; x += 12000) {
+    // Wassertürme: nur die Wasserfläche absuchen, in 3-px-Schritten (der Bach der Wiese ist schmal)
+    const step = water ? 3000 : 12000;
+    const [ya, yb, xa, xb] = water
+      ? waterBox ? [waterBox.y0, waterBox.y1, waterBox.x0, waterBox.x1] : [1, 0, 1, 0]
+      : [14000, 350000, 14000, 600000];
+    for (let y = ya; y <= yb; y += step) {
+      for (let x = xa; x <= xb; x += step) {
         const c = game.canPlace(type, x, y);
         if (!c.ok && c.reason !== 'no-cash') continue;
         let score = 0;
@@ -178,7 +194,7 @@ export function createBot(game: Game, mapId: string, strategy: Strategy): Bot {
     while (next < steps.length) {
       const st = steps[next];
       if (st.kind === 'place' || st.kind === 'hero') {
-        const type: TowerType | HeroType = st.kind === 'hero' ? 'wren' : strategy.towers[st.plan].type;
+        const type: TowerType | HeroType = st.kind === 'hero' ? game.info.hero : strategy.towers[st.plan].type;
         if (!fund(game.priceOf(type))) return;
         const spot = bestSpot(type);
         if (!spot) {
@@ -224,7 +240,9 @@ export function createBot(game: Game, mapId: string, strategy: Strategy): Bot {
     if (S.enemies.length === 0) return;
     let boss = false;
     let hidden = false;
+    let armored = false;
     for (const e of S.enemies) {
+      if (e.type === 'ironshell' || e.type === 'brute' || e.type === 'crystal') armored = true;
       if (e.type === 'leviathan' || e.type === 'wyrm' || e.type === 'colossus') boss = true;
       if (e.camo && !e.revealed) hidden = true;
     }
@@ -242,6 +260,13 @@ export function createBot(game: Game, mapId: string, strategy: Strategy): Bot {
         case 'grant': use = true; break;
         case 'wallOfTrees': use = n >= 10 || boss; break;
         case 'tonic': use = n >= 15 || boss; break;
+        // Runde 16
+        case 'alarm': use = n >= 12 || boss; break;
+        case 'overclock': use = n >= 10 || boss; break;
+        case 'anvilDrop': use = n >= 8 || boss; break;
+        case 'forgeOfDawn': use = armored || boss; break;
+        case 'starfall': use = n >= 8 || boss; break;
+        case 'eclipse': use = n >= 20 || boss; break;
       }
       if (use) game.apply({ type: 'ability', ability: a.id });
     }
@@ -261,7 +286,8 @@ export function createBot(game: Game, mapId: string, strategy: Strategy): Bot {
 
 export function runBot(strategy: Strategy, opts: Partial<GameOptions> & { difficulty: Difficulty; maxTicks?: number }): BotResult {
   const mapId = opts.map ?? 'meadow';
-  const game = createGame({ map: mapId, seed: 1, ...opts });
+  const heroOpt: HeroType = typeof strategy.hero === 'string' ? strategy.hero : 'wren';
+  const game = createGame({ map: mapId, seed: 1, hero: heroOpt, ...opts });
   const bot = createBot(game, mapId, strategy);
   const max = opts.maxTicks ?? 60 * 60 * 40;
   const S = game.state;
@@ -270,7 +296,7 @@ export function runBot(strategy: Strategy, opts: Partial<GameOptions> & { diffic
     game.step(6);
     game.drainEvents();
   }
-  const hero = S.towers.find((t) => t.type === 'wren');
+  const hero = S.towers.find((t) => t.type === 'wren' || t.type === 'bram' || t.type === 'sela');
   return {
     strategy: strategy.name,
     difficulty: opts.difficulty,
@@ -296,13 +322,17 @@ export function runBot(strategy: Strategy, opts: Partial<GameOptions> & { diffic
 /** "ranger 0-2-4 + bombardier 3-2-0 + hero" -> Strategy. Zusatz "@strong" setzt das Targeting. */
 export function parseStrategy(text: string): Strategy {
   const towers: TowerPlan[] = [];
-  let hero = false;
+  let hero: boolean | HeroType = false;
   for (const part of text.split('+').map((s) => s.trim()).filter(Boolean)) {
     if (part === 'hero' || part === 'wren') {
-      hero = true;
+      hero = part === 'wren' ? 'wren' : true;
       continue;
     }
-    const m = /^(ranger|bombardier|frostcaller|longshot|market|thornweaver|alchemist)\s+(\d)-(\d)-(\d)(?:@(first|last|strong|close))?$/.exec(part);
+    if (part === 'bram' || part === 'sela') {
+      hero = part;
+      continue;
+    }
+    const m = /^(ranger|bombardier|frostcaller|longshot|market|thornweaver|alchemist|riverkeeper|bellringer|tinker)\s+(\d)-(\d)-(\d)(?:@(first|last|strong|close))?$/.exec(part);
     if (!m) throw new Error(`Strategie nicht lesbar: "${part}"`);
     towers.push({ type: m[1] as TowerType, tiers: [Number(m[2]), Number(m[3]), Number(m[4])], target: m[5] as TargetMode | undefined });
   }

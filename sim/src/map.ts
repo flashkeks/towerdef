@@ -66,6 +66,20 @@ export function pointInPolygon(x: number, y: number, poly: readonly [number, num
 }
 
 /**
+ * Liegt der ganze Kreis (Mittelpunkt, Radius `r`, Milli-px) im Polygon? Mittelpunkt, vier Achsen- und vier Diagonalpunkte des Kreises
+ * muessen innen liegen, und kein Polygon-Eckpunkt darf im Kreis liegen (sonst schneidet eine Ecke ins Kreisinnere). Ganzzahlig.
+ * Runde 16: Platzierung der Wassertuerme.
+ */
+export function circleInPolygon(x: number, y: number, r: number, poly: readonly [number, number][]): boolean {
+  const d = Math.round((r * 7071) / 10000);
+  const pts: [number, number][] = [[x, y], [x + r, y], [x - r, y], [x, y + r], [x, y - r], [x + d, y + d], [x - d, y + d], [x + d, y - d], [x - d, y - d]];
+  for (const [px, py] of pts) if (!pointInPolygon(px, py, poly)) return false;
+  const r2 = r * r;
+  for (const [vx, vy] of poly) if ((vx - x) * (vx - x) + (vy - y) * (vy - y) < r2) return false;
+  return true;
+}
+
+/**
  * Auf welchem Ast liegt der Punkt (x, y)? -1 = auf dem gemeinsamen Wegteil (alle Aeste in Wegbreite), sonst der naechste Ast.
  * Bei einem Weg immer 0. Ganzzahlig ueber `nearestOnPath`.
  */

@@ -19,12 +19,12 @@ export interface ModeInfo {
 }
 
 const PRIMARY: readonly TowerType[] = ['ranger', 'bombardier', 'frostcaller'];
-const SPECIALISTS: readonly TowerType[] = ['longshot', 'market', 'thornweaver', 'alchemist'];
+const SPECIALISTS: readonly TowerType[] = ['longshot', 'market', 'thornweaver', 'alchemist', 'riverkeeper', 'bellringer', 'tinker'];
 
 export const MODES: Record<ModeId, ModeInfo> = {
   standard: { id: 'standard', name: 'Standard', desc: 'The normal game.', hero: true, powers: true },
   'primary-only': { id: 'primary-only', name: 'Primary Only', desc: 'Only Ranger, Bombardier and Frostcaller (and your hero).', towers: PRIMARY, hero: true, powers: true },
-  'specialists-only': { id: 'specialists-only', name: 'Specialists Only', desc: 'Only Longshot, Lantern Market, Thornweaver and Alchemist (and your hero).', towers: SPECIALISTS, hero: true, powers: true },
+  'specialists-only': { id: 'specialists-only', name: 'Specialists Only', desc: 'Only the specialist towers: everything except Ranger, Bombardier and Frostcaller (and your hero).', towers: SPECIALISTS, hero: true, powers: true },
   'no-hero': { id: 'no-hero', name: 'No Hero', desc: 'Your hero stays home.', hero: false, powers: true },
   'half-cash': { id: 'half-cash', name: 'Half Cash', desc: 'Starting gold and all income are halved.', hero: true, powers: true },
   deflation: { id: 'deflation', name: 'Deflation', desc: 'Start late with 20,000 gold. No income at all. No powers.', hero: true, powers: false },
@@ -40,7 +40,7 @@ export const isModeId = (v: unknown): v is ModeId => typeof v === 'string' && (M
 /** Darf `type` in diesem Modus gebaut werden? */
 export function modeAllows(mode: ModeId, type: TowerType | HeroType): boolean {
   const m = MODES[mode];
-  if (type === 'wren') return m.hero;
+  if (type === 'wren' || type === 'bram' || type === 'sela') return m.hero;
   return !m.towers || m.towers.includes(type);
 }
 
