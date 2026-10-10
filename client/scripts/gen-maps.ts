@@ -9,6 +9,10 @@ import { blockers as qBlockers } from '../src/pixel/map/quarry';
 import { DU_BRANCHES, DU_BUILD, DU_HW, duBlockers, duWater } from '../src/pixel/map/dunes-layout';
 import { SP_BRANCHES, SP_BRIDGES, SP_BUILD, SP_HW, SP_LAVA, spBlockers, spWallPolys, spWater } from '../src/pixel/map/spire-layout';
 import { HB_BRANCHES, HB_BUILD, HB_HW, hbBlockers, hbWallPolys, hbWater } from '../src/pixel/map/harbor-layout';
+import { blockers as baBlockers, waterPolygons as baWater, wallPolygons as baWalls } from '../src/pixel/map/bastion';
+import { blockers as maBlockers, waterPolygons as maWater } from '../src/pixel/map/marsh';
+import { blockers as skBlockers, waterPolygons as skWater } from '../src/pixel/map/skyreach';
+import { blockers as hoBlockers, waterPolygons as hoWater } from '../src/pixel/map/hollow';
 
 function patch(name: string, fn: (j: Record<string, unknown>) => void): void {
   const file = resolve(process.cwd(), `../sim/data/maps/${name}.json`);
@@ -34,3 +38,7 @@ function write(name: string, title: string, o: { branches: Pt[][]; hw: number; w
 write('dunes', 'Ashra Dunes', { branches: DU_BRANCHES, hw: DU_HW, water: duWater(), blockers: duBlockers(), build: DU_BUILD });
 write('harbor', 'Gloomharbor', { branches: HB_BRANCHES, hw: HB_HW, water: hbWater(), walls: hbWallPolys(), blockers: hbBlockers(), build: HB_BUILD });
 write('spire', 'Duskspire Keep', { branches: SP_BRANCHES, hw: SP_HW, water: spWater(), lava: SP_LAVA, bridges: SP_BRIDGES, walls: spWallPolys(), blockers: spBlockers(), build: SP_BUILD });
+patch('hollow', (j) => { j.water = hoWater(); j.blockers = hoBlockers(); });
+patch('marsh', (j) => { j.water = maWater(); j.blockers = maBlockers(); });
+patch('bastion', (j) => { j.water = baWater(); j.walls = baWalls(); j.blockers = baBlockers(); });
+patch('skyreach', (j) => { j.water = skWater(); j.blockers = skBlockers(); });

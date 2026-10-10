@@ -14,6 +14,10 @@ import quarryJson from '../data/maps/quarry.json';
 import dunesJson from '../data/maps/dunes.json';
 import harborJson from '../data/maps/harbor.json';
 import spireJson from '../data/maps/spire.json';
+import hollowJson from '../data/maps/hollow.json';
+import marshJson from '../data/maps/marsh.json';
+import bastionJson from '../data/maps/bastion.json';
+import skyreachJson from '../data/maps/skyreach.json';
 import { STAT_DEFAULTS, type Mod, type Stats } from './stats.js';
 import type { Difficulty, EnemyType, HeroType, PowerKey, TowerType } from './types.js';
 
@@ -204,7 +208,7 @@ function load(): GameData {
   const enemies = enemiesSchema.parse(enemiesJson) as Record<EnemyType, EnemyData>;
   const rounds = roundsSchema(120).parse(roundsJson);
   const difficulties = difficultiesSchema.parse(difficultiesJson);
-  const maps = { meadow: mapSchema.parse(meadowJson), frostfen: mapSchema.parse(frostfenJson), quarry: mapSchema.parse(quarryJson), dunes: mapSchema.parse(dunesJson), harbor: mapSchema.parse(harborJson), spire: mapSchema.parse(spireJson) };
+  const maps = { meadow: mapSchema.parse(meadowJson), frostfen: mapSchema.parse(frostfenJson), quarry: mapSchema.parse(quarryJson), hollow: mapSchema.parse(hollowJson), marsh: mapSchema.parse(marshJson), bastion: mapSchema.parse(bastionJson), skyreach: mapSchema.parse(skyreachJson), dunes: mapSchema.parse(dunesJson), harbor: mapSchema.parse(harborJson), spire: mapSchema.parse(spireJson) };
   const xp = xpSchema.parse(xpJson);
   const pw = powersSchema.parse(powersJson);
   for (const k of POWER_KEYS) check(!!pw.powers[k], `Power ${k} fehlt`);

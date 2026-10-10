@@ -11,6 +11,10 @@ import { paintQuarry } from './quarry';
 import { paintDunes } from './dunes';
 import { paintHarbor } from './harbor';
 import { paintSpire } from './spire';
+import { paintHollow } from './hollow';
+import { paintMarsh } from './marsh';
+import { paintBastion } from './bastion';
+import { paintSkyreach } from './skyreach';
 import { ambientPoints, smokePoints } from './ambient';
 import { bayer } from './buf';
 import type { MapArt, MapId } from './types';
@@ -28,10 +32,23 @@ function meadowAsMap(): MapArt {
   };
 }
 
+const PAINTERS: Record<MapId, () => MapArt> = {
+  meadow: meadowAsMap,
+  hollow: paintHollow,
+  marsh: paintMarsh,
+  frostfen: paintFrostfen,
+  bastion: paintBastion,
+  quarry: paintQuarry,
+  skyreach: paintSkyreach,
+  dunes: paintDunes,
+  harbor: paintHarbor,
+  spire: paintSpire,
+};
+
 export function mapArt(id: MapId): MapArt {
   let a = cache.get(id);
   if (!a) {
-    a = id === 'meadow' ? meadowAsMap() : id === 'frostfen' ? paintFrostfen() : id === 'quarry' ? paintQuarry() : id === 'dunes' ? paintDunes() : id === 'harbor' ? paintHarbor() : id === 'spire' ? paintSpire() : (() => { throw new Error('Karte noch nicht gemalt: ' + id); })();
+    a = PAINTERS[id]();
     cache.set(id, a);
   }
   return a;
