@@ -13,7 +13,7 @@ interface L { branches: Pt[][]; hw: number; water: Pt[][]; lava: Pt[][]; walls: 
 const layouts: Record<string, () => L> = {
   dunes: () => ({ branches: du.DU_BRANCHES, hw: du.DU_HW, water: du.duWater(), lava: [], walls: [], blockers: [], build: du.DU_BUILD }),
 };
-layouts.harbor = () => ({ branches: hb.HB_BRANCHES, hw: hb.HB_HW, water: hb.hbWater(), lava: [], walls: [], blockers: [], build: hb.HB_BUILD });
+layouts.harbor = () => ({ branches: hb.HB_BRANCHES, hw: hb.HB_HW, water: hb.hbWater(), lava: [], walls: hb.hbWallPolys(), blockers: hb.hbBlockers(), build: hb.HB_BUILD });
 layouts.spire = () => ({ branches: sp.SP_BRANCHES, hw: sp.SP_HW, water: sp.spWater(), lava: sp.SP_LAVA, walls: sp.SP_WALLS.map(rectPoly), blockers: sp.SP_WALLS.flatMap(rectBlockers), build: sp.SP_BUILD });
 const L = layouts[id]();
 console.log(id, 'Aeste:', L.branches.map((b) => pathLength(b).toFixed(2)).join(' / '));
@@ -35,6 +35,7 @@ for (let y = 0; y < 360; y++) for (let x = 0; x < 640; x++) {
   for (const p of L.water) if (inPoly(x, y, p)) b.set(x, y, C.sky);
   for (const p of L.lava) if (inPoly(x, y, p)) b.set(x, y, C.orange);
   for (const p of L.walls) if (inPoly(x, y, p)) b.set(x, y, C.stone);
+  for (const [bx, by, br] of L.blockers) if (Math.hypot(x - bx, y - by) < br && pd >= L.hw && b.get(x, y) === C.dusk) b.set(x, y, C.slate);
 }
 console.log('buildable (r9) approx', Math.round((ok / tot) * 100) + '%');
 L.branches.forEach((br, i) => br.forEach(([x, y]) => b.rect(Math.round(x) - 1, Math.round(y) - 1, 3, 3, [C.red, C.yellow, C.white][i % 3])));

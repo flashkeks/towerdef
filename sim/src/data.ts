@@ -14,6 +14,7 @@ import meadowJson from '../data/maps/meadow.json';
 import frostfenJson from '../data/maps/frostfen.json';
 import quarryJson from '../data/maps/quarry.json';
 import dunesJson from '../data/maps/dunes.json';
+import harborJson from '../data/maps/harbor.json';
 import { STAT_DEFAULTS, type Mod, type Stats } from './stats.js';
 import type { Difficulty, EnemyType, HeroType, PowerKey, TowerType } from './types.js';
 
@@ -201,7 +202,7 @@ function load(): GameData {
   const rounds = roundsSchema(20).parse(roundsMeadowJson);
   const roundsByMap = { meadow: rounds, frostfen: roundsSchema(25).parse(roundsFrostfenJson), quarry: roundsSchema(30).parse(roundsQuarryJson) };
   const difficulties = difficultiesSchema.parse(difficultiesJson);
-  const maps = { meadow: mapSchema.parse(meadowJson), frostfen: mapSchema.parse(frostfenJson), quarry: mapSchema.parse(quarryJson), dunes: mapSchema.parse(dunesJson) };
+  const maps = { meadow: mapSchema.parse(meadowJson), frostfen: mapSchema.parse(frostfenJson), quarry: mapSchema.parse(quarryJson), dunes: mapSchema.parse(dunesJson), harbor: mapSchema.parse(harborJson) };
   const xp = xpSchema.parse(xpJson);
   const pw = powersSchema.parse(powersJson);
   for (const k of POWER_KEYS) check(!!pw.powers[k], `Power ${k} fehlt`);

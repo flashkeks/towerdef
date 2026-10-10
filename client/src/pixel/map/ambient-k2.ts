@@ -6,6 +6,7 @@
 import { C, hash2 } from './buf';
 import { MAP_H, MAP_W } from './layout';
 import type { AmbientPoint } from './ambient';
+import { HB_PROPS } from './harbor-layout';
 import type { MapId } from './types';
 
 const S = (t: number): number => t / 1000;
@@ -45,8 +46,36 @@ function sandstorm(t: number): AmbientPoint[] {
   return out;
 }
 
+// ---------- Gloomharbor: Nebelschwaden ueber dem Becken, Motten um die Laternen ----------
+const HB_LAMPS: [number, number][] = HB_PROPS.filter((p) => p.kind === 'lamp').map((p) => [p.x, p.y - 29]);
+export const FOG_COUNT = 11;
+export const MOTHS_PER_LAMP = 2;
+
+function harborAir(t: number): AmbientPoint[] {
+  const out: AmbientPoint[] = [];
+  const s = S(t);
+  for (let i = 0; i < FOG_COUNT; i++) {
+    const ph = ((s / 46 + hash2(i, 1, 130)) % 1 + 1) % 1;
+    const w = 110 + Math.floor(hash2(i, 2, 130) * 100);
+    const x = -w + ph * (MAP_W + 2 * w);
+    const y = 222 + hash2(i, 3, 130) * 120 + Math.sin(s * 0.35 + i * 1.9) * 5;
+    out.push({ kind: 'haze', x: Math.round(x), y: Math.round(y), w, h: 6 + Math.floor(hash2(i, 4, 130) * 8), c: i % 2 ? C.stone : C.silver, a: 0.045 + 0.02 * Math.sin(s * 0.5 + i) });
+  }
+  HB_LAMPS.forEach(([lx, ly], k) => {
+    for (let m = 0; m < MOTHS_PER_LAMP; m++) {
+      const a = s * (1.6 + hash2(k, m, 131) * 1.4) + hash2(k, m, 132) * 6.28;
+      const r = 5 + hash2(k, m, 133) * 6;
+      const x = lx + Math.cos(a) * r, y = ly + Math.sin(a * 1.3) * r * 0.6;
+      const flick = Math.sin(a * 9 + k) > -0.6;
+      out.push({ kind: 'ember', x: Math.round(x), y: Math.round(y), w: 1, c: m ? C.amber : C.yellow, a: flick ? 0.95 : 0.35 });
+    }
+  });
+  return out;
+}
+
 /** Alle bewegten Luftteilchen der K2-Karten; leer fuer fremde Karten. */
 export function ambientK2(id: MapId, tMs: number): AmbientPoint[] {
   if (id === 'dunes') return sandstorm(tMs);
+  if (id === 'harbor') return harborAir(tMs);
   return [];
 }

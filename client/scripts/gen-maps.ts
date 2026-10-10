@@ -7,6 +7,7 @@ import type { Pt } from '../src/pixel/map/kit';
 import { blockers as ffBlockers, waterPolygons } from '../src/pixel/map/frostfen';
 import { blockers as qBlockers } from '../src/pixel/map/quarry';
 import { DU_BRANCHES, DU_BUILD, DU_HW, duBlockers, duWater } from '../src/pixel/map/dunes-layout';
+import { HB_BRANCHES, HB_BUILD, HB_HW, hbBlockers, hbWallPolys, hbWater } from '../src/pixel/map/harbor-layout';
 
 function patch(name: string, fn: (j: Record<string, unknown>) => void): void {
   const file = resolve(process.cwd(), `../sim/data/maps/${name}.json`);
@@ -30,3 +31,4 @@ function write(name: string, title: string, o: { branches: Pt[][]; hw: number; w
   console.log(name, 'geschrieben:', o.blockers.length, 'Blocker,', o.water.length, 'Wasser,', (o.walls ?? []).length, 'Mauern');
 }
 write('dunes', 'Ashra Dunes', { branches: DU_BRANCHES, hw: DU_HW, water: duWater(), blockers: duBlockers(), build: DU_BUILD });
+write('harbor', 'Gloomharbor', { branches: HB_BRANCHES, hw: HB_HW, water: hbWater(), walls: hbWallPolys(), blockers: hbBlockers(), build: HB_BUILD });
