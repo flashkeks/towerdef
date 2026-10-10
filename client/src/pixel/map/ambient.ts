@@ -141,11 +141,11 @@ function fireflies(t: number): AmbientPoint[] {
   return out;
 }
 /** Bodennebel (Marsh): breite, flache Schwaden ueber dem Wasser, treiben langsam und atmen. */
-function mist(t: number, col: number, n: number, seedBase: number, over: (x: number, y: number) => boolean, speed = 3, alpha = 0.05): AmbientPoint[] {
+function mist(t: number, col: number, n: number, seedBase: number, over: (x: number, y: number) => boolean, speed = 3, alpha = 0.05, hMul = 1): AmbientPoint[] {
   const out: AmbientPoint[] = [];
   const s = t / 1000;
   for (let i = 0; i < n; i++) {
-    const w = 70 + Math.floor(hash2(i, 1, seedBase) * 70), h = 5 + Math.floor(hash2(i, 2, seedBase) * 5);
+    const w = 70 + Math.floor(hash2(i, 1, seedBase) * 70), h = Math.round((5 + Math.floor(hash2(i, 2, seedBase) * 5)) * hMul);
     const x0 = hash2(i, 3, seedBase) * (MAP_W + w), sp = speed * (0.6 + hash2(i, 4, seedBase) * 0.8);
     const x = (((x0 + s * sp) % (MAP_W + w)) + MAP_W + w) % (MAP_W + w) - w;
     const y = hash2(i, 5, seedBase) * MAP_H + Math.sin(s * 0.3 + i) * 4;
@@ -158,8 +158,8 @@ function mist(t: number, col: number, n: number, seedBase: number, over: (x: num
 function skyreach(t: number): AmbientPoint[] {
   const out: AmbientPoint[] = [];
   const s = t / 1000;
-  out.push(...mist(t, C.night, 7, 97, () => true, 4.5, 0.035).map((p) => ({ ...p, y: p.y + 12, x: p.x + 14 }))); // Wolkenschatten
-  out.push(...mist(t, C.white, 9, 98, () => true, 4.5, 0.075));
+  out.push(...mist(t, C.night, 7, 97, () => true, 4.5, 0.03, 2).map((p) => ({ ...p, y: p.y + 12, x: p.x + 14 }))); // Wolkenschatten
+  out.push(...mist(t, C.white, 9, 98, () => true, 4.5, 0.06, 2));
   for (const [cx, cy, rx, ry, sp, k] of [[210, 190, 120, 54, 0.11, 0], [500, 240, 80, 40, -0.15, 1]] as const) {
     const a = s * sp + k * 2;
     bird(out, cx + Math.cos(a) * rx, cy + Math.sin(a) * ry, 4, Math.sin(a) * Math.sign(sp) > 0 ? -1 : 1, 5, C.night);
