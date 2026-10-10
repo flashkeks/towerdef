@@ -2,6 +2,7 @@
 import * as api from './index';
 import type { Tiers, TowerType, TowerFrame } from './index';
 import { sheetFx2R15e, sheetFxR15e, sheetGegnerR15e, sheetVergleichR15e } from './sheet15e';
+import { sheetRkDirs, sheetRkFrames, sheetRkIcons, sheetRkPaths } from './sheet16-riverkeeper';
 import { sheetBosseR15, sheetFxR15, sheetGegnerR15 } from './sheet15';
 
 const q = new URLSearchParams(location.search);
@@ -577,6 +578,10 @@ const sheets: Record<string, () => HTMLCanvasElement> = {
   'b2-gegner': sheetGegnerR15,
   'b2-bosse': sheetBosseR15,
   'b2-fx': sheetFxR15,
+  'tp-rk-paths': sheetRkPaths,
+  'tp-rk-dirs': sheetRkDirs,
+  'tp-rk-frames': sheetRkFrames,
+  'tp-rk-icons': sheetRkIcons,
   fxr14: sheetFxR14,
   fxr14b: sheetFxR14b,
   iconsr14: sheetIconsR14,

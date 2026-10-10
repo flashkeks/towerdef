@@ -123,6 +123,23 @@ export function projectileRaster(kind: ProjectileKind, dir16: number, spin = 0):
       const t1 = P(4); s.px(t1[0], t1[1], 'white'); const t2 = P(3); s.px(t2[0], t2[1], 'yellow');
       break;
     }
+    case 'harpoon': {
+      // Harpune (Runde 16 TP): langer Holzschaft mit Seil-Spur, silberne Spitze mit Widerhaken, Gischt-Funke
+      for (let i = 1; i <= 6; i++) { const q = P(-5 - i * 1.1, (i % 2 ? 0.5 : -0.5)); if (i % 3 !== 0) s.px(q[0], q[1], i < 3 ? 'white' : 'ice'); }
+      L(-6, 2, 0, 'wood'); L(-5, 2, 0.8, 'bark'); L(-6, -2, 0, 'tan');
+      L(2, 6, 0, 'silver'); L(2, 4, 1, 'stone'); L(2, 4, -1, 'stone');
+      const tip = P(7); s.px(tip[0], tip[1], 'white'); const t2 = P(5.5); s.px(t2[0], t2[1], 'white');
+      for (const w of [-2, 2]) { const b = P(2, w); s.px(b[0], b[1], 'stone'); }
+      break;
+    }
+    case 'cannonball': {
+      // Kanonenkugel: dunkle Kugel mit Glanz, kurze Rauchspur gegen die Flugrichtung
+      for (let i = 1; i <= 4; i++) { const q = P(-3 - i * 1.4, ((i * 5) % 3 - 1) * 0.6); s.px(q[0], q[1], i < 3 ? 'silver' : 'stone'); }
+      s.ball(C, C, 2.8, 2.8, ['ink', 'night', 'dusk']);
+      s.px(C - 1, C - 1, 'stone'); s.px(C - 1, C - 2, 'silver');
+      const f = P(2.5); s.px(f[0], f[1], 'amber');
+      break;
+    }
     case 'potion': case 'potionGold': {
       // Flasche im Bogen: `spin` = Drehung 0..15 (22,5 Grad je Schritt), Hals zeigt in Drehrichtung
       const gold = kind === 'potionGold';
