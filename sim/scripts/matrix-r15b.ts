@@ -9,6 +9,7 @@ import type { Difficulty } from '../src/types.js';
 const maps = (process.env.MAPS ?? 'meadow,frostfen,quarry').split(',');
 const diffs = (process.env.MATRIX_DIFFS ?? 'easy,medium,hard').split(',') as Difficulty[];
 const seeds = (process.env.MATRIX_SEEDS ?? '1').split(',').map(Number);
+/** ONLY="2 Tuerme T4,6 Tuerme T5" begrenzt die Aufstellungen (Standard: alle). */
 const only = process.env.ONLY?.split(',');
 const cyc = (specs: string[], n: number): string => Array.from({ length: n }, (_, i) => specs[i % specs.length]).join(' + ');
 const T4 = ['ranger 0-2-4', 'bombardier 4-2-0', 'frostcaller 2-0-4'];
@@ -26,7 +27,7 @@ const COMBOS: [string, string][] = [
 ];
 const rows = [`Seeds ${seeds.join(',')}; Held immer dabei`, '', `| Aufstellung | Karte | ${diffs.join(' | ')} |`, `|---|---|${diffs.map(() => '---|').join('')}`];
 for (const [label, text] of COMBOS) {
-  if (only && !only.includes(label.split(' ')[0] + label.split(' ')[1] + (label.split(' ')[2] ?? '')) && !only.includes(label)) { /* kein Filter-Treffer */ }
+  if (only && !only.includes(label)) continue;
   for (const map of maps) {
     const cells = diffs.map((d) => {
       // je Zelle die bessere von drei Kaufreihenfolgen (Standard-Bot, gestaffelt, gestaffelt mit spaetem Nachsetzen): ein Mensch waehlt die passende

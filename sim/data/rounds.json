@@ -1919,14 +1919,14 @@
   "groups": [
    {
     "type": "duskrunner",
-    "n": 100,
-    "gapMs": 250,
+    "n": 10,
+    "gapMs": 1200,
     "startMs": 0
    },
    {
     "type": "gloomship",
-    "n": 74,
-    "gapMs": 410,
+    "n": 45,
+    "gapMs": 670,
     "startMs": 7000,
     "fortified": true
    },
@@ -2203,8 +2203,8 @@
   "groups": [
    {
     "type": "duskrunner",
-    "n": 100,
-    "gapMs": 250,
+    "n": 16,
+    "gapMs": 1000,
     "startMs": 0
    },
    {
@@ -2255,8 +2255,8 @@
    },
    {
     "type": "duskrunner",
-    "n": 100,
-    "gapMs": 250,
+    "n": 16,
+    "gapMs": 1000,
     "startMs": 5000
    },
    {
@@ -2273,15 +2273,15 @@
   "groups": [
    {
     "type": "cruiser",
-    "n": 58,
+    "n": 60,
     "gapMs": 1200,
     "startMs": 0,
     "fortified": true
    },
    {
     "type": "duskrunner",
-    "n": 100,
-    "gapMs": 250,
+    "n": 13,
+    "gapMs": 1200,
     "startMs": 6000
    },
    {
@@ -2318,8 +2318,8 @@
   "groups": [
    {
     "type": "duskrunner",
-    "n": 100,
-    "gapMs": 250,
+    "n": 14,
+    "gapMs": 1140,
     "startMs": 0
    },
    {
@@ -2370,8 +2370,8 @@
    },
    {
     "type": "duskrunner",
-    "n": 100,
-    "gapMs": 250,
+    "n": 18,
+    "gapMs": 890,
     "startMs": 6000
    },
    {
@@ -2401,8 +2401,8 @@
    },
    {
     "type": "duskrunner",
-    "n": 100,
-    "gapMs": 250,
+    "n": 34,
+    "gapMs": 470,
     "startMs": 0
    },
    {
@@ -2446,8 +2446,8 @@
   "groups": [
    {
     "type": "duskrunner",
-    "n": 100,
-    "gapMs": 250,
+    "n": 20,
+    "gapMs": 800,
     "startMs": 0
    },
    {
@@ -2490,8 +2490,8 @@
    },
    {
     "type": "duskrunner",
-    "n": 100,
-    "gapMs": 250,
+    "n": 19,
+    "gapMs": 840,
     "startMs": 7000
    },
    {
@@ -2523,8 +2523,8 @@
    },
    {
     "type": "duskrunner",
-    "n": 100,
-    "gapMs": 250,
+    "n": 22,
+    "gapMs": 730,
     "startMs": 8000
    }
   ]
@@ -2553,8 +2553,8 @@
   "groups": [
    {
     "type": "duskrunner",
-    "n": 100,
-    "gapMs": 250,
+    "n": 27,
+    "gapMs": 590,
     "startMs": 0
    },
    {
@@ -2605,8 +2605,8 @@
    },
    {
     "type": "duskrunner",
-    "n": 100,
-    "gapMs": 250,
+    "n": 28,
+    "gapMs": 570,
     "startMs": 8000
    },
    {
@@ -2630,8 +2630,8 @@
    },
    {
     "type": "duskrunner",
-    "n": 100,
-    "gapMs": 250,
+    "n": 48,
+    "gapMs": 330,
     "startMs": 8000
    },
    {

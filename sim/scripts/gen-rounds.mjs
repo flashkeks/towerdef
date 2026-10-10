@@ -39,6 +39,8 @@ const NMAX = { gold: 200, pink: 200, ironshell: 120, ember: 120, brute: 100, fro
 function grp(type, share, r, opts = {}) {
   const fort = !!opts.fortified;
   let n = Math.round((target(r) * share * (opts.mul ?? 1)) / tree(type, fort));
+  // Duskrunner: Schwarmgroesse fest nach Runde (schnell, getarnt, explosions-immun: jeder Durchbruch kostet 444 Leben), nicht nach RBE-Ziel
+  if (type === 'duskrunner') n = Math.round((7 + 0.9 * (r - 90)) * Math.min(1.4, share / 0.4));
   n = Math.max(opts.min ?? 1, Math.min(NMAX[type], n));
   const [g0, g1] = GAP[type];
   let gap = Math.round(DUR[type] / n / 10) * 10;
@@ -84,9 +86,9 @@ const P4 = [ // R82-99 (Cruiser ab 82, Duskrunner ab 90)
   [['cruiser', 0.7, 'f'], ['crystal', 0.3, 'f']],
 ];
 const P5 = [ // R100-119 (Dreadnought nur in den festen Runden 100/110/120)
-  [['cruiser', 0.6, 'f'], ['duskrunner', 0.4, '']],
+  [['cruiser', 0.7, 'f'], ['duskrunner', 0.3, '']],
   [['gloomship', 0.4, 'f'], ['cruiser', 0.6, 'f']],
-  [['duskrunner', 0.5, ''], ['gloomship', 0.5, 'f']],
+  [['duskrunner', 0.3, ''], ['gloomship', 0.7, 'f']],
   [['cruiser', 0.8, 'f'], ['crystal', 0.2, 'f']],
   [['cruiser', 0.5, 'f'], ['duskrunner', 0.3, ''], ['gloomship', 0.2, 'f']],
 ];
@@ -127,7 +129,7 @@ for (let r = 1; r <= 120; r++) {
   else if (r === 100) groups = [raw('dreadnought', 1, 0, 0), ...build(r, [['cruiser', 0.5, 'f'], ['gloomship', 0.5, 'f']]).map((g) => ({ ...g, startMs: g.startMs + 10000 }))];
   else if (r === 110) groups = [raw('dreadnought', 1, 0, 0), raw('dreadnought', 1, 0, 20000, { fortified: true }), ...build(r, [['duskrunner', 0.6, ''], ['cruiser', 0.4, 'f']])];
   else if (r === 120) groups = [raw('dreadnought', 2, 14000, 0, { fortified: true }), ...build(r, [['duskrunner', 0.6, ''], ['cruiser', 0.4, 'f']]).map((g) => ({ ...g, startMs: g.startMs + 8000 })), raw('duskrunner', 60, 300, 40000)];
-  else if (r === 90) groups = build(r, [['duskrunner', 0.7, ''], ['gloomship', 0.3, 'f']]);
+  else if (r === 90) groups = build(r, [['duskrunner', 0.7, ''], ['gloomship', 0.3, 'f']], 0.6); // erste Duskrunner: kleiner Schwarm (Max: "diese schwarzen, extrem schnellen Schiffe")
   else {
     let pool, k;
     if (r <= 37) { pool = P1; k = r - 21; if (r < 25) k = k % 4 === 3 ? 3 : k % 4; }
