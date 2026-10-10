@@ -1,7 +1,7 @@
 /** Runde 14: Thornweaver/Alchemist freischalten, Migration, 12 neue Wissensknoten samt Mods. */
 import { describe, expect, it } from 'vitest';
 import {
-  KNOWLEDGE, applyMatch, buyNode, isTowerUnlocked, knowledgePoints, loadProfile, matchEmbers, matchOptions, newProfile, nodeById, unlockEverything, unlockLevel, xpForLevel,
+  KNOWLEDGE, applyMatch, buyNode, isTowerUnlocked, knowledgePoints, loadProfile, matchEmbers, matchOptions, newProfile, roundRewardBp, nodeById, unlockEverything, unlockLevel, xpForLevel,
   type MatchResult, type Profile,
 } from '../src/index';
 
@@ -91,7 +91,8 @@ describe('Neue Wissensknoten', () => {
     expect(matchEmbers(20, 'medium', true, false, 0, 0).rush).toBe(0);
     const base = applyMatch(withLevel(30), res());
     const rush = applyMatch(know(withLevel(30), 'ember-pouch', 'ember-rush'), res({ matchId: 'x' }));
-    expect(rush.report.embers.rush).toBe(20);
-    expect(rush.report.embersGained).toBe(base.report.embersGained + 20 + Math.floor((base.report.embersGained + 20) * 0.1));
+    const rushN = Math.floor((20 * roundRewardBp(60)) / 10000); // Runde 15b: gedaempft wie die Runden-Embers
+    expect(rush.report.embers.rush).toBe(rushN);
+    expect(rush.report.embersGained).toBe(base.report.embersGained + rushN + Math.floor((base.report.embersGained + rushN) * 0.1));
   });
 });

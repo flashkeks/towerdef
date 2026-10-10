@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { createGame } from '../../sim/src/index';
 import {
   BRANCHES, BRANCH_NAMES, KNOWLEDGE, LEVEL_UNLOCKS, TOWER_TYPES, applyMatch, buyNode, buyPower, isTowerUnlocked, knowledgePoints, loadProfile, matchEmbers,
-  matchOptions, matchXp, newProfile, nodeById, nodeState, powerCost, powerPrice, unlockEverything, unlockLevel, xpForLevel, type MatchResult, type Profile,
+  matchOptions, matchXp, newProfile, roundRewardBp, nodeById, nodeState, powerCost, powerPrice, unlockEverything, unlockLevel, xpForLevel, type MatchResult, type Profile,
 } from '../src/index';
 
 const withLevel = (n: number, p: Profile = newProfile()): Profile => ({ ...p, playerXp: xpForLevel(n) });
@@ -96,7 +96,7 @@ describe('Freischalt-Level und Migration', () => {
   });
 
   it('Level-Up in einem Match meldet die neuen Türme', () => {
-    const r = applyMatch(newProfile(), res({ roundsCleared: 20 }));
+    const r = applyMatch(newProfile(), res({ roundsCleared: 60 })); // Runde 15b: Medium endet bei R60
     expect(r.report.unlocks.map((u) => u.id)).toContain('longshot');
   });
 
@@ -194,17 +194,19 @@ describe('Matches: Scholar, Ember Pouch, Starter Kit; Store: Bulk Buyer', () => 
     const plain = applyMatch(newProfile(), res());
     const sch = applyMatch(know(withLevel(30), 'scholar'), res());
     const base = applyMatch(withLevel(30), res());
-    expect(plain.report.xpGained).toBe(matchXp(20, 'medium', true));
-    expect(base.report.xpGained).toBe(2970);
-    expect(sch.report.xpGained).toBe(3267);
-    expect(matchXp(20, 'medium', true, 1000)).toBe(3267);
+    const ctx = { maxRound: 60, roundBp: roundRewardBp(60) }; // Runde 15b
+    expect(plain.report.xpGained).toBe(matchXp(20, 'medium', true, 0, ctx));
+    expect(base.report.xpGained).toBe(738);
+    expect(sch.report.xpGained).toBe(matchXp(20, 'medium', true, 1000, ctx));
+    expect(sch.report.xpGained).toBeGreaterThan(base.report.xpGained);
+    expect(matchXp(20, 'medium', true, 1000)).toBe(3267); // ohne Kontext: alte 20-Runden-Formel
   });
   it('Ember Pouch +10 % Embers (abgerundet auf die Summe), eigene Zeile im Bericht', () => {
     expect(matchEmbers(20, 'medium', true, false, 0, 1000)).toEqual({ rounds: 54, win: 30, medal: 0, levelUp: 0, pouch: 8, rush: 0 });
     const lv = withLevel(30, { ...newProfile(), medals: { meadow: { easy: true, medium: true, hard: true } } });
     const a = applyMatch(lv, res({ matchId: 'a' }));
     const b = applyMatch(know(lv, 'ember-pouch'), res({ matchId: 'b' }));
-    expect(b.report.embers.pouch).toBe(Math.floor((54 + 30) * 0.1));
+    expect(b.report.embers.pouch).toBe(Math.floor((10 + 30) * 0.1)); // 54 Runden-Embers x 19,25 % = 10
     expect(b.report.embersGained).toBe(a.report.embersGained + b.report.embers.pouch);
     expect(b.profile.embers).toBe(100 + b.report.embersGained);
   });

@@ -44,6 +44,12 @@ export const ProfileSchema = z.object({
   modeMedals: modeMedalsSchema.default({}),
   /** Runde 15: Bestleistung der Zusatzmodi je Karte. Standard in `best`. */
   modeBest: modeBestSchema.default({}),
+  /**
+   * Runde 15b: Bestrunde im Freeplay je Karte (hoechste geschaffte Runde ueber der Endrunde der gespielten Schwierigkeit, Standardmodus,
+   * ein Wert je Karte). Fehlt in aelteren Staenden = leer (Schema bleibt 11). Alte `best`-Runden (bis 30) bleiben gueltig: sie zaehlen
+   * weiter als Rundenstand der Schwierigkeit und sind damit jetzt Runden der gemeinsamen Liste.
+   */
+  freeplayBest: z.record(z.string(), nat).default({}),
   /** Match-IDs, die schon verbucht sind (juengste hinten). */
   seenMatches: z.array(z.string()).max(SEEN_MATCHES_MAX),
   matchesPlayed: nat,
@@ -78,6 +84,7 @@ export function newProfile(now = new Date(0).toISOString()): Profile {
     best: {},
     modeMedals: {},
     modeBest: {},
+    freeplayBest: {},
     seenMatches: [],
     matchesPlayed: 0,
     matchesWon: 0,

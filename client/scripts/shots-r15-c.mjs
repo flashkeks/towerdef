@@ -23,7 +23,7 @@ async function open(q = '?debug&seed=7') {
   return page;
 }
 /** Vorschaubilder werden im Hintergrund gemalt: warten, bis alle drei da sind. */
-const previewsReady = (page) => page.waitForFunction(() => document.querySelectorAll('.maptile canvas.pv').length === 3, null, { timeout: 40000 });
+const previewsReady = (page) => page.waitForFunction(() => (document.querySelectorAll('.maptile').length > 0 && document.querySelectorAll('.maptile canvas.pv').length >= document.querySelectorAll('.maptile').length), null, { timeout: 40000 });
 /** Karte, Modus und Schwierigkeit ueber Klicks waehlen, Match starten. */
 async function startMatch(page, { map = 'meadow', mode = 'standard', diff = 'medium' } = {}) {
   await page.click(`.maptile[data-map="${map}"]`);

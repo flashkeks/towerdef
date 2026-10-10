@@ -34,7 +34,7 @@ export function resultView(ctx: Ctx, info: ResultInfo): View {
   const head = h('header', 'res-head');
   head.append(
     ptext(info.quit ? S.result.left : info.won ? S.result.victory : S.result.defeat, 7, info.won ? 'leaf' : info.quit ? 'silver' : 'red', 'ink', 'res-title'),
-    h('div', 'res-sub', [MAP_NAMES[info.map] ?? info.map, info.mode === 'standard' ? '' : MODE_META[info.mode].name, S.home.difficulty[info.difficulty], S.result.round(Math.min(info.round, maxRoundOf(info.map)), maxRoundOf(info.map))].filter(Boolean).join(' \u00b7 ')),
+    h('div', 'res-sub', [MAP_NAMES[info.map] ?? info.map, info.mode === 'standard' ? '' : MODE_META[info.mode].name, S.home.difficulty[info.difficulty], info.round > maxRoundOf(info.map, info.difficulty) ? S.result.roundFree(info.round, maxRoundOf(info.map, info.difficulty)) : S.result.round(info.round, maxRoundOf(info.map, info.difficulty))].filter(Boolean).join(' \u00b7 ')),
   );
   if (r.newMedal) {
     const m = h('div', 'res-medal');
@@ -43,6 +43,7 @@ export function resultView(ctx: Ctx, info: ResultInfo): View {
   } else if (r.newBest && !r.duplicate) {
     head.append(h('div', 'res-best', S.result.newBest));
   }
+  if (r.newFreeplayBest && !r.duplicate) head.append(h('div', 'res-best', S.result.freeplayBest(r.freeplayBest)));
 
   // ---- Spieler-XP
   const xpCard = h('section', 'card xp-card');

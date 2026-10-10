@@ -6,8 +6,8 @@ import { PAL_NAMES } from '../src/pixel/palette';
 vi.setConfig({ testTimeout: 60000 });
 
 describe('Kartenwahl ueber die ID', () => {
-  it('sieben Karten, jede mit gemeinsamer Form', () => {
-    expect(MAP_IDS).toEqual(['meadow', 'hollow', 'marsh', 'frostfen', 'bastion', 'quarry', 'skyreach']);
+  it('zehn Karten, jede mit gemeinsamer Form', () => {
+    expect(MAP_IDS).toEqual(['meadow', 'hollow', 'marsh', 'frostfen', 'bastion', 'quarry', 'skyreach', 'dunes', 'harbor', 'spire']);
     for (const id of MAP_IDS) {
       const a = mapArt(id);
       expect(a.id).toBe(id);

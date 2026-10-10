@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createGame, DATA } from '../../sim/src/index';
 import {
   POWER_KEYS, buyPower, canonicalJson, checksum, embersForRound, matchEmbers, powerPrice,
-  applyMatch, buyNode, exportProfile, importProfile, knowledgePoints, levelFromXp, loadProfile, matchOptions, matchXp, newProfile,
+  applyMatch, buyNode, exportProfile, importProfile, knowledgePoints, levelFromXp, loadProfile, matchOptions, matchXp, newProfile, roundRewardBp,
   resetKnowledge, tierCost, unlockEverything, unlockTier, xpForLevel, type MatchResult, type Profile,
 } from '../src/index';
 
@@ -32,9 +32,10 @@ describe('Level', () => {
 describe('Match anwenden', () => {
   it('XP, Level-Ups, Freischaltungen, Wissenspunkte, Medaille', () => {
     const { profile, report } = applyMatch(newProfile(), res());
-    expect(report.xpGained).toBe(2970);
-    expect(report.levelAfter).toBe(levelFromXp(2970).level);
-    expect(report.unlocks.map((u) => u.id)).toEqual(['bombardier', 'wren', 'frostcaller', 'riverkeeper', 'hard', 'longshot']);
+    // Runde 15b: Medium endet bei R60; 20 Runden sind ein Teilstueck, die Runden-XP sind auf 19,25 % gedaempft (volle Partie R60: 4.316)
+    expect(report.xpGained).toBe(738);
+    expect(report.levelAfter).toBe(levelFromXp(738).level);
+    expect(report.unlocks.map((u) => u.id)).toEqual(['bombardier']);
     expect(report.pointsGained).toBe(report.levelAfter - 1);
     expect(report.newMedal).toBe('medium');
     expect(profile.medals.meadow.medium).toBe(true);
@@ -222,7 +223,7 @@ describe('Laden, Reset, Export', () => {
     const code = (s: string): string => { const r = importProfile(s); return r.ok ? 'ok' : r.code; };
     expect(code('{')).toBe('import-invalid-json');
     expect(code('{"a":1}')).toBe('import-wrong-format');
-    expect(code(json.replace('"playerXp": 2970', '"playerXp": 9999'))).toBe('import-bad-checksum');
+    expect(code(json.replace('"playerXp": 738', '"playerXp": 9999'))).toBe('import-bad-checksum');
     expect(code(JSON.stringify({ ...JSON.parse(json), formatVersion: 3 }))).toBe('import-old-version');
   });
 });
@@ -327,8 +328,8 @@ describe('Embers, Inventar und Store (Runde 12)', () => {
     const { profile, report } = applyMatch(newProfile(), res());
     const lvUps = report.levelAfter - report.levelBefore;
     expect(lvUps).toBeGreaterThan(0);
-    expect(report.embers).toEqual({ rounds: 54, win: 30, medal: 50, levelUp: 25 * lvUps, pouch: 0, rush: 0 });
-    expect(report.embersGained).toBe(54 + 30 + 50 + 25 * lvUps);
+    expect(report.embers).toEqual({ rounds: 10, win: 30, medal: 50, levelUp: 25 * lvUps, pouch: 0, rush: 0 }); // 54 x 19,25 %
+    expect(report.embersGained).toBe(10 + 30 + 50 + 25 * lvUps);
     expect(profile.embers).toBe(100 + report.embersGained);
     // zweiter Sieg gleicher Schwierigkeit: keine Medaille mehr
     const second = applyMatch(profile, res({ matchId: 'm2' }));
@@ -337,7 +338,7 @@ describe('Embers, Inventar und Store (Runde 12)', () => {
 
   it('applyMatch: Niederlage gibt Embers für die geschafften Runden', () => {
     const { profile, report } = applyMatch(newProfile(), res({ won: false, roundsCleared: 7, difficulty: 'hard' }));
-    expect(report.embers.rounds).toBe(1 + 1 + 1 + 1 + 2 + 2 + 2);
+    expect(report.embers.rounds).toBe(Math.floor((1 + 1 + 1 + 1 + 2 + 2 + 2) * roundRewardBp(80) / 10000)); // Hard endet bei R80: gedaempft
     expect(report.embers.win).toBe(0);
     expect(report.embers.medal).toBe(0);
     expect(profile.embers).toBe(100 + report.embersGained);

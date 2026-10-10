@@ -31,14 +31,16 @@ const R = rng(77);
 const SHARD_COL: Partial<Record<EnemyType, number[]>> = {
   red: [C.red, C.crimson, C.coral], blue: [C.sky, C.navy, C.ice], green: [C.leaf, C.grass, C.yellow], gold: [C.amber, C.yellow, C.orange],
   ironshell: [C.stone, C.silver, C.slate], ember: [C.orange, C.yellow, C.red], brute: [C.slate, C.dusk, C.stone], leviathan: [C.navy, C.stone, C.sky],
-  pink: [C.orchid, C.coral, C.peach], frostling: [C.plum, C.violet, C.ice], crystal: [C.navy, C.sky, C.ice], gloomship: [C.night, C.violet, C.orchid],
+  pink: [C.orchid, C.coral, C.peach], frostling: [C.plum, C.violet, C.ice], crystal: [C.navy, C.sky, C.ice], gloomship: [C.night, C.violet, C.orchid], cruiser: [C.night, C.violet, C.slate], duskrunner: [C.ink, C.night, C.violet], dreadnought: [C.ink, C.night, C.violet, C.slate],
   wyrm: [C.ice, C.white, C.sky, C.navy], colossus: [C.red, C.orange, C.yellow, C.slate],
 };
 /** Gegner, die beim Platzen groessere Scherben werfen */
-const BIG_SHARDS = new Set<EnemyType>(['brute', 'leviathan', 'crystal', 'gloomship', 'wyrm', 'colossus']);
+const BIG_SHARDS = new Set<EnemyType>(['brute', 'leviathan', 'crystal', 'gloomship', 'wyrm', 'colossus', 'cruiser', 'dreadnought']);
+/** Schiffe (Blimps ohne Bodenkontakt): eigener Bodenschatten, Absturz beim Platzen */
+const SHIPS = new Set<EnemyType>(['gloomship', 'cruiser', 'duskrunner', 'dreadnought']);
 
 interface TowerView { ice?: Sprite; spr: Sprite; shadow: Sprite; key: string; drop: number; up: number; tiers: string; kick: number; flag?: Sprite; zone?: Sprite; glow?: Sprite; mon: boolean; hide: number }
-interface EnemyView { vine?: Sprite; vol?: Sprite; bub?: Sprite; mark?: Sprite; spr: Sprite; shadow: Sprite; key: string; px: number; py: number; cx: number; cy: number; flash: number; flip: boolean; bar?: Sprite; barBg?: Sprite }
+interface EnemyView { trail?: Sprite; vine?: Sprite; vol?: Sprite; bub?: Sprite; mark?: Sprite; spr: Sprite; shadow: Sprite; key: string; px: number; py: number; cx: number; cy: number; flash: number; flip: boolean; bar?: Sprite; barBg?: Sprite }
 interface WallView { spr: Sprite; x: number; y: number; hide: number }
 interface PuddleView { spr: Sprite; x: number; y: number; r: number }
 interface TrapView { spr: Sprite; x: number; y: number; kind: 'caltrops' | 'frostTrap'; key: string; drop: number }
@@ -361,7 +363,7 @@ export class Renderer {
 
     const seenE = new Set<number>();
     for (const e of state.enemies) { seenE.add(e.id); this.syncEnemy(e, newTick, alpha); }
-    for (const [id, v] of this.enemies) if (!seenE.has(id)) { v.spr.destroy(); v.shadow.destroy(); v.bar?.destroy(); v.barBg?.destroy(); v.bub?.destroy(); v.mark?.destroy(); v.vine?.destroy(); v.vol?.destroy(); this.enemies.delete(id); }
+    for (const [id, v] of this.enemies) if (!seenE.has(id)) { v.spr.destroy(); v.shadow.destroy(); v.bar?.destroy(); v.barBg?.destroy(); v.bub?.destroy(); v.mark?.destroy(); v.vine?.destroy(); v.vol?.destroy(); v.trail?.destroy(); this.enemies.delete(id); }
 
     const seenP = new Set<number>();
     for (const p of state.projectiles) { seenP.add(p.id); this.syncProj(p, newTick, alpha); }
@@ -616,6 +618,14 @@ export class Renderer {
       v.bub.position.set(x - bs.ax, y - bs.ay - Math.round(look.top * 0.3));
       v.bub.alpha = 0.9;
     } else if (v.bub) { v.bub.destroy(); v.bub = undefined; }
+    // Duskrunner: Tempo-Streifen unter dem Schiff (Runde 15e)
+    if (e.type === 'duskrunner') {
+      if (!v.trail) { v.trail = new Sprite(); this.worldC.addChild(v.trail); }
+      const ts = P2.duskTrail(Math.floor(this.now / 90), v.flip);
+      v.trail.texture = tex(ts.canvas);
+      v.trail.position.set(x - ts.ax, y - ts.ay);
+      v.trail.zIndex = y + look.lift - 1;
+    }
     // Ranken-Fessel (Vine Snare): Ranken um die Fuesse, solange die Sim den Gegner festhaelt
     if (e.vineTicks > 0) {
       if (!v.vine) { v.vine = new Sprite(); this.worldC.addChild(v.vine); }
@@ -641,8 +651,8 @@ export class Renderer {
       v.mark.alpha = e.markTicks < 30 && (Math.floor(this.now / 90) & 1) ? 0.4 : 1;
     } else if (v.mark) { v.mark.destroy(); v.mark = undefined; }
     // Schatten: Gloomship schwebt, sein Schatten liegt am Boden unter dem Anker (eigener Sprite, 35 % Alpha eingebaut)
-    if (e.type === 'gloomship') {
-      const gs = P2.gloomShadow(Math.floor(this.now / 200));
+    if (SHIPS.has(e.type)) {
+      const gs = P2.shipShadow(e.type as 'gloomship' | 'cruiser' | 'duskrunner' | 'dreadnought', Math.floor(this.now / 200));
       v.shadow.texture = tex(gs.canvas);
       v.shadow.alpha = 1;
       v.shadow.position.set(x - gs.ax, y - gs.ay);
@@ -799,6 +809,11 @@ export class Renderer {
           // Absturz: das Schiff schlaegt am Boden unter sich ein
           fx.anim(x, y, FRAMES.GLOOM_CRASH_FRAMES, (f) => P2.gloomCrash(f), { per: 3 });
           fx.shake.t = 10; fx.shake.amp = 2;
+        } else if (ev.etype === 'cruiser' || ev.etype === 'dreadnought') {
+          fx.anim(x, y, FRAMES.SHIP_CRASH_FRAMES, (f) => P2.shipCrash(ev.etype as 'cruiser' | 'dreadnought', f), { per: 3 });
+          fx.shake.t = ev.etype === 'dreadnought' ? 40 : 16; fx.shake.amp = ev.etype === 'dreadnought' ? 4 : 2;
+        } else if (ev.etype === 'duskrunner') {
+          fx.burst(x, y - 10, SHARD_COL.duskrunner!, 10, 2.2, 2, 0.06, 18);
         } else if (ev.etype === 'wyrm' || ev.etype === 'colossus') {
           fx.anim(x, y, FRAMES.BOSS_DEATH_FRAMES, (f) => P2.bossDeath(ev.etype as 'wyrm' | 'colossus', f), { per: 3 });
           fx.shake.t = 30; fx.shake.amp = 3;

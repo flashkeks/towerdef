@@ -8,12 +8,23 @@ import { MODE_IDS, MODES } from '../../sim/src/modes';
 
 export const TOWER_TYPES: readonly TowerType[] = ['ranger', 'bombardier', 'frostcaller', 'longshot', 'market', 'thornweaver', 'alchemist', 'riverkeeper', 'bellringer', 'tinker'];
 export const DIFFICULTIES: readonly Difficulty[] = ['easy', 'medium', 'hard'];
-/** Letzte Runde von Lanternfall Meadow (Freeplay-Grenze der alten Formeln). Je Karte: `MAPS[i].maxRound` / `maxRoundOf(map)`. */
+/** Alte Rechengrenze (20 Runden): Vorgabe der Belohnungsformeln, wenn kein `maxRound` im Kontext steht. Echte Endrunde: `maxRoundOf(map, difficulty)`. */
 export const MAX_ROUND = 20;
+/**
+ * Runde 15b (Max, 10.10.2026: "Easy 40, Medium 60, Hard 80 wie BTD6"): eine Rundenliste fuer alle Karten, Endrunde nach Schwierigkeit
+ * (`sim/data/difficulties.json`). Erreicht = Sieg und Medaille; danach optional Freeplay.
+ */
+export const END_ROUND: Record<Difficulty, number> = { easy: DATA.difficulties.easy.endRound, medium: DATA.difficulties.medium.endRound, hard: DATA.difficulties.hard.endRound };
+/**
+ * Daempfung von Spieler-XP und Embers je Runde in Basispunkten, damit 40/60/80 Runden die Level-Kurve nicht sprengen:
+ * bis 20 Runden unveraendert, darueber (20 / Endrunde)^1,5 (Easy 3536, Medium 1925, Hard 1250). Eine volle Partie bleibt so bei
+ * rund 3.400 / 4.300 / 5.300 XP (Medium; frueher R20 = 2.970).
+ */
+export const roundRewardBp = (endRound: number): number => (endRound <= 20 ? 10000 : Math.round(10000 * Math.pow(20 / endRound, 1.5)));
 
 // ---------------------------------------------------------------- Karten und Modi (Runde 15, docs/design/karten-gegner-r15.md)
 
-export type MapTier = 'beginner' | 'intermediate' | 'advanced';
+export type MapTier = 'beginner' | 'intermediate' | 'advanced' | 'expert';
 export interface MapUnlockRule {
   /** Spieler-Level, ab dem die Karte offen ist. */
   level: number;
@@ -26,9 +37,7 @@ export interface MapMeta {
   tier: MapTier;
   /** Anzeigename der Stufe (Englisch). */
   tierName: string;
-  /** Anzahl Runden = letzte Runde (Sieg). */
-  maxRound: number;
-  /** Boss der letzten Runde (Anzeige). */
+  /** Boss der Karte (Anzeige, Flavour); die Bosse stehen fest in der gemeinsamen Liste (R20 Leviathan, R40 Wyrm, R60 Colossus, R80 alle). */
   boss: string;
   /** Keine Regel = von Anfang an offen. */
   unlock: MapUnlockRule | null;
@@ -39,15 +48,23 @@ export interface MapMeta {
   desc: string;
 }
 export const MAPS: readonly MapMeta[] = [
-  { id: 'meadow', name: 'Lanternfall Meadow', tier: 'beginner', tierName: 'Beginner', maxRound: DATA.roundsByMap.meadow.length, boss: 'Dusk Leviathan', unlock: null, xpBp: 10000, embersBp: 10000, desc: 'A long road through a summer meadow. Plenty of room to build.' },
-  { id: 'frostfen', name: 'Frostfen Crossing', tier: 'intermediate', tierName: 'Intermediate', maxRound: DATA.roundsByMap.frostfen.length, boss: 'Frost Wyrm', unlock: { level: 8, medal: { map: 'meadow', difficulty: 'medium' } }, xpBp: 11500, embersBp: 12000, desc: 'Two roads over a frozen lake meet in the middle. The ice cannot be built on.' },
-  { id: 'quarry', name: 'Ember Quarry', tier: 'advanced', tierName: 'Advanced', maxRound: DATA.roundsByMap.quarry.length, boss: 'Ember Colossus', unlock: { level: 12, medal: { map: 'frostfen', difficulty: 'medium' } }, xpBp: 13000, embersBp: 14000, desc: 'A short, winding road through lava and rock. Very little room to build.' },
+  // Runde 16 (10.10.2026, Max: „Karten … mindestens um die 10 … der Reihe nach freischalten, die halt auch schwieriger werden“)
+  { id: 'meadow', name: 'Lanternfall Meadow', tier: 'beginner', tierName: 'Beginner', boss: 'Dusk Leviathan', unlock: null, xpBp: 10000, embersBp: 10000, desc: 'A long road through a summer meadow. Plenty of room to build.' },
+  { id: 'hollow', name: 'Harvest Hollow', tier: 'beginner', tierName: 'Beginner', boss: 'Dusk Leviathan', unlock: { level: 3, medal: { map: 'meadow', difficulty: 'medium' } }, xpBp: 10000, embersBp: 10000, desc: 'Autumn fields, a windmill and a pond for water towers. A long, gentle road.' },
+  { id: 'marsh', name: 'Mistwood Marsh', tier: 'intermediate', tierName: 'Intermediate', boss: 'Frost Wyrm', unlock: { level: 5, medal: { map: 'hollow', difficulty: 'medium' } }, xpBp: 11500, embersBp: 12000, desc: 'Foggy swamp with lots of water and little dry land. Water towers shine here.' },
+  { id: 'frostfen', name: 'Frostfen Crossing', tier: 'intermediate', tierName: 'Intermediate', boss: 'Frost Wyrm', unlock: { level: 8, medal: { map: 'marsh', difficulty: 'medium' } }, xpBp: 11500, embersBp: 12000, desc: 'Two roads over a frozen lake meet in the middle. The ice cannot be built on.' },
+  { id: 'bastion', name: 'Sunken Bastion', tier: 'intermediate', tierName: 'Intermediate', boss: 'Frost Wyrm', unlock: { level: 10, medal: { map: 'frostfen', difficulty: 'medium' } }, xpBp: 11500, embersBp: 12000, desc: 'A ruined castle with a moat. Two roads, and the walls leave little room.' },
+  { id: 'quarry', name: 'Ember Quarry', tier: 'advanced', tierName: 'Advanced', boss: 'Ember Colossus', unlock: { level: 12, medal: { map: 'bastion', difficulty: 'medium' } }, xpBp: 13000, embersBp: 14000, desc: 'A short, winding road through lava and rock. Very little room to build.' },
+  { id: 'skyreach', name: 'Skyreach Cliffs', tier: 'advanced', tierName: 'Advanced', boss: 'Ember Colossus', unlock: { level: 14, medal: { map: 'quarry', difficulty: 'medium' } }, xpBp: 13000, embersBp: 14000, desc: 'Mountain switchbacks over deep chasms. Two roads, small plateaus.' },
+  { id: 'dunes', name: 'Ashra Dunes', tier: 'advanced', tierName: 'Advanced', boss: 'Ember Colossus', unlock: { level: 16, medal: { map: 'skyreach', difficulty: 'medium' } }, xpBp: 13000, embersBp: 14000, desc: 'Three roads through the desert meet at the ruins. A small oasis for water towers.' },
+  { id: 'harbor', name: 'Gloomharbor', tier: 'expert', tierName: 'Expert', boss: 'Dusk Dreadnought', unlock: { level: 18, medal: { map: 'dunes', difficulty: 'medium' } }, xpBp: 15000, embersBp: 16000, desc: 'A harbor town at night. Big docks for water towers, but the streets are tight.' },
+  { id: 'spire', name: 'Duskspire Keep', tier: 'expert', tierName: 'Expert', boss: 'Dusk Dreadnought', unlock: { level: 20, medal: { map: 'harbor', difficulty: 'medium' } }, xpBp: 15000, embersBp: 16000, desc: 'The final fortress. Three short roads, lava moats and almost no room to build.' },
 ];
 export const MAP_IDS: readonly string[] = MAPS.map((m) => m.id);
 export const MAP_NAMES: Record<string, string> = Object.fromEntries(MAPS.map((m) => [m.id, m.name]));
 export const mapById = (id: string): MapMeta | undefined => MAPS.find((m) => m.id === id);
-/** Letzte Runde der Karte; unbekannte Karten zaehlen wie Meadow. */
-export const maxRoundOf = (map: string): number => mapById(map)?.maxRound ?? MAX_ROUND;
+/** Endrunde (= Sieg) auf der Schwierigkeit; seit 15b gleich fuer alle Karten (`map` bleibt fuer spaetere Sonderkarten). Vorgabe Medium. */
+export const maxRoundOf = (_map: string, difficulty: Difficulty = 'medium'): number => END_ROUND[difficulty];
 
 export { MODE_IDS };
 /** Bonus auf Spieler-XP und Embers in den Zusatzmodi (+20 %). */
@@ -76,6 +93,7 @@ export const STARTER_TOWER_XP = 100;
 
 export const DIFFICULTY_XP_BP: Record<Difficulty, number> = { easy: 10000, medium: 11000, hard: 12000 };
 export const WIN_BONUS_XP = 200;
+/** Freeplay-Runden (ueber der Endrunde) zaehlen 30 % der Runden-XP. */
 export const FREEPLAY_BP = 3000;
 
 /** XP bis zum naechsten Level, von Level `l` aus. */
@@ -122,8 +140,15 @@ export const LEVEL_UNLOCKS: readonly LevelUnlock[] = [
   { level: 5, kind: 'tower', id: 'longshot', title: 'Longshot', text: 'Sniper that sees the whole map. Slow, heavy shots.' },
   { level: 6, kind: 'tower', id: 'market', title: 'Lantern Market', text: 'Does not attack. Pays gold every round, banks interest, or buffs nearby towers.' },
   { level: 7, kind: 'tower', id: 'thornweaver', title: 'Thornweaver', text: 'Nature caster. Thorn fans, chain lightning, vines and a wall of trees.' },
+  { level: 3, kind: 'map', id: 'hollow', title: 'Harvest Hollow', text: 'Autumn fields and a pond. Beginner map.' },
+  { level: 5, kind: 'map', id: 'marsh', title: 'Mistwood Marsh', text: 'A foggy swamp full of water. Intermediate map.' },
   { level: 8, kind: 'map', id: 'frostfen', title: 'Frostfen Crossing', text: 'A frozen lake with two roads. Intermediate map.' },
+  { level: 10, kind: 'map', id: 'bastion', title: 'Sunken Bastion', text: 'A ruined castle with a moat. Intermediate map.' },
   { level: 12, kind: 'map', id: 'quarry', title: 'Ember Quarry', text: 'Lava, rock and a short road. Advanced map.' },
+  { level: 14, kind: 'map', id: 'skyreach', title: 'Skyreach Cliffs', text: 'Switchbacks over deep chasms. Advanced map.' },
+  { level: 16, kind: 'map', id: 'dunes', title: 'Ashra Dunes', text: 'Three roads through the desert. Advanced map.' },
+  { level: 18, kind: 'map', id: 'harbor', title: 'Gloomharbor', text: 'A harbor town at night. Expert map.' },
+  { level: 20, kind: 'map', id: 'spire', title: 'Duskspire Keep', text: 'The final fortress. Expert map.' },
   { level: 9, kind: 'tower', id: 'alchemist', title: 'Alchemist', text: 'Lobs acid, brews buffs for nearby towers, turns lead into gold.' },
   // Runde 16 (Paket T): Helden Bram und Sela gibt es auch fuer Embers (`HEROES`), die Karte hier ist der Level-Weg
   { level: 10, kind: 'hero', id: 'bram', title: 'Bram Ironwright', text: 'Hero. A smith whose hammers crack armor. Builds a forge, drops an anvil. Can also be bought with Embers.' },
@@ -178,7 +203,7 @@ export interface KnowledgeNode {
 const node = (id: string, branch: Branch, name: string, cost: number, desc: string, requires: string[], col: number, row: number): KnowledgeNode =>
   ({ id, branch, name, cost, desc, requires, col, row });
 /**
- * Wissensbaum Runde 13/14 (docs/design/tuerme-r13.md): 40 Knoten in 5 Aesten, Summe 77 Punkte (Runde 13: 28 Knoten / 52 Punkte, Runde 14: +12). Die 10 alten Knoten
+ * Wissensbaum Runde 13/14 (docs/design/tuerme-r13.md): 40 Knoten in 5 Aesten (Runde 16: +6 = 46, docs/design/tuerme-r16.md), Summe 77 Punkte (Runde 13: 28 Knoten / 52 Punkte, Runde 14: +12). Die 10 alten Knoten
  * behalten ID und Wirkung (Ast `towers` heisst jetzt `primary`). Reihenfolge: Voraussetzungen stehen vor den Folgeknoten.
  */
 export const KNOWLEDGE: readonly KnowledgeNode[] = [

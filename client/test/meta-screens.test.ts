@@ -24,9 +24,11 @@ describe('MatchOutcome -> MatchResult', () => {
     expect(r.pops).toEqual({ ranger: 500, wren: 200 });
     expect(r.matchId).toBe('id-1');
   });
-  it('Sieg = 20 Runden, nie mehr als MAX_ROUND aus `round`', () => {
-    expect(toMetaResult(outcome({ won: true, round: 20 }), ctx).roundsCleared).toBe(20);
-    expect(toMetaResult(outcome({ won: true, round: 25 }), ctx).roundsCleared).toBe(20);
+  it('Sieg = Endrunde der Schwierigkeit (Runde 15b: Medium 60), nie mehr aus `round`', () => {
+    expect(toMetaResult(outcome({ won: true, round: 60 }), ctx).roundsCleared).toBe(60);
+    expect(toMetaResult(outcome({ won: true, round: 65 }), ctx).roundsCleared).toBe(60);
+    // Freeplay: der Client liefert die exakte Zahl (state.roundsCleared), auch ueber der Endrunde
+    expect(toMetaResult(outcome({ won: true, round: 70, roundsCleared: 69 }), ctx).roundsCleared).toBe(69);
   });
   it('exakte Felder von P3 gewinnen; Niederlage in Runde 1 = 0 Runden', () => {
     const r = toMetaResult(outcome({ roundsCleared: 7, livesLost: 9, matchId: 'x' }), ctx);
@@ -37,7 +39,7 @@ describe('MatchOutcome -> MatchResult', () => {
   it('Ergebnis laesst sich verbuchen, doppelt nicht', () => {
     const r = toMetaResult(outcome({ won: true, round: 20 }), ctx);
     const a = applyMatch(newProfile(), r);
-    expect(a.report.xpGained).toBe(2970);
+    expect(a.report.xpGained).toBe(738); // 20 von 60 Runden, gedaempft (Runde 15b)
     expect(applyMatch(a.profile, r).report.duplicate).toBe(true);
   });
 });

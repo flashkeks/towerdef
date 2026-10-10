@@ -7,6 +7,7 @@
 import { C, hash2 } from './buf';
 import { MAP_H, MAP_W } from './layout';
 import { EMBER_SEEDS } from './quarry';
+import { ambientK2 } from './ambient-k2';
 import { waterAt as marshWaterAt } from './marsh';
 import type { MapId } from './types';
 
@@ -189,7 +190,7 @@ export function ambientPoints(id: MapId, tMs: number): AmbientPoint[] {
   if (id === 'marsh') return [...mist(tMs, C.silver, 14, 100, (x, y) => marshWaterAt(x, y) < 0, 2.2, 0.05), ...fireflies(tMs)];
   if (id === 'skyreach') return skyreach(tMs);
   if (id === 'bastion') return bastion(tMs);
-  return [];
+  return ambientK2(id, tMs);
 }
 
 /** Rauchfahnen: je Quelle vier Wolken, die aufsteigen, mit dem Wind abdriften, wachsen und verblassen. */

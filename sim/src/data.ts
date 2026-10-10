@@ -4,15 +4,16 @@
 import { z } from 'zod';
 import towersJson from '../data/towers.json';
 import enemiesJson from '../data/enemies.json';
-import roundsMeadowJson from '../data/rounds/meadow.json';
-import roundsFrostfenJson from '../data/rounds/frostfen.json';
-import roundsQuarryJson from '../data/rounds/quarry.json';
+import roundsJson from '../data/rounds.json';
 import difficultiesJson from '../data/difficulties.json';
 import xpJson from '../data/xp.json';
 import powersJson from '../data/powers.json';
 import meadowJson from '../data/maps/meadow.json';
 import frostfenJson from '../data/maps/frostfen.json';
 import quarryJson from '../data/maps/quarry.json';
+import dunesJson from '../data/maps/dunes.json';
+import harborJson from '../data/maps/harbor.json';
+import spireJson from '../data/maps/spire.json';
 import hollowJson from '../data/maps/hollow.json';
 import marshJson from '../data/maps/marsh.json';
 import bastionJson from '../data/maps/bastion.json';
@@ -75,7 +76,7 @@ const towersSchema = z.object({
   sela: heroSchema,
 });
 
-const ENEMY_TYPES = ['red', 'blue', 'green', 'gold', 'ironshell', 'ember', 'brute', 'leviathan', 'pink', 'frostling', 'crystal', 'gloomship', 'wyrm', 'colossus'] as const;
+const ENEMY_TYPES = ['red', 'blue', 'green', 'gold', 'ironshell', 'ember', 'brute', 'leviathan', 'pink', 'frostling', 'crystal', 'gloomship', 'wyrm', 'colossus', 'cruiser', 'duskrunner', 'dreadnought'] as const;
 const enemyTypeSchema = z.enum(ENEMY_TYPES);
 const enemySchema = z.object({
   name: z.string(),
@@ -98,6 +99,10 @@ const enemySchema = z.object({
   heavy: z.boolean().optional(),
   /** Pop-Gold fuer die Huelle (statt Pop-Cash je Schicht): Blimp 50, Boss 100/150. */
   hullCash: z.number().int().positive().optional(),
+  /** Runde 15b: nie verlangsamt, eingefroren oder (per Time Warp) gebremst (Dusk Dreadnought). */
+  immuneSlow: z.boolean().optional(),
+  /** Runde 15b: immer getarnt (Duskrunner), Kinder erben. */
+  alwaysCamo: z.boolean().optional(),
   /** Boss-Huelle je Schwierigkeit (fehlt: `bossHp` aus difficulties.json). */
   bossHp: z.object({ easy: z.number().int().positive(), medium: z.number().int().positive(), hard: z.number().int().positive() }).optional(),
 });
@@ -124,6 +129,8 @@ const diffSchema = z.object({
   priceBp: z.number().int().positive(),
   speedBp: z.number().int().positive(),
   bossHp: z.number().int().positive(),
+  /** Runde 15b: Endrunde = Sieg (Easy 40, Medium 60, Hard 80, wie BTD6). */
+  endRound: z.number().int().positive(),
   startCash: z.number().int().nonnegative(),
   /** Gold je geknackter Schicht (Runde 11 / P5: 2, weil 20 Runden den Gegnerfortschritt von BTD6-R1-40 tragen). */
   popCash: z.number().int().positive(),
@@ -185,10 +192,8 @@ export interface GameData {
   towers: Record<TowerType, TowerData>;
   hero: Record<HeroType, HeroData>;
   enemies: Record<EnemyType, EnemyData>;
-  /** Index = Runde - 1. Runden der Karte `meadow` (Kurzform fuer `roundsByMap.meadow`). */
+  /** Runde 15b: die eine Rundenliste fuer alle Karten, Index = Runde - 1, 120 feste Runden (`sim/data/rounds.json`, Quelle `sim/scripts/gen-rounds.mjs`). */
   rounds: RoundData[];
-  /** Runde 15: Rundenliste je Karte (Meadow 20, Frostfen 25, Quarry 30). Unbekannte Karten (Testkarten) nutzen die Meadow-Liste. */
-  roundsByMap: Record<string, RoundData[]>;
   difficulties: Record<Difficulty, DifficultyData>;
   xp: z.infer<typeof xpSchema>;
   /** Powers (Runde 12), Reihenfolge der Anzeige in `powerOrder`. */
@@ -209,10 +214,9 @@ function check(cond: boolean, msg: string): void {
 function load(): GameData {
   const t = towersSchema.parse(towersJson);
   const enemies = enemiesSchema.parse(enemiesJson) as Record<EnemyType, EnemyData>;
-  const rounds = roundsSchema(20).parse(roundsMeadowJson);
-  const roundsByMap = { meadow: rounds, frostfen: roundsSchema(25).parse(roundsFrostfenJson), quarry: roundsSchema(30).parse(roundsQuarryJson) };
+  const rounds = roundsSchema(120).parse(roundsJson);
   const difficulties = difficultiesSchema.parse(difficultiesJson);
-  const maps = { meadow: mapSchema.parse(meadowJson), frostfen: mapSchema.parse(frostfenJson), quarry: mapSchema.parse(quarryJson), hollow: mapSchema.parse(hollowJson), marsh: mapSchema.parse(marshJson), bastion: mapSchema.parse(bastionJson), skyreach: mapSchema.parse(skyreachJson) };
+  const maps = { meadow: mapSchema.parse(meadowJson), frostfen: mapSchema.parse(frostfenJson), quarry: mapSchema.parse(quarryJson), hollow: mapSchema.parse(hollowJson), marsh: mapSchema.parse(marshJson), bastion: mapSchema.parse(bastionJson), skyreach: mapSchema.parse(skyreachJson), dunes: mapSchema.parse(dunesJson), harbor: mapSchema.parse(harborJson), spire: mapSchema.parse(spireJson) };
   const xp = xpSchema.parse(xpJson);
   const pw = powersSchema.parse(powersJson);
   for (const k of POWER_KEYS) check(!!pw.powers[k], `Power ${k} fehlt`);
@@ -224,7 +228,7 @@ function load(): GameData {
   for (let i = 1; i < 5; i++) check(xp.unlockCost[i] > xp.unlockCost[i - 1], 'Freischaltkosten nicht steigend');
 
   for (const e of ENEMY_TYPES) check(!!enemies[e], `Gegner ${e} fehlt`);
-  for (const [m, list] of Object.entries(roundsByMap)) list.forEach((r, i) => check(r.round === i + 1, `${m}: Runde ${i + 1} falsch nummeriert`));
+  rounds.forEach((r, i) => check(r.round === i + 1, `Runde ${i + 1} falsch nummeriert`));
   for (const m of Object.values(maps)) {
     if (m.paths) check(JSON.stringify(m.paths[0]) === JSON.stringify(m.path), `${m.id}: paths[0] ist nicht path`);
   }
@@ -272,7 +276,6 @@ function load(): GameData {
     hero: { wren: t.wren, bram: t.bram, sela: t.sela },
     enemies,
     rounds,
-    roundsByMap,
     difficulties,
     xp,
     powers: pw.powers as Record<PowerKey, PowerData>,

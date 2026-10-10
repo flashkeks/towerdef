@@ -11,7 +11,7 @@ export const WARNING_TEXT: Record<Warning, { name: string; tip: string }> = {
   ember: { name: 'Ember', tip: 'Emberlings burn out and cannot be frozen.' },
   boss: { name: 'Boss', tip: 'A boss walks this round.' },
   frostling: { name: 'Blast-proof', tip: 'Frostlings shrug off explosions. Use arrows, frost or magic.' },
-  blimp: { name: 'Blimp', tip: 'Gloomships cannot be frozen, slow down by half, and their children take no damage until the hull breaks.' },
+  blimp: { name: 'Blimp', tip: 'Gloomships, Cruisers and Duskrunners cannot be frozen, slow down by half, and their children take no damage until the hull breaks.' },
   regrow: { name: 'Regrow', tip: 'Bloom foes grow a layer back every 3 seconds. Pop them fast.' },
   fortified: { name: 'Fortified', tip: 'Fortified foes have double hull. Bring heavy hitters.' },
 };
@@ -19,6 +19,7 @@ export const WARNING_TEXT: Record<Warning, { name: string; tip: string }> = {
 export const ENEMY_NAMES: Record<EnemyKind, string> = {
   red: 'Red Glim', blue: 'Blue Glim', green: 'Green Glim', gold: 'Gold Glim', ironshell: 'Ironshell', ember: 'Emberling', brute: 'Brute', leviathan: 'Dusk Leviathan',
   pink: 'Pink Glim', frostling: 'Frostling', crystal: 'Crystal Brute', gloomship: 'Gloomship', wyrm: 'Frost Wyrm', colossus: 'Ember Colossus',
+  cruiser: 'Gloom Cruiser', duskrunner: 'Duskrunner', dreadnought: 'Dusk Dreadnought',
 };
 
 export function warnings(p: RoundPreview): Warning[] {
@@ -50,9 +51,11 @@ export function waveRows(p: RoundPreview): WaveRow[] {
 }
 
 /** Welche Runde zeigt der Reiter? Vor dem Start die naechste, waehrend der Welle die laufende; nach der letzten Runde der Karte nichts. */
-export function previewRound(phase: string, round: number, maxRound: number): number | null {
+export function previewRound(phase: string, round: number, maxRound: number, freeplay = false): number | null {
+  if (phase === 'won' || phase === 'lost') return null;
   const r = phase === 'wave' ? round : round + 1;
-  return r >= 1 && r <= maxRound ? r : null;
+  // Runde 15b: im Freeplay gibt es keine letzte Runde mehr (die Sim liefert auch Formel-Runden ab R121)
+  return r >= 1 && (freeplay || r <= maxRound) ? r : null;
 }
 
 export const totalEnemies = (p: RoundPreview): number => p.groups.reduce((a, g) => a + Math.max(0, g.n), 0);

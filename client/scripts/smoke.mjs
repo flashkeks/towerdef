@@ -16,7 +16,25 @@ try {
   await page.goto(url + '?debug');
   await page.waitForSelector('.maptile[data-map="meadow"]', { timeout: 20000 });
   check(true, 'Startbildschirm da (Kartenwahl)');
-  check(await page.locator('.maptile').count() === 3, 'Kartenwahl zeigt drei Karten');
+  // Runde 16 H: Reiter je Stufe, nur die Kacheln der gewaehlten Stufe stehen im DOM; alle sichtbaren Vorschauen werden gemalt
+  check(await page.locator('.maptab').count() === 4, 'Kartenwahl: vier Reiter (Beginner bis Expert)');
+  const nTiles = await page.locator('.maptile').count();
+  check(nTiles >= 2 && nTiles <= 3, `Kartenwahl zeigt die Karten einer Stufe (${nTiles})`);
+  await page.waitForFunction(() => document.querySelectorAll('.maptile canvas.pv').length >= document.querySelectorAll('.maptile').length, null, { timeout: 60000 });
+  check(true, 'Vorschauen der sichtbaren Kacheln gemalt');
+  // ?debug schaltet alles frei: fuer die Schloss-Pruefung kurz echtes Profil (Level 1), danach wieder alles offen
+  const setUnlockAll = (on) => page.evaluate(async (v) => { const s = __app.store; await s.update({ ...s.profile, settings: { ...s.profile.settings, unlockAll: v } }); __app.go({ name: 'home' }); }, on);
+  await setUnlockAll(false);
+  await page.waitForSelector('.maptab[data-tier="expert"]');
+  await page.click('.maptab[data-tier="expert"]');
+  await page.waitForSelector('.maptile[data-map="spire"]');
+  check(await page.locator('.maptile.locked[data-map="spire"]').count() === 1 && await page.locator('.mt-lock').count() >= 1, 'Expert-Reiter: gesperrte Karten mit Schloss sichtbar');
+  const homeFit = await page.evaluate(() => { const sc = document.querySelector('.dw-screens'); return sc.scrollHeight <= sc.clientHeight + 1; });
+  check(homeFit, 'Startseite 1280x720 ohne Scrollen');
+  await setUnlockAll(true);
+  await page.waitForSelector('.maptab[data-tier="beginner"]');
+  await page.click('.maptab[data-tier="beginner"]');
+  await page.waitForSelector('.maptile[data-map="meadow"]:not(.locked)');
   await page.click('.maptile[data-map="meadow"]');
   await page.waitForSelector('.app-play');
   await page.click('.diff[data-diff="easy"]');
@@ -136,7 +154,7 @@ try {
   await p3.waitForSelector('.knode');
   check(await p3.evaluate(() => __audio.ctxState) !== null, 'erster Klick im Menue erzeugt den AudioContext');
   check(await p3.evaluate(() => __audio.log.includes('ui.click')), 'Klick-Ton im Menue ausgeloest');
-  check(await p3.locator('.knode').count() === 40, 'Wissensbaum zeigt 40 Knoten');
+  check(await p3.locator('.knode').count() === 46, 'Wissensbaum zeigt 46 Knoten (Runde 16: +6 fuer Riverkeeper/Bellringer/Tinker/Helden)');
   check(await p3.locator('.kband').count() === 5, 'Wissensbaum zeigt fuenf Aeste');
   check(await p3.evaluate(() => { const sc = document.querySelector('.dw-screens'); return sc.scrollWidth <= sc.clientWidth; }), 'Wissensbaum bei 1280 x 720 ohne Quer-Scrollen');
   check(await p3.evaluate(() => { const sc = document.querySelector('.dw-screens'); return sc.scrollHeight <= sc.clientHeight; }), 'Wissensbaum bei 1280 x 720 ohne Scrollen (alle Aeste auf einer Flaeche)');
@@ -199,7 +217,7 @@ try {
   await p4.mouse.click(...vis);
   await p4.waitForSelector('.knode.bought');
   await p4.waitForTimeout(250);
-  check(await p4.evaluate(() => { const sc = document.querySelector('.dw-screens'); return sc.scrollTop === 0 && document.querySelectorAll('.knode').length === 40; }), 'Wissensbaum nach einem Kauf neu gezeichnet, weiter ohne Scrollen');
+  check(await p4.evaluate(() => { const sc = document.querySelector('.dw-screens'); return sc.scrollTop === 0 && document.querySelectorAll('.knode').length === 46; }), 'Wissensbaum nach einem Kauf neu gezeichnet, weiter ohne Scrollen');
   await p4.click('.subtop .btn-small');
   await p4.click('.maptile[data-map="meadow"]');
   await p4.waitForSelector('.app-play');

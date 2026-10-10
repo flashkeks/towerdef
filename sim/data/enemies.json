@@ -191,5 +191,70 @@
   "immuneStun": true,
   "hullCash": 150,
   "heavy": true
+ },
+ "cruiser": {
+  "name": "Gloom Cruiser",
+  "hp": 1600,
+  "tempo": 60,
+  "radius": 20,
+  "children": [
+   "gloomship",
+   "gloomship",
+   "gloomship",
+   "gloomship"
+  ],
+  "blimp": true,
+  "hullCash": 150,
+  "heavy": true,
+  "stages": [
+   75,
+   50,
+   25
+  ]
+ },
+ "duskrunner": {
+  "name": "Duskrunner",
+  "hp": 400,
+  "tempo": 260,
+  "radius": 14,
+  "children": [
+   "frostling",
+   "frostling",
+   "frostling",
+   "frostling"
+  ],
+  "blimp": true,
+  "hullCash": 50,
+  "immuneExplosive": true,
+  "alwaysCamo": true
+ },
+ "dreadnought": {
+  "name": "Dusk Dreadnought",
+  "hp": 20000,
+  "tempo": 25,
+  "radius": 34,
+  "children": [
+   "cruiser",
+   "cruiser",
+   "duskrunner",
+   "duskrunner",
+   "duskrunner"
+  ],
+  "blimp": true,
+  "hullCash": 400,
+  "heavy": true,
+  "immuneSlow": true,
+  "immuneStun": true,
+  "stages": [
+   80,
+   60,
+   40,
+   20
+  ],
+  "bossHp": {
+   "easy": 15000,
+   "medium": 20000,
+   "hard": 30000
+  }
  }
 }

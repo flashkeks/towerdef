@@ -86,6 +86,10 @@ describe('Wave-Vorschau', () => {
     expect(previewRound('wave', 5, MAX_ROUND)).toBe(5);
     expect(previewRound('build', 20, MAX_ROUND)).toBeNull();
     expect(previewRound('won', 20, MAX_ROUND)).toBeNull();
+    // Runde 15b: im Freeplay gibt es keine letzte Runde
+    expect(previewRound('build', 60, 60, true)).toBe(61);
+    expect(previewRound('build', 60, 60)).toBeNull();
+    expect(previewRound('wave', 130, 60, true)).toBe(130);
   });
   it('Sim-Vorschau: Warnungen und Zeilen stimmen fuer alle 20 Runden', () => {
     const g = createGame({ map: 'meadow', difficulty: 'medium', seed: 1 });

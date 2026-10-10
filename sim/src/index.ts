@@ -16,5 +16,6 @@ export type { MapRt } from './map.js';
 export { STAT_DEFAULTS, applyMod, pathOrder } from './stats.js';
 export type { Stats, Mod, ModOp } from './stats.js';
 export { towerXpPot, splitTowerXp } from './xp.js';
-export { runBot, createBot, parseStrategy, buildSteps } from './bot.js';
+export { runBot, createBot, parseStrategy, buildSteps, staged } from './bot.js';
 export type { Strategy, TowerPlan, BotResult, Bot } from './bot.js';
+export { LIST_ROUNDS, popBp, roundBonus, freeplayGroups, fpHpBp, fpSpeedBp, fpCountBp } from './freeplay.js';

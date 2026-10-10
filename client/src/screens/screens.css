@@ -396,16 +396,37 @@ canvas.pop { animation: pop-in 0.5s steps(6) both; }
 .pv-wait { position: absolute; inset: 0; display: grid; place-items: center; color: var(--p-stone); font-weight: 800; letter-spacing: 0.2em; text-transform: uppercase; font-size: 14px; line-height: 1; }
 
 .home { gap: 10px; }
-.home .mid.maps { display: flex; flex-direction: column; gap: 4px; align-self: stretch; width: 100%; }
+.home .mid.maps { flex: 1; display: flex; flex-direction: column; align-items: stretch; gap: 4px; align-self: stretch; width: 100%; }
+/* grosse Fenster: Platz fuer drei Vorschauen in dreifacher Vergroesserung (Runde 16 H) */
+@media (min-width: 1600px) and (min-height: 900px) { .home.scr { max-width: 1660px; } }
 .home .mid.maps .h2 { margin-bottom: 4px; }
-.maptiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; }
+/* Runde 16 H: Reiter je Stufe, Kacheln kompakt (Breite = Vorschau, von home.ts gesetzt) */
+.maps-head { display: flex; align-items: center; justify-content: flex-start; gap: 24px; flex-wrap: wrap; }
+.maps-head .h2 { margin-bottom: 0 !important; }
+.maptabs { display: flex; gap: 10px; margin: 4px; }
+.maptab {
+  position: relative; display: flex; align-items: center; gap: 10px; padding: 6px 16px; background: var(--p-night); font-weight: 800; font-size: 17px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--p-silver);
+  box-shadow: 0 -3px 0 0 var(--p-ink), 0 3px 0 0 var(--p-ink), -3px 0 0 0 var(--p-ink), 3px 0 0 0 var(--p-ink), inset 0 3px 0 0 var(--p-dusk);
+}
+.maptab:hover { background: var(--p-dusk); color: var(--p-white); }
+.maptab.on { background: var(--p-dusk); color: var(--p-yellow); box-shadow: 0 -3px 0 0 var(--p-ink), 0 3px 0 0 var(--p-ink), -3px 0 0 0 var(--p-ink), 3px 0 0 0 var(--p-ink), 0 0 0 6px var(--p-amber); }
+.mtab-c { font-size: 13px; color: var(--p-stone); padding: 1px 6px; background: var(--p-ink); }
+.mtab-c.full { color: var(--p-yellow); }
+.mtab-dot { position: absolute; top: -9px; right: -7px; width: 12px; height: 12px; background: var(--p-amber); box-shadow: 0 0 0 3px var(--p-ink); }
+.maptiles { display: flex; justify-content: center; align-content: center; gap: 26px; flex-wrap: wrap; padding: 8px 0 6px; min-height: 0; flex: 1; }
+.maptile.next { box-shadow: 0 -4px 0 0 var(--p-ink), 0 4px 0 0 var(--p-ink), -4px 0 0 0 var(--p-ink), 4px 0 0 0 var(--p-ink), 0 0 0 8px var(--p-amber), 0 -8px 0 0 var(--p-amber), 0 8px 0 0 var(--p-amber); }
+.mt-next { position: absolute; right: 8px; top: 8px; z-index: 2; padding: 3px 10px 4px; font: 800 13px 'Rajdhani', sans-serif; line-height: 1.1; letter-spacing: 0.12em; text-transform: uppercase; color: var(--p-ink); background: var(--p-amber); box-shadow: 0 0 0 3px var(--p-ink); }
+.mt-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .maptile {
   position: relative; display: flex; flex-direction: column; text-align: left; margin: 4px; padding: 0; background: var(--p-night); min-width: 0;
   box-shadow: 0 -4px 0 0 var(--p-ink), 0 4px 0 0 var(--p-ink), -4px 0 0 0 var(--p-ink), 4px 0 0 0 var(--p-ink), 0 0 0 8px var(--p-dusk), 0 -8px 0 0 var(--p-dusk), 0 8px 0 0 var(--p-dusk);
 }
 .maptile:hover:not(:disabled), .maptile:focus-visible { background: var(--p-dusk); box-shadow: 0 -4px 0 0 var(--p-ink), 0 4px 0 0 var(--p-ink), -4px 0 0 0 var(--p-ink), 4px 0 0 0 var(--p-ink), 0 0 0 8px var(--p-amber), 0 -8px 0 0 var(--p-amber), 0 8px 0 0 var(--p-amber); }
 .maptile.gold { box-shadow: 0 -4px 0 0 var(--p-ink), 0 4px 0 0 var(--p-ink), -4px 0 0 0 var(--p-ink), 4px 0 0 0 var(--p-ink), 0 0 0 8px var(--p-amber), 0 -8px 0 0 var(--p-amber), 0 8px 0 0 var(--p-amber), 0 0 0 12px var(--p-ink); }
-.maptile.locked { cursor: not-allowed; }
+.maptile.locked { cursor: not-allowed; color: var(--p-white); opacity: 1; filter: none; } /* kit.css graut disabled-Knoepfe aus; hier sorgt das graue Vorschaubild fuers Gesperrt-Gefuehl, der Text bleibt lesbar */
+.maptile.locked .map-name { color: var(--p-stone); }
+.maptile.locked .mt-lock { color: var(--p-yellow); background: rgba(24, 20, 37, 0.94); }
+.maptile.next .map-name { color: var(--p-sand); }
 .mt-art { position: relative; background: var(--p-ink); display: flex; justify-content: center; padding: 0; line-height: 0; }
 .mt-tier {
   position: absolute; left: 8px; top: 8px; z-index: 2; padding: 3px 10px 4px; font: 800 14px 'Rajdhani', sans-serif; line-height: 1.1; letter-spacing: 0.12em; text-transform: uppercase; color: var(--p-white);
@@ -413,18 +434,21 @@ canvas.pop { animation: pop-in 0.5s steps(6) both; }
 }
 .tier-intermediate .mt-tier { background: var(--p-navy); }
 .tier-advanced .mt-tier { background: var(--p-crimson); }
+.tier-expert .mt-tier { background: var(--p-violet); }
 .mt-lock {
   position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; display: flex; align-items: center; gap: 12px; padding: 10px 14px; line-height: 1.15;
   background: rgba(24, 20, 37, 0.9); color: var(--p-yellow); font-weight: 800; font-size: 16px; text-align: left; border-top: 3px solid var(--p-amber);
 }
-.mt-info { padding: 8px 14px 10px; display: flex; flex-direction: column; gap: 4px; }
-.maptile .map-name { font-size: 24px; margin-bottom: 0; }
+.mt-info { padding: 8px 12px 9px; display: flex; flex-direction: column; gap: 3px; }
+.maptile .map-name { font-size: 19px; line-height: 1.1; margin-bottom: 0; min-width: 0; }
 .mt-sub { font-size: 14px; color: var(--p-silver); letter-spacing: 0.04em; }
 .mt-modes { position: absolute; right: 8px; bottom: 8px; z-index: 2; padding: 2px 8px 3px; line-height: 1.2; font-size: 12px; font-weight: 800; color: var(--p-silver); background: var(--p-ink); letter-spacing: 0.06em; text-transform: uppercase; }
-.maptile .medals { gap: 8px; }
-.maptile .medal { padding: 4px 8px; column-gap: 8px; min-width: 0; }
-.maptile .medal-d { font-size: 13px; }
-.maptile .medal-b { font-size: 12px; white-space: nowrap; }
+.maptile .medals { gap: 4px; flex: none; }
+.maptile .medal { display: flex; flex-direction: column; align-items: center; flex: none; padding: 3px 5px 2px; gap: 1px; min-width: 0; }
+.maptile .medal canvas { grid-row: auto; }
+.maptile .medal-b { font-size: 11px; white-space: nowrap; }
+.maptile .mt-free { font-size: 12px; margin-top: 0; }
+.maptile .mt-lock { padding: 6px 10px; font-size: 14px; gap: 8px; }
 .maptile .mapflag { top: 8px; right: 8px; z-index: 2; font-size: 13px; padding: 3px 10px; }
 
 .setup-body { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 28px; align-items: start; }
@@ -458,3 +482,23 @@ canvas.pop { animation: pop-in 0.5s steps(6) both; }
 .setup .play { margin-top: 4px; min-height: 68px; }
 .setup-reward { text-align: center; font-size: 14px; color: var(--p-silver); letter-spacing: 0.05em; }
 .res-factors { margin-top: 8px; font-size: 14px; color: var(--p-silver); letter-spacing: 0.05em; }
+
+/* Runde 15b: Rundenzahl je Schwierigkeit, Freeplay-Bestrunde (Max, 10.10.2026) */
+.mt-free { font-size: 13px; color: var(--p-silver); letter-spacing: 0.04em; margin-top: 2px; }
+.mt-free.on { color: var(--p-amber, #f5b942); }
+.diff-r { font-size: 14px; color: var(--p-amber, #f5b942); letter-spacing: 0.04em; }
+
+/* Runde 16 H: niedrige Fenster (1280x720, 1366x768): Startseite ohne Scrollen */
+@media (max-height: 800px) {
+  .home.scr { padding-top: 10px; padding-bottom: 12px; gap: 6px; }
+  .home .logo { gap: 4px; }
+  .home .mid.maps { gap: 0; }
+  .home .maptiles { padding: 4px 0 2px; }
+  .home .navbtn { padding: 7px 18px; font-size: 17px; }
+  .home .nav { gap: 10px; }
+  .home .foot { gap: 10px 28px; }
+  .home .crew-i { padding: 5px 8px; gap: 2px; min-width: 92px; }
+  .home .crew-i canvas { max-height: 52px; }
+  .home .crew-n { font-size: 13px; }
+  .home .crew-lock { font-size: 12px; }
+}

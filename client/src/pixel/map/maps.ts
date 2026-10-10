@@ -8,6 +8,9 @@ import { meadowArt } from './compose';
 import { MAP_H, MAP_W } from './layout';
 import { paintFrostfen } from './frostfen';
 import { paintQuarry } from './quarry';
+import { paintDunes } from './dunes';
+import { paintHarbor } from './harbor';
+import { paintSpire } from './spire';
 import { paintHollow } from './hollow';
 import { paintMarsh } from './marsh';
 import { paintBastion } from './bastion';
@@ -37,6 +40,9 @@ const PAINTERS: Record<MapId, () => MapArt> = {
   bastion: paintBastion,
   quarry: paintQuarry,
   skyreach: paintSkyreach,
+  dunes: paintDunes,
+  harbor: paintHarbor,
+  spire: paintSpire,
 };
 
 export function mapArt(id: MapId): MapArt {

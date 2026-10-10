@@ -1,4 +1,4 @@
-# Runden 1–20 (Runde 11, Vertical Slice)
+# Runden (Runde 11: R1–20, Runde 15b: eine Liste mit 120 Runden fuer alle Karten)
 
 Verbindlich für P1 (`sim/data/rounds.json`). Feste Liste (Lehre 1), verdichtet aus BTD6 Runde 1–40 auf 20 Runden.
 
@@ -58,3 +58,16 @@ R15/17 Brutes (Einzelschaden, Bonus-Upgrades). R18 Gold-Ansturm (Verlangsamung, 
 - Kumuliert (Start 650 + alle Schichten × 2 + Boni): R5 1.693 · R10 3.949 · R15 7.286 · R17 9.379 · **R20 13.448**
   (BTD6 Medium bis R40: 17.506). Ein T5 (≈ 3.700–5.800 Medium) ist damit ab etwa R15 erreichbar, wenn man darauf spart.
 - Einzelwerte RBE/Schichten je Runde: Test `sim/test/data.test.ts`.
+
+## Runde 15b — 120 Runden, 40 / 60 / 80, Freeplay (10.10.2026)
+
+Max: „jede Welle hat dieselben Gegner immer … egal auf welcher Map … bis Runde 60 oder 80 und danach Free Play“ (Spezifikation: `karten-gegner-r15.md` §5, Nachtraege 15b und 15b-2).
+
+- **Eine Liste** `sim/data/rounds.json` (120 Runden, alle Karten). Erzeugt von `sim/scripts/gen-rounds.mjs` (RBE-Kurve + Themen-Rotation + Einfuehrungsrunden), eingecheckt. **R1–20 = die Tabelle oben**, unveraendert.
+- **Endrunde je Schwierigkeit** (`difficulties.json`, `endRound`): Easy **40**, Medium **60**, Hard **80** = Sieg + Medaille. `Game.info.maxRound` = diese Endrunde, `info.listRounds` = 120.
+- **Weiterspielen:** nach dem Sieg Befehl `{ type: 'continue' }` (nur in Phase `won`), `state.freeplay = true`. Danach laeuft dieselbe Liste weiter (Easy R41 …), ab R121 die Formel. Kein Medaillen-Einfluss, Powers erlaubt.
+- **Formel ab R121** (`sim/src/freeplay.ts`, `freeplayGroups(r, seed)`): Gruppen einer festen Runde 101–119 (zyklisch, Seed verschiebt den Start), Anzahl + 3,5 % je Runde (hoechstens x6), alles Schwere Fortified, Tarnung/Regrow per Seed auf einzelne Gruppen; jede 10. Runde = Finale (Gruppen von R120). Huelle ab 10 HP: x(1 + 0,04 d + 0,001 d²), d = R − 120; Tempo +0,8 % je Runde bis x2.
+- **Einfuehrung:** Pink R21 · Frostling R25 · Regrow R30 · Crystal R38 · Gloomship R45 · Fortified R55 · Cruiser R82 · Duskrunner R90 · Dreadnought R100. **Bosse:** Leviathan R20, Frost Wyrm R40, Ember Colossus R60, R80 alle drei (Fortified), R100/R110/R120 Dreadnoughts (R120: 2 x Fortified + Duskrunner-Schwaerme).
+- **RBE-Kurve (Ziel ohne Bosse, Anker):** R20 900 · R40 8.000 · R60 34.000 · R80 120.000 · R100 400.000 · R120 1,5 Mio. Boss-Runden haben nur halbe Begleitung. Duskrunner-Schwarm fest nach Runde (7 + 0,9 x (R−90)), weil jeder Durchbruch 444 Leben kostet.
+- **Einkommen:** Pop-Gold (2 je Schicht) ab R21 gedaempft (`popBp`, nach Runde des Gegners: R40 x0,4, R80 x0,2, R120 x0,12), Rundenbonus `100 + R + 5 x (R − 20)` ueber R20. Ein T5 ist damit ab etwa R35–50 bezahlbar, wenn man darauf spart.
+- **Deflation:** Start bei Ende − 10 (R30 / R50 / R70), 20.000 Gold.

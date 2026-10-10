@@ -52,7 +52,7 @@ export interface MatchStartOptions {
 export type StartMatch = (root: HTMLElement, opts: MatchStartOptions) => Promise<MatchOutcome>;
 
 export function toMetaResult(o: MatchOutcome, ctx: { matchId: string; map: string; mode?: ModeId; startLives: number }): MatchResult {
-  const roundsCleared = Math.max(0, Math.min(9999, o.roundsCleared ?? (o.won ? Math.min(o.round, maxRoundOf(ctx.map)) : o.round - 1)));
+  const roundsCleared = Math.max(0, Math.min(9999, o.roundsCleared ?? (o.won ? Math.min(o.round, maxRoundOf(ctx.map, o.difficulty)) : o.round - 1)));
   const livesLost = Math.max(0, Math.min(9999, Math.round(o.livesLost ?? ctx.startLives - o.livesLeft)));
   const pops: MatchResult['pops'] = {};
   for (const [k, v] of Object.entries(o.pops)) pops[k as keyof MatchResult['pops']] = Math.max(0, Math.floor(v ?? 0));

@@ -1,7 +1,7 @@
 /** Runde 15: Karten (Frostfen mit zwei Aesten, Quarry), neue Gegner, Merkmale, Bosse, Modi. */
 import { describe, expect, it } from 'vitest';
 import './setup';
-import { DATA, MODES, createGame, getMap, modeAllows, type EnemyType, type Game, type ModeId } from '../src/index';
+import { DATA, MODES, createGame, getMap, modeAllows, popBp, roundBonus, type EnemyType, type Game, type ModeId } from '../src/index';
 import { run } from './helpers';
 
 const mk = (map: string, over: { mode?: ModeId; difficulty?: 'easy' | 'medium' | 'hard' } = {}): Game =>
@@ -25,13 +25,16 @@ function place(g: Game, type: 'ranger' | 'frostcaller', skip = 0): number {
 const enemy = (g: Game, id: number) => g.state.enemies.find((e) => e.id === id)!;
 
 describe('Runde 15: Daten', () => {
-  it('Rundenzahl je Karte 20 / 25 / 30, info.maxRound', () => {
-    expect(DATA.roundsByMap.meadow).toHaveLength(20);
-    expect(DATA.roundsByMap.frostfen).toHaveLength(25);
-    expect(DATA.roundsByMap.quarry).toHaveLength(30);
-    expect(mk('meadow').info.maxRound).toBe(20);
-    expect(mk('frostfen').info.maxRound).toBe(25);
-    expect(mk('quarry').info.maxRound).toBe(30);
+  it('Eine Rundenliste (120) fuer alle Karten, Endrunde je Schwierigkeit 40 / 60 / 80 (Runde 15b)', () => {
+    expect(DATA.rounds).toHaveLength(120);
+    for (const map of ['meadow', 'frostfen', 'quarry']) {
+      expect(mk(map, { difficulty: 'easy' }).info.maxRound).toBe(40);
+      expect(mk(map, { difficulty: 'medium' }).info.maxRound).toBe(60);
+      expect(mk(map, { difficulty: 'hard' }).info.maxRound).toBe(80);
+      expect(mk(map).info.listRounds).toBe(120);
+    }
+    // gleiche Gruppen auf allen Karten
+    expect(mk('quarry').roundPreview(25)).toEqual(mk('frostfen').roundPreview(25));
   });
 
   it('RBE neuer Typen', () => {
@@ -50,49 +53,59 @@ describe('Runde 15: Daten', () => {
     expect([hp('colossus', 'easy'), hp('colossus', 'medium'), hp('colossus', 'hard')]).toEqual([1700, 2500, 3200]);
   });
 
-  it('Boss- und Neuauftritte stehen in den Rundenlisten', () => {
-    const has = (map: string, round: number, type: EnemyType) => DATA.roundsByMap[map][round - 1].groups.some((x) => x.type === type);
-    expect(has('frostfen', 20, 'leviathan')).toBe(true);
-    expect(has('frostfen', 25, 'wyrm')).toBe(true);
-    expect(has('quarry', 20, 'leviathan')).toBe(true);
-    expect(has('quarry', 30, 'colossus')).toBe(true);
-    expect(has('frostfen', 3, 'pink')).toBe(true);
-    expect(has('frostfen', 8, 'frostling')).toBe(true);
-    expect(has('frostfen', 18, 'crystal')).toBe(true);
-    expect(has('frostfen', 22, 'gloomship')).toBe(true);
-    expect(has('quarry', 16, 'crystal')).toBe(true);
-    expect(has('quarry', 21, 'gloomship')).toBe(true);
-    expect(DATA.roundsByMap.frostfen[11].groups.some((x) => x.regrow)).toBe(true);
-    expect(DATA.roundsByMap.quarry[17].groups.some((x) => x.fortified)).toBe(true);
+  it('Boss- und Neuauftritte stehen in der gemeinsamen Liste (Runde 15b)', () => {
+    const has = (round: number, type: EnemyType) => DATA.rounds[round - 1].groups.some((x) => x.type === type);
+    expect(has(20, 'leviathan')).toBe(true);
+    expect(has(40, 'wyrm')).toBe(true);
+    expect(has(60, 'colossus')).toBe(true);
+    for (const t of ['leviathan', 'wyrm', 'colossus'] as const) expect(has(80, t)).toBe(true);
+    expect(has(21, 'pink')).toBe(true);
+    expect(has(25, 'frostling')).toBe(true);
+    expect(has(38, 'crystal')).toBe(true);
+    expect(has(45, 'gloomship')).toBe(true);
+    expect(has(82, 'cruiser')).toBe(true);
+    expect(has(90, 'duskrunner')).toBe(true);
+    expect(has(100, 'dreadnought')).toBe(true);
+    expect(has(110, 'dreadnought')).toBe(true);
+    expect(has(120, 'dreadnought')).toBe(true);
+    expect(DATA.rounds.slice(0, 29).some((r) => r.groups.some((x) => x.regrow))).toBe(false);
+    expect(DATA.rounds[29].groups.some((x) => x.regrow)).toBe(true); // R30
+    expect(DATA.rounds.slice(0, 54).some((r) => r.groups.some((x) => x.fortified))).toBe(false);
+    expect(DATA.rounds[54].groups.some((x) => x.fortified)).toBe(true); // R55
+    // Neue Typen vor ihrer Einfuehrung nirgends (Dreadnought nur in den festen Runden 100/110/120)
+    const first = (t: EnemyType) => DATA.rounds.findIndex((r) => r.groups.some((x) => x.type === t)) + 1;
+    expect(first('cruiser')).toBe(82);
+    expect(first('duskrunner')).toBe(90);
+    expect(first('dreadnought')).toBe(100);
+    expect(DATA.rounds.filter((r) => r.groups.some((x) => x.type === 'dreadnought')).map((r) => r.round)).toEqual([100, 110, 120]);
   });
 
-  it('Einkommen und RBE wachsen plausibel (kumuliert, Medium)', () => {
-    for (const [map, lo, hi] of [['frostfen', 18_000, 40_000], ['quarry', 40_000, 100_000]] as const) {
-      const g = mk(map);
-      let cum = 650;
-      let prev = 0;
-      for (let r = 1; r <= g.info.maxRound; r++) {
-        const p = g.roundPreview(r)!;
-        expect(p.rbe).toBeGreaterThan(0);
-        cum += p.rbe * 2 + 100 + r;
-        prev = p.rbe;
-      }
-      expect(prev).toBeGreaterThan(1000);
-      expect(cum).toBeGreaterThan(lo);
-      expect(cum).toBeLessThan(hi);
-    }
-    // Meadow bleibt unveraendert (Test in data.test.ts), hier nur die Erste Runde je Karte
-    expect(mk('quarry').roundPreview(1)!.rbe).toBeGreaterThan(mk('frostfen').roundPreview(1)!.rbe);
+  it('RBE und Einkommen wachsen ueber 120 Runden (Medium), Pop-Gold ab R21 gedaempft', () => {
+    const g = mk('meadow');
+    let prev = 0;
+    const at: Record<number, number> = {};
+    for (let r = 1; r <= 120; r++) { const p = g.roundPreview(r)!; expect(p.rbe).toBeGreaterThan(0); at[r] = p.rbe; prev = p.rbe; }
+    expect(at[20]).toBeLessThan(2000);
+    expect(at[40]).toBeGreaterThan(at[20] * 3);
+    expect(at[60]).toBeGreaterThan(at[40] * 3);
+    expect(at[100]).toBeGreaterThan(at[60] * 5);
+    expect(prev).toBeGreaterThan(300_000);
+    expect(popBp(20)).toBe(10000);
+    expect(popBp(40)).toBeLessThan(5000);
+    expect(popBp(121)).toBeLessThan(popBp(80));
+    expect(roundBonus(20)).toBe(120);
+    expect(roundBonus(60)).toBeGreaterThan(roundBonus(40));
   });
 
   it('Vorschau: Merkmale und Flags', () => {
     const g = mk('frostfen');
-    expect(g.roundPreview(8)!.hasFrostling).toBe(true);
-    expect(g.roundPreview(12)!.hasRegrow).toBe(true);
-    expect(g.roundPreview(22)!.hasBlimp).toBe(true);
-    expect(g.roundPreview(25)!.hasBoss).toBe(true);
-    expect(mk('quarry').roundPreview(18)!.hasFortified).toBe(true);
-    expect(g.roundPreview(26)).toBeNull();
+    expect(g.roundPreview(25)!.hasFrostling).toBe(true);
+    expect(g.roundPreview(30)!.hasRegrow).toBe(true);
+    expect(g.roundPreview(45)!.hasBlimp).toBe(true);
+    expect(g.roundPreview(40)!.hasBoss).toBe(true);
+    expect(g.roundPreview(60)!.hasFortified).toBe(true);
+    expect(g.roundPreview(0)).toBeNull();
+    expect(g.roundPreview(500)).not.toBeNull(); // Formel-Runden
   });
 });
 
@@ -354,8 +367,9 @@ describe('Runde 15: Modi', () => {
   });
 
   it('Deflation: 20.000 Gold, kein Einkommen, Start bei letzter Runde - 10, keine Powers', () => {
-    for (const [map, first] of [['meadow', 10], ['frostfen', 15], ['quarry', 20]] as const) {
-      const g = start('deflation', map);
+    // Runde 15b: Start = Endrunde der Schwierigkeit - 10 (Easy 30, Medium 50, Hard 70)
+    for (const [d, first] of [['easy', 30], ['medium', 50], ['hard', 70]] as const) {
+      const g = createGame({ map: 'meadow', difficulty: d, seed: 1, mode: 'deflation' });
       expect(g.state.cash).toBe(20_000);
       expect(g.info.baseRound).toBe(first - 1);
       const r = g.apply({ type: 'startRound' });

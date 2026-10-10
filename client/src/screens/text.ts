@@ -37,11 +37,15 @@ export const S = {
   },
   maps: {
     title: 'Choose a map',
-    tier: { beginner: 'Beginner', intermediate: 'Intermediate', advanced: 'Advanced' } as Record<string, string>,
-    rounds: (n: number, boss: string): string => `${n} rounds \u00b7 Boss: ${boss}`,
+    tier: { beginner: 'Beginner', intermediate: 'Intermediate', advanced: 'Advanced', expert: 'Expert' } as Record<string, string>,
+    // Runde 15b: alle Karten teilen die Rundenliste, die Endrunde haengt an der Schwierigkeit
+    rounds: (e: number, m: number, h: number): string => `${e} / ${m} / ${h} rounds`,
+    freeplayBest: (r: number): string => `Freeplay best: round ${r}`,
+    freeplayNone: 'Freeplay: not played',
     modeMedals: (n: number, of: number): string => `Mode medals ${n}/${of}`,
     lockedBy: (level: number, prev: string, d: string): string => `Reach level ${level} or earn ${d} on ${prev}`,
     allMedals: 'All medals earned',
+    next: 'Next unlock',
   },
   setup: {
     change: 'Maps',
@@ -49,12 +53,15 @@ export const S = {
     mode: 'Mode',
     reward: (xp: string, em: string, mode: number): string => `Rewards: XP x${xp}, Embers x${em}${mode ? `, mode bonus +${mode}%` : ''}`,
     best: (r: number): string => `Best: round ${r}`,
+    rounds: (n: number): string => `${n} rounds`,
   },
   result: {
     victory: 'Victory',
     defeat: 'Defeat',
     left: 'Match ended',
     round: (r: number, max: number): string => `Round ${r} of ${max}`,
+    roundFree: (r: number, end: number): string => `Round ${r} \u00b7 Freeplay from ${end + 1}`,
+    freeplayBest: (r: number): string => `New Freeplay best: round ${r}`,
     xpGained: (n: number): string => `+${fmt(n)} XP`,
     levelUp: 'Level up',
     newLevel: (n: number): string => `Level ${n}`,

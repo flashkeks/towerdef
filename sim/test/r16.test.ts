@@ -100,7 +100,7 @@ describe('Riverkeeper', () => {
   it('Harpunen: A2 = 3er-Fächer, A3 trifft Ironshell, A5 Lanze mit Boss-Schaden', () => {
     expect(statsOf('riverkeeper', [0, 0, 0])).toMatchObject({ pk: 'harpoon', dmg: 2, pierce: 3, count: 1 });
     expect(statsOf('riverkeeper', [2, 0, 0])).toMatchObject({ count: 3, pierce: 5 });
-    expect(statsOf('riverkeeper', [3, 0, 0])).toMatchObject({ dtype: 'magic', dmg: 4 });
+    expect(statsOf('riverkeeper', [3, 0, 0])).toMatchObject({ dtype: 'magic', dmg: 5 });
     expect(statsOf('riverkeeper', [5, 0, 0])).toMatchObject({ count: 1, dmg: 40, bonusBoss: 210 });
   });
 
@@ -363,7 +363,7 @@ describe('Tinker', () => {
     const r = place(g, 'ranger', 90, 122);
     const far = place(g, 'ranger', 300, 110);
     const a = g.state.abilities.find((x) => x.id === 'overclock')!;
-    expect(a).toMatchObject({ ready: false, cdTotal: 3000 });
+    expect(a).toMatchObject({ ready: false, cdTotal: 2700 });
     waitAbility(g, 'overclock');
     expect(g.apply({ type: 'ability', ability: 'overclock' })).toEqual({ ok: true });
     const tw = (id: number) => g.state.towers.find((x) => x.id === id)!;
@@ -393,7 +393,7 @@ describe('Tinker', () => {
   });
 
   it('Ultra-Overclock: 20 Türme, 15 s, Dauer-Aura +10 % Tempo', () => {
-    expect(statsOf('tinker', [0, 0, 5])).toMatchObject({ ocMax: 20, ocDur: 900, ocCd: 2100, aSpeedBp: 1000, aR: 70000 });
+    expect(statsOf('tinker', [0, 0, 5])).toMatchObject({ ocMax: 20, ocDur: 900, ocCd: 1800, aSpeedBp: 1000, aR: 70000 });
     const g = newGame();
     const t = place(g, 'tinker', 60, 122);
     buy(g, t, [0, 0, 3]);
@@ -473,7 +473,7 @@ describe('Bram Ironwright', () => {
     const g = bram(1);
     expect(g.state.towers[0].range).toBe(70000);
     expect(g.state.towers[0].camo).toBe(false);
-    expect(D.hero.bram.base).toMatchObject({ pk: 'hammer', dtype: 'magic', dmg: 2, pierce: 2, bonusBrute: 2, bonusIron: 2 });
+    expect(D.hero.bram.base).toMatchObject({ pk: 'hammer', dtype: 'magic', dmg: 4, pierce: 3, bonusBrute: 2, bonusIron: 2 });
   });
 
   it('L3 Schmiede: Türme im Radius machen +1 Schaden, L12 +2; Hero selbst nicht', () => {

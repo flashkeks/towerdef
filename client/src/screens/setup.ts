@@ -3,7 +3,7 @@
  * Medaillen je Schwierigkeit stehen an der Karte und an jedem Modus; die Belohnungsfaktoren aendern sich mit Karte und Modus.
  */
 import type { Difficulty, ModeId } from '../../../sim/src/types';
-import { DIFFICULTIES, MODE_IDS, MODE_META, isDifficultyUnlocked, mapById, mapLock, medalsOf, modeLock, rewardFactors, unlockLevel, bestOf } from '../meta';
+import { END_ROUND, DIFFICULTIES, MODE_IDS, MODE_META, isDifficultyUnlocked, mapById, mapLock, medalsOf, modeLock, rewardFactors, unlockLevel, bestOf } from '../meta';
 import { h, setClass } from '../ui/dom';
 import { MEDAL_OF, icon, medal } from './icons';
 import { previewCanvas } from './home';
@@ -40,7 +40,9 @@ export function setupView(ctx: Ctx, mapId: string): View {
     mm.append(cv(medal(MEDAL_OF[d], stdMedals[d]), 2), h('div', 'medal-d', S.home.difficulty[d]), h('div', 'medal-b num', best ? `Best R${best.round}` : 'Not played'));
     row.append(mm);
   }
-  info.append(h('div', 'mt-sub', S.maps.rounds(m.maxRound, m.boss)), h('div', 'setup-desc', m.desc), row);
+  info.append(h('div', 'mt-sub', S.maps.rounds(END_ROUND.easy, END_ROUND.medium, END_ROUND.hard)), h('div', 'setup-desc', m.desc), row);
+  const fpBest = p.freeplayBest[m.id] ?? 0;
+  info.append(h('div', `mt-free num ${fpBest ? 'on' : ''}`.trim(), fpBest ? S.maps.freeplayBest(fpBest) : S.maps.freeplayNone));
   card.append(art, info);
 
   // ---- rechts: Schwierigkeit, Modus, Play
@@ -61,7 +63,7 @@ export function setupView(ctx: Ctx, mapId: string): View {
     b.dataset.diff = d;
     b.disabled = !ok;
     const best = bestOf(p, m.id, d);
-    b.append(cv(medal(MEDAL_OF[d], std[d]), 2), h('div', 'diff-t', S.home.difficulty[d]), h('div', 'diff-s', ok ? (best ? S.setup.best(best.round) : S.home.diffText[d]) : ''));
+    b.append(cv(medal(MEDAL_OF[d], std[d]), 2), h('div', 'diff-t', S.home.difficulty[d]), h('div', 'diff-r num', S.setup.rounds(END_ROUND[d])), h('div', 'diff-s', ok ? (best ? S.setup.best(best.round) : S.home.diffText[d]) : ''));
     if (!ok) {
       const lock = h('div', 'diff-lock');
       lock.append(cv(icon('lock'), 2), h('span', '', S.home.lockedAt(unlockLevel(d))));
