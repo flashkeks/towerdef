@@ -158,7 +158,8 @@ export function novaRaster(frame: number, radius = 16): FxRaster {
 /** Platzen einer Schicht: Scherben in Schichtfarbe, kleiner Puff. frame 0..5. */
 export function popRaster(etype: EnemyType, frame: number): FxRaster {
   const f = Math.max(0, Math.min(POP_FRAMES - 1, Math.floor(frame)));
-  const big = etype === 'brute' ? 1.6 : etype === 'leviathan' ? 3.2 : etype === 'ironshell' ? 1.2 : 1;
+  const BIG: Partial<Record<EnemyType, number>> = { brute: 1.6, leviathan: 3.2, ironshell: 1.2, frostling: 1.1, crystal: 1.9, gloomship: 2.8, wyrm: 3.4, colossus: 3.6 };
+  const big = BIG[etype] ?? 1;
   const size = Math.ceil(30 * big);
   const s = new Surface(size, size);
   const c = size / 2;
@@ -181,7 +182,9 @@ export function popRaster(etype: EnemyType, frame: number): FxRaster {
     if (f >= POP_FRAMES - 1 && i % 2) continue;
     if (sz === 2) { s.rect(x - 1, y - 1, 2, 2, col); s.px(x - 1, y - 1, ramp[2]); } else s.px(x, y, col);
   }
-  if (etype === 'ember') for (let i = 0; i < 6; i++) { const a = rnd() * 6.28; s.px(c + Math.cos(a) * (4 + f * 2), c + Math.sin(a) * (4 + f * 2) - f, i % 2 ? 'amber' : 'yellow'); }
+  if (etype === 'ember' || etype === 'colossus') for (let i = 0; i < Math.round(6 * big); i++) { const a = rnd() * 6.28; s.px(c + Math.cos(a) * (4 + f * 2) * big, c + Math.sin(a) * (4 + f * 2) * big - f, i % 2 ? 'amber' : 'yellow'); }
+  // Frost und Kristall: Flocken in den Scherben (Runde 15)
+  if (etype === 'frostling' || etype === 'crystal' || etype === 'wyrm') for (let i = 0; i < Math.round(4 * big); i++) { const a = rnd() * 6.28; if (f >= 1 && f < POP_FRAMES - 1) flake(s, c + Math.cos(a) * (3 + f * 2.4) * big, c + Math.sin(a) * (3 + f * 2.4) * big - f * 0.6, i % 2 ? 'white' : 'ice'); }
   return fin(s, Math.floor(c), Math.floor(c));
 }
 
@@ -208,8 +211,10 @@ export function statusRaster(kind: StatusKind, frame: number, etype: EnemyType =
   const f = ((Math.floor(frame) % 4) + 4) % 4;
   if (kind === 'freeze') {
     const z = ENEMY_SIZE[etype];
-    const bw = etype === 'leviathan' ? 66 : etype === 'brute' ? 24 : etype === 'ember' || etype === 'ironshell' ? 16 : 14;
-    const bh = etype === 'leviathan' ? 50 : etype === 'brute' ? 24 : 16;
+    const BW: Partial<Record<EnemyType, number>> = { leviathan: 66, brute: 24, ember: 16, ironshell: 16, crystal: 32, gloomship: 56, wyrm: 70, colossus: 66 };
+    const BH: Partial<Record<EnemyType, number>> = { leviathan: 50, brute: 24, crystal: 30, gloomship: 34, wyrm: 46, colossus: 56 };
+    const bw = BW[etype] ?? 14;
+    const bh = BH[etype] ?? 16;
     const s = new Surface(bw + 8, bh + 8);
     const x0 = 4, y0 = 4;
     // Eisblock: durchscheinend wirkend durch Schachbrett-Fuellung, Kanten hell

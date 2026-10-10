@@ -2,10 +2,12 @@
 import type { PalName } from '../palette';
 import { flame, spark } from './parts';
 import { outlineSurface, RAMPS, type Ramp, silhouette, Surface } from './surface';
+import { drawColossus, drawCrystalBrute, drawFortified, drawFrostling, drawGloomship, drawPink, drawRegrow, drawWyrm } from './enemies15';
 import type { EnemyType } from './types';
 
 export interface EnemyRaster { rows: string[]; ax: number; ay: number }
-export interface EnemyOpts { damageStage?: number; hitFlash?: boolean; flip?: boolean }
+/** damageStage: brute 0-2, leviathan 0-3, crystal 0-3, gloomship 0-2, wyrm 0-2 (Phase), colossus 0-4 (Platten). regrow/fortified: Merkmale als Ueberlagerung (Runde 15). */
+export interface EnemyOpts { damageStage?: number; hitFlash?: boolean; flip?: boolean; regrow?: boolean; fortified?: boolean }
 
 export const SHELL: Record<'red' | 'blue' | 'green' | 'gold', Ramp> = {
   red: ['crimson', 'red', 'coral'],
@@ -22,6 +24,12 @@ export function shellRamp(t: EnemyType): Ramp {
     case 'ember': return ['red', 'orange', 'yellow'];
     case 'brute': return RAMPS.cloth;
     case 'leviathan': return RAMPS.steel;
+    case 'pink': return ['orchid', 'coral', 'peach'];
+    case 'frostling': return ['plum', 'violet', 'ice'];
+    case 'crystal': return ['navy', 'sky', 'ice'];
+    case 'gloomship': return ['night', 'violet', 'orchid'];
+    case 'wyrm': return RAMPS.frost;
+    case 'colossus': return ['red', 'orange', 'yellow'];
   }
 }
 
@@ -34,6 +42,13 @@ export const ENEMY_SIZE: Record<EnemyType, { w: number; h: number; ax: number; a
   ember: { w: 24, h: 28, ax: 12, ay: 21 },
   brute: { w: 34, h: 34, ax: 17, ay: 28 },
   leviathan: { w: 90, h: 70, ax: 45, ay: 58 },
+  pink: { w: 24, h: 24, ax: 12, ay: 19 },
+  frostling: { w: 24, h: 24, ax: 12, ay: 20 },
+  crystal: { w: 42, h: 40, ax: 21, ay: 35 },
+  /** Gloomship schwebt: ay liegt ~8 px unter den Laternen (Bodenpunkt fuer den Schatten). */
+  gloomship: { w: 66, h: 64, ax: 33, ay: 62 },
+  wyrm: { w: 80, h: 64, ax: 40, ay: 60 },
+  colossus: { w: 80, h: 64, ax: 40, ay: 62 },
 };
 
 const WOBBLE = [
@@ -283,8 +298,17 @@ export function enemyRaster(type: EnemyType, frame: number, o: EnemyOpts = {}): 
     case 'ember': drawEmber(f, s); break;
     case 'brute': drawBrute(f, Math.min(2, Math.max(0, o.damageStage ?? 0)), s); break;
     case 'leviathan': drawLeviathan(f, Math.min(3, Math.max(0, o.damageStage ?? 0)), s); break;
+    case 'pink': drawPink(f, s); break;
+    case 'frostling': drawFrostling(f, s); break;
+    case 'crystal': drawCrystalBrute(f, Math.min(3, Math.max(0, o.damageStage ?? 0)), s); break;
+    case 'gloomship': drawGloomship(f, Math.min(2, Math.max(0, o.damageStage ?? 0)), s); break;
+    case 'wyrm': drawWyrm(f, Math.min(2, Math.max(0, o.damageStage ?? 0)), s); break;
+    case 'colossus': drawColossus(f, Math.min(4, Math.max(0, o.damageStage ?? 0)), s); break;
   }
-  let out = outlineSurface(s, 'ink', type === 'leviathan');
+  if (o.fortified) drawFortified(s, type, f);
+  if (o.regrow) drawRegrow(s, type, f);
+  const diag = type === 'leviathan' || type === 'gloomship' || type === 'wyrm' || type === 'colossus';
+  let out = outlineSurface(s, 'ink', diag);
   if (o.hitFlash) out = silhouette(out, 'white');
   if (o.flip) out = out.flipX();
   return { rows: out.toRows(), ax: o.flip ? sz.w - 1 - sz.ax : sz.ax, ay: sz.ay };

@@ -6,6 +6,7 @@
 import { explosionRaster, novaRaster, popRaster, boltLineRaster, statusRaster, puffRaster, leakRaster, arrowRainRaster, absoluteZeroRaster, flareRaster, dawnBeamRaster, bossPlateRaster, type ExplosionKind, type StatusKind, EXPLOSION_RADIUS } from '../fx/effects';
 import { coinRiseRaster, bankChestRaster, auraRingRaster, grantRaster, ricochetRaster, supplyDropRaster, focusRaster, bossMarkRaster } from '../fx/r13';
 import { acidMarkRaster, acidPoolRaster, acidSplashRaster, buffGlowRaster, deathBlastRaster, goldBurstRaster, monsterTransformRaster, shrinkRaster, stormArcRaster, thornZoneRaster, treeWallGrowRaster, treeWallRaster, vineSnareRaster, whirlwindRaster, worldTreeZoneRaster } from '../fx/r14';
+import { bossDeathRaster, frostBreathRaster, gloomCrashRaster, gloomShadowRaster, regrowRaster, stompRaster, towerFrozenRaster, type BossKind, FROST_BREATH_RADIUS, STOMP_RADIUS } from '../fx/r15';
 import { textRaster, textWidth } from '../font';
 import type { PalName } from '../palette';
 import { camoAlpha, rowsToCanvas, type Sprite } from './canvas';
@@ -67,10 +68,10 @@ export function heroMuzzle(level: number, facing: number): { x: number; y: numbe
 // ---------- Gegner ----------
 
 export interface EnemySpriteOpts extends EnemyOpts { camo?: boolean }
-/** Gegner (Anker = Fuss am Boden, Blick nach rechts, `flip` fuer links). Frame 0..3 = Laufen. Camo = Flimmer-Raster. */
+/** Gegner (Anker = Fuss am Boden, Blick nach rechts, `flip` fuer links). Frame 0..3 = Laufen. Camo = Flimmer-Raster. `regrow`/`fortified` (Runde 15) legen Blaetterkranz bzw. Eisenbaender darueber, mit Camo kombinierbar. */
 export function enemySprite(type: EnemyType, frame: number, o: EnemySpriteOpts = {}): Sprite {
   const f = ((Math.floor(frame) % 4) + 4) % 4;
-  const key = `e|${type}|${f}|${o.damageStage ?? 0}|${o.hitFlash ? 1 : 0}|${o.flip ? 1 : 0}|${o.camo ? 1 : 0}`;
+  const key = `e|${type}|${f}|${o.damageStage ?? 0}|${o.hitFlash ? 1 : 0}|${o.flip ? 1 : 0}|${o.camo ? 1 : 0}|${o.regrow ? 1 : 0}${o.fortified ? 1 : 0}`;
   return cached(key, () => sprite(enemyRaster(type, f, o), o.camo ? camoAlpha(f) : undefined));
 }
 /** Schlagschatten (ink, 35 % Alpha) als Ellipse w x h; Anker = Mitte. Turm 16x5, Glim 9x3, Boss 40x10. */
@@ -243,7 +244,25 @@ export function monsterSprite(facing: number, frame: TowerFrame, scale = 1): Spr
   return cached(`mon|${f}|${frame}|${k}`, () => sprite(monsterRaster(f, frame, k / 100)));
 }
 
-export const fx = { stormArc, whirlwind, vineSnare, treeWall, treeWallGrow, thornZone, worldTreeZone, acidSplash, acidMark, acidPool, buffGlow, deathBlast, monsterTransform, shrink, goldBurst, explosion, popShards, nova, boltLine, status, puff, leak, arrowRain, absoluteZero, flare, dawnBeam, bossPlate, coinRise, bankChest, auraRing, grant, ricochet, supplyDrop, focus, bossMark };
+// ---------- Effekte Runde 15 (B2): neue Gegner und Bosse ----------
+export { REGROW_FRAMES, FROST_BREATH_FRAMES, FROZEN_TOWER_FRAMES, STOMP_FRAMES, GLOOM_CRASH_FRAMES, BOSS_DEATH_FRAMES, GLOOM_SHADOW_FRAMES, FROST_BREATH_RADIUS, STOMP_RADIUS } from '../fx/r15';
+export type { BossKind } from '../fx/r15';
+/** Regrow: Schicht waechst nach (Frame 0..5), Anker = Fuss des Gegners. */
+const regrow = (etype: EnemyType, frame: number): Sprite => { const f = clampF(frame, 6); return cached(`rg|${etype}|${f}`, () => sprite(regrowRaster(etype, f))); };
+/** Frosthauch des Frost Wyrm (Frame 0..7), Radius px (Standard 60 = Einfrier-Umkreis), Anker = Mitte (auf dem Wyrm). */
+const frostBreath = (frame: number, radius = FROST_BREATH_RADIUS): Sprite => { const f = clampF(frame, 8), R = Math.round(radius); return cached(`fb|${R}|${f}`, () => sprite(frostBreathRaster(f, R))); };
+/** Eisblock ueber einem eingefrorenen Turm (Frame 0..3), durchscheinend, Anker = Fuss des Turms. */
+const towerFrozen = (frame: number): Sprite => { const f = wrap4(frame); return cached(`tf|${f}`, () => sprite(towerFrozenRaster(f))); };
+/** Lava-Stampfer des Ember Colossus (Frame 0..5), Radius px (Standard 80), Anker = Auftrittspunkt. */
+const stomp = (frame: number, radius = STOMP_RADIUS): Sprite => { const f = clampF(frame, 6), R = Math.round(radius); return cached(`sp|${R}|${f}`, () => sprite(stompRaster(f, R))); };
+/** Schatten am Boden unter dem Gloomship (35 % Alpha), Frame 0..3, Anker = Mitte. */
+const gloomShadow = (frame: number): Sprite => { const f = wrap4(frame); return cached(`gs|${f}`, () => sprite(gloomShadowRaster(f), () => 0.35)); };
+/** Gloomship-Absturz (Frame 0..7), Anker = Aufschlagpunkt. */
+const gloomCrash = (frame: number): Sprite => { const f = clampF(frame, 8); return cached(`gc|${f}`, () => sprite(gloomCrashRaster(f))); };
+/** Boss-Tod 'wyrm' (Eisbruch) / 'colossus' (Eruption), Frame 0..9, Anker = Fuss des Bosses. */
+const bossDeath = (kind: BossKind, frame: number): Sprite => { const f = clampF(frame, 10); return cached(`bd|${kind}|${f}`, () => sprite(bossDeathRaster(kind, f))); };
+
+export const fx = { regrow, frostBreath, towerFrozen, stomp, gloomShadow, gloomCrash, bossDeath, stormArc, whirlwind, vineSnare, treeWall, treeWallGrow, thornZone, worldTreeZone, acidSplash, acidMark, acidPool, buffGlow, deathBlast, monsterTransform, shrink, goldBurst, explosion, popShards, nova, boltLine, status, puff, leak, arrowRain, absoluteZero, flare, dawnBeam, bossPlate, coinRise, bankChest, auraRing, grant, ricochet, supplyDrop, focus, bossMark };
 export { coinRise, bankChest, auraRing, grant as grantFx, ricochet, supplyDrop, focus as focusFx, bossMark };
 export { explosion, popShards, nova, boltLine, status as statusFx, puff, leak as leakFx, arrowRain as arrowRainFx, absoluteZero as absoluteZeroFx, flare as flareFx, dawnBeam, bossPlate };
 
